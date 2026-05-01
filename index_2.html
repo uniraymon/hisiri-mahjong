@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🀄 麻將戰績小本本</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif;
+    background:
+      radial-gradient(circle at 20% 10%, #ffd6e7 0%, transparent 40%),
+      radial-gradient(circle at 80% 30%, #d6f5ff 0%, transparent 40%),
+      radial-gradient(circle at 50% 80%, #fff4d6 0%, transparent 40%),
+      linear-gradient(135deg, #ffeef5 0%, #fff5e6 100%);
+    min-height: 100vh;
+    padding: 16px;
+    padding-bottom: 100px;
+    color: #5a4a4a;
+  }
+  .container { max-width: 600px; margin: 0 auto; position: relative; z-index: 1; }
+
+  h1 {
+    font-size: 26px;
+    text-align: center;
+    margin-bottom: 4px;
+    color: #d4806b;
+    text-shadow: 2px 2px 0 #fff, 3px 3px 0 #ffc4d0;
+    letter-spacing: 1px;
+    animation: float 3s ease-in-out infinite;
+  }
+  .subtitle-wrap { text-align: center; margin-bottom: 16px; }
+  .subtitle {
+    color: #b88a8a;
+    font-size: 13px;
+    background: rgba(255,255,255,0.7);
+    display: inline-block;
+    padding: 5px 16px;
+    border-radius: 20px;
+    border: 1px dashed #ffc4d0;
+  }
+
+  .tab-bar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    padding: 4px 0;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab {
+    flex-shrink: 0;
+    padding: 8px 14px;
+    background: rgba(255,255,255,0.7);
+    border: 2px solid #ffd6e0;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #b88a8a;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .tab.active {
+    background: linear-gradient(135deg, #ffabbf, #ff8fa3);
+    color: #fff;
+    border-color: #ff8fa3;
+    box-shadow: 0 3px 0 #ef6b8a;
+  }
+
+  .card {
+    background: rgba(255, 255, 255, 0.85);
+    border: 2px solid #ffd6e0;
+    border-radius: 20px;
+    padding: 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 0 #ffc4d0, 0 8px 20px rgba(255, 180, 200, 0.2);
+    backdrop-filter: blur(10px);
+  }
+  .card h2 {
+    font-size: 17px;
+    margin-bottom: 14px;
+    color: #d4806b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .player-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 10px;
+    align-items: center;
+    padding: 12px 8px;
+    border-bottom: 2px dashed #ffe4ec;
+  }
+  .player-row:last-child { border-bottom: none; }
+
+  .avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    font-size: 20px;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .avatar-0 { background: linear-gradient(135deg, #ffd6e0, #ffabbf); }
+  .avatar-1 { background: linear-gradient(135deg, #d6e7ff, #abc4ff); }
+  .avatar-2 { background: linear-gradient(135deg, #fff4d6, #ffdb9b); }
+  .avatar-3 { background: linear-gradient(135deg, #d6ffe0, #abf5b8); }
+
+  .player-name {
+    background: transparent;
+    border: none;
+    border-bottom: 2px dotted #ffc4d0;
+    color: #5a4a4a;
+    padding: 6px 4px;
+    font-size: 14px;
+    width: 100%;
+    font-family: inherit;
+    font-weight: 600;
+  }
+  .player-name:focus {
+    outline: none;
+    border-bottom-color: #ff8fa3;
+    background: rgba(255, 230, 240, 0.5);
+  }
+
+  .total {
+    font-weight: 700;
+    font-size: 17px;
+    min-width: 80px;
+    text-align: right;
+  }
+  .pos { color: #ef6b8a; }
+  .neg { color: #6b9eef; }
+  .zero { color: #b88a8a; }
+
+  .rank-badge {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    background: #fff0f3;
+    color: #b88a8a;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  }
+  .rank-1 {
+    background: linear-gradient(135deg,#ffd700,#ffa500);
+    color:#fff;
+    box-shadow: 0 0 10px rgba(255, 200, 0, 0.6);
+  }
+  .rank-2 { background: linear-gradient(135deg,#e0e0e0,#a0a0a0); color:#fff; }
+  .rank-3 { background: linear-gradient(135deg,#deb887,#8b6f47); color:#fff; }
+  .rank-4 { background: linear-gradient(135deg,#c9c9c9,#888); color:#fff; }
+
+  .score-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .score-input-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: #fff8fb;
+    padding: 10px;
+    border-radius: 14px;
+    border: 2px solid #ffe4ec;
+  }
+  .score-input-wrap label {
+    font-size: 12px;
+    color: #b88a8a;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .score-input {
+    background: #fff;
+    border: 2px solid #ffd6e0;
+    color: #5a4a4a;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 17px;
+    width: 100%;
+    font-family: inherit;
+    font-weight: 600;
+    text-align: center;
+    -moz-appearance: textfield;
+  }
+  .score-input::-webkit-outer-spin-button,
+  .score-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .score-input:focus {
+    outline: none;
+    border-color: #ff8fa3;
+    background: #fff5f8;
+  }
+
+  .sum-display {
+    text-align: center;
+    font-size: 13px;
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 14px;
+    background: #fff8fb;
+    font-weight: 600;
+    border: 2px dashed #ffd6e0;
+  }
+  .sum-ok { color: #4ade80; background: #f0fff4; border-color: #b8e6c5; }
+  .sum-bad { color: #ef6b8a; background: #fff0f3; border-color: #ffabbf; }
+
+  .btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 16px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.1s;
+    font-family: inherit;
+    letter-spacing: 1px;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn-primary {
+    background: linear-gradient(135deg, #ffabbf, #ff8fa3);
+    color: #fff;
+    box-shadow: 0 4px 0 #ef6b8a, 0 6px 12px rgba(239, 107, 138, 0.3);
+  }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+  .btn-danger {
+    background: #fff0f3;
+    color: #ef6b8a;
+    border: 2px solid #ffabbf;
+    margin-top: 12px;
+  }
+
+  .history-row {
+    display: grid;
+    grid-template-columns: 36px 1fr auto;
+    gap: 10px;
+    padding: 12px 8px;
+    border-bottom: 2px dashed #ffe4ec;
+    font-size: 13px;
+    align-items: center;
+  }
+  .history-row:last-child { border-bottom: none; }
+  .history-num {
+    background: linear-gradient(135deg, #ffd6e0, #ffabbf);
+    color: #fff;
+    font-weight: 700;
+    text-align: center;
+    padding: 4px 0;
+    border-radius: 10px;
+    font-size: 12px;
+  }
+  .history-detail { color: #5a4a4a; line-height: 1.7; font-size: 12px; }
+  .history-detail span {
+    display: inline-block;
+    padding: 2px 6px;
+    margin: 1px 2px;
+    border-radius: 6px;
+    background: #fff8fb;
+  }
+  .history-del {
+    background: #fff0f3;
+    border: 2px solid #ffabbf;
+    color: #ef6b8a;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px 10px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-family: inherit;
+  }
+
+  .empty {
+    text-align: center;
+    color: #b88a8a;
+    padding: 24px;
+    font-size: 13px;
+  }
+  .empty::before {
+    content: '🌸';
+    display: block;
+    font-size: 32px;
+    margin-bottom: 8px;
+  }
+
+  details summary {
+    cursor: pointer;
+    color: #d4806b;
+    font-weight: 700;
+    font-size: 15px;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  details summary::-webkit-details-marker { display: none; }
+  details[open] summary { margin-bottom: 12px; }
+  .settings-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .settings-row label {
+    font-size: 13px;
+    color: #b88a8a;
+    min-width: 110px;
+    font-weight: 600;
+  }
+  .settings-row input {
+    flex: 1;
+    background: #fff;
+    border: 2px solid #ffd6e0;
+    color: #5a4a4a;
+    padding: 8px 10px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: 600;
+  }
+  .rate-display {
+    font-size: 12px;
+    color: #b88a8a;
+    text-align: center;
+    margin-top: 8px;
+    font-style: italic;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(120px);
+    background: linear-gradient(135deg, #ffabbf, #ff8fa3);
+    color: #fff;
+    padding: 14px 24px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 700;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 1000;
+    box-shadow: 0 6px 20px rgba(239, 107, 138, 0.4);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .player-header {
+    text-align: center;
+    padding: 16px 0;
+  }
+  .player-avatar-big {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    font-size: 44px;
+    margin-bottom: 8px;
+    box-shadow: 0 6px 20px rgba(255, 180, 200, 0.4);
+  }
+  .player-title-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: #d4806b;
+    margin-bottom: 4px;
+  }
+  .player-nickname {
+    display: inline-block;
+    padding: 4px 12px;
+    background: linear-gradient(135deg, #fff4d6, #ffdb9b);
+    border-radius: 14px;
+    font-size: 12px;
+    color: #8b6f47;
+    font-weight: 700;
+  }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .stat-box {
+    background: #fff8fb;
+    border: 2px solid #ffe4ec;
+    border-radius: 14px;
+    padding: 12px;
+    text-align: center;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: #b88a8a;
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #d4806b;
+  }
+  .stat-value.big { font-size: 26px; }
+
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 8px;
+  }
+  .chart-svg { display: block; min-width: 100%; }
+
+  .vs-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 4px;
+    border-bottom: 2px dashed #ffe4ec;
+    font-size: 13px;
+  }
+  .vs-row:last-child { border-bottom: none; }
+  .vs-name { font-weight: 600; color: #5a4a4a; }
+
+  .achievement-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+  }
+  .achievement {
+    background: #fff8fb;
+    border: 2px solid #ffe4ec;
+    border-radius: 14px;
+    padding: 10px 8px;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .achievement.unlocked {
+    background: linear-gradient(135deg, #fff4d6, #ffdb9b);
+    border-color: #ffb84d;
+    box-shadow: 0 3px 8px rgba(255, 180, 80, 0.3);
+  }
+  .achievement.locked { opacity: 0.4; }
+  .achievement-icon { font-size: 24px; margin-bottom: 4px; }
+  .achievement-name { font-size: 11px; font-weight: 700; color: #5a4a4a; line-height: 1.3; }
+  .achievement-desc { font-size: 9px; color: #b88a8a; margin-top: 2px; line-height: 1.3; }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🀄 麻將戰績小本本 🌸</h1>
+  <div class="subtitle-wrap">
+    <span class="subtitle" id="rateInfo">25,000 分 = 1,000 元 ♡</span>
+  </div>
+
+  <div class="tab-bar" id="tabBar"></div>
+
+  <div id="page-overview">
+    <details class="card">
+      <summary>⚙️ 設定 / 換算比例</summary>
+      <div>
+        <div class="settings-row">
+          <label>底分（25000 等於）</label>
+          <input type="number" id="baseMoney" value="1000">
+        </div>
+        <div class="settings-row">
+          <label>起始分數</label>
+          <input type="number" id="basePoint" value="25000">
+        </div>
+        <div class="rate-display" id="rateDetail"></div>
+      </div>
+    </details>
+
+    <div class="card">
+      <h2>🏆 累計戰績排行</h2>
+      <div id="playersList"></div>
+    </div>
+
+    <div class="card">
+      <h2>✨ 新增本局分數</h2>
+      <div class="score-grid" id="scoreInputs"></div>
+      <div class="sum-display" id="sumCheck">輸入 4 家分數（總和應為 100,000）</div>
+      <button class="btn btn-primary" id="addBtn" onclick="addRound()">📝 記錄本局</button>
+    </div>
+
+    <div class="card">
+      <h2>📜 對局小日記 <span id="roundCount" style="font-size:12px; color:#b88a8a; font-weight:500;"></span></h2>
+      <div id="historyList"></div>
+    </div>
+
+    <button class="btn btn-danger" onclick="resetAll()">🗑 全部重置</button>
+  </div>
+
+  <div id="page-player" class="hidden">
+    <div id="playerPageContent"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // === 預設值（首次開啟才會用）===
+  const DEFAULT_PLAYERS = ['小燈泡掉頭走了', '小小小小小狗狗', '好久沒下雪了呢', '鵝霸天下'];
+  const DEFAULT_HISTORY = [
+    {
+      id: 1700000000000,
+      scores: [42800, 33000, 25500, -1300],
+      money: [712, 320, 20, -1052],
+      ts: '2026-05-02T00:00:00.000Z'
+    }
+  ];
+
+  let players = [...DEFAULT_PLAYERS];
+  let history = [];
+  let baseMoney = 1000;
+  let basePoint = 25000;
+  let currentTab = 'overview';
+  const avatars = ['🌸', '🐶', '❄️', '🦢'];
+  const colors = ['#ff8fa3', '#6b9eef', '#ffb84d', '#4ade80'];
+
+  const STORAGE_KEY = 'mahjong-tracker-v1';
+  const SEEDED_KEY = 'mahjong-tracker-seeded';
+
+  function loadData() {
+    const seeded = localStorage.getItem(SEEDED_KEY);
+    let loaded = false;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (data.players && data.players.length === 4) players = data.players;
+        if (data.history) history = data.history;
+        if (data.baseMoney) baseMoney = data.baseMoney;
+        if (data.basePoint) basePoint = data.basePoint;
+        loaded = true;
+      }
+    } catch (e) { console.error(e); }
+
+    // 第一次開啟（沒儲存過資料）→ 帶入預設南 3 局
+    if (!loaded && !seeded) {
+      players = [...DEFAULT_PLAYERS];
+      history = JSON.parse(JSON.stringify(DEFAULT_HISTORY));
+      localStorage.setItem(SEEDED_KEY, '1');
+      saveData();
+    }
+
+    document.getElementById('baseMoney').value = baseMoney;
+    document.getElementById('basePoint').value = basePoint;
+    renderTabs();
+    render();
+  }
+
+  function saveData() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        players, history, baseMoney, basePoint
+      }));
+    } catch (e) { console.error(e); }
+  }
+
+  function pointToMoney(point) {
+    return (point - basePoint) * baseMoney / basePoint;
+  }
+  function fmtMoney(m) {
+    const r = Math.round(m);
+    if (r > 0) return `+${r}`;
+    return `${r}`;
+  }
+  function moneyClass(m) {
+    if (m > 0) return 'pos';
+    if (m < 0) return 'neg';
+    return 'zero';
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    })[c]);
+  }
+
+  function renderTabs() {
+    const bar = document.getElementById('tabBar');
+    let html = `<button class="tab ${currentTab==='overview'?'active':''}" onclick="switchTab('overview')">🏠 總覽</button>`;
+    players.forEach((name, i) => {
+      const active = currentTab === `p${i}` ? 'active' : '';
+      html += `<button class="tab ${active}" onclick="switchTab('p${i}')">${avatars[i]} ${escapeHtml(name)}</button>`;
+    });
+    bar.innerHTML = html;
+  }
+
+  function switchTab(tab) {
+    currentTab = tab;
+    renderTabs();
+    if (tab === 'overview') {
+      document.getElementById('page-overview').classList.remove('hidden');
+      document.getElementById('page-player').classList.add('hidden');
+    } else {
+      document.getElementById('page-overview').classList.add('hidden');
+      document.getElementById('page-player').classList.remove('hidden');
+      const idx = parseInt(tab.slice(1));
+      renderPlayerPage(idx);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function render() {
+    document.getElementById('rateInfo').textContent = `${basePoint.toLocaleString()} 分 = ${baseMoney} 元 ♡`;
+    document.getElementById('rateDetail').textContent =
+      `1 分 ≈ ${(baseMoney/basePoint).toFixed(4)} 元 ✨`;
+
+    const totals = players.map((name, i) => {
+      const sum = history.reduce((acc, h) => acc + (h.money[i] || 0), 0);
+      return { name, total: sum, idx: i };
+    });
+
+    const sorted = [...totals].sort((a, b) => b.total - a.total);
+    const rankMap = {};
+    sorted.forEach((p, i) => rankMap[p.idx] = i + 1);
+
+    const list = document.getElementById('playersList');
+    list.innerHTML = totals.map((p, i) => {
+      const rank = rankMap[i];
+      return `
+        <div class="player-row">
+          <span class="avatar avatar-${i}" onclick="switchTab('p${i}')" style="cursor:pointer">${avatars[i]}</span>
+          <input class="player-name" value="${escapeHtml(p.name)}"
+                 onchange="updateName(${i}, this.value)">
+          <span class="rank-badge rank-${rank}">${rank}</span>
+          <span class="total ${moneyClass(p.total)}">${fmtMoney(p.total)}元</span>
+        </div>
+      `;
+    }).join('');
+
+    const scoreDiv = document.getElementById('scoreInputs');
+    scoreDiv.innerHTML = players.map((name, i) => `
+      <div class="score-input-wrap">
+        <label>${avatars[i]} ${escapeHtml(name)}</label>
+        <input type="number" class="score-input" id="score-${i}"
+               placeholder="0" inputmode="numeric"
+               oninput="checkSum()">
+      </div>
+    `).join('');
+
+    document.getElementById('roundCount').textContent =
+      history.length > 0 ? `（共 ${history.length} 局 ✨）` : '';
+    const histDiv = document.getElementById('historyList');
+    if (history.length === 0) {
+      histDiv.innerHTML = '<div class="empty">還沒有對局紀錄<br>來打第一局吧 ♡</div>';
+    } else {
+      histDiv.innerHTML = history.slice().reverse().map((h, idx) => {
+        const realIdx = history.length - 1 - idx;
+        const detail = players.map((n, i) => {
+          const m = h.money[i];
+          const cls = moneyClass(m);
+          return `<span class="${cls}">${avatars[i]} ${fmtMoney(m)}</span>`;
+        }).join(' ');
+        return `
+          <div class="history-row">
+            <span class="history-num">#${realIdx + 1}</span>
+            <span class="history-detail">${detail}</span>
+            <button class="history-del" onclick="deleteRound(${realIdx})">×</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    checkSum();
+  }
+
+  function renderPlayerPage(idx) {
+    const name = players[idx];
+    const myMoney = history.map(h => h.money[idx] || 0);
+
+    if (myMoney.length === 0) {
+      document.getElementById('playerPageContent').innerHTML = `
+        <div class="card">
+          <div class="player-header">
+            <div class="player-avatar-big avatar-${idx}">${avatars[idx]}</div>
+            <div class="player-title-name">${escapeHtml(name)}</div>
+          </div>
+          <div class="empty">還沒有對局紀錄<br>來打一局吧 ♡</div>
+        </div>
+      `;
+      return;
+    }
+
+    const total = myMoney.reduce((a, b) => a + b, 0);
+    const games = myMoney.length;
+    const avgMoney = total / games;
+
+    const myRanks = history.map(h => {
+      const sorted = [...h.money].map((m, i) => ({m, i})).sort((a, b) => b.m - a.m);
+      return sorted.findIndex(s => s.i === idx) + 1;
+    });
+    const wins = myRanks.filter(r => r === 1).length;
+    const lasts = myRanks.filter(r => r === 4).length;
+    const winRate = ((wins / games) * 100).toFixed(0);
+    const avgRank = (myRanks.reduce((a, b) => a + b, 0) / games).toFixed(2);
+
+    const maxMoney = Math.max(...myMoney);
+    const minMoney = Math.min(...myMoney);
+    const maxScore = Math.max(...history.map(h => h.scores[idx]));
+    const minScore = Math.min(...history.map(h => h.scores[idx]));
+
+    const vsStats = players.map((_, j) => {
+      if (j === idx) return null;
+      let vsTotal = 0;
+      history.forEach(h => {
+        const myM = h.money[idx] || 0;
+        const theirM = h.money[j] || 0;
+        vsTotal += (myM - theirM) / 2;
+      });
+      return { idx: j, name: players[j], vs: vsTotal };
+    }).filter(Boolean);
+    const bestVs = [...vsStats].sort((a, b) => b.vs - a.vs)[0];
+    const worstVs = [...vsStats].sort((a, b) => a.vs - b.vs)[0];
+
+    const achievements = calcAchievements(idx, myMoney, myRanks);
+    const unlockedCount = achievements.filter(a => a.unlocked).length;
+
+    const titleObj = getTitle(idx, myMoney, myRanks, total, games);
+
+    const cumulative = [];
+    let acc = 0;
+    myMoney.forEach(m => { acc += m; cumulative.push(acc); });
+
+    const chartSvg = drawChart(cumulative, colors[idx]);
+
+    const rankCounts = [1,2,3,4].map(r => myRanks.filter(x => x === r).length);
+
+    document.getElementById('playerPageContent').innerHTML = `
+      <div class="card">
+        <div class="player-header">
+          <div class="player-avatar-big avatar-${idx}">${avatars[idx]}</div>
+          <div class="player-title-name">${escapeHtml(name)}</div>
+          <div class="player-nickname">${titleObj.icon} ${titleObj.title}</div>
+        </div>
+        <div class="stat-grid" style="margin-top:14px;">
+          <div class="stat-box">
+            <div class="stat-label">總輸贏</div>
+            <div class="stat-value big ${moneyClass(total)}">${fmtMoney(total)}元</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">總局數</div>
+            <div class="stat-value big">${games}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📊 基本統計</h2>
+        <div class="stat-grid">
+          <div class="stat-box">
+            <div class="stat-label">勝率（一位）</div>
+            <div class="stat-value">${winRate}%</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">平均名次</div>
+            <div class="stat-value">${avgRank}</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">每局平均</div>
+            <div class="stat-value ${moneyClass(avgMoney)}">${fmtMoney(avgMoney)}</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">墊底次數</div>
+            <div class="stat-value">${lasts}</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">最高分</div>
+            <div class="stat-value pos">${maxScore.toLocaleString()}</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">最低分</div>
+            <div class="stat-value neg">${minScore.toLocaleString()}</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">單局最賺</div>
+            <div class="stat-value pos">${fmtMoney(maxMoney)}</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">單局最賠</div>
+            <div class="stat-value neg">${fmtMoney(minMoney)}</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:6px; margin-top:14px; justify-content:space-around; padding:8px; background:#fff8fb; border-radius:12px; border:2px solid #ffe4ec;">
+          ${[1,2,3,4].map((r, i) => `
+            <div style="text-align:center;">
+              <div style="font-size:18px; font-weight:700; color:${['#ffa500','#a0a0a0','#8b6f47','#888'][i]}">${rankCounts[i]}</div>
+              <div style="font-size:11px; color:#b88a8a;">${r}位</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📈 累計戰績趨勢</h2>
+        <div class="chart-wrap">${chartSvg}</div>
+      </div>
+
+      <div class="card">
+        <h2>⚔️ 對戰分析</h2>
+        ${vsStats.map(v => {
+          const bar = Math.abs(v.vs);
+          const maxBar = Math.max(...vsStats.map(x => Math.abs(x.vs)), 1);
+          const w = (bar / maxBar * 100).toFixed(0);
+          const cls = moneyClass(v.vs);
+          const dir = v.vs >= 0 ? '贏' : '輸';
+          return `
+            <div class="vs-row">
+              <span class="avatar avatar-${v.idx}" style="width:30px; height:30px; font-size:16px;">${avatars[v.idx]}</span>
+              <div>
+                <div class="vs-name">${escapeHtml(v.name)}</div>
+                <div style="height:6px; background:#ffe4ec; border-radius:3px; margin-top:4px; overflow:hidden;">
+                  <div style="height:100%; width:${w}%; background:${v.vs >= 0 ? '#ff8fa3' : '#6b9eef'}; border-radius:3px;"></div>
+                </div>
+              </div>
+              <span class="${cls}" style="font-weight:700; font-size:13px;">${dir} ${Math.round(Math.abs(v.vs))}</span>
+            </div>
+          `;
+        }).join('')}
+        ${bestVs && worstVs ? `
+          <div style="margin-top:12px; padding:10px; background:#fff8fb; border-radius:12px; border:2px dashed #ffd6e0; font-size:12px; line-height:1.7;">
+            🍀 跟 <b>${escapeHtml(bestVs.name)}</b> 對局最佔便宜<br>
+            💔 跟 <b>${escapeHtml(worstVs.name)}</b> 對局最吃虧
+          </div>
+        ` : ''}
+      </div>
+
+      <div class="card">
+        <h2>🏅 成就徽章 <span style="font-size:12px; color:#b88a8a; font-weight:500;">（${unlockedCount}/${achievements.length}）</span></h2>
+        <div class="achievement-grid">
+          ${achievements.map(a => `
+            <div class="achievement ${a.unlocked ? 'unlocked' : 'locked'}">
+              <div class="achievement-icon">${a.icon}</div>
+              <div class="achievement-name">${a.name}</div>
+              <div class="achievement-desc">${a.desc}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  function drawChart(data, color) {
+    if (data.length === 0) return '';
+    const w = Math.max(300, data.length * 40);
+    const h = 180;
+    const pad = { top: 16, right: 12, bottom: 30, left: 40 };
+    const cw = w - pad.left - pad.right;
+    const ch = h - pad.top - pad.bottom;
+
+    const min = Math.min(0, ...data);
+    const max = Math.max(0, ...data);
+    const range = max - min || 1;
+
+    const points = data.map((v, i) => {
+      const x = pad.left + (data.length === 1 ? cw/2 : (i / (data.length - 1)) * cw);
+      const y = pad.top + ch - ((v - min) / range) * ch;
+      return { x, y, v };
+    });
+
+    const zeroY = pad.top + ch - ((0 - min) / range) * ch;
+
+    const linePath = points.map((p, i) => `${i===0?'M':'L'} ${p.x},${p.y}`).join(' ');
+    const areaPath = `${linePath} L ${points[points.length-1].x},${zeroY} L ${points[0].x},${zeroY} Z`;
+
+    let html = `<svg class="chart-svg" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">`;
+    html += `<line x1="${pad.left}" y1="${zeroY}" x2="${pad.left+cw}" y2="${zeroY}" stroke="#ffd6e0" stroke-width="1.5" stroke-dasharray="4,3"/>`;
+    html += `<text x="${pad.left-6}" y="${zeroY+4}" text-anchor="end" font-size="10" fill="#b88a8a">0</text>`;
+    html += `<text x="${pad.left-6}" y="${pad.top+5}" text-anchor="end" font-size="10" fill="#b88a8a">${Math.round(max)}</text>`;
+    html += `<text x="${pad.left-6}" y="${pad.top+ch}" text-anchor="end" font-size="10" fill="#b88a8a">${Math.round(min)}</text>`;
+    html += `<path d="${areaPath}" fill="${color}" fill-opacity="0.15"/>`;
+    html += `<path d="${linePath}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+    points.forEach((p, i) => {
+      html += `<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="#fff" stroke="${color}" stroke-width="2"/>`;
+      html += `<text x="${p.x}" y="${h-10}" text-anchor="middle" font-size="9" fill="#b88a8a">#${i+1}</text>`;
+    });
+    html += `</svg>`;
+    return html;
+  }
+
+  function calcAchievements(idx, myMoney, myRanks) {
+    const total = myMoney.reduce((a,b)=>a+b, 0);
+    const games = myMoney.length;
+    const wins = myRanks.filter(r => r === 1).length;
+    const maxWin = Math.max(...myMoney, 0);
+    const maxLose = Math.min(...myMoney, 0);
+
+    let maxStreak = 0, curStreak = 0;
+    myRanks.forEach(r => {
+      if (r === 1) { curStreak++; if (curStreak > maxStreak) maxStreak = curStreak; }
+      else curStreak = 0;
+    });
+
+    let maxLoseStreak = 0, curLose = 0;
+    myRanks.forEach(r => {
+      if (r === 4) { curLose++; if (curLose > maxLoseStreak) maxLoseStreak = curLose; }
+      else curLose = 0;
+    });
+
+    return [
+      { icon: '🌱', name: '初登場', desc: '完成首局', unlocked: games >= 1 },
+      { icon: '🏆', name: '首勝', desc: '拿下一次第一', unlocked: wins >= 1 },
+      { icon: '🔥', name: '二連勝', desc: '連續兩局第一', unlocked: maxStreak >= 2 },
+      { icon: '⚡', name: '三連霸', desc: '連續三局第一', unlocked: maxStreak >= 3 },
+      { icon: '👑', name: '常勝軍', desc: '累計 5 次第一', unlocked: wins >= 5 },
+      { icon: '💰', name: '小富翁', desc: '累計贏 +500', unlocked: total >= 500 },
+      { icon: '💎', name: '大富翁', desc: '累計贏 +2000', unlocked: total >= 2000 },
+      { icon: '💥', name: '爆發局', desc: '單局贏 +1000', unlocked: maxWin >= 1000 },
+      { icon: '🎰', name: '神之一手', desc: '單局贏 +2000', unlocked: maxWin >= 2000 },
+      { icon: '😅', name: '飛了一次', desc: '單局負分', unlocked: history.some(h => h.scores[idx] < 0) },
+      { icon: '😱', name: '慘澹經營', desc: '單局輸 -1500', unlocked: maxLose <= -1500 },
+      { icon: '🎯', name: '老鐵粉', desc: '打滿 10 局', unlocked: games >= 10 },
+      { icon: '🌟', name: '麻將達人', desc: '打滿 20 局', unlocked: games >= 20 },
+      { icon: '😭', name: '雷殘三連', desc: '連 3 局墊底', unlocked: maxLoseStreak >= 3 },
+    ];
+  }
+
+  function getTitle(idx, myMoney, myRanks, total, games) {
+    if (games < 3) return { icon: '🌱', title: '麻將新手' };
+
+    const winRate = myRanks.filter(r => r === 1).length / games;
+    const lastRate = myRanks.filter(r => r === 4).length / games;
+    const avgMoney = total / games;
+
+    if (winRate >= 0.5) return { icon: '👑', title: '麻將之神' };
+    if (winRate >= 0.35) return { icon: '🏆', title: '常勝將軍' };
+    if (avgMoney >= 300) return { icon: '💰', title: '聚寶盆' };
+    if (avgMoney >= 100) return { icon: '🍀', title: '幸運星' };
+    if (lastRate >= 0.5) return { icon: '😭', title: '永遠的四位' };
+    if (avgMoney <= -300) return { icon: '💸', title: '散財童子' };
+    if (avgMoney <= -100) return { icon: '🥲', title: '苦命人' };
+    return { icon: '⚖️', title: '穩健派' };
+  }
+
+  function checkSum() {
+    const scores = players.map((_, i) => {
+      const v = document.getElementById(`score-${i}`)?.value;
+      return v === '' || v === undefined || v === null ? null : Number(v);
+    });
+    const filled = scores.filter(s => s !== null);
+    const expectedTotal = basePoint * 4;
+    const sum = filled.reduce((a, b) => a + b, 0);
+    const sumDiv = document.getElementById('sumCheck');
+    const btn = document.getElementById('addBtn');
+    if (!sumDiv || !btn) return;
+
+    if (filled.length === 0) {
+      sumDiv.textContent = `輸入 4 家分數（總和應為 ${expectedTotal.toLocaleString()}）`;
+      sumDiv.className = 'sum-display';
+      btn.disabled = true;
+      return;
+    }
+    if (filled.length < 4) {
+      sumDiv.textContent = `已輸入 ${filled.length}/4 家 · 目前 ${sum.toLocaleString()}`;
+      sumDiv.className = 'sum-display';
+      btn.disabled = true;
+      return;
+    }
+    if (sum === expectedTotal) {
+      sumDiv.textContent = `✨ 總和 ${sum.toLocaleString()} 正確 ✨`;
+      sumDiv.className = 'sum-display sum-ok';
+      btn.disabled = false;
+    } else {
+      const diff = sum - expectedTotal;
+      sumDiv.textContent = `⚠️ 總和 ${sum.toLocaleString()}（${diff > 0 ? '多' : '少'}了 ${Math.abs(diff).toLocaleString()}）`;
+      sumDiv.className = 'sum-display sum-bad';
+      btn.disabled = false;
+    }
+  }
+
+  function updateName(i, v) {
+    players[i] = v.trim() || `玩家${i+1}`;
+    saveData();
+    renderTabs();
+    render();
+  }
+
+  function addRound() {
+    const scores = players.map((_, i) => {
+      const v = document.getElementById(`score-${i}`).value;
+      return v === '' ? null : Number(v);
+    });
+    if (scores.some(s => s === null || isNaN(s))) {
+      showToast('請填完 4 家分數 ♡');
+      return;
+    }
+    const money = scores.map(s => Math.round(pointToMoney(s)));
+    history.push({
+      id: Date.now(),
+      scores, money,
+      ts: new Date().toISOString()
+    });
+    saveData();
+    players.forEach((_, i) => {
+      document.getElementById(`score-${i}`).value = '';
+    });
+    render();
+    showToast('✨ 已記錄本局 ✨');
+  }
+
+  function deleteRound(idx) {
+    if (!confirm(`刪除第 ${idx+1} 局紀錄？`)) return;
+    history.splice(idx, 1);
+    saveData();
+    render();
+  }
+
+  function resetAll() {
+    if (!confirm('確定要清除全部紀錄嗎？(´;ω;`)')) return;
+    history = [];
+    localStorage.removeItem(SEEDED_KEY);
+    saveData();
+    render();
+    showToast('已重置 🌸');
+  }
+
+  document.getElementById('baseMoney').addEventListener('change', e => {
+    baseMoney = Number(e.target.value) || 1000;
+    history.forEach(h => {
+      h.money = h.scores.map(s => Math.round(pointToMoney(s)));
+    });
+    saveData();
+    render();
+  });
+  document.getElementById('basePoint').addEventListener('change', e => {
+    basePoint = Number(e.target.value) || 25000;
+    history.forEach(h => {
+      h.money = h.scores.map(s => Math.round(pointToMoney(s)));
+    });
+    saveData();
+    render();
+  });
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  }
+
+  loadData();
+</script>
+</body>
+</html>
