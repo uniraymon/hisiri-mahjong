@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🀄 麻將戰績小本本</title>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body {
@@ -667,6 +668,96 @@
     border-color: #ef6b8a;
   }
 
+  /* 截圖匯入 */
+  .btn-screenshot {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #fff4d6, #ffdb9b);
+    border: 2px dashed #ffb84d;
+    border-radius: 14px;
+    color: #8b6f47;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: inherit;
+    margin-bottom: 10px;
+    transition: all 0.15s;
+  }
+  .btn-screenshot:hover { transform: translateY(-1px); box-shadow: 0 3px 0 #ffb84d; }
+  .btn-screenshot:active { transform: scale(0.98); }
+
+  .ocr-divider {
+    text-align: center;
+    font-size: 10px;
+    color: #b88a8a;
+    margin: 6px 0 12px;
+    position: relative;
+    font-weight: 600;
+  }
+  .ocr-divider::before, .ocr-divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 28%;
+    border-top: 1px dashed #ffd6e0;
+  }
+  .ocr-divider::before { left: 0; }
+  .ocr-divider::after { right: 0; }
+
+  .ocr-row {
+    display: grid;
+    grid-template-columns: 38px 1fr 100px;
+    gap: 8px;
+    align-items: center;
+    padding: 10px 4px;
+    border-bottom: 2px dashed #ffe4ec;
+  }
+  .ocr-row:last-child { border-bottom: none; }
+  .ocr-rank {
+    font-weight: 700;
+    text-align: center;
+    background: linear-gradient(135deg, #ffd6e0, #ffabbf);
+    color: #fff;
+    border-radius: 10px;
+    padding: 6px 0;
+    font-size: 13px;
+  }
+  .ocr-detected-name {
+    font-size: 10px;
+    color: #b88a8a;
+    margin-bottom: 3px;
+    line-height: 1.3;
+  }
+  .ocr-select {
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 2px solid #ffd6e0;
+    font-family: inherit;
+    font-size: 12px;
+    background: #fff;
+    color: #5a4a4a;
+    font-weight: 600;
+  }
+  .ocr-score-input {
+    width: 100%;
+    padding: 8px;
+    border-radius: 8px;
+    border: 2px solid #ffd6e0;
+    font-family: inherit;
+    font-size: 14px;
+    text-align: center;
+    font-weight: 700;
+    color: #5a4a4a;
+  }
+  .ocr-score-input:focus, .ocr-select:focus { outline: none; border-color: #ff8fa3; }
+  .ocr-preview img {
+    max-width: 100%;
+    max-height: 180px;
+    border-radius: 12px;
+    border: 2px solid #ffd6e0;
+  }
+
   @keyframes float {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-3px); }
@@ -708,6 +799,9 @@
 
     <div class="card">
       <h2><span class="h2-text">✨ 新增本局分數</span></h2>
+      <button class="btn-screenshot" onclick="document.getElementById('screenshotInput').click()">📸 從截圖匯入（雀魂結算畫面）</button>
+      <input type="file" id="screenshotInput" accept="image/*" style="display:none" onchange="handleScreenshot(event)">
+      <div class="ocr-divider"><span>或手動輸入 ↓</span></div>
       <div class="pick-tip" id="pickTip">先點選本局上場的 4 位玩家</div>
       <div class="player-pick-grid" id="playerPicks"></div>
       <div id="scoreSection" class="hidden">
@@ -737,6 +831,18 @@
     <h3 id="titleModalHeader">🌟 選擇稱號</h3>
     <div id="titleGrid" class="title-grid"></div>
     <button class="btn btn-secondary" onclick="closeTitleModal()">關閉</button>
+  </div>
+</div>
+
+<div id="ocrModal" class="modal-overlay hidden" onclick="closeOcrModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 540px;">
+    <h3>📸 截圖辨識結果</h3>
+    <div class="ocr-preview" id="ocrPreview" style="text-align:center; margin-bottom:10px;"></div>
+    <div id="ocrStatus" style="text-align:center; font-size:12px; color:#b88a8a; margin-bottom:10px; min-height:18px;"></div>
+    <div id="ocrRows"></div>
+    <div id="ocrSumCheck" style="margin-top:10px;"></div>
+    <button id="ocrConfirmBtn" class="btn btn-primary" onclick="confirmOcrImport()" disabled style="margin-top:12px;">📝 確認記錄本局</button>
+    <button class="btn btn-secondary" onclick="closeOcrModal()">取消</button>
   </div>
 </div>
 
@@ -1515,6 +1621,237 @@
     saveData();
     render();
   });
+
+  // === OCR 截圖匯入 ===
+  let ocrWorker = null;
+  let ocrParsed = null; // [{rank, nameRaw, score, matchedId}]
+
+  async function handleScreenshot(e) {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    if (typeof Tesseract === 'undefined') {
+      showToast('⚠️ 辨識引擎未載入（檢查網路）');
+      return;
+    }
+    openOcrModal();
+    const url = URL.createObjectURL(file);
+    document.getElementById('ocrPreview').innerHTML = `<img src="${url}">`;
+    document.getElementById('ocrStatus').textContent = '⏳ 載入辨識引擎中...（首次約 30 秒）';
+    document.getElementById('ocrRows').innerHTML = '';
+    document.getElementById('ocrSumCheck').innerHTML = '';
+    document.getElementById('ocrConfirmBtn').disabled = true;
+
+    try {
+      if (!ocrWorker) {
+        ocrWorker = await Tesseract.createWorker(['chi_tra', 'eng'], 1, {
+          logger: m => {
+            if (m.status === 'recognizing text' && m.progress != null) {
+              document.getElementById('ocrStatus').textContent = `🔍 辨識中... ${Math.round(m.progress * 100)}%`;
+            } else if (m.status) {
+              const st = m.status === 'loading tesseract core' ? '載入引擎'
+                : m.status === 'initializing tesseract' ? '初始化'
+                : m.status === 'loading language traineddata' ? '載入中文字庫（首次較久）'
+                : m.status === 'initializing api' ? '準備辨識'
+                : m.status;
+              document.getElementById('ocrStatus').textContent = `⏳ ${st}...`;
+            }
+          }
+        });
+      }
+      document.getElementById('ocrStatus').textContent = '🔍 辨識中...';
+      const result = await ocrWorker.recognize(file);
+      const text = result.data.text || '';
+      console.log('OCR raw text:\n', text);
+      ocrParsed = parseOcrText(text);
+      if (ocrParsed.length === 0) {
+        document.getElementById('ocrStatus').textContent = '⚠️ 沒有抓到位次資訊，請手動填';
+        // give 4 empty rows so user can fill manually
+        ocrParsed = [1,2,3,4].map(r => ({ rank: r, nameRaw: '', score: null, matchedId: null }));
+      } else {
+        document.getElementById('ocrStatus').textContent = `✨ 辨識完成（${ocrParsed.length}/4 行），請確認 ↓`;
+      }
+      // 補滿 4 行
+      while (ocrParsed.length < 4) {
+        const missing = [1,2,3,4].find(r => !ocrParsed.some(x => x.rank === r));
+        ocrParsed.push({ rank: missing || ocrParsed.length + 1, nameRaw: '', score: null, matchedId: null });
+      }
+      ocrParsed.sort((a, b) => a.rank - b.rank);
+      // 自動配對
+      ocrParsed.forEach(r => {
+        if (!r.matchedId) r.matchedId = fuzzyMatchPlayer(r.nameRaw);
+      });
+      renderOcrRows();
+    } catch (err) {
+      console.error(err);
+      document.getElementById('ocrStatus').textContent = `❌ 辨識失敗：${err.message}`;
+    }
+  }
+
+  function parseOcrText(text) {
+    const normalized = text
+      .replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+      .replace(/[，、]/g, ' ');
+    const lines = normalized.split('\n').map(l => l.trim()).filter(Boolean);
+    const rows = [];
+    for (const line of lines) {
+      const rankMatch = line.match(/([1234])\s*位/);
+      if (!rankMatch) continue;
+      const rank = parseInt(rankMatch[1]);
+      if (rows.find(r => r.rank === rank)) continue;
+      const nums = (line.match(/-?\d+/g) || []).map(Number);
+      // 分數通常是 5 位數左右、絕對值最大
+      let score = null;
+      const candidates = nums.filter(n => Math.abs(n) >= 100 && Math.abs(n) <= 999999);
+      if (candidates.length > 0) {
+        score = candidates.reduce((max, n) => Math.abs(n) > Math.abs(max) ? n : max);
+      }
+      // 名字：去 X位 / 數字 / 符號 / 段位星
+      const name = line
+        .replace(/[1234]\s*位/g, '')
+        .replace(/-?\d+/g, '')
+        .replace(/[\/\\★⭐☆\*\.\,\:\;\|\-_=]+/g, ' ')
+        .replace(/[a-zA-Z]+/g, '')
+        .replace(/\s+/g, '')
+        .trim();
+      rows.push({ rank, nameRaw: name, score, matchedId: null });
+    }
+    rows.sort((a, b) => a.rank - b.rank);
+    return rows;
+  }
+
+  function fuzzyMatchPlayer(rawName) {
+    if (!rawName) return null;
+    for (const p of players) if (p.name === rawName) return p.id;
+    for (const p of players) if (rawName.includes(p.name) || p.name.includes(rawName)) return p.id;
+    let bestId = null, bestScore = 0;
+    for (const p of players) {
+      const set1 = new Set(rawName), set2 = new Set(p.name);
+      let overlap = 0;
+      for (const c of set1) if (set2.has(c)) overlap++;
+      const score = overlap / Math.max(set1.size, set2.size, 1);
+      if (score > bestScore) { bestScore = score; bestId = p.id; }
+    }
+    return bestScore >= 0.5 ? bestId : null;
+  }
+
+  function renderOcrRows() {
+    if (!ocrParsed) return;
+    const html = ocrParsed.slice(0, 4).map((r, i) => {
+      const playerOpts = players.map(p =>
+        `<option value="${p.id}" ${p.id === r.matchedId ? 'selected' : ''}>${p.avatar} ${escapeHtml(p.name)}</option>`
+      ).join('');
+      return `
+        <div class="ocr-row">
+          <div class="ocr-rank">${r.rank}位</div>
+          <div>
+            <div class="ocr-detected-name">辨識：${escapeHtml(r.nameRaw || '(未抓到)')}</div>
+            <select class="ocr-select" onchange="updateOcrRow(${i}, 'matchedId', this.value)">
+              <option value="">— 選玩家 —</option>
+              ${playerOpts}
+              <option value="__new__">+ 新增為玩家</option>
+            </select>
+          </div>
+          <input type="number" class="ocr-score-input" value="${r.score ?? ''}"
+                 placeholder="分數" inputmode="numeric"
+                 onchange="updateOcrRow(${i}, 'score', this.value)"
+                 oninput="updateOcrRow(${i}, 'score', this.value, true)">
+        </div>
+      `;
+    }).join('');
+    document.getElementById('ocrRows').innerHTML = html;
+    checkOcrSum();
+  }
+
+  function updateOcrRow(i, field, value, skipRender) {
+    if (!ocrParsed || !ocrParsed[i]) return;
+    if (field === 'matchedId') {
+      if (value === '__new__') {
+        const name = prompt('新玩家名字 ♡', ocrParsed[i].nameRaw || '');
+        if (name && name.trim()) {
+          const usedAvatars = new Set(players.map(p => p.avatar));
+          const avatar = AVATAR_POOL.find(a => !usedAvatars.has(a)) || AVATAR_POOL[players.length % AVATAR_POOL.length];
+          const id = 'p' + Date.now() + '_' + i;
+          players.push({ id, name: name.trim(), avatar });
+          saveData();
+          renderTabs();
+          render();
+          ocrParsed[i].matchedId = id;
+        }
+        renderOcrRows();
+      } else {
+        ocrParsed[i].matchedId = value || null;
+        if (!skipRender) renderOcrRows();
+        else checkOcrSum();
+      }
+    } else if (field === 'score') {
+      ocrParsed[i].score = value === '' ? null : Number(value);
+      checkOcrSum();
+    }
+  }
+
+  function checkOcrSum() {
+    if (!ocrParsed) return;
+    const expectedTotal = basePoint * 4;
+    const slice = ocrParsed.slice(0, 4);
+    const scores = slice.map(r => r.score);
+    const filled = scores.filter(s => s !== null && !isNaN(s));
+    const sum = filled.reduce((a, b) => a + b, 0);
+    const allFilled = filled.length === 4;
+    const sumOk = sum === expectedTotal;
+    const matchedIds = slice.map(r => r.matchedId).filter(Boolean);
+    const allMatched = matchedIds.length === 4;
+    const noDup = new Set(matchedIds).size === matchedIds.length;
+
+    let msg, cls = '';
+    if (!allFilled) {
+      msg = `已填 ${filled.length}/4 家 · 目前總和 ${sum.toLocaleString()}`;
+    } else if (sumOk) {
+      msg = `✨ 總和 ${sum.toLocaleString()} 正確 ✨`;
+      cls = 'sum-ok';
+    } else {
+      const diff = sum - expectedTotal;
+      msg = `⚠️ 總和 ${sum.toLocaleString()}（${diff > 0 ? '多' : '少'}了 ${Math.abs(diff).toLocaleString()}）`;
+      cls = 'sum-bad';
+    }
+    let warn = '';
+    if (!allMatched) warn += '<div style="color:#ef6b8a; font-size:11px; text-align:center; margin-top:4px;">⚠️ 還有玩家沒對應</div>';
+    if (allMatched && !noDup) warn += '<div style="color:#ef6b8a; font-size:11px; text-align:center; margin-top:4px;">⚠️ 玩家重複</div>';
+    document.getElementById('ocrSumCheck').innerHTML = `<div class="sum-display ${cls}">${msg}</div>${warn}`;
+    document.getElementById('ocrConfirmBtn').disabled = !(allFilled && allMatched && noDup);
+  }
+
+  function confirmOcrImport() {
+    if (!ocrParsed) return;
+    const slice = ocrParsed.slice(0, 4);
+    const participants = slice.map(r => r.matchedId);
+    const scores = slice.map(r => Number(r.score));
+    if (participants.some(p => !p) || scores.some(s => isNaN(s))) return;
+    if (new Set(participants).size !== 4) return;
+    const money = scores.map(s => Math.round(pointToMoney(s)));
+    history.push({
+      id: Date.now(),
+      ts: new Date().toISOString(),
+      participants,
+      scores,
+      money
+    });
+    saveData();
+    closeOcrModal();
+    render();
+    showToast('📸 截圖匯入成功 ♡');
+  }
+
+  function openOcrModal() {
+    ocrParsed = null;
+    document.getElementById('ocrModal').classList.remove('hidden');
+  }
+
+  function closeOcrModal(e) {
+    if (e && e.target.id !== 'ocrModal') return;
+    document.getElementById('ocrModal').classList.add('hidden');
+    ocrParsed = null;
+  }
 
   // === 稱號選擇 modal ===
   function openTitleModal(pid) {
