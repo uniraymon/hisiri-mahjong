@@ -549,6 +549,123 @@
   .achievement-icon { font-size: 24px; margin-bottom: 4px; }
   .achievement-name { font-size: 11px; font-weight: 700; color: #5a4a4a; line-height: 1.3; }
   .achievement-desc { font-size: 9px; color: #b88a8a; margin-top: 2px; line-height: 1.3; }
+  .achievement.unlocked { cursor: pointer; }
+  .achievement.unlocked:hover { transform: translateY(-2px); }
+  .achievement.current-title {
+    background: linear-gradient(135deg, #ffabbf, #ff8fa3) !important;
+    border-color: #ef6b8a !important;
+    box-shadow: 0 3px 0 #ef6b8a, 0 0 0 3px rgba(239, 107, 138, 0.25) !important;
+  }
+  .achievement.current-title .achievement-name { color: #fff; }
+  .achievement.current-title .achievement-desc { color: rgba(255,255,255,0.9); }
+  .achievement.current-title::after {
+    content: '★ 使用中';
+    display: block;
+    font-size: 9px;
+    color: #fff;
+    font-weight: 700;
+    margin-top: 4px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 8px;
+    padding: 2px 4px;
+  }
+  .achievement-category-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #b88a8a;
+    margin: 14px 0 6px;
+    padding-left: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .achievement-category-title:first-child { margin-top: 0; }
+  .achievement-category-title .cat-count {
+    font-size: 10px;
+    background: #fff8fb;
+    border: 1px dashed #ffd6e0;
+    border-radius: 8px;
+    padding: 1px 6px;
+    color: #b88a8a;
+    font-weight: 600;
+  }
+
+  .player-nickname {
+    cursor: pointer;
+    transition: transform 0.15s;
+    user-select: none;
+  }
+  .player-nickname:hover { transform: scale(1.05); }
+  .player-nickname::after {
+    content: ' ▼';
+    font-size: 9px;
+    opacity: 0.6;
+  }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(90, 74, 74, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .modal-content {
+    background: linear-gradient(135deg, #fff5f8, #fff8fb);
+    border: 2px solid #ffabbf;
+    border-radius: 20px;
+    padding: 18px;
+    max-width: 480px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 30px rgba(239, 107, 138, 0.3);
+  }
+  .modal-content h3 {
+    color: #d4806b;
+    font-size: 17px;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .title-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .title-option {
+    background: #fff8fb;
+    border: 2px solid #ffe4ec;
+    border-radius: 14px;
+    padding: 10px 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    color: #5a4a4a;
+  }
+  .title-option:hover { transform: translateY(-2px); }
+  .title-option.current {
+    background: linear-gradient(135deg, #ffabbf, #ff8fa3);
+    border-color: #ef6b8a;
+    color: #fff;
+    box-shadow: 0 3px 0 #ef6b8a;
+  }
+  .title-option .title-icon { font-size: 24px; display: block; margin-bottom: 4px; }
+  .title-option .title-text { font-size: 12px; font-weight: 700; line-height: 1.3; display: block; }
+  .title-option .title-cond { font-size: 9px; opacity: 0.75; margin-top: 3px; line-height: 1.3; display: block; }
+  .title-option.auto-rec {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, #fff4d6, #ffdb9b);
+    border-color: #ffb84d;
+  }
+  .title-option.auto-rec.current {
+    background: linear-gradient(135deg, #ffabbf, #ff8fa3);
+    border-color: #ef6b8a;
+  }
 
   @keyframes float {
     0%, 100% { transform: translateY(0); }
@@ -614,6 +731,14 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<div id="titleModal" class="modal-overlay hidden" onclick="closeTitleModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <h3 id="titleModalHeader">🌟 選擇稱號</h3>
+    <div id="titleGrid" class="title-grid"></div>
+    <button class="btn btn-secondary" onclick="closeTitleModal()">關閉</button>
+  </div>
+</div>
 
 <script>
   // === 玩家資料結構：{id, name, avatar} ===
@@ -959,7 +1084,8 @@
 
     const achievements = calcAchievements(records);
     const unlockedCount = achievements.filter(a => a.unlocked).length;
-    const titleObj = getTitle(records);
+    const titleObj = getDisplayTitle(p, records);
+    const currentTitleId = titleObj.id;
 
     const cumulative = [];
     let acc = 0;
@@ -973,7 +1099,7 @@
         <div class="player-header">
           <div class="player-avatar-big" style="background: linear-gradient(135deg, ${getColor(pid)}33, ${getColor(pid)}88);">${p.avatar}</div>
           <div class="player-title-name">${escapeHtml(p.name)}</div>
-          <div class="player-nickname">${titleObj.icon} ${titleObj.title}</div>
+          <div class="player-nickname" onclick="openTitleModal('${pid}')" title="點選更換稱號">${titleObj.icon} ${escapeHtml(titleObj.title)}</div>
         </div>
         <div class="stat-grid" style="margin-top:14px;">
           <div class="stat-box">
@@ -1071,17 +1197,36 @@
 
       <div class="card">
         <h2><span class="h2-text">🏅 成就徽章</span> <span style="font-size:12px; color:#b88a8a; font-weight:500;">（${unlockedCount}/${achievements.length}）</span></h2>
-        <div class="achievement-grid">
-          ${achievements.map(a => `
-            <div class="achievement ${a.unlocked ? 'unlocked' : 'locked'}">
-              <div class="achievement-icon">${a.icon}</div>
-              <div class="achievement-name">${a.name}</div>
-              <div class="achievement-desc">${a.desc}</div>
-            </div>
-          `).join('')}
-        </div>
+        <div style="font-size:11px; color:#b88a8a; margin-bottom:6px; padding:6px 8px; background:#fff8fb; border-radius:10px; border:1px dashed #ffd6e0;">💡 點解鎖的成就可直接設為稱號，或點上方稱號開啟選單</div>
+        ${renderAchievementsByCategory(achievements, currentTitleId, pid)}
       </div>
     `;
+  }
+
+  function renderAchievementsByCategory(achievements, currentTitleId, pid) {
+    const groups = {};
+    const order = [];
+    achievements.forEach(a => {
+      if (!groups[a.cat]) { groups[a.cat] = []; order.push(a.cat); }
+      groups[a.cat].push(a);
+    });
+    return order.map(cat => {
+      const items = groups[cat];
+      const got = items.filter(a => a.unlocked).length;
+      const grid = items.map(a => `
+        <div class="achievement ${a.unlocked ? 'unlocked' : 'locked'} ${a.id === currentTitleId ? 'current-title' : ''}"
+             ${a.unlocked ? `onclick="selectTitle('${pid}', '${a.id}')"` : ''}
+             title="${a.unlocked ? '點擊設為稱號' : '尚未解鎖'}">
+          <div class="achievement-icon">${a.icon}</div>
+          <div class="achievement-name">${escapeHtml(a.name)}</div>
+          <div class="achievement-desc">${escapeHtml(a.desc)}</div>
+        </div>
+      `).join('');
+      return `
+        <div class="achievement-category-title">${cat} <span class="cat-count">${got}/${items.length}</span></div>
+        <div class="achievement-grid">${grid}</div>
+      `;
+    }).join('');
   }
 
   function drawChart(data, color) {
@@ -1117,60 +1262,125 @@
     return html;
   }
 
-  function calcAchievements(records) {
-    const myMoney = records.map(r => r.money);
-    const myRanks = records.map(r => r.rank);
-    const total = myMoney.reduce((a,b)=>a+b, 0);
-    const games = myMoney.length;
-    const wins = myRanks.filter(r => r === 1).length;
-    const maxWin = Math.max(...myMoney, 0);
-    const maxLose = Math.min(...myMoney, 0);
-    let maxStreak = 0, curStreak = 0;
-    myRanks.forEach(r => {
-      if (r === 1) { curStreak++; if (curStreak > maxStreak) maxStreak = curStreak; }
-      else curStreak = 0;
-    });
-    let maxLoseStreak = 0, curLose = 0;
-    myRanks.forEach(r => {
-      if (r === 4) { curLose++; if (curLose > maxLoseStreak) maxLoseStreak = curLose; }
-      else curLose = 0;
-    });
-    const hasNegScore = records.some(r => r.score < 0);
+  // === 成就清單（每個成就附帶一個稱號）===
+  const ACHIEVEMENTS = [
+    // 局數
+    { id: 'games_1',   cat: '局數', icon: '🌱', name: '初登場',     title: '麻將新手',     desc: '完成首局',                check: s => s.games >= 1 },
+    { id: 'games_10',  cat: '局數', icon: '🎯', name: '老鐵粉',     title: '老鐵粉',       desc: '出場 10 局',              check: s => s.games >= 10 },
+    { id: 'games_30',  cat: '局數', icon: '🌟', name: '麻將達人',   title: '麻將達人',     desc: '出場 30 局',              check: s => s.games >= 30 },
+    { id: 'games_50',  cat: '局數', icon: '🎓', name: '麻將高手',   title: '麻將高手',     desc: '出場 50 局',              check: s => s.games >= 50 },
+    { id: 'games_100', cat: '局數', icon: '🀄', name: '麻將傳說',   title: '麻將傳說',     desc: '出場 100 局',             check: s => s.games >= 100 },
+    // 累計贏
+    { id: 'win_500',   cat: '累計贏', icon: '💰', name: '小富翁',     title: '小富翁',       desc: '累計贏 +500',             check: s => s.total >= 500 },
+    { id: 'win_2000',  cat: '累計贏', icon: '💎', name: '大富翁',     title: '大富翁',       desc: '累計贏 +2000',            check: s => s.total >= 2000 },
+    { id: 'win_5000',  cat: '累計贏', icon: '🏦', name: '富甲一方',   title: '富甲一方',     desc: '累計贏 +5000',            check: s => s.total >= 5000 },
+    { id: 'win_10000', cat: '累計贏', icon: '👛', name: '萬貫家財',   title: '萬貫家財',     desc: '累計贏 +10000',           check: s => s.total >= 10000 },
+    { id: 'win_30000', cat: '累計贏', icon: '🤑', name: '麻將神商',   title: '麻將神商',     desc: '累計贏 +30000',           check: s => s.total >= 30000 },
+    // 累計輸
+    { id: 'loss_500',   cat: '累計輸', icon: '😟', name: '小輸家',     title: '小輸家',       desc: '累計輸 -500',             check: s => s.total <= -500 },
+    { id: 'loss_2000',  cat: '累計輸', icon: '😩', name: '破財鬼',     title: '破財鬼',       desc: '累計輸 -2000',            check: s => s.total <= -2000 },
+    { id: 'loss_5000',  cat: '累計輸', icon: '💀', name: '破產戶',     title: '破產戶',       desc: '累計輸 -5000',            check: s => s.total <= -5000 },
+    { id: 'loss_10000', cat: '累計輸', icon: '⚰️', name: '慘案受害者', title: '慘案受害者',   desc: '累計輸 -10000',           check: s => s.total <= -10000 },
+    // 單局爆發
+    { id: 'big_500',  cat: '單局爆發', icon: '✨', name: '小爆發',     title: '小爆發',       desc: '單局贏 +500',             check: s => s.maxWin >= 500 },
+    { id: 'big_1000', cat: '單局爆發', icon: '💥', name: '爆發局',     title: '爆發局',       desc: '單局贏 +1000',            check: s => s.maxWin >= 1000 },
+    { id: 'big_2000', cat: '單局爆發', icon: '🎰', name: '神之一手',   title: '神之一手',     desc: '單局贏 +2000',            check: s => s.maxWin >= 2000 },
+    { id: 'big_5000', cat: '單局爆發', icon: '🌈', name: '天胡大滿貫', title: '天胡大滿貫',   desc: '單局贏 +5000',            check: s => s.maxWin >= 5000 },
+    // 單局慘案
+    { id: 'bad_500',  cat: '單局慘案', icon: '😣', name: '小衰',       title: '小衰',         desc: '單局輸 -500',             check: s => s.maxLose <= -500 },
+    { id: 'bad_1000', cat: '單局慘案', icon: '😱', name: '慘澹經營',   title: '慘澹經營',     desc: '單局輸 -1000',            check: s => s.maxLose <= -1000 },
+    { id: 'bad_2000', cat: '單局慘案', icon: '🩸', name: '血淋淋',     title: '血淋淋',       desc: '單局輸 -2000',            check: s => s.maxLose <= -2000 },
+    { id: 'bad_5000', cat: '單局慘案', icon: '🔥', name: '雷殘極限',   title: '雷殘極限',     desc: '單局輸 -5000',            check: s => s.maxLose <= -5000 },
+    // 連勝
+    { id: 'streak_2', cat: '連勝', icon: '🔥', name: '二連勝',     title: '二連勝',       desc: '連 2 局第一',             check: s => s.maxStreak >= 2 },
+    { id: 'streak_3', cat: '連勝', icon: '⚡', name: '三連霸',     title: '三連霸',       desc: '連 3 局第一',             check: s => s.maxStreak >= 3 },
+    { id: 'streak_5', cat: '連勝', icon: '🌊', name: '五連神',     title: '五連神',       desc: '連 5 局第一',             check: s => s.maxStreak >= 5 },
+    { id: 'streak_7', cat: '連勝', icon: '☄️', name: '七連天王',   title: '七連天王',     desc: '連 7 局第一',             check: s => s.maxStreak >= 7 },
+    // 雷殘墊底
+    { id: 'lose_2', cat: '雷殘墊底', icon: '😢', name: '連衰二',     title: '連衰二',       desc: '連 2 局墊底',             check: s => s.maxLoseStreak >= 2 },
+    { id: 'lose_3', cat: '雷殘墊底', icon: '😭', name: '雷殘三連',   title: '雷殘三連',     desc: '連 3 局墊底',             check: s => s.maxLoseStreak >= 3 },
+    { id: 'lose_5', cat: '雷殘墊底', icon: '🌀', name: '雷殘五連',   title: '雷殘五連',     desc: '連 5 局墊底',             check: s => s.maxLoseStreak >= 5 },
+    // 累計第一
+    { id: 'first_1',  cat: '累計第一', icon: '🏆', name: '首勝',       title: '首勝',         desc: '拿下 1 次第一',           check: s => s.wins >= 1 },
+    { id: 'first_5',  cat: '累計第一', icon: '👑', name: '常勝軍',     title: '常勝軍',       desc: '拿下 5 次第一',           check: s => s.wins >= 5 },
+    { id: 'first_10', cat: '累計第一', icon: '🌠', name: '王者',       title: '王者',         desc: '拿下 10 次第一',          check: s => s.wins >= 10 },
+    { id: 'first_20', cat: '累計第一', icon: '🎖️', name: '麻將之王',   title: '麻將之王',     desc: '拿下 20 次第一',          check: s => s.wins >= 20 },
+    // 墊底次數
+    { id: 'last_1',  cat: '墊底次數', icon: '🥲', name: '首墊',       title: '首墊',         desc: '墊底 1 次',               check: s => s.lasts >= 1 },
+    { id: 'last_5',  cat: '墊底次數', icon: '😔', name: '墊底常客',   title: '墊底常客',     desc: '墊底 5 次',               check: s => s.lasts >= 5 },
+    { id: 'last_10', cat: '墊底次數', icon: '🛏️', name: '床墊王',     title: '床墊王',       desc: '墊底 10 次',              check: s => s.lasts >= 10 },
+    { id: 'last_20', cat: '墊底次數', icon: '🏚️', name: '永遠的四位', title: '永遠的四位',   desc: '墊底 20 次',              check: s => s.lasts >= 20 },
+    // 飛了次數（負分）
+    { id: 'flew_1',  cat: '飛了次數', icon: '😅', name: '首飛俠',     title: '首飛俠',       desc: '飛 1 次（局末負分）',     check: s => s.flews >= 1 },
+    { id: 'flew_5',  cat: '飛了次數', icon: '🛫', name: '常飛俠',     title: '常飛俠',       desc: '飛 5 次',                 check: s => s.flews >= 5 },
+    { id: 'flew_10', cat: '飛了次數', icon: '✈️', name: '飛行常客',   title: '飛行常客',     desc: '飛 10 次',                check: s => s.flews >= 10 },
+    { id: 'flew_20', cat: '飛了次數', icon: '🛩️', name: '資深飛官',   title: '資深飛官',     desc: '飛 20 次',                check: s => s.flews >= 20 },
+    { id: 'flew_30', cat: '飛了次數', icon: '🚁', name: '飛行員機長', title: '飛行員機長',   desc: '飛 30 次',                check: s => s.flews >= 30 },
+    // 平均每局
+    { id: 'avg_pos300', cat: '平均每局', icon: '💰', name: '聚寶盆',   title: '聚寶盆',       desc: '每局平均 ≥ +300（≥3 局）', check: s => s.games >= 3 && s.avgMoney >= 300 },
+    { id: 'avg_pos100', cat: '平均每局', icon: '🍀', name: '幸運星',   title: '幸運星',       desc: '每局平均 ≥ +100（≥3 局）', check: s => s.games >= 3 && s.avgMoney >= 100 },
+    { id: 'avg_neg100', cat: '平均每局', icon: '😞', name: '苦命人',   title: '苦命人',       desc: '每局平均 ≤ -100（≥3 局）', check: s => s.games >= 3 && s.avgMoney <= -100 },
+    { id: 'avg_neg300', cat: '平均每局', icon: '💸', name: '散財童子', title: '散財童子',     desc: '每局平均 ≤ -300（≥3 局）', check: s => s.games >= 3 && s.avgMoney <= -300 },
+    // 勝率
+    { id: 'wr_35', cat: '勝率', icon: '🎯', name: '常勝將軍', title: '常勝將軍', desc: '勝率 ≥ 35%（≥10 局）', check: s => s.games >= 10 && s.winRate >= 0.35 },
+    { id: 'wr_50', cat: '勝率', icon: '🤴', name: '麻將之神', title: '麻將之神', desc: '勝率 ≥ 50%（≥10 局）', check: s => s.games >= 10 && s.winRate >= 0.5 },
+    // 翻身
+    { id: 'reversal', cat: '翻身', icon: '🔄', name: '浴火鳳凰', title: '浴火鳳凰', desc: '從累計負分翻成正分', check: s => s.reversal },
+  ];
 
-    return [
-      { icon: '🌱', name: '初登場', desc: '完成首局', unlocked: games >= 1 },
-      { icon: '🏆', name: '首勝', desc: '拿下一次第一', unlocked: wins >= 1 },
-      { icon: '🔥', name: '二連勝', desc: '連續兩局第一', unlocked: maxStreak >= 2 },
-      { icon: '⚡', name: '三連霸', desc: '連續三局第一', unlocked: maxStreak >= 3 },
-      { icon: '👑', name: '常勝軍', desc: '累計 5 次第一', unlocked: wins >= 5 },
-      { icon: '💰', name: '小富翁', desc: '累計贏 +500', unlocked: total >= 500 },
-      { icon: '💎', name: '大富翁', desc: '累計贏 +2000', unlocked: total >= 2000 },
-      { icon: '💥', name: '爆發局', desc: '單局贏 +1000', unlocked: maxWin >= 1000 },
-      { icon: '🎰', name: '神之一手', desc: '單局贏 +2000', unlocked: maxWin >= 2000 },
-      { icon: '😅', name: '飛了一次', desc: '單局負分', unlocked: hasNegScore },
-      { icon: '😱', name: '慘澹經營', desc: '單局輸 -1500', unlocked: maxLose <= -1500 },
-      { icon: '🎯', name: '老鐵粉', desc: '出場 10 局', unlocked: games >= 10 },
-      { icon: '🌟', name: '麻將達人', desc: '出場 20 局', unlocked: games >= 20 },
-      { icon: '😭', name: '雷殘三連', desc: '連 3 局墊底', unlocked: maxLoseStreak >= 3 },
-    ];
+  function getStats(records) {
+    const myMoney = records.map(r => r.money);
+    const myScores = records.map(r => r.score);
+    const myRanks = records.map(r => r.rank);
+    const games = records.length;
+    const total = myMoney.reduce((a,b) => a+b, 0);
+    const wins = myRanks.filter(r => r === 1).length;
+    const lasts = myRanks.filter(r => r === 4).length;
+    const flews = myScores.filter(s => s < 0).length;
+    const maxWin = games ? Math.max(...myMoney, 0) : 0;
+    const maxLose = games ? Math.min(...myMoney, 0) : 0;
+    const avgMoney = games ? total / games : 0;
+    const winRate = games ? wins / games : 0;
+    let maxStreak = 0, c = 0;
+    myRanks.forEach(r => { if (r === 1) { c++; if (c > maxStreak) maxStreak = c; } else c = 0; });
+    let maxLoseStreak = 0; c = 0;
+    myRanks.forEach(r => { if (r === 4) { c++; if (c > maxLoseStreak) maxLoseStreak = c; } else c = 0; });
+    let acc = 0, wasNeg = false;
+    myMoney.forEach(m => { acc += m; if (acc < 0) wasNeg = true; });
+    const reversal = wasNeg && acc > 0;
+    return { games, total, wins, lasts, flews, maxWin, maxLose, avgMoney, winRate, maxStreak, maxLoseStreak, reversal };
   }
 
-  function getTitle(records) {
-    const games = records.length;
-    if (games < 3) return { icon: '🌱', title: '麻將新手' };
-    const myRanks = records.map(r => r.rank);
-    const total = records.reduce((a,r) => a + r.money, 0);
-    const winRate = myRanks.filter(r => r === 1).length / games;
-    const lastRate = myRanks.filter(r => r === 4).length / games;
-    const avgMoney = total / games;
-    if (winRate >= 0.5) return { icon: '👑', title: '麻將之神' };
-    if (winRate >= 0.35) return { icon: '🏆', title: '常勝將軍' };
-    if (avgMoney >= 300) return { icon: '💰', title: '聚寶盆' };
-    if (avgMoney >= 100) return { icon: '🍀', title: '幸運星' };
-    if (lastRate >= 0.5) return { icon: '😭', title: '永遠的四位' };
-    if (avgMoney <= -300) return { icon: '💸', title: '散財童子' };
-    if (avgMoney <= -100) return { icon: '🥲', title: '苦命人' };
-    return { icon: '⚖️', title: '穩健派' };
+  function calcAchievements(records) {
+    const stats = getStats(records);
+    return ACHIEVEMENTS.map(a => ({ ...a, unlocked: a.check(stats) }));
+  }
+
+  // 自動推薦稱號（fallback：玩家未自選或選的稱號目前沒解鎖時）
+  function getAutoTitle(records) {
+    const stats = getStats(records);
+    if (stats.games === 0) return { icon: '🌸', title: '尚未出戰', id: null };
+    if (stats.games < 3) return { icon: '🌱', title: '麻將新手', id: null };
+    const lastRate = stats.lasts / stats.games;
+    if (stats.winRate >= 0.5) return { icon: '👑', title: '麻將之神', id: null };
+    if (stats.winRate >= 0.35) return { icon: '🏆', title: '常勝將軍', id: null };
+    if (stats.avgMoney >= 300) return { icon: '💰', title: '聚寶盆', id: null };
+    if (stats.avgMoney >= 100) return { icon: '🍀', title: '幸運星', id: null };
+    if (lastRate >= 0.5) return { icon: '😭', title: '永遠的四位', id: null };
+    if (stats.avgMoney <= -300) return { icon: '💸', title: '散財童子', id: null };
+    if (stats.avgMoney <= -100) return { icon: '🥲', title: '苦命人', id: null };
+    return { icon: '⚖️', title: '穩健派', id: null };
+  }
+
+  function getDisplayTitle(player, records) {
+    if (player && player.chosenTitle) {
+      const ach = ACHIEVEMENTS.find(a => a.id === player.chosenTitle);
+      if (ach) {
+        const stats = getStats(records);
+        if (ach.check(stats)) return { icon: ach.icon, title: ach.title, id: ach.id };
+      }
+    }
+    return getAutoTitle(records);
   }
 
   // === 互動 ===
@@ -1305,6 +1515,63 @@
     saveData();
     render();
   });
+
+  // === 稱號選擇 modal ===
+  function openTitleModal(pid) {
+    const player = getPlayer(pid);
+    if (!player) return;
+    const records = getPlayerData(pid);
+    const stats = getStats(records);
+    const all = ACHIEVEMENTS.map(a => ({ ...a, unlocked: a.check(stats) }));
+    const unlocked = all.filter(a => a.unlocked);
+    const auto = getAutoTitle(records);
+    const isAutoSelected = !player.chosenTitle || !ACHIEVEMENTS.find(a => a.id === player.chosenTitle && a.check(stats));
+
+    document.getElementById('titleModalHeader').innerHTML =
+      `🌟 ${escapeHtml(player.name)} 的稱號 <span style="font-size:12px; color:#b88a8a; font-weight:500;">（已解鎖 ${unlocked.length}/${all.length}）</span>`;
+
+    let html = `
+      <button class="title-option auto-rec ${isAutoSelected ? 'current' : ''}" onclick="selectTitle('${pid}', '')">
+        <span class="title-icon">✨</span>
+        <span class="title-text">自動推薦</span>
+        <span class="title-cond">目前：${auto.icon} ${escapeHtml(auto.title)}</span>
+      </button>
+    `;
+    if (unlocked.length === 0) {
+      html += `<div class="empty" style="grid-column: 1/-1;">還沒解鎖任何稱號<br>多打幾局就有了 ♡</div>`;
+    } else {
+      html += unlocked.map(a => `
+        <button class="title-option ${player.chosenTitle === a.id ? 'current' : ''}" onclick="selectTitle('${pid}', '${a.id}')">
+          <span class="title-icon">${a.icon}</span>
+          <span class="title-text">${escapeHtml(a.title)}</span>
+          <span class="title-cond">${escapeHtml(a.desc)}</span>
+        </button>
+      `).join('');
+    }
+    document.getElementById('titleGrid').innerHTML = html;
+    document.getElementById('titleModal').classList.remove('hidden');
+  }
+
+  function closeTitleModal(e) {
+    if (e && e.target.id !== 'titleModal') return;
+    document.getElementById('titleModal').classList.add('hidden');
+  }
+
+  function selectTitle(pid, achId) {
+    const player = getPlayer(pid);
+    if (!player) return;
+    if (achId) {
+      player.chosenTitle = achId;
+      const ach = ACHIEVEMENTS.find(a => a.id === achId);
+      showToast(`✨ 稱號：${ach ? ach.icon + ' ' + ach.title : '已更新'}`);
+    } else {
+      delete player.chosenTitle;
+      showToast('✨ 已切回自動推薦 ♡');
+    }
+    saveData();
+    closeTitleModal();
+    renderPlayerPage(pid);
+  }
 
   function showToast(msg) {
     const t = document.getElementById('toast');
