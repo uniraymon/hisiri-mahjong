@@ -1772,10 +1772,11 @@
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
           const data = imgData.data;
-          // 灰階 + 對比強化（中性灰 128 為中心，乘 1.6）
+          // 灰階 + 反轉（白字暗底 → 黑字亮底，Tesseract 對這類好辨識）+ 對比強化
           for (let i = 0; i < data.length; i += 4) {
             const gray = data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114;
-            let v = (gray - 128) * 1.6 + 140;
+            let v = 255 - gray; // 反轉
+            v = (v - 128) * 1.5 + 128; // 對比
             v = Math.min(255, Math.max(0, v));
             data[i] = data[i+1] = data[i+2] = v;
           }
@@ -1915,12 +1916,10 @@
       }
       const nameRaw = nameParts.join('').replace(/\s+/g, '');
 
-      // 數字（從整行抽，正確順序）
-      const allNums = [];
-      for (const w of after) {
-        const ms = w.text.match(/-?\d+/g);
-        if (ms) for (const m of ms) allNums.push(parseInt(m));
-      }
+      // 數字（從整行抽，正確順序；先把分離的負號黏回去）
+      const afterText = after.map(w => w.text).join(' ');
+      const gluedAfter = afterText.replace(/[-—–]\s*(\d+)/g, '-$1');
+      const allNums = (gluedAfter.match(/-?\d+/g) || []).map(n => parseInt(n));
 
       let score = null;
       const candidates = allNums.filter(n => Math.abs(n) >= 100 && Math.abs(n) <= 999999);
@@ -1952,9 +1951,10 @@
       if (!rankMatch) continue;
       const rank = parseInt(rankMatch[1]);
       if (rows.find(r => r.rank === rank)) continue;
-      // 去掉 "X位" 後再抓數字，避免位次數字干擾
+      // 去掉 "X位" 後再抓數字，先把分離的負號黏回去
       const lineNoRank = line.replace(/[1234]\s*位/g, '');
-      const nums = (lineNoRank.match(/-?\d+/g) || []).map(Number);
+      const gluedLine = lineNoRank.replace(/[-—–]\s*(\d+)/g, '-$1');
+      const nums = (gluedLine.match(/-?\d+/g) || []).map(Number);
       // 分數：絕對值最大的（通常 ≥ 100）
       let score = null;
       const candidates = nums.filter(n => Math.abs(n) >= 100 && Math.abs(n) <= 999999);
@@ -2096,6 +2096,16 @@
     let warn = '';
     if (!allMatched) warn += '<div style="color:#ef6b8a; font-size:11px; text-align:center; margin-top:4px;">⚠️ 還有玩家沒對應</div>';
     if (allMatched && !noDup) warn += '<div style="color:#ef6b8a; font-size:11px; text-align:center; margin-top:4px;">⚠️ 玩家重複</div>';
+    // 榮和總和應 = 放銃總和（4 家共識）
+    const ronArr = slice.map(r => r.stats?.[1]).filter(n => n != null && !isNaN(n));
+    const houjuArr = slice.map(r => r.stats?.[3]).filter(n => n != null && !isNaN(n));
+    if (ronArr.length === 4 && houjuArr.length === 4) {
+      const ronSum = ronArr.reduce((a,b)=>a+b,0);
+      const houjuSum = houjuArr.reduce((a,b)=>a+b,0);
+      if (ronSum !== houjuSum) {
+        warn += `<div style="color:#d4806b; font-size:11px; text-align:center; margin-top:4px;">⚠️ 榮和總和 (${ronSum}) ≠ 放銃總和 (${houjuSum})，可能有讀錯，請確認 ♡</div>`;
+      }
+    }
     document.getElementById('ocrSumCheck').innerHTML = `<div class="sum-display ${cls}">${msg}</div>${warn}`;
     document.getElementById('ocrConfirmBtn').disabled = !(allFilled && allMatched && noDup);
   }
