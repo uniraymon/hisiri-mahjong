@@ -1758,6 +1758,36 @@
 
   document.addEventListener('paste', handlePaste);
 
+  function preprocessImage(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const SCALE = 2;
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width * SCALE;
+          canvas.height = img.height * SCALE;
+          const ctx = canvas.getContext('2d');
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imgData.data;
+          // 灰階 + 對比強化（中性灰 128 為中心，乘 1.6）
+          for (let i = 0; i < data.length; i += 4) {
+            const gray = data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114;
+            let v = (gray - 128) * 1.6 + 140;
+            v = Math.min(255, Math.max(0, v));
+            data[i] = data[i+1] = data[i+2] = v;
+          }
+          ctx.putImageData(imgData, 0, 0);
+          canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob 失敗')), 'image/png');
+        } catch (e) { reject(e); }
+      };
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
   async function processScreenshotFile(file) {
     if (typeof Tesseract === 'undefined') {
       showToast('⚠️ 辨識引擎未載入（檢查網路）');
@@ -1788,11 +1818,19 @@
           }
         });
       }
+      document.getElementById('ocrStatus').textContent = '🖼️ 圖片預處理中...';
+      let imgForOcr = file;
+      try {
+        imgForOcr = await preprocessImage(file);
+      } catch (preErr) {
+        console.warn('預處理失敗，用原圖辨識:', preErr);
+      }
       document.getElementById('ocrStatus').textContent = '🔍 辨識中...';
-      const result = await ocrWorker.recognize(file);
-      const text = result.data.text || '';
-      console.log('OCR raw text:\n', text);
-      ocrParsed = parseOcrText(text);
+      const result = await ocrWorker.recognize(imgForOcr);
+      console.log('OCR raw text:\n', result.data.text);
+      console.log('OCR words:', result.data.words);
+      ocrParsed = parseOcrFromWords(result.data);
+      if (ocrParsed.length === 0) ocrParsed = parseOcrText(result.data.text || '');
       if (ocrParsed.length === 0) {
         document.getElementById('ocrStatus').textContent = '⚠️ 沒有抓到位次資訊，請手動填';
         // give 4 empty rows so user can fill manually
@@ -1815,6 +1853,91 @@
       console.error(err);
       document.getElementById('ocrStatus').textContent = `❌ 辨識失敗：${err.message}`;
     }
+  }
+
+  // 用 Tesseract 的 word-level bbox 重組行（解決 rank/名字/分數被切到不同 line 的問題）
+  function parseOcrFromWords(data) {
+    if (!data || !Array.isArray(data.words) || data.words.length === 0) return [];
+
+    const words = data.words.map(w => {
+      const text = (w.text || '').trim();
+      const b = w.bbox || {};
+      return {
+        text,
+        x: ((b.x0 || 0) + (b.x1 || 0)) / 2,
+        y: ((b.y0 || 0) + (b.y1 || 0)) / 2,
+        h: (b.y1 || 0) - (b.y0 || 0),
+      };
+    }).filter(w => w.text);
+    if (words.length === 0) return [];
+
+    // 用 y 座標分群成「行」
+    const heights = words.map(w => w.h).filter(h => h > 0);
+    const avgH = heights.length ? heights.reduce((s, h) => s + h, 0) / heights.length : 20;
+    const rowThreshold = Math.max(8, avgH * 0.6);
+    const rows = [];
+    const sorted = [...words].sort((a, b) => a.y - b.y);
+    for (const w of sorted) {
+      let placed = false;
+      for (const row of rows) {
+        const rowY = row.reduce((s, x) => s + x.y, 0) / row.length;
+        if (Math.abs(w.y - rowY) <= rowThreshold) { row.push(w); placed = true; break; }
+      }
+      if (!placed) rows.push([w]);
+    }
+    rows.forEach(r => r.sort((a, b) => a.x - b.x));
+
+    const result = [];
+    for (const row of rows) {
+      // 找 X位
+      let rankIdx = -1, rank = null;
+      for (let i = 0; i < row.length; i++) {
+        const t = row[i].text;
+        const m = t.match(/([1234])\s*位/);
+        if (m) { rank = parseInt(m[1]); rankIdx = i; break; }
+        if (t === '位' && i > 0 && /^[1234]$/.test(row[i-1].text)) {
+          rank = parseInt(row[i-1].text); rankIdx = i; break;
+        }
+      }
+      if (rank === null) continue;
+      if (result.find(r => r.rank === rank)) continue;
+
+      const after = row.slice(rankIdx + 1);
+
+      // 名字：在 rank 之後、第一個含數字/段位星 之前的中文/英文 token
+      const nameParts = [];
+      for (const w of after) {
+        const t = w.text;
+        if (/\d/.test(t)) break;
+        if (/[★⭐☆\*]/.test(t)) break;
+        if (/^[\/\\\.\,\:\;\|\-_=]+$/.test(t)) continue;
+        if (/[\u4e00-\u9fff\u3400-\u4dbfA-Za-z]/.test(t)) nameParts.push(t);
+      }
+      const nameRaw = nameParts.join('').replace(/\s+/g, '');
+
+      // 數字（從整行抽，正確順序）
+      const allNums = [];
+      for (const w of after) {
+        const ms = w.text.match(/-?\d+/g);
+        if (ms) for (const m of ms) allNums.push(parseInt(m));
+      }
+
+      let score = null;
+      const candidates = allNums.filter(n => Math.abs(n) >= 100 && Math.abs(n) <= 999999);
+      if (candidates.length > 0) score = candidates.reduce((max, n) => Math.abs(n) > Math.abs(max) ? n : max);
+
+      let stats = [null, null, null, null];
+      if (score !== null) {
+        const scoreIdx = allNums.indexOf(score);
+        const afterScore = scoreIdx >= 0 ? allNums.slice(scoreIdx + 1) : allNums;
+        const small = afterScore.filter(n => n >= 0 && n < 100);
+        for (let i = 0; i < 4 && i < small.length; i++) stats[i] = small[i];
+      }
+
+      result.push({ rank, nameRaw, score, stats, matchedId: null });
+    }
+    result.sort((a, b) => a.rank - b.rank);
+    return result;
   }
 
   function parseOcrText(text) {
