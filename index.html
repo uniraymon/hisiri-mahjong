@@ -704,15 +704,53 @@
   .ocr-divider::before { left: 0; }
   .ocr-divider::after { right: 0; }
 
+  .ocr-block {
+    padding: 8px 0;
+    border-bottom: 2px dashed #ffe4ec;
+  }
+  .ocr-block:last-child { border-bottom: none; }
   .ocr-row {
     display: grid;
     grid-template-columns: 38px 1fr 100px;
     gap: 8px;
     align-items: center;
-    padding: 10px 4px;
-    border-bottom: 2px dashed #ffe4ec;
+    padding: 0 4px 6px;
   }
-  .ocr-row:last-child { border-bottom: none; }
+  .ocr-stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    padding: 0 4px;
+  }
+  .ocr-stat {
+    background: #fff8fb;
+    border: 2px solid #ffe4ec;
+    border-radius: 8px;
+    padding: 4px 2px;
+    text-align: center;
+  }
+  .ocr-stat-label {
+    font-size: 9px;
+    color: #b88a8a;
+    font-weight: 600;
+    margin-bottom: 2px;
+    display: block;
+  }
+  .ocr-stat input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: center;
+    font-weight: 700;
+    font-size: 12px;
+    font-family: inherit;
+    color: #5a4a4a;
+    padding: 2px;
+    -moz-appearance: textfield;
+  }
+  .ocr-stat input::-webkit-outer-spin-button,
+  .ocr-stat input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .ocr-stat input:focus { outline: none; background: #fff5f8; }
   .ocr-rank {
     font-weight: 700;
     text-align: center;
@@ -980,7 +1018,11 @@
       const others = h.participants
         .map((p, j) => ({ pid: p, money: h.money[j] }))
         .filter(o => o.pid !== pid);
-      records.push({ roundIdx: i, money: myMoney, score: myScore, rank, others });
+      const riichi = h.riichi ? (h.riichi[slot] || 0) : 0;
+      const ron    = h.ron    ? (h.ron[slot]    || 0) : 0;
+      const tsumo  = h.tsumo  ? (h.tsumo[slot]  || 0) : 0;
+      const houju  = h.houju  ? (h.houju[slot]  || 0) : 0;
+      records.push({ roundIdx: i, money: myMoney, score: myScore, rank, others, riichi, ron, tsumo, houju });
     });
     return records;
   }
@@ -1169,6 +1211,8 @@
     const minMoney = Math.min(...myMoney);
     const maxScore = Math.max(...records.map(r => r.score));
     const minScore = Math.min(...records.map(r => r.score));
+    const sumStats = getStats(records);
+    const hasStats = (sumStats.totalRiichi + sumStats.totalRon + sumStats.totalTsumo + sumStats.totalHouju) > 0;
 
     // 對戰分析 - 只算同桌過的
     const vsMap = {};
@@ -1264,6 +1308,30 @@
           `).join('')}
         </div>
       </div>
+
+      ${hasStats ? `
+      <div class="card">
+        <h2><span class="h2-text">🀄 雀魂明細</span> <span style="font-size:11px; color:#b88a8a; font-weight:500;">（截圖匯入累計）</span></h2>
+        <div class="stat-grid">
+          <div class="stat-box">
+            <div class="stat-label">立直</div>
+            <div class="stat-value">${sumStats.totalRiichi}</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">榮和</div>
+            <div class="stat-value pos">${sumStats.totalRon}</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">自摸</div>
+            <div class="stat-value pos">${sumStats.totalTsumo}</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">放銃</div>
+            <div class="stat-value neg">${sumStats.totalHouju}</div>
+          </div>
+        </div>
+      </div>
+      ` : ''}
 
       <div class="card">
         <h2><span class="h2-text">📈 累計戰績趨勢</span></h2>
@@ -1432,6 +1500,34 @@
     { id: 'wr_50', cat: '勝率', icon: '🤴', name: '麻將之神', title: '麻將之神', desc: '勝率 ≥ 50%（≥10 局）', check: s => s.games >= 10 && s.winRate >= 0.5 },
     // 翻身
     { id: 'reversal', cat: '翻身', icon: '🔄', name: '浴火鳳凰', title: '浴火鳳凰', desc: '從累計負分翻成正分', check: s => s.reversal },
+    // 立直
+    { id: 'riichi_1',   cat: '立直', icon: '🚦', name: '初次立直',   title: '初次立直',   desc: '立直 1 次',   check: s => s.totalRiichi >= 1 },
+    { id: 'riichi_10',  cat: '立直', icon: '🚥', name: '立直常客',   title: '立直常客',   desc: '立直 10 次',  check: s => s.totalRiichi >= 10 },
+    { id: 'riichi_30',  cat: '立直', icon: '🎲', name: '立直魂',     title: '立直魂',     desc: '立直 30 次',  check: s => s.totalRiichi >= 30 },
+    { id: 'riichi_50',  cat: '立直', icon: '🎰', name: '立直之王',   title: '立直之王',   desc: '立直 50 次',  check: s => s.totalRiichi >= 50 },
+    { id: 'riichi_100', cat: '立直', icon: '👑', name: '立直之神',   title: '立直之神',   desc: '立直 100 次', check: s => s.totalRiichi >= 100 },
+    // 榮和（胡別人）
+    { id: 'ron_1',   cat: '榮和', icon: '🎯', name: '首次榮和',   title: '首次榮和',   desc: '榮和 1 次',   check: s => s.totalRon >= 1 },
+    { id: 'ron_10',  cat: '榮和', icon: '🏹', name: '榮和好手',   title: '榮和好手',   desc: '榮和 10 次',  check: s => s.totalRon >= 10 },
+    { id: 'ron_30',  cat: '榮和', icon: '💘', name: '必殺榮和',   title: '必殺榮和',   desc: '榮和 30 次',  check: s => s.totalRon >= 30 },
+    { id: 'ron_50',  cat: '榮和', icon: '🎴', name: '榮和魔人',   title: '榮和魔人',   desc: '榮和 50 次',  check: s => s.totalRon >= 50 },
+    { id: 'ron_100', cat: '榮和', icon: '🌹', name: '榮和之神',   title: '榮和之神',   desc: '榮和 100 次', check: s => s.totalRon >= 100 },
+    // 自摸
+    { id: 'tsumo_1',   cat: '自摸', icon: '🌙', name: '首次自摸',   title: '首次自摸',   desc: '自摸 1 次',   check: s => s.totalTsumo >= 1 },
+    { id: 'tsumo_5',   cat: '自摸', icon: '🌛', name: '自摸俠',     title: '自摸俠',     desc: '自摸 5 次',   check: s => s.totalTsumo >= 5 },
+    { id: 'tsumo_10',  cat: '自摸', icon: '✨', name: '自摸客',     title: '自摸客',     desc: '自摸 10 次',  check: s => s.totalTsumo >= 10 },
+    { id: 'tsumo_30',  cat: '自摸', icon: '🌟', name: '自摸王',     title: '自摸王',     desc: '自摸 30 次',  check: s => s.totalTsumo >= 30 },
+    { id: 'tsumo_50',  cat: '自摸', icon: '☀️', name: '自摸之神',   title: '自摸之神',   desc: '自摸 50 次',  check: s => s.totalTsumo >= 50 },
+    // 放銃
+    { id: 'houju_1',   cat: '放銃', icon: '💔', name: '首次放槍',   title: '首次放槍',   desc: '放銃 1 次',   check: s => s.totalHouju >= 1 },
+    { id: 'houju_10',  cat: '放銃', icon: '💸', name: '放槍常客',   title: '放槍常客',   desc: '放銃 10 次',  check: s => s.totalHouju >= 10 },
+    { id: 'houju_30',  cat: '放銃', icon: '🎁', name: '送錢小王',   title: '送錢小王',   desc: '放銃 30 次',  check: s => s.totalHouju >= 30 },
+    { id: 'houju_50',  cat: '放銃', icon: '🎀', name: '包鳳大師',   title: '包鳳大師',   desc: '放銃 50 次',  check: s => s.totalHouju >= 50 },
+    { id: 'houju_100', cat: '放銃', icon: '⚱️', name: '送財童子',   title: '送財童子',   desc: '放銃 100 次', check: s => s.totalHouju >= 100 },
+    // 胡牌總數（榮和+自摸）
+    { id: 'agari_50',  cat: '胡牌總數', icon: '🃏', name: '胡牌好手', title: '胡牌好手', desc: '胡牌 50 次（榮+摸）',  check: s => s.totalAgari >= 50 },
+    { id: 'agari_100', cat: '胡牌總數', icon: '🀄', name: '胡牌大師', title: '胡牌大師', desc: '胡牌 100 次',          check: s => s.totalAgari >= 100 },
+    { id: 'agari_200', cat: '胡牌總數', icon: '👑', name: '胡牌之神', title: '胡牌之神', desc: '胡牌 200 次',          check: s => s.totalAgari >= 200 },
   ];
 
   function getStats(records) {
@@ -1454,7 +1550,13 @@
     let acc = 0, wasNeg = false;
     myMoney.forEach(m => { acc += m; if (acc < 0) wasNeg = true; });
     const reversal = wasNeg && acc > 0;
-    return { games, total, wins, lasts, flews, maxWin, maxLose, avgMoney, winRate, maxStreak, maxLoseStreak, reversal };
+    const totalRiichi = records.reduce((a, r) => a + (r.riichi || 0), 0);
+    const totalRon    = records.reduce((a, r) => a + (r.ron    || 0), 0);
+    const totalTsumo  = records.reduce((a, r) => a + (r.tsumo  || 0), 0);
+    const totalHouju  = records.reduce((a, r) => a + (r.houju  || 0), 0);
+    const totalAgari  = totalRon + totalTsumo;
+    return { games, total, wins, lasts, flews, maxWin, maxLose, avgMoney, winRate, maxStreak, maxLoseStreak, reversal,
+             totalRiichi, totalRon, totalTsumo, totalHouju, totalAgari };
   }
 
   function calcAchievements(records) {
@@ -1718,7 +1820,8 @@
   function parseOcrText(text) {
     const normalized = text
       .replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
-      .replace(/[，、]/g, ' ');
+      .replace(/[，、]/g, ' ')
+      .replace(/(\d),(\d)/g, '$1$2'); // 移除分數中的逗號
     const lines = normalized.split('\n').map(l => l.trim()).filter(Boolean);
     const rows = [];
     for (const line of lines) {
@@ -1726,22 +1829,31 @@
       if (!rankMatch) continue;
       const rank = parseInt(rankMatch[1]);
       if (rows.find(r => r.rank === rank)) continue;
-      const nums = (line.match(/-?\d+/g) || []).map(Number);
-      // 分數通常是 5 位數左右、絕對值最大
+      // 去掉 "X位" 後再抓數字，避免位次數字干擾
+      const lineNoRank = line.replace(/[1234]\s*位/g, '');
+      const nums = (lineNoRank.match(/-?\d+/g) || []).map(Number);
+      // 分數：絕對值最大的（通常 ≥ 100）
       let score = null;
       const candidates = nums.filter(n => Math.abs(n) >= 100 && Math.abs(n) <= 999999);
       if (candidates.length > 0) {
         score = candidates.reduce((max, n) => Math.abs(n) > Math.abs(max) ? n : max);
       }
-      // 名字：去 X位 / 數字 / 符號 / 段位星
-      const name = line
-        .replace(/[1234]\s*位/g, '')
+      // stats: 分數之後的 4 個小數字（立直/榮和/自摸/放銃，0-99 範圍）
+      let stats = [null, null, null, null];
+      if (score !== null) {
+        const scoreIdx = nums.indexOf(score);
+        const after = scoreIdx >= 0 ? nums.slice(scoreIdx + 1) : nums;
+        const small = after.filter(n => n >= 0 && n < 100);
+        for (let i = 0; i < 4 && i < small.length; i++) stats[i] = small[i];
+      }
+      // 名字：去 X位 / 數字 / 符號 / 段位星 / 英文字母
+      const name = lineNoRank
         .replace(/-?\d+/g, '')
         .replace(/[\/\\★⭐☆\*\.\,\:\;\|\-_=]+/g, ' ')
         .replace(/[a-zA-Z]+/g, '')
         .replace(/\s+/g, '')
         .trim();
-      rows.push({ rank, nameRaw: name, score, matchedId: null });
+      rows.push({ rank, nameRaw: name, score, stats, matchedId: null });
     }
     rows.sort((a, b) => a.rank - b.rank);
     return rows;
@@ -1764,25 +1876,38 @@
 
   function renderOcrRows() {
     if (!ocrParsed) return;
+    const STAT_LABELS = ['立直', '榮和', '自摸', '放銃'];
     const html = ocrParsed.slice(0, 4).map((r, i) => {
       const playerOpts = players.map(p =>
         `<option value="${p.id}" ${p.id === r.matchedId ? 'selected' : ''}>${p.avatar} ${escapeHtml(p.name)}</option>`
       ).join('');
+      const stats = r.stats || [null, null, null, null];
+      const statInputs = STAT_LABELS.map((lbl, j) => `
+        <div class="ocr-stat">
+          <span class="ocr-stat-label">${lbl}</span>
+          <input type="number" min="0" value="${stats[j] ?? ''}" placeholder="0"
+                 inputmode="numeric"
+                 oninput="updateOcrRow(${i}, 'stat${j}', this.value)">
+        </div>
+      `).join('');
       return `
-        <div class="ocr-row">
-          <div class="ocr-rank">${r.rank}位</div>
-          <div>
-            <div class="ocr-detected-name">辨識：${escapeHtml(r.nameRaw || '(未抓到)')}</div>
-            <select class="ocr-select" onchange="updateOcrRow(${i}, 'matchedId', this.value)">
-              <option value="">— 選玩家 —</option>
-              ${playerOpts}
-              <option value="__new__">+ 新增為玩家</option>
-            </select>
+        <div class="ocr-block">
+          <div class="ocr-row">
+            <div class="ocr-rank">${r.rank}位</div>
+            <div>
+              <div class="ocr-detected-name">辨識：${escapeHtml(r.nameRaw || '(未抓到)')}</div>
+              <select class="ocr-select" onchange="updateOcrRow(${i}, 'matchedId', this.value)">
+                <option value="">— 選玩家 —</option>
+                ${playerOpts}
+                <option value="__new__">+ 新增為玩家</option>
+              </select>
+            </div>
+            <input type="number" class="ocr-score-input" value="${r.score ?? ''}"
+                   placeholder="分數" inputmode="numeric"
+                   onchange="updateOcrRow(${i}, 'score', this.value)"
+                   oninput="updateOcrRow(${i}, 'score', this.value, true)">
           </div>
-          <input type="number" class="ocr-score-input" value="${r.score ?? ''}"
-                 placeholder="分數" inputmode="numeric"
-                 onchange="updateOcrRow(${i}, 'score', this.value)"
-                 oninput="updateOcrRow(${i}, 'score', this.value, true)">
+          <div class="ocr-stats-row">${statInputs}</div>
         </div>
       `;
     }).join('');
@@ -1814,6 +1939,10 @@
     } else if (field === 'score') {
       ocrParsed[i].score = value === '' ? null : Number(value);
       checkOcrSum();
+    } else if (field && field.startsWith('stat')) {
+      const j = parseInt(field.slice(4));
+      if (!ocrParsed[i].stats) ocrParsed[i].stats = [null, null, null, null];
+      ocrParsed[i].stats[j] = value === '' ? null : Math.max(0, Math.floor(Number(value)) || 0);
     }
   }
 
@@ -1856,12 +1985,17 @@
     if (participants.some(p => !p) || scores.some(s => isNaN(s))) return;
     if (new Set(participants).size !== 4) return;
     const money = scores.map(s => Math.round(pointToMoney(s)));
+    const riichi = slice.map(r => Number(r.stats?.[0]) || 0);
+    const ron    = slice.map(r => Number(r.stats?.[1]) || 0);
+    const tsumo  = slice.map(r => Number(r.stats?.[2]) || 0);
+    const houju  = slice.map(r => Number(r.stats?.[3]) || 0);
     history.push({
       id: Date.now(),
       ts: new Date().toISOString(),
       participants,
       scores,
-      money
+      money,
+      riichi, ron, tsumo, houju
     });
     saveData();
     closeOcrModal();
