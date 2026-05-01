@@ -799,7 +799,7 @@
 
     <div class="card">
       <h2><span class="h2-text">✨ 新增本局分數</span></h2>
-      <button class="btn-screenshot" onclick="document.getElementById('screenshotInput').click()">📸 從截圖匯入（雀魂結算畫面）</button>
+      <button class="btn-screenshot" onclick="document.getElementById('screenshotInput').click()">📸 從截圖匯入（或直接 Ctrl+V 貼上）</button>
       <input type="file" id="screenshotInput" accept="image/*" style="display:none" onchange="handleScreenshot(event)">
       <div class="ocr-divider"><span>或手動輸入 ↓</span></div>
       <div class="pick-tip" id="pickTip">先點選本局上場的 4 位玩家</div>
@@ -1630,6 +1630,33 @@
     const file = e.target.files[0];
     e.target.value = '';
     if (!file) return;
+    processScreenshotFile(file);
+  }
+
+  function handlePaste(e) {
+    if (!e.clipboardData) return;
+    // 如果焦點在 input/textarea/contenteditable，讓原生貼上行為跑（不要劫持文字貼上）
+    const ae = document.activeElement;
+    if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) {
+      // 但仍允許在這些元素貼圖時抓圖
+      const hasImage = Array.from(e.clipboardData.items || []).some(it => it.type && it.type.startsWith('image/'));
+      if (!hasImage) return;
+    }
+    for (const item of e.clipboardData.items) {
+      if (item.type && item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          e.preventDefault();
+          processScreenshotFile(file);
+          return;
+        }
+      }
+    }
+  }
+
+  document.addEventListener('paste', handlePaste);
+
+  async function processScreenshotFile(file) {
     if (typeof Tesseract === 'undefined') {
       showToast('⚠️ 辨識引擎未載入（檢查網路）');
       return;
