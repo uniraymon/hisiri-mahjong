@@ -1763,12 +1763,18 @@
       const img = new Image();
       img.onload = () => {
         try {
-          const SCALE = 2;
+          // 動態縮放到目標寬度（OCR 對字高敏感，不同視窗大小截圖也能一致）
+          const TARGET_W = 1800;
+          let scale = 1;
+          if (img.width < TARGET_W * 0.9) scale = TARGET_W / img.width;
+          else if (img.width > TARGET_W * 1.6) scale = TARGET_W / img.width;
+          scale = Math.max(0.5, Math.min(scale, 4));
           const canvas = document.createElement('canvas');
-          canvas.width = img.width * SCALE;
-          canvas.height = img.height * SCALE;
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
           const ctx = canvas.getContext('2d');
-          ctx.imageSmoothingEnabled = false;
+          ctx.imageSmoothingEnabled = scale < 1; // 縮小才用平滑、放大保留銳利
+          ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
           const data = imgData.data;
@@ -1928,7 +1934,8 @@
       if (score !== null) {
         const scoreIdx = allNums.indexOf(score);
         const afterScore = scoreIdx >= 0 ? allNums.slice(scoreIdx + 1) : allNums;
-        const small = afterScore.filter(n => n >= 0 && n < 100);
+        let small = afterScore.filter(n => n >= 0 && n < 100);
+        small = unmaskSlashSevens(small);
         for (let i = 0; i < 4 && i < small.length; i++) stats[i] = small[i];
       }
 
@@ -1936,6 +1943,19 @@
     }
     result.sort((a, b) => a.rank - b.rank);
     return result;
+  }
+
+  // 雀魂 stats 為「A / B / C / D」三個 slash。若 slash 被 OCR 讀成 7，
+  // 會多出 3 個 7，總長度變 7、奇數位都是 7。修正回 [A, B, C, D]。
+  function unmaskSlashSevens(small) {
+    if (small.length === 7 && small[1] === 7 && small[3] === 7 && small[5] === 7) {
+      return [small[0], small[2], small[4], small[6]];
+    }
+    // 退一步：6 個且 index 1, 3 都是 7（最後一格 D 沒抓到）
+    if (small.length === 6 && small[1] === 7 && small[3] === 7) {
+      return [small[0], small[2], small[4], small[5]];
+    }
+    return small;
   }
 
   function parseOcrText(text) {
@@ -1965,7 +1985,8 @@
       if (score !== null) {
         const scoreIdx = nums.indexOf(score);
         const after = scoreIdx >= 0 ? nums.slice(scoreIdx + 1) : nums;
-        const small = after.filter(n => n >= 0 && n < 100);
+        let small = after.filter(n => n >= 0 && n < 100);
+        small = unmaskSlashSevens(small);
         for (let i = 0; i < 4 && i < small.length; i++) stats[i] = small[i];
       }
       // 名字：去 X位 / 數字 / 符號 / 段位星 / 英文字母
