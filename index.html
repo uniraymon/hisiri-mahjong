@@ -42,13 +42,26 @@
 
   .tab-bar {
     display: flex;
+    flex-wrap: wrap;
     gap: 6px;
     margin-bottom: 16px;
-    overflow-x: auto;
     padding: 4px 0;
-    -webkit-overflow-scrolling: touch;
   }
-  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab-bar.scroll-mode {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #ffabbf transparent;
+    cursor: grab;
+  }
+  .tab-bar.scroll-mode:active { cursor: grabbing; }
+  .tab-bar.scroll-mode::-webkit-scrollbar { height: 6px; }
+  .tab-bar.scroll-mode::-webkit-scrollbar-thumb {
+    background: #ffabbf;
+    border-radius: 3px;
+  }
+  .tab-bar.scroll-mode::-webkit-scrollbar-track { background: transparent; }
   .tab {
     flex-shrink: 0;
     padding: 8px 14px;
@@ -86,11 +99,13 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    justify-content: space-between;
   }
+  .h2-text { display: flex; align-items: center; gap: 6px; }
 
   .player-row {
     display: grid;
-    grid-template-columns: auto 1fr auto auto;
+    grid-template-columns: auto 1fr auto auto auto;
     gap: 10px;
     align-items: center;
     padding: 12px 8px;
@@ -106,11 +121,8 @@
     font-size: 20px;
     background: #fff;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    cursor: pointer;
   }
-  .avatar-0 { background: linear-gradient(135deg, #ffd6e0, #ffabbf); }
-  .avatar-1 { background: linear-gradient(135deg, #d6e7ff, #abc4ff); }
-  .avatar-2 { background: linear-gradient(135deg, #fff4d6, #ffdb9b); }
-  .avatar-3 { background: linear-gradient(135deg, #d6ffe0, #abf5b8); }
 
   .player-name {
     background: transparent;
@@ -131,8 +143,8 @@
 
   .total {
     font-weight: 700;
-    font-size: 17px;
-    min-width: 80px;
+    font-size: 16px;
+    min-width: 90px;
     text-align: right;
   }
   .pos { color: #ef6b8a; }
@@ -140,11 +152,11 @@
   .zero { color: #b88a8a; }
 
   .rank-badge {
-    width: 28px; height: 28px;
+    width: 26px; height: 26px;
     border-radius: 50%;
     display: inline-flex;
     align-items: center; justify-content: center;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     background: #fff0f3;
     color: #b88a8a;
@@ -158,6 +170,86 @@
   .rank-2 { background: linear-gradient(135deg,#e0e0e0,#a0a0a0); color:#fff; }
   .rank-3 { background: linear-gradient(135deg,#deb887,#8b6f47); color:#fff; }
   .rank-4 { background: linear-gradient(135deg,#c9c9c9,#888); color:#fff; }
+
+  .player-del {
+    background: transparent;
+    border: none;
+    color: #f87171;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 8px;
+    font-weight: 700;
+  }
+
+  .add-player-btn {
+    width: 100%;
+    padding: 10px;
+    background: #fff8fb;
+    border: 2px dashed #ffabbf;
+    border-radius: 12px;
+    color: #ef6b8a;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    margin-top: 10px;
+  }
+
+  /* 玩家選擇 */
+  .player-pick-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .player-pick {
+    background: #fff8fb;
+    border: 2px solid #ffe4ec;
+    border-radius: 12px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: #5a4a4a;
+    text-align: left;
+    width: 100%;
+  }
+  .player-pick.selected {
+    background: linear-gradient(135deg, #ffabbf, #ff8fa3);
+    border-color: #ff8fa3;
+    color: #fff;
+    box-shadow: 0 3px 0 #ef6b8a;
+  }
+  .player-pick.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .player-pick .pick-avatar {
+    font-size: 18px;
+  }
+  .player-pick .pick-num {
+    margin-left: auto;
+    width: 22px; height: 22px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .player-pick:not(.selected) .pick-num { display: none; }
+
+  .pick-tip {
+    text-align: center;
+    font-size: 12px;
+    color: #b88a8a;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
 
   .score-grid {
     display: grid;
@@ -235,6 +327,12 @@
     box-shadow: 0 4px 0 #ef6b8a, 0 6px 12px rgba(239, 107, 138, 0.3);
   }
   .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+  .btn-secondary {
+    background: #fff;
+    color: #d4806b;
+    border: 2px solid #ffd6e0;
+    margin-top: 8px;
+  }
   .btn-danger {
     background: #fff0f3;
     color: #ef6b8a;
@@ -427,6 +525,7 @@
   }
   .vs-row:last-child { border-bottom: none; }
   .vs-name { font-weight: 600; color: #5a4a4a; }
+  .vs-meta { font-size: 10px; color: #b88a8a; }
 
   .achievement-grid {
     display: grid;
@@ -463,7 +562,7 @@
 <div class="container">
   <h1>🀄 麻將戰績小本本 🌸</h1>
   <div class="subtitle-wrap">
-    <span class="subtitle" id="rateInfo">25,000 分 = 1,000 元 ♡</span>
+    <span class="subtitle" id="rateInfo">25,000 分 = 1,000 萬基納 ♡</span>
   </div>
 
   <div class="tab-bar" id="tabBar"></div>
@@ -473,7 +572,7 @@
       <summary>⚙️ 設定 / 換算比例</summary>
       <div>
         <div class="settings-row">
-          <label>底分（25000 等於）</label>
+          <label>底分（25000 = 多少萬基納）</label>
           <input type="number" id="baseMoney" value="1000">
         </div>
         <div class="settings-row">
@@ -485,19 +584,24 @@
     </details>
 
     <div class="card">
-      <h2>🏆 累計戰績排行</h2>
+      <h2><span class="h2-text">🏆 累計戰績排行</span></h2>
       <div id="playersList"></div>
+      <button class="add-player-btn" onclick="addPlayer()">➕ 新增玩家</button>
     </div>
 
     <div class="card">
-      <h2>✨ 新增本局分數</h2>
-      <div class="score-grid" id="scoreInputs"></div>
-      <div class="sum-display" id="sumCheck">輸入 4 家分數（總和應為 100,000）</div>
-      <button class="btn btn-primary" id="addBtn" onclick="addRound()">📝 記錄本局</button>
+      <h2><span class="h2-text">✨ 新增本局分數</span></h2>
+      <div class="pick-tip" id="pickTip">先點選本局上場的 4 位玩家</div>
+      <div class="player-pick-grid" id="playerPicks"></div>
+      <div id="scoreSection" class="hidden">
+        <div class="score-grid" id="scoreInputs"></div>
+        <div class="sum-display" id="sumCheck">輸入 4 家分數（總和應為 100,000）</div>
+        <button class="btn btn-primary" id="addBtn" onclick="addRound()">📝 記錄本局</button>
+      </div>
     </div>
 
     <div class="card">
-      <h2>📜 對局小日記 <span id="roundCount" style="font-size:12px; color:#b88a8a; font-weight:500;"></span></h2>
+      <h2><span class="h2-text">📜 對局小日記</span> <span id="roundCount" style="font-size:12px; color:#b88a8a; font-weight:500;"></span></h2>
       <div id="historyList"></div>
     </div>
 
@@ -512,27 +616,26 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  // === 預設值（首次開啟才會用）===
-  const DEFAULT_PLAYERS = ['小燈泡掉頭走了', '小小小小小狗狗', '好久沒下雪了呢', '鵝霸天下'];
-  const DEFAULT_HISTORY = [
-    {
-      id: 1700000000000,
-      scores: [42800, 33000, 25500, -1300],
-      money: [712, 320, 20, -1052],
-      ts: '2026-05-02T00:00:00.000Z'
-    }
-  ];
+  // === 玩家資料結構：{id, name, avatar} ===
+  // 每局 history: { id, ts, participants: [pid1, pid2, pid3, pid4], scores: [s1,s2,s3,s4], money: [m1,m2,m3,m4] }
+  // participants[i] 對應 scores[i]、money[i]，是該局四位玩家的順序
 
-  let players = [...DEFAULT_PLAYERS];
+  const AVATAR_POOL = ['🌸', '🐶', '❄️', '🦢', '🐱', '🦊', '🐰', '🐼', '🐧', '🐯', '🦁', '🐨', '🐸', '🐵', '🦄', '🐹'];
+
+  let players = [
+    { id: 'p1', name: '小燈泡掉頭走了', avatar: '🌸' },
+    { id: 'p2', name: '小小小小小狗狗', avatar: '🐶' },
+    { id: 'p3', name: '好久沒下雪了呢', avatar: '❄️' },
+    { id: 'p4', name: '鵝霸天下', avatar: '🦢' }
+  ];
   let history = [];
   let baseMoney = 1000;
   let basePoint = 25000;
   let currentTab = 'overview';
-  const avatars = ['🌸', '🐶', '❄️', '🦢'];
-  const colors = ['#ff8fa3', '#6b9eef', '#ffb84d', '#4ade80'];
+  let currentPick = []; // 本局正在選的 4 個玩家 id
 
-  const STORAGE_KEY = 'mahjong-tracker-v1';
-  const SEEDED_KEY = 'mahjong-tracker-seeded';
+  const STORAGE_KEY = 'mahjong-tracker-v2';
+  const SEEDED_KEY = 'mahjong-tracker-seeded-v2';
 
   function loadData() {
     const seeded = localStorage.getItem(SEEDED_KEY);
@@ -541,7 +644,7 @@
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const data = JSON.parse(raw);
-        if (data.players && data.players.length === 4) players = data.players;
+        if (data.players) players = data.players;
         if (data.history) history = data.history;
         if (data.baseMoney) baseMoney = data.baseMoney;
         if (data.basePoint) basePoint = data.basePoint;
@@ -549,10 +652,44 @@
       }
     } catch (e) { console.error(e); }
 
-    // 第一次開啟（沒儲存過資料）→ 帶入預設南 3 局
+    // 嘗試從舊版 v1 遷移
+    if (!loaded) {
+      try {
+        const oldRaw = localStorage.getItem('mahjong-tracker-v1');
+        if (oldRaw) {
+          const old = JSON.parse(oldRaw);
+          if (old.players && old.players.length === 4) {
+            players = old.players.map((n, i) => ({
+              id: 'p' + (i+1),
+              name: n,
+              avatar: AVATAR_POOL[i]
+            }));
+          }
+          if (old.history) {
+            history = old.history.map(h => ({
+              id: h.id,
+              ts: h.ts,
+              participants: players.map(p => p.id),
+              scores: h.scores,
+              money: h.money
+            }));
+          }
+          if (old.baseMoney) baseMoney = old.baseMoney;
+          if (old.basePoint) basePoint = old.basePoint;
+          loaded = true;
+        }
+      } catch (e) {}
+    }
+
+    // 第一次：帶入南 3 局
     if (!loaded && !seeded) {
-      players = [...DEFAULT_PLAYERS];
-      history = JSON.parse(JSON.stringify(DEFAULT_HISTORY));
+      history = [{
+        id: 1700000000000,
+        ts: '2026-05-02T00:00:00.000Z',
+        participants: ['p1','p2','p3','p4'],
+        scores: [42800, 33000, 25500, -1300],
+        money: [712, 320, 20, -1052]
+      }];
       localStorage.setItem(SEEDED_KEY, '1');
       saveData();
     }
@@ -589,13 +726,41 @@
       '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
     })[c]);
   }
+  function getPlayer(id) {
+    return players.find(p => p.id === id);
+  }
+  function getColor(id) {
+    const idx = players.findIndex(p => p.id === id);
+    const colors = ['#ff8fa3', '#6b9eef', '#ffb84d', '#4ade80', '#a78bfa', '#fb7185', '#22d3ee', '#f97316', '#84cc16'];
+    return colors[idx % colors.length];
+  }
 
+  // === 玩家計算（針對 id）===
+  function getPlayerData(pid) {
+    const records = []; // 每筆: { roundIdx, money, score, rank, others: [{pid, money}] }
+    history.forEach((h, i) => {
+      const slot = h.participants.indexOf(pid);
+      if (slot < 0) return;
+      const myMoney = h.money[slot];
+      const myScore = h.scores[slot];
+      // 計算名次（在這 4 個人裡）
+      const sorted = h.money.map((m, idx) => ({m, idx})).sort((a,b) => b.m - a.m);
+      const rank = sorted.findIndex(s => s.idx === slot) + 1;
+      const others = h.participants
+        .map((p, j) => ({ pid: p, money: h.money[j] }))
+        .filter(o => o.pid !== pid);
+      records.push({ roundIdx: i, money: myMoney, score: myScore, rank, others });
+    });
+    return records;
+  }
+
+  // === 分頁切換 ===
   function renderTabs() {
     const bar = document.getElementById('tabBar');
     let html = `<button class="tab ${currentTab==='overview'?'active':''}" onclick="switchTab('overview')">🏠 總覽</button>`;
-    players.forEach((name, i) => {
-      const active = currentTab === `p${i}` ? 'active' : '';
-      html += `<button class="tab ${active}" onclick="switchTab('p${i}')">${avatars[i]} ${escapeHtml(name)}</button>`;
+    players.forEach(p => {
+      const active = currentTab === p.id ? 'active' : '';
+      html += `<button class="tab ${active}" onclick="switchTab('${p.id}')">${p.avatar} ${escapeHtml(p.name)}</button>`;
     });
     bar.innerHTML = html;
   }
@@ -609,49 +774,49 @@
     } else {
       document.getElementById('page-overview').classList.add('hidden');
       document.getElementById('page-player').classList.remove('hidden');
-      const idx = parseInt(tab.slice(1));
-      renderPlayerPage(idx);
+      renderPlayerPage(tab);
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  // === 主畫面 ===
   function render() {
-    document.getElementById('rateInfo').textContent = `${basePoint.toLocaleString()} 分 = ${baseMoney} 元 ♡`;
+    document.getElementById('rateInfo').textContent = `${basePoint.toLocaleString()} 分 = ${baseMoney} 萬基納 ♡`;
     document.getElementById('rateDetail').textContent =
-      `1 分 ≈ ${(baseMoney/basePoint).toFixed(4)} 元 ✨`;
+      `1 分 ≈ ${(baseMoney/basePoint).toFixed(4)} 萬基納 ✨`;
 
-    const totals = players.map((name, i) => {
-      const sum = history.reduce((acc, h) => acc + (h.money[i] || 0), 0);
-      return { name, total: sum, idx: i };
+    // 累計戰績
+    const totals = players.map(p => {
+      const records = getPlayerData(p.id);
+      const sum = records.reduce((acc, r) => acc + r.money, 0);
+      return { ...p, total: sum, games: records.length };
     });
-
     const sorted = [...totals].sort((a, b) => b.total - a.total);
     const rankMap = {};
-    sorted.forEach((p, i) => rankMap[p.idx] = i + 1);
+    sorted.forEach((p, i) => rankMap[p.id] = i + 1);
 
     const list = document.getElementById('playersList');
-    list.innerHTML = totals.map((p, i) => {
-      const rank = rankMap[i];
-      return `
-        <div class="player-row">
-          <span class="avatar avatar-${i}" onclick="switchTab('p${i}')" style="cursor:pointer">${avatars[i]}</span>
-          <input class="player-name" value="${escapeHtml(p.name)}"
-                 onchange="updateName(${i}, this.value)">
-          <span class="rank-badge rank-${rank}">${rank}</span>
-          <span class="total ${moneyClass(p.total)}">${fmtMoney(p.total)}元</span>
-        </div>
-      `;
-    }).join('');
+    if (players.length === 0) {
+      list.innerHTML = '<div class="empty">還沒有玩家<br>點下面新增 ♡</div>';
+    } else {
+      list.innerHTML = totals.map(p => {
+        const rank = rankMap[p.id];
+        const rankCls = p.games > 0 ? `rank-${rank <= 4 ? rank : 4}` : '';
+        return `
+          <div class="player-row">
+            <span class="avatar" onclick="switchTab('${p.id}')">${p.avatar}</span>
+            <input class="player-name" value="${escapeHtml(p.name)}"
+                   onchange="updateName('${p.id}', this.value)">
+            <span class="rank-badge ${rankCls}" title="${p.games} 局">${p.games > 0 ? rank : '-'}</span>
+            <span class="total ${moneyClass(p.total)}">${fmtMoney(p.total)} 萬基納</span>
+            <button class="player-del" onclick="deletePlayer('${p.id}')" title="刪除玩家">×</button>
+          </div>
+        `;
+      }).join('');
+    }
 
-    const scoreDiv = document.getElementById('scoreInputs');
-    scoreDiv.innerHTML = players.map((name, i) => `
-      <div class="score-input-wrap">
-        <label>${avatars[i]} ${escapeHtml(name)}</label>
-        <input type="number" class="score-input" id="score-${i}"
-               placeholder="0" inputmode="numeric"
-               oninput="checkSum()">
-      </div>
-    `).join('');
+    renderPlayerPicks();
+    renderScoreInputs();
 
     document.getElementById('roundCount').textContent =
       history.length > 0 ? `（共 ${history.length} 局 ✨）` : '';
@@ -661,10 +826,12 @@
     } else {
       histDiv.innerHTML = history.slice().reverse().map((h, idx) => {
         const realIdx = history.length - 1 - idx;
-        const detail = players.map((n, i) => {
+        const detail = h.participants.map((pid, i) => {
+          const p = getPlayer(pid);
           const m = h.money[i];
           const cls = moneyClass(m);
-          return `<span class="${cls}">${avatars[i]} ${fmtMoney(m)}</span>`;
+          const av = p ? p.avatar : '❓';
+          return `<span class="${cls}">${av} ${fmtMoney(m)}</span>`;
         }).join(' ');
         return `
           <div class="history-row">
@@ -675,20 +842,83 @@
         `;
       }).join('');
     }
+  }
 
+  // === 玩家選擇 ===
+  function renderPlayerPicks() {
+    const div = document.getElementById('playerPicks');
+    const tip = document.getElementById('pickTip');
+
+    if (players.length < 4) {
+      div.innerHTML = `<div class="empty" style="grid-column: 1/-1;">至少需要 4 位玩家才能開新局<br>請先到上方新增玩家</div>`;
+      tip.textContent = '';
+      document.getElementById('scoreSection').classList.add('hidden');
+      return;
+    }
+
+    tip.textContent = `已選 ${currentPick.length} / 4 位玩家`;
+    div.innerHTML = players.map(p => {
+      const order = currentPick.indexOf(p.id);
+      const selected = order >= 0;
+      const disabled = !selected && currentPick.length >= 4;
+      return `
+        <button class="player-pick ${selected ? 'selected' : ''} ${disabled ? 'disabled' : ''}"
+                onclick="togglePick('${p.id}')">
+          <span class="pick-avatar">${p.avatar}</span>
+          <span>${escapeHtml(p.name)}</span>
+          <span class="pick-num">${order + 1}</span>
+        </button>
+      `;
+    }).join('');
+
+    if (currentPick.length === 4) {
+      document.getElementById('scoreSection').classList.remove('hidden');
+    } else {
+      document.getElementById('scoreSection').classList.add('hidden');
+    }
+  }
+
+  function togglePick(pid) {
+    const idx = currentPick.indexOf(pid);
+    if (idx >= 0) {
+      currentPick.splice(idx, 1);
+    } else if (currentPick.length < 4) {
+      currentPick.push(pid);
+    }
+    renderPlayerPicks();
+    renderScoreInputs();
+  }
+
+  function renderScoreInputs() {
+    if (currentPick.length !== 4) return;
+    const scoreDiv = document.getElementById('scoreInputs');
+    scoreDiv.innerHTML = currentPick.map((pid, i) => {
+      const p = getPlayer(pid);
+      return `
+        <div class="score-input-wrap">
+          <label>${p.avatar} ${escapeHtml(p.name)}</label>
+          <input type="number" class="score-input" id="score-${i}"
+                 placeholder="0" inputmode="numeric"
+                 oninput="checkSum()">
+        </div>
+      `;
+    }).join('');
     checkSum();
   }
 
-  function renderPlayerPage(idx) {
-    const name = players[idx];
-    const myMoney = history.map(h => h.money[idx] || 0);
+  // === 個人頁 ===
+  function renderPlayerPage(pid) {
+    const p = getPlayer(pid);
+    if (!p) return;
+    const records = getPlayerData(pid);
+    const games = records.length;
 
-    if (myMoney.length === 0) {
+    if (games === 0) {
       document.getElementById('playerPageContent').innerHTML = `
         <div class="card">
           <div class="player-header">
-            <div class="player-avatar-big avatar-${idx}">${avatars[idx]}</div>
-            <div class="player-title-name">${escapeHtml(name)}</div>
+            <div class="player-avatar-big" style="background: linear-gradient(135deg, #ffd6e0, #ffabbf);">${p.avatar}</div>
+            <div class="player-title-name">${escapeHtml(p.name)}</div>
           </div>
           <div class="empty">還沒有對局紀錄<br>來打一局吧 ♡</div>
         </div>
@@ -696,71 +926,69 @@
       return;
     }
 
-    const total = myMoney.reduce((a, b) => a + b, 0);
-    const games = myMoney.length;
+    const myMoney = records.map(r => r.money);
+    const myRanks = records.map(r => r.rank);
+    const total = myMoney.reduce((a,b)=>a+b, 0);
     const avgMoney = total / games;
-
-    const myRanks = history.map(h => {
-      const sorted = [...h.money].map((m, i) => ({m, i})).sort((a, b) => b.m - a.m);
-      return sorted.findIndex(s => s.i === idx) + 1;
-    });
     const wins = myRanks.filter(r => r === 1).length;
     const lasts = myRanks.filter(r => r === 4).length;
     const winRate = ((wins / games) * 100).toFixed(0);
-    const avgRank = (myRanks.reduce((a, b) => a + b, 0) / games).toFixed(2);
-
+    const avgRank = (myRanks.reduce((a,b)=>a+b, 0) / games).toFixed(2);
     const maxMoney = Math.max(...myMoney);
     const minMoney = Math.min(...myMoney);
-    const maxScore = Math.max(...history.map(h => h.scores[idx]));
-    const minScore = Math.min(...history.map(h => h.scores[idx]));
+    const maxScore = Math.max(...records.map(r => r.score));
+    const minScore = Math.min(...records.map(r => r.score));
 
-    const vsStats = players.map((_, j) => {
-      if (j === idx) return null;
-      let vsTotal = 0;
-      history.forEach(h => {
-        const myM = h.money[idx] || 0;
-        const theirM = h.money[j] || 0;
-        vsTotal += (myM - theirM) / 2;
+    // 對戰分析 - 只算同桌過的
+    const vsMap = {};
+    records.forEach(r => {
+      r.others.forEach(o => {
+        if (!vsMap[o.pid]) vsMap[o.pid] = { vs: 0, games: 0 };
+        vsMap[o.pid].vs += (r.money - o.money) / 2;
+        vsMap[o.pid].games++;
       });
-      return { idx: j, name: players[j], vs: vsTotal };
-    }).filter(Boolean);
-    const bestVs = [...vsStats].sort((a, b) => b.vs - a.vs)[0];
-    const worstVs = [...vsStats].sort((a, b) => a.vs - b.vs)[0];
+    });
+    const vsStats = Object.keys(vsMap).map(opid => {
+      const op = getPlayer(opid);
+      if (!op) return null;
+      return { id: opid, name: op.name, avatar: op.avatar, vs: vsMap[opid].vs, games: vsMap[opid].games };
+    }).filter(Boolean).sort((a,b) => b.vs - a.vs);
 
-    const achievements = calcAchievements(idx, myMoney, myRanks);
+    const bestVs = vsStats[0];
+    const worstVs = vsStats[vsStats.length - 1];
+
+    const achievements = calcAchievements(records);
     const unlockedCount = achievements.filter(a => a.unlocked).length;
-
-    const titleObj = getTitle(idx, myMoney, myRanks, total, games);
+    const titleObj = getTitle(records);
 
     const cumulative = [];
     let acc = 0;
     myMoney.forEach(m => { acc += m; cumulative.push(acc); });
-
-    const chartSvg = drawChart(cumulative, colors[idx]);
+    const chartSvg = drawChart(cumulative, getColor(pid));
 
     const rankCounts = [1,2,3,4].map(r => myRanks.filter(x => x === r).length);
 
     document.getElementById('playerPageContent').innerHTML = `
       <div class="card">
         <div class="player-header">
-          <div class="player-avatar-big avatar-${idx}">${avatars[idx]}</div>
-          <div class="player-title-name">${escapeHtml(name)}</div>
+          <div class="player-avatar-big" style="background: linear-gradient(135deg, ${getColor(pid)}33, ${getColor(pid)}88);">${p.avatar}</div>
+          <div class="player-title-name">${escapeHtml(p.name)}</div>
           <div class="player-nickname">${titleObj.icon} ${titleObj.title}</div>
         </div>
         <div class="stat-grid" style="margin-top:14px;">
           <div class="stat-box">
             <div class="stat-label">總輸贏</div>
-            <div class="stat-value big ${moneyClass(total)}">${fmtMoney(total)}元</div>
+            <div class="stat-value big ${moneyClass(total)}">${fmtMoney(total)} 萬基納</div>
           </div>
           <div class="stat-box">
-            <div class="stat-label">總局數</div>
+            <div class="stat-label">出場局數</div>
             <div class="stat-value big">${games}</div>
           </div>
         </div>
       </div>
 
       <div class="card">
-        <h2>📊 基本統計</h2>
+        <h2><span class="h2-text">📊 基本統計</span></h2>
         <div class="stat-grid">
           <div class="stat-box">
             <div class="stat-label">勝率（一位）</div>
@@ -806,12 +1034,13 @@
       </div>
 
       <div class="card">
-        <h2>📈 累計戰績趨勢</h2>
+        <h2><span class="h2-text">📈 累計戰績趨勢</span></h2>
         <div class="chart-wrap">${chartSvg}</div>
       </div>
 
+      ${vsStats.length > 0 ? `
       <div class="card">
-        <h2>⚔️ 對戰分析</h2>
+        <h2><span class="h2-text">⚔️ 對戰分析</span></h2>
         ${vsStats.map(v => {
           const bar = Math.abs(v.vs);
           const maxBar = Math.max(...vsStats.map(x => Math.abs(x.vs)), 1);
@@ -820,9 +1049,9 @@
           const dir = v.vs >= 0 ? '贏' : '輸';
           return `
             <div class="vs-row">
-              <span class="avatar avatar-${v.idx}" style="width:30px; height:30px; font-size:16px;">${avatars[v.idx]}</span>
+              <span class="avatar" style="width:30px; height:30px; font-size:16px;">${v.avatar}</span>
               <div>
-                <div class="vs-name">${escapeHtml(v.name)}</div>
+                <div class="vs-name">${escapeHtml(v.name)} <span class="vs-meta">（同桌 ${v.games} 局）</span></div>
                 <div style="height:6px; background:#ffe4ec; border-radius:3px; margin-top:4px; overflow:hidden;">
                   <div style="height:100%; width:${w}%; background:${v.vs >= 0 ? '#ff8fa3' : '#6b9eef'}; border-radius:3px;"></div>
                 </div>
@@ -831,16 +1060,17 @@
             </div>
           `;
         }).join('')}
-        ${bestVs && worstVs ? `
+        ${bestVs && worstVs && bestVs.id !== worstVs.id ? `
           <div style="margin-top:12px; padding:10px; background:#fff8fb; border-radius:12px; border:2px dashed #ffd6e0; font-size:12px; line-height:1.7;">
             🍀 跟 <b>${escapeHtml(bestVs.name)}</b> 對局最佔便宜<br>
             💔 跟 <b>${escapeHtml(worstVs.name)}</b> 對局最吃虧
           </div>
         ` : ''}
       </div>
+      ` : ''}
 
       <div class="card">
-        <h2>🏅 成就徽章 <span style="font-size:12px; color:#b88a8a; font-weight:500;">（${unlockedCount}/${achievements.length}）</span></h2>
+        <h2><span class="h2-text">🏅 成就徽章</span> <span style="font-size:12px; color:#b88a8a; font-weight:500;">（${unlockedCount}/${achievements.length}）</span></h2>
         <div class="achievement-grid">
           ${achievements.map(a => `
             <div class="achievement ${a.unlocked ? 'unlocked' : 'locked'}">
@@ -861,22 +1091,17 @@
     const pad = { top: 16, right: 12, bottom: 30, left: 40 };
     const cw = w - pad.left - pad.right;
     const ch = h - pad.top - pad.bottom;
-
     const min = Math.min(0, ...data);
     const max = Math.max(0, ...data);
     const range = max - min || 1;
-
     const points = data.map((v, i) => {
       const x = pad.left + (data.length === 1 ? cw/2 : (i / (data.length - 1)) * cw);
       const y = pad.top + ch - ((v - min) / range) * ch;
       return { x, y, v };
     });
-
     const zeroY = pad.top + ch - ((0 - min) / range) * ch;
-
     const linePath = points.map((p, i) => `${i===0?'M':'L'} ${p.x},${p.y}`).join(' ');
     const areaPath = `${linePath} L ${points[points.length-1].x},${zeroY} L ${points[0].x},${zeroY} Z`;
-
     let html = `<svg class="chart-svg" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">`;
     html += `<line x1="${pad.left}" y1="${zeroY}" x2="${pad.left+cw}" y2="${zeroY}" stroke="#ffd6e0" stroke-width="1.5" stroke-dasharray="4,3"/>`;
     html += `<text x="${pad.left-6}" y="${zeroY+4}" text-anchor="end" font-size="10" fill="#b88a8a">0</text>`;
@@ -886,30 +1111,31 @@
     html += `<path d="${linePath}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
     points.forEach((p, i) => {
       html += `<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="#fff" stroke="${color}" stroke-width="2"/>`;
-      html += `<text x="${p.x}" y="${h-10}" text-anchor="middle" font-size="9" fill="#b88a8a">#${i+1}</text>`;
+      html += `<text x="${p.x}" y="${h-10}" text-anchor="middle" font-size="9" fill="#b88a8a">${i+1}</text>`;
     });
     html += `</svg>`;
     return html;
   }
 
-  function calcAchievements(idx, myMoney, myRanks) {
+  function calcAchievements(records) {
+    const myMoney = records.map(r => r.money);
+    const myRanks = records.map(r => r.rank);
     const total = myMoney.reduce((a,b)=>a+b, 0);
     const games = myMoney.length;
     const wins = myRanks.filter(r => r === 1).length;
     const maxWin = Math.max(...myMoney, 0);
     const maxLose = Math.min(...myMoney, 0);
-
     let maxStreak = 0, curStreak = 0;
     myRanks.forEach(r => {
       if (r === 1) { curStreak++; if (curStreak > maxStreak) maxStreak = curStreak; }
       else curStreak = 0;
     });
-
     let maxLoseStreak = 0, curLose = 0;
     myRanks.forEach(r => {
       if (r === 4) { curLose++; if (curLose > maxLoseStreak) maxLoseStreak = curLose; }
       else curLose = 0;
     });
+    const hasNegScore = records.some(r => r.score < 0);
 
     return [
       { icon: '🌱', name: '初登場', desc: '完成首局', unlocked: games >= 1 },
@@ -921,21 +1147,22 @@
       { icon: '💎', name: '大富翁', desc: '累計贏 +2000', unlocked: total >= 2000 },
       { icon: '💥', name: '爆發局', desc: '單局贏 +1000', unlocked: maxWin >= 1000 },
       { icon: '🎰', name: '神之一手', desc: '單局贏 +2000', unlocked: maxWin >= 2000 },
-      { icon: '😅', name: '飛了一次', desc: '單局負分', unlocked: history.some(h => h.scores[idx] < 0) },
+      { icon: '😅', name: '飛了一次', desc: '單局負分', unlocked: hasNegScore },
       { icon: '😱', name: '慘澹經營', desc: '單局輸 -1500', unlocked: maxLose <= -1500 },
-      { icon: '🎯', name: '老鐵粉', desc: '打滿 10 局', unlocked: games >= 10 },
-      { icon: '🌟', name: '麻將達人', desc: '打滿 20 局', unlocked: games >= 20 },
+      { icon: '🎯', name: '老鐵粉', desc: '出場 10 局', unlocked: games >= 10 },
+      { icon: '🌟', name: '麻將達人', desc: '出場 20 局', unlocked: games >= 20 },
       { icon: '😭', name: '雷殘三連', desc: '連 3 局墊底', unlocked: maxLoseStreak >= 3 },
     ];
   }
 
-  function getTitle(idx, myMoney, myRanks, total, games) {
+  function getTitle(records) {
+    const games = records.length;
     if (games < 3) return { icon: '🌱', title: '麻將新手' };
-
+    const myRanks = records.map(r => r.rank);
+    const total = records.reduce((a,r) => a + r.money, 0);
     const winRate = myRanks.filter(r => r === 1).length / games;
     const lastRate = myRanks.filter(r => r === 4).length / games;
     const avgMoney = total / games;
-
     if (winRate >= 0.5) return { icon: '👑', title: '麻將之神' };
     if (winRate >= 0.35) return { icon: '🏆', title: '常勝將軍' };
     if (avgMoney >= 300) return { icon: '💰', title: '聚寶盆' };
@@ -946,8 +1173,10 @@
     return { icon: '⚖️', title: '穩健派' };
   }
 
+  // === 互動 ===
   function checkSum() {
-    const scores = players.map((_, i) => {
+    if (currentPick.length !== 4) return;
+    const scores = currentPick.map((_, i) => {
       const v = document.getElementById(`score-${i}`)?.value;
       return v === '' || v === undefined || v === null ? null : Number(v);
     });
@@ -982,15 +1211,49 @@
     }
   }
 
-  function updateName(i, v) {
-    players[i] = v.trim() || `玩家${i+1}`;
+  function updateName(pid, v) {
+    const p = getPlayer(pid);
+    if (!p) return;
+    p.name = v.trim() || '未命名';
     saveData();
     renderTabs();
     render();
   }
 
+  function addPlayer() {
+    const name = prompt('新玩家名字 ♡');
+    if (!name || !name.trim()) return;
+    // 找個還沒用過的 avatar
+    const usedAvatars = new Set(players.map(p => p.avatar));
+    const avatar = AVATAR_POOL.find(a => !usedAvatars.has(a)) || AVATAR_POOL[players.length % AVATAR_POOL.length];
+    const id = 'p' + Date.now();
+    players.push({ id, name: name.trim(), avatar });
+    saveData();
+    renderTabs();
+    render();
+    showToast(`✨ 已新增 ${name} ${avatar}`);
+  }
+
+  function deletePlayer(pid) {
+    const p = getPlayer(pid);
+    if (!p) return;
+    const records = getPlayerData(pid);
+    if (records.length > 0) {
+      if (!confirm(`${p.name} 已經有 ${records.length} 局紀錄，刪除後紀錄仍會保留但無法再開啟個人頁。確定刪除？`)) return;
+    } else {
+      if (!confirm(`刪除 ${p.name}？`)) return;
+    }
+    players = players.filter(x => x.id !== pid);
+    currentPick = currentPick.filter(x => x !== pid);
+    saveData();
+    if (currentTab === pid) currentTab = 'overview';
+    renderTabs();
+    switchTab(currentTab);
+  }
+
   function addRound() {
-    const scores = players.map((_, i) => {
+    if (currentPick.length !== 4) return;
+    const scores = currentPick.map((_, i) => {
       const v = document.getElementById(`score-${i}`).value;
       return v === '' ? null : Number(v);
     });
@@ -1001,13 +1264,12 @@
     const money = scores.map(s => Math.round(pointToMoney(s)));
     history.push({
       id: Date.now(),
-      scores, money,
-      ts: new Date().toISOString()
+      ts: new Date().toISOString(),
+      participants: [...currentPick],
+      scores, money
     });
     saveData();
-    players.forEach((_, i) => {
-      document.getElementById(`score-${i}`).value = '';
-    });
+    currentPick = [];
     render();
     showToast('✨ 已記錄本局 ✨');
   }
@@ -1020,9 +1282,8 @@
   }
 
   function resetAll() {
-    if (!confirm('確定要清除全部紀錄嗎？(´;ω;`)')) return;
+    if (!confirm('確定要清除全部對局紀錄嗎？玩家會保留 (´;ω;`)')) return;
     history = [];
-    localStorage.removeItem(SEEDED_KEY);
     saveData();
     render();
     showToast('已重置 🌸');
