@@ -2040,10 +2040,8 @@
     const ATB_THRESHOLD = 100;
     const pSpd = Math.max(1, effectiveSpd);
     const mSpd = Math.max(1, monster.spd);
+    // 雙方都從 0 開始填條，誰先達到 100 誰先出手（速度高自然先到）
     let pGauge = 0, mGauge = 0;
-    // 起手：較快的一方先攻 40%，避免雙方同時動作
-    if (pSpd > mSpd)      pGauge = ATB_THRESHOLD * 0.4;
-    else if (mSpd > pSpd) mGauge = ATB_THRESHOLD * 0.4;
 
     log.push({ type: 'system', text: `═══ ⚔️ ${player.name} VS ${monster.icon} ${monster.name} Lv ${monster.level} ═══` });
     log.push({ type: 'system', text: `🌬 速度：你 ${pSpd} vs ${monster.name} ${mSpd}（行動頻率比 ${(pSpd/mSpd).toFixed(2)} : 1）` });
