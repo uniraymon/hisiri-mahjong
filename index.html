@@ -2122,6 +2122,16 @@
     { id: 'quest_kill_merch',  cat: '冒險島', icon: '💸', name: '商人剋星',       title: '商人剋星',       desc: '擊倒商人鵝 3 次',   check: s => (s.rpgKills?.merch  || 0) >= 3 },
     { id: 'quest_crit_100',    cat: '冒險島', icon: '💥', name: '暴擊狂',         title: '暴擊狂',         desc: '冒險中累計暴擊 100 次',  check: s => (s.rpgCrits || 0) >= 100 },
     { id: 'quest_crit_500',    cat: '冒險島', icon: '⚡', name: '暴擊大師',       title: '暴擊大師',       desc: '冒險中累計暴擊 500 次',  check: s => (s.rpgCrits || 0) >= 500 },
+    // 日常活動
+    { id: 'work_1',    cat: '日常', icon: '💼', name: '鵝鵝兼職',     title: '鵝鵝兼職',   desc: '打工 1 次',       check: s => (s.rpgWorkCount || 0) >= 1 },
+    { id: 'work_10',   cat: '日常', icon: '🍜', name: '兼職達人',     title: '兼職達人',   desc: '打工 10 次',      check: s => (s.rpgWorkCount || 0) >= 10 },
+    { id: 'work_50',   cat: '日常', icon: '🛵', name: '鵝鵝員工',     title: '鵝鵝員工',   desc: '打工 50 次',      check: s => (s.rpgWorkCount || 0) >= 50 },
+    { id: 'work_200',  cat: '日常', icon: '🎖', name: '鵝鵝勞模',     title: '鵝鵝勞模',   desc: '打工 200 次',     check: s => (s.rpgWorkCount || 0) >= 200 },
+    { id: 'forage_1',  cat: '日常', icon: '🎣', name: '探險新手',     title: '探險新手',   desc: '探索 1 次',       check: s => (s.rpgForageCount || 0) >= 1 },
+    { id: 'forage_10', cat: '日常', icon: '🗺️', name: '探險家',       title: '探險家',     desc: '探索 10 次',      check: s => (s.rpgForageCount || 0) >= 10 },
+    { id: 'forage_50', cat: '日常', icon: '🌍', name: '鵝印第安那瓊斯', title: '鵝印第安那瓊斯', desc: '探索 50 次',  check: s => (s.rpgForageCount || 0) >= 50 },
+    { id: 'forage_battle_1',  cat: '日常', icon: '⚠️', name: '偶遇怪鵝', title: '偶遇怪鵝', desc: '探索時遇到戰鬥 1 次',  check: s => (s.rpgForageBattles || 0) >= 1 },
+    { id: 'forage_battle_10', cat: '日常', icon: '🎯', name: '怪鵝磁鐵', title: '怪鵝磁鐵', desc: '探索時遇到戰鬥 10 次', check: s => (s.rpgForageBattles || 0) >= 10 },
   ];
 
   function getStats(records, player) {
@@ -2163,6 +2173,9 @@
     const metGreenTea = rpg.metGreenTea || 0;
     const rpgKills    = rpg.kills || {};
     const rpgCrits    = rpg.critCount || 0;
+    const rpgWorkCount   = rpg.workCount || 0;
+    const rpgForageCount = rpg.forageCount || 0;
+    const rpgForageBattles = rpg.forageBattles || 0;
     const coinsEarned = calcCoinsEarned(records);
     const coinsSpent  = player ? (player.coinsSpent || 0) : 0;
     const coinsBalance = coinsEarned - coinsSpent;
@@ -2171,6 +2184,7 @@
       totalRiichi, totalRon, totalTsumo, totalHouju, totalAgari,
       rpgClass, rpgLevel, rpgWins, rpgLosses, rpgInv, rpgEquippedSlots, rpgHasLegendary,
       metGreenTea, rpgKills, rpgCrits,
+      rpgWorkCount, rpgForageCount, rpgForageBattles,
       coinsEarned, coinsSpent, coinsBalance
     };
   }

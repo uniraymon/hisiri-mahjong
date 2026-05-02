@@ -787,8 +787,8 @@
     <div class="card">
       <h2><span>🎒 日常</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（用體力換錢與物品）</span></h2>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-        <button class="btn btn-primary" id="workBtn" style="background:linear-gradient(135deg,#fde68a,#f59e0b); box-shadow:0 4px 0 #d97706;" onclick="doWork()">💼 打工 (5 ⚡)</button>
-        <button class="btn btn-primary" id="forageBtn" style="background:linear-gradient(135deg,#a7f3d0,#10b981); box-shadow:0 4px 0 #059669;" onclick="doForage()">🎣 探索 (5 ⚡)</button>
+        <button class="btn btn-primary" id="workBtn" style="background:linear-gradient(135deg,#fde68a,#f59e0b); box-shadow:0 4px 0 #d97706;" onclick="doWork()">💼 打工 (15 ⚡)</button>
+        <button class="btn btn-primary" id="forageBtn" style="background:linear-gradient(135deg,#a7f3d0,#10b981); box-shadow:0 4px 0 #059669;" onclick="doForage()">🎣 探索 (20 ⚡)</button>
       </div>
       <div id="dailyResult" style="margin-top:10px;"></div>
     </div>
@@ -1013,8 +1013,8 @@
   ];
 
   // === 打工 ===
-  const WORK_STAMINA = 5;
-  const WORK_BASE_PAY = 25;
+  const WORK_STAMINA = 15;
+  const WORK_BASE_PAY = 60; // 體力較高、報酬也提高
   const JOB_EVENTS = [
     // good (1.5x), normal (1x), bad (0.6x)
     { mood: 'good',   icon: '🍜', name: '鵝肉店搬運', line: '老闆娘看你可憐多給了一份小費！' },
@@ -1043,7 +1043,8 @@
   ];
 
   // === 探索 / 採集 ===
-  const FORAGE_STAMINA = 5;
+  const FORAGE_STAMINA = 20;
+  const FORAGE_BATTLE_CHANCE = 0.20; // 20% 觸發戰鬥
   const FORAGE_EVENTS = [
     // type: coins / equip / none
     { type: 'coins', minCoins: 8,  maxCoins: 18, line: '🌳 在樹下撿到幾枚鵝鵝幣，閃閃發亮！' },
@@ -2407,6 +2408,7 @@
     tickRecovery(me);
     if (r.stamina < WORK_STAMINA) { showToast(`⚡ 體力不足（需 ${WORK_STAMINA}）`); return; }
     r.stamina -= WORK_STAMINA;
+    r.workCount = (r.workCount || 0) + 1;
     const ev = JOB_EVENTS[Math.floor(Math.random() * JOB_EVENTS.length)];
     const mult = ev.mood === 'good' ? 1.5 : ev.mood === 'bad' ? 0.6 : 1.0;
     const variance = 0.85 + Math.random() * 0.3;
@@ -2434,6 +2436,24 @@
     tickRecovery(me);
     if (r.stamina < FORAGE_STAMINA) { showToast(`⚡ 體力不足（需 ${FORAGE_STAMINA}）`); return; }
     r.stamina -= FORAGE_STAMINA;
+    r.forageCount = (r.forageCount || 0) + 1;
+
+    // 20% 機率：探索路上遭遇怪物
+    if (Math.random() < FORAGE_BATTLE_CHANCE && r.hp > 0) {
+      r.forageBattles = (r.forageBattles || 0) + 1;
+      saveData();
+      document.getElementById('dailyResult').innerHTML = `
+        <div class="reward-list" style="background:linear-gradient(135deg,#fee2e2,#fecaca); border-color:#dc2626;">
+          <div class="rl-title" style="color:#991b1b;">⚠️ 突然遭遇怪物！</div>
+          <div class="rl-item" style="color:#5a4a4a;">探索的時候，從草叢裡跳出一隻怪物鵝...</div>
+          <div class="rl-item" style="margin-top:4px; font-size:11px; color:#7f1d1d;">↓ 戰鬥開始 ↓</div>
+        </div>
+      `;
+      // 戰鬥不再扣體力（已扣 20）
+      onFight({ skipStamina: true });
+      return;
+    }
+
     // 加權：65% 錢 / 30% 裝備 / 5% 啥都沒
     const roll = Math.random();
     const pool = roll < 0.65
@@ -2482,21 +2502,24 @@
   }
   window.doForage = doForage;
 
-  function onFight() {
+  function onFight(opts) {
+    const skipStamina = opts && opts.skipStamina;
     const me = getMe();
     if (!me) return;
     const rpg = getRpg(me);
     if (!rpg.class) return;
-    tickRecovery(me);
-    if (rpg.stamina < STAMINA_PER_FIGHT) {
-      showToast(`⚡ 體力不足（需 ${STAMINA_PER_FIGHT}，目前 ${rpg.stamina}）`);
-      return;
+    if (!skipStamina) {
+      tickRecovery(me);
+      if (rpg.stamina < STAMINA_PER_FIGHT) {
+        showToast(`⚡ 體力不足（需 ${STAMINA_PER_FIGHT}，目前 ${rpg.stamina}）`);
+        return;
+      }
     }
     if (rpg.hp <= 0) { showToast('💀 HP 不足，等回血或喝藥'); return; }
 
     // 鎖按鈕，扣體力
     document.getElementById('fightBtn').disabled = true;
-    rpg.stamina -= STAMINA_PER_FIGHT;
+    if (!skipStamina) rpg.stamina -= STAMINA_PER_FIGHT;
 
     const monster = generateMonster(rpg.level);
     const result = autoFight(me, monster);
