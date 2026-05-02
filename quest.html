@@ -1016,7 +1016,7 @@
   // 5% 機率出現的綠茶事件怪
   function createGreenTea(playerLv) {
     return {
-      id: 'greentea', tier: 0, name: '綠茶',  icon: '🍵',
+      id: 'greentea', tier: 0, name: '綠茶鵝',  icon: '🍵',
       level: playerLv, hp: 1, maxHp: 1,
       atk: 1, def: 0, spd: 999,
       verb: '裝清純', goldDrop: 0, xpDrop: 0,
@@ -1502,14 +1502,14 @@
       const startMp = Math.min(player.rpg.mp ?? stats.maxMp, stats.maxMp);
       const kickDmg = 5 + Math.floor(Math.random() * 5);
       const newHp = Math.max(1, startHp - kickDmg);
-      log.push({ type: 'system', text: `═══ 🍵 綠茶突然飄了過來 ═══` });
+      log.push({ type: 'system', text: `═══ 🍵 綠茶鵝突然飄了過來 ═══` });
       if (monster.dialogue && monster.dialogue.length) {
         const line = monster.dialogue[Math.floor(Math.random() * monster.dialogue.length)];
-        log.push({ type: 'monster', text: `🍵 綠茶：「${line}」` });
+        log.push({ type: 'monster', text: `🍵 綠茶鵝：「${line}」` });
       }
-      log.push({ type: 'monster', text: `回合 1：綠茶踢了你一腳 → -${kickDmg} HP`, hp: { player: newHp, monster: 1, mp: startMp } });
-      log.push({ type: 'monster', text: `回合 2：綠茶順手摸走 💰 10 鵝鵝幣`, hp: { player: newHp, monster: 1, mp: startMp } });
-      log.push({ type: 'system', text: `綠茶丟下一句「鵝鵝沒有錯」就跑掉了 ☕💨` });
+      log.push({ type: 'monster', text: `回合 1：綠茶鵝踢了你一腳 → -${kickDmg} HP`, hp: { player: newHp, monster: 1, mp: startMp } });
+      log.push({ type: 'monster', text: `回合 2：綠茶鵝順手摸走 💰 10 鵝鵝幣`, hp: { player: newHp, monster: 1, mp: startMp } });
+      log.push({ type: 'system', text: `綠茶鵝丟下一句「鵝鵝沒有錯」就跑掉了 ☕💨` });
       return {
         won: false, fled: true,
         pHpFinal: newHp, pMpFinal: startMp, mHpFinal: 1,
@@ -2451,11 +2451,11 @@
     if (result.fled) {
       const div = document.createElement('div');
       div.className = 'log-line log-system';
-      div.textContent = `🍵 綠茶逃走了，這次的相遇不算戰鬥`;
+      div.textContent = `🍵 綠茶鵝逃走了，這次的相遇不算戰鬥`;
       logEl.appendChild(div);
       rewardHtml = `
         <div class="reward-list" style="background:#dcfce7; border-color:#86efac;">
-          <div class="rl-title" style="color:#15803d;">🍵 綠茶反撒了一波</div>
+          <div class="rl-title" style="color:#15803d;">🍵 綠茶鵝反撒了一波</div>
           <div class="rl-item">「鵝鵝沒有錯」</div>
           <div class="rl-item" style="color:#dc2626;">💰 −${result.coinsStolen} 鵝鵝幣　❤️ −${result.kickDmg || 0} HP</div>
           <div class="rl-item" style="margin-top:4px; font-size:11px; color:#16a34a;">無 XP / 無金幣 / 無戰利品</div>

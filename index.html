@@ -2112,8 +2112,8 @@
     { id: 'spend_10k',  cat: '鵝幣', icon: '💳', name: '購物狂',   title: '購物狂',   desc: '累計花 10,000 鵝鵝幣', check: s => s.coinsSpent >= 10000 },
     { id: 'coin_30k',   cat: '鵝幣', icon: '💎', name: '鵝鵝富翁', title: '鵝鵝富翁', desc: '累計賺 30,000 鵝鵝幣', check: s => s.coinsEarned >= 30000 },
     // 冒險島 — 綠茶 / 屠殺 / 暴擊
-    { id: 'quest_greentea_1', cat: '冒險島', icon: '🍵', name: '鵝鵝沒有錯',     title: '鵝鵝沒有錯',     desc: '遇到綠茶 1 次',     check: s => (s.metGreenTea || 0) >= 1 },
-    { id: 'quest_greentea_5', cat: '冒險島', icon: '☕', name: '又是綠茶鵝',     title: '又是綠茶鵝',     desc: '遇到綠茶 5 次',     check: s => (s.metGreenTea || 0) >= 5 },
+    { id: 'quest_greentea_1', cat: '冒險島', icon: '🍵', name: '鵝鵝沒有錯',     title: '鵝鵝沒有錯',     desc: '遇到綠茶鵝 1 次',     check: s => (s.metGreenTea || 0) >= 1 },
+    { id: 'quest_greentea_5', cat: '冒險島', icon: '☕', name: '又是綠茶鵝',     title: '又是綠茶鵝',     desc: '遇到綠茶鵝 5 次',     check: s => (s.metGreenTea || 0) >= 5 },
     { id: 'quest_kill_dragon',   cat: '冒險島', icon: '🐉', name: '屠龍鵝',       title: '屠龍鵝',       desc: '擊倒龍鵝 1 隻',     check: s => (s.rpgKills?.dragon || 0) >= 1 },
     { id: 'quest_kill_dragon_5', cat: '冒險島', icon: '🗡️', name: '龍鵝終結者',   title: '龍鵝終結者',   desc: '擊倒龍鵝 5 隻',     check: s => (s.rpgKills?.dragon || 0) >= 5 },
     { id: 'quest_kill_titan',  cat: '冒險島', icon: '🪨', name: '巨人殺手',       title: '巨人殺手',       desc: '擊倒泰坦鵝 1 隻',   check: s => (s.rpgKills?.titan  || 0) >= 1 },
