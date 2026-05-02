@@ -1397,7 +1397,7 @@
     { id: 'p_dragon', name: '龍鱗披',   icon: '🐲', slot: 'cape', hp: 80, def: 8, lv: 16 },
   ];
 
-  const STAMINA_MAX = 150;
+  const STAMINA_MAX = 200;
   const STAMINA_PER_FIGHT = 10;
   const STAMINA_PER_TICK = 4;     // 每分鐘 +4 體力（原本 +5，慢 20%）
   const HP_PER_TICK = 1;
@@ -1837,6 +1837,15 @@
     if (!player.rpg.currentZone) player.rpg.currentZone = 'forest';
     if (!player.rpg.currentFloor) player.rpg.currentFloor = 1;
     if (!player.rpg.zoneProgress) player.rpg.zoneProgress = {};
+    // 封測補償 v1：每位玩家補滿一次體力 + 跳公告（只對「我自己」觸發，不污染別人的 in-memory 狀態）
+    if (!player.rpg.betaCompV1 && typeof getMeId === 'function' && player.id === getMeId()) {
+      player.rpg.stamina = STAMINA_MAX;
+      player.rpg.betaCompV1 = true;
+      if (typeof window !== 'undefined') {
+        window.__pendingBetaComp = window.__pendingBetaComp || new Set();
+        window.__pendingBetaComp.add(player.id);
+      }
+    }
     // skillPoints migration
     if (player.rpg.skillPoints == null) {
       const earned = Math.max(0, (player.rpg.level || 1) - 1) * POINTS_PER_LEVEL.skill;
@@ -2345,6 +2354,34 @@
     renderZoneSelector();
     updateStaminaUI();
     checkBossKillBanners();
+    maybeShowBetaCompModal();
+  }
+
+  // 封測補償 v1 公告（每位玩家只跳一次）
+  function maybeShowBetaCompModal() {
+    if (!window.__pendingBetaComp) return;
+    const me = getMe();
+    if (!me || !window.__pendingBetaComp.has(me.id)) return;
+    window.__pendingBetaComp.delete(me.id);
+    const html = `
+      <div style="text-align:center; padding:6px 0;">
+        <div style="font-size:42px; margin-bottom:6px;">🎁</div>
+        <div style="font-weight:700; font-size:16px; color:#7c3aed; margin-bottom:8px;">封測補償 v1</div>
+        <div style="font-size:13px; color:#5b3d62; line-height:1.7; text-align:left; padding:8px 12px; background:#f3e8ff; border-radius:10px; border:2px dashed #c4b5fd;">
+          • 體力上限提高至 <b>${STAMINA_MAX}</b>（原本 150）<br>
+          • 雲端資料拆檔重構，掉裝不再被覆蓋<br>
+          • 押注新增金額 / 彩池機制<br>
+          • 多地區 + 樓層 + 戰鬥 ATB 系統<br>
+          • 綠茶鵝出現率加保底<br>
+          <br>
+          📦 <b>補償內容</b>：體力已自動補滿至 ${STAMINA_MAX}<br>
+          感謝陪我一起測試 ♡
+        </div>
+        <button class="btn btn-primary" onclick="hideModal()" style="margin-top:14px;">收下 ✨</button>
+      </div>
+    `;
+    showModal('📣 封測補償公告', html);
+    saveData(); // 把 betaCompV1=true 持久化（並推到雲端）
   }
 
   function renderAbilityTree() {
