@@ -2026,7 +2026,6 @@
     let pHp = Math.min(player.rpg.hp ?? stats.maxHp, stats.maxHp);
     let pMp = Math.min(player.rpg.mp ?? stats.maxMp, stats.maxMp);
     let mHp = monster.hp;
-    let pTurn = effectiveSpd >= monster.spd;
     let round = 0;
     let playerActions = 0;
     let coinsStolen = 0;
@@ -2036,7 +2035,18 @@
     const skills = cls.skills || (cls.skill ? [cls.skill] : []);
     const nextActionForSkill = skills.map(() => 1);
 
+    // ATB（Active Time Battle）：每個單位的「行動條」依速度填滿
+    // 條滿（達到 ATB_THRESHOLD）即出手；速度越快、填滿越快、出手越頻繁
+    const ATB_THRESHOLD = 100;
+    const pSpd = Math.max(1, effectiveSpd);
+    const mSpd = Math.max(1, monster.spd);
+    let pGauge = 0, mGauge = 0;
+    // 起手：較快的一方先攻 40%，避免雙方同時動作
+    if (pSpd > mSpd)      pGauge = ATB_THRESHOLD * 0.4;
+    else if (mSpd > pSpd) mGauge = ATB_THRESHOLD * 0.4;
+
     log.push({ type: 'system', text: `═══ ⚔️ ${player.name} VS ${monster.icon} ${monster.name} Lv ${monster.level} ═══` });
+    log.push({ type: 'system', text: `🌬 速度：你 ${pSpd} vs ${monster.name} ${mSpd}（行動頻率比 ${(pSpd/mSpd).toFixed(2)} : 1）` });
     if (monster.dialogue && monster.dialogue.length) {
       const line = monster.dialogue[Math.floor(Math.random() * monster.dialogue.length)];
       log.push({ type: 'monster', text: `${monster.icon} ${monster.name}：「${line}」` });
@@ -2048,7 +2058,20 @@
       }
     };
 
-    while (pHp > 0 && mHp > 0 && round < 50) {
+    while (pHp > 0 && mHp > 0 && round < 80) {
+      // 推進時間：跳到下一個「條滿」的瞬間
+      const pNeed = Math.max(0, ATB_THRESHOLD - pGauge);
+      const mNeed = Math.max(0, ATB_THRESHOLD - mGauge);
+      const dt = Math.min(pNeed / pSpd, mNeed / mSpd);
+      pGauge += dt * pSpd;
+      mGauge += dt * mSpd;
+
+      // 決定誰先出手：若同時滿條，gauge 較大者先；否則只有滿條那邊出手
+      let pTurn;
+      if (pGauge >= ATB_THRESHOLD && mGauge >= ATB_THRESHOLD) pTurn = pGauge >= mGauge;
+      else if (pGauge >= ATB_THRESHOLD) pTurn = true;
+      else pTurn = false;
+
       round++;
       // 被動自癒（聖騎天生 + 自癒強化技能）
       if (pTurn && regenPer > 0 && pHp < stats.maxHp) {
@@ -2057,6 +2080,7 @@
         log.push({ type: 'player', text: `回合 ${round}：自癒 +${heal} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
       }
       if (pTurn) {
+        pGauge -= ATB_THRESHOLD;
         playerActions++;
         // 從強到弱掃技能，第一個 cooldown 完且 MP 夠 + 條件 OK 的就放
         let useSkill = null;
@@ -2144,6 +2168,7 @@
           if (mHp <= 0) { pushDeathLine(); break; }
         }
       } else {
+        mGauge -= ATB_THRESHOLD;
         // 多段攻擊：1.3x 總傷害平均分散
         const hits = (mAbility?.type === 'multiHit') ? Math.max(1, mAbility.hits || 2) : 1;
         const perHitMult = hits === 1 ? 1.0 : (1.3 / hits);
@@ -2174,7 +2199,6 @@
         }
         if (pHp <= 0) break;
       }
-      pTurn = !pTurn;
     }
     const won = pHp > 0 && mHp <= 0;
     return {
