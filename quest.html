@@ -1247,13 +1247,14 @@
 
   // === 世界王 ===
   const BOSS_STAMINA = 30;
+  const BOSS_COOLDOWN_MS = 5 * 60 * 1000; // 每位玩家每隻王 5 分鐘冷卻
   const WORLD_BOSSES = [
     {
       id: 'goose_king',
       name: '🦢 鵝皇',
       icon: '🦢',
-      hp: 50000,
-      atk: 60, def: 25, spd: 12,
+      hp: 90000,        // 50000 → 90000：更耐打
+      atk: 48, def: 38, spd: 12,  // ATK 60→48（比之前低）、DEF 25→38（更扛）
       level: 30,
       respawnMs: 4 * 60 * 60 * 1000, // 4 小時
       verb: '皇者懲戒',
@@ -1270,8 +1271,8 @@
       id: 'dragon_goose',
       name: '🐉 古龍鵝',
       icon: '🐉',
-      hp: 100000,
-      atk: 80, def: 30, spd: 14,
+      hp: 200000,       // 100000 → 200000
+      atk: 65, def: 50, spd: 14,  // ATK 80→65、DEF 30→50
       level: 40,
       respawnMs: 8 * 60 * 60 * 1000, // 8 小時
       verb: '龍焰之息',
@@ -3133,9 +3134,15 @@
     const stage = document.getElementById('stageGame');
     if (stage && !stage.classList.contains('hidden')) {
       updateStaminaUI();
-      // 世界王倒數刷新
+      // 世界王倒數刷新（復活倒數 + 我的攻擊冷卻倒數）
       const anyDead = WORLD_BOSSES.some(b => worldBoss?.[b.id]?.deadAt);
-      if (anyDead) renderWorldBoss();
+      const me = getMe();
+      const myRpg = me ? getRpg(me) : null;
+      const anyCd = myRpg && myRpg.lastBossAttack && WORLD_BOSSES.some(b => {
+        const t = myRpg.lastBossAttack[b.id] || 0;
+        return Date.now() - t < BOSS_COOLDOWN_MS;
+      });
+      if (anyDead || anyCd) renderWorldBoss();
       if (Math.floor(Date.now() / 1000) % 30 === 0) renderCharCard();
     }
   }, 1000);
@@ -3198,6 +3205,8 @@
   }
 
   function renderWorldBoss() {
+    const me = getMe();
+    const myRpg = me ? getRpg(me) : null;
     const html = WORLD_BOSSES.map(boss => {
       const state = getBossState(boss.id);
       const isDead = !!state.deadAt;
@@ -3206,6 +3215,11 @@
       const hr = Math.floor(remainingMs / 3600000);
       const min = Math.floor((remainingMs % 3600000) / 60000);
       const sec = Math.floor((remainingMs % 60000) / 1000);
+      // 我自己對這隻王的冷卻
+      const myCdMs = myRpg && myRpg.lastBossAttack ? Math.max(0, (myRpg.lastBossAttack[boss.id] || 0) + BOSS_COOLDOWN_MS - Date.now()) : 0;
+      const cdM = Math.floor(myCdMs / 60000);
+      const cdS = Math.ceil((myCdMs % 60000) / 1000);
+      const onCd = myCdMs > 0;
       const sortedDmg = Object.entries(state.damageLog || {}).sort((a, b) => b[1] - a[1]);
       const top5 = sortedDmg.slice(0, 5);
       return `
@@ -3239,8 +3253,10 @@
               🏆 第 ${state.killCount} 次擊殺：${getPlayer(state.lastKill.killer)?.name || '?'}
             </div>
           ` : ''}
-          <button class="btn btn-primary" onclick="runBossFight('${boss.id}')" ${isDead ? 'disabled' : ''} style="background:linear-gradient(135deg,#f59e0b,#dc2626); box-shadow:0 4px 0 #991b1b;">
-            ${isDead ? `⏳ 等待復活` : `⚔️ 挑戰（${BOSS_STAMINA} ⚡）`}
+          <button class="btn btn-primary" onclick="runBossFight('${boss.id}')" ${isDead || onCd ? 'disabled' : ''} style="background:linear-gradient(135deg,#f59e0b,#dc2626); box-shadow:0 4px 0 #991b1b;">
+            ${isDead ? `⏳ 等待復活`
+              : onCd  ? `⏳ 冷卻 ${cdM > 0 ? cdM + ':' + String(cdS).padStart(2,'0') : cdS + 's'}`
+              :         `⚔️ 挑戰（${BOSS_STAMINA} ⚡）`}
           </button>
         </div>
       `;
@@ -3284,7 +3300,17 @@
     if (state.deadAt) { showToast('🦢 王還沒復活'); return; }
     if (r.stamina < BOSS_STAMINA) { showToast(`⚡ 體力不足（需 ${BOSS_STAMINA}）`); return; }
     if (r.hp <= 0) { showToast('💀 HP 不足'); return; }
+    // 每位玩家每隻王 5 分鐘冷卻
+    if (!r.lastBossAttack) r.lastBossAttack = {};
+    const cdRemain = (r.lastBossAttack[bossId] || 0) + BOSS_COOLDOWN_MS - Date.now();
+    if (cdRemain > 0) {
+      const m = Math.floor(cdRemain / 60000);
+      const s = Math.ceil((cdRemain % 60000) / 1000);
+      showToast(`⏳ 還要等 ${m > 0 ? m + ':' + String(s).padStart(2,'0') : s + 's'} 才能再挑戰這隻王`);
+      return;
+    }
     r.stamina -= BOSS_STAMINA;
+    r.lastBossAttack[bossId] = Date.now();
 
     const monster = {
       id: boss.id, tier: 99,
