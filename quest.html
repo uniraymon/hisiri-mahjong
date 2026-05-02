@@ -512,6 +512,13 @@
 
 <div class="toast" id="toast"></div>
 
+<div id="genericModal" class="modal-overlay hidden" onclick="hideModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <h3 id="genericModalTitle"></h3>
+    <div id="genericModalBody"></div>
+  </div>
+</div>
+
 <script>
   // ============================================================
   // 常數
@@ -748,6 +755,10 @@
   // ============================================================
   // 角色資料 helpers
   // ============================================================
+  function findItem(id) {
+    return ITEMS.find(i => i.id === id) || SHOP_ITEMS.find(i => i.id === id);
+  }
+
   function getRpg(player) {
     if (!player) return null;
     if (!player.rpg) {
@@ -808,7 +819,7 @@
     for (const slot of ['weapon', 'armor', 'accessory']) {
       const itemId = rpg.equipment?.[slot];
       if (itemId) {
-        const item = ITEMS.find(i => i.id === itemId);
+        const item = findItem(itemId);
         if (item) {
           if (item.atk) stats.atk += item.atk;
           if (item.def) stats.def += item.def;
@@ -968,7 +979,43 @@
     const it = SHOP_ITEMS.find(x => x.id === itemId);
     if (!it) return;
     if (getCoins(me.id) < it.cost) { showToast('幣不夠 ♡'); return; }
-    if (!spendCoins(me.id, it.cost)) { showToast('幣不夠 ♡'); return; }
+    // 跳出確認 modal
+    openBuyConfirm(it);
+  }
+  window.buyShop = buyShop;
+
+  function openBuyConfirm(it) {
+    const me = getMe();
+    const myCoins = getCoins(me.id);
+    const after = myCoins - it.cost;
+    const stats = it.type === 'equipment'
+      ? `<div style="margin-top:6px; font-size:12px; color:#8b6f9b;">需求 Lv ${it.lv}　·　${['atk','def','spd','hp'].filter(k=>it[k]).map(k=>`${k.toUpperCase()}+${it[k]}`).join(' / ')}</div>`
+      : `<div style="margin-top:6px; font-size:12px; color:#8b6f9b;">${escapeHtml(it.desc || '')}</div>`;
+    const html = `
+      <div style="text-align:center; padding:8px 0;">
+        <div style="font-size:64px; margin-bottom:4px;">${it.icon}</div>
+        <div style="font-weight:700; font-size:16px; color:#7c3aed;">${escapeHtml(it.name)}</div>
+        ${stats}
+        <div style="margin-top:14px; font-size:13px;">
+          🪙 <b>${myCoins}</b> → 購入後剩 <b style="color:#d97706;">${after}</b>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px;">
+          <button class="btn btn-secondary" onclick="closeBuyConfirm()" style="margin-top:0;">取消</button>
+          <button class="btn btn-primary" onclick="doBuyShop('${it.id}')">確認購入（🪙 ${it.cost}）</button>
+        </div>
+      </div>
+    `;
+    showModal(`🛒 確認購入`, html);
+  }
+  function closeBuyConfirm() { hideModal(); }
+  window.closeBuyConfirm = closeBuyConfirm;
+
+  function doBuyShop(itemId) {
+    const me = getMe();
+    if (!me) return;
+    const it = SHOP_ITEMS.find(x => x.id === itemId);
+    if (!it) return;
+    if (!spendCoins(me.id, it.cost)) { showToast('幣不夠 ♡'); hideModal(); return; }
     const rpg = getRpg(me);
     if (it.type === 'consumable') {
       tickRecovery(me);
@@ -1006,11 +1053,25 @@
       showToast(`🛒 購入 ${it.icon} ${it.name}`);
     }
     saveData();
+    hideModal();
     renderCharCard();
     renderEquipment();
     renderShop();
   }
-  window.buyShop = buyShop;
+  window.doBuyShop = doBuyShop;
+
+  // === Modal helpers ===
+  function showModal(title, html) {
+    const overlay = document.getElementById('genericModal');
+    document.getElementById('genericModalTitle').textContent = title;
+    document.getElementById('genericModalBody').innerHTML = html;
+    overlay.classList.remove('hidden');
+  }
+  function hideModal(e) {
+    if (e && e.target.id !== 'genericModal') return;
+    document.getElementById('genericModal').classList.add('hidden');
+  }
+  window.hideModal = hideModal;
 
   function renderClassPicker() {
     const grid = document.getElementById('classGrid');
@@ -1072,7 +1133,7 @@
     const slotLabels = { weapon: '武器', armor: '防具', accessory: '飾品' };
     document.getElementById('equipRow').innerHTML = slots.map(s => {
       const id = rpg.equipment?.[s];
-      const item = id ? ITEMS.find(i => i.id === id) : null;
+      const item = id ? findItem(id) : null;
       if (!item) {
         return `<div class="equip-slot empty"><div class="es-icon">➕</div><div class="es-name">${slotLabels[s]}</div></div>`;
       }
@@ -1089,7 +1150,7 @@
       document.getElementById('invGrid').innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#8b6f9b; font-size:11px; padding:8px;">背包空空 ♡</div>';
     } else {
       document.getElementById('invGrid').innerHTML = inv.map((id, idx) => {
-        const item = ITEMS.find(i => i.id === id);
+        const item = findItem(id);
         if (!item) return '';
         return `<button class="inv-item" onclick="equipFromInv(${idx})">
           <div class="ii-icon">${item.icon}</div>
@@ -1326,7 +1387,7 @@
     const me = getMe();
     const rpg = getRpg(me);
     const itemId = rpg.inventory[idx];
-    const item = ITEMS.find(i => i.id === itemId);
+    const item = findItem(itemId);
     if (!item) return;
     // 把現有同 slot 裝備丟回背包
     const cur = rpg.equipment[item.slot];
