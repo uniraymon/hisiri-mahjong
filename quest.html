@@ -1029,6 +1029,7 @@
         xp: 0,
         hp: null, // 第一次選職業時設為 maxHp
         equipment: { weapon: null, armor: null, accessory: null },
+        equipped:  { weapon: null, shield: null, accessory: null, armor: null }, // 紙娃娃 SVG 路徑
         inventory: [],
         stamina: STAMINA_MAX,
         lastTickAt: Date.now(),
@@ -1039,7 +1040,23 @@
     }
     if (player.rpg.stamina == null) player.rpg.stamina = STAMINA_MAX;
     if (player.rpg.lastTickAt == null) player.rpg.lastTickAt = Date.now();
+    if (!player.rpg.equipped) player.rpg.equipped = { weapon: null, shield: null, accessory: null, armor: null };
     return player.rpg;
+  }
+
+  // 由職業 + equipment 推導出紙娃娃 4 層 SVG 路徑，存進 rpg.equipped
+  // 在 pickClass / equipFromInv / unequip / buyShop / applyRemote 後都要呼叫
+  function syncEquipped(player) {
+    const rpg = getRpg(player);
+    if (!rpg.class) return;
+    const cls = CLASSES[rpg.class] || {};
+    const eq = rpg.equipment || {};
+    rpg.equipped = {
+      weapon:    (eq.weapon    && cls.weaponImage) ? cls.weaponImage : null,
+      armor:     eq.armor ? 'assets/equipment/armor-glow.svg' : null,
+      accessory: (eq.accessory && cls.accImage)    ? cls.accImage    : null,
+      shield:    cls.hasShield ? 'assets/equipment/shield.svg' : null,
+    };
   }
 
   // 體力 / HP 自動回復（不存資料庫，每次讀取時算）
@@ -1229,6 +1246,7 @@
     document.getElementById('stageClassPick').classList.add('hidden');
     document.getElementById('stageGame').classList.remove('hidden');
 
+    syncEquipped(me); // 雲端載入後可能 equipped 還沒填
     renderCharCard();
     renderEquipment();
     renderShop();
@@ -1411,6 +1429,8 @@
     const stamPercent = Math.round((rpg.stamina / STAMINA_MAX) * 100);
     const coins = getCoins(me.id);
 
+    // 從同步好的 equipped 物件讀紙娃娃 SVG 路徑（裝備物品 ID 仍存在 rpg.equipment）
+    const equipped = rpg.equipped || {};
     const weaponItem = rpg.equipment?.weapon ? findItem(rpg.equipment.weapon) : null;
     const armorItem  = rpg.equipment?.armor  ? findItem(rpg.equipment.armor)  : null;
     const accItem    = rpg.equipment?.accessory ? findItem(rpg.equipment.accessory) : null;
@@ -1424,12 +1444,12 @@
     // 紙娃娃 5 層（順序由下到上：armor-glow → base → shield → weapon → accessory）
     // 每張 SVG 都是 200×250、位置已對齊；data-tier 觸發 CSS filter 上色（1..10）
     const dollLayers = [];
-    if (armorItem) dollLayers.push(`<img class="pd-layer pd-armor" data-tier="${aTier}" src="assets/equipment/armor-glow.svg" alt="">`);
+    if (equipped.armor) dollLayers.push(`<img class="pd-layer pd-armor" data-tier="${aTier}" src="${equipped.armor}" alt="">`);
     dollLayers.push(`<img class="pd-layer pd-base" src="${cls.baseImage}" alt="${cls.name}"
        onerror="this.outerHTML='<div class=\\'pd-base-emoji\\'>${cls.icon}</div>';">`);
-    if (cls.hasShield) dollLayers.push(`<img class="pd-layer pd-shield" src="assets/equipment/shield.svg" alt="">`);
-    if (weaponItem && cls.weaponImage) dollLayers.push(`<img class="pd-layer pd-weapon" data-tier="${wTier}" src="${cls.weaponImage}" alt="">`);
-    if (accItem && cls.accImage) dollLayers.push(`<img class="pd-layer pd-acc" data-tier="${cTier}" src="${cls.accImage}" alt="">`);
+    if (equipped.shield) dollLayers.push(`<img class="pd-layer pd-shield" src="${equipped.shield}" alt="">`);
+    if (equipped.weapon) dollLayers.push(`<img class="pd-layer pd-weapon" data-tier="${wTier}" src="${equipped.weapon}" alt="">`);
+    if (equipped.accessory) dollLayers.push(`<img class="pd-layer pd-acc" data-tier="${cTier}" src="${equipped.accessory}" alt="">`);
 
     document.getElementById('charCard').innerHTML = `
       <div class="char-portrait">
@@ -1568,6 +1588,7 @@
     rpg.hp = stats.maxHp;
     rpg.stamina = STAMINA_MAX;
     rpg.lastTickAt = Date.now();
+    syncEquipped(me);
     saveData();
     showToast(`✨ 選擇了 ${CLASSES[classId].icon} ${CLASSES[classId].name}`);
     render();
@@ -1745,6 +1766,7 @@
     if (cur) rpg.inventory.push(cur);
     rpg.equipment[item.slot] = itemId;
     rpg.inventory.splice(idx, 1);
+    syncEquipped(me);
     saveData();
     renderCharCard();
     renderEquipment();
@@ -1759,6 +1781,7 @@
     if (!cur) return;
     rpg.inventory.push(cur);
     rpg.equipment[slot] = null;
+    syncEquipped(me);
     saveData();
     renderCharCard();
     renderEquipment();
