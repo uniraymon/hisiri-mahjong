@@ -1493,12 +1493,6 @@
     </div>
 
     <div class="card">
-      <h2 id="skillCardHeader"><span>📚 技能</span></h2>
-      <div id="skillTreeBody"></div>
-    </div>
-
-
-    <div class="card">
       <h2><span>🛒 商店</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（用鵝鵝幣購買）</span></h2>
       <div id="shopGrid"></div>
     </div>
@@ -3227,8 +3221,9 @@
     // skillPoints migration
     if (player.rpg.skillPoints == null) {
       const earned = Math.max(0, (player.rpg.level || 1) - 1) * POINTS_PER_LEVEL.skill;
-      const used = Object.values(player.rpg.skills).reduce((a, b) => a + (b || 0), 0);
-      player.rpg.skillPoints = Math.max(0, earned - used);
+      const usedTree = Object.values(player.rpg.skills).reduce((a, b) => a + (b || 0), 0);
+      const usedLv   = Object.values(player.rpg.skillLevels || {}).reduce((a, b) => a + (b || 0), 0);
+      player.rpg.skillPoints = Math.max(0, earned - usedTree - usedLv);
     }
     // abilityPoints migration
     if (player.rpg.abilityPoints == null) {
@@ -3289,7 +3284,9 @@
 
     const expectedSk = Math.max(0, (r.level || 1) - 1) * POINTS_PER_LEVEL.skill;
     const usedSk = Object.values(r.skills || {}).reduce((a, b) => a + (b || 0), 0);
-    const correctSk = Math.max(0, expectedSk - usedSk);
+    // ⭐ 主動技能升級也吃 SP，要一起算
+    const usedSkLv = Object.values(r.skillLevels || {}).reduce((a, b) => a + (b || 0), 0);
+    const correctSk = Math.max(0, expectedSk - usedSk - usedSkLv);
     if ((r.skillPoints || 0) < correctSk) {
       r.skillPoints = correctSk;
       corrected = true;
@@ -4852,9 +4849,12 @@
                 ? `<div style="font-size:12px; color:#16a34a; font-weight:700;">✓ 已滿級</div>`
                 : `<div style="font-size:12px; color:#dc2626;">技能點不足（你有 ${rpg.skillPoints || 0} SP）</div>`
           }
-          <div style="font-size:10px; color:#8b6f9b; margin-top:6px;">技能點與「技能樹」共用</div>
+          <div style="font-size:10px; color:#8b6f9b; margin-top:6px;">技能點與「屬性強化」共用同一個池</div>
         </div>
-        <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:8px;">關閉</button>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px;">
+          <button class="btn btn-secondary" onclick="showSkillsModal()">← 返回列表</button>
+          <button class="btn btn-secondary" onclick="hideModal()">關閉</button>
+        </div>
       </div>
     `;
     showModal(`${skill.icon} ${skill.name}`, html);
@@ -4880,33 +4880,65 @@
     showToast(`✨ ${skill.icon} ${skill.name} → Lv ${cur + 1}`);
     showSkillDetailModal(skillId); // refresh modal
     renderCharCard();
+    renderCharQuickMenu();
   }
   window.upgradeSkillLevel = upgradeSkillLevel;
 
-  // ⭐ 技能列表 modal — 顯示所有技能、點任一個看詳細
+  // ⭐ 技能 modal — 主動技能升級 + 屬性強化技能樹合併到同一個畫面
   function showSkillsModal() {
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
     const cls = CLASSES[rpg.class];
     if (!cls) return;
+    const points = rpg.skillPoints || 0;
+    // ─ 主動技能：點任一個進詳細看升級
+    const activeHtml = (cls.skills || []).map(s => {
+      const locked = (s.unlockLv || 1) > rpg.level;
+      const sLv = (rpg.skillLevels || {})[s.id] || 0;
+      const canUp = !locked && sLv < SKILL_MAX_LEVEL && points >= 1;
+      return `<div class="skill-row${locked ? ' locked' : ''}" onclick="hideModal(); showSkillDetailModal('${s.id}')">
+        <span>${locked ? '🔒' : '✓'} <b>${s.icon} ${s.name}</b>${sLv > 0 ? ` <span class="skill-row-lv">Lv ${sLv}/${SKILL_MAX_LEVEL}</span>` : ''}${locked ? ` <span style="font-size:10px;">(${s.unlockLv})</span>` : ''}${canUp ? ` <span style="font-size:9px; color:#7c3aed; font-weight:700;">⬆ 可升級</span>` : ''}</span>
+        <span style="opacity:0.85; font-size:10px; white-space:nowrap;">CD ${s.cooldown} · ${formatSkillCost(s)}</span>
+      </div>`;
+    }).join('');
+    // ─ 屬性強化技能樹：直接 inline + 按鈕
+    const treeHtml = (cls.skillTree || []).map(node => {
+      const lv = (rpg.skills || {})[node.id] || 0;
+      const maxed = lv >= node.maxLevel;
+      const canLearn = !maxed && points >= 1;
+      const pct = (lv / node.maxLevel) * 100;
+      const valStr = node.effect.endsWith('Pct') || node.effect === 'critChance' || node.effect === 'regen'
+        ? `${(lv * node.per * 100).toFixed(0)}%`
+        : `+${(lv * node.per).toFixed(0)}`;
+      return `
+        <div class="skill-node ${maxed ? 'maxed' : ''}">
+          <div class="sn-icon">${node.icon}</div>
+          <div>
+            <div class="sn-name">${escapeHtml(node.name)}</div>
+            <div class="sn-desc">${escapeHtml(node.desc)}　·　目前 ${valStr}</div>
+            <div class="sn-progress">
+              <span>Lv ${lv}/${node.maxLevel}</span>
+              <div class="sn-bar"><div class="sn-fill" style="width:${pct}%"></div></div>
+            </div>
+          </div>
+          <button class="sn-add-btn" onclick="learnSkill('${node.id}')" ${canLearn ? '' : 'disabled'} title="${maxed ? '已滿級' : (points < 1 ? '沒點數' : '加 1 級')}">+</button>
+        </div>
+      `;
+    }).join('');
     const html = `
       <div style="text-align:left;">
-        <div style="font-size:11px; color:#5b3d62; padding:6px 10px; background:#fef3c7; border-radius:8px; margin-bottom:8px; border:1px dashed #f59e0b;">
-          💡 點任一技能看詳細與升級。<br>
-          技能點 <b style="color:#7c3aed;">${rpg.skillPoints || 0} SP</b>（與「技能樹」共用同一個池）
+        <div style="font-size:12px; color:#5b3d62; padding:8px 10px; background:linear-gradient(135deg,#fef3c7,#fde68a); border-radius:8px; margin-bottom:10px; border:2px dashed #f59e0b;">
+          技能點 <b style="color:#7c3aed; font-size:14px;">${points} SP</b>　·　每升 1 等 +${POINTS_PER_LEVEL.skill} SP<br>
+          <span style="font-size:10px; color:#8b6f37;">主動技能升級 / 屬性強化共用同一個池</span>
         </div>
-        ${cls.skills.map(s => {
-          const locked = (s.unlockLv || 1) > rpg.level;
-          const sLv = (rpg.skillLevels || {})[s.id] || 0;
-          return `<div class="skill-row${locked ? ' locked' : ''}" onclick="hideModal(); showSkillDetailModal('${s.id}')">
-            <span>${locked ? '🔒' : '✓'} <b>${s.icon} ${s.name}</b>${sLv > 0 ? ` <span class="skill-row-lv">Lv ${sLv}</span>` : ''}${locked ? ` <span style="font-size:10px;">(${s.unlockLv})</span>` : ''}</span>
-            <span style="opacity:0.85; font-size:10px; white-space:nowrap;">CD ${s.cooldown} · ${formatSkillCost(s)}</span>
-          </div>`;
-        }).join('')}
-        <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:10px;">關閉</button>
+        <div style="font-size:11px; color:#1e3a8a; font-weight:700; margin:6px 0; padding:4px 8px; background:#dbeafe; border-radius:8px;">⚡ 主動技能（點任一個看詳細與升級）</div>
+        ${activeHtml || '<div style="font-size:11px; color:#8b6f9b; text-align:center; padding:8px;">尚無主動技能</div>'}
+        <div style="font-size:11px; color:#8b6f37; font-weight:700; margin:12px 0 6px; padding:4px 8px; background:#fef3c7; border-radius:8px;">💪 屬性強化（直接 + 加 1 級）</div>
+        ${treeHtml || '<div style="font-size:11px; color:#8b6f9b; text-align:center; padding:8px;">尚無屬性強化</div>'}
+        <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:12px;">關閉</button>
       </div>
     `;
-    showModal('⚡ 技能列表', html);
+    showModal('⚡ 技能', html);
   }
   window.showSkillsModal = showSkillsModal;
 
@@ -5073,66 +5105,8 @@
   }
   window.resetActionPattern = resetActionPattern;
 
-  function renderSkillTree() {
-    const me = getMe(); if (!me) return;
-    const r = getRpg(me);
-    const cls = CLASSES[r.class];
-    if (!cls || !cls.skillTree) {
-      document.getElementById('skillCardHeader').innerHTML = `<span>📚 技能</span>`;
-      document.getElementById('skillTreeBody').innerHTML = '';
-      return;
-    }
-    const points = r.skillPoints || 0;
-    document.getElementById('skillCardHeader').innerHTML = `
-      <span>📚 ${escapeHtml(cls.name)}技能樹</span>
-      <span class="skill-card-points">⚡ ${points} 點可用</span>
-    `;
-    // 主動技能（依等級解鎖、戰鬥自動施放，無法用點數提升）
-    const activeHtml = (cls.skills || []).map(s => {
-      const locked = (s.unlockLv || 1) > r.level;
-      return `
-        <div class="skill-node ${locked ? '' : 'maxed'}" style="${locked ? 'opacity:0.55;' : ''}">
-          <div class="sn-icon">${s.icon}</div>
-          <div>
-            <div class="sn-name">${escapeHtml(s.name)} ${locked ? `<span style="color:#9ca3af; font-size:10px;">🔒 Lv ${s.unlockLv} 解鎖</span>` : `<span style="color:#16a34a; font-size:10px;">✓ 已解鎖</span>`}</div>
-            <div class="sn-desc">${formatSkillDesc(s)}　·　CD ${s.cooldown} 回合 / ${s.mpCost} MP</div>
-          </div>
-          <div style="font-size:9px; color:#8b6f9b; text-align:center;">主動<br>自動</div>
-        </div>
-      `;
-    }).join('');
-
-    const html = cls.skillTree.map(node => {
-      const lv = (r.skills || {})[node.id] || 0;
-      const maxed = lv >= node.maxLevel;
-      const canLearn = !maxed && points >= 1;
-      const pct = (lv / node.maxLevel) * 100;
-      const valStr = node.effect.endsWith('Pct') || node.effect === 'critChance' || node.effect === 'regen'
-        ? `${(lv * node.per * 100).toFixed(0)}%`
-        : `+${(lv * node.per).toFixed(0)}`;
-      return `
-        <div class="skill-node ${maxed ? 'maxed' : ''}">
-          <div class="sn-icon">${node.icon}</div>
-          <div>
-            <div class="sn-name">${escapeHtml(node.name)}</div>
-            <div class="sn-desc">${escapeHtml(node.desc)}　·　目前 ${valStr}</div>
-            <div class="sn-progress">
-              <span>Lv ${lv}/${node.maxLevel}</span>
-              <div class="sn-bar"><div class="sn-fill" style="width:${pct}%"></div></div>
-            </div>
-          </div>
-          <button class="sn-add-btn" onclick="learnSkill('${node.id}')" ${canLearn ? '' : 'disabled'} title="${maxed ? '已滿級' : (points < 1 ? '沒點數' : '加 1 級')}">+</button>
-        </div>
-      `;
-    }).join('');
-    document.getElementById('skillTreeBody').innerHTML = `
-      <div style="font-size:11px; color:#1e3a8a; font-weight:700; margin:0 0 6px; padding:4px 8px; background:#dbeafe; border-radius:8px;">⚡ 主動技能（戰鬥自動施放，依等級解鎖）</div>
-      ${activeHtml}
-      <div style="font-size:11px; color:#8b6f37; font-weight:700; margin:12px 0 6px; padding:4px 8px; background:#fef3c7; border-radius:8px;">💪 屬性強化（用技能點 +）</div>
-      ${html}
-      <div style="font-size:11px; color:#8b6f9b; text-align:center; margin-top:6px;">每升 1 等獲得 +2 技能點　·　點 + 強化屬性</div>
-    `;
-  }
+  // 技能樹現在只在 modal 裡渲染，舊頁面卡片已移除 → 這裡保留空殼以免有舊 call site
+  function renderSkillTree() { /* moved to showSkillsModal */ }
 
   function formatSkillDesc(s) {
     if (s.type === 'heal') {
@@ -5177,7 +5151,12 @@
     if (r.mp > s.maxMp) r.mp = s.maxMp;
     saveData();
     renderCharCard();
-    renderSkillTree();
+    renderCharQuickMenu();
+    // 如果技能 modal 開著就重整；否則 no-op
+    const modalEl = document.getElementById('genericModal');
+    if (modalEl && !modalEl.classList.contains('hidden')) {
+      showSkillsModal();
+    }
     showToast(`✨ ${node.name} → Lv ${cur + 1}`);
   }
   window.learnSkill = learnSkill;
@@ -7214,9 +7193,10 @@
     if (!r.class) { showToast('先選職業'); return; }
     const lv = Math.max(1, Math.min(50, parseInt(lvStr) || 1));
     const usedSk = Object.values(r.skills || {}).reduce((a, b) => a + (b || 0), 0);
+    const usedSkLv = Object.values(r.skillLevels || {}).reduce((a, b) => a + (b || 0), 0);
     const usedAb = Object.values(r.abilities || {}).reduce((a, b) => a + (b || 0), 0);
     r.level = lv; r.xp = 0;
-    r.skillPoints = Math.max(0, (lv - 1) * POINTS_PER_LEVEL.skill - usedSk);
+    r.skillPoints = Math.max(0, (lv - 1) * POINTS_PER_LEVEL.skill - usedSk - usedSkLv);
     r.abilityPoints = Math.max(0, 5 + (lv - 1) * POINTS_PER_LEVEL.ability - usedAb);
     const s = computeStats(me);
     r.hp = s.maxHp; r.mp = s.maxMp;
@@ -7260,17 +7240,19 @@
     if (!confirm('退回所有技能點 + 能力點？（職業 / 等級 / 裝備不變）')) return;
     const r = getRpg(me);
     const usedSk = Object.values(r.skills || {}).reduce((a, b) => a + (b || 0), 0);
+    const usedSkLv = Object.values(r.skillLevels || {}).reduce((a, b) => a + (b || 0), 0);
     const usedAb = Object.values(r.abilities || {}).reduce((a, b) => a + (b || 0), 0);
-    r.skillPoints = (r.skillPoints || 0) + usedSk;
+    r.skillPoints = (r.skillPoints || 0) + usedSk + usedSkLv;
     r.abilityPoints = (r.abilityPoints || 0) + usedAb;
     r.skills = {};
+    r.skillLevels = {};
     r.abilities = { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0 };
     // HP/MP 上限可能因屬性歸零而變小，擋一下
     const s = computeStats(me);
     if (r.hp > s.maxHp) r.hp = s.maxHp;
     if (r.mp > s.maxMp) r.mp = s.maxMp;
     saveData(); render(); showDebugModal();
-    showToast(`🔄 退回 ${usedSk} 技能點 + ${usedAb} 能力點`);
+    showToast(`🔄 退回 ${usedSk + usedSkLv} 技能點 + ${usedAb} 能力點`);
   }
   window.adminResetPoints = adminResetPoints;
 
