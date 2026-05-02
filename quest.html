@@ -675,6 +675,68 @@
   .boss-card .btn { margin-top: 0; }
   .boss-card .btn:disabled { background: #4b5563; box-shadow: none; }
 
+  /* 排行榜 */
+  .lb-section { margin-bottom: 14px; }
+  .lb-section:last-child { margin-bottom: 0; }
+  .lb-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #5b3d62;
+    margin-bottom: 6px;
+    padding: 4px 8px;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border-radius: 8px;
+    border-left: 3px solid #f59e0b;
+  }
+  .lb-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-bottom: 2px;
+  }
+  .lb-row.lb-me {
+    background: #fff8e6;
+    border: 1px dashed #f59e0b;
+  }
+  .lb-rank { width: 26px; text-align: center; font-size: 16px; }
+  .lb-rank-num {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+    border-radius: 50%;
+    background: #e9d5e3;
+    color: #5b3d62;
+    font-weight: 700;
+    font-size: 11px;
+  }
+  .lb-avatar { font-size: 18px; }
+  .lb-name {
+    flex: 1;
+    font-weight: 600;
+    color: #5b3d62;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .lb-note {
+    margin-left: 6px;
+    font-size: 10px;
+    color: #8b6f9b;
+    font-weight: 400;
+  }
+  .lb-val { font-weight: 700; color: #d97706; font-size: 13px; }
+  .lb-empty {
+    padding: 8px;
+    color: #8b6f9b;
+    font-size: 12px;
+    text-align: center;
+    font-style: italic;
+  }
+
   .boss-killed-banner {
     position: fixed;
     top: 24px;
@@ -1027,6 +1089,11 @@
     <div class="card">
       <h2><span>📊 戰績</span></h2>
       <div id="rpgStats" style="font-size:13px; line-height:1.8;"></div>
+    </div>
+
+    <div class="card">
+      <h2><span>🏆 排行榜</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（所有玩家）</span></h2>
+      <div id="leaderboardBody"></div>
     </div>
   </div>
 </div>
@@ -1396,6 +1463,23 @@
     { id: 'p_cloth',  name: '布披風',   icon: '🧣', slot: 'cape', hp: 15, def: 1, lv: 2 },
     { id: 'p_leather',name: '皮披風',   icon: '🦺', slot: 'cape', hp: 35, def: 3, lv: 8 },
     { id: 'p_dragon', name: '龍鱗披',   icon: '🐲', slot: 'cape', hp: 80, def: 8, lv: 16 },
+    // 綠茶指南書（slot: guide）— 不掉落、不販售，遇綠茶鵝達到次數時自動發放
+    { id: 'gt_10',  name: '綠茶見習指南',   icon: '💚', slot: 'guide', atk: 3,  spd: 2,                   lv: 1, gtReq: 10  },
+    { id: 'gt_20',  name: '綠茶實戰手冊',   icon: '📗', slot: 'guide', atk: 6,  spd: 4,  hp: 15,          lv: 1, gtReq: 20  },
+    { id: 'gt_30',  name: '綠茶心法錄',     icon: '🍃', slot: 'guide', atk: 10, spd: 6,  hp: 30,          lv: 1, gtReq: 30  },
+    { id: 'gt_50',  name: '綠茶天命書',     icon: '📖', slot: 'guide', atk: 15, spd: 9,  hp: 50, def: 5,  lv: 1, gtReq: 50  },
+    { id: 'gt_75',  name: '綠茶禁術全集',   icon: '🌿', slot: 'guide', atk: 22, spd: 12, hp: 80, def: 8,  lv: 1, gtReq: 75  },
+    { id: 'gt_100', name: '綠茶終極奧義書', icon: '💀', slot: 'guide', atk: 30, spd: 16, hp: 120, def: 12, lv: 1, gtReq: 100 },
+  ];
+
+  // 綠茶指南書門檻表（給後面 grant 邏輯用）
+  const GREENTEA_GUIDES = [
+    { count: 10,  itemId: 'gt_10' },
+    { count: 20,  itemId: 'gt_20' },
+    { count: 30,  itemId: 'gt_30' },
+    { count: 50,  itemId: 'gt_50' },
+    { count: 75,  itemId: 'gt_75' },
+    { count: 100, itemId: 'gt_100' },
   ];
 
   const STAMINA_MAX = 200;
@@ -1750,7 +1834,8 @@
     const boosted = opts === true || (opts && opts.boosted);
     const slotBias = opts && opts.slotBias;
     // 過濾：上限 playerLv+2；下限取靠近的（避免高等級玩家拿不到任何掉落）
-    let eligible = ITEMS.filter(i => (i.lv || 1) <= playerLv + 2 && (i.lv || 1) >= Math.max(1, playerLv - 5));
+    // 排除綠茶指南書（slot: guide）— 那是綠茶遭遇次數的里程碑獎勵，不能掉落
+    let eligible = ITEMS.filter(i => i.slot !== 'guide' && (i.lv || 1) <= playerLv + 2 && (i.lv || 1) >= Math.max(1, playerLv - 5));
     if (eligible.length === 0) eligible = ITEMS.filter(i => (i.lv || 1) <= playerLv + 2);
     if (eligible.length === 0) eligible = ITEMS.slice(); // 終極 fallback：任何物品
     if (eligible.length === 0) return null;
@@ -1817,7 +1902,7 @@
         xp: 0,
         hp: null,
         mp: null,
-        equipment: { weapon: null, armor: null, accessory: null, helmet: null, gloves: null, boots: null, cape: null, wings: null, pet: null },
+        equipment: { weapon: null, armor: null, accessory: null, helmet: null, gloves: null, boots: null, cape: null, wings: null, pet: null, guide: null },
         currentZone: 'forest',
         currentFloor: 1,
         zoneProgress: {},
@@ -1842,6 +1927,20 @@
     if (!player.rpg.currentZone) player.rpg.currentZone = 'forest';
     if (!player.rpg.currentFloor) player.rpg.currentFloor = 1;
     if (!player.rpg.zoneProgress) player.rpg.zoneProgress = {};
+    if (!player.rpg.equipment.guide) player.rpg.equipment.guide = null;
+    if (!Array.isArray(player.rpg.greenTeaGuidesGranted)) player.rpg.greenTeaGuidesGranted = [];
+    // 補發：以前遇過綠茶但還沒拿到對應指南書的，現在補回去
+    if ((player.rpg.metGreenTea || 0) > 0) {
+      const before = player.rpg.greenTeaGuidesGranted.length;
+      player.rpg.inventory = player.rpg.inventory || [];
+      for (const g of (typeof GREENTEA_GUIDES !== 'undefined' ? GREENTEA_GUIDES : [])) {
+        if ((player.rpg.metGreenTea || 0) >= g.count && !player.rpg.greenTeaGuidesGranted.includes(g.itemId)) {
+          player.rpg.inventory.push(g.itemId);
+          player.rpg.greenTeaGuidesGranted.push(g.itemId);
+        }
+      }
+      // 補發過就不在這裡跳 toast，避免每次 getRpg 都跳
+    }
     // 封測補償 v1：每位玩家補滿一次體力 + 跳公告（只對「我自己」觸發，不污染別人的 in-memory 狀態）
     if (!player.rpg.betaCompV1 && typeof getMeId === 'function' && player.id === getMeId()) {
       player.rpg.stamina = STAMINA_MAX;
@@ -2020,7 +2119,7 @@
       spd:   Math.round(cls.spd + (lv - 1) * cls.spdPer) + b.spd + ab.spd,
     };
     // 裝備加成（7 個槽）
-    for (const slot of ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape', 'wings', 'pet']) {
+    for (const slot of ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape', 'wings', 'pet', 'guide']) {
       const itemId = rpg.equipment?.[slot];
       if (itemId) {
         const item = resolveItem(itemId);
@@ -2356,6 +2455,7 @@
     renderShop();
     renderWorldBoss();
     renderRpgStats();
+    renderLeaderboard();
     renderZoneSelector();
     updateStaminaUI();
     checkBossKillBanners();
@@ -2907,8 +3007,8 @@
   function renderEquipment() {
     const me = getMe();
     const rpg = getRpg(me);
-    const slots = ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape', 'wings', 'pet'];
-    const slotLabels = { weapon: '武器', armor: '防具', accessory: '飾品', helmet: '頭盔', gloves: '手套', boots: '鞋子', cape: '披風', wings: '翅膀', pet: '寵物' };
+    const slots = ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape', 'wings', 'pet', 'guide'];
+    const slotLabels = { weapon: '武器', armor: '防具', accessory: '飾品', helmet: '頭盔', gloves: '手套', boots: '鞋子', cape: '披風', wings: '翅膀', pet: '寵物', guide: '綠茶指南書' };
     document.getElementById('equipRow').innerHTML = slots.map(s => {
       const id = rpg.equipment?.[s];
       const item = id ? resolveItem(id) : null;
@@ -3022,6 +3122,58 @@
     `;
   }
 
+  function renderLeaderboard() {
+    const host = document.getElementById('leaderboardBody');
+    if (!host) return;
+    const meId = getMeId();
+    // 只列有開冒險島角色的玩家
+    const adventurers = (players || []).filter(p => p && p.rpg && p.rpg.class);
+    const buildSection = (title, icon, getter, suffix, getNote) => {
+      const rows = adventurers
+        .map(p => ({ p, val: getter(p) }))
+        .filter(x => Number.isFinite(x.val))
+        .sort((a, b) => b.val - a.val)
+        .slice(0, 5);
+      if (rows.length === 0) {
+        return `
+          <div class="lb-section">
+            <div class="lb-title">${icon} ${title}</div>
+            <div class="lb-empty">尚無資料</div>
+          </div>
+        `;
+      }
+      const items = rows.map((row, i) => {
+        const isMe = row.p.id === meId;
+        const medals = ['🥇', '🥈', '🥉'];
+        const rank = medals[i] || `<span class="lb-rank-num">${i + 1}</span>`;
+        const note = getNote ? getNote(row.p) : '';
+        return `
+          <div class="lb-row ${isMe ? 'lb-me' : ''}">
+            <span class="lb-rank">${rank}</span>
+            <span class="lb-avatar">${row.p.avatar || '🎴'}</span>
+            <span class="lb-name">${escapeHtml(row.p.name || '?')}${note ? `<span class="lb-note">${note}</span>` : ''}</span>
+            <span class="lb-val">${row.val.toLocaleString()}${suffix}</span>
+          </div>
+        `;
+      }).join('');
+      return `
+        <div class="lb-section">
+          <div class="lb-title">${icon} ${title}</div>
+          ${items}
+        </div>
+      `;
+    };
+
+    host.innerHTML = `
+      ${buildSection('等級', '⭐', p => p.rpg.level || 1, '', p => CLASSES[p.rpg.class]?.icon || '')}
+      ${buildSection('鵝鵝幣', '🪙', p => getCoins(p.id), ' 幣')}
+      ${buildSection('綠茶遭遇', '🍵', p => p.rpg.metGreenTea || 0, ' 次', p => {
+        const owned = (p.rpg.greenTeaGuidesGranted || []).length;
+        return owned > 0 ? `<span style="color:#16a34a;">${owned}/6 指南書</span>` : '';
+      })}
+    `;
+  }
+
   function renderZoneSelector() {
     const me = getMe();
     if (!me) return;
@@ -3106,7 +3258,7 @@
   const SLOT_LABEL = {
     weapon: '武器', armor: '盔甲', accessory: '飾品',
     helmet: '頭盔', gloves: '手套', boots: '鞋子',
-    cape: '披風', wings: '翅膀', pet: '寵物',
+    cape: '披風', wings: '翅膀', pet: '寵物', guide: '綠茶指南書',
   };
 
   function updateStaminaUI() {
@@ -3266,6 +3418,31 @@
       `;
     }).join('');
     document.getElementById('worldBossBody').innerHTML = html;
+  }
+
+  // 綠茶指南書里程碑發放：遇綠茶鵝 10/20/30/50/75/100 次自動拿到對應的指南書
+  function grantGreenTeaGuides(player) {
+    if (!player || !player.rpg) return;
+    const rpg = player.rpg;
+    rpg.greenTeaGuidesGranted = rpg.greenTeaGuidesGranted || [];
+    const cnt = rpg.metGreenTea || 0;
+    rpg.inventory = rpg.inventory || [];
+    let granted = false;
+    for (const g of GREENTEA_GUIDES) {
+      if (cnt >= g.count && !rpg.greenTeaGuidesGranted.includes(g.itemId)) {
+        const def = ITEMS.find(i => i.id === g.itemId);
+        if (def) {
+          rpg.inventory.push(def.id);
+          rpg.greenTeaGuidesGranted.push(g.itemId);
+          granted = true;
+          // 跳通知
+          if (player.id === getMeId()) {
+            showToast(`📚 綠茶指南書達成！第 ${g.count} 次相遇 → 獲得 ${def.icon} ${def.name}`);
+          }
+        }
+      }
+    }
+    return granted;
   }
 
   // 玩家自己領取自己的待領獎勵（從 worldBoss[*].pendingRewards 取出 pid 等於自己的條目）
@@ -3685,7 +3862,11 @@
       player.coinsSpent = (player.coinsSpent || 0) + result.coinsStolen;
     }
     if (result.critCount) rpg.critCount = (rpg.critCount || 0) + result.critCount;
-    if (result.metGreenTea) rpg.metGreenTea = (rpg.metGreenTea || 0) + result.metGreenTea;
+    if (result.metGreenTea) {
+      rpg.metGreenTea = (rpg.metGreenTea || 0) + result.metGreenTea;
+      // 綠茶指南書里程碑：遇到 10/20/30/50/75/100 次自動獲得
+      grantGreenTeaGuides(player);
+    }
     if (result.won) {
       if (!rpg.kills) rpg.kills = {};
       rpg.kills[monster.id] = (rpg.kills[monster.id] || 0) + 1;
