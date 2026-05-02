@@ -834,9 +834,9 @@
       hpPer: 14, atkPer: 2.2, defPer: 1.2, spdPer: 0.4,
       attackVerb: '揮砍',
       skills: [
-        { name: '怒之炎', icon: '☄️', cooldown: 7, mpCost: 35, type: 'damage', mult: 2.5 },
-        { name: '重擊',   icon: '⚡', cooldown: 4, mpCost: 18, type: 'damage', mult: 1.3, alwaysCrit: true },
-        { name: '狂怒斬', icon: '🔥', cooldown: 3, mpCost: 14, type: 'damage', mult: 1.8 },
+        { name: '怒之炎', icon: '☄️', unlockLv: 12, cooldown: 7, mpCost: 35, type: 'damage', mult: 2.5 },
+        { name: '重擊',   icon: '⚡', unlockLv: 5,  cooldown: 4, mpCost: 18, type: 'damage', mult: 1.3, alwaysCrit: true },
+        { name: '狂怒斬', icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 14, type: 'damage', mult: 1.8 },
       ],
       skillTree: [
         { id: 'w_rage', name: '狂怒斬精通', icon: '🔥', desc: '+10% 主動技能傷害', maxLevel: 8, effect: 'skillDmgPct', per: 0.1 },
@@ -856,9 +856,9 @@
       hpPer: 9, atkPer: 1.5, defPer: 0.6, spdPer: 1.2,
       attackVerb: '射擊',
       skills: [
-        { name: '神之矢',   icon: '🌟', cooldown: 7, mpCost: 32, type: 'damage', mult: 2.8, alwaysCrit: true },
-        { name: '多重射擊', icon: '🏹', cooldown: 4, mpCost: 16, type: 'damage', mult: 1.8 },
-        { name: '精準射擊', icon: '🎯', cooldown: 3, mpCost: 12, type: 'damage', mult: 1.4, alwaysCrit: true },
+        { name: '神之矢',   icon: '🌟', unlockLv: 12, cooldown: 7, mpCost: 32, type: 'damage', mult: 2.8, alwaysCrit: true },
+        { name: '多重射擊', icon: '🏹', unlockLv: 5,  cooldown: 4, mpCost: 16, type: 'damage', mult: 1.8 },
+        { name: '精準射擊', icon: '🎯', unlockLv: 1,  cooldown: 3, mpCost: 12, type: 'damage', mult: 1.4, alwaysCrit: true },
       ],
       skillTree: [
         { id: 'a_snipe', name: '精準射擊精通', icon: '🎯', desc: '+5% 主動技能傷害', maxLevel: 8, effect: 'skillDmgPct', per: 0.05 },
@@ -879,9 +879,9 @@
       attackVerb: '魔法',
       critBonus: 0.18,
       skills: [
-        { name: '隕石術', icon: '☄️', cooldown: 7, mpCost: 50, type: 'damage', flat: 120, perLv: 5, ignoreDef: true },
-        { name: '冰錐術', icon: '❄️', cooldown: 4, mpCost: 20, type: 'damage', mult: 1.6, alwaysCrit: true },
-        { name: '火球術', icon: '🔥', cooldown: 3, mpCost: 25, type: 'damage', flat: 50, perLv: 3, ignoreDef: true },
+        { name: '隕石術', icon: '☄️', unlockLv: 12, cooldown: 7, mpCost: 50, type: 'damage', flat: 120, perLv: 5, ignoreDef: true },
+        { name: '冰錐術', icon: '❄️', unlockLv: 5,  cooldown: 4, mpCost: 20, type: 'damage', mult: 1.6, alwaysCrit: true },
+        { name: '火球術', icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 25, type: 'damage', flat: 50, perLv: 3, ignoreDef: true },
       ],
       skillTree: [
         { id: 'm_fire', name: '火球術精通', icon: '🔥', desc: '主動技能 +5 固定傷害', maxLevel: 8, effect: 'skillFlat',  per: 5 },
@@ -903,9 +903,9 @@
       attackVerb: '聖光斬',
       regenPer: 0.05,
       skills: [
-        { name: '審判',     icon: '⚖️', cooldown: 7, mpCost: 38, type: 'damage', mult: 2.5, alwaysCrit: true },
-        { name: '聖光斬',   icon: '✝️', cooldown: 4, mpCost: 22, type: 'damage', mult: 1.6, healCaster: 0.05 },
-        { name: '神聖治癒', icon: '✨', cooldown: 5, mpCost: 30, type: 'heal', healPct: 0.3 },
+        { name: '審判',     icon: '⚖️', unlockLv: 12, cooldown: 7, mpCost: 38, type: 'damage', mult: 2.5, alwaysCrit: true },
+        { name: '聖光斬',   icon: '✝️', unlockLv: 5,  cooldown: 4, mpCost: 22, type: 'damage', mult: 1.6, healCaster: 0.05 },
+        { name: '神聖治癒', icon: '✨', unlockLv: 1,  cooldown: 5, mpCost: 30, type: 'heal', healPct: 0.3 },
       ],
       skillTree: [
         { id: 'p_heal',  name: '神聖治癒精通', icon: '✨', desc: '+3% 治癒量',        maxLevel: 8, effect: 'skillHealPct', per: 0.03 },
@@ -1373,6 +1373,7 @@
         let useSkillIdx = -1;
         for (let i = 0; i < skills.length; i++) {
           const s = skills[i];
+          if ((s.unlockLv || 1) > (player.rpg.level || 1)) continue; // 等級不夠未解鎖
           if (playerActions < nextActionForSkill[i]) continue;
           if (pMp < s.mpCost) continue;
           if (s.type === 'heal' && pHp >= stats.maxHp * 0.7) continue; // 治癒只在 HP < 70% 才放
@@ -1515,6 +1516,21 @@
       <span>📚 ${escapeHtml(cls.name)}技能樹</span>
       <span class="skill-card-points">⚡ ${points} 點可用</span>
     `;
+    // 主動技能（依等級解鎖、戰鬥自動施放，無法用點數提升）
+    const activeHtml = (cls.skills || []).map(s => {
+      const locked = (s.unlockLv || 1) > r.level;
+      return `
+        <div class="skill-node ${locked ? '' : 'maxed'}" style="${locked ? 'opacity:0.55;' : ''}">
+          <div class="sn-icon">${s.icon}</div>
+          <div>
+            <div class="sn-name">${escapeHtml(s.name)} ${locked ? `<span style="color:#9ca3af; font-size:10px;">🔒 Lv ${s.unlockLv} 解鎖</span>` : `<span style="color:#16a34a; font-size:10px;">✓ 已解鎖</span>`}</div>
+            <div class="sn-desc">${formatSkillDesc(s)}　·　CD ${s.cooldown} 回合 / ${s.mpCost} MP</div>
+          </div>
+          <div style="font-size:9px; color:#8b6f9b; text-align:center;">主動<br>自動</div>
+        </div>
+      `;
+    }).join('');
+
     const html = cls.skillTree.map(node => {
       const lv = (r.skills || {})[node.id] || 0;
       const maxed = lv >= node.maxLevel;
@@ -1538,8 +1554,23 @@
         </div>
       `;
     }).join('');
-    document.getElementById('skillTreeBody').innerHTML = html
-      + `<div style="font-size:11px; color:#8b6f9b; text-align:center; margin-top:6px;">每升 1 等獲得 +2 技能點　·　點選 + 強化技能</div>`;
+    document.getElementById('skillTreeBody').innerHTML = `
+      <div style="font-size:11px; color:#1e3a8a; font-weight:700; margin:0 0 6px; padding:4px 8px; background:#dbeafe; border-radius:8px;">⚡ 主動技能（戰鬥自動施放，依等級解鎖）</div>
+      ${activeHtml}
+      <div style="font-size:11px; color:#8b6f37; font-weight:700; margin:12px 0 6px; padding:4px 8px; background:#fef3c7; border-radius:8px;">💪 屬性強化（用技能點 +）</div>
+      ${html}
+      <div style="font-size:11px; color:#8b6f9b; text-align:center; margin-top:6px;">每升 1 等獲得 +2 技能點　·　點 + 強化屬性</div>
+    `;
+  }
+
+  function formatSkillDesc(s) {
+    if (s.type === 'heal') return `回 ${Math.round(s.healPct * 100)}% maxHP`;
+    if (s.flat != null) return `固定 ${s.flat}+Lv×${s.perLv} 傷害${s.ignoreDef ? '（無視防）' : ''}`;
+    let parts = [];
+    if (s.mult) parts.push(`${s.mult}× ATK`);
+    if (s.alwaysCrit) parts.push('必中暴擊');
+    if (s.healCaster) parts.push(`回 ${Math.round(s.healCaster * 100)}% maxHP`);
+    return parts.join(' + ');
   }
 
   function learnSkill(nodeId) {
@@ -1806,11 +1837,14 @@
           <div class="stat-cell"><div class="sc-label">SPD</div><div class="sc-value">${stats.spd}</div></div>
         </div>
         ${(cls.skills && cls.skills.length) ? `<div style="margin-top:10px; padding:8px 10px; background:linear-gradient(135deg,#dbeafe,#bfdbfe); border:2px dashed #60a5fa; border-radius:10px; font-size:11px; color:#1e3a8a;">
-          <div style="font-weight:700; margin-bottom:4px;">⚡ 主動技能（依強→弱優先施放）</div>
-          ${cls.skills.map(s => `<div style="display:flex; justify-content:space-between; padding:2px 0;">
-            <span><b>${s.icon} ${s.name}</b></span>
-            <span style="opacity:0.85;">CD ${s.cooldown} / ${s.mpCost} MP</span>
-          </div>`).join('')}
+          <div style="font-weight:700; margin-bottom:4px;">⚡ 主動技能（戰鬥自動施放，強→弱優先）</div>
+          ${cls.skills.map(s => {
+            const locked = (s.unlockLv || 1) > rpg.level;
+            return `<div style="display:flex; justify-content:space-between; padding:2px 0; ${locked ? 'opacity:0.45;' : ''}">
+              <span>${locked ? '🔒' : '✓'} <b>${s.icon} ${s.name}</b>${locked ? ` <span style="font-size:10px;">(Lv ${s.unlockLv} 解鎖)</span>` : ''}</span>
+              <span style="opacity:0.85;">CD ${s.cooldown} / ${s.mpCost} MP</span>
+            </div>`;
+          }).join('')}
         </div>` : ''}
       </div>
     `;
