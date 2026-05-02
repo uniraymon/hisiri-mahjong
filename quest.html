@@ -174,54 +174,52 @@
     padding: 4px 8px;
     backdrop-filter: blur(4px);
   }
-  /* 角色圖選單（寶物庫等） — 移到角色卡下方、不擋圖 */
-  .cp-side-menu {
-    position: absolute;
-    bottom: 8px;
-    right: 8px;
+  /* 角色卡左側按鈕列（規則 / 寶物庫 / 未來擴充） */
+  .char-with-menu {
     display: flex;
-    flex-direction: row;
-    gap: 6px;
-    z-index: 8;
-  }
-  .cp-side-btn {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 4px;
-    background: linear-gradient(135deg, #fef3c7, #fde047);
-    border: 2px solid #f59e0b;
-    border-radius: 10px;
-    padding: 4px 8px;
-    cursor: pointer;
-    box-shadow: 0 2px 0 #d97706;
-    font-family: inherit;
-    transition: transform 0.1s;
-  }
-  .cp-side-btn:hover { transform: translateY(-1px); background: linear-gradient(135deg, #fffaf0, #fbbf24); }
-  .cp-side-btn .cpsb-icon { font-size: 16px; line-height: 1; }
-  .cp-side-btn .cpsb-label { font-size: 10px; font-weight: 700; color: #92400e; }
-  .cp-side-btn .cpsb-badge { font-size: 9px; color: #78350f; opacity: 0.8; background: rgba(255,255,255,0.5); padding: 1px 4px; border-radius: 4px; }
-
-  /* 角色卡 + 行動規則 並排佈局 */
-  .char-rules-row {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
+    gap: 10px;
     align-items: stretch;
     margin-bottom: 12px;
   }
-  .char-rules-row > .card {
-    flex: 1 1 320px;
+  .char-with-menu > .char-card {
+    flex: 1;
     margin-bottom: 0;
   }
-  .char-rules-card {
+  .char-quick-menu {
     display: flex;
     flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+    width: 70px;
+    padding-top: 4px;
   }
-  .char-rules-card #actionPatternBody {
-    flex: 1;
-    overflow-y: auto;
+  .cqm-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    background: linear-gradient(135deg, #fef3c7, #fde047);
+    border: 2px solid #f59e0b;
+    border-radius: 12px;
+    padding: 8px 4px;
+    cursor: pointer;
+    box-shadow: 0 3px 0 #d97706;
+    font-family: inherit;
+    transition: transform 0.1s;
+    min-height: 56px;
+  }
+  .cqm-btn:hover { transform: translateY(-1px); background: linear-gradient(135deg, #fffaf0, #fbbf24); }
+  .cqm-btn:active { transform: translateY(1px); box-shadow: 0 1px 0 #d97706; }
+  .cqm-btn .cqm-icon { font-size: 22px; line-height: 1; }
+  .cqm-btn .cqm-label { font-size: 11px; font-weight: 700; color: #92400e; margin-top: 2px; }
+  .cqm-btn .cqm-badge {
+    font-size: 9px;
+    color: #78350f;
+    background: rgba(255,255,255,0.6);
+    padding: 1px 5px;
+    border-radius: 6px;
+    margin-top: 2px;
   }
   /* 寶物庫卡 */
   .tv-grid {
@@ -1412,12 +1410,9 @@
 
   <!-- Stage C: 主畫面 -->
   <div id="stageGame" class="hidden">
-    <div class="char-rules-row">
+    <div class="char-with-menu">
+      <div class="char-quick-menu" id="charQuickMenu"></div>
       <div class="card char-card" id="charCard"></div>
-      <div class="card char-rules-card">
-        <h2><span>📋 行動規則</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（從上到下檢查、第一個成立的觸發）</span></h2>
-        <div id="actionPatternBody"></div>
-      </div>
     </div>
 
     <div class="card">
@@ -4117,7 +4112,7 @@
     renderRpgStats();
     renderLeaderboard();
     renderZoneSelector();
-    renderActionPattern();
+    renderCharQuickMenu();
     renderTrial();
     maybeFlashHelp();
     refreshBugBadge();
@@ -4570,6 +4565,46 @@
       document.getElementById('helpBtn')?.classList.add('pulse');
     }
   }
+
+  // ⭐ 角色卡左側按鈕列（規則 / 寶物庫，未來擴充）
+  function renderCharQuickMenu() {
+    const host = document.getElementById('charQuickMenu');
+    if (!host) return;
+    const me = getMe();
+    if (!me) { host.innerHTML = ''; return; }
+    const rpg = getRpg(me);
+    if (!rpg.class) { host.innerHTML = ''; return; }
+    const tCount = (rpg.treasures || []).length;
+    const tMax = Object.keys(TREASURES).length;
+    const ruleCount = (rpg.actionPattern || []).length;
+    host.innerHTML = `
+      <button class="cqm-btn" onclick="showActionPatternModal()" title="行動規則">
+        <span class="cqm-icon">📋</span>
+        <span class="cqm-label">規則</span>
+        <span class="cqm-badge">${ruleCount}</span>
+      </button>
+      <button class="cqm-btn" onclick="showTreasureVault()" title="寶物庫">
+        <span class="cqm-icon">🎁</span>
+        <span class="cqm-label">寶物</span>
+        <span class="cqm-badge">${tCount}/${tMax}</span>
+      </button>
+    `;
+  }
+  window.renderCharQuickMenu = renderCharQuickMenu;
+
+  // 用 modal 開行動規則編輯器（規則改完即時存）
+  function showActionPatternModal() {
+    const me = getMe();
+    if (!me) return;
+    const html = `
+      <div id="actionPatternBody"></div>
+      <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:10px;">關閉</button>
+    `;
+    showModal('📋 行動規則（HOF Gambit）', html);
+    // 模態打開後再 render（因為 #actionPatternBody 要先存在）
+    renderActionPattern();
+  }
+  window.showActionPatternModal = showActionPatternModal;
 
   // ⭐ HOF 行動規則編輯器
   function renderActionPattern() {
@@ -5092,21 +5127,12 @@
     if (equipped.weapon) dollLayers.push(`<img class="pd-layer pd-weapon" data-tier="${wTier}" src="${equipped.weapon}" alt="">`);
     if (equipped.accessory) dollLayers.push(`<img class="pd-layer pd-acc" data-tier="${cTier}" src="${equipped.accessory}" alt="">`);
 
-    const treasureCount = (rpg.treasures || []).length;
-    const treasureMax = Object.keys(TREASURES).length;
     document.getElementById('charCard').innerHTML = `
       <div class="char-portrait">
         <div class="cp-lv-badge">Lv ${rpg.level}</div>
         <div class="cp-coin-badge">🪙 ${coins >= 1000 ? (coins/1000).toFixed(1) + 'k' : coins}</div>
         <div class="paper-doll">${dollLayers.join('')}</div>
         <div class="cp-collection">${collectionHtml}</div>
-        <div class="cp-side-menu">
-          <button class="cp-side-btn" onclick="showTreasureVault()" title="寶物庫">
-            <span class="cpsb-icon">🎁</span>
-            <span class="cpsb-label">寶物庫</span>
-            <span class="cpsb-badge">${treasureCount}/${treasureMax}</span>
-          </button>
-        </div>
       </div>
       <div class="char-info">
         <div class="char-name">${escapeHtml(me.name)}</div>
