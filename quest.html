@@ -5343,16 +5343,19 @@
           const sourceLabel = i.__source === 'shop' ? '🛒 商店'
             : i.__source === 'set' ? `🛡 ${SETS[i.setId]?.name || '套裝'}`
             : '⚔️ 掉落';
-          return `<div style="display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:8px; border:1px solid ${has ? rarColor : '#e5e7eb'}; background:${has ? `linear-gradient(135deg,#fff,${rarColor}1a)` : '#f9fafb'}; opacity:${has ? '1' : '0.55'}; margin-bottom:5px;">
-            <div style="font-size:24px; line-height:1;">${has ? i.icon : '❔'}</div>
+          // 即便未取得也顯示完整能力，只是用灰底 + 「未取得」標記
+          return `<div style="display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:8px; border:1px solid ${has ? rarColor : '#e5e7eb'}; background:${has ? `linear-gradient(135deg,#fff,${rarColor}1a)` : '#f9fafb'}; margin-bottom:5px;">
+            <div style="font-size:24px; line-height:1; ${has ? '' : 'filter:grayscale(0.7); opacity:0.55;'}">${i.icon}</div>
             <div style="flex:1; min-width:0;">
-              <div style="font-size:12px; font-weight:700; color:${has ? rarColor : '#9ca3af'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${has ? escapeHtml(i.name) : '???'}</div>
-              <div style="font-size:10px; color:#8b6f9b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                ${has ? `${i.lv ? `Lv ${i.lv} · ` : ''}${formatItemStats(i) || '無'}` : '尚未發現'}
+              <div style="font-size:12px; font-weight:700; color:${has ? rarColor : '#9ca3af'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(i.name)}</div>
+              <div style="font-size:10px; color:${has ? '#8b6f9b' : '#9ca3af'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                ${i.lv ? `Lv ${i.lv} · ` : ''}${formatItemStats(i) || '無屬性'}
               </div>
               <div style="font-size:9px; color:#9ca3af; margin-top:1px;">${sourceLabel}${i.cost ? ` · 🪙${i.cost}` : ''}</div>
             </div>
-            ${has ? '<div style="font-size:10px; color:#16a34a; font-weight:700;">✓</div>' : ''}
+            ${has
+              ? '<div style="font-size:10px; color:#16a34a; font-weight:700;">✓</div>'
+              : '<div style="font-size:9px; color:#9ca3af; font-weight:600; padding:2px 5px; border:1px dashed #d1d5db; border-radius:4px;">未取得</div>'}
           </div>`;
         }).join('');
 
