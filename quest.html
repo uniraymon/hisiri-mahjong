@@ -2021,20 +2021,22 @@
     return stats;
   }
   function generateMonster(playerLv, opts) {
-    // 綠茶事件：基礎 8%，每場沒遇到 +1 點保底，第 25 場必定觸發
-    // 計數器存在 me.rpg.greenTeaPity 上
+    // 綠茶事件：頭 5 場固定 5%，第 6 場起每場 +2% 慢慢加，第 30 場保底必出
+    // 計數器存在 me.rpg.greenTeaPity 上（每次出現後歸零）
     const me = (typeof getMe === 'function') ? getMe() : null;
     const rpg = me && me.rpg ? me.rpg : null;
     if (rpg) {
       rpg.greenTeaPity = (rpg.greenTeaPity || 0) + 1;
-      const baseRate = 0.08;
-      const pityRate = baseRate + Math.max(0, rpg.greenTeaPity - 8) * 0.04; // 第 9 場起每場 +4%
-      const guaranteed = rpg.greenTeaPity >= 25;
-      if (guaranteed || Math.random() < pityRate) {
+      const baseRate = 0.05;
+      const rate = rpg.greenTeaPity <= 5
+        ? baseRate
+        : baseRate + (rpg.greenTeaPity - 5) * 0.02; // 第 6 場 7%、第 10 場 15%、第 20 場 35%
+      const guaranteed = rpg.greenTeaPity >= 30;
+      if (guaranteed || Math.random() < rate) {
         rpg.greenTeaPity = 0;
         return createGreenTea(playerLv);
       }
-    } else if (Math.random() < 0.08) {
+    } else if (Math.random() < 0.05) {
       return createGreenTea(playerLv);
     }
     let candidates;
