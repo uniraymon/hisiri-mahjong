@@ -675,6 +675,48 @@
   .boss-card .btn { margin-top: 0; }
   .boss-card .btn:disabled { background: #4b5563; box-shadow: none; }
 
+  /* 探險分支選項 */
+  .forage-choices {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .forage-choice {
+    background: #fff;
+    border: 2px solid #c4b5fd;
+    border-radius: 12px;
+    padding: 10px 12px;
+    text-align: left;
+    cursor: pointer;
+    box-shadow: 0 3px 0 #a78bfa;
+    transition: transform 0.1s, background 0.1s;
+    font-family: inherit;
+  }
+  .forage-choice:hover:not(:disabled) {
+    background: #f3e8ff;
+    transform: translateY(-1px);
+  }
+  .forage-choice:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: #f3f4f6;
+    border-color: #d1d5db;
+    box-shadow: 0 3px 0 #9ca3af;
+  }
+  .forage-choice .fc-text {
+    font-size: 14px;
+    font-weight: 700;
+    color: #5b3d62;
+    line-height: 1.5;
+  }
+  .forage-choice .fc-cost {
+    font-size: 11px;
+    color: #d97706;
+    margin-top: 4px;
+    font-weight: 600;
+  }
+
   /* Boss 排隊 */
   .boss-queue {
     background: rgba(0,0,0,0.25);
@@ -1425,20 +1467,235 @@
 
   // === 探索 / 採集 ===
   const FORAGE_STAMINA = 20;
-  const FORAGE_BATTLE_CHANCE = 0.20; // 20% 觸發戰鬥
-  const FORAGE_EVENTS = [
-    // type: coins / equip / none
-    { type: 'coins', minCoins: 8,  maxCoins: 18, line: '🌳 在樹下撿到幾枚鵝鵝幣，閃閃發亮！' },
-    { type: 'coins', minCoins: 10, maxCoins: 22, line: '💧 河邊一隻好心鵝丟了零錢給你...你也不知道為什麼。' },
-    { type: 'coins', minCoins: 5,  maxCoins: 15, line: '🍂 從草叢翻出舊錢袋，至少還有點錢。' },
-    { type: 'coins', minCoins: 15, maxCoins: 30, line: '⛲ 許願池裡的硬幣...偷了！希望沒人看到。' },
-    { type: 'coins', minCoins: 20, maxCoins: 40, line: '🌟 大發現！前任冒險者掉的小錢包！' },
-    { type: 'equip', line: '⚔️ 你在洞穴裡找到一件被棄置的裝備！' },
-    { type: 'equip', line: '📦 路邊木箱裡塞了一件不錯的東西！' },
-    { type: 'equip', line: '🦴 從怪物的窩裡撿到沾血的裝備...好像可以用？' },
-    { type: 'none',  line: '🌫 走了一圈什麼都沒找到，浪費時間了...' },
-    { type: 'none',  line: '😴 看見遠方有寶箱，但鵝鵝太懶不想走過去...' },
-    { type: 'none',  line: '🍃 今天運氣很差，連野生史萊姆鵝都沒看到。' },
+  const FORAGE_BATTLE_CHANCE = 0.18; // 18% 觸發戰鬥（其餘走分支事件）
+  // 新版：分支事件（玩家做選擇 → 影響結果）
+  // outcome 欄位：coins (數字 or [min,max])、hp (扣血)、xp、item ('drop'=隨機掉落)、greentea (true 觸發綠茶)、stat (永久 +1 屬性)
+  const FORAGE_QUESTS = [
+    {
+      id: 'sleeping_sloth',
+      icon: '🦥',
+      intro: '你看到一隻樹懶鵝在樹下打盹，旁邊放著一袋叮叮噹噹的鵝鵝幣...',
+      choices: [
+        {
+          text: '🤫 偷偷摸走錢袋',
+          outcomes: [
+            { p: 0.65, line: '成功！樹懶鵝還在打呼，鵝鵝沒醒。', coins: [25, 45] },
+            { p: 0.35, line: '樹懶鵝突然張開眼：「鵝...你...」一巴掌打飛你。', hp: -8, coins: -10 },
+          ],
+        },
+        {
+          text: '📷 跟牠合照自拍',
+          outcomes: [
+            { p: 1.0, line: '樹懶鵝在睡夢中露出微笑，這張圖可以發 IG 了。', xp: [60, 90] },
+          ],
+        },
+        {
+          text: '🚶 不關我事，繼續走',
+          outcomes: [
+            { p: 1.0, line: '走了一段路，撿到幾顆人家不要的鵝鵝幣。', coins: [5, 12] },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'nft_snake',
+      icon: '🐍',
+      intro: '一隻穿西裝的蛇鵝湊過來：「兄弟！這隻 NFT 鵝鵝原圖即將漲 100 倍！只賣 80 幣！」',
+      choices: [
+        {
+          text: '💰 買！(花 80 幣)',
+          requiresCoins: 80,
+          outcomes: [
+            { p: 0.05, line: '欸真的漲了！？！？這次運氣爆棚！', coins: 600 },
+            { p: 0.05, line: '隔天平台 rug pull 了，但你保留下來給孫子看。', coins: -80, xp: 100 },
+            { p: 0.90, line: '檔案連打開都打不開。鵝鵝盤子確認。', coins: -80 },
+          ],
+        },
+        {
+          text: '😤 嗆「鵝鵝才不想當盤子」',
+          outcomes: [
+            { p: 1.0, line: '蛇鵝氣噗噗離開。圍觀路鵝給你拍手鼓勵。', xp: [40, 70] },
+          ],
+        },
+        {
+          text: '👀 假裝沒看見走掉',
+          outcomes: [
+            { p: 1.0, line: '路邊撿到 5 塊。蛇鵝翻白眼。', coins: 5 },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'casino_goose',
+      icon: '🎰',
+      intro: '黑色西裝的鵝在路邊擺骰盅：「翻倍翻倍翻倍！下注 50 幣猜大小！」',
+      choices: [
+        {
+          text: '🎲 下 50 幣賭一把',
+          requiresCoins: 50,
+          outcomes: [
+            { p: 0.45, line: '鵝鵝賭神出列！翻倍！', coins: 50 },
+            { p: 0.45, line: '骰盅打開：鵝鵝鵝鵝鵝。輸了。', coins: -50 },
+            { p: 0.10, line: '骰子滾出去掉進水溝，黑鵝罵罵咧咧跑了。沒輸沒贏。', coins: 0 },
+          ],
+        },
+        {
+          text: '👁 站旁邊看人賭、學經驗',
+          outcomes: [
+            { p: 1.0, line: '看了 10 場，總結：「鵝鵝看不懂為什麼大家都在輸」。', xp: [50, 80] },
+          ],
+        },
+        {
+          text: '📞 報警',
+          outcomes: [
+            { p: 0.6, line: '警察鵝出現了！檢舉獎金到帳。', coins: 80 },
+            { p: 0.4, line: '電話打不通。回來時黑鵝已經跑了。', coins: 0 },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'crying_goose',
+      icon: '👻',
+      intro: '草叢深處傳來幽幽哭聲：「嗚嗚嗚...鵝鵝...沒有人...愛我...」',
+      choices: [
+        {
+          text: '🤗 上前安慰',
+          outcomes: [
+            { p: 0.55, line: '原來只是被甩了。聽完牠哭兩小時，賺到一袋謝禮。', coins: [30, 50], xp: 80 },
+            { p: 0.40, line: '是綠茶鵝偽裝的！你被踢了一腳還被偷錢！', greentea: true },
+            { p: 0.05, line: '居然是失蹤多年的鵝鵝富翁，重重有賞！', coins: 200 },
+          ],
+        },
+        {
+          text: '🚷 假裝沒聽到默默離開',
+          outcomes: [
+            { p: 1.0, line: '良心被狗叼走了。但路上撿到一些散錢。', coins: [5, 15] },
+          ],
+        },
+        {
+          text: '😭 跟著一起哭',
+          outcomes: [
+            { p: 1.0, line: '兩隻鵝在樹下哭整晚，路人看不下去丟了零錢給你。', coins: [10, 25], xp: 30 },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'fruit_stand',
+      icon: '🍎',
+      intro: '一隻鵝在賣「超神奇蘋果！吃了能變強！只要 60 幣！」',
+      choices: [
+        {
+          text: '💵 買一顆 (60 幣)',
+          requiresCoins: 60,
+          outcomes: [
+            { p: 0.20, line: '吃下去身體發光！永久 +1 STR！', coins: -60, stat: 'str' },
+            { p: 0.20, line: '吃下去眼睛發光！永久 +1 DEX！', coins: -60, stat: 'dex' },
+            { p: 0.60, line: '......就是普通蘋果。但很甜。', coins: -60, hp: 15 },
+          ],
+        },
+        {
+          text: '🦹 偷一顆',
+          outcomes: [
+            { p: 0.45, line: '成功偷走！而且偏偏偷到神奇的那顆！+1 LUK！', stat: 'luk' },
+            { p: 0.55, line: '被攤主發現追殺，跑掉時掉了一些錢。', coins: -30, hp: -5 },
+          ],
+        },
+        {
+          text: '🚶 路過不買',
+          outcomes: [
+            { p: 1.0, line: '攤主大喊「不買也來看一下嘛！」鵝鵝沒理。', coins: 0 },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'street_singer',
+      icon: '🎤',
+      intro: '一隻鵝拿著吉他在唱歌，完全走音，路鵝紛紛掩耳逃跑',
+      choices: [
+        {
+          text: '💝 打賞 20 幣',
+          requiresCoins: 20,
+          outcomes: [
+            { p: 1.0, line: '鵝鵝音樂家感動到唱不下去，給了你一張簽名照。', coins: -20, xp: 100 },
+          ],
+        },
+        {
+          text: '🔇 嗆「太難聽了！」',
+          outcomes: [
+            { p: 0.5, line: '鵝鵝大哭跑掉了。你深深感受到罪惡感。', xp: -10 },
+            { p: 0.5, line: '鵝鵝回嘴：「鵝鵝也覺得！」附近的人聽到笑出聲、丟錢給你打圓場。', coins: [20, 40] },
+          ],
+        },
+        {
+          text: '🎸 上去搶吉他自彈',
+          outcomes: [
+            { p: 0.30, line: '你變網紅！整條街都在打賞！', coins: [80, 150], xp: 50 },
+            { p: 0.70, line: '吉他被原主人搶回。你跌坐在地上。', hp: -10 },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'fake_monk',
+      icon: '🧘',
+      intro: '一隻僧袍鵝坐在路邊：「施主，看你印堂發黑，需要鵝鵝消災...只要 100 幣...」',
+      choices: [
+        {
+          text: '🙏 給香油錢 (100 幣)',
+          requiresCoins: 100,
+          outcomes: [
+            { p: 0.15, line: '居然真的是高僧！心靈受到洗禮。', coins: -100, stat: 'int', xp: 200 },
+            { p: 0.85, line: '鵝鵝才剛起步出家，那 100 幣他直接拿去買鵝鵝奶茶了。', coins: -100 },
+          ],
+        },
+        {
+          text: '🤔 反問「鵝鵝消的是什麼災？」',
+          outcomes: [
+            { p: 0.7, line: '僧鵝答不出來，灰溜溜走了。圍觀群眾鼓掌。', xp: [60, 100] },
+            { p: 0.3, line: '僧鵝開口背了 30 分鐘經文，你聽到睡著。', xp: 20 },
+          ],
+        },
+        {
+          text: '🦢 比僧鵝更兇地驅趕他',
+          outcomes: [
+            { p: 0.5, line: '僧鵝跑掉時掉了個袋子，裡面全是別人的香油錢。', coins: [50, 100] },
+            { p: 0.5, line: '不料僧鵝身手矯健，反過來搶你錢就跑！', coins: -30 },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'mysterious_chest',
+      icon: '📦',
+      intro: '路邊一個寫著「打開有獎」的箱子，旁邊沒人',
+      choices: [
+        {
+          text: '📦 打開',
+          outcomes: [
+            { p: 0.40, line: '裡面是一袋鵝鵝幣！', coins: [50, 100] },
+            { p: 0.30, line: '裡面是裝備！', item: 'drop' },
+            { p: 0.20, line: '裡面跳出一隻彈簧鵝，打你一下逃跑。', hp: -10 },
+            { p: 0.10, line: '裡面是綠茶鵝。', greentea: true },
+          ],
+        },
+        {
+          text: '🦶 用腳踢一下測試',
+          outcomes: [
+            { p: 0.5, line: '什麼也沒發生，但路人覺得你有病。', coins: 0 },
+            { p: 0.5, line: '彈簧鵝被踢到外太空，箱底有鵝鵝幣！', coins: [25, 50] },
+          ],
+        },
+        {
+          text: '🚶 走人，鵝鵝才不上當',
+          outcomes: [
+            { p: 1.0, line: '智者鵝。沒得獎勵但也沒虧錢。', xp: 20 },
+          ],
+        },
+      ],
+    },
   ];
 
   function describeAbility(ab) {
@@ -3844,7 +4101,7 @@
     r.stamina -= FORAGE_STAMINA;
     r.forageCount = (r.forageCount || 0) + 1;
 
-    // 20% 機率：探索路上遭遇怪物
+    // 18% 機率：探索路上遭遇怪物
     if (Math.random() < FORAGE_BATTLE_CHANCE && r.hp > 0) {
       r.forageBattles = (r.forageBattles || 0) + 1;
       saveData();
@@ -3855,57 +4112,159 @@
           <div class="rl-item" style="margin-top:4px; font-size:11px; color:#7f1d1d;">↓ 戰鬥開始 ↓</div>
         </div>
       `;
-      // 戰鬥不再扣體力（已扣 20）
       onFight({ skipStamina: true });
       return;
     }
 
-    // 加權：65% 錢 / 30% 裝備 / 5% 啥都沒
+    // 隨機抽一個分支事件
+    const quest = FORAGE_QUESTS[Math.floor(Math.random() * FORAGE_QUESTS.length)];
+    saveData(); // 把扣體力的狀態先存起來
+    showForageQuest(quest);
+  }
+  window.doForage = doForage;
+
+  // 顯示分支事件：讓玩家做選擇
+  function showForageQuest(quest) {
+    const me = getMe();
+    const myCoins = me ? getCoins(me.id) : 0;
+    const choicesHtml = quest.choices.map((c, i) => {
+      const need = c.requiresCoins || 0;
+      const tooPoor = need > myCoins;
+      return `
+        <button class="forage-choice" onclick="resolveForageChoice('${quest.id}', ${i})" ${tooPoor ? 'disabled' : ''}>
+          <div class="fc-text">${escapeHtml(c.text)}</div>
+          ${need > 0 ? `<div class="fc-cost">需要 ${need} 幣${tooPoor ? '（不足）' : ''}</div>` : ''}
+        </button>
+      `;
+    }).join('');
+    const html = `
+      <div style="text-align:center; padding:6px 0 12px;">
+        <div style="font-size:54px; margin-bottom:6px;">${quest.icon}</div>
+        <div style="font-size:13px; color:#5b3d62; padding:10px 12px; background:#fff8fb; border-radius:10px; border:2px dashed #ffd6e0; line-height:1.7;">${escapeHtml(quest.intro)}</div>
+      </div>
+      <div class="forage-choices">${choicesHtml}</div>
+    `;
+    showModal('🎣 探險中…', html);
+  }
+
+  function resolveForageChoice(questId, choiceIdx) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const quest = FORAGE_QUESTS.find(q => q.id === questId);
+    if (!quest) { hideModal(); return; }
+    const choice = quest.choices[choiceIdx];
+    if (!choice) { hideModal(); return; }
+    // 再檢查一次條件（防玩家在 modal 開啟期間鵝幣被扣完）
+    if (choice.requiresCoins && getCoins(me.id) < choice.requiresCoins) {
+      showToast('鵝幣不足');
+      return;
+    }
+    // 加權選一個 outcome
     const roll = Math.random();
-    const pool = roll < 0.65
-      ? FORAGE_EVENTS.filter(e => e.type === 'coins')
-      : roll < 0.95
-        ? FORAGE_EVENTS.filter(e => e.type === 'equip')
-        : FORAGE_EVENTS.filter(e => e.type === 'none');
-    const ev = pool[Math.floor(Math.random() * pool.length)];
-    let resultText = '';
+    let acc = 0;
+    let outcome = choice.outcomes[choice.outcomes.length - 1];
+    for (const o of choice.outcomes) {
+      acc += (o.p || 0);
+      if (roll < acc) { outcome = o; break; }
+    }
+    // 處理 outcome
+    let parts = [];
     let resultColor = '#5a4a4a';
-    if (ev.type === 'coins') {
-      const amt = ev.minCoins + Math.floor(Math.random() * (ev.maxCoins - ev.minCoins + 1));
-      refundCoins(me.id, amt);
-      resultText = `+${amt} 鵝鵝幣`; resultColor = '#16a34a';
-      showToast(`🎣 +${amt} 鵝鵝幣`);
-    } else if (ev.type === 'equip') {
-      const drop = generateDropItem(r.level, true); // 探索：稀有度加倍
+    const applyAmount = (val) => {
+      if (Array.isArray(val)) return val[0] + Math.floor(Math.random() * (val[1] - val[0] + 1));
+      return Number(val) || 0;
+    };
+    // coins
+    if (outcome.coins != null) {
+      const amt = applyAmount(outcome.coins);
+      if (amt > 0) {
+        refundCoins(me.id, amt);
+        parts.push(`<span style="color:#16a34a;">+${amt} 鵝鵝幣</span>`);
+      } else if (amt < 0) {
+        // 防止扣超過手上有的（負債也允許，但顯示為扣多少）
+        spendCoins(me.id, -amt);
+        parts.push(`<span style="color:#dc2626;">${amt} 鵝鵝幣</span>`);
+      }
+    }
+    // hp
+    if (outcome.hp) {
+      const amt = applyAmount(outcome.hp);
+      const stats = computeStats(me);
+      r.hp = Math.max(0, Math.min(stats.maxHp, (r.hp || 0) + amt));
+      if (r.hp <= 0 && (r.level || 1) > 4) r.deathAt = Date.now();
+      parts.push(amt >= 0
+        ? `<span style="color:#16a34a;">+${amt} HP</span>`
+        : `<span style="color:#dc2626;">${amt} HP</span>`);
+    }
+    // xp
+    if (outcome.xp) {
+      const amt = applyAmount(outcome.xp);
+      r.xp = Math.max(0, (r.xp || 0) + amt);
+      let leveled = 0;
+      while (r.xp >= xpForLevel(r.level)) {
+        r.xp -= xpForLevel(r.level);
+        r.level += 1;
+        r.skillPoints = (r.skillPoints || 0) + POINTS_PER_LEVEL.skill;
+        r.abilityPoints = (r.abilityPoints || 0) + POINTS_PER_LEVEL.ability;
+        leveled++;
+      }
+      if (leveled) {
+        const ns = computeStats(me);
+        r.hp = ns.maxHp; r.mp = ns.maxMp; r.deathAt = null;
+      }
+      parts.push(amt >= 0
+        ? `<span style="color:#7c3aed;">+${amt} XP</span>${leveled ? `<span style="color:#7c3aed; font-weight:700;">（升級到 Lv ${r.level}！）</span>` : ''}`
+        : `<span style="color:#9ca3af;">${amt} XP</span>`);
+    }
+    // 永久屬性 +1
+    if (outcome.stat) {
+      r.abilities = r.abilities || { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0 };
+      r.abilities[outcome.stat] = (r.abilities[outcome.stat] || 0) + 1;
+      const labels = { str: '力量', vit: '體力', agi: '敏捷', dex: '技巧', int: '智慧', luk: '幸運' };
+      parts.push(`<span style="color:#f59e0b; font-weight:700;">✨ ${labels[outcome.stat] || outcome.stat.toUpperCase()} +1（永久）</span>`);
+    }
+    // 隨機掉落
+    if (outcome.item === 'drop') {
+      const drop = generateDropItem(r.level, true);
       if (drop) {
-        if (!r.inventory) r.inventory = [];
+        r.inventory = r.inventory || [];
         r.inventory.push(drop);
         const rarLabel = RARITY[drop.rarity]?.label || '';
-        resultText = `獲得 [${rarLabel}] ${drop.icon} ${drop.name}（背包 +1）`;
-        resultColor = RARITY[drop.rarity]?.color || '#7c3aed';
-        showToast(`🎒 +${drop.icon} ${drop.name}`);
-      } else {
-        resultText = '結果什麼裝備都看不上，隨手丟掉了。';
-        resultColor = '#9ca3af';
+        const rarColor = RARITY[drop.rarity]?.color || '#7c3aed';
+        parts.push(`<span style="color:${rarColor};">[${rarLabel}] ${drop.icon} ${escapeHtml(drop.name)}</span>`);
       }
-    } else {
-      resultText = '空手而回。';
-      resultColor = '#9ca3af';
-      showToast('🌫 什麼都沒找到');
+    }
+    // 觸發綠茶事件
+    if (outcome.greentea) {
+      r.metGreenTea = (r.metGreenTea || 0) + 1;
+      // 偷錢扣 HP
+      const kickDmg = 5 + Math.floor(Math.random() * 5);
+      const stolen = 10;
+      const stats = computeStats(me);
+      r.hp = Math.max(1, Math.min(stats.maxHp, (r.hp || stats.maxHp) - kickDmg));
+      spendCoins(me.id, stolen);
+      parts.push(`<span style="color:#dc2626;">🍵 綠茶鵝偷襲 −${stolen} 幣 / −${kickDmg} HP</span>`);
+      // 是否觸發指南書
+      if (typeof grantGreenTeaGuides === 'function') grantGreenTeaGuides(me);
     }
     saveData();
     renderCharCard();
     renderEquipment();
+    renderRpgStats();
+    renderLeaderboard();
     updateStaminaUI();
-    document.getElementById('dailyResult').innerHTML = `
-      <div class="reward-list" style="background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-color:#10b981;">
-        <div class="rl-title" style="color:#047857;">🎣 探索結果</div>
-        <div class="rl-item" style="color:#5a4a4a;">「${escapeHtml(ev.line)}」</div>
-        <div class="rl-item" style="margin-top:6px; color:${resultColor}; font-weight:700;">${escapeHtml(resultText)}</div>
+    // 顯示結果
+    const html = `
+      <div style="text-align:center; padding:6px 0;">
+        <div style="font-size:48px; margin-bottom:6px;">${quest.icon}</div>
+        <div style="font-size:13px; color:#5b3d62; padding:10px 12px; background:#fff8fb; border-radius:10px; border:2px dashed #ffd6e0; line-height:1.7;">${escapeHtml(outcome.line || '')}</div>
+        ${parts.length > 0 ? `<div style="margin-top:14px; padding:10px; background:#ecfdf5; border-radius:10px; font-size:13px; line-height:1.9;">${parts.join('　·　')}</div>` : '<div style="margin-top:14px; color:#9ca3af; font-size:12px;">什麼都沒發生。</div>'}
+        <button class="btn btn-primary" onclick="hideModal()" style="margin-top:14px;">繼續探險 ✨</button>
       </div>
     `;
+    showModal('🎣 探險結果', html);
   }
-  window.doForage = doForage;
+  window.resolveForageChoice = resolveForageChoice;
 
   let __fightInProgress = false;
   function onFight(opts) {
