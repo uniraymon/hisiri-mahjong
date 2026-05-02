@@ -2119,7 +2119,13 @@
   // ⭐ 技能等級系統：用技能點升級，最多 5 級
   // 每級 +10% 效果（傷害 / 治療量 / MP 回復）
   // Lv 3 強化 applyStatus（機率 / 持續 / 傷害）
-  // Lv 5 自動賦予「必中暴擊」（若該技能本來沒有）
+  // Lv 5 額外加成：依技能特性給「不一樣」的好處（不再一律必中暴擊）
+  //   - 有 applyStatus（毒/麻痺）：持續 +2 回合 + 觸發機率封頂
+  //   - 有 lifesteal：吸血 +10%
+  //   - 有 healCaster：自癒 +5% maxHP
+  //   - 是 heal 技能：MP 消耗 -25%
+  //   - 本來就是 alwaysCrit 的：爆傷 +25%（這次施放專屬）
+  //   - 其他傷害技能：暴擊率 +20%（不是必中）
   const SKILL_MAX_LEVEL = 5;
   function getSkillEffectiveStats(skill, level) {
     const eff = { ...skill };
@@ -2137,15 +2143,44 @@
         dmg: Math.round((skill.applyStatus.dmg || 0) * (1 + dmgBonus)),
       };
     }
-    if (level >= 5 && !skill.alwaysCrit) eff.alwaysCrit = true;
+    // ⭐ Lv 5 多元化加成（不再一律必中暴擊）
+    if (level >= 5) {
+      const k = lv5BonusKind(skill);
+      if (k === 'lifesteal')   eff.lifesteal  = +((eff.lifesteal  || 0) + 0.10).toFixed(3);
+      else if (k === 'heal')   eff.healCaster = +((eff.healCaster || 0) + 0.05).toFixed(3);
+      else if (k === 'restore') eff.mpCostMult = (eff.mpCostMult || 1) * 0.75;
+      else if (k === 'critDmg') eff.extraCritDmg = (eff.extraCritDmg || 0) + 0.25;
+      else if (k === 'crit')    eff.extraCritChance = (eff.extraCritChance || 0) + 0.20;
+      // 'status' 已被前面的 applyStatus 加成涵蓋
+      eff.lv5Kind = k;
+    }
     return eff;
+  }
+  // 判斷某技能 Lv 5 應該拿什麼樣的加成
+  function lv5BonusKind(skill) {
+    if (skill.applyStatus)      return 'status';
+    if (skill.lifesteal)        return 'lifesteal';
+    if (skill.healCaster)       return 'heal';
+    if (skill.type === 'heal')  return 'restore';
+    if (skill.alwaysCrit)       return 'critDmg';
+    return 'crit';
+  }
+  function describeLv5Bonus(skill) {
+    switch (lv5BonusKind(skill)) {
+      case 'status':    return `${statusEmoji(skill.applyStatus.type)} ${statusLabel(skill.applyStatus.type)} 持續 +1`;
+      case 'lifesteal': return '🩸 吸血 +10%';
+      case 'heal':      return '💚 自癒 +5% maxHP';
+      case 'restore':   return '💙 MP 消耗 -25%';
+      case 'critDmg':   return '💥 暴擊傷害 +25%（本招）';
+      case 'crit':      return '🎯 暴擊率 +20%（本招）';
+      default:          return '✨ 額外加成';
+    }
   }
   // 描述某一級會帶來的好處（給 UI 用）
   function describeSkillLevelEffect(skill, level) {
     const parts = [`+${level * 10}% 效果`];
     if (level === 3 && skill.applyStatus) parts.push(`${statusEmoji(skill.applyStatus.type)} ${statusLabel(skill.applyStatus.type)} 機率/持續 +`);
-    if (level === 5 && !skill.alwaysCrit) parts.push('💥 必中暴擊');
-    if (level === 5 && skill.applyStatus) parts.push(`${statusEmoji(skill.applyStatus.type)} 持續 +1`);
+    if (level === 5) parts.push(describeLv5Bonus(skill));
     return parts.join('、');
   }
 
@@ -3757,10 +3792,11 @@
         }
 
         if (useSkill) {
-          // ⭐ 套用技能等級加成：傷害/治療/MP 回復 +10%/級，Lv 3+ 強化狀態，Lv 5 必爆
+          // ⭐ 套用技能等級加成：傷害/治療/MP 回復 +10%/級，Lv 3+ 強化狀態，Lv 5 額外加成（依技能特性）
           const __skillLv = (player.rpg.skillLevels && player.rpg.skillLevels[useSkill.id]) || 0;
           const skill = getSkillEffectiveStats(useSkill, __skillLv);
-          const effMpCost = Math.round((skill.mpCost || 0) * (1 - (passive.mpDiscount || 0)));
+          // Lv 5 治療系：mpCostMult 進一步打折
+          const effMpCost = Math.round((skill.mpCost || 0) * (skill.mpCostMult || 1) * (1 - (passive.mpDiscount || 0)));
           pMp -= effMpCost;
           // ⭐ HP 代價（戰士血祭系列）：施法時扣自身 HP（最少留 1）
           let hpPaid = 0;
@@ -3800,9 +3836,11 @@
             // 怪物抗性（魔攻吃法抗，物攻吃物抗）
             if (isMagic && mAbility?.type === 'magicResist') dmg *= (1 - mAbility.resist);
             if (!isMagic && mAbility?.type === 'physResist') dmg *= (1 - mAbility.resist);
-            const isCrit = skill.alwaysCrit || Math.random() < baseCritChance;
+            const skillCrit = baseCritChance + (skill.extraCritChance || 0);
+            const skillCritMult = critMult + (skill.extraCritDmg || 0);
+            const isCrit = skill.alwaysCrit || Math.random() < skillCrit;
             dmg *= (0.9 + Math.random() * 0.2);
-            if (isCrit) { dmg *= critMult; critCount++; }
+            if (isCrit) { dmg *= skillCritMult; critCount++; }
             dmg = Math.max(1, Math.round(dmg));
             mHp -= dmg;
             // 吸血機制（嗜血爆裂）：吸所造成傷害的某 %
@@ -4082,10 +4120,11 @@
         const targets = aliveM.slice().sort((a, b) => a.hp - b.hp).slice(0, targetCount);
 
         if (useSkill) {
-          // ⭐ 套用技能等級加成：傷害/治療/MP 回復 +10%/級，Lv 3+ 強化狀態，Lv 5 必爆
+          // ⭐ 套用技能等級加成：傷害/治療/MP 回復 +10%/級，Lv 3+ 強化狀態，Lv 5 額外加成（依技能特性）
           const __skillLv = (player.rpg.skillLevels && player.rpg.skillLevels[useSkill.id]) || 0;
           const skill = getSkillEffectiveStats(useSkill, __skillLv);
-          const effMpCost = Math.round((skill.mpCost || 0) * (1 - (passive.mpDiscount || 0)));
+          // Lv 5 治療系：mpCostMult 進一步打折
+          const effMpCost = Math.round((skill.mpCost || 0) * (skill.mpCostMult || 1) * (1 - (passive.mpDiscount || 0)));
           pMp -= effMpCost;
           let hpPaid = 0;
           if (skill.hpCost) {
@@ -4119,9 +4158,11 @@
               else         dmg *= (1 + (passive.physPct || 0));
               if (isMagic && tgt.ability?.type === 'magicResist') dmg *= (1 - tgt.ability.resist);
               if (!isMagic && tgt.ability?.type === 'physResist') dmg *= (1 - tgt.ability.resist);
-              const isCrit = skill.alwaysCrit || Math.random() < baseCritChance;
+              const skillCrit = baseCritChance + (skill.extraCritChance || 0);
+              const skillCritMult = critMult + (skill.extraCritDmg || 0);
+              const isCrit = skill.alwaysCrit || Math.random() < skillCrit;
               dmg *= (0.9 + Math.random() * 0.2);
-              if (isCrit) { dmg *= critMult; critCount++; }
+              if (isCrit) { dmg *= skillCritMult; critCount++; }
               dmg = Math.max(1, Math.round(dmg));
               tgt.hp = Math.max(0, tgt.hp - dmg);
               if (tgt.hp <= 0) tgt.alive = false;
@@ -4817,6 +4858,9 @@
       buffPairs.push(`🎯 同時打 ${eff.targetCount === 'all' ? '全體' : eff.targetCount + ' 個目標'}`);
     }
     if (eff.alwaysCrit) buffPairs.push('💥 必中暴擊');
+    if (eff.extraCritChance) buffPairs.push(`🎯 暴擊率 +${Math.round(eff.extraCritChance * 100)}%（本招）`);
+    if (eff.extraCritDmg)    buffPairs.push(`💥 爆傷 +${Math.round(eff.extraCritDmg * 100)}%（本招）`);
+    if (eff.mpCostMult && eff.mpCostMult < 1) buffPairs.push(`💙 MP 消耗 -${Math.round((1 - eff.mpCostMult) * 100)}%`);
     if (eff.magic) buffPairs.push('🔮 魔攻（吃法抗）');
     if (eff.ignoreDef) buffPairs.push('🗡 無視防禦');
 
