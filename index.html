@@ -2780,6 +2780,9 @@
     const r = Math.random();
     const kind = r < 0.30 ? 'equipment' : r < 0.65 ? 'avatar' : 'title';
     let resultHtml = '';
+    let dupItemName = '';   // 重複時要在 toast 顯示的名稱
+    let isDup = false;
+    let isNew = false;
     const DUP_XP = 50;
     if (kind === 'avatar') {
       const a = GACHA_AVATARS[Math.floor(Math.random() * GACHA_AVATARS.length)];
@@ -2787,9 +2790,12 @@
       if (me.unlockedAvatars.includes(a)) {
         refundCoins(me.id, GACHA_DUP_REFUND);
         me.bonusXp = (me.bonusXp || 0) + DUP_XP;
-        resultHtml = `<div class="gacha-result"><div class="gr-icon">${a}</div><div class="gr-text">重複了…<br>退 ${GACHA_DUP_REFUND} 幣 + ${DUP_XP} XP</div></div>`;
+        isDup = true;
+        dupItemName = `頭像 ${a}`;
+        resultHtml = `<div class="gacha-result"><div class="gr-icon">${a}</div><div class="gr-text">重複了…<br>退 ${GACHA_DUP_REFUND} 幣 + <b style="color:#fde047;">${DUP_XP} XP</b></div></div>`;
       } else {
         me.unlockedAvatars.push(a);
+        isNew = true;
         resultHtml = `<div class="gacha-result"><div class="gr-icon">${a}</div><div class="gr-text">✨ 抽到新頭像！<br><small>到個人頁點頭像可換</small></div></div>`;
       }
     } else if (kind === 'title') {
@@ -2798,9 +2804,12 @@
       if (me.unlockedTitles.includes(t.id)) {
         refundCoins(me.id, GACHA_DUP_REFUND);
         me.bonusXp = (me.bonusXp || 0) + DUP_XP;
-        resultHtml = `<div class="gacha-result"><div class="gr-icon">${t.icon}</div><div class="gr-text">重複了「${t.title}」<br>退 ${GACHA_DUP_REFUND} 幣 + ${DUP_XP} XP</div></div>`;
+        isDup = true;
+        dupItemName = `稱號「${t.title}」`;
+        resultHtml = `<div class="gacha-result"><div class="gr-icon">${t.icon}</div><div class="gr-text">重複了「${t.title}」<br>退 ${GACHA_DUP_REFUND} 幣 + <b style="color:#fde047;">${DUP_XP} XP</b></div></div>`;
       } else {
         me.unlockedTitles.push(t.id);
+        isNew = true;
         resultHtml = `<div class="gacha-result"><div class="gr-icon">${t.icon}</div><div class="gr-text">✨ 抽到新稱號！<br><b>${t.title}</b></div></div>`;
       }
     } else {
@@ -2814,18 +2823,28 @@
       if (owned) {
         refundCoins(me.id, GACHA_DUP_REFUND);
         me.bonusXp = (me.bonusXp || 0) + DUP_XP;
-        resultHtml = `<div class="gacha-result"><div class="gr-icon">${eq.icon}</div><div class="gr-text">重複了「${eq.name}」<br>退 ${GACHA_DUP_REFUND} 幣 + ${DUP_XP} XP</div></div>`;
+        isDup = true;
+        dupItemName = `裝備「${eq.name}」`;
+        resultHtml = `<div class="gacha-result"><div class="gr-icon">${eq.icon}</div><div class="gr-text">重複了「${eq.name}」<br>退 ${GACHA_DUP_REFUND} 幣 + <b style="color:#fde047;">${DUP_XP} XP</b></div></div>`;
       } else {
         me.rpg.inventory.push({ ...eq, rarity: 'legendary' }); // 一律當作傳說稀有度顯示
+        isNew = true;
         const stats = ['atk','def','spd','hp'].filter(k => eq[k]).map(k => `${k.toUpperCase()}+${eq[k]}`).join(' / ');
         resultHtml = `<div class="gacha-result"><div class="gr-icon">${eq.icon}</div><div class="gr-text">✨ 抽到限定裝備！<br><b style="color:#fde047;">${eq.name}</b><br><small>${stats}</small><br><small style="opacity:0.85;">到冒險島背包查看</small></div></div>`;
       }
     }
     saveData();
-    document.getElementById('gachaResult').innerHTML = resultHtml;
-    // 重新打開（更新顯示）
-    const me2 = getMe();
-    setTimeout(() => openGachaModal(), 0);
+    // 先重建 modal（更新幣數 / 已收集列表），再把這次結果寫進 #gachaResult
+    // 注意順序：之前的版本是先寫結果再 setTimeout 重建，會把結果蓋掉
+    openGachaModal();
+    const resultEl = document.getElementById('gachaResult');
+    if (resultEl) resultEl.innerHTML = resultHtml;
+    // toast 補一個訊息（防 modal 被快速關掉看不到）
+    if (isDup) {
+      showToast(`重複了 ${dupItemName} → 退 ${GACHA_DUP_REFUND} 幣 + ${DUP_XP} XP`);
+    } else if (isNew) {
+      showToast(`✨ 抽到新東西！`);
+    }
     render();
   }
 
