@@ -1155,6 +1155,46 @@
   .debug-btn:hover { opacity: 1; transform: rotate(45deg); }
   .debug-btn.unlocked { background: rgba(245, 158, 11, 0.85); opacity: 0.7; }
 
+  /* BUG 按鈕（齒輪左邊兩格） */
+  .bug-btn {
+    position: fixed;
+    top: 10px;
+    right: 102px;
+    height: 36px;
+    min-width: 40px;
+    padding: 0 10px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #fca5a5, #dc2626);
+    color: #fff;
+    border: 2px solid rgba(255,255,255,0.7);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 990;
+    opacity: 0.9;
+    transition: opacity 0.2s, transform 0.2s;
+    font-family: inherit;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+  }
+  .bug-btn:hover { opacity: 1; transform: scale(1.05); }
+
+  /* BUG 列表卡 */
+  .bug-card {
+    background: #fff;
+    border: 1px solid #e9d5e3;
+    border-radius: 10px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: #5b3d62;
+    line-height: 1.5;
+  }
+  .bug-head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap; }
+  .bug-text { background: #fef9ff; border-radius: 6px; padding: 6px 8px; white-space: pre-wrap; word-break: break-word; }
+  .bug-snapshot { margin-top: 6px; }
+  .bug-snapshot summary { font-size: 11px; color: #8b6f9b; cursor: pointer; padding: 2px 0; }
+  .bug-snap-body { background: #f9fafb; border-radius: 6px; padding: 6px 8px; margin-top: 4px; }
+
   /* 教學按鈕（右上角，齒輪左邊） */
   .help-btn {
     position: fixed;
@@ -1316,6 +1356,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<button class="bug-btn" id="bugListBtn" onclick="showBugList()" title="BUG 列表">🐛</button>
 <button class="help-btn" id="helpBtn" onclick="showActionPatternHelp()" title="HOF 行動規則教學">?</button>
 <button class="debug-btn" id="debugBtn" onclick="onDebugClick()" title="Debug">⚙️</button>
 
@@ -1342,13 +1383,16 @@
       hpPer: 14, atkPer: 2.2, defPer: 1.2, spdPer: 0.4,
       attackVerb: '揮砍',
       skills: [
-        { id: 'w_rage_flame',   name: '怒之炎',   icon: '☄️', unlockLv: 12, cooldown: 7, mpCost: 35, type: 'damage', mult: 2.5 },
+        // 怒之炎：50 MP / 3.5× ATK / 算魔攻（無視物理抗性 + 走法傷加成）
+        { id: 'w_rage_flame',   name: '怒之炎',   icon: '☄️', unlockLv: 12, cooldown: 7, mpCost: 50, type: 'damage', mult: 3.5, magic: true },
         { id: 'w_heavy_strike', name: '重擊',     icon: '⚡', unlockLv: 5,  cooldown: 4, mpCost: 18, type: 'damage', mult: 1.3, alwaysCrit: true },
         { id: 'w_rage_slash',   name: '狂怒斬',   icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 14, type: 'damage', mult: 1.8 },
-        // ⭐ HP 代價系列：不耗 MP、改扣自身 HP
-        { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 3,  cooldown: 3, mpCost: 0, hpCost: 0.08, type: 'damage', mult: 2.0 },
-        { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 10, cooldown: 5, mpCost: 0, hpCost: 0.15, type: 'damage', mult: 3.0, healCaster: 0.12 },
-        { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 15, cooldown: 8, mpCost: 0, hpCost: 0.25, type: 'damage', mult: 4.0 },
+        // ⭐ HP 代價系列：固定扣 HP（不是 % maxHP）
+        { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 3,  cooldown: 3, mpCost: 0, hpCostFlat: 20, type: 'damage', mult: 2.0 },
+        // 嗜血爆裂：低傷 + 吸血 20%（吸所造成傷害的百分比）
+        { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 10, cooldown: 5, mpCost: 0, type: 'damage', mult: 1.0, lifesteal: 0.20 },
+        // 死戰之怒：50 MP + 20 HP（固定）, 4.5× ATK
+        { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 15, cooldown: 8, mpCost: 50, hpCostFlat: 20, type: 'damage', mult: 4.5 },
         // 補給技：兼顧 HP+MP
         { id: 'w_war_cry',      name: '戰意呼喚', icon: '📢', unlockLv: 7,  cooldown: 5, mpCost: 10, type: 'heal', healPct: 0.15, mpPct: 0.20 },
       ],
@@ -2446,7 +2490,10 @@
   let gifts = [];
   let comments = [];
   let pendingBets = [];
-  let worldBoss = {}; // { bossId: { currentHp, deadAt, nextSpawnAt, damageLog, lastHit, killCount, lastKill } }
+  let worldBoss = {};
+  let bugs = []; // [{ id, reporter, reporterName, text, ts, snapshot }]
+  // 暫存最近一場戰鬥的 log，回報 bug 時帶過去
+  let __lastFightSnapshot = null; // { bossId: { currentHp, deadAt, nextSpawnAt, damageLog, lastHit, killCount, lastKill } }
   let baseMoney = 1000;
   let basePoint = 25000;
 
@@ -2534,6 +2581,7 @@
         if (data.comments) comments = data.comments;
         if (data.pendingBets) pendingBets = data.pendingBets;
         if (data.worldBoss) worldBoss = data.worldBoss;
+        if (Array.isArray(data.bugs)) bugs = data.bugs;
         if (data.baseMoney) baseMoney = data.baseMoney;
         if (data.basePoint) basePoint = data.basePoint;
       }
@@ -2555,7 +2603,7 @@
 
   // ⭐ 拆檔架構同步介面
   function __persistLocalSnapshot() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ players, history, gifts, comments, pendingBets, worldBoss, baseMoney, basePoint })); } catch (e) {}
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ players, history, gifts, comments, pendingBets, worldBoss, bugs, baseMoney, basePoint })); } catch (e) {}
   }
 
   window.__getMeId = function() { return getMeId(); };
@@ -2569,6 +2617,7 @@
       if (Array.isArray(data.comments)) comments = data.comments;
       if (Array.isArray(data.pendingBets)) pendingBets = data.pendingBets;
       if (data.worldBoss && typeof data.worldBoss === 'object') worldBoss = data.worldBoss;
+      if (Array.isArray(data.bugs)) bugs = data.bugs;
       if (typeof data.baseMoney === 'number') baseMoney = data.baseMoney;
       if (typeof data.basePoint === 'number') basePoint = data.basePoint;
       __persistLocalSnapshot();
@@ -2644,7 +2693,7 @@
   };
 
   window.__getCurrentData = function() {
-    return { players, history, gifts, comments, pendingBets, worldBoss, baseMoney, basePoint };
+    return { players, history, gifts, comments, pendingBets, worldBoss, bugs, baseMoney, basePoint };
   };
   window.__updateSyncStatus = function(text, cls) {
     const el = document.getElementById('syncBadge');
@@ -3095,17 +3144,18 @@
           paladin: { name: '★ 聖騎試煉鵝', icon: '✨', verb: '聖光裁決', dialogue: ['以鵝鵝聖光之名審判你！', '正義永不消逝！'],         deathLine: ['信念...傳遞給你...', '聖光...歸於你...'] },
       };
       const tpl = FORAGE_ELITE_TEMPLATES[myClass] || FORAGE_ELITE_TEMPLATES.warrior;
+      // ⭐ 重新調平：原本 220/20/8/multiHit 對裸裝玩家完全打不過 → 全敗 → 沒掉裝
+      // 調到「跟同等級玩家裸裝接近」，有裝備就贏；獎勵照樣是套裝必掉
       return {
         id: 'forage_elite_' + myClass,
         name: tpl.name, icon: tpl.icon, verb: tpl.verb,
         level: lv,
-        hp: Math.round(220 * k), maxHp: Math.round(220 * k),
-        atk: Math.round(20 * k * 1.3),
-        def: Math.round(8 * k * 0.7),
-        spd: Math.round(10 + lv * 0.4),
-        goldDrop: Math.round(120 + lv * 3 + Math.random() * lv * 2),
-        xpDrop: Math.round((280 + lv * 8) * 2),
-        ability: { type: 'multiHit', hits: 2 },
+        hp: Math.round(115 * k), maxHp: Math.round(115 * k),
+        atk: Math.round(12 * k * 1.3),
+        def: Math.round(4 * k * 0.7),
+        spd: Math.round(8 + lv * 0.4),
+        goldDrop: Math.round(110 + lv * 3 + Math.random() * lv * 2),
+        xpDrop: Math.round((220 + lv * 7) * 2),
         dialogue: tpl.dialogue,
         deathLine: tpl.deathLine,
         dropSet: setId,
@@ -3311,6 +3361,9 @@
             const hpNeeded = Math.max(1, Math.round(stats.maxHp * s.hpCost));
             if (pHp <= hpNeeded) continue;
           }
+          if (s.hpCostFlat) {
+            if (pHp <= s.hpCostFlat) continue;
+          }
           // judge 已過、技能也可用 → 採用這條
           useSkill = s;
           useSkillIdx = sInfo.idx;
@@ -3332,6 +3385,10 @@
             hpPaid = Math.max(1, Math.round(stats.maxHp * skill.hpCost));
             pHp = Math.max(1, pHp - hpPaid);
           }
+          if (skill.hpCostFlat) {
+            hpPaid += skill.hpCostFlat;
+            pHp = Math.max(1, pHp - skill.hpCostFlat);
+          }
           nextActionForSkill[skill.id] = playerActions + skill.cooldown;
           // 成本說明字串（多種代價可能組合：MP / HP）
           const costParts = [];
@@ -3352,28 +3409,39 @@
             dmg *= (1 + (bonus[perSkillKey] || 0));
             // 通用 skillDmgPct（保留舊邏輯）
             dmg *= (1 + (bonus.skillDmgPct || 0));
+            // 是否走「魔攻」邏輯：flat 公式 OR 顯式 magic flag
+            const isMagic = isFlat || skill.magic;
             // 職業被動：物理或法術加成
-            if (isFlat) dmg *= (1 + (passive.flatPct || 0));
-            else        dmg *= (1 + (passive.physPct || 0));
-            // 怪物抗性
-            if (isFlat && mAbility?.type === 'magicResist') dmg *= (1 - mAbility.resist);
-            if (!isFlat && mAbility?.type === 'physResist') dmg *= (1 - mAbility.resist);
+            if (isMagic) dmg *= (1 + (passive.flatPct || 0));
+            else         dmg *= (1 + (passive.physPct || 0));
+            // 怪物抗性（魔攻吃法抗，物攻吃物抗）
+            if (isMagic && mAbility?.type === 'magicResist') dmg *= (1 - mAbility.resist);
+            if (!isMagic && mAbility?.type === 'physResist') dmg *= (1 - mAbility.resist);
             const isCrit = skill.alwaysCrit || Math.random() < baseCritChance;
             dmg *= (0.9 + Math.random() * 0.2);
             if (isCrit) { dmg *= critMult; critCount++; }
             dmg = Math.max(1, Math.round(dmg));
             mHp -= dmg;
-            // healCaster: 攻擊同時治癒自己（嗜血/聖光斬）
+            // 吸血機制（嗜血爆裂）：吸所造成傷害的某 %
+            // 同時保留舊的 healCaster（% maxHp 自癒，例：聖光斬）
             let extra = '';
+            if (skill.lifesteal) {
+              const heal = Math.max(1, Math.round(dmg * skill.lifesteal));
+              const before = pHp;
+              pHp = Math.min(stats.maxHp, pHp + heal);
+              const gained = pHp - before;
+              if (gained > 0) extra += ` 🩸+${gained} HP (吸血)`;
+            }
             if (skill.healCaster) {
               const heal = Math.max(1, Math.round(stats.maxHp * skill.healCaster));
               const before = pHp;
               pHp = Math.min(stats.maxHp, pHp + heal);
-              extra = ` 💚+${pHp - before} HP`;
+              const gained = pHp - before;
+              if (gained > 0) extra += ` 💚+${gained} HP`;
             }
             log.push({
               type: 'crit-player',
-              text: `回合 ${round}：${skill.icon} ${skill.name}${isCrit ? '【暴擊】' : ''} → ${monster.name} -${dmg} HP${extra}${costStr}`,
+              text: `回合 ${round}：${skill.icon} ${skill.name}${isCrit ? '【暴擊】' : ''}${isMagic ? '【魔攻】' : ''} → ${monster.name} -${dmg} HP${extra}${costStr}`,
               hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp }
             });
             if (mHp <= 0) { pushDeathLine(); break; }
@@ -3505,6 +3573,7 @@
     renderZoneSelector();
     renderActionPattern();
     maybeFlashHelp();
+    refreshBugBadge();
     updateStaminaUI();
     checkBossKillBanners();
     maybeShowBetaCompModal();
@@ -3660,6 +3729,171 @@
 
   // ⭐ HOF 行動規則小教學
   const HELP_SEEN_KEY = 'hof-action-pattern-help-seen';
+  // ========================================================================
+  // 🐛 BUG 回報系統
+  // ========================================================================
+  function snapshotLastFight(monster, result) {
+    try {
+      __lastFightSnapshot = {
+        monster: monster ? { id: monster.id, name: monster.name, level: monster.level, hp: monster.maxHp, atk: monster.atk, def: monster.def, isElite: !!monster.isElite, dropSet: monster.dropSet } : null,
+        result: result ? {
+          won: !!result.won,
+          fled: !!result.fled,
+          pHp: result.pHpFinal,
+          pMp: result.pMpFinal,
+          mHp: result.mHpFinal,
+          critCount: result.critCount,
+        } : null,
+        log: result && Array.isArray(result.log) ? result.log.slice(-30).map(l => ({ type: l.type, text: l.text })) : [],
+        ts: Date.now(),
+      };
+    } catch (e) { console.warn('snapshot fail', e); }
+  }
+
+  function openBugReport(includeLastFight) {
+    const me = getMe();
+    if (!me) { showToast('先登入再回報'); return; }
+    const snap = includeLastFight && __lastFightSnapshot ? __lastFightSnapshot : null;
+    const html = `
+      <div style="text-align:left; padding:4px 0;">
+        <div style="font-size:13px; color:#5b3d62; margin-bottom:8px;">說一下你遇到了什麼問題（裝備消失？戰鬥怪怪的？UI 跑版？）</div>
+        <textarea id="bugReportText" rows="5" style="width:100%; padding:8px; border:2px solid #fda4af; border-radius:8px; font-family:inherit; font-size:13px; resize:vertical; box-sizing:border-box;" placeholder="例：探險打贏精英怪後，背包沒有套裝..."></textarea>
+        ${snap ? `
+          <div style="margin-top:8px; padding:8px 10px; background:#fef3c7; border-radius:8px; font-size:11px; color:#92400e;">
+            📎 將附上「最近一場戰鬥」的快照（怪物：${escapeHtml(snap.monster?.name || '?')} Lv${snap.monster?.level || '?'} / ${snap.result?.won ? '勝' : snap.result?.fled ? '逃跑' : '敗'} / 戰鬥 log ${snap.log.length} 條）
+          </div>
+        ` : ''}
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px;">
+          <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:0;">取消</button>
+          <button class="btn btn-primary" onclick="submitBugReport(${snap ? 'true' : 'false'})" style="background:linear-gradient(135deg,#fca5a5,#dc2626); box-shadow:0 4px 0 #991b1b;">📤 送出</button>
+        </div>
+      </div>
+    `;
+    showModal('🐛 回報 BUG', html);
+    setTimeout(() => document.getElementById('bugReportText')?.focus(), 50);
+  }
+  window.openBugReport = openBugReport;
+
+  function submitBugReport(withSnapshot) {
+    const me = getMe();
+    if (!me) { hideModal(); return; }
+    const text = (document.getElementById('bugReportText')?.value || '').trim();
+    if (!text) { showToast('寫一下發生什麼事 ♡'); return; }
+    if (!Array.isArray(bugs)) bugs = [];
+    bugs.push({
+      id: 'bug_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6),
+      reporter: me.id,
+      reporterName: me.name || '?',
+      reporterAvatar: me.avatar || '🐛',
+      text: text.slice(0, 500),
+      ts: Date.now(),
+      status: 'open',
+      snapshot: withSnapshot && __lastFightSnapshot ? __lastFightSnapshot : null,
+    });
+    saveData();
+    hideModal();
+    showToast('🙏 回報已收到，謝謝！');
+    // 把 BUG 按鈕的紅點刷新一下
+    refreshBugBadge();
+  }
+  window.submitBugReport = submitBugReport;
+
+  function showBugList() {
+    const me = getMe();
+    if (!Array.isArray(bugs)) bugs = [];
+    const open = bugs.filter(b => b.status !== 'fixed' && b.status !== 'wontfix');
+    const closed = bugs.filter(b => b.status === 'fixed' || b.status === 'wontfix');
+    const renderBug = (b) => {
+      const dt = new Date(b.ts);
+      const when = `${dt.getMonth() + 1}/${dt.getDate()} ${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+      const isMine = me && b.reporter === me.id;
+      const statusBadge = b.status === 'fixed' ? '<span style="font-size:10px; color:#fff; background:#16a34a; padding:1px 6px; border-radius:6px;">已修</span>'
+        : b.status === 'wontfix' ? '<span style="font-size:10px; color:#fff; background:#9ca3af; padding:1px 6px; border-radius:6px;">不修</span>'
+        : '<span style="font-size:10px; color:#fff; background:#dc2626; padding:1px 6px; border-radius:6px;">待修</span>';
+      const snap = b.snapshot;
+      return `
+        <div class="bug-card" data-id="${b.id}">
+          <div class="bug-head">
+            <span>${b.reporterAvatar || '🐛'} <b>${escapeHtml(b.reporterName || '?')}</b></span>
+            <span style="font-size:10px; color:#8b6f9b;">${when}</span>
+            ${statusBadge}
+          </div>
+          <div class="bug-text">${escapeHtml(b.text)}</div>
+          ${snap ? `
+            <details class="bug-snapshot">
+              <summary>📎 戰鬥快照（${escapeHtml(snap.monster?.name || '?')} ${snap.result?.won ? '勝' : snap.result?.fled ? '逃' : '敗'}）</summary>
+              <div class="bug-snap-body">
+                <div style="font-size:10px; color:#8b6f9b; margin-bottom:4px;">怪物：${escapeHtml(snap.monster?.name || '?')} Lv${snap.monster?.level || '?'} (HP ${snap.monster?.hp || '?'} / ATK ${snap.monster?.atk || '?'} / DEF ${snap.monster?.def || '?'})</div>
+                <div style="max-height:160px; overflow:auto; background:#fff; border-radius:6px; padding:6px; font-size:10px; line-height:1.4;">
+                  ${snap.log.slice(-15).map(l => `<div>${escapeHtml(l.text)}</div>`).join('')}
+                </div>
+              </div>
+            </details>
+          ` : ''}
+          ${isMine || isDebugUnlocked() ? `
+            <div style="display:flex; gap:4px; margin-top:6px;">
+              ${b.status !== 'fixed' ? `<button class="btn btn-secondary" style="font-size:10px; padding:4px 8px; margin:0; flex:1;" onclick="setBugStatus('${b.id}','fixed')">標記已修</button>` : ''}
+              ${b.status !== 'wontfix' ? `<button class="btn btn-secondary" style="font-size:10px; padding:4px 8px; margin:0; flex:1;" onclick="setBugStatus('${b.id}','wontfix')">不修</button>` : ''}
+              <button class="btn btn-secondary" style="font-size:10px; padding:4px 8px; margin:0; color:#dc2626;" onclick="deleteBug('${b.id}')">刪除</button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    };
+    const html = `
+      <div style="text-align:left;">
+        <div style="font-size:12px; color:#8b6f9b; margin-bottom:8px;">所有玩家的 BUG 回報，按時間倒序。任何人都能標記「已修」或「不修」。</div>
+        ${open.length > 0 ? `
+          <div style="font-size:13px; font-weight:700; color:#dc2626; margin:6px 0;">⏳ 待修（${open.length}）</div>
+          ${[...open].reverse().map(renderBug).join('')}
+        ` : '<div style="font-size:12px; color:#9ca3af; padding:8px; text-align:center;">沒有待修 BUG，乾淨！</div>'}
+        ${closed.length > 0 ? `
+          <div style="font-size:13px; font-weight:700; color:#16a34a; margin:14px 0 6px;">✓ 已處理（${closed.length}）</div>
+          ${[...closed].reverse().slice(0, 10).map(renderBug).join('')}
+          ${closed.length > 10 ? `<div style="font-size:11px; color:#9ca3af; text-align:center; margin-top:6px;">還有 ${closed.length - 10} 筆，省略</div>` : ''}
+        ` : ''}
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px;">
+          <button class="btn btn-primary" onclick="hideModal(); openBugReport(false)" style="background:linear-gradient(135deg,#fca5a5,#dc2626); box-shadow:0 4px 0 #991b1b;">+ 新增回報</button>
+          <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:0;">關閉</button>
+        </div>
+      </div>
+    `;
+    showModal(`🐛 BUG 列表（${bugs.length}）`, html);
+  }
+  window.showBugList = showBugList;
+
+  function setBugStatus(id, status) {
+    if (!Array.isArray(bugs)) return;
+    const b = bugs.find(x => x.id === id);
+    if (!b) return;
+    b.status = status;
+    saveData();
+    showBugList();
+    refreshBugBadge();
+  }
+  window.setBugStatus = setBugStatus;
+
+  function deleteBug(id) {
+    if (!Array.isArray(bugs)) return;
+    if (!confirm('刪掉這筆？')) return;
+    bugs = bugs.filter(b => b.id !== id);
+    saveData();
+    showBugList();
+    refreshBugBadge();
+  }
+  window.deleteBug = deleteBug;
+
+  function refreshBugBadge() {
+    const btn = document.getElementById('bugListBtn');
+    if (!btn) return;
+    const open = (bugs || []).filter(b => b.status !== 'fixed' && b.status !== 'wontfix').length;
+    btn.textContent = open > 0 ? `🐛 ${open}` : '🐛';
+  }
+
+  function isDebugUnlocked() {
+    return localStorage.getItem('quest-debug-unlocked') === '1';
+  }
+
   function showActionPatternHelp() {
     localStorage.setItem(HELP_SEEN_KEY, '1');
     document.getElementById('helpBtn')?.classList.remove('pulse');
@@ -3933,15 +4167,17 @@
     }
     if (s.flat != null) return `固定 ${s.flat}+Lv×${s.perLv} 傷害${s.ignoreDef ? '（無視防）' : ''}`;
     let parts = [];
-    if (s.mult) parts.push(`${s.mult}× ATK`);
+    if (s.mult) parts.push(`${s.mult}× ATK${s.magic ? '（魔攻）' : ''}`);
     if (s.alwaysCrit) parts.push('必中暴擊');
-    if (s.healCaster) parts.push(`吸 ${Math.round(s.healCaster * 100)}% HP`);
+    if (s.lifesteal) parts.push(`吸血 ${Math.round(s.lifesteal * 100)}%`);
+    if (s.healCaster) parts.push(`回 ${Math.round(s.healCaster * 100)}% maxHP`);
     return parts.join(' + ');
   }
   function formatSkillCost(s) {
     const parts = [];
     if (s.mpCost && s.mpCost > 0) parts.push(`<span style="color:#3b82f6;">${s.mpCost} MP</span>`);
-    if (s.hpCost) parts.push(`<span style="color:#dc2626;">${Math.round(s.hpCost * 100)}% HP</span>`);
+    if (s.hpCost)     parts.push(`<span style="color:#dc2626;">${Math.round(s.hpCost * 100)}% HP</span>`);
+    if (s.hpCostFlat) parts.push(`<span style="color:#dc2626;">${s.hpCostFlat} HP</span>`);
     if (parts.length === 0) parts.push('<span style="color:#16a34a;">免費</span>');
     return parts.join(' + ');
   }
@@ -5387,6 +5623,19 @@
       if (i >= result.log.length) {
         // 結算
         finalizeFight(me, monster, result, stats);
+        snapshotLastFight(monster, result);
+        // 在戰鬥結果下方加一個小回報按鈕
+        try {
+          const fr = document.getElementById('fightResult');
+          if (fr) {
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-secondary';
+            btn.style.cssText = 'margin-top:8px; padding:6px 10px; font-size:12px; background:#fef2f2; color:#991b1b; border:1px dashed #f87171;';
+            btn.textContent = '🐛 這場有 BUG？回報一下';
+            btn.onclick = () => openBugReport(true);
+            fr.appendChild(btn);
+          }
+        } catch (e) {}
         __fightInProgress = false;
         return;
       }
@@ -6059,6 +6308,7 @@
           pendingBets: payload.pendingBets,
           betPool: payload.betPool,
           worldBoss: payload.worldBoss,
+          bugs: payload.bugs,
           baseMoney: payload.baseMoney,
           basePoint: payload.basePoint,
         };
