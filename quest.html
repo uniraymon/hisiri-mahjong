@@ -1623,6 +1623,10 @@
       __persistLocalSnapshot();
       render();
     } finally { __isApplyingRemote = false; }
+    // 雲端有新 worldBoss → 看看是不是別人剛打死了王、我有獎勵可以領
+    if (typeof claimMyBossRewards === 'function') {
+      try { claimMyBossRewards(); } catch (e) { console.warn('claim rewards:', e); }
+    }
   };
 
   window.__applyRemotePlayers = function(remotePlayers) {
@@ -3264,6 +3268,44 @@
     document.getElementById('worldBossBody').innerHTML = html;
   }
 
+  // 玩家自己領取自己的待領獎勵（從 worldBoss[*].pendingRewards 取出 pid 等於自己的條目）
+  // 用 rpg.claimedBossRewards 防止重複領取（多端同步可能重複觸發）
+  function claimMyBossRewards() {
+    const me = getMe();
+    if (!me) return false;
+    const r = getRpg(me);
+    r.claimedBossRewards = r.claimedBossRewards || [];
+    let claimedAny = false;
+    let inventoryAdded = [];
+    let coinsAdded = 0;
+    for (const boss of WORLD_BOSSES) {
+      const state = worldBoss && worldBoss[boss.id];
+      if (!state || !Array.isArray(state.pendingRewards)) continue;
+      for (const reward of state.pendingRewards) {
+        if (!reward || reward.pid !== me.id) continue;
+        if (r.claimedBossRewards.includes(reward.rewardId)) continue;
+        // 領取
+        if (reward.coins) refundCoins(me.id, reward.coins);
+        if (reward.item) {
+          r.inventory = r.inventory || [];
+          r.inventory.push(reward.item);
+          inventoryAdded.push(reward.item);
+        }
+        r.claimedBossRewards.push(reward.rewardId);
+        coinsAdded += reward.coins || 0;
+        claimedAny = true;
+      }
+    }
+    if (claimedAny) {
+      saveData();
+      const itemNote = inventoryAdded.length > 0 ? ` + ${inventoryAdded.length} 件神話裝備` : '';
+      showToast(`🏆 世界王獎勵入帳：+${coinsAdded} 鵝鵝幣${itemNote}`);
+    }
+    return claimedAny;
+  }
+  window.claimMyBossRewards = claimMyBossRewards;
+
+  // 舊版的同步分發（保留為 fallback，但實際上已被 transaction 內的 pendingRewards 取代）
   function distributeBossRewards(bossId, boss, state) {
     const sortedDmg = Object.entries(state.damageLog || {}).sort((a, b) => b[1] - a[1]);
     const ranks = [boss.rewardTop, boss.rewardSecond, boss.rewardThird];
@@ -3290,7 +3332,7 @@
     });
   }
 
-  function runBossFight(bossId) {
+  async function runBossFight(bossId) {
     const me = getMe(); if (!me) return;
     const r = getRpg(me); if (!r.class) return;
     tickRecovery(me);
@@ -3309,6 +3351,10 @@
       showToast(`⏳ 還要等 ${m > 0 ? m + ':' + String(s).padStart(2,'0') : s + 's'} 才能再挑戰這隻王`);
       return;
     }
+    if (!window.__firebaseSync || !window.__firebaseSync.applyBossAttack) {
+      showToast('☁️ 雲端尚未連線，稍後再試');
+      return;
+    }
     r.stamina -= BOSS_STAMINA;
     r.lastBossAttack[bossId] = Date.now();
 
@@ -3322,9 +3368,27 @@
       goldDrop: 0, xpDrop: 0,
     };
     const result = autoFight(me, monster);
-    const dmgDealt = state.currentHp - result.mHpFinal;
-    state.currentHp = Math.max(0, result.mHpFinal);
-    state.damageLog[me.id] = (state.damageLog[me.id] || 0) + dmgDealt;
+    const dmgRaw = Math.max(0, state.currentHp - result.mHpFinal);
+
+    // 把傷害透過 transaction 原子地寫上雲端，避免兩個玩家 race
+    let txOut;
+    try {
+      txOut = await window.__firebaseSync.applyBossAttack(bossId, dmgRaw, me.id, boss);
+    } catch (e) {
+      console.warn('Boss attack tx failed:', e?.message || e);
+      // 王在我動手前已倒下 → 退回體力 + 冷卻
+      r.stamina += BOSS_STAMINA;
+      delete r.lastBossAttack[bossId];
+      saveData();
+      showToast('🦢 王已倒下，體力已退回');
+      renderWorldBoss();
+      return;
+    }
+    const dmgDealt = txOut.actualDmg;  // 雲端實際接受的傷害（可能比 dmgRaw 少：王只剩 50 HP 時你打 1000 也只算 50）
+    const newState = txOut.newState;
+    const killed = txOut.killed;
+    // 把雲端結果同步回本地
+    worldBoss[bossId] = newState;
 
     // 玩家獲得：傷害 × 0.8 XP / 傷害 × 0.1 鵝鵝幣
     const xpGain = Math.round(dmgDealt * 0.8);
@@ -3346,19 +3410,9 @@
       const s = computeStats(me); r.hp = s.maxHp; r.mp = s.maxMp;
     }
 
-    // 擊殺判定
-    let killed = false;
-    if (state.currentHp <= 0) {
-      killed = true;
-      state.deadAt = Date.now();
-      state.nextSpawnAt = state.deadAt + boss.respawnMs;
-      state.lastHit = me.id;
-      state.killCount = (state.killCount || 0) + 1;
-      state.lastKill = { killer: me.id, when: state.deadAt, killCount: state.killCount };
-      distributeBossRewards(bossId, boss, state);
-    }
-
     saveData();
+    // 領自己的待領獎勵（pendingRewards）
+    claimMyBossRewards();
     renderCharCard();
     updateStaminaUI();
     renderWorldBoss();
@@ -3370,8 +3424,8 @@
         <div class="rl-item">⚔️ 你造成 <b style="color:#fca5a5;">${dmgDealt.toLocaleString()}</b> 傷害</div>
         <div class="rl-item">⭐ +${xpGain} XP　·　🪙 +${coinGain} 鵝鵝幣</div>
         ${killed
-          ? `<div style="margin-top:8px; padding:8px; background:rgba(245,158,11,0.3); border-radius:8px; color:#fde047; font-weight:700;">🏆 你給了尾刀！+${boss.rewardKiller.coins} 鵝鵝幣 + 1 件神話裝備</div>`
-          : `<div class="rl-item">${boss.icon} ${boss.name} 還剩 ${state.currentHp.toLocaleString()} HP（${(state.currentHp/boss.hp*100).toFixed(1)}%）</div>`}
+          ? `<div style="margin-top:8px; padding:8px; background:rgba(245,158,11,0.3); border-radius:8px; color:#fde047; font-weight:700;">🏆 你給了尾刀！獎勵已加到背包與鵝鵝幣</div>`
+          : `<div class="rl-item">${boss.icon} ${boss.name} 還剩 ${newState.currentHp.toLocaleString()} HP（${(newState.currentHp/boss.hp*100).toFixed(1)}%）</div>`}
       </div>
     `;
 
@@ -4006,7 +4060,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-  import { getFirestore, doc, collection, onSnapshot, setDoc, getDoc, deleteField } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+  import { getFirestore, doc, collection, onSnapshot, setDoc, getDoc, deleteField, runTransaction } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyA1dzTX6COdDAab7gojdXaycx7Vr9EydN8",
@@ -4045,6 +4099,91 @@
     window.__firebaseSync = {
       ready: false,
       roomId: ROOM_ID,
+      // 世界王打擊：用 transaction 原子地讀 + 扣 HP + 寫回，避免兩個玩家互相蓋掉
+      // bossDef 是 WORLD_BOSSES 裡的設定（要拿 hp / respawnMs / 各檔次獎勵）
+      // 回傳 { actualDmg, newState, killed, pendingRewards }
+      applyBossAttack: async (bossId, requestedDmg, attackerId, bossDef) => {
+        return await runTransaction(db, async (tx) => {
+          const snap = await tx.get(metaRef);
+          const data = snap.exists() ? snap.data() : {};
+          const wb = data.worldBoss ? { ...data.worldBoss } : {};
+          let state = wb[bossId];
+          // 若沒有狀態 / 已經到復活時間 → 重生
+          if (!state || (state.deadAt && state.nextSpawnAt && Date.now() >= state.nextSpawnAt)) {
+            state = {
+              currentHp: bossDef.hp,
+              spawnedAt: Date.now(),
+              deadAt: null,
+              nextSpawnAt: null,
+              damageLog: {},
+              lastHit: null,
+              killCount: state ? (state.killCount || 0) : 0,
+              lastKill: state ? state.lastKill : null,
+              pendingRewards: state ? (state.pendingRewards || []) : [],
+            };
+          }
+          if (state.deadAt) {
+            // 王已倒下、還沒到復活時間
+            throw new Error('boss-already-dead');
+          }
+          const actualDmg = Math.min(state.currentHp, Math.max(0, Math.floor(requestedDmg)));
+          state.currentHp -= actualDmg;
+          state.damageLog = state.damageLog || {};
+          state.damageLog[attackerId] = (state.damageLog[attackerId] || 0) + actualDmg;
+          state.lastHit = attackerId;
+          let killed = false;
+          let newPending = [];
+          if (state.currentHp <= 0) {
+            state.currentHp = 0;
+            state.deadAt = Date.now();
+            state.nextSpawnAt = state.deadAt + bossDef.respawnMs;
+            state.killCount = (state.killCount || 0) + 1;
+            state.lastKill = { killer: attackerId, when: state.deadAt, killCount: state.killCount };
+            killed = true;
+            // 把獎勵記在 pendingRewards 裡，由各玩家自己領
+            const sortedDmg = Object.entries(state.damageLog).sort((a, b) => b[1] - a[1]);
+            const rankRewards = [bossDef.rewardTop, bossDef.rewardSecond, bossDef.rewardThird];
+            const seen = new Set();
+            // 尾刀
+            newPending.push({
+              pid: attackerId,
+              coins: bossDef.rewardKiller.coins,
+              item: bossDef.rewardKiller.item || null,
+              rewardId: `${bossId}_${state.killCount}_killer`,
+              kind: '尾刀',
+            });
+            seen.add(attackerId + '_killer');
+            // 排行 1-3 額外
+            sortedDmg.slice(0, 3).forEach(([pid], idx) => {
+              if (rankRewards[idx]) {
+                newPending.push({
+                  pid,
+                  coins: rankRewards[idx].coins,
+                  item: null,
+                  rewardId: `${bossId}_${state.killCount}_rank${idx+1}_${pid}`,
+                  kind: `第 ${idx+1} 名`,
+                });
+              }
+            });
+            // 其餘參與者
+            sortedDmg.slice(3).forEach(([pid]) => {
+              if (bossDef.rewardParticipant) {
+                newPending.push({
+                  pid,
+                  coins: bossDef.rewardParticipant.coins,
+                  item: null,
+                  rewardId: `${bossId}_${state.killCount}_part_${pid}`,
+                  kind: '參與',
+                });
+              }
+            });
+            state.pendingRewards = (state.pendingRewards || []).concat(newPending);
+          }
+          wb[bossId] = state;
+          tx.set(metaRef, { worldBoss: wb }, { merge: true });
+          return { actualDmg, newState: state, killed, pendingRewards: newPending };
+        });
+      },
       save: (payload) => {
         const meId = window.__getMeId?.();
 
