@@ -1342,9 +1342,15 @@
       hpPer: 14, atkPer: 2.2, defPer: 1.2, spdPer: 0.4,
       attackVerb: '揮砍',
       skills: [
-        { id: 'w_rage_flame',   name: '怒之炎', icon: '☄️', unlockLv: 12, cooldown: 7, mpCost: 35, type: 'damage', mult: 2.5 },
-        { id: 'w_heavy_strike', name: '重擊',   icon: '⚡', unlockLv: 5,  cooldown: 4, mpCost: 18, type: 'damage', mult: 1.3, alwaysCrit: true },
-        { id: 'w_rage_slash',   name: '狂怒斬', icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 14, type: 'damage', mult: 1.8 },
+        { id: 'w_rage_flame',   name: '怒之炎',   icon: '☄️', unlockLv: 12, cooldown: 7, mpCost: 35, type: 'damage', mult: 2.5 },
+        { id: 'w_heavy_strike', name: '重擊',     icon: '⚡', unlockLv: 5,  cooldown: 4, mpCost: 18, type: 'damage', mult: 1.3, alwaysCrit: true },
+        { id: 'w_rage_slash',   name: '狂怒斬',   icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 14, type: 'damage', mult: 1.8 },
+        // ⭐ HP 代價系列：不耗 MP、改扣自身 HP
+        { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 3,  cooldown: 3, mpCost: 0, hpCost: 0.08, type: 'damage', mult: 2.0 },
+        { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 10, cooldown: 5, mpCost: 0, hpCost: 0.15, type: 'damage', mult: 3.0, healCaster: 0.12 },
+        { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 15, cooldown: 8, mpCost: 0, hpCost: 0.25, type: 'damage', mult: 4.0 },
+        // 補給技：兼顧 HP+MP
+        { id: 'w_war_cry',      name: '戰意呼喚', icon: '📢', unlockLv: 7,  cooldown: 5, mpCost: 10, type: 'heal', healPct: 0.15, mpPct: 0.20 },
       ],
       skillTree: [
         { id: 'w_s0', name: '怒之炎強化', icon: '☄️', desc: '+10% 怒之炎傷害', maxLevel: 5, effect: 'skill0Pct', per: 0.10 },
@@ -1374,6 +1380,10 @@
         { id: 'a_god_arrow',   name: '神之矢',   icon: '🌟', unlockLv: 12, cooldown: 7, mpCost: 32, type: 'damage', mult: 2.8, alwaysCrit: true },
         { id: 'a_multishot',   name: '多重射擊', icon: '🏹', unlockLv: 5,  cooldown: 4, mpCost: 16, type: 'damage', mult: 1.8 },
         { id: 'a_precise_shot',name: '精準射擊', icon: '🎯', unlockLv: 1,  cooldown: 3, mpCost: 12, type: 'damage', mult: 1.4, alwaysCrit: true },
+        // 弓手 MP regen：靠專注補魔
+        { id: 'a_concentrate', name: '集中',     icon: '🧘', unlockLv: 4,  cooldown: 4, mpCost: 0,  type: 'heal', mpPct: 0.20 },
+        { id: 'a_barrage',     name: '連射',     icon: '🌊', unlockLv: 8,  cooldown: 5, mpCost: 28, type: 'damage', mult: 2.4 },
+        { id: 'a_lethal_aim',  name: '致命瞄準', icon: '💀', unlockLv: 14, cooldown: 8, mpCost: 40, type: 'damage', mult: 3.5, alwaysCrit: true, ignoreDef: true },
       ],
       skillTree: [
         { id: 'a_s0', name: '神之矢強化',   icon: '🌟', desc: '+10% 神之矢傷害',   maxLevel: 5, effect: 'skill0Pct', per: 0.10 },
@@ -1401,9 +1411,14 @@
       attackVerb: '魔法',
       critBonus: 0.18,
       skills: [
-        { id: 'm_meteor',   name: '隕石術', icon: '☄️', unlockLv: 12, cooldown: 7, mpCost: 50, type: 'damage', flat: 120, perLv: 5, ignoreDef: true },
-        { id: 'm_ice_lance',name: '冰錐術', icon: '❄️', unlockLv: 5,  cooldown: 4, mpCost: 20, type: 'damage', mult: 1.6, alwaysCrit: true },
-        { id: 'm_fireball', name: '火球術', icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 25, type: 'damage', flat: 50, perLv: 3, ignoreDef: true },
+        { id: 'm_meteor',         name: '隕石術',     icon: '☄️', unlockLv: 12, cooldown: 7, mpCost: 50, type: 'damage', flat: 120, perLv: 5, ignoreDef: true },
+        { id: 'm_ice_lance',      name: '冰錐術',     icon: '❄️', unlockLv: 5,  cooldown: 4, mpCost: 20, type: 'damage', mult: 1.6, alwaysCrit: true },
+        { id: 'm_fireball',       name: '火球術',     icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 25, type: 'damage', flat: 50, perLv: 3, ignoreDef: true },
+        // 法師核心：法力湧泉（MP regen），沒這個 MP 一下就用光
+        { id: 'm_mana_spring',    name: '法力湧泉',   icon: '💧', unlockLv: 3,  cooldown: 4, mpCost: 0,  type: 'heal', mpPct: 0.30 },
+        { id: 'm_chain_lightning',name: '連環閃電',   icon: '⚡', unlockLv: 8,  cooldown: 5, mpCost: 35, type: 'damage', flat: 85, perLv: 4, ignoreDef: true },
+        { id: 'm_arcane_shield',  name: '魔力護盾',   icon: '🛡️', unlockLv: 9,  cooldown: 6, mpCost: 30, type: 'heal', healPct: 0.20 },
+        { id: 'm_destruction',    name: '毀滅之怒',   icon: '💀', unlockLv: 16, cooldown: 9, mpCost: 65, type: 'damage', flat: 220, perLv: 8, ignoreDef: true },
       ],
       skillTree: [
         { id: 'm_s0', name: '隕石術強化', icon: '☄️', desc: '+10% 隕石術傷害', maxLevel: 5, effect: 'skill0Pct', per: 0.10 },
@@ -1432,9 +1447,13 @@
       attackVerb: '聖光斬',
       regenPer: 0.05,
       skills: [
-        { id: 'p_judgment', name: '審判',     icon: '⚖️', unlockLv: 12, cooldown: 7, mpCost: 38, type: 'damage', mult: 2.5, alwaysCrit: true },
-        { id: 'p_holy_slash',name: '聖光斬',  icon: '✝️', unlockLv: 5,  cooldown: 4, mpCost: 22, type: 'damage', mult: 1.6, healCaster: 0.05 },
-        { id: 'p_holy_heal',name: '神聖治癒', icon: '✨', unlockLv: 1,  cooldown: 5, mpCost: 30, type: 'heal', healPct: 0.3 },
+        { id: 'p_judgment',  name: '審判',     icon: '⚖️', unlockLv: 12, cooldown: 7, mpCost: 38, type: 'damage', mult: 2.5, alwaysCrit: true },
+        { id: 'p_holy_slash',name: '聖光斬',   icon: '✝️', unlockLv: 5,  cooldown: 4, mpCost: 22, type: 'damage', mult: 1.6, healCaster: 0.05 },
+        { id: 'p_holy_heal', name: '神聖治癒', icon: '✨', unlockLv: 1,  cooldown: 5, mpCost: 30, type: 'heal', healPct: 0.3 },
+        // 聖騎 MP regen：祈禱
+        { id: 'p_pray',      name: '祈禱',     icon: '🙏', unlockLv: 3,  cooldown: 4, mpCost: 0,  type: 'heal', mpPct: 0.25, healPct: 0.05 },
+        { id: 'p_shelter',   name: '庇護術',   icon: '🤲', unlockLv: 7,  cooldown: 6, mpCost: 25, type: 'heal', healPct: 0.40 },
+        { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 10, cooldown: 5, mpCost: 35, type: 'damage', mult: 2.0, alwaysCrit: true, healCaster: 0.10 },
       ],
       skillTree: [
         { id: 'p_s0', name: '審判強化',   icon: '⚖️', desc: '+10% 審判傷害',   maxLevel: 5, effect: 'skill0Pct', per: 0.10 },
@@ -1761,30 +1780,43 @@
     switch (classId) {
       case 'warrior':
         return [
-          { judgeId: 1300, param: 30, skillId: 'w_rage_flame' },
+          { judgeId: 1101, param: 30, skillId: 'w_war_cry' },        // 自身 HP ≤ 30% → 戰意呼喚（補 HP+MP）
+          { judgeId: 1300, param: 25, skillId: 'w_death_rage' },     // 敵血 ≤ 25% → 死戰之怒（HP 代價收頭）
+          { judgeId: 1300, param: 50, skillId: 'w_blood_burst' },    // 敵血 ≤ 50% → 嗜血爆裂
+          { judgeId: 1300, param: 30, skillId: 'w_rage_flame' },     // 敵血 ≤ 30% → 怒之炎
+          { judgeId: 1201, param: 25, skillId: 'w_blood_slash' },    // MP ≤ 25% → 血祭斬（不耗 MP）
           { judgeId: 1000, param: 0,  skillId: 'w_heavy_strike' },
           { judgeId: 1000, param: 0,  skillId: 'w_rage_slash' },
           { judgeId: 1000, param: 0,  skillId: 'basic' },
         ];
       case 'archer':
         return [
-          { judgeId: 1300, param: 25, skillId: 'a_god_arrow' },
+          { judgeId: 1300, param: 25, skillId: 'a_lethal_aim' },     // 敵血 ≤ 25% → 致命瞄準
+          { judgeId: 1300, param: 40, skillId: 'a_god_arrow' },      // 敵血 ≤ 40% → 神之矢
+          { judgeId: 1201, param: 25, skillId: 'a_concentrate' },    // MP ≤ 25% → 集中（純 MP regen）
+          { judgeId: 1000, param: 0,  skillId: 'a_barrage' },
           { judgeId: 1000, param: 0,  skillId: 'a_multishot' },
           { judgeId: 1000, param: 0,  skillId: 'a_precise_shot' },
           { judgeId: 1000, param: 0,  skillId: 'basic' },
         ];
       case 'mage':
         return [
-          { judgeId: 1300, param: 20, skillId: 'm_meteor' },
-          { judgeId: 1200, param: 30, skillId: 'm_fireball' },
+          { judgeId: 1201, param: 25, skillId: 'm_mana_spring' },    // MP ≤ 25% → 法力湧泉（必須先補 MP）
+          { judgeId: 1101, param: 40, skillId: 'm_arcane_shield' },  // 自身 HP ≤ 40% → 魔力護盾
+          { judgeId: 1300, param: 20, skillId: 'm_destruction' },    // 敵血 ≤ 20% → 毀滅之怒
+          { judgeId: 1300, param: 50, skillId: 'm_meteor' },         // 敵血 ≤ 50% → 隕石術
+          { judgeId: 1000, param: 0,  skillId: 'm_chain_lightning' },
           { judgeId: 1000, param: 0,  skillId: 'm_ice_lance' },
           { judgeId: 1000, param: 0,  skillId: 'm_fireball' },
           { judgeId: 1000, param: 0,  skillId: 'basic' },
         ];
       case 'paladin':
         return [
-          { judgeId: 1101, param: 50, skillId: 'p_holy_heal' },
-          { judgeId: 1300, param: 30, skillId: 'p_judgment' },
+          { judgeId: 1101, param: 35, skillId: 'p_shelter' },        // 自身 HP ≤ 35% → 庇護術（大補）
+          { judgeId: 1101, param: 60, skillId: 'p_holy_heal' },      // 自身 HP ≤ 60% → 神聖治癒
+          { judgeId: 1201, param: 25, skillId: 'p_pray' },           // MP ≤ 25% → 祈禱（MP regen）
+          { judgeId: 1300, param: 30, skillId: 'p_judgment' },       // 敵血 ≤ 30% → 審判
+          { judgeId: 1000, param: 0,  skillId: 'p_holy_smite' },
           { judgeId: 1000, param: 0,  skillId: 'p_holy_slash' },
           { judgeId: 1000, param: 0,  skillId: 'basic' },
         ];
@@ -2768,6 +2800,12 @@
     if (!Array.isArray(player.rpg.actionPattern) || player.rpg.actionPattern.length === 0) {
       player.rpg.actionPattern = player.rpg.class ? getDefaultActionPattern(player.rpg.class) : [];
     }
+    // 一次性升級：舊規則表沒有 MP regen / HP cost 等新技能 → 升級為新預設
+    // actionPatternV2 旗標確保只跑一次，玩家後續自訂的不會被重設
+    if (!player.rpg.actionPatternV2 && player.rpg.class) {
+      player.rpg.actionPattern = getDefaultActionPattern(player.rpg.class);
+      player.rpg.actionPatternV2 = true;
+    }
     // 補發：以前遇過綠茶但還沒拿到對應指南書的，現在補回去
     if ((player.rpg.metGreenTea || 0) > 0) {
       const before = player.rpg.greenTeaGuidesGranted.length;
@@ -3266,8 +3304,13 @@
           const s = sInfo.skill;
           if ((s.unlockLv || 1) > (player.rpg.level || 1)) continue;
           if (playerActions < (nextActionForSkill[s.id] || 0)) continue;
-          const effMpCost = Math.round(s.mpCost * (1 - (passive.mpDiscount || 0)));
+          const effMpCost = Math.round((s.mpCost || 0) * (1 - (passive.mpDiscount || 0)));
           if (pMp < effMpCost) continue;
+          // HP 代價技能：必須有「比成本多」的 HP（防自爆）
+          if (s.hpCost) {
+            const hpNeeded = Math.max(1, Math.round(stats.maxHp * s.hpCost));
+            if (pHp <= hpNeeded) continue;
+          }
           // judge 已過、技能也可用 → 採用這條
           useSkill = s;
           useSkillIdx = sInfo.idx;
@@ -3281,9 +3324,20 @@
 
         if (useSkill) {
           const skill = useSkill;
-          const effMpCost = Math.round(skill.mpCost * (1 - (passive.mpDiscount || 0)));
+          const effMpCost = Math.round((skill.mpCost || 0) * (1 - (passive.mpDiscount || 0)));
           pMp -= effMpCost;
+          // ⭐ HP 代價（戰士血祭系列）：施法時扣自身 HP（最少留 1）
+          let hpPaid = 0;
+          if (skill.hpCost) {
+            hpPaid = Math.max(1, Math.round(stats.maxHp * skill.hpCost));
+            pHp = Math.max(1, pHp - hpPaid);
+          }
           nextActionForSkill[skill.id] = playerActions + skill.cooldown;
+          // 成本說明字串（多種代價可能組合：MP / HP）
+          const costParts = [];
+          if (effMpCost > 0) costParts.push(`-${effMpCost} MP`);
+          if (hpPaid > 0)    costParts.push(`-${hpPaid} HP`);
+          const costStr = costParts.length ? `（${costParts.join('，')}）` : '';
           if (skill.type === 'damage') {
             let dmg;
             const isFlat = skill.flat != null;
@@ -3293,7 +3347,7 @@
             } else {
               dmg = stats.atk * (skill.mult || 1) - Math.floor(monster.def / 2);
             }
-            // 技能個別 % 加成（從技能樹點到的對應節點）
+            // 技能個別 % 加成（從技能樹點到的對應節點）— 只對前 3 個技能有效
             const perSkillKey = `skill${useSkillIdx}Pct`;
             dmg *= (1 + (bonus[perSkillKey] || 0));
             // 通用 skillDmgPct（保留舊邏輯）
@@ -3309,27 +3363,39 @@
             if (isCrit) { dmg *= critMult; critCount++; }
             dmg = Math.max(1, Math.round(dmg));
             mHp -= dmg;
-            // healCaster: 攻擊同時治癒自己（例如聖光斬）
+            // healCaster: 攻擊同時治癒自己（嗜血/聖光斬）
             let extra = '';
             if (skill.healCaster) {
               const heal = Math.max(1, Math.round(stats.maxHp * skill.healCaster));
               const before = pHp;
               pHp = Math.min(stats.maxHp, pHp + heal);
-              extra = ` +${pHp - before} HP`;
+              extra = ` 💚+${pHp - before} HP`;
             }
             log.push({
               type: 'crit-player',
-              text: `回合 ${round}：${skill.icon} ${skill.name}${isCrit ? '【暴擊】' : ''} → ${monster.name} -${dmg} HP${extra}（-${effMpCost} MP）`,
+              text: `回合 ${round}：${skill.icon} ${skill.name}${isCrit ? '【暴擊】' : ''} → ${monster.name} -${dmg} HP${extra}${costStr}`,
               hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp }
             });
             if (mHp <= 0) { pushDeathLine(); break; }
           } else if (skill.type === 'heal') {
-            const before = pHp;
-            const heal = Math.round(stats.maxHp * skill.healPct * (1 + (bonus.skillHealPct || 0)) * (1 + (passive.healPct || 0)));
-            pHp = Math.min(stats.maxHp, pHp + heal);
+            // 'heal' 類型：可同時帶 healPct（HP 補）和 mpPct（MP 補），任一或兩者
+            const gainedParts = [];
+            if (skill.healPct) {
+              const before = pHp;
+              const heal = Math.round(stats.maxHp * skill.healPct * (1 + (bonus.skillHealPct || 0)) * (1 + (passive.healPct || 0)));
+              pHp = Math.min(stats.maxHp, pHp + heal);
+              if (pHp - before > 0) gainedParts.push(`💚+${pHp - before} HP`);
+            }
+            if (skill.mpPct) {
+              const before = pMp;
+              const mpHeal = Math.round(stats.maxMp * skill.mpPct);
+              pMp = Math.min(stats.maxMp, pMp + mpHeal);
+              if (pMp - before > 0) gainedParts.push(`💙+${pMp - before} MP`);
+            }
+            const gainedStr = gainedParts.length ? gainedParts.join(' ') : '無效果';
             log.push({
               type: 'player',
-              text: `回合 ${round}：${skill.icon} ${skill.name} +${pHp - before} HP（-${effMpCost} MP）`,
+              text: `回合 ${round}：${skill.icon} ${skill.name} ${gainedStr}${costStr}`,
               hp: { player: pHp, monster: mHp, mp: pMp }
             });
           }
@@ -3635,6 +3701,14 @@
           改完<b>立刻生效</b>，下一次戰鬥就會用新規則。
         </div>
 
+        <div style="font-size:13px; font-weight:700; color:#7c3aed; margin:8px 0 4px;">⚙️ 新版技能機制</div>
+        <ul style="margin:4px 0 8px 18px; padding:0; font-size:12px;">
+          <li><b>戰鬥中 MP 不會自動回</b>，要靠回魔技能（如法師「💧法力湧泉」、聖騎「🙏祈禱」、弓手「🧘集中」、戰士「📢戰意呼喚」）</li>
+          <li>戰士有 <b>HP 代價</b>系列技能（🩸血祭斬 / 💥嗜血爆裂 / ☠️死戰之怒）：不耗 MP、改扣自身 HP</li>
+          <li>HP 代價技不會直接讓你死（最少留 1 HP），但接著被打就慘</li>
+          <li>建議在規則中加「自身 HP ≤ 30% → 補血技」來保命</li>
+        </ul>
+
         <div style="font-size:13px; font-weight:700; color:#7c3aed; margin:8px 0 4px;">💡 進階小技巧</div>
         <ul style="margin:4px 0 8px 18px; padding:0; font-size:12px;">
           <li><b>「我的第 X 次行動」</b>可以做開場連擊（第 1 動先重擊）</li>
@@ -3851,12 +3925,24 @@
   }
 
   function formatSkillDesc(s) {
-    if (s.type === 'heal') return `回 ${Math.round(s.healPct * 100)}% maxHP`;
+    if (s.type === 'heal') {
+      const parts = [];
+      if (s.healPct) parts.push(`回 ${Math.round(s.healPct * 100)}% HP`);
+      if (s.mpPct)  parts.push(`回 ${Math.round(s.mpPct  * 100)}% MP`);
+      return parts.join(' + ') || '輔助';
+    }
     if (s.flat != null) return `固定 ${s.flat}+Lv×${s.perLv} 傷害${s.ignoreDef ? '（無視防）' : ''}`;
     let parts = [];
     if (s.mult) parts.push(`${s.mult}× ATK`);
     if (s.alwaysCrit) parts.push('必中暴擊');
-    if (s.healCaster) parts.push(`回 ${Math.round(s.healCaster * 100)}% maxHP`);
+    if (s.healCaster) parts.push(`吸 ${Math.round(s.healCaster * 100)}% HP`);
+    return parts.join(' + ');
+  }
+  function formatSkillCost(s) {
+    const parts = [];
+    if (s.mpCost && s.mpCost > 0) parts.push(`<span style="color:#3b82f6;">${s.mpCost} MP</span>`);
+    if (s.hpCost) parts.push(`<span style="color:#dc2626;">${Math.round(s.hpCost * 100)}% HP</span>`);
+    if (parts.length === 0) parts.push('<span style="color:#16a34a;">免費</span>');
     return parts.join(' + ');
   }
 
@@ -4222,12 +4308,12 @@
           </div>`;
         })()}
         ${(cls.skills && cls.skills.length) ? `<div style="margin-top:10px; padding:8px 10px; background:linear-gradient(135deg,#dbeafe,#bfdbfe); border:2px dashed #60a5fa; border-radius:10px; font-size:11px; color:#1e3a8a;">
-          <div style="font-weight:700; margin-bottom:4px;">⚡ 主動技能（戰鬥自動施放，強→弱優先）</div>
+          <div style="font-weight:700; margin-bottom:4px;">⚡ 主動技能（依「行動規則」自動使用）</div>
           ${cls.skills.map(s => {
             const locked = (s.unlockLv || 1) > rpg.level;
-            return `<div style="display:flex; justify-content:space-between; padding:2px 0; ${locked ? 'opacity:0.45;' : ''}">
-              <span>${locked ? '🔒' : '✓'} <b>${s.icon} ${s.name}</b>${locked ? ` <span style="font-size:10px;">(Lv ${s.unlockLv} 解鎖)</span>` : ''}</span>
-              <span style="opacity:0.85;">CD ${s.cooldown} / ${s.mpCost} MP</span>
+            return `<div style="display:flex; justify-content:space-between; padding:2px 0; gap:6px; ${locked ? 'opacity:0.45;' : ''}">
+              <span>${locked ? '🔒' : '✓'} <b>${s.icon} ${s.name}</b>${locked ? ` <span style="font-size:10px;">(Lv ${s.unlockLv})</span>` : ''}</span>
+              <span style="opacity:0.85; font-size:10px; white-space:nowrap;">CD ${s.cooldown} · ${formatSkillCost(s)}</span>
             </div>`;
           }).join('')}
         </div>` : ''}
