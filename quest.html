@@ -96,16 +96,76 @@
   /* 角色卡 */
   .char-card { display: flex; gap: 14px; align-items: flex-start; }
   .char-portrait {
-    font-size: 56px;
-    width: 80px; height: 80px;
+    width: 100px; height: 100px;
     background: linear-gradient(135deg, #ddd6fe, #c4b5fd);
     border-radius: 18px;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 -10px 20px rgba(124, 58, 237, 0.15);
+  }
+  /* 紙娃娃 */
+  .paper-doll {
+    position: relative;
+    width: 100%; height: 100%;
+  }
+  .pd-armor {
+    position: absolute;
+    inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
-    cursor: default;
+    font-size: 96px;
+    opacity: 0.32;
+    z-index: 1;
+    filter: drop-shadow(0 0 8px rgba(255,255,255,0.6));
+    animation: pdPulse 3s ease-in-out infinite;
   }
+  @keyframes pdPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+  .pd-base {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 60px;
+    z-index: 2;
+    text-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+  }
+  .pd-weapon {
+    position: absolute;
+    right: 0px;
+    bottom: 4px;
+    font-size: 36px;
+    z-index: 3;
+    transform: rotate(-25deg);
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.25));
+    animation: pdSwayWeapon 2.6s ease-in-out infinite;
+  }
+  @keyframes pdSwayWeapon {
+    0%, 100% { transform: rotate(-25deg) translateY(0); }
+    50% { transform: rotate(-22deg) translateY(-2px); }
+  }
+  .pd-acc {
+    position: absolute;
+    top: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 24px;
+    z-index: 4;
+    filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.8));
+    animation: pdFloatAcc 2.4s ease-in-out infinite;
+  }
+  @keyframes pdFloatAcc {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-2px); }
+  }
+  /* 紙娃娃 hover 顯示換裝提示 */
+  .char-portrait[role="button"] { cursor: pointer; }
+  .char-portrait[role="button"]:hover .pd-base { transform: scale(1.04); transition: transform 0.2s; }
   .char-info { flex: 1; min-width: 0; }
   .char-name { font-weight: 700; color: #7c3aed; font-size: 18px; }
   .char-class { font-size: 12px; color: #8b6f9b; margin-bottom: 8px; }
@@ -1217,8 +1277,18 @@
     const stamPercent = Math.round((rpg.stamina / STAMINA_MAX) * 100);
     const coins = getCoins(me.id);
 
+    const wIcon = rpg.equipment?.weapon ? findItem(rpg.equipment.weapon)?.icon : '';
+    const aIcon = rpg.equipment?.armor ? findItem(rpg.equipment.armor)?.icon : '';
+    const cIcon = rpg.equipment?.accessory ? findItem(rpg.equipment.accessory)?.icon : '';
     document.getElementById('charCard').innerHTML = `
-      <div class="char-portrait">${cls.icon}</div>
+      <div class="char-portrait">
+        <div class="paper-doll">
+          ${aIcon ? `<div class="pd-armor">${aIcon}</div>` : ''}
+          <div class="pd-base">${cls.icon}</div>
+          ${wIcon ? `<div class="pd-weapon">${wIcon}</div>` : ''}
+          ${cIcon ? `<div class="pd-acc">${cIcon}</div>` : ''}
+        </div>
+      </div>
       <div class="char-info">
         <div class="char-name">${escapeHtml(me.name)}</div>
         <div class="char-class">${cls.name} · Lv ${rpg.level}</div>
