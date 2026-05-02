@@ -208,6 +208,48 @@
   .pd-shield { z-index: 3; }
   .pd-weapon { z-index: 4; animation: pdSwayWeapon 2.6s ease-in-out infinite; transform-origin: center; }
   .pd-acc    { z-index: 5; animation: pdFloatAcc 2.4s ease-in-out infinite; }
+
+  /* === 裝備分階自動上色（用 CSS filter 覆蓋 SVG 模板） === */
+  /* 武器：10 階色調（木 → 鐵 → 鋼 → 銀 → 魔 → 聖 → 邪 → 雷 → 龍 → 神話） */
+  .pd-weapon[data-tier="1"]  { filter: sepia(1) saturate(0.8) hue-rotate(-15deg) brightness(0.85) drop-shadow(0 2px 3px rgba(0,0,0,0.25)); }
+  .pd-weapon[data-tier="2"]  { filter: saturate(0.4) brightness(0.95) drop-shadow(0 2px 3px rgba(0,0,0,0.3)); }
+  .pd-weapon[data-tier="3"]  { filter: saturate(0.7) brightness(1.05) drop-shadow(0 2px 3px rgba(0,0,0,0.25)); }
+  .pd-weapon[data-tier="4"]  { filter: saturate(0.6) brightness(1.15) drop-shadow(0 0 4px rgba(135,206,250,0.5)); }
+  .pd-weapon[data-tier="5"]  { filter: hue-rotate(70deg) saturate(2.5) brightness(1.1) drop-shadow(0 0 6px rgba(167,139,250,0.85)); }
+  .pd-weapon[data-tier="6"]  { filter: sepia(1) saturate(2.5) hue-rotate(-30deg) brightness(1.15) drop-shadow(0 0 6px rgba(255,215,0,0.8)); }
+  .pd-weapon[data-tier="7"]  { filter: hue-rotate(-30deg) saturate(2.2) brightness(0.7) drop-shadow(0 0 6px rgba(220,38,38,0.7)); }
+  .pd-weapon[data-tier="8"]  { filter: hue-rotate(-80deg) saturate(3) brightness(1.2) drop-shadow(0 0 7px rgba(250,204,21,0.95)); }
+  .pd-weapon[data-tier="9"]  { filter: hue-rotate(110deg) saturate(2.2) brightness(1.05) drop-shadow(0 0 7px rgba(34,197,94,0.85)); }
+  .pd-weapon[data-tier="10"] { filter: saturate(2.5) brightness(1.2) drop-shadow(0 0 4px #ff7eb9) drop-shadow(0 0 8px #7afcff) drop-shadow(0 0 14px rgba(255,255,255,0.6)); animation: pdSwayWeapon 2.6s ease-in-out infinite, pdRainbow 4s linear infinite; }
+  @keyframes pdRainbow {
+    0%   { filter: hue-rotate(0deg)   saturate(2.5) brightness(1.2) drop-shadow(0 0 6px #ff7eb9); }
+    50%  { filter: hue-rotate(180deg) saturate(2.5) brightness(1.2) drop-shadow(0 0 6px #7afcff); }
+    100% { filter: hue-rotate(360deg) saturate(2.5) brightness(1.2) drop-shadow(0 0 6px #ff7eb9); }
+  }
+
+  /* 防具：10 階盔甲光暈色 */
+  .pd-armor[data-tier="1"]  { filter: hue-rotate(20deg) saturate(0.5) brightness(0.85); }
+  .pd-armor[data-tier="2"]  { filter: saturate(0.3) brightness(0.95); }
+  .pd-armor[data-tier="3"]  { filter: saturate(0.6) brightness(1.05); }
+  .pd-armor[data-tier="4"]  { filter: hue-rotate(15deg) saturate(0.8) brightness(1.15); }
+  .pd-armor[data-tier="5"]  { filter: hue-rotate(60deg) saturate(2) brightness(1.1) drop-shadow(0 0 8px rgba(167,139,250,0.7)); }
+  .pd-armor[data-tier="6"]  { filter: hue-rotate(-150deg) saturate(2.5) brightness(1.2) drop-shadow(0 0 10px rgba(255,215,0,0.7)); }
+  .pd-armor[data-tier="7"]  { filter: hue-rotate(140deg) saturate(2) brightness(0.6) drop-shadow(0 0 8px rgba(220,38,38,0.6)); }
+  .pd-armor[data-tier="8"]  { filter: hue-rotate(-110deg) saturate(2.5) brightness(1.15) drop-shadow(0 0 10px rgba(250,204,21,0.85)); }
+  .pd-armor[data-tier="9"]  { filter: hue-rotate(80deg) saturate(2.2) brightness(1.05) drop-shadow(0 0 10px rgba(34,197,94,0.8)); }
+  .pd-armor[data-tier="10"] { filter: saturate(3) brightness(1.2) drop-shadow(0 0 12px rgba(255,255,255,0.8)); animation: pdPulse 3s ease-in-out infinite, pdRainbow 4s linear infinite; }
+
+  /* 飾品：10 階色 */
+  .pd-acc[data-tier="1"]  { filter: sepia(0.7) saturate(0.7) brightness(0.9); }
+  .pd-acc[data-tier="2"]  { filter: saturate(0.6) brightness(1); }
+  .pd-acc[data-tier="3"]  { filter: saturate(0.8) brightness(1.05); }
+  .pd-acc[data-tier="4"]  { filter: hue-rotate(-20deg) saturate(0.8) brightness(1.15); }
+  .pd-acc[data-tier="5"]  { filter: hue-rotate(60deg) saturate(2) brightness(1.1) drop-shadow(0 0 5px rgba(167,139,250,0.85)); }
+  .pd-acc[data-tier="6"]  { filter: sepia(1) saturate(2.5) hue-rotate(-30deg) drop-shadow(0 0 6px rgba(255,215,0,0.9)); }
+  .pd-acc[data-tier="7"]  { filter: hue-rotate(-30deg) saturate(2.2) brightness(0.75) drop-shadow(0 0 5px rgba(220,38,38,0.7)); }
+  .pd-acc[data-tier="8"]  { filter: hue-rotate(-80deg) saturate(3) brightness(1.15) drop-shadow(0 0 6px rgba(250,204,21,0.95)); }
+  .pd-acc[data-tier="9"]  { filter: hue-rotate(110deg) saturate(2.2) brightness(1.05) drop-shadow(0 0 6px rgba(34,197,94,0.85)); }
+  .pd-acc[data-tier="10"] { animation: pdFloatAcc 2.4s ease-in-out infinite, pdRainbow 4s linear infinite; filter: saturate(2.5) brightness(1.2) drop-shadow(0 0 6px rgba(255,255,255,0.9)); }
   /* emoji fallback：當 SVG 載不到時用 emoji 撐住中央位置 */
   .pd-base-emoji {
     position: absolute;
@@ -966,6 +1008,18 @@
     return ITEMS.find(i => i.id === id) || SHOP_ITEMS.find(i => i.id === id);
   }
 
+  // 把裝備 lv 轉成 1..10 階（用於紙娃娃 CSS filter 對應）
+  // 商店裝備等級：1, 4, 7, 10, 13, 16, 19, 22, 25, 28
+  // ITEMS（怪物掉落）等級：1, 2, 3, 4, 5, 7, 8, 12, 18, 20 等不規則 → 用 ceil(lv/3)
+  const SHOP_LEVEL_SEQ = [1, 4, 7, 10, 13, 16, 19, 22, 25, 28];
+  function itemTier(item) {
+    if (!item || !item.lv) return 1;
+    const idx = SHOP_LEVEL_SEQ.indexOf(item.lv);
+    if (idx >= 0) return idx + 1;
+    // 不在商店序列：用 lv 大略換算（lv 28+ → 10、lv 1 → 1）
+    return Math.max(1, Math.min(10, Math.ceil(item.lv / 3)));
+  }
+
   function getRpg(player) {
     if (!player) return null;
     if (!player.rpg) {
@@ -1357,22 +1411,25 @@
     const stamPercent = Math.round((rpg.stamina / STAMINA_MAX) * 100);
     const coins = getCoins(me.id);
 
-    const hasWeapon = !!rpg.equipment?.weapon;
-    const hasArmor = !!rpg.equipment?.armor;
-    const hasAcc = !!rpg.equipment?.accessory;
+    const weaponItem = rpg.equipment?.weapon ? findItem(rpg.equipment.weapon) : null;
+    const armorItem  = rpg.equipment?.armor  ? findItem(rpg.equipment.armor)  : null;
+    const accItem    = rpg.equipment?.accessory ? findItem(rpg.equipment.accessory) : null;
+    const wTier = weaponItem ? itemTier(weaponItem) : 0;
+    const aTier = armorItem  ? itemTier(armorItem)  : 0;
+    const cTier = accItem    ? itemTier(accItem)    : 0;
     const unlockedAvatars = (me.unlockedAvatars || []).slice(0, 6);
     const collectionHtml = unlockedAvatars.length > 0
       ? unlockedAvatars.map(a => `<span class="cc-item">${a}</span>`).join('')
       : `<span class="cc-empty">主頁抽蛋可解鎖收藏</span>`;
     // 紙娃娃 5 層（順序由下到上：armor-glow → base → shield → weapon → accessory）
-    // 每張 SVG 都是 200×250、位置已對齊
+    // 每張 SVG 都是 200×250、位置已對齊；data-tier 觸發 CSS filter 上色（1..10）
     const dollLayers = [];
-    if (hasArmor) dollLayers.push(`<img class="pd-layer pd-armor" src="assets/equipment/armor-glow.svg" alt="">`);
+    if (armorItem) dollLayers.push(`<img class="pd-layer pd-armor" data-tier="${aTier}" src="assets/equipment/armor-glow.svg" alt="">`);
     dollLayers.push(`<img class="pd-layer pd-base" src="${cls.baseImage}" alt="${cls.name}"
        onerror="this.outerHTML='<div class=\\'pd-base-emoji\\'>${cls.icon}</div>';">`);
     if (cls.hasShield) dollLayers.push(`<img class="pd-layer pd-shield" src="assets/equipment/shield.svg" alt="">`);
-    if (hasWeapon && cls.weaponImage) dollLayers.push(`<img class="pd-layer pd-weapon" src="${cls.weaponImage}" alt="">`);
-    if (hasAcc && cls.accImage) dollLayers.push(`<img class="pd-layer pd-acc" src="${cls.accImage}" alt="">`);
+    if (weaponItem && cls.weaponImage) dollLayers.push(`<img class="pd-layer pd-weapon" data-tier="${wTier}" src="${cls.weaponImage}" alt="">`);
+    if (accItem && cls.accImage) dollLayers.push(`<img class="pd-layer pd-acc" data-tier="${cTier}" src="${cls.accImage}" alt="">`);
 
     document.getElementById('charCard').innerHTML = `
       <div class="char-portrait">
