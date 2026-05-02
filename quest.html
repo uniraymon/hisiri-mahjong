@@ -844,10 +844,17 @@
         { name: '狂怒斬', icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 14, type: 'damage', mult: 1.8 },
       ],
       skillTree: [
-        { id: 'w_rage', name: '狂怒斬精通', icon: '🔥', desc: '+10% 主動技能傷害', maxLevel: 8, effect: 'skillDmgPct', per: 0.1 },
-        { id: 'w_hp',   name: '鋼鐵之軀',   icon: '🛡',  desc: '+5% 最大 HP',       maxLevel: 5, effect: 'hpPct',       per: 0.05 },
-        { id: 'w_atk',  name: '力量強化',   icon: '💪', desc: '+1 ATK',            maxLevel: 5, effect: 'atk',         per: 1 },
-        { id: 'w_def',  name: '防禦強化',   icon: '🛡️', desc: '+1 DEF',            maxLevel: 5, effect: 'def',         per: 1 },
+        { id: 'w_s0', name: '怒之炎強化', icon: '☄️', desc: '+10% 怒之炎傷害', maxLevel: 5, effect: 'skill0Pct', per: 0.10 },
+        { id: 'w_s1', name: '重擊強化',   icon: '⚡', desc: '+10% 重擊傷害',   maxLevel: 5, effect: 'skill1Pct', per: 0.10 },
+        { id: 'w_s2', name: '狂怒斬強化', icon: '🔥', desc: '+10% 狂怒斬傷害', maxLevel: 5, effect: 'skill2Pct', per: 0.10 },
+        { id: 'w_hp', name: '鋼鐵之軀', icon: '🛡',  desc: '+5% 最大 HP', maxLevel: 5, effect: 'hpPct', per: 0.05 },
+        { id: 'w_atk', name: '力量強化', icon: '💪', desc: '+1 ATK',     maxLevel: 5, effect: 'atk',   per: 1 },
+        { id: 'w_def', name: '防禦強化', icon: '🛡️', desc: '+1 DEF',     maxLevel: 5, effect: 'def',   per: 1 },
+      ],
+      passives: [
+        { id: 'w_p1', name: '猛擊',   icon: '💥', stat: 'str', threshold: 20, desc: 'STR ≥ 20：物理技能 +20% 傷害',    effect: 'physPct',     per: 0.20 },
+        { id: 'w_p2', name: '鋼骨',   icon: '🛡', stat: 'vit', threshold: 30, desc: 'VIT ≥ 30：受到傷害 −10%',         effect: 'dmgReduction', per: 0.10 },
+        { id: 'w_p3', name: '怒火',   icon: '🔥', stat: 'str', threshold: 40, desc: 'STR ≥ 40：暴擊傷害 +30%',         effect: 'critDmg',     per: 0.30 },
       ],
     },
     archer: {
@@ -866,10 +873,17 @@
         { name: '精準射擊', icon: '🎯', unlockLv: 1,  cooldown: 3, mpCost: 12, type: 'damage', mult: 1.4, alwaysCrit: true },
       ],
       skillTree: [
-        { id: 'a_snipe', name: '精準射擊精通', icon: '🎯', desc: '+5% 主動技能傷害', maxLevel: 8, effect: 'skillDmgPct', per: 0.05 },
-        { id: 'a_crit',  name: '致命瞄準',     icon: '💥', desc: '+2% 暴擊率',        maxLevel: 5, effect: 'critChance', per: 0.02 },
-        { id: 'a_spd',   name: '疾風之足',     icon: '💨', desc: '+1 SPD',            maxLevel: 5, effect: 'spd',         per: 1 },
-        { id: 'a_hp',    name: '敏捷之身',     icon: '🦋', desc: '+5% 最大 HP',       maxLevel: 5, effect: 'hpPct',       per: 0.05 },
+        { id: 'a_s0', name: '神之矢強化',   icon: '🌟', desc: '+10% 神之矢傷害',   maxLevel: 5, effect: 'skill0Pct', per: 0.10 },
+        { id: 'a_s1', name: '多重射擊強化', icon: '🏹', desc: '+10% 多重射擊傷害', maxLevel: 5, effect: 'skill1Pct', per: 0.10 },
+        { id: 'a_s2', name: '精準射擊強化', icon: '🎯', desc: '+10% 精準射擊傷害', maxLevel: 5, effect: 'skill2Pct', per: 0.10 },
+        { id: 'a_crit', name: '致命瞄準', icon: '💥', desc: '+2% 暴擊率', maxLevel: 5, effect: 'critChance', per: 0.02 },
+        { id: 'a_spd',  name: '疾風之足', icon: '💨', desc: '+1 SPD',     maxLevel: 5, effect: 'spd',         per: 1 },
+        { id: 'a_hp',   name: '敏捷之身', icon: '🦋', desc: '+5% 最大 HP', maxLevel: 5, effect: 'hpPct',      per: 0.05 },
+      ],
+      passives: [
+        { id: 'a_p1', name: '鷹眼',   icon: '🦅', stat: 'dex', threshold: 20, desc: 'DEX ≥ 20：暴擊率 +10%',          effect: 'critChance', per: 0.10 },
+        { id: 'a_p2', name: '疾風',   icon: '💨', stat: 'agi', threshold: 30, desc: 'AGI ≥ 30：SPD +15',              effect: 'spd',        per: 15 },
+        { id: 'a_p3', name: '致命',   icon: '🌟', stat: 'luk', threshold: 30, desc: 'LUK ≥ 30：暴擊傷害 +50%',        effect: 'critDmg',    per: 0.50 },
       ],
     },
     mage: {
@@ -889,10 +903,17 @@
         { name: '火球術', icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 25, type: 'damage', flat: 50, perLv: 3, ignoreDef: true },
       ],
       skillTree: [
-        { id: 'm_fire', name: '火球術精通', icon: '🔥', desc: '主動技能 +5 固定傷害', maxLevel: 8, effect: 'skillFlat',  per: 5 },
-        { id: 'm_mp',   name: '法力深淵',   icon: '💎', desc: '+5% 最大 MP',         maxLevel: 5, effect: 'mpPct',     per: 0.05 },
-        { id: 'm_atk',  name: '智慧',       icon: '📚', desc: '+1 ATK',              maxLevel: 5, effect: 'atk',       per: 1 },
-        { id: 'm_crit', name: '暴擊精通',   icon: '💥', desc: '+2% 暴擊率',          maxLevel: 5, effect: 'critChance', per: 0.02 },
+        { id: 'm_s0', name: '隕石術強化', icon: '☄️', desc: '+10% 隕石術傷害', maxLevel: 5, effect: 'skill0Pct', per: 0.10 },
+        { id: 'm_s1', name: '冰錐術強化', icon: '❄️', desc: '+10% 冰錐術傷害', maxLevel: 5, effect: 'skill1Pct', per: 0.10 },
+        { id: 'm_s2', name: '火球術強化', icon: '🔥', desc: '+10% 火球術傷害', maxLevel: 5, effect: 'skill2Pct', per: 0.10 },
+        { id: 'm_mp',   name: '法力深淵', icon: '💎', desc: '+5% 最大 MP',  maxLevel: 5, effect: 'mpPct', per: 0.05 },
+        { id: 'm_atk',  name: '智慧',     icon: '📚', desc: '+1 ATK',       maxLevel: 5, effect: 'atk',   per: 1 },
+        { id: 'm_crit', name: '暴擊精通', icon: '💥', desc: '+2% 暴擊率',   maxLevel: 5, effect: 'critChance', per: 0.02 },
+      ],
+      passives: [
+        { id: 'm_p1', name: '法力凝聚', icon: '💧', stat: 'int', threshold: 25, desc: 'INT ≥ 25：技能 MP 消耗 −20%',    effect: 'mpDiscount', per: 0.20 },
+        { id: 'm_p2', name: '元素掌握', icon: '🔥', stat: 'int', threshold: 50, desc: 'INT ≥ 50：固定傷害技能 +50%',    effect: 'flatPct',    per: 0.50 },
+        { id: 'm_p3', name: '智者',     icon: '⚡', stat: 'luk', threshold: 25, desc: 'LUK ≥ 25：暴擊率 +15%',          effect: 'critChance', per: 0.15 },
       ],
     },
     paladin: {
@@ -913,10 +934,17 @@
         { name: '神聖治癒', icon: '✨', unlockLv: 1,  cooldown: 5, mpCost: 30, type: 'heal', healPct: 0.3 },
       ],
       skillTree: [
-        { id: 'p_heal',  name: '神聖治癒精通', icon: '✨', desc: '+3% 治癒量',        maxLevel: 8, effect: 'skillHealPct', per: 0.03 },
-        { id: 'p_def',   name: '聖光鎧甲',     icon: '🛡',  desc: '+2 DEF',           maxLevel: 5, effect: 'def',           per: 2 },
-        { id: 'p_regen', name: '自癒強化',     icon: '🌿', desc: '每回合 +1% maxHP', maxLevel: 5, effect: 'regen',         per: 0.01 },
-        { id: 'p_hp',    name: '信仰之力',     icon: '🙏', desc: '+5% 最大 HP',      maxLevel: 5, effect: 'hpPct',         per: 0.05 },
+        { id: 'p_s0', name: '審判強化',   icon: '⚖️', desc: '+10% 審判傷害',   maxLevel: 5, effect: 'skill0Pct', per: 0.10 },
+        { id: 'p_s1', name: '聖光斬強化', icon: '✝️', desc: '+10% 聖光斬傷害', maxLevel: 5, effect: 'skill1Pct', per: 0.10 },
+        { id: 'p_s2', name: '神聖治癒強化', icon: '✨', desc: '+5% 治癒量',     maxLevel: 5, effect: 'skillHealPct', per: 0.05 },
+        { id: 'p_def',   name: '聖光鎧甲', icon: '🛡',  desc: '+2 DEF',           maxLevel: 5, effect: 'def',   per: 2 },
+        { id: 'p_regen', name: '自癒強化', icon: '🌿', desc: '每回合 +1% maxHP', maxLevel: 5, effect: 'regen', per: 0.01 },
+        { id: 'p_hp',    name: '信仰之力', icon: '🙏', desc: '+5% 最大 HP',      maxLevel: 5, effect: 'hpPct', per: 0.05 },
+      ],
+      passives: [
+        { id: 'p_p1', name: '神聖庇護', icon: '🛡️', stat: 'vit', threshold: 25, desc: 'VIT ≥ 25：受到傷害 −15%',         effect: 'dmgReduction', per: 0.15 },
+        { id: 'p_p2', name: '神聖治療', icon: '✨', stat: 'int', threshold: 25, desc: 'INT ≥ 25：治療效果 +30%',          effect: 'healPct',      per: 0.30 },
+        { id: 'p_p3', name: '神威',     icon: '⚖️', stat: 'str', threshold: 30, desc: 'STR ≥ 30：暴擊傷害 +30%',          effect: 'critDmg',      per: 0.30 },
       ],
     },
   };
@@ -1242,12 +1270,28 @@
   function computeSkillBonuses(player) {
     const rpg = getRpg(player);
     const cls = rpg && rpg.class ? CLASSES[rpg.class] : null;
-    const b = { hp: 0, atk: 0, def: 0, spd: 0, mp: 0, hpPct: 0, mpPct: 0, critChance: 0, skillDmgPct: 0, skillFlat: 0, skillHealPct: 0, regen: 0 };
+    const b = { hp: 0, atk: 0, def: 0, spd: 0, mp: 0, hpPct: 0, mpPct: 0, critChance: 0, skillDmgPct: 0, skillFlat: 0, skillHealPct: 0, regen: 0,
+                skill0Pct: 0, skill1Pct: 0, skill2Pct: 0 };
     if (!cls || !cls.skillTree) return b;
     const skills = rpg.skills || {};
     for (const node of cls.skillTree) {
       const lv = skills[node.id] || 0;
       if (lv > 0) b[node.effect] = (b[node.effect] || 0) + node.per * lv;
+    }
+    return b;
+  }
+
+  // 依能力點門檻計算職業被動加成
+  function computePassiveBonuses(player) {
+    const r = getRpg(player);
+    const cls = r && r.class ? CLASSES[r.class] : null;
+    const a = r.abilities || {};
+    const b = { physPct: 0, flatPct: 0, dmgReduction: 0, mpDiscount: 0, healPct: 0, spd: 0, critChance: 0, critDmg: 0 };
+    if (!cls || !cls.passives) return b;
+    for (const p of cls.passives) {
+      if ((a[p.stat] || 0) >= p.threshold) {
+        b[p.effect] = (b[p.effect] || 0) + p.per;
+      }
     }
     return b;
   }
@@ -1386,13 +1430,16 @@
     const stats = computeStats(player);
     const bonus = computeSkillBonuses(player);
     const abil  = computeAbilityBonuses(player);
-    const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0);
-    const critMult = 1.7 + (abil.critDmgBonus || 0);
+    const passive = computePassiveBonuses(player);
+    // 被動 spd 加成已套到 stats 之外（先給門檻型，autoFight 用即時 spd）
+    const effectiveSpd = stats.spd + (passive.spd || 0);
+    const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0);
+    const critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0);
     const regenPer = (cls.regenPer || 0) + (bonus.regen || 0);
     let pHp = Math.min(player.rpg.hp ?? stats.maxHp, stats.maxHp);
     let pMp = Math.min(player.rpg.mp ?? stats.maxMp, stats.maxMp);
     let mHp = monster.hp;
-    let pTurn = stats.spd >= monster.spd;
+    let pTurn = effectiveSpd >= monster.spd;
     let round = 0;
     let playerActions = 0;
     // 每個技能各自的 nextActionForSkill（順序：強→中→弱，優先發強的）
@@ -1418,8 +1465,9 @@
           const s = skills[i];
           if ((s.unlockLv || 1) > (player.rpg.level || 1)) continue; // 等級不夠未解鎖
           if (playerActions < nextActionForSkill[i]) continue;
-          if (pMp < s.mpCost) continue;
-          if (s.type === 'heal' && pHp >= stats.maxHp * 0.7) continue; // 治癒只在 HP < 70% 才放
+          const effMpCost = Math.round(s.mpCost * (1 - (passive.mpDiscount || 0)));
+          if (pMp < effMpCost) continue;
+          if (s.type === 'heal' && pHp >= stats.maxHp * 0.7) continue;
           useSkill = s;
           useSkillIdx = i;
           break;
@@ -1427,18 +1475,26 @@
 
         if (useSkill) {
           const skill = useSkill;
-          pMp -= skill.mpCost;
+          const effMpCost = Math.round(skill.mpCost * (1 - (passive.mpDiscount || 0)));
+          pMp -= effMpCost;
           nextActionForSkill[useSkillIdx] = playerActions + skill.cooldown;
           if (skill.type === 'damage') {
             let dmg;
-            if (skill.flat != null) {
+            const isFlat = skill.flat != null;
+            if (isFlat) {
               dmg = (skill.flat + (bonus.skillFlat || 0) + (abil.skillFlat || 0)) + (skill.perLv || 0) * (player.rpg.level || 1);
               if (!skill.ignoreDef) dmg -= Math.floor(monster.def / 2);
             } else {
               dmg = stats.atk * (skill.mult || 1) - Math.floor(monster.def / 2);
             }
-            // 技能傷害 % 加成
+            // 技能個別 % 加成（從技能樹點到的對應節點）
+            const perSkillKey = `skill${useSkillIdx}Pct`;
+            dmg *= (1 + (bonus[perSkillKey] || 0));
+            // 通用 skillDmgPct（保留舊邏輯）
             dmg *= (1 + (bonus.skillDmgPct || 0));
+            // 職業被動：物理或法術加成
+            if (isFlat) dmg *= (1 + (passive.flatPct || 0));
+            else        dmg *= (1 + (passive.physPct || 0));
             const isCrit = skill.alwaysCrit || Math.random() < baseCritChance;
             dmg *= (0.9 + Math.random() * 0.2);
             if (isCrit) dmg *= critMult;
@@ -1454,17 +1510,17 @@
             }
             log.push({
               type: 'crit-player',
-              text: `回合 ${round}：${skill.icon} ${skill.name}${isCrit ? '【暴擊】' : ''} → ${monster.name} -${dmg} HP${extra}（-${skill.mpCost} MP）`,
+              text: `回合 ${round}：${skill.icon} ${skill.name}${isCrit ? '【暴擊】' : ''} → ${monster.name} -${dmg} HP${extra}（-${effMpCost} MP）`,
               hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp }
             });
             if (mHp <= 0) break;
           } else if (skill.type === 'heal') {
             const before = pHp;
-            const heal = Math.round(stats.maxHp * skill.healPct * (1 + (bonus.skillHealPct || 0)));
+            const heal = Math.round(stats.maxHp * skill.healPct * (1 + (bonus.skillHealPct || 0)) * (1 + (passive.healPct || 0)));
             pHp = Math.min(stats.maxHp, pHp + heal);
             log.push({
               type: 'player',
-              text: `回合 ${round}：${skill.icon} ${skill.name} +${pHp - before} HP（-${skill.mpCost} MP）`,
+              text: `回合 ${round}：${skill.icon} ${skill.name} +${pHp - before} HP（-${effMpCost} MP）`,
               hp: { player: pHp, monster: mHp, mp: pMp }
             });
           }
@@ -1486,6 +1542,8 @@
       } else {
         let dmg = Math.max(1, monster.atk - Math.floor(stats.def / 2));
         dmg *= (0.85 + Math.random() * 0.3);
+        // 職業被動：傷害減免
+        dmg *= (1 - (passive.dmgReduction || 0));
         dmg = Math.max(1, Math.round(dmg));
         pHp -= dmg;
         log.push({
@@ -1573,12 +1631,38 @@
         </div>
       `;
     }).join('');
+    // 職業被動（依能力門檻自動觸發）
+    const cls = CLASSES[r.class];
+    const passivesHtml = (cls && cls.passives) ? cls.passives.map(p => {
+      const a = (r.abilities || {})[p.stat] || 0;
+      const active = a >= p.threshold;
+      const progress = Math.min(100, Math.round((a / p.threshold) * 100));
+      return `
+        <div class="skill-node ${active ? 'maxed' : ''}" style="${active ? '' : 'opacity:0.65;'} background:linear-gradient(135deg,#fff,${active ? '#fde68a' : '#f3f4f6'}); border-color:${active ? '#d97706' : '#d1d5db'};">
+          <div class="sn-icon">${p.icon}</div>
+          <div>
+            <div class="sn-name" style="color:${active ? '#92400e' : '#6b7280'};">${active ? '✨' : '🔒'} ${escapeHtml(p.name)}</div>
+            <div class="sn-desc">${escapeHtml(p.desc)}</div>
+            <div class="sn-progress">
+              <span>${p.stat.toUpperCase()} ${a}/${p.threshold}</span>
+              <div class="sn-bar"><div class="sn-fill" style="width:${progress}%; background:${active ? 'linear-gradient(90deg,#fcd34d,#d97706)' : 'linear-gradient(90deg,#9ca3af,#6b7280)'};"></div></div>
+            </div>
+          </div>
+          <div style="font-size:9px; color:#6b7280; text-align:center;">職業<br>被動</div>
+        </div>
+      `;
+    }).join('') : '';
+
     document.getElementById('abilityBody').innerHTML = `
       ${html}
       <div style="display:flex; gap:6px; margin-top:6px;">
         <button class="btn btn-secondary" style="flex:1; margin-top:0;" onclick="resetAbilities()">🔄 重置能力（退回所有點）</button>
       </div>
       <div style="font-size:11px; color:#8b6f9b; text-align:center; margin-top:6px;">每升 1 等獲得 +${POINTS_PER_LEVEL.ability} 能力點　·　起手 +5 點</div>
+      ${passivesHtml ? `
+        <div style="font-size:11px; color:#92400e; font-weight:700; margin:14px 0 6px; padding:4px 8px; background:#fef3c7; border-radius:8px;">🌟 職業被動（依能力門檻自動觸發）</div>
+        ${passivesHtml}
+      ` : ''}
     `;
   }
 
