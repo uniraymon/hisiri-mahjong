@@ -627,6 +627,65 @@
     color: #8b6f9b;
   }
 
+  /* 技能樹 */
+  .skill-card-points {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 10px;
+    background: linear-gradient(135deg, #fde68a, #f59e0b);
+    color: #fff;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .skill-node {
+    display: grid;
+    grid-template-columns: 40px 1fr 40px;
+    gap: 10px;
+    align-items: center;
+    padding: 10px;
+    background: linear-gradient(135deg, #fff, #fef3c7);
+    border: 2px solid #fde68a;
+    border-radius: 12px;
+    margin-bottom: 6px;
+  }
+  .skill-node.maxed {
+    background: linear-gradient(135deg, #fef3c7, #fcd34d);
+    border-color: #d97706;
+  }
+  .skill-node .sn-icon { font-size: 28px; text-align: center; }
+  .skill-node .sn-name { font-weight: 700; color: #7c3aed; font-size: 13px; }
+  .skill-node .sn-desc { font-size: 11px; color: #8b6f9b; margin-top: 1px; }
+  .skill-node .sn-progress { font-size: 10px; color: #5a4a4a; margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+  .skill-node .sn-bar {
+    flex: 1; background: #fff8e1; border: 1px solid #fde68a;
+    border-radius: 6px; height: 8px; overflow: hidden;
+  }
+  .skill-node .sn-fill {
+    height: 100%; background: linear-gradient(90deg, #fcd34d, #d97706);
+    transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .sn-add-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #fde68a, #f59e0b);
+    border: 2px solid #d97706;
+    color: #fff;
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    line-height: 1;
+    padding: 0;
+  }
+  .sn-add-btn:hover:not(:disabled) { transform: scale(1.1); }
+  .sn-add-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    background: #e5e7eb;
+    border-color: #9ca3af;
+  }
+
   /* Debug 按鈕（右上角小齒輪） */
   .debug-btn {
     position: fixed;
@@ -733,6 +792,11 @@
     </div>
 
     <div class="card">
+      <h2 id="skillCardHeader"><span>📚 技能</span></h2>
+      <div id="skillTreeBody"></div>
+    </div>
+
+    <div class="card">
       <h2><span>🛒 商店</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（用鵝鵝幣購買）</span></h2>
       <div id="shopGrid"></div>
     </div>
@@ -770,6 +834,12 @@
       hpPer: 14, atkPer: 2.2, defPer: 1.2, spdPer: 0.4,
       attackVerb: '揮砍',
       skill: { name: '狂怒斬', icon: '🔥', cooldown: 3, mpCost: 14, type: 'damage', mult: 1.8 },
+      skillTree: [
+        { id: 'w_rage', name: '狂怒斬精通', icon: '🔥', desc: '+10% 主動技能傷害', maxLevel: 8, effect: 'skillDmgPct', per: 0.1 },
+        { id: 'w_hp',   name: '鋼鐵之軀',   icon: '🛡',  desc: '+5% 最大 HP',       maxLevel: 5, effect: 'hpPct',       per: 0.05 },
+        { id: 'w_atk',  name: '力量強化',   icon: '💪', desc: '+1 ATK',            maxLevel: 5, effect: 'atk',         per: 1 },
+        { id: 'w_def',  name: '防禦強化',   icon: '🛡️', desc: '+1 DEF',            maxLevel: 5, effect: 'def',         per: 1 },
+      ],
     },
     archer: {
       icon: '🧝', name: '弓手',
@@ -782,6 +852,12 @@
       hpPer: 9, atkPer: 1.5, defPer: 0.6, spdPer: 1.2,
       attackVerb: '射擊',
       skill: { name: '精準射擊', icon: '🎯', cooldown: 3, mpCost: 12, type: 'damage', mult: 1.4, alwaysCrit: true },
+      skillTree: [
+        { id: 'a_snipe', name: '精準射擊精通', icon: '🎯', desc: '+5% 主動技能傷害', maxLevel: 8, effect: 'skillDmgPct', per: 0.05 },
+        { id: 'a_crit',  name: '致命瞄準',     icon: '💥', desc: '+2% 暴擊率',        maxLevel: 5, effect: 'critChance', per: 0.02 },
+        { id: 'a_spd',   name: '疾風之足',     icon: '💨', desc: '+1 SPD',            maxLevel: 5, effect: 'spd',         per: 1 },
+        { id: 'a_hp',    name: '敏捷之身',     icon: '🦋', desc: '+5% 最大 HP',       maxLevel: 5, effect: 'hpPct',       per: 0.05 },
+      ],
     },
     mage: {
       icon: '🧙', name: '法師',
@@ -795,6 +871,12 @@
       attackVerb: '魔法',
       critBonus: 0.18,
       skill: { name: '火球術', icon: '🔥', cooldown: 3, mpCost: 25, type: 'damage', flat: 50, perLv: 3, ignoreDef: true },
+      skillTree: [
+        { id: 'm_fire', name: '火球術精通', icon: '🔥', desc: '主動技能 +5 固定傷害', maxLevel: 8, effect: 'skillFlat',  per: 5 },
+        { id: 'm_mp',   name: '法力深淵',   icon: '💎', desc: '+5% 最大 MP',         maxLevel: 5, effect: 'mpPct',     per: 0.05 },
+        { id: 'm_atk',  name: '智慧',       icon: '📚', desc: '+1 ATK',              maxLevel: 5, effect: 'atk',       per: 1 },
+        { id: 'm_crit', name: '暴擊精通',   icon: '💥', desc: '+2% 暴擊率',          maxLevel: 5, effect: 'critChance', per: 0.02 },
+      ],
     },
     paladin: {
       icon: '🦸', name: '聖騎',
@@ -809,6 +891,12 @@
       attackVerb: '聖光斬',
       regenPer: 0.05,
       skill: { name: '神聖治癒', icon: '✨', cooldown: 5, mpCost: 30, type: 'heal', healPct: 0.3 },
+      skillTree: [
+        { id: 'p_heal',  name: '神聖治癒精通', icon: '✨', desc: '+3% 治癒量',        maxLevel: 8, effect: 'skillHealPct', per: 0.03 },
+        { id: 'p_def',   name: '聖光鎧甲',     icon: '🛡',  desc: '+2 DEF',           maxLevel: 5, effect: 'def',           per: 2 },
+        { id: 'p_regen', name: '自癒強化',     icon: '🌿', desc: '每回合 +1% maxHP', maxLevel: 5, effect: 'regen',         per: 0.01 },
+        { id: 'p_hp',    name: '信仰之力',     icon: '🙏', desc: '+5% 最大 HP',      maxLevel: 5, effect: 'hpPct',         per: 0.05 },
+      ],
     },
   };
 
@@ -1067,11 +1155,13 @@
         class: null,
         level: 1,
         xp: 0,
-        hp: null, // 第一次選職業時設為 maxHp
-        mp: null, // 同上
+        hp: null,
+        mp: null,
         equipment: { weapon: null, armor: null, accessory: null },
-        equipped:  { weapon: null, shield: null, accessory: null, armor: null }, // 紙娃娃 SVG 路徑
+        equipped:  { weapon: null, shield: null, accessory: null, armor: null },
         inventory: [],
+        skillPoints: 0,
+        skills: {}, // { skillNodeId: level }
         stamina: STAMINA_MAX,
         lastTickAt: Date.now(),
         fightsWon: 0,
@@ -1082,7 +1172,28 @@
     if (player.rpg.stamina == null) player.rpg.stamina = STAMINA_MAX;
     if (player.rpg.lastTickAt == null) player.rpg.lastTickAt = Date.now();
     if (!player.rpg.equipped) player.rpg.equipped = { weapon: null, shield: null, accessory: null, armor: null };
+    if (!player.rpg.skills) player.rpg.skills = {};
+    // 既有玩家補上 skillPoints：每等 +2，扣掉已點掉的
+    if (player.rpg.skillPoints == null) {
+      const earned = Math.max(0, (player.rpg.level || 1) - 1) * 2;
+      const used = Object.values(player.rpg.skills).reduce((a, b) => a + (b || 0), 0);
+      player.rpg.skillPoints = Math.max(0, earned - used);
+    }
     return player.rpg;
+  }
+
+  // 把已點的技能換算成各種屬性加成
+  function computeSkillBonuses(player) {
+    const rpg = getRpg(player);
+    const cls = rpg && rpg.class ? CLASSES[rpg.class] : null;
+    const b = { hp: 0, atk: 0, def: 0, spd: 0, mp: 0, hpPct: 0, mpPct: 0, critChance: 0, skillDmgPct: 0, skillFlat: 0, skillHealPct: 0, regen: 0 };
+    if (!cls || !cls.skillTree) return b;
+    const skills = rpg.skills || {};
+    for (const node of cls.skillTree) {
+      const lv = skills[node.id] || 0;
+      if (lv > 0) b[node.effect] = (b[node.effect] || 0) + node.per * lv;
+    }
+    return b;
   }
 
   // 由職業 + equipment 推導出紙娃娃 4 層 SVG 路徑，存進 rpg.equipped
@@ -1158,12 +1269,13 @@
     const cls = CLASSES[rpg.class];
     if (!cls) return null;
     const lv = rpg.level || 1;
+    const b = computeSkillBonuses(player);
     let stats = {
-      maxHp: Math.round(cls.hp + (lv - 1) * cls.hpPer),
-      maxMp: Math.round((cls.mp || 30) + (lv - 1) * (cls.mpPer || 5)),
-      atk:   Math.round(cls.atk + (lv - 1) * cls.atkPer),
-      def:   Math.round(cls.def + (lv - 1) * cls.defPer),
-      spd:   Math.round(cls.spd + (lv - 1) * cls.spdPer),
+      maxHp: Math.round((cls.hp + (lv - 1) * cls.hpPer) * (1 + b.hpPct)) + b.hp,
+      maxMp: Math.round(((cls.mp || 30) + (lv - 1) * (cls.mpPer || 5)) * (1 + b.mpPct)) + b.mp,
+      atk:   Math.round(cls.atk + (lv - 1) * cls.atkPer) + b.atk,
+      def:   Math.round(cls.def + (lv - 1) * cls.defPer) + b.def,
+      spd:   Math.round(cls.spd + (lv - 1) * cls.spdPer) + b.spd,
     };
     // 裝備加成
     for (const slot of ['weapon', 'armor', 'accessory']) {
@@ -1215,6 +1327,9 @@
     const log = [];
     const cls = CLASSES[player.rpg.class];
     const stats = computeStats(player);
+    const bonus = computeSkillBonuses(player);
+    const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0);
+    const regenPer = (cls.regenPer || 0) + (bonus.regen || 0);
     let pHp = Math.min(player.rpg.hp ?? stats.maxHp, stats.maxHp);
     let pMp = Math.min(player.rpg.mp ?? stats.maxMp, stats.maxMp);
     let mHp = monster.hp;
@@ -1227,11 +1342,11 @@
 
     while (pHp > 0 && mHp > 0 && round < 50) {
       round++;
-      // 聖騎被動自癒（每回合輪到自己時）
-      if (pTurn && cls.regenPer && pHp < stats.maxHp) {
-        const heal = Math.round(stats.maxHp * cls.regenPer);
+      // 被動自癒（聖騎天生 + 自癒強化技能）
+      if (pTurn && regenPer > 0 && pHp < stats.maxHp) {
+        const heal = Math.max(1, Math.round(stats.maxHp * regenPer));
         pHp = Math.min(stats.maxHp, pHp + heal);
-        log.push({ type: 'player', text: `回合 ${round}：聖光自癒 +${heal} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
+        log.push({ type: 'player', text: `回合 ${round}：自癒 +${heal} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
       }
       if (pTurn) {
         playerActions++;
@@ -1253,12 +1368,14 @@
           if (skill.type === 'damage') {
             let dmg;
             if (skill.flat != null) {
-              dmg = skill.flat + (skill.perLv || 0) * (player.rpg.level || 1);
+              dmg = (skill.flat + (bonus.skillFlat || 0)) + (skill.perLv || 0) * (player.rpg.level || 1);
               if (!skill.ignoreDef) dmg -= Math.floor(monster.def / 2);
             } else {
               dmg = stats.atk * (skill.mult || 1) - Math.floor(monster.def / 2);
             }
-            const isCrit = skill.alwaysCrit || Math.random() < (0.08 + (cls.critBonus || 0));
+            // 技能傷害 % 加成
+            dmg *= (1 + (bonus.skillDmgPct || 0));
+            const isCrit = skill.alwaysCrit || Math.random() < baseCritChance;
             dmg *= (0.9 + Math.random() * 0.2);
             if (isCrit) dmg *= 1.7;
             dmg = Math.max(1, Math.round(dmg));
@@ -1271,7 +1388,7 @@
             if (mHp <= 0) break;
           } else if (skill.type === 'heal') {
             const before = pHp;
-            const heal = Math.round(stats.maxHp * skill.healPct);
+            const heal = Math.round(stats.maxHp * skill.healPct * (1 + (bonus.skillHealPct || 0)));
             pHp = Math.min(stats.maxHp, pHp + heal);
             log.push({
               type: 'player',
@@ -1281,7 +1398,7 @@
           }
         } else {
           // 普攻
-          const isCrit = Math.random() < (0.08 + (cls.critBonus || 0));
+          const isCrit = Math.random() < baseCritChance;
           let dmg = Math.max(1, stats.atk - Math.floor(monster.def / 2));
           dmg *= (0.85 + Math.random() * 0.3);
           if (isCrit) dmg *= 1.7;
@@ -1350,10 +1467,76 @@
     syncEquipped(me); // 雲端載入後可能 equipped 還沒填
     renderCharCard();
     renderEquipment();
+    renderSkillTree();
     renderShop();
     renderRpgStats();
     updateStaminaUI();
   }
+
+  function renderSkillTree() {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const cls = CLASSES[r.class];
+    if (!cls || !cls.skillTree) {
+      document.getElementById('skillCardHeader').innerHTML = `<span>📚 技能</span>`;
+      document.getElementById('skillTreeBody').innerHTML = '';
+      return;
+    }
+    const points = r.skillPoints || 0;
+    document.getElementById('skillCardHeader').innerHTML = `
+      <span>📚 ${escapeHtml(cls.name)}技能樹</span>
+      <span class="skill-card-points">⚡ ${points} 點可用</span>
+    `;
+    const html = cls.skillTree.map(node => {
+      const lv = (r.skills || {})[node.id] || 0;
+      const maxed = lv >= node.maxLevel;
+      const canLearn = !maxed && points >= 1;
+      const pct = (lv / node.maxLevel) * 100;
+      const valStr = node.effect.endsWith('Pct') || node.effect === 'critChance' || node.effect === 'regen'
+        ? `${(lv * node.per * 100).toFixed(0)}%`
+        : `+${(lv * node.per).toFixed(0)}`;
+      return `
+        <div class="skill-node ${maxed ? 'maxed' : ''}">
+          <div class="sn-icon">${node.icon}</div>
+          <div>
+            <div class="sn-name">${escapeHtml(node.name)}</div>
+            <div class="sn-desc">${escapeHtml(node.desc)}　·　目前 ${valStr}</div>
+            <div class="sn-progress">
+              <span>Lv ${lv}/${node.maxLevel}</span>
+              <div class="sn-bar"><div class="sn-fill" style="width:${pct}%"></div></div>
+            </div>
+          </div>
+          <button class="sn-add-btn" onclick="learnSkill('${node.id}')" ${canLearn ? '' : 'disabled'} title="${maxed ? '已滿級' : (points < 1 ? '沒點數' : '加 1 級')}">+</button>
+        </div>
+      `;
+    }).join('');
+    document.getElementById('skillTreeBody').innerHTML = html
+      + `<div style="font-size:11px; color:#8b6f9b; text-align:center; margin-top:6px;">每升 1 等獲得 +2 技能點　·　點選 + 強化技能</div>`;
+  }
+
+  function learnSkill(nodeId) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const cls = CLASSES[r.class];
+    if (!cls || !cls.skillTree) return;
+    const node = cls.skillTree.find(n => n.id === nodeId);
+    if (!node) return;
+    if ((r.skillPoints || 0) < 1) { showToast('沒有可用技能點'); return; }
+    const cur = (r.skills || {})[nodeId] || 0;
+    if (cur >= node.maxLevel) { showToast('已達最高等'); return; }
+    r.skills = r.skills || {};
+    r.skills[nodeId] = cur + 1;
+    r.skillPoints -= 1;
+    // 強化 maxHp/maxMp 後當前 HP/MP 不變但上限變大 → 補滿（避免上限變了 HP 顯示比例怪）
+    const s = computeStats(me);
+    if (r.hp > s.maxHp) r.hp = s.maxHp;
+    if (r.mp > s.maxMp) r.mp = s.maxMp;
+    saveData();
+    renderCharCard();
+    renderSkillTree();
+    showToast(`✨ ${node.name} → Lv ${cur + 1}`);
+  }
+  window.learnSkill = learnSkill;
 
   let __shopTab = 'consumable';
 
@@ -1820,16 +2003,18 @@
       const drop = rollItemDrop(rpg.level, monster.level);
       if (drop) rpg.inventory.push(drop.id);
       // 升級檢查
-      let leveledUp = false;
+      let leveledUp = 0;
       while (rpg.xp >= xpForLevel(rpg.level)) {
         rpg.xp -= xpForLevel(rpg.level);
         rpg.level += 1;
-        leveledUp = true;
+        rpg.skillPoints = (rpg.skillPoints || 0) + 2;
+        leveledUp++;
       }
       // 升級回滿 HP
       if (leveledUp) {
         const newStats = computeStats(player);
         rpg.hp = newStats.maxHp;
+        rpg.mp = newStats.maxMp;
         rpg.deathAt = null;
       }
 
@@ -1843,7 +2028,7 @@
           <div class="rl-item">⭐ +${monster.xpDrop} XP</div>
           <div class="rl-item">🪙 +${monster.goldDrop} 鵝鵝幣</div>
           ${drop ? `<div class="rl-item">${drop.icon} ${drop.name}</div>` : ''}
-          ${leveledUp ? `<div style="margin-top:8px; color:#7c3aed; font-weight:700;">🎊 升級到 Lv ${rpg.level}！HP 回滿</div>` : ''}
+          ${leveledUp ? `<div style="margin-top:8px; color:#7c3aed; font-weight:700;">🎊 升級到 Lv ${rpg.level}！HP/MP 回滿、+${leveledUp * 2} 技能點</div>` : ''}
         </div>
       `;
       if (leveledUp) showLevelUp(rpg.level);
@@ -2005,13 +2190,16 @@
     while (r.xp >= xpForLevel(r.level)) {
       r.xp -= xpForLevel(r.level);
       r.level += 1;
+      r.skillPoints = (r.skillPoints || 0) + 2;
       leveled++;
       if (r.level > 50) break;
     }
-    r.hp = computeStats(me).maxHp;
+    const s = computeStats(me);
+    r.hp = s.maxHp;
+    r.mp = s.maxMp;
     r.deathAt = null;
     syncEquipped(me); saveData(); render(); showDebugModal();
-    showToast(`⭐ +${amount} XP${leveled ? `，升 ${leveled} 級` : ''}`);
+    showToast(`⭐ +${amount} XP${leveled ? `，升 ${leveled} 級 +${leveled * 2} 技能點` : ''}`);
   }
   window.adminAddXp = adminAddXp;
 
@@ -2020,8 +2208,11 @@
     const r = getRpg(me);
     if (!r.class) { showToast('先選職業'); return; }
     const lv = Math.max(1, Math.min(50, parseInt(lvStr) || 1));
+    const used = Object.values(r.skills || {}).reduce((a, b) => a + (b || 0), 0);
     r.level = lv; r.xp = 0;
-    r.hp = computeStats(me).maxHp;
+    r.skillPoints = Math.max(0, (lv - 1) * 2 - used);
+    const s = computeStats(me);
+    r.hp = s.maxHp; r.mp = s.maxMp;
     r.deathAt = null;
     syncEquipped(me); saveData(); render(); showDebugModal();
     showToast(`🎯 等級設為 Lv ${lv}`);
