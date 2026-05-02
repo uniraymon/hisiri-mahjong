@@ -1783,32 +1783,20 @@
     if (!p) return;
     const records = getPlayerData(pid);
     const games = records.length;
-
-    if (games === 0) {
-      document.getElementById('playerPageContent').innerHTML = `
-        <div class="card">
-          <div class="player-header">
-            <div class="player-avatar-big" style="background: linear-gradient(135deg, #ffd6e0, #ffabbf);">${p.avatar}</div>
-            <div class="player-title-name">${escapeHtml(p.name)}</div>
-          </div>
-          <div class="empty">還沒有對局紀錄<br>來打一局吧 ♡</div>
-        </div>
-      `;
-      return;
-    }
+    const hasGames = games > 0;
 
     const myMoney = records.map(r => r.money);
     const myRanks = records.map(r => r.rank);
     const total = myMoney.reduce((a,b)=>a+b, 0);
-    const avgMoney = total / games;
+    const avgMoney = hasGames ? (total / games) : 0;
     const wins = myRanks.filter(r => r === 1).length;
     const lasts = myRanks.filter(r => r === 4).length;
-    const winRate = ((wins / games) * 100).toFixed(0);
-    const avgRank = (myRanks.reduce((a,b)=>a+b, 0) / games).toFixed(2);
-    const maxMoney = Math.max(...myMoney);
-    const minMoney = Math.min(...myMoney);
-    const maxScore = Math.max(...records.map(r => r.score));
-    const minScore = Math.min(...records.map(r => r.score));
+    const winRate = hasGames ? ((wins / games) * 100).toFixed(0) : '–';
+    const avgRank = hasGames ? (myRanks.reduce((a,b)=>a+b, 0) / games).toFixed(2) : '–';
+    const maxMoney = hasGames ? Math.max(...myMoney) : 0;
+    const minMoney = hasGames ? Math.min(...myMoney) : 0;
+    const maxScore = hasGames ? Math.max(...records.map(r => r.score)) : 0;
+    const minScore = hasGames ? Math.min(...records.map(r => r.score)) : 0;
     const sumStats = getStats(records, p);
     const hasStats = (sumStats.totalRiichi + sumStats.totalRon + sumStats.totalTsumo + sumStats.totalHouju) > 0;
 
@@ -1881,48 +1869,52 @@
 
       <div class="card">
         <h2><span class="h2-text">📊 基本統計</span></h2>
-        <div class="stat-grid">
-          <div class="stat-box">
-            <div class="stat-label">勝率（一位）</div>
-            <div class="stat-value">${winRate}%</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">平均名次</div>
-            <div class="stat-value">${avgRank}</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">每局平均</div>
-            <div class="stat-value ${moneyClass(avgMoney)}">${fmtMoney(avgMoney)}</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">墊底次數</div>
-            <div class="stat-value">${lasts}</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">最高分</div>
-            <div class="stat-value pos">${maxScore.toLocaleString()}</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">最低分</div>
-            <div class="stat-value neg">${minScore.toLocaleString()}</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">單局最賺</div>
-            <div class="stat-value pos">${fmtMoney(maxMoney)}</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">單局最賠</div>
-            <div class="stat-value neg">${fmtMoney(minMoney)}</div>
-          </div>
-        </div>
-        <div style="display:flex; gap:6px; margin-top:14px; justify-content:space-around; padding:8px; background:#fff8fb; border-radius:12px; border:2px solid #ffe4ec;">
-          ${[1,2,3,4].map((r, i) => `
-            <div style="text-align:center;">
-              <div style="font-size:18px; font-weight:700; color:${['#ffa500','#a0a0a0','#8b6f47','#888'][i]}">${rankCounts[i]}</div>
-              <div style="font-size:11px; color:#b88a8a;">${r}位</div>
+        ${hasGames ? `
+          <div class="stat-grid">
+            <div class="stat-box">
+              <div class="stat-label">勝率（一位）</div>
+              <div class="stat-value">${winRate}%</div>
             </div>
-          `).join('')}
-        </div>
+            <div class="stat-box">
+              <div class="stat-label">平均名次</div>
+              <div class="stat-value">${avgRank}</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">每局平均</div>
+              <div class="stat-value ${moneyClass(avgMoney)}">${fmtMoney(avgMoney)}</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">墊底次數</div>
+              <div class="stat-value">${lasts}</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">最高分</div>
+              <div class="stat-value pos">${maxScore.toLocaleString()}</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">最低分</div>
+              <div class="stat-value neg">${minScore.toLocaleString()}</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">單局最賺</div>
+              <div class="stat-value pos">${fmtMoney(maxMoney)}</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">單局最賠</div>
+              <div class="stat-value neg">${fmtMoney(minMoney)}</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:6px; margin-top:14px; justify-content:space-around; padding:8px; background:#fff8fb; border-radius:12px; border:2px solid #ffe4ec;">
+            ${[1,2,3,4].map((r, i) => `
+              <div style="text-align:center;">
+                <div style="font-size:18px; font-weight:700; color:${['#ffa500','#a0a0a0','#8b6f47','#888'][i]}">${rankCounts[i]}</div>
+                <div style="font-size:11px; color:#b88a8a;">${r}位</div>
+              </div>
+            `).join('')}
+          </div>
+        ` : `
+          <div class="empty">還沒有對局紀錄<br>來打一局吧 ♡</div>
+        `}
       </div>
 
       ${hasStats ? `
@@ -1949,10 +1941,12 @@
       </div>
       ` : ''}
 
+      ${hasGames ? `
       <div class="card">
         <h2><span class="h2-text">📈 累計戰績趨勢</span></h2>
         <div class="chart-wrap">${chartSvg}</div>
       </div>
+      ` : ''}
 
       ${vsStats.length > 0 ? `
       <div class="card">
