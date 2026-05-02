@@ -484,6 +484,37 @@
     margin-bottom: 8px;
     font-size: 13px;
   }
+  .bet-preset-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+  .bet-preset {
+    background: #fff;
+    border: 2px solid #ffb84d;
+    border-radius: 10px;
+    padding: 8px 4px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #8b6f47;
+    cursor: pointer;
+    box-shadow: 0 2px 0 #f59e0b;
+    transition: transform 0.1s;
+  }
+  .bet-preset:hover:not(:disabled):not(.selected) {
+    background: #fff8e6;
+    transform: translateY(-1px);
+  }
+  .bet-preset.selected {
+    background: linear-gradient(135deg,#fde68a,#f59e0b);
+    color: #fff;
+    border-color: #d97706;
+    box-shadow: 0 2px 0 #b45309;
+  }
+  .bet-preset:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 
   .gacha-result {
     background: linear-gradient(135deg, #c4b5fd, #a78bfa);
@@ -1335,7 +1366,7 @@
     star:      { icon: '⭐', name: '星星',   cost: 30 },
   };
   const COMMENT_COST = 5;
-  const BET_REWARD = 30;
+  // BET_REWARD 已停用：新版押注用「注額 × 2」回報
   const GACHA_COST = 100;
   const GACHA_DUP_REFUND = 50;
 
@@ -1348,7 +1379,8 @@
   let history = [];
   let gifts = [];        // [{ id, from, to, type, ts }]
   let comments = [];     // [{ id, from, on, text, ts }]
-  let pendingBets = [];  // [{ id, better, predicted, ts }]
+  let pendingBets = [];  // [{ id, better, predicted, amount, ts }]
+  let betPool = 0;       // 押注彩池：沒中的人金額累積（之後設計分配方式）
   let worldBoss = {};
   let baseMoney = 1000;
   let basePoint = 25000;
@@ -1371,6 +1403,7 @@
         if (data.gifts) gifts = data.gifts;
         if (data.comments) comments = data.comments;
         if (data.pendingBets) pendingBets = data.pendingBets;
+        if (typeof data.betPool === 'number') betPool = data.betPool;
         if (data.worldBoss) worldBoss = data.worldBoss;
         if (data.baseMoney) baseMoney = data.baseMoney;
         if (data.basePoint) basePoint = data.basePoint;
@@ -1429,7 +1462,7 @@
   let __isApplyingRemote = false;
 
   function saveData() {
-    const payload = { players, history, gifts, comments, pendingBets, worldBoss, baseMoney, basePoint };
+    const payload = { players, history, gifts, comments, pendingBets, betPool, worldBoss, baseMoney, basePoint };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     } catch (e) { console.error(e); }
@@ -1449,11 +1482,12 @@
       if (Array.isArray(data.gifts)) gifts = data.gifts;
       if (Array.isArray(data.comments)) comments = data.comments;
       if (Array.isArray(data.pendingBets)) pendingBets = data.pendingBets;
+      if (typeof data.betPool === 'number') betPool = data.betPool;
       if (data.worldBoss && typeof data.worldBoss === 'object') worldBoss = data.worldBoss;
       if (typeof data.baseMoney === 'number') baseMoney = data.baseMoney;
       if (typeof data.basePoint === 'number') basePoint = data.basePoint;
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ players, history, gifts, comments, pendingBets, worldBoss, baseMoney, basePoint }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ players, history, gifts, comments, pendingBets, betPool, worldBoss, baseMoney, basePoint }));
       } catch (e) {}
       const bm = document.getElementById('baseMoney');
       const bp = document.getElementById('basePoint');
@@ -1466,7 +1500,7 @@
 
   // 給 module script 用：取得目前本地狀態（用來首次推上雲）
   window.__getCurrentData = function() {
-    return { players, history, gifts, comments, pendingBets, worldBoss, baseMoney, basePoint };
+    return { players, history, gifts, comments, pendingBets, betPool, worldBoss, baseMoney, basePoint };
   };
 
   // 給 module script 用：更新同步狀態 badge
@@ -1582,7 +1616,10 @@
         <button class="btn btn-primary" onclick="openBetModal()">🎯 押下一局</button>
         <button class="btn btn-primary" style="background:linear-gradient(135deg,#c4b5fd,#a78bfa); box-shadow:0 4px 0 #8b5cf6;" onclick="openGachaModal()">🎰 抽蛋機</button>
       </div>
-      ${myBet ? `<div class="bet-active" style="margin-top:8px;">🎯 你目前押 <b>${getPlayer(myBet.predicted)?.avatar || '?'} ${escapeHtml(getPlayer(myBet.predicted)?.name || '?')}</b> 拿 1 位</div>` : ''}
+      <div style="margin-top:8px; padding:8px 10px; background:linear-gradient(135deg,#fef3c7,#fde68a); border:2px solid #f59e0b; border-radius:10px; text-align:center; font-size:13px; color:#92400e; font-weight:700;">
+        🏆 押注彩池：<span style="font-size:16px;">${(betPool || 0).toLocaleString()}</span> 鵝鵝幣
+      </div>
+      ${myBet ? `<div class="bet-active" style="margin-top:8px;">🎯 你目前押 <b>${getPlayer(myBet.predicted)?.avatar || '?'} ${escapeHtml(getPlayer(myBet.predicted)?.name || '?')}</b> 拿 1 位（注 ${myBet.amount || 0} 幣）</div>` : ''}
       ${recentGiftsToMe.length > 0 ? `
         <div style="margin-top:8px; font-size:11px; color:#b88a8a;">💝 最近收到：
           ${recentGiftsToMe.map(g => {
@@ -2533,47 +2570,119 @@
   }
 
   // === 押注 ===
+  const BET_MAX = 300;
+  const BET_PRESETS = [30, 50, 100, 200, 300];
+  let __betAmount = 50; // modal 內暫存的選擇金額
   function openBetModal() {
     if (!ensureMe('押注')) return;
     const me = getMe();
     const existing = pendingBets.find(b => b.better === me.id);
+    if (existing) __betAmount = existing.amount || 50;
+    if (__betAmount > BET_MAX) __betAmount = BET_MAX;
+    if (__betAmount < 1) __betAmount = 1;
+    renderBetModal();
+  }
+  function renderBetModal() {
+    const me = getMe();
+    if (!me) return;
+    const myCoins = getCoins(me.id);
+    const existing = pendingBets.find(b => b.better === me.id);
     const candidates = players.filter(p => p.id !== me.id);
+    const presetBtns = BET_PRESETS.map(v => {
+      const disabled = v > myCoins && (!existing || v > myCoins + (existing.amount || 0));
+      const sel = __betAmount === v ? 'selected' : '';
+      return `<button class="bet-preset ${sel}" ${disabled ? 'disabled' : ''} onclick="setBetAmount(${v})">${v}</button>`;
+    }).join('');
+    const canAfford = existing ? (myCoins + (existing.amount || 0)) >= __betAmount : myCoins >= __betAmount;
     const html = `
       <div style="font-size:12px; color:#b88a8a; text-align:center; margin-bottom:8px;">
-        押誰下次出場拿 1 位 → 押中 +${BET_REWARD} 幣<br>免費，每人同時只能 1 個押注
+        押誰下次出場拿 <b>1 位</b> → 押中可拿回 <b>2 倍注額</b><br>
+        沒押中：注額會丟入 🏆 押注彩池<br>
+        最大 ${BET_MAX} 鵝幣，每人同時只能 1 個押注
       </div>
-      ${existing ? `<div class="bet-active">目前押的是：<b>${getPlayer(existing.predicted)?.avatar || '?'} ${escapeHtml(getPlayer(existing.predicted)?.name || '?')}</b><br><button class="btn btn-secondary" style="margin-top:6px;" onclick="cancelBet()">取消押注</button></div>` : ''}
+      <div style="text-align:center; font-size:13px; color:#8b6f47; margin-bottom:6px;">
+        🏆 目前彩池：<b>${(betPool || 0).toLocaleString()}</b> 幣　·　你身上：<b>${myCoins.toLocaleString()}</b> 幣
+      </div>
+      ${existing ? `<div class="bet-active">目前押的是：<b>${getPlayer(existing.predicted)?.avatar || '?'} ${escapeHtml(getPlayer(existing.predicted)?.name || '?')}</b>，注 ${existing.amount || 0} 幣<br><button class="btn btn-secondary" style="margin-top:6px;" onclick="cancelBet()">取消押注（退回 ${existing.amount || 0} 幣）</button></div>` : ''}
+      <div style="margin:10px 0 4px; font-size:12px; color:#8b6f47; font-weight:700;">下注金額</div>
+      <div class="bet-preset-row">${presetBtns}</div>
+      <div style="display:flex; align-items:center; gap:8px; margin:6px 0 10px;">
+        <input id="betAmountInput" type="number" min="1" max="${BET_MAX}" value="${__betAmount}" oninput="setBetAmountFromInput(this.value)" style="flex:1; padding:8px; border:2px solid #f5d9d2; border-radius:8px; font-size:14px; text-align:center;">
+        <span style="font-size:11px; color:#b88a8a;">幣（最多 ${BET_MAX}）</span>
+      </div>
+      <div style="margin:6px 0; font-size:12px; color:#8b6f47; font-weight:700;">押誰：</div>
       <div class="player-pick-grid">
         ${candidates.map(p => `
-          <button class="player-pick ${existing?.predicted === p.id ? 'selected' : ''}" onclick="placeBet('${p.id}')">
+          <button class="player-pick ${existing?.predicted === p.id ? 'selected' : ''}" ${canAfford ? '' : 'disabled'} onclick="placeBet('${p.id}')">
             <span class="pick-avatar">${p.avatar}</span>
             <span>${escapeHtml(p.name)}</span>
           </button>
         `).join('')}
       </div>
+      ${!canAfford ? `<div style="text-align:center; color:#dc2626; font-size:12px; margin-top:6px;">⚠ 鵝幣不足</div>` : ''}
     `;
     openGenericModal('🎯 押下一局', html);
   }
+  function setBetAmount(v) {
+    let n = Math.floor(Number(v) || 0);
+    if (n < 1) n = 1;
+    if (n > BET_MAX) n = BET_MAX;
+    __betAmount = n;
+    renderBetModal();
+  }
+  window.setBetAmount = setBetAmount;
+  // 從 number input 觸發：只更新狀態 + 重新計算「能否下注」按鈕，不整個 rerender（避免失焦）
+  function setBetAmountFromInput(v) {
+    let n = Math.floor(Number(v) || 0);
+    if (n < 1) n = 1;
+    if (n > BET_MAX) n = BET_MAX;
+    __betAmount = n;
+    // 同步預設按鈕的 selected 狀態
+    document.querySelectorAll('.bet-preset').forEach(btn => {
+      const btnVal = Number(btn.textContent.trim());
+      btn.classList.toggle('selected', btnVal === n);
+    });
+    // 同步 player-pick 的 disabled 狀態
+    const me = getMe();
+    if (!me) return;
+    const myCoins = getCoins(me.id);
+    const existing = pendingBets.find(b => b.better === me.id);
+    const canAfford = existing ? (myCoins + (existing.amount || 0)) >= n : myCoins >= n;
+    document.querySelectorAll('.player-pick').forEach(b => { b.disabled = !canAfford; });
+  }
+  window.setBetAmountFromInput = setBetAmountFromInput;
   function placeBet(predictedId) {
     const me = getMe();
     if (!me) return;
-    pendingBets = pendingBets.filter(b => b.better !== me.id);
+    let amount = Math.floor(Number(__betAmount) || 0);
+    if (amount < 1) { showToast('注額至少 1 幣'); return; }
+    if (amount > BET_MAX) amount = BET_MAX;
+    // 先退回舊押注，再扣新押注
+    const existing = pendingBets.find(b => b.better === me.id);
+    if (existing) {
+      refundCoins(me.id, existing.amount || 0);
+      pendingBets = pendingBets.filter(b => b.better !== me.id);
+    }
+    if (getCoins(me.id) < amount) { showToast('鵝幣不足'); return; }
+    if (!spendCoins(me.id, amount)) { showToast('鵝幣不足'); return; }
     pendingBets.push({
       id: Date.now() + '_' + Math.random().toString(36).slice(2,6),
-      better: me.id, predicted: predictedId, ts: new Date().toISOString()
+      better: me.id, predicted: predictedId, amount, ts: new Date().toISOString()
     });
     saveData();
     closeGenericModal();
-    showToast(`🎯 已押 ${getPlayer(predictedId)?.name} 拿 1 位`);
+    showToast(`🎯 已押 ${getPlayer(predictedId)?.name} 拿 1 位（注 ${amount} 幣）`);
     render();
   }
   function cancelBet() {
     const me = getMe();
     if (!me) return;
+    const existing = pendingBets.find(b => b.better === me.id);
+    if (existing) refundCoins(me.id, existing.amount || 0);
     pendingBets = pendingBets.filter(b => b.better !== me.id);
     saveData();
     closeGenericModal();
-    showToast('已取消押注');
+    showToast(existing ? `已取消押注，退回 ${existing.amount || 0} 幣` : '已取消押注');
     render();
   }
   function settleBetsForRound(participants, scores, money) {
@@ -2583,20 +2692,32 @@
     const winner = participants[winnerIdx];
     const remaining = [];
     const winners = [];
+    const losers = [];
     for (const b of pendingBets) {
       if (participants.includes(b.predicted)) {
+        const stake = b.amount || 0;
         if (b.predicted === winner) {
-          refundCoins(b.better, BET_REWARD);
-          winners.push(b);
+          // 押中：拿回 2 倍注額
+          refundCoins(b.better, stake * 2);
+          winners.push({ ...b, payout: stake * 2 });
+        } else {
+          // 沒中：注額進彩池
+          betPool = (betPool || 0) + stake;
+          losers.push(b);
         }
       } else {
+        // 押的人這局沒上場：留著等下局
         remaining.push(b);
       }
     }
     pendingBets = remaining;
     if (winners.length > 0) {
-      const names = winners.map(w => getPlayer(w.better)?.name || '?').join('、');
-      setTimeout(() => showToast(`🎯 押中：${names} +${BET_REWARD} 幣`), 800);
+      const summary = winners.map(w => `${getPlayer(w.better)?.name || '?'} +${w.payout}`).join('、');
+      setTimeout(() => showToast(`🎯 押中：${summary} 幣`), 800);
+    }
+    if (losers.length > 0) {
+      const total = losers.reduce((s, b) => s + (b.amount || 0), 0);
+      setTimeout(() => showToast(`🏆 彩池 +${total} 幣（共 ${losers.length} 注沒中）`), 1200);
     }
   }
 
