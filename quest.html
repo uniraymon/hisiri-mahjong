@@ -1435,6 +1435,127 @@
     },
   ];
 
+  // === 套裝 ===
+  // 每套 5 件（helmet/armor/gloves/boots/cape），固定屬性、不帶詞綴
+  // 集滿件數有疊加 bonus（在 computeStats 內被疊上）
+  const SETS = {
+    forest_guardian: {
+      name: '森林守衛者', color: '#22c55e',
+      pieces: [
+        { id: 'sg_helmet', name: '森林之冠', icon: '🍃', slot: 'helmet', def: 8,  hp: 25, lv: 4 },
+        { id: 'sg_armor',  name: '森林之鎧', icon: '🌲', slot: 'armor',  def: 12, hp: 35, lv: 4 },
+        { id: 'sg_gloves', name: '森林之爪', icon: '🌿', slot: 'gloves', atk: 7,  spd: 3, lv: 4 },
+        { id: 'sg_boots',  name: '森林之履', icon: '🌳', slot: 'boots',  spd: 6,  hp: 20, lv: 4 },
+        { id: 'sg_cape',   name: '森林之披', icon: '🍂', slot: 'cape',   def: 5,  hp: 30, lv: 4 },
+      ],
+      tiers: [
+        { req: 2, bonus: { spd: 5 },           desc: '2 件：SPD +5' },
+        { req: 3, bonus: { hp: 30 },           desc: '3 件：HP +30' },
+        { req: 4, bonus: { atk: 8 },           desc: '4 件：ATK +8' },
+        { req: 5, bonus: { critChance: 0.10 }, desc: '5 件：暴擊率 +10%' },
+      ],
+    },
+    ruin_undead: {
+      name: '亡者詛咒', color: '#a855f7',
+      pieces: [
+        { id: 'ru_helmet', name: '亡者頭骨',   icon: '💀', slot: 'helmet', def: 14, hp: 30, lv: 10 },
+        { id: 'ru_armor',  name: '亡者法袍',   icon: '🥼', slot: 'armor',  def: 18, hp: 50, lv: 10 },
+        { id: 'ru_gloves', name: '亡者枯骨',   icon: '✋', slot: 'gloves', atk: 10, hp: 15, lv: 10 },
+        { id: 'ru_boots',  name: '亡者鞋',     icon: '👢', slot: 'boots',  def: 6,  hp: 35, lv: 10 },
+        { id: 'ru_cape',   name: '亡者披風',   icon: '🦇', slot: 'cape',   def: 8,  hp: 50, lv: 10 },
+      ],
+      tiers: [
+        { req: 2, bonus: { def: 10 },         desc: '2 件：DEF +10' },
+        { req: 3, bonus: { hp: 50 },          desc: '3 件：HP +50' },
+        { req: 4, bonus: { atk: 12 },         desc: '4 件：ATK +12' },
+        { req: 5, bonus: { def: 15, hp: 80 }, desc: '5 件：DEF +15、HP +80' },
+      ],
+    },
+    volcano_warrior: {
+      name: '火山戰神', color: '#dc2626',
+      pieces: [
+        { id: 'vw_helmet', name: '熔岩盔', icon: '🔥', slot: 'helmet', atk: 8,  def: 10, lv: 16 },
+        { id: 'vw_armor',  name: '熔岩鎧', icon: '🌋', slot: 'armor',  atk: 6,  def: 18, hp: 40, lv: 16 },
+        { id: 'vw_gloves', name: '熔岩拳', icon: '👊', slot: 'gloves', atk: 18, spd: 4,  lv: 16 },
+        { id: 'vw_boots',  name: '熔岩靴', icon: '🥾', slot: 'boots',  atk: 5,  spd: 8,  lv: 16 },
+        { id: 'vw_cape',   name: '熔岩披', icon: '🧥', slot: 'cape',   atk: 8,  hp: 45, lv: 16 },
+      ],
+      tiers: [
+        { req: 2, bonus: { atk: 12 },                  desc: '2 件：ATK +12' },
+        { req: 3, bonus: { spd: 6 },                   desc: '3 件：SPD +6' },
+        { req: 4, bonus: { critDmg: 0.20 },            desc: '4 件：暴擊傷害 +20%' },
+        { req: 5, bonus: { atk: 25, critChance: 0.05 }, desc: '5 件：ATK +25、暴擊率 +5%' },
+      ],
+    },
+    ice_heart: {
+      name: '冰原之心', color: '#3b82f6',
+      pieces: [
+        { id: 'ih_helmet', name: '冰晶冠', icon: '❄️', slot: 'helmet', def: 18, hp: 60, lv: 22 },
+        { id: 'ih_armor',  name: '冰晶鎧', icon: '🧊', slot: 'armor',  def: 25, hp: 90, lv: 22 },
+        { id: 'ih_gloves', name: '冰晶爪', icon: '🥶', slot: 'gloves', atk: 14, def: 8,  lv: 22 },
+        { id: 'ih_boots',  name: '冰晶靴', icon: '⛸',  slot: 'boots',  spd: 10, hp: 50, lv: 22 },
+        { id: 'ih_cape',   name: '冰晶披', icon: '🪽',  slot: 'cape',   def: 12, hp: 70, lv: 22 },
+      ],
+      tiers: [
+        { req: 2, bonus: { hp: 50 },                 desc: '2 件：HP +50' },
+        { req: 3, bonus: { def: 12 },                desc: '3 件：DEF +12' },
+        { req: 4, bonus: { spd: 8 },                 desc: '4 件：SPD +8' },
+        { req: 5, bonus: { hp: 100, def: 25, atk: 15 }, desc: '5 件：HP +100、DEF +25、ATK +15' },
+      ],
+    },
+  };
+
+  // 把所有 set piece 加上 setId 標記，並建立 id → 件的查表
+  const SET_PIECES = {};
+  Object.entries(SETS).forEach(([sid, set]) => {
+    set.pieces.forEach(p => {
+      p.setId = sid;
+      p.isSetPiece = true;
+      SET_PIECES[p.id] = p;
+    });
+  });
+
+  // === 精英怪 ===
+  // 每個地區一隻；遭遇率約 7%；HP / ATK 比一般怪高、固定掉落該地區套裝其中一件
+  const ELITES = [
+    {
+      id: 'elite_forest', zone: 'forest', name: '★ 森林之主鵝', icon: '🦌',
+      hpBase: 250, atkBase: 24, defBase: 8, spdBase: 9,
+      goldBase: 80, xpBase: 200, verb: '森林之怒',
+      ability: { type: 'multiHit', hits: 2 },
+      dropSet: 'forest_guardian',
+      dialogue: ['鵝鵝森林由我守護！', '凡人敢踏入聖地？', '感受森林的怒火吧！'],
+      deathLine: ['森林...會記住你...', '吾將...化為春風...', '誰來繼承...森林之意志...'],
+    },
+    {
+      id: 'elite_ruins', zone: 'ruins', name: '★ 詛咒巫妖鵝', icon: '☠️',
+      hpBase: 380, atkBase: 30, defBase: 14, spdBase: 8,
+      goldBase: 140, xpBase: 320, verb: '亡者詛咒',
+      ability: { type: 'magicResist', resist: 0.5 },
+      dropSet: 'ruin_undead',
+      dialogue: ['加入吾等亡者之列吧...', '骨骼...吟唱吧...', '生命...是多餘的...'],
+      deathLine: ['歸於塵土...', '又一次...沉睡...', '不死之軀...亦有盡頭...'],
+    },
+    {
+      id: 'elite_volcano', zone: 'volcano', name: '★ 烈焰龍鵝', icon: '🔥',
+      hpBase: 480, atkBase: 38, defBase: 16, spdBase: 12,
+      goldBase: 200, xpBase: 480, verb: '熔岩噴發',
+      ability: { type: 'physResist', resist: 0.3 },
+      dropSet: 'volcano_warrior',
+      dialogue: ['熔岩深淵的霸主！', '燃燒吧！', '吾乃火山之意志！'],
+      deathLine: ['火焰...終會...再起...', '吾魂...歸於熔岩...', '下次...更強大...'],
+    },
+    {
+      id: 'elite_ice', zone: 'ice', name: '★ 冰封巨人鵝', icon: '❄️',
+      hpBase: 700, atkBase: 42, defBase: 24, spdBase: 7,
+      goldBase: 300, xpBase: 700, verb: '極寒風暴',
+      ability: { type: 'physResist', resist: 0.4 },
+      dropSet: 'ice_heart',
+      dialogue: ['冰封一切...', '汝之溫暖...微不足道...', '冰原...永恆...'],
+      deathLine: ['吾魂...歸於冰原...', '下次相見...化為寒風...', '冰封...也有解凍...'],
+    },
+  ];
+
   // === 打工 ===
   const WORK_STAMINA = 15;
   const WORK_BASE_PAY = 100; // 拉高底薪
@@ -2102,7 +2223,7 @@
   // 角色資料 helpers
   // ============================================================
   function findItem(id) {
-    return ITEMS.find(i => i.id === id) || SHOP_ITEMS.find(i => i.id === id);
+    return ITEMS.find(i => i.id === id) || SHOP_ITEMS.find(i => i.id === id) || SET_PIECES[id] || null;
   }
 
   // 通用物品解析（背包項目可能是 string ID 或物件 instance）
@@ -2416,6 +2537,35 @@
     };
   }
   function xpForLevel(lv) { return lv * lv * 100; }
+  // 計算目前裝備的套裝件數，並回傳 { counts: {setId: n}, bonuses: {...合併} }
+  function computeSetBonuses(player) {
+    const rpg = player?.rpg;
+    if (!rpg || !rpg.equipment) return { counts: {}, bonuses: {} };
+    const counts = {};
+    for (const slot of Object.keys(rpg.equipment)) {
+      const entry = rpg.equipment[slot];
+      if (!entry) continue;
+      const item = resolveItem(entry);
+      if (item && item.setId) {
+        counts[item.setId] = (counts[item.setId] || 0) + 1;
+      }
+    }
+    const bonuses = {};
+    for (const setId of Object.keys(counts)) {
+      const set = SETS[setId];
+      if (!set) continue;
+      const c = counts[setId];
+      for (const tier of (set.tiers || [])) {
+        if (c >= tier.req) {
+          for (const k of Object.keys(tier.bonus || {})) {
+            bonuses[k] = (bonuses[k] || 0) + tier.bonus[k];
+          }
+        }
+      }
+    }
+    return { counts, bonuses };
+  }
+
   function computeStats(player) {
     const rpg = getRpg(player);
     const cls = CLASSES[rpg.class];
@@ -2430,7 +2580,7 @@
       def:   Math.round(cls.def + (lv - 1) * cls.defPer) + b.def + ab.def,
       spd:   Math.round(cls.spd + (lv - 1) * cls.spdPer) + b.spd + ab.spd,
     };
-    // 裝備加成（7 個槽）
+    // 裝備加成（10 個槽）
     for (const slot of ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape', 'wings', 'pet', 'guide']) {
       const itemId = rpg.equipment?.[slot];
       if (itemId) {
@@ -2443,6 +2593,16 @@
         }
       }
     }
+    // 套裝加成
+    const setInfo = computeSetBonuses(player);
+    if (setInfo.bonuses.atk) stats.atk += setInfo.bonuses.atk;
+    if (setInfo.bonuses.def) stats.def += setInfo.bonuses.def;
+    if (setInfo.bonuses.spd) stats.spd += setInfo.bonuses.spd;
+    if (setInfo.bonuses.hp)  stats.maxHp += setInfo.bonuses.hp;
+    if (setInfo.bonuses.mp)  stats.maxMp += setInfo.bonuses.mp;
+    // critChance / critDmg 在 autoFight 直接讀，這裡也帶出去
+    stats.setBonuses = setInfo.bonuses;
+    stats.setCounts = setInfo.counts;
     return stats;
   }
   function generateMonster(playerLv, opts) {
@@ -2463,6 +2623,28 @@
       }
     } else if (Math.random() < 0.05) {
       return createGreenTea(playerLv);
+    }
+    // 精英怪：在指定地區內 7% 機率出現
+    if (opts && opts.zoneId && Math.random() < 0.07) {
+      const elite = ELITES.find(e => e.zone === opts.zoneId);
+      const zone = ZONES.find(z => z.id === opts.zoneId);
+      if (elite && zone) {
+        const floor = Math.max(1, opts.floor || 1);
+        const lv = zone.baseLv + floor - 1;
+        const k = 1 + (lv - 1) * 0.18;
+        return {
+          ...elite,
+          level: lv,
+          hp: Math.round(elite.hpBase * k),
+          maxHp: Math.round(elite.hpBase * k),
+          atk: Math.round(elite.atkBase * k * 1.3),
+          def: Math.round(elite.defBase * k * 0.7),
+          spd: Math.round(elite.spdBase + lv * 0.4),
+          goldDrop: Math.round(elite.goldBase + lv * 1.8 + Math.random() * lv * 0.6),
+          xpDrop: Math.round((elite.xpBase + lv * 6 + Math.random() * lv * 3) * 2),
+          isElite: true,
+        };
+      }
     }
     let candidates;
     let levelMin = playerLv, levelMax = playerLv;
@@ -2536,8 +2718,9 @@
     const passive = computePassiveBonuses(player);
     // 被動 spd 加成已套到 stats 之外（先給門檻型，autoFight 用即時 spd）
     const effectiveSpd = stats.spd + (passive.spd || 0);
-    const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0);
-    const critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0);
+    const setB = stats.setBonuses || {};
+    const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0) + (setB.critChance || 0);
+    const critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
     const regenPer = (cls.regenPer || 0) + (bonus.regen || 0);
     let pHp = Math.min(player.rpg.hp ?? stats.maxHp, stats.maxHp);
     let pMp = Math.min(player.rpg.mp ?? stats.maxMp, stats.maxMp);
@@ -3302,6 +3485,27 @@
           <div class="stat-cell"><div class="sc-label">DEF</div><div class="sc-value">${stats.def}</div></div>
           <div class="stat-cell"><div class="sc-label">SPD</div><div class="sc-value">${stats.spd}</div></div>
         </div>
+        ${(() => {
+          const setIds = Object.keys(stats.setCounts || {});
+          if (setIds.length === 0) return '';
+          return `<div style="margin-top:10px; padding:8px 10px; background:linear-gradient(135deg,#fef3c7,#fde68a); border:2px dashed #f59e0b; border-radius:10px; font-size:11px;">
+            <div style="font-weight:700; margin-bottom:4px; color:#92400e;">🛡 套裝</div>
+            ${setIds.map(sid => {
+              const set = SETS[sid];
+              if (!set) return '';
+              const c = stats.setCounts[sid];
+              const totalPieces = set.pieces.length;
+              const tiers = (set.tiers || []).map(t => {
+                const active = c >= t.req;
+                return `<span style="display:inline-block; padding:1px 6px; margin:1px 2px; border-radius:6px; font-size:10px; ${active ? `background:${set.color}; color:#fff; font-weight:700;` : 'background:#e5e7eb; color:#9ca3af;'}">${t.desc}</span>`;
+              }).join('');
+              return `<div style="margin-bottom:3px;">
+                <b style="color:${set.color};">${escapeHtml(set.name)}</b> <span style="color:#92400e;">${c}/${totalPieces}</span>
+                <div style="margin-top:2px;">${tiers}</div>
+              </div>`;
+            }).join('')}
+          </div>`;
+        })()}
         ${(cls.skills && cls.skills.length) ? `<div style="margin-top:10px; padding:8px 10px; background:linear-gradient(135deg,#dbeafe,#bfdbfe); border:2px dashed #60a5fa; border-radius:10px; font-size:11px; color:#1e3a8a;">
           <div style="font-weight:700; margin-bottom:4px;">⚡ 主動技能（戰鬥自動施放，強→弱優先）</div>
           ${cls.skills.map(s => {
@@ -3361,11 +3565,29 @@
     if (!item) return;
     const sellValue = getSellValue(item);
     const canEquip = !item.lv || r.level >= item.lv;
-    const rarColor = item.rarity ? RARITY[item.rarity]?.color : '#7c3aed';
-    const rarLabel = item.rarity ? RARITY[item.rarity]?.label : '';
+    const rarColor = item.rarity ? RARITY[item.rarity]?.color : (item.setId ? (SETS[item.setId]?.color || '#f59e0b') : '#7c3aed');
+    const rarLabel = item.rarity ? RARITY[item.rarity]?.label : (item.setId ? '套裝' : '');
     const affixHtml = item.affixes && item.affixes.length
       ? `<div style="margin-top:6px; padding:6px 8px; background:${rarColor}20; border-radius:8px; font-size:11px;">${item.affixes.map(a => `<div style="color:${rarColor};">+${a.val} ${a.type.toUpperCase()}（${a.name}）</div>`).join('')}</div>`
       : '';
+    // 套裝資訊
+    let setHtml = '';
+    if (item.setId && SETS[item.setId]) {
+      const set = SETS[item.setId];
+      // 計算目前已裝備的件數
+      const setInfo = computeSetBonuses(me);
+      const currentCount = setInfo.counts[item.setId] || 0;
+      const tiers = set.tiers.map(t => {
+        const active = currentCount >= t.req;
+        return `<div style="font-size:11px; padding:3px 6px; margin:2px 0; border-radius:6px; ${active ? `background:${set.color}; color:#fff;` : 'background:#fff; color:#9ca3af; border:1px dashed #d1d5db;'}">${active ? '✓' : `${t.req}件：`}${t.desc}</div>`;
+      }).join('');
+      setHtml = `
+        <div style="margin-top:8px; padding:8px 10px; background:${set.color}15; border:2px solid ${set.color}; border-radius:10px; text-align:left;">
+          <div style="font-size:12px; color:${set.color}; font-weight:700; margin-bottom:4px;">🛡 ${set.name}（已裝 ${currentCount}/${set.pieces.length}）</div>
+          ${tiers}
+        </div>
+      `;
+    }
     const html = `
       <div style="text-align:center; padding:8px 0;">
         <div style="font-size:52px; margin-bottom:4px;">${item.icon}</div>
@@ -3375,6 +3597,7 @@
           ${item.lv ? `Lv ${item.lv} 需求　·　` : ''}${formatItemStats(item)}
         </div>
         ${affixHtml}
+        ${setHtml}
         ${!canEquip ? `<div style="font-size:11px; color:#dc2626; margin-top:6px;">🔒 等級不足無法裝備</div>` : ''}
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:14px;">
           <button class="btn btn-primary" onclick="equipFromInvAndClose(${idx})" ${canEquip ? '' : 'disabled'}>裝備</button>
@@ -4445,6 +4668,16 @@
       const _zone = ZONES.find(z => z.id === (rpg.currentZone || 'forest'));
       const drop = rollItemDrop(rpg.level, { slotBias: _zone ? _zone.dropBias : null });
       if (drop) rpg.inventory.push(drop); // drop instance（含詞綴）直接存物件
+      // 精英怪：必掉一件套裝（隨機從該套挑一件）
+      let elitePiece = null;
+      if (monster.isElite && monster.dropSet) {
+        const set = SETS[monster.dropSet];
+        if (set && set.pieces.length > 0) {
+          const piece = set.pieces[Math.floor(Math.random() * set.pieces.length)];
+          rpg.inventory.push(piece.id);
+          elitePiece = piece;
+        }
+      }
       // 紀錄地區進度：通關目前層數 → 解鎖下一層
       if (_zone) {
         if (!rpg.zoneProgress) rpg.zoneProgress = {};
@@ -4476,11 +4709,12 @@
       div.textContent = `✨ ${monster.name}倒下！`;
       logEl.appendChild(div);
       rewardHtml = `
-        <div class="reward-list">
-          <div class="rl-title">🎉 戰利品</div>
+        <div class="reward-list" ${monster.isElite ? 'style="background:linear-gradient(135deg,#fef3c7,#fde047); border-color:#f59e0b;"' : ''}>
+          <div class="rl-title">${monster.isElite ? '⭐ 精英戰利品' : '🎉 戰利品'}</div>
           <div class="rl-item">⭐ +${monster.xpDrop} XP</div>
           <div class="rl-item">🪙 +${monster.goldDrop} 鵝鵝幣</div>
           ${drop ? `<div class="rl-item">${drop.icon} ${drop.name}</div>` : ''}
+          ${elitePiece ? `<div class="rl-item" style="color:${SETS[monster.dropSet]?.color || '#7c3aed'}; font-weight:700;">🛡 [套裝] ${elitePiece.icon} ${elitePiece.name}（${SETS[monster.dropSet]?.name}）</div>` : ''}
           ${result.coinsStolen > 0 ? `<div class="rl-item" style="color:#dc2626;">💰 被偷走 −${result.coinsStolen} 鵝鵝幣</div>` : ''}
           ${leveledUp ? `<div style="margin-top:8px; color:#7c3aed; font-weight:700;">🎊 升級到 Lv ${rpg.level}！HP/MP 回滿、+${leveledUp * POINTS_PER_LEVEL.skill} 技能點 / +${leveledUp * POINTS_PER_LEVEL.ability} 能力點</div>` : ''}
         </div>
