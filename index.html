@@ -806,6 +806,32 @@
     z-index: 1000;
     box-shadow: 0 6px 20px rgba(239, 107, 138, 0.4);
   }
+
+  /* 成就解鎖通知 */
+  .ach-toast {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    width: 280px;
+    background: linear-gradient(135deg, #fde68a, #f59e0b);
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 16px;
+    border: 3px solid #d97706;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    z-index: 1100;
+    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.5);
+    transform: translateX(120%);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .ach-toast.show { transform: translateX(0); }
+  .ach-toast .at-icon { font-size: 36px; flex-shrink: 0; }
+  .ach-toast .at-info { min-width: 0; }
+  .ach-toast .at-title { font-size: 11px; font-weight: 700; opacity: 0.85; letter-spacing: 1px; }
+  .ach-toast .at-name { font-size: 16px; font-weight: 800; line-height: 1.2; margin-top: 2px; }
+  .ach-toast .at-desc { font-size: 11px; opacity: 0.9; margin-top: 2px; line-height: 1.3; }
   .toast.show { transform: translateX(-50%) translateY(0); }
 
   .player-header {
@@ -1617,6 +1643,9 @@
         `;
       }).join('');
     }
+
+    // 檢查所有玩家的新成就（從冒險島回來時尤其重要）
+    players.forEach(p => checkAndNotifyAchievements(p));
   }
 
   // === 玩家選擇 ===
@@ -2079,6 +2108,20 @@
     { id: 'coin_10k',   cat: '鵝幣', icon: '🤑', name: '萬鵝齊發', title: '萬鵝齊發', desc: '累計賺 10,000 鵝鵝幣', check: s => s.coinsEarned >= 10000 },
     { id: 'spend_500',  cat: '鵝幣', icon: '🛍', name: '愛買鵝',   title: '愛買鵝',   desc: '累計花 500 鵝鵝幣',    check: s => s.coinsSpent >= 500 },
     { id: 'spend_2000', cat: '鵝幣', icon: '💸', name: '大手筆',   title: '大手筆',   desc: '累計花 2,000 鵝鵝幣',  check: s => s.coinsSpent >= 2000 },
+    { id: 'spend_5k',   cat: '鵝幣', icon: '🛒', name: '揮霍家',   title: '揮霍家',   desc: '累計花 5,000 鵝鵝幣',  check: s => s.coinsSpent >= 5000 },
+    { id: 'spend_10k',  cat: '鵝幣', icon: '💳', name: '購物狂',   title: '購物狂',   desc: '累計花 10,000 鵝鵝幣', check: s => s.coinsSpent >= 10000 },
+    { id: 'coin_30k',   cat: '鵝幣', icon: '💎', name: '鵝鵝富翁', title: '鵝鵝富翁', desc: '累計賺 30,000 鵝鵝幣', check: s => s.coinsEarned >= 30000 },
+    // 冒險島 — 綠茶 / 屠殺 / 暴擊
+    { id: 'quest_greentea_1', cat: '冒險島', icon: '🍵', name: '鵝鵝沒有錯',     title: '鵝鵝沒有錯',     desc: '遇到綠茶 1 次',     check: s => (s.metGreenTea || 0) >= 1 },
+    { id: 'quest_greentea_5', cat: '冒險島', icon: '☕', name: '又是綠茶鵝',     title: '又是綠茶鵝',     desc: '遇到綠茶 5 次',     check: s => (s.metGreenTea || 0) >= 5 },
+    { id: 'quest_kill_dragon',   cat: '冒險島', icon: '🐉', name: '屠龍鵝',       title: '屠龍鵝',       desc: '擊倒龍鵝 1 隻',     check: s => (s.rpgKills?.dragon || 0) >= 1 },
+    { id: 'quest_kill_dragon_5', cat: '冒險島', icon: '🗡️', name: '龍鵝終結者',   title: '龍鵝終結者',   desc: '擊倒龍鵝 5 隻',     check: s => (s.rpgKills?.dragon || 0) >= 5 },
+    { id: 'quest_kill_titan',  cat: '冒險島', icon: '🪨', name: '巨人殺手',       title: '巨人殺手',       desc: '擊倒泰坦鵝 1 隻',   check: s => (s.rpgKills?.titan  || 0) >= 1 },
+    { id: 'quest_kill_demon',  cat: '冒險島', icon: '👼', name: '滅魔者',         title: '滅魔者',         desc: '擊倒惡魔鵝 1 隻',   check: s => (s.rpgKills?.demon  || 0) >= 1 },
+    { id: 'quest_kill_lich',   cat: '冒險島', icon: '✝️', name: '驅魔師',         title: '驅魔師',         desc: '擊倒巫妖鵝 1 隻',   check: s => (s.rpgKills?.lich   || 0) >= 1 },
+    { id: 'quest_kill_merch',  cat: '冒險島', icon: '💸', name: '商人剋星',       title: '商人剋星',       desc: '擊倒商人鵝 3 次',   check: s => (s.rpgKills?.merch  || 0) >= 3 },
+    { id: 'quest_crit_100',    cat: '冒險島', icon: '💥', name: '暴擊狂',         title: '暴擊狂',         desc: '冒險中累計暴擊 100 次',  check: s => (s.rpgCrits || 0) >= 100 },
+    { id: 'quest_crit_500',    cat: '冒險島', icon: '⚡', name: '暴擊大師',       title: '暴擊大師',       desc: '冒險中累計暴擊 500 次',  check: s => (s.rpgCrits || 0) >= 500 },
   ];
 
   function getStats(records, player) {
@@ -2117,6 +2160,9 @@
     const rpgEquippedSlots = ['weapon','armor','accessory'].filter(s => eq[s]).length;
     const rpgHasLegendary = ['weapon','armor','accessory']
       .some(s => eq[s] && String(eq[s]).endsWith('_28'));
+    const metGreenTea = rpg.metGreenTea || 0;
+    const rpgKills    = rpg.kills || {};
+    const rpgCrits    = rpg.critCount || 0;
     const coinsEarned = calcCoinsEarned(records);
     const coinsSpent  = player ? (player.coinsSpent || 0) : 0;
     const coinsBalance = coinsEarned - coinsSpent;
@@ -2124,6 +2170,7 @@
       games, total, wins, lasts, flews, maxWin, maxLose, avgMoney, winRate, maxStreak, maxLoseStreak, reversal,
       totalRiichi, totalRon, totalTsumo, totalHouju, totalAgari,
       rpgClass, rpgLevel, rpgWins, rpgLosses, rpgInv, rpgEquippedSlots, rpgHasLegendary,
+      metGreenTea, rpgKills, rpgCrits,
       coinsEarned, coinsSpent, coinsBalance
     };
   }
@@ -3408,6 +3455,52 @@
     saveData();
     closeTitleModal();
     renderPlayerPage(pid);
+  }
+
+  // === 成就解鎖通知 ===
+  function showAchievementToast(ach, offsetIdx = 0) {
+    const el = document.createElement('div');
+    el.className = 'ach-toast';
+    el.style.top = (24 + offsetIdx * 92) + 'px';
+    el.innerHTML = `
+      <div class="at-icon">${ach.icon}</div>
+      <div class="at-info">
+        <div class="at-title">🏆 成就解鎖！</div>
+        <div class="at-name">${escapeHtml(ach.name)}</div>
+        <div class="at-desc">${escapeHtml(ach.desc)}</div>
+      </div>
+    `;
+    document.body.appendChild(el);
+    setTimeout(() => el.classList.add('show'), 50 + offsetIdx * 200);
+    setTimeout(() => {
+      el.classList.remove('show');
+      setTimeout(() => el.remove(), 400);
+    }, 4500 + offsetIdx * 200);
+  }
+  function getSeenAchSet(pid) {
+    try { return new Set(JSON.parse(localStorage.getItem('ach-seen-' + pid) || '[]')); }
+    catch { return new Set(); }
+  }
+  function saveSeenAchSet(pid, set) {
+    try { localStorage.setItem('ach-seen-' + pid, JSON.stringify([...set])); } catch {}
+  }
+  function checkAndNotifyAchievements(player) {
+    if (!player) return;
+    const records = getPlayerData(player.id);
+    const all = calcAchievements(records, player);
+    const unlockedNow = all.filter(a => a.unlocked);
+    const seenKey = 'ach-seen-' + player.id;
+    // 第一次跑：把目前已解鎖的全部當作已看過，避免一次跳一堆 toast
+    if (localStorage.getItem(seenKey) === null) {
+      saveSeenAchSet(player.id, new Set(unlockedNow.map(a => a.id)));
+      return;
+    }
+    const seen = getSeenAchSet(player.id);
+    const newOnes = unlockedNow.filter(a => !seen.has(a.id));
+    if (newOnes.length === 0) return;
+    for (const a of unlockedNow) seen.add(a.id);
+    saveSeenAchSet(player.id, seen);
+    newOnes.slice(0, 5).forEach((a, i) => showAchievementToast(a, i));
   }
 
   function showToast(msg) {

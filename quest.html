@@ -1515,6 +1515,7 @@
         pHpFinal: newHp, pMpFinal: startMp, mHpFinal: 1,
         maxHp: stats.maxHp, maxMp: stats.maxMp,
         coinsStolen: 10, kickDmg, log,
+        metGreenTea: 1,
       };
     }
 
@@ -1533,6 +1534,7 @@
     let round = 0;
     let playerActions = 0;
     let coinsStolen = 0;
+    let critCount = 0;
     const mAbility = monster.ability;
     // 每個技能各自的 nextActionForSkill（順序：強→中→弱，優先發強的）
     const skills = cls.skills || (cls.skill ? [cls.skill] : []);
@@ -1602,7 +1604,7 @@
             if (!isFlat && mAbility?.type === 'physResist') dmg *= (1 - mAbility.resist);
             const isCrit = skill.alwaysCrit || Math.random() < baseCritChance;
             dmg *= (0.9 + Math.random() * 0.2);
-            if (isCrit) dmg *= critMult;
+            if (isCrit) { dmg *= critMult; critCount++; }
             dmg = Math.max(1, Math.round(dmg));
             mHp -= dmg;
             // healCaster: 攻擊同時治癒自己（例如聖光斬）
@@ -1634,7 +1636,7 @@
           const isCrit = Math.random() < baseCritChance;
           let dmg = Math.max(1, stats.atk - Math.floor(monster.def / 2));
           dmg *= (0.85 + Math.random() * 0.3);
-          if (isCrit) dmg *= critMult;
+          if (isCrit) { dmg *= critMult; critCount++; }
           if (mAbility?.type === 'physResist') dmg *= (1 - mAbility.resist);
           dmg = Math.max(1, Math.round(dmg));
           mHp -= dmg;
@@ -1687,6 +1689,7 @@
       maxHp: stats.maxHp,
       maxMp: stats.maxMp,
       coinsStolen,
+      critCount,
       log
     };
   }
@@ -2434,6 +2437,12 @@
     rpg.mp = result.pMpFinal;
     if (result.coinsStolen > 0) {
       player.coinsSpent = (player.coinsSpent || 0) + result.coinsStolen;
+    }
+    if (result.critCount) rpg.critCount = (rpg.critCount || 0) + result.critCount;
+    if (result.metGreenTea) rpg.metGreenTea = (rpg.metGreenTea || 0) + result.metGreenTea;
+    if (result.won) {
+      if (!rpg.kills) rpg.kills = {};
+      rpg.kills[monster.id] = (rpg.kills[monster.id] || 0) + 1;
     }
     const logEl = document.getElementById('battleLog');
     let rewardHtml = '';
