@@ -792,6 +792,11 @@
     </div>
 
     <div class="card">
+      <h2 id="abilityCardHeader"><span>📊 能力值</span></h2>
+      <div id="abilityBody"></div>
+    </div>
+
+    <div class="card">
       <h2 id="skillCardHeader"><span>📚 技能</span></h2>
       <div id="skillTreeBody"></div>
     </div>
@@ -964,6 +969,16 @@
   const TICK_MS = 60 * 1000;     // 1 分鐘 +1 體力 +1 HP
   const REST_MS = 10 * 60 * 1000; // HP=0 → 10 分後恢復到 50%
   const REST_HP_RATIO = 0.5;
+
+  const ABILITIES = [
+    { id: 'str', name: '力量 STR', short: 'STR', icon: '💪', desc: '+1 ATK / 點' },
+    { id: 'vit', name: '體力 VIT', short: 'VIT', icon: '🛡️', desc: '+5 HP / 點，每 2 點 +1 DEF' },
+    { id: 'agi', name: '敏捷 AGI', short: 'AGI', icon: '🦅', desc: '每 2 點 +1 SPD' },
+    { id: 'dex', name: '技巧 DEX', short: 'DEX', icon: '🎯', desc: '+0.4% 暴擊率 / 點' },
+    { id: 'int', name: '智力 INT', short: 'INT', icon: '📚', desc: '+2 MP / 點，+0.5 法術傷害' },
+    { id: 'luk', name: '幸運 LUK', short: 'LUK', icon: '🍀', desc: '+0.2% 暴擊率 +1% 暴擊傷害 / 點' },
+  ];
+  const POINTS_PER_LEVEL = { skill: 2, ability: 3 };
 
   const SHOP_ITEMS = (() => {
     const items = [
@@ -1177,7 +1192,9 @@
         equipped:  { weapon: null, shield: null, accessory: null, armor: null },
         inventory: [],
         skillPoints: 0,
-        skills: {}, // { skillNodeId: level }
+        skills: {},
+        abilityPoints: 5, // 起手 5 點
+        abilities: { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0 },
         stamina: STAMINA_MAX,
         lastTickAt: Date.now(),
         fightsWon: 0,
@@ -1189,13 +1206,36 @@
     if (player.rpg.lastTickAt == null) player.rpg.lastTickAt = Date.now();
     if (!player.rpg.equipped) player.rpg.equipped = { weapon: null, shield: null, accessory: null, armor: null };
     if (!player.rpg.skills) player.rpg.skills = {};
-    // 既有玩家補上 skillPoints：每等 +2，扣掉已點掉的
+    if (!player.rpg.abilities) player.rpg.abilities = { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0 };
+    // skillPoints migration
     if (player.rpg.skillPoints == null) {
-      const earned = Math.max(0, (player.rpg.level || 1) - 1) * 2;
+      const earned = Math.max(0, (player.rpg.level || 1) - 1) * POINTS_PER_LEVEL.skill;
       const used = Object.values(player.rpg.skills).reduce((a, b) => a + (b || 0), 0);
       player.rpg.skillPoints = Math.max(0, earned - used);
     }
+    // abilityPoints migration
+    if (player.rpg.abilityPoints == null) {
+      const earned = 5 + Math.max(0, (player.rpg.level || 1) - 1) * POINTS_PER_LEVEL.ability;
+      const used = Object.values(player.rpg.abilities).reduce((a, b) => a + (b || 0), 0);
+      player.rpg.abilityPoints = Math.max(0, earned - used);
+    }
     return player.rpg;
+  }
+
+  // 把已點的能力換算成屬性加成
+  function computeAbilityBonuses(player) {
+    const r = getRpg(player);
+    const a = r.abilities || {};
+    return {
+      atk: (a.str || 0),
+      hp: (a.vit || 0) * 5,
+      def: Math.floor((a.vit || 0) / 2),
+      spd: Math.floor((a.agi || 0) / 2),
+      critChance: (a.dex || 0) * 0.004 + (a.luk || 0) * 0.002,
+      critDmgBonus: (a.luk || 0) * 0.01,
+      mp: (a.int || 0) * 2,
+      skillFlat: (a.int || 0) * 0.5,
+    };
   }
 
   // 把已點的技能換算成各種屬性加成
@@ -1286,12 +1326,13 @@
     if (!cls) return null;
     const lv = rpg.level || 1;
     const b = computeSkillBonuses(player);
+    const ab = computeAbilityBonuses(player);
     let stats = {
-      maxHp: Math.round((cls.hp + (lv - 1) * cls.hpPer) * (1 + b.hpPct)) + b.hp,
-      maxMp: Math.round(((cls.mp || 30) + (lv - 1) * (cls.mpPer || 5)) * (1 + b.mpPct)) + b.mp,
-      atk:   Math.round(cls.atk + (lv - 1) * cls.atkPer) + b.atk,
-      def:   Math.round(cls.def + (lv - 1) * cls.defPer) + b.def,
-      spd:   Math.round(cls.spd + (lv - 1) * cls.spdPer) + b.spd,
+      maxHp: Math.round((cls.hp + (lv - 1) * cls.hpPer) * (1 + b.hpPct)) + b.hp + ab.hp,
+      maxMp: Math.round(((cls.mp || 30) + (lv - 1) * (cls.mpPer || 5)) * (1 + b.mpPct)) + b.mp + ab.mp,
+      atk:   Math.round(cls.atk + (lv - 1) * cls.atkPer) + b.atk + ab.atk,
+      def:   Math.round(cls.def + (lv - 1) * cls.defPer) + b.def + ab.def,
+      spd:   Math.round(cls.spd + (lv - 1) * cls.spdPer) + b.spd + ab.spd,
     };
     // 裝備加成
     for (const slot of ['weapon', 'armor', 'accessory']) {
@@ -1344,7 +1385,9 @@
     const cls = CLASSES[player.rpg.class];
     const stats = computeStats(player);
     const bonus = computeSkillBonuses(player);
-    const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0);
+    const abil  = computeAbilityBonuses(player);
+    const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0);
+    const critMult = 1.7 + (abil.critDmgBonus || 0);
     const regenPer = (cls.regenPer || 0) + (bonus.regen || 0);
     let pHp = Math.min(player.rpg.hp ?? stats.maxHp, stats.maxHp);
     let pMp = Math.min(player.rpg.mp ?? stats.maxMp, stats.maxMp);
@@ -1389,7 +1432,7 @@
           if (skill.type === 'damage') {
             let dmg;
             if (skill.flat != null) {
-              dmg = (skill.flat + (bonus.skillFlat || 0)) + (skill.perLv || 0) * (player.rpg.level || 1);
+              dmg = (skill.flat + (bonus.skillFlat || 0) + (abil.skillFlat || 0)) + (skill.perLv || 0) * (player.rpg.level || 1);
               if (!skill.ignoreDef) dmg -= Math.floor(monster.def / 2);
             } else {
               dmg = stats.atk * (skill.mult || 1) - Math.floor(monster.def / 2);
@@ -1398,7 +1441,7 @@
             dmg *= (1 + (bonus.skillDmgPct || 0));
             const isCrit = skill.alwaysCrit || Math.random() < baseCritChance;
             dmg *= (0.9 + Math.random() * 0.2);
-            if (isCrit) dmg *= 1.7;
+            if (isCrit) dmg *= critMult;
             dmg = Math.max(1, Math.round(dmg));
             mHp -= dmg;
             // healCaster: 攻擊同時治癒自己（例如聖光斬）
@@ -1430,7 +1473,7 @@
           const isCrit = Math.random() < baseCritChance;
           let dmg = Math.max(1, stats.atk - Math.floor(monster.def / 2));
           dmg *= (0.85 + Math.random() * 0.3);
-          if (isCrit) dmg *= 1.7;
+          if (isCrit) dmg *= critMult;
           dmg = Math.max(1, Math.round(dmg));
           mHp -= dmg;
           log.push({
@@ -1496,11 +1539,82 @@
     syncEquipped(me); // 雲端載入後可能 equipped 還沒填
     renderCharCard();
     renderEquipment();
+    renderAbilityTree();
     renderSkillTree();
     renderShop();
     renderRpgStats();
     updateStaminaUI();
   }
+
+  function renderAbilityTree() {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    if (!r.class) {
+      document.getElementById('abilityCardHeader').innerHTML = `<span>📊 能力值</span>`;
+      document.getElementById('abilityBody').innerHTML = '';
+      return;
+    }
+    const points = r.abilityPoints || 0;
+    document.getElementById('abilityCardHeader').innerHTML = `
+      <span>📊 能力值</span>
+      <span class="skill-card-points" style="background:linear-gradient(135deg,#a7f3d0,#10b981);">⚡ ${points} 點可用</span>
+    `;
+    const html = ABILITIES.map(ab => {
+      const cur = (r.abilities || {})[ab.id] || 0;
+      const canAdd = points >= 1;
+      return `
+        <div class="skill-node" style="background:linear-gradient(135deg,#fff,#ecfdf5); border-color:#a7f3d0;">
+          <div class="sn-icon">${ab.icon}</div>
+          <div>
+            <div class="sn-name" style="color:#047857;">${ab.name} <span style="color:#10b981; margin-left:4px;">${cur}</span></div>
+            <div class="sn-desc">${ab.desc}</div>
+          </div>
+          <button class="sn-add-btn" style="background:linear-gradient(135deg,#a7f3d0,#10b981); border-color:#047857;" onclick="learnAbility('${ab.id}')" ${canAdd ? '' : 'disabled'}>+</button>
+        </div>
+      `;
+    }).join('');
+    document.getElementById('abilityBody').innerHTML = `
+      ${html}
+      <div style="display:flex; gap:6px; margin-top:6px;">
+        <button class="btn btn-secondary" style="flex:1; margin-top:0;" onclick="resetAbilities()">🔄 重置能力（退回所有點）</button>
+      </div>
+      <div style="font-size:11px; color:#8b6f9b; text-align:center; margin-top:6px;">每升 1 等獲得 +${POINTS_PER_LEVEL.ability} 能力點　·　起手 +5 點</div>
+    `;
+  }
+
+  function learnAbility(id) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    if ((r.abilityPoints || 0) < 1) { showToast('沒有可用能力點'); return; }
+    if (!r.abilities) r.abilities = { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0 };
+    r.abilities[id] = (r.abilities[id] || 0) + 1;
+    r.abilityPoints -= 1;
+    const s = computeStats(me);
+    if (r.hp > s.maxHp) r.hp = s.maxHp;
+    if (r.mp > s.maxMp) r.mp = s.maxMp;
+    saveData();
+    renderCharCard();
+    renderAbilityTree();
+    showToast(`✨ ${id.toUpperCase()} +1 → ${r.abilities[id]}`);
+  }
+  window.learnAbility = learnAbility;
+
+  function resetAbilities() {
+    const me = getMe(); if (!me) return;
+    if (!confirm('退回所有能力點？')) return;
+    const r = getRpg(me);
+    const total = Object.values(r.abilities || {}).reduce((a, b) => a + (b || 0), 0);
+    r.abilityPoints = (r.abilityPoints || 0) + total;
+    r.abilities = { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0 };
+    const s = computeStats(me);
+    if (r.hp > s.maxHp) r.hp = s.maxHp;
+    if (r.mp > s.maxMp) r.mp = s.maxMp;
+    saveData();
+    renderCharCard();
+    renderAbilityTree();
+    showToast(`🔄 退回 ${total} 點能力`);
+  }
+  window.resetAbilities = resetAbilities;
 
   function renderSkillTree() {
     const me = getMe(); if (!me) return;
@@ -1951,6 +2065,10 @@
     rpg.class = classId;
     rpg.level = 1;
     rpg.xp = 0;
+    rpg.skillPoints = 0;
+    rpg.skills = {};
+    rpg.abilityPoints = 5;
+    rpg.abilities = { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0 };
     const stats = computeStats(me);
     rpg.hp = stats.maxHp;
     rpg.mp = stats.maxMp;
@@ -2073,7 +2191,8 @@
       while (rpg.xp >= xpForLevel(rpg.level)) {
         rpg.xp -= xpForLevel(rpg.level);
         rpg.level += 1;
-        rpg.skillPoints = (rpg.skillPoints || 0) + 2;
+        rpg.skillPoints = (rpg.skillPoints || 0) + POINTS_PER_LEVEL.skill;
+        rpg.abilityPoints = (rpg.abilityPoints || 0) + POINTS_PER_LEVEL.ability;
         leveledUp++;
       }
       // 升級回滿 HP
@@ -2094,7 +2213,7 @@
           <div class="rl-item">⭐ +${monster.xpDrop} XP</div>
           <div class="rl-item">🪙 +${monster.goldDrop} 鵝鵝幣</div>
           ${drop ? `<div class="rl-item">${drop.icon} ${drop.name}</div>` : ''}
-          ${leveledUp ? `<div style="margin-top:8px; color:#7c3aed; font-weight:700;">🎊 升級到 Lv ${rpg.level}！HP/MP 回滿、+${leveledUp * 2} 技能點</div>` : ''}
+          ${leveledUp ? `<div style="margin-top:8px; color:#7c3aed; font-weight:700;">🎊 升級到 Lv ${rpg.level}！HP/MP 回滿、+${leveledUp * POINTS_PER_LEVEL.skill} 技能點 / +${leveledUp * POINTS_PER_LEVEL.ability} 能力點</div>` : ''}
         </div>
       `;
       if (leveledUp) showLevelUp(rpg.level);
@@ -2256,7 +2375,8 @@
     while (r.xp >= xpForLevel(r.level)) {
       r.xp -= xpForLevel(r.level);
       r.level += 1;
-      r.skillPoints = (r.skillPoints || 0) + 2;
+      r.skillPoints = (r.skillPoints || 0) + POINTS_PER_LEVEL.skill;
+      r.abilityPoints = (r.abilityPoints || 0) + POINTS_PER_LEVEL.ability;
       leveled++;
       if (r.level > 50) break;
     }
@@ -2265,7 +2385,7 @@
     r.mp = s.maxMp;
     r.deathAt = null;
     syncEquipped(me); saveData(); render(); showDebugModal();
-    showToast(`⭐ +${amount} XP${leveled ? `，升 ${leveled} 級 +${leveled * 2} 技能點` : ''}`);
+    showToast(`⭐ +${amount} XP${leveled ? `，升 ${leveled} 級 +${leveled * POINTS_PER_LEVEL.skill} 技能點 +${leveled * POINTS_PER_LEVEL.ability} 能力點` : ''}`);
   }
   window.adminAddXp = adminAddXp;
 
@@ -2274,9 +2394,11 @@
     const r = getRpg(me);
     if (!r.class) { showToast('先選職業'); return; }
     const lv = Math.max(1, Math.min(50, parseInt(lvStr) || 1));
-    const used = Object.values(r.skills || {}).reduce((a, b) => a + (b || 0), 0);
+    const usedSk = Object.values(r.skills || {}).reduce((a, b) => a + (b || 0), 0);
+    const usedAb = Object.values(r.abilities || {}).reduce((a, b) => a + (b || 0), 0);
     r.level = lv; r.xp = 0;
-    r.skillPoints = Math.max(0, (lv - 1) * 2 - used);
+    r.skillPoints = Math.max(0, (lv - 1) * POINTS_PER_LEVEL.skill - usedSk);
+    r.abilityPoints = Math.max(0, 5 + (lv - 1) * POINTS_PER_LEVEL.ability - usedAb);
     const s = computeStats(me);
     r.hp = s.maxHp; r.mp = s.maxMp;
     r.deathAt = null;
