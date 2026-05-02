@@ -833,7 +833,11 @@
       mp: 25, mpPer: 4,
       hpPer: 14, atkPer: 2.2, defPer: 1.2, spdPer: 0.4,
       attackVerb: '揮砍',
-      skill: { name: '狂怒斬', icon: '🔥', cooldown: 3, mpCost: 14, type: 'damage', mult: 1.8 },
+      skills: [
+        { name: '怒之炎', icon: '☄️', cooldown: 7, mpCost: 35, type: 'damage', mult: 2.5 },
+        { name: '重擊',   icon: '⚡', cooldown: 4, mpCost: 18, type: 'damage', mult: 1.3, alwaysCrit: true },
+        { name: '狂怒斬', icon: '🔥', cooldown: 3, mpCost: 14, type: 'damage', mult: 1.8 },
+      ],
       skillTree: [
         { id: 'w_rage', name: '狂怒斬精通', icon: '🔥', desc: '+10% 主動技能傷害', maxLevel: 8, effect: 'skillDmgPct', per: 0.1 },
         { id: 'w_hp',   name: '鋼鐵之軀',   icon: '🛡',  desc: '+5% 最大 HP',       maxLevel: 5, effect: 'hpPct',       per: 0.05 },
@@ -851,7 +855,11 @@
       mp: 30, mpPer: 4,
       hpPer: 9, atkPer: 1.5, defPer: 0.6, spdPer: 1.2,
       attackVerb: '射擊',
-      skill: { name: '精準射擊', icon: '🎯', cooldown: 3, mpCost: 12, type: 'damage', mult: 1.4, alwaysCrit: true },
+      skills: [
+        { name: '神之矢',   icon: '🌟', cooldown: 7, mpCost: 32, type: 'damage', mult: 2.8, alwaysCrit: true },
+        { name: '多重射擊', icon: '🏹', cooldown: 4, mpCost: 16, type: 'damage', mult: 1.8 },
+        { name: '精準射擊', icon: '🎯', cooldown: 3, mpCost: 12, type: 'damage', mult: 1.4, alwaysCrit: true },
+      ],
       skillTree: [
         { id: 'a_snipe', name: '精準射擊精通', icon: '🎯', desc: '+5% 主動技能傷害', maxLevel: 8, effect: 'skillDmgPct', per: 0.05 },
         { id: 'a_crit',  name: '致命瞄準',     icon: '💥', desc: '+2% 暴擊率',        maxLevel: 5, effect: 'critChance', per: 0.02 },
@@ -870,7 +878,11 @@
       hpPer: 7, atkPer: 2.6, defPer: 0.5, spdPer: 0.7,
       attackVerb: '魔法',
       critBonus: 0.18,
-      skill: { name: '火球術', icon: '🔥', cooldown: 3, mpCost: 25, type: 'damage', flat: 50, perLv: 3, ignoreDef: true },
+      skills: [
+        { name: '隕石術', icon: '☄️', cooldown: 7, mpCost: 50, type: 'damage', flat: 120, perLv: 5, ignoreDef: true },
+        { name: '冰錐術', icon: '❄️', cooldown: 4, mpCost: 20, type: 'damage', mult: 1.6, alwaysCrit: true },
+        { name: '火球術', icon: '🔥', cooldown: 3, mpCost: 25, type: 'damage', flat: 50, perLv: 3, ignoreDef: true },
+      ],
       skillTree: [
         { id: 'm_fire', name: '火球術精通', icon: '🔥', desc: '主動技能 +5 固定傷害', maxLevel: 8, effect: 'skillFlat',  per: 5 },
         { id: 'm_mp',   name: '法力深淵',   icon: '💎', desc: '+5% 最大 MP',         maxLevel: 5, effect: 'mpPct',     per: 0.05 },
@@ -890,7 +902,11 @@
       hpPer: 12, atkPer: 1.4, defPer: 1.6, spdPer: 0.4,
       attackVerb: '聖光斬',
       regenPer: 0.05,
-      skill: { name: '神聖治癒', icon: '✨', cooldown: 5, mpCost: 30, type: 'heal', healPct: 0.3 },
+      skills: [
+        { name: '審判',     icon: '⚖️', cooldown: 7, mpCost: 38, type: 'damage', mult: 2.5, alwaysCrit: true },
+        { name: '聖光斬',   icon: '✝️', cooldown: 4, mpCost: 22, type: 'damage', mult: 1.6, healCaster: 0.05 },
+        { name: '神聖治癒', icon: '✨', cooldown: 5, mpCost: 30, type: 'heal', healPct: 0.3 },
+      ],
       skillTree: [
         { id: 'p_heal',  name: '神聖治癒精通', icon: '✨', desc: '+3% 治癒量',        maxLevel: 8, effect: 'skillHealPct', per: 0.03 },
         { id: 'p_def',   name: '聖光鎧甲',     icon: '🛡',  desc: '+2 DEF',           maxLevel: 5, effect: 'def',           per: 2 },
@@ -1336,7 +1352,9 @@
     let pTurn = stats.spd >= monster.spd;
     let round = 0;
     let playerActions = 0;
-    let nextSkillAction = 1; // 第 1 次行動嘗試放技能
+    // 每個技能各自的 nextActionForSkill（順序：強→中→弱，優先發強的）
+    const skills = cls.skills || (cls.skill ? [cls.skill] : []);
+    const nextActionForSkill = skills.map(() => 1);
 
     log.push({ type: 'system', text: `═══ ⚔️ ${player.name} VS ${monster.icon} ${monster.name} Lv ${monster.level} ═══` });
 
@@ -1350,21 +1368,23 @@
       }
       if (pTurn) {
         playerActions++;
-        // 判斷是否觸發技能：到 cooldown 時間 + MP 夠
-        let useSkill = false;
-        const skill = cls.skill;
-        if (skill && playerActions >= nextSkillAction && pMp >= skill.mpCost) {
-          if (skill.type === 'heal') {
-            // 治癒只在 HP < 70% 時觸發
-            if (pHp < stats.maxHp * 0.7) useSkill = true;
-          } else {
-            useSkill = true;
-          }
+        // 從強到弱掃技能，第一個 cooldown 完且 MP 夠 + 條件 OK 的就放
+        let useSkill = null;
+        let useSkillIdx = -1;
+        for (let i = 0; i < skills.length; i++) {
+          const s = skills[i];
+          if (playerActions < nextActionForSkill[i]) continue;
+          if (pMp < s.mpCost) continue;
+          if (s.type === 'heal' && pHp >= stats.maxHp * 0.7) continue; // 治癒只在 HP < 70% 才放
+          useSkill = s;
+          useSkillIdx = i;
+          break;
         }
 
         if (useSkill) {
+          const skill = useSkill;
           pMp -= skill.mpCost;
-          nextSkillAction = playerActions + skill.cooldown;
+          nextActionForSkill[useSkillIdx] = playerActions + skill.cooldown;
           if (skill.type === 'damage') {
             let dmg;
             if (skill.flat != null) {
@@ -1380,9 +1400,17 @@
             if (isCrit) dmg *= 1.7;
             dmg = Math.max(1, Math.round(dmg));
             mHp -= dmg;
+            // healCaster: 攻擊同時治癒自己（例如聖光斬）
+            let extra = '';
+            if (skill.healCaster) {
+              const heal = Math.max(1, Math.round(stats.maxHp * skill.healCaster));
+              const before = pHp;
+              pHp = Math.min(stats.maxHp, pHp + heal);
+              extra = ` +${pHp - before} HP`;
+            }
             log.push({
               type: 'crit-player',
-              text: `回合 ${round}：${skill.icon} ${skill.name}${isCrit ? '【暴擊】' : ''} → ${monster.name} -${dmg} HP（-${skill.mpCost} MP）`,
+              text: `回合 ${round}：${skill.icon} ${skill.name}${isCrit ? '【暴擊】' : ''} → ${monster.name} -${dmg} HP${extra}（-${skill.mpCost} MP）`,
               hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp }
             });
             if (mHp <= 0) break;
@@ -1777,8 +1805,12 @@
           <div class="stat-cell"><div class="sc-label">DEF</div><div class="sc-value">${stats.def}</div></div>
           <div class="stat-cell"><div class="sc-label">SPD</div><div class="sc-value">${stats.spd}</div></div>
         </div>
-        ${cls.skill ? `<div style="margin-top:10px; padding:6px 10px; background:linear-gradient(135deg,#dbeafe,#bfdbfe); border:2px dashed #60a5fa; border-radius:10px; font-size:11px; color:#1e3a8a;">
-          <b>${cls.skill.icon} ${cls.skill.name}</b>　${cls.skill.cooldown} 回合 / ${cls.skill.mpCost} MP
+        ${(cls.skills && cls.skills.length) ? `<div style="margin-top:10px; padding:8px 10px; background:linear-gradient(135deg,#dbeafe,#bfdbfe); border:2px dashed #60a5fa; border-radius:10px; font-size:11px; color:#1e3a8a;">
+          <div style="font-weight:700; margin-bottom:4px;">⚡ 主動技能（依強→弱優先施放）</div>
+          ${cls.skills.map(s => `<div style="display:flex; justify-content:space-between; padding:2px 0;">
+            <span><b>${s.icon} ${s.name}</b></span>
+            <span style="opacity:0.85;">CD ${s.cooldown} / ${s.mpCost} MP</span>
+          </div>`).join('')}
         </div>` : ''}
       </div>
     `;
