@@ -2130,7 +2130,8 @@
   function refundCoins(playerId, amount) {
     const p = getPlayer(playerId);
     if (!p) return;
-    p.coinsSpent = Math.max(0, (p.coinsSpent || 0) - amount);
+    // 不能 clamp 到 0：coinsSpent 可能是負數（手動加幣／管理員贈送）
+    p.coinsSpent = (p.coinsSpent || 0) - amount;
   }
 
   // === 身份識別 + 密碼閘 ===
