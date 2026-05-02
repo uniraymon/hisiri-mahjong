@@ -1472,7 +1472,9 @@
 
     <div class="card">
       <h2><span>🌌 試煉戰場</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（最多 3 隻怪物同時上場、AOE / 多目標技能）</span></h2>
-      <div id="trialBody"></div>
+      <div id="trialIntro"></div>
+      <button id="trialEnterBtn" class="btn btn-primary" onclick="onTrialFight()" style="background:linear-gradient(135deg,#c4b5fd,#7c3aed); box-shadow:0 4px 0 #5b21b6;">🌌 進入試煉</button>
+      <div id="trialResult"></div>
     </div>
 
     <div class="card">
@@ -5794,27 +5796,28 @@
     return out;
   }
   function renderTrial() {
-    const host = document.getElementById('trialBody');
-    if (!host) return;
+    // ⚠️ 重要：只更新 intro 文字 + 按鈕，絕不能覆蓋 #trialResult（戰鬥畫面在裡面）
+    const intro = document.getElementById('trialIntro');
+    const btn = document.getElementById('trialEnterBtn');
+    if (!intro || !btn) return;
     const me = getMe();
-    if (!me) { host.innerHTML = ''; return; }
+    if (!me) { intro.innerHTML = ''; btn.disabled = true; btn.textContent = '🌌 進入試煉'; return; }
     const rpg = getRpg(me);
     if (!rpg.class) {
-      host.innerHTML = '<div style="font-size:12px; color:#8b6f9b; padding:8px; text-align:center;">先選職業 ♡</div>';
+      intro.innerHTML = '<div style="font-size:12px; color:#8b6f9b; padding:8px; text-align:center;">先選職業 ♡</div>';
+      btn.disabled = true;
       return;
     }
     const state = tickRecovery(me);
     const canEnter = !__trialInProgress && state.stamina >= TRIAL_STAMINA && state.hp > 0;
-    host.innerHTML = `
+    intro.innerHTML = `
       <div style="font-size:12px; color:#5b3d62; padding:6px 10px; background:#f3e8ff; border-radius:8px; margin-bottom:8px; border:1px dashed #c4b5fd;">
         💡 一次面對 2-3 隻怪物（用目前地區怪物池）<br>
         花 ${TRIAL_STAMINA} ⚡，獎勵 = 全部怪物 XP+鵝幣相加。法師 / 弓手 / 聖騎可發揮多目標技能！
       </div>
-      <button class="btn btn-primary" onclick="onTrialFight()" ${canEnter ? '' : 'disabled'} style="background:linear-gradient(135deg,#c4b5fd,#7c3aed); box-shadow:0 4px 0 #5b21b6;">
-        ${__trialInProgress ? '⚔️ 戰鬥中…' : `🌌 進入試煉（${TRIAL_STAMINA} ⚡）`}
-      </button>
-      <div id="trialResult"></div>
     `;
+    btn.disabled = !canEnter;
+    btn.textContent = __trialInProgress ? '⚔️ 戰鬥中…' : `🌌 進入試煉（${TRIAL_STAMINA} ⚡）`;
   }
   window.renderTrial = renderTrial;
 
