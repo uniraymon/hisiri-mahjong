@@ -93,21 +93,100 @@
     line-height: 1.4;
   }
 
-  /* 角色卡 */
-  .char-card { display: flex; gap: 14px; align-items: flex-start; }
+  /* 角色卡（卡片風） */
+  .char-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: center;
+  }
   .char-portrait {
-    width: 100px; height: 100px;
-    background: linear-gradient(135deg, #ddd6fe, #c4b5fd);
+    width: 220px;
+    height: 280px;
+    background:
+      radial-gradient(circle at 50% 30%, rgba(255,255,255,0.5) 0%, transparent 40%),
+      linear-gradient(160deg, #ddd6fe 0%, #c4b5fd 50%, #a78bfa 100%);
     border-radius: 18px;
-    flex-shrink: 0;
     position: relative;
     overflow: hidden;
-    box-shadow: inset 0 -10px 20px rgba(124, 58, 237, 0.15);
+    border: 3px solid #c4b5fd;
+    box-shadow:
+      0 4px 0 #8b5cf6,
+      0 8px 20px rgba(124, 58, 237, 0.25),
+      inset 0 0 30px rgba(255, 255, 255, 0.3);
   }
-  /* 紙娃娃 */
+  /* 卡片內框 */
+  .char-portrait::before {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border: 1px dashed rgba(255, 255, 255, 0.55);
+    border-radius: 12px;
+    pointer-events: none;
+    z-index: 5;
+  }
+  /* 卡片角落裝飾 */
+  .char-portrait::after {
+    content: '✨';
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    font-size: 16px;
+    opacity: 0.6;
+    animation: sparkleFloat 2.5s ease-in-out infinite;
+    z-index: 6;
+  }
+  @keyframes sparkleFloat {
+    0%, 100% { opacity: 0.3; transform: rotate(0) scale(1); }
+    50%      { opacity: 1;   transform: rotate(25deg) scale(1.2); }
+  }
+
+  /* 卡片角徽章 */
+  .cp-lv-badge, .cp-coin-badge {
+    position: absolute;
+    z-index: 7;
+    font-weight: 700;
+    background: linear-gradient(135deg, #fff, #fef3c7);
+    border: 2px solid #f59e0b;
+    color: #d97706;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+  }
+  .cp-lv-badge { top: 8px; left: 8px; }
+  .cp-coin-badge { bottom: 60px; right: 8px; background: linear-gradient(135deg, #fff, #fed7aa); border-color: #ea580c; color: #c2410c; }
+
+  /* 卡片下方收藏列 */
+  .cp-collection {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 4px;
+    z-index: 7;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(124, 58, 237, 0.3);
+    border-radius: 10px;
+    padding: 4px 8px;
+    backdrop-filter: blur(4px);
+  }
+  .cp-collection .cc-item {
+    font-size: 16px;
+    line-height: 1;
+  }
+  .cp-collection .cc-empty {
+    font-size: 9px;
+    color: #8b6f9b;
+    font-style: italic;
+  }
+
+  /* 紙娃娃（大卡版本） */
   .paper-doll {
     position: relative;
     width: 100%; height: 100%;
+    z-index: 4;
   }
   .pd-armor {
     position: absolute;
@@ -115,57 +194,57 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 96px;
-    opacity: 0.32;
+    font-size: 200px;
+    opacity: 0.22;
     z-index: 1;
-    filter: drop-shadow(0 0 8px rgba(255,255,255,0.6));
+    filter: drop-shadow(0 0 10px rgba(255,255,255,0.6));
     animation: pdPulse 3s ease-in-out infinite;
   }
   @keyframes pdPulse {
     0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
+    50%      { transform: scale(1.06); }
   }
   .pd-base {
     position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 60px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -45%);
+    font-size: 130px;
     z-index: 2;
-    text-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+    text-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+    line-height: 1;
   }
   .pd-weapon {
     position: absolute;
-    right: 0px;
-    bottom: 4px;
-    font-size: 36px;
+    right: 16px;
+    bottom: 60px;
+    font-size: 64px;
     z-index: 3;
     transform: rotate(-25deg);
-    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.25));
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
     animation: pdSwayWeapon 2.6s ease-in-out infinite;
   }
   @keyframes pdSwayWeapon {
     0%, 100% { transform: rotate(-25deg) translateY(0); }
-    50% { transform: rotate(-22deg) translateY(-2px); }
+    50%      { transform: rotate(-20deg) translateY(-3px); }
   }
   .pd-acc {
     position: absolute;
-    top: 2px;
+    top: 14px;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 24px;
+    font-size: 38px;
     z-index: 4;
-    filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.8));
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.9));
     animation: pdFloatAcc 2.4s ease-in-out infinite;
   }
   @keyframes pdFloatAcc {
     0%, 100% { transform: translateX(-50%) translateY(0); }
-    50% { transform: translateX(-50%) translateY(-2px); }
+    50%      { transform: translateX(-50%) translateY(-3px); }
   }
-  /* 紙娃娃 hover 顯示換裝提示 */
-  .char-portrait[role="button"] { cursor: pointer; }
-  .char-portrait[role="button"]:hover .pd-base { transform: scale(1.04); transition: transform 0.2s; }
+
+  /* 角色資訊（下方） */
+  .char-info { width: 100%; }
   .char-info { flex: 1; min-width: 0; }
   .char-name { font-weight: 700; color: #7c3aed; font-size: 18px; }
   .char-class { font-size: 12px; color: #8b6f9b; margin-bottom: 8px; }
@@ -1280,14 +1359,21 @@
     const wIcon = rpg.equipment?.weapon ? findItem(rpg.equipment.weapon)?.icon : '';
     const aIcon = rpg.equipment?.armor ? findItem(rpg.equipment.armor)?.icon : '';
     const cIcon = rpg.equipment?.accessory ? findItem(rpg.equipment.accessory)?.icon : '';
+    const unlockedAvatars = (me.unlockedAvatars || []).slice(0, 6);
+    const collectionHtml = unlockedAvatars.length > 0
+      ? unlockedAvatars.map(a => `<span class="cc-item">${a}</span>`).join('')
+      : `<span class="cc-empty">主頁抽蛋可解鎖收藏</span>`;
     document.getElementById('charCard').innerHTML = `
       <div class="char-portrait">
+        <div class="cp-lv-badge">Lv ${rpg.level}</div>
+        <div class="cp-coin-badge">🪙 ${coins >= 1000 ? (coins/1000).toFixed(1) + 'k' : coins}</div>
         <div class="paper-doll">
           ${aIcon ? `<div class="pd-armor">${aIcon}</div>` : ''}
           <div class="pd-base">${cls.icon}</div>
           ${wIcon ? `<div class="pd-weapon">${wIcon}</div>` : ''}
           ${cIcon ? `<div class="pd-acc">${cIcon}</div>` : ''}
         </div>
+        <div class="cp-collection">${collectionHtml}</div>
       </div>
       <div class="char-info">
         <div class="char-name">${escapeHtml(me.name)}</div>
