@@ -949,27 +949,38 @@
     },
   };
 
-  // 重新調整：目標 同階怪 5 回合擊倒，玩家損失 ~35-50% HP（套梅洛斯戰鬥節奏公式）
+  // 鵝鵝怪物全名單（5 階、特殊能力：multiHit / steal / magicResist / physResist）
   const MONSTERS = [
     // tier 1（玩家 Lv 1-4）
-    { id: 'bat',   tier: 1, name: '蝙蝠',    icon: '🦇', hpBase: 50,  atkBase: 8,  defBase: 1, spdBase: 11, goldBase: 6,  xpBase: 22, verb: '俯衝' },
-    { id: 'slime', tier: 1, name: '史萊姆',  icon: '🟢', hpBase: 70,  atkBase: 10, defBase: 1, spdBase: 6,  goldBase: 7,  xpBase: 20, verb: '撞擊' },
-    { id: 'rat',   tier: 1, name: '賊鼠',    icon: '🐀', hpBase: 65,  atkBase: 11, defBase: 2, spdBase: 9,  goldBase: 8,  xpBase: 24, verb: '撕咬' },
+    { id: 'bat',   tier: 1, name: '蝙蝠鵝',    icon: '🦇', hpBase: 50,  atkBase: 8,  defBase: 1, spdBase: 11, goldBase: 6,  xpBase: 22, verb: '俯衝啄', ability: { type: 'multiHit', hits: 2 } },
+    { id: 'slime', tier: 1, name: '史萊姆鵝',  icon: '🟢', hpBase: 70,  atkBase: 10, defBase: 1, spdBase: 6,  goldBase: 7,  xpBase: 20, verb: '撞擊' },
+    { id: 'thief', tier: 1, name: '賊鵝',      icon: '🦝', hpBase: 60,  atkBase: 9,  defBase: 2, spdBase: 12, goldBase: 8,  xpBase: 26, verb: '偷襲', ability: { type: 'steal', min: 5, max: 10 } },
     // tier 2（玩家 Lv 4-8）
-    { id: 'spider',tier: 2, name: '蜘蛛',    icon: '🕷', hpBase: 95,  atkBase: 14, defBase: 5, spdBase: 11, goldBase: 18, xpBase: 50, verb: '毒咬' },
-    { id: 'gob',   tier: 2, name: '哥布林',  icon: '👺', hpBase: 110, atkBase: 15, defBase: 4, spdBase: 8,  goldBase: 20, xpBase: 55, verb: '亂砍' },
-    { id: 'wolf',  tier: 2, name: '惡狼',    icon: '🐺', hpBase: 90,  atkBase: 17, defBase: 3, spdBase: 13, goldBase: 22, xpBase: 58, verb: '猛撲' },
+    { id: 'spider',tier: 2, name: '蜘蛛鵝',    icon: '🕷', hpBase: 95,  atkBase: 14, defBase: 5, spdBase: 11, goldBase: 18, xpBase: 50, verb: '毒咬', ability: { type: 'multiHit', hits: 2 } },
+    { id: 'gob',   tier: 2, name: '哥布鵝',    icon: '👺', hpBase: 110, atkBase: 15, defBase: 4, spdBase: 8,  goldBase: 20, xpBase: 55, verb: '亂砍' },
+    { id: 'wolf',  tier: 2, name: '狼鵝',      icon: '🐺', hpBase: 90,  atkBase: 17, defBase: 3, spdBase: 13, goldBase: 22, xpBase: 58, verb: '猛撲' },
+    { id: 'pirate',tier: 2, name: '海盜鵝',    icon: '🏴',  hpBase: 100, atkBase: 14, defBase: 4, spdBase: 10, goldBase: 25, xpBase: 62, verb: '搶劫', ability: { type: 'steal', min: 10, max: 18 } },
     // tier 3（玩家 Lv 8-14）
-    { id: 'orc',   tier: 3, name: '獸人',    icon: '👹', hpBase: 170, atkBase: 22, defBase: 8, spdBase: 7,  goldBase: 38, xpBase: 95, verb: '怒吼' },
-    { id: 'mummy', tier: 3, name: '木乃伊',  icon: '🧟', hpBase: 200, atkBase: 20, defBase: 12,spdBase: 4,  goldBase: 42, xpBase: 105, verb: '詛咒' },
-    { id: 'troll', tier: 3, name: '巨魔',    icon: '🧌', hpBase: 230, atkBase: 25, defBase: 11,spdBase: 5,  goldBase: 50, xpBase: 125, verb: '巨拳' },
+    { id: 'orc',   tier: 3, name: '獸人鵝',    icon: '👹', hpBase: 170, atkBase: 22, defBase: 8, spdBase: 7,  goldBase: 38, xpBase: 95, verb: '怒吼' },
+    { id: 'mummy', tier: 3, name: '木乃鵝',    icon: '🧟', hpBase: 200, atkBase: 20, defBase: 12,spdBase: 4,  goldBase: 42, xpBase: 105, verb: '詛咒', ability: { type: 'magicResist', resist: 0.5 } },
+    { id: 'troll', tier: 3, name: '巨魔鵝',    icon: '🧌', hpBase: 230, atkBase: 25, defBase: 11,spdBase: 5,  goldBase: 50, xpBase: 125, verb: '巨拳', ability: { type: 'multiHit', hits: 2 } },
+    { id: 'merch', tier: 3, name: '商人鵝',    icon: '💰', hpBase: 130, atkBase: 16, defBase: 6, spdBase: 8,  goldBase: 130,xpBase: 75,  verb: '推銷' },
     // tier 4（玩家 Lv 14-22）
-    { id: 'lich',   tier: 4, name: '巫妖',   icon: '☠️', hpBase: 310, atkBase: 40, defBase: 10, spdBase: 12, goldBase: 110,xpBase: 280, verb: '死亡之觸' },
-    { id: 'dragon', tier: 4, name: '幼龍',   icon: '🐲', hpBase: 380, atkBase: 35, defBase: 14, spdBase: 11, goldBase: 100,xpBase: 260, verb: '龍息' },
+    { id: 'lich',   tier: 4, name: '巫妖鵝',   icon: '☠️', hpBase: 310, atkBase: 40, defBase: 10, spdBase: 12, goldBase: 110,xpBase: 280, verb: '死亡之觸', ability: { type: 'magicResist', resist: 0.6 } },
+    { id: 'dragon', tier: 4, name: '龍鵝',     icon: '🐲', hpBase: 380, atkBase: 35, defBase: 14, spdBase: 11, goldBase: 100,xpBase: 260, verb: '龍息' },
     // tier 5（玩家 Lv 22+）
-    { id: 'demon',  tier: 5, name: '惡魔',   icon: '😈', hpBase: 520, atkBase: 46, defBase: 16, spdBase: 14, goldBase: 170,xpBase: 420, verb: '地獄火' },
-    { id: 'titan',  tier: 5, name: '泰坦',   icon: '🗿', hpBase: 680, atkBase: 38, defBase: 22, spdBase: 8,  goldBase: 180,xpBase: 440, verb: '大地碎裂' },
+    { id: 'demon',  tier: 5, name: '惡魔鵝',   icon: '😈', hpBase: 520, atkBase: 46, defBase: 16, spdBase: 14, goldBase: 170,xpBase: 420, verb: '地獄火', ability: { type: 'multiHit', hits: 3 } },
+    { id: 'titan',  tier: 5, name: '泰坦鵝',   icon: '🗿', hpBase: 680, atkBase: 38, defBase: 22, spdBase: 8,  goldBase: 180,xpBase: 440, verb: '大地碎裂', ability: { type: 'physResist', resist: 0.3 } },
   ];
+
+  function describeAbility(ab) {
+    if (!ab) return '';
+    if (ab.type === 'multiHit')     return `⚔️ ${ab.hits} 段攻擊`;
+    if (ab.type === 'steal')        return `💰 偷 ${ab.min}-${ab.max} 鵝鵝幣`;
+    if (ab.type === 'magicResist')  return `🔮 法抗 ${Math.round(ab.resist*100)}%`;
+    if (ab.type === 'physResist')   return `🛡 物抗 ${Math.round(ab.resist*100)}%`;
+    return '';
+  }
 
   const ITEMS = [
     // 武器
@@ -1442,6 +1453,8 @@
     let pTurn = effectiveSpd >= monster.spd;
     let round = 0;
     let playerActions = 0;
+    let coinsStolen = 0;
+    const mAbility = monster.ability;
     // 每個技能各自的 nextActionForSkill（順序：強→中→弱，優先發強的）
     const skills = cls.skills || (cls.skill ? [cls.skill] : []);
     const nextActionForSkill = skills.map(() => 1);
@@ -1495,6 +1508,9 @@
             // 職業被動：物理或法術加成
             if (isFlat) dmg *= (1 + (passive.flatPct || 0));
             else        dmg *= (1 + (passive.physPct || 0));
+            // 怪物抗性
+            if (isFlat && mAbility?.type === 'magicResist') dmg *= (1 - mAbility.resist);
+            if (!isFlat && mAbility?.type === 'physResist') dmg *= (1 - mAbility.resist);
             const isCrit = skill.alwaysCrit || Math.random() < baseCritChance;
             dmg *= (0.9 + Math.random() * 0.2);
             if (isCrit) dmg *= critMult;
@@ -1530,6 +1546,7 @@
           let dmg = Math.max(1, stats.atk - Math.floor(monster.def / 2));
           dmg *= (0.85 + Math.random() * 0.3);
           if (isCrit) dmg *= critMult;
+          if (mAbility?.type === 'physResist') dmg *= (1 - mAbility.resist);
           dmg = Math.max(1, Math.round(dmg));
           mHp -= dmg;
           log.push({
@@ -1540,17 +1557,34 @@
           if (mHp <= 0) break;
         }
       } else {
-        let dmg = Math.max(1, monster.atk - Math.floor(stats.def / 2));
-        dmg *= (0.85 + Math.random() * 0.3);
-        // 職業被動：傷害減免
-        dmg *= (1 - (passive.dmgReduction || 0));
-        dmg = Math.max(1, Math.round(dmg));
-        pHp -= dmg;
-        log.push({
-          type: 'monster',
-          text: `回合 ${round}：${monster.name} ${monster.verb} → ${player.name} -${dmg} HP`,
-          hp: { player: Math.max(0, pHp), monster: mHp, mp: pMp }
-        });
+        // 多段攻擊：1.3x 總傷害平均分散
+        const hits = (mAbility?.type === 'multiHit') ? Math.max(1, mAbility.hits || 2) : 1;
+        const perHitMult = hits === 1 ? 1.0 : (1.3 / hits);
+        let dead = false;
+        for (let h = 0; h < hits; h++) {
+          let dmg = Math.max(1, monster.atk - Math.floor(stats.def / 2));
+          dmg *= (0.85 + Math.random() * 0.3);
+          dmg *= perHitMult;
+          dmg *= (1 - (passive.dmgReduction || 0));
+          dmg = Math.max(1, Math.round(dmg));
+          pHp -= dmg;
+          log.push({
+            type: 'monster',
+            text: `回合 ${round}：${monster.name} ${monster.verb}${hits > 1 ? `（${h+1}/${hits}）` : ''} → ${player.name} -${dmg} HP`,
+            hp: { player: Math.max(0, pHp), monster: mHp, mp: pMp }
+          });
+          if (pHp <= 0) { dead = true; break; }
+        }
+        // 偷錢：60% 機率得手
+        if (!dead && mAbility?.type === 'steal' && Math.random() < 0.6) {
+          const stolen = mAbility.min + Math.floor(Math.random() * (mAbility.max - mAbility.min + 1));
+          coinsStolen += stolen;
+          log.push({
+            type: 'monster',
+            text: `回合 ${round}：${monster.name} 摸走 💰 ${stolen} 鵝鵝幣！`,
+            hp: { player: pHp, monster: mHp, mp: pMp }
+          });
+        }
         if (pHp <= 0) break;
       }
       pTurn = !pTurn;
@@ -1563,6 +1597,7 @@
       mHpFinal: Math.max(0, mHp),
       maxHp: stats.maxHp,
       maxMp: stats.maxMp,
+      coinsStolen,
       log
     };
   }
@@ -2200,6 +2235,7 @@
         <div class="combatant" id="combatMonster">
           <div class="combatant-icon">${monster.icon}</div>
           <div class="combatant-name">${monster.name} Lv${monster.level}</div>
+          ${monster.ability ? `<div style="font-size:9px; color:#7c3aed; font-weight:600; margin-bottom:2px;">${describeAbility(monster.ability)}</div>` : ''}
           <div class="combatant-hp-track"><div class="combatant-hp-fill" id="mHpBar" style="width:100%"></div></div>
           <div class="combatant-hp-text" id="mHpText">${monster.hp}/${monster.maxHp}</div>
         </div>
@@ -2256,6 +2292,10 @@
     const rpg = getRpg(player);
     rpg.hp = result.pHpFinal;
     rpg.mp = result.pMpFinal;
+    // 怪物偷的錢，扣到玩家
+    if (result.coinsStolen > 0) {
+      player.coinsSpent = (player.coinsSpent || 0) + result.coinsStolen;
+    }
     const logEl = document.getElementById('battleLog');
     let rewardHtml = '';
 
@@ -2297,6 +2337,7 @@
           <div class="rl-item">⭐ +${monster.xpDrop} XP</div>
           <div class="rl-item">🪙 +${monster.goldDrop} 鵝鵝幣</div>
           ${drop ? `<div class="rl-item">${drop.icon} ${drop.name}</div>` : ''}
+          ${result.coinsStolen > 0 ? `<div class="rl-item" style="color:#dc2626;">💰 被偷走 −${result.coinsStolen} 鵝鵝幣</div>` : ''}
           ${leveledUp ? `<div style="margin-top:8px; color:#7c3aed; font-weight:700;">🎊 升級到 Lv ${rpg.level}！HP/MP 回滿、+${leveledUp * POINTS_PER_LEVEL.skill} 技能點 / +${leveledUp * POINTS_PER_LEVEL.ability} 能力點</div>` : ''}
         </div>
       `;
@@ -2313,6 +2354,7 @@
         <div class="reward-list reward-loss">
           <div class="rl-title">😭 失敗了</div>
           <div class="rl-item">💀 進入休息：10 分鐘後恢復到 50% HP</div>
+          ${result.coinsStolen > 0 ? `<div class="rl-item" style="color:#dc2626;">💰 被偷走 −${result.coinsStolen} 鵝鵝幣</div>` : ''}
           <div class="rl-item" style="margin-top:4px;">想立刻回血可用治療藥</div>
         </div>
       `;
