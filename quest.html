@@ -1355,6 +1355,29 @@
   .bug-snapshot summary { font-size: 11px; color: #8b6f9b; cursor: pointer; padding: 2px 0; }
   .bug-snap-body { background: #f9fafb; border-radius: 6px; padding: 6px 8px; margin-top: 4px; }
 
+  /* 圖鑑按鈕（右上角，BUG 左邊） */
+  .dex-btn {
+    position: fixed;
+    top: 10px;
+    right: 152px;
+    height: 36px;
+    min-width: 40px;
+    padding: 0 10px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #c4b5fd, #7c3aed);
+    color: #fff;
+    border: 2px solid rgba(255,255,255,0.7);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 990;
+    opacity: 0.9;
+    transition: opacity 0.2s, transform 0.2s;
+    font-family: inherit;
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.4);
+  }
+  .dex-btn:hover { opacity: 1; transform: scale(1.05); }
+
   /* 教學按鈕（右上角，齒輪左邊） */
   .help-btn {
     position: fixed;
@@ -1510,6 +1533,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<button class="dex-btn" id="dexBtn" onclick="showItemDex()" title="裝備圖鑑">📖</button>
 <button class="bug-btn" id="bugListBtn" onclick="showBugList()" title="BUG 列表">🐛</button>
 <button class="help-btn" id="helpBtn" onclick="showActionPatternHelp()" title="HOF 行動規則教學">?</button>
 <button class="debug-btn" id="debugBtn" onclick="onDebugClick()" title="Debug">⚙️</button>
@@ -5228,6 +5252,117 @@
     if (typeof renderEquipment === 'function') renderEquipment();
   }
   window.showEquipmentModal = showEquipmentModal;
+
+  // ⭐ 裝備圖鑑：列出所有可裝備物品，分槽位分頁、標出已擁有
+  let __dexTab = 'weapon';
+  function getDexOwnedSet() {
+    const me = getMe();
+    if (!me) return new Set();
+    const rpg = getRpg(me);
+    const owned = new Set();
+    // 背包 + 已裝備 = 擁有過
+    (rpg.inventory || []).forEach(entry => {
+      const id = typeof entry === 'string' ? entry : entry?.id;
+      if (id) owned.add(id);
+    });
+    Object.values(rpg.equipment || {}).forEach(id => { if (id) owned.add(id); });
+    // 也算進已永久收集（dexSeen），把當前擁有的合進 dexSeen 並存檔
+    rpg.dexSeen = Array.isArray(rpg.dexSeen) ? rpg.dexSeen : [];
+    let changed = false;
+    for (const id of owned) {
+      if (!rpg.dexSeen.includes(id)) { rpg.dexSeen.push(id); changed = true; }
+    }
+    rpg.dexSeen.forEach(id => owned.add(id));
+    if (changed && typeof saveData === 'function') saveData();
+    return owned;
+  }
+  function buildDexCatalog() {
+    // 收集所有可裝備物品（基底 ITEMS + 商店 SHOP_ITEMS + 套裝件）
+    const all = [];
+    const seen = new Set();
+    const push = (it, source) => {
+      if (!it || !it.slot || seen.has(it.id)) return;
+      seen.add(it.id);
+      all.push({ ...it, __source: source });
+    };
+    ITEMS.forEach(i => push(i, 'drop'));
+    SHOP_ITEMS.forEach(i => { if (i.type === 'equipment') push(i, 'shop'); });
+    Object.values(SET_PIECES).forEach(p => push(p, 'set'));
+    return all;
+  }
+  function showItemDex() {
+    const me = getMe(); if (!me) { showToast('請先進入遊戲'); return; }
+    const all = buildDexCatalog();
+    const owned = getDexOwnedSet();
+    // 槽位順序與標籤
+    const SLOTS = [
+      { id: 'weapon',    label: '⚔️ 武器' },
+      { id: 'armor',     label: '🛡 防具' },
+      { id: 'accessory', label: '💎 飾品' },
+      { id: 'helmet',    label: '🪖 頭盔' },
+      { id: 'gloves',    label: '🧤 手套' },
+      { id: 'boots',     label: '🥾 鞋子' },
+      { id: 'cape',      label: '🎽 披風' },
+      { id: 'guide',     label: '📗 綠茶指南' },
+    ];
+    if (!SLOTS.find(s => s.id === __dexTab)) __dexTab = 'weapon';
+    const totalAll = all.length;
+    const totalOwned = all.filter(i => owned.has(i.id)).length;
+
+    // 該分頁的物品（按 lv 升冪 + 名稱）
+    const pageItems = all.filter(i => i.slot === __dexTab)
+      .sort((a, b) => (a.lv || 0) - (b.lv || 0) || (a.name || '').localeCompare(b.name || ''));
+    const pageOwned = pageItems.filter(i => owned.has(i.id)).length;
+
+    const tabsHtml = SLOTS.map(s => {
+      const slotItems = all.filter(i => i.slot === s.id);
+      const slotOwned = slotItems.filter(i => owned.has(i.id)).length;
+      const active = s.id === __dexTab;
+      return `<button onclick="setDexTab('${s.id}')" style="padding:5px 9px; border-radius:8px; border:2px solid ${active ? '#7c3aed' : '#e5e7eb'}; background:${active ? '#ede9fe' : '#fff'}; color:${active ? '#5b21b6' : '#6b7280'}; font-size:11px; font-weight:${active ? '700' : '500'}; cursor:pointer; white-space:nowrap;">${s.label} <span style="opacity:0.7; font-size:10px;">${slotOwned}/${slotItems.length}</span></button>`;
+    }).join('');
+
+    const itemsHtml = pageItems.length === 0
+      ? '<div style="text-align:center; color:#9ca3af; padding:20px; font-size:12px;">— 此槽位尚無物品 —</div>'
+      : pageItems.map(i => {
+          const has = owned.has(i.id);
+          const rarColor = i.rarity ? RARITY[i.rarity]?.color
+            : i.setId ? (SETS[i.setId]?.color || '#f59e0b')
+            : '#9ca3af';
+          const sourceLabel = i.__source === 'shop' ? '🛒 商店'
+            : i.__source === 'set' ? `🛡 ${SETS[i.setId]?.name || '套裝'}`
+            : '⚔️ 掉落';
+          return `<div style="display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:8px; border:1px solid ${has ? rarColor : '#e5e7eb'}; background:${has ? `linear-gradient(135deg,#fff,${rarColor}1a)` : '#f9fafb'}; opacity:${has ? '1' : '0.55'}; margin-bottom:5px;">
+            <div style="font-size:24px; line-height:1;">${has ? i.icon : '❔'}</div>
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:12px; font-weight:700; color:${has ? rarColor : '#9ca3af'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${has ? escapeHtml(i.name) : '???'}</div>
+              <div style="font-size:10px; color:#8b6f9b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                ${has ? `${i.lv ? `Lv ${i.lv} · ` : ''}${formatItemStats(i) || '無'}` : '尚未發現'}
+              </div>
+              <div style="font-size:9px; color:#9ca3af; margin-top:1px;">${sourceLabel}${i.cost ? ` · 🪙${i.cost}` : ''}</div>
+            </div>
+            ${has ? '<div style="font-size:10px; color:#16a34a; font-weight:700;">✓</div>' : ''}
+          </div>`;
+        }).join('');
+
+    const html = `
+      <div style="text-align:left;">
+        <div style="font-size:12px; color:#5b3d62; padding:8px 10px; background:linear-gradient(135deg,#ede9fe,#ddd6fe); border-radius:8px; margin-bottom:10px; border:2px dashed #a78bfa;">
+          📖 共收集 <b style="color:#7c3aed; font-size:14px;">${totalOwned} / ${totalAll}</b> 件裝備　·　當前頁 ${pageOwned}/${pageItems.length}
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px;">
+          ${tabsHtml}
+        </div>
+        <div style="max-height:50vh; overflow-y:auto; padding-right:4px;">
+          ${itemsHtml}
+        </div>
+        <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:10px;">關閉</button>
+      </div>
+    `;
+    showModal('📖 裝備圖鑑', html);
+  }
+  window.showItemDex = showItemDex;
+  function setDexTab(slot) { __dexTab = slot; showItemDex(); }
+  window.setDexTab = setDexTab;
 
   // 用 modal 開行動規則編輯器（規則改完即時存）
   function showActionPatternModal() {
