@@ -775,25 +775,26 @@
     },
   };
 
+  // 重新調整：目標 同階怪 5 回合擊倒，玩家損失 ~35-50% HP（套梅洛斯戰鬥節奏公式）
   const MONSTERS = [
-    // tier 1
-    { id: 'slime', tier: 1, name: '史萊姆',  icon: '🟢', hpBase: 30,  atkBase: 5,  defBase: 1, spdBase: 6,  goldBase: 5,  xpBase: 15, verb: '撞擊' },
-    { id: 'rat',   tier: 1, name: '賊鼠',    icon: '🐀', hpBase: 26,  atkBase: 7,  defBase: 2, spdBase: 9,  goldBase: 6,  xpBase: 18, verb: '撕咬' },
-    { id: 'bat',   tier: 1, name: '蝙蝠',    icon: '🦇', hpBase: 22,  atkBase: 6,  defBase: 1, spdBase: 11, goldBase: 6,  xpBase: 20, verb: '俯衝' },
-    // tier 2
-    { id: 'gob',   tier: 2, name: '哥布林',  icon: '👺', hpBase: 55,  atkBase: 10, defBase: 4, spdBase: 8,  goldBase: 14, xpBase: 38, verb: '亂砍' },
-    { id: 'wolf',  tier: 2, name: '惡狼',    icon: '🐺', hpBase: 50,  atkBase: 13, defBase: 3, spdBase: 13, goldBase: 16, xpBase: 42, verb: '猛撲' },
-    { id: 'spider',tier: 2, name: '蜘蛛',    icon: '🕷', hpBase: 45,  atkBase: 11, defBase: 5, spdBase: 11, goldBase: 15, xpBase: 40, verb: '毒咬' },
-    // tier 3
-    { id: 'orc',   tier: 3, name: '獸人',    icon: '👹', hpBase: 90,  atkBase: 17, defBase: 8, spdBase: 7,  goldBase: 30, xpBase: 70, verb: '怒吼' },
-    { id: 'troll', tier: 3, name: '巨魔',    icon: '🧌', hpBase: 130, atkBase: 20, defBase: 11,spdBase: 5,  goldBase: 40, xpBase: 95, verb: '巨拳' },
-    { id: 'mummy', tier: 3, name: '木乃伊',  icon: '🧟', hpBase: 110, atkBase: 16, defBase: 12,spdBase: 4,  goldBase: 35, xpBase: 80, verb: '詛咒' },
-    // tier 4
-    { id: 'dragon', tier: 4, name: '幼龍',   icon: '🐲', hpBase: 220, atkBase: 28, defBase: 14, spdBase: 11, goldBase: 90, xpBase: 220, verb: '龍息' },
-    { id: 'lich',   tier: 4, name: '巫妖',   icon: '☠️', hpBase: 180, atkBase: 32, defBase: 10, spdBase: 12, goldBase: 100,xpBase: 240, verb: '死亡之觸' },
-    // tier 5
-    { id: 'demon',  tier: 5, name: '惡魔',   icon: '😈', hpBase: 320, atkBase: 36, defBase: 16, spdBase: 14, goldBase: 150,xpBase: 350, verb: '地獄火' },
-    { id: 'titan',  tier: 5, name: '泰坦',   icon: '🗿', hpBase: 420, atkBase: 30, defBase: 22, spdBase: 8,  goldBase: 160,xpBase: 380, verb: '大地碎裂' },
+    // tier 1（玩家 Lv 1-4）
+    { id: 'bat',   tier: 1, name: '蝙蝠',    icon: '🦇', hpBase: 50,  atkBase: 8,  defBase: 1, spdBase: 11, goldBase: 6,  xpBase: 22, verb: '俯衝' },
+    { id: 'slime', tier: 1, name: '史萊姆',  icon: '🟢', hpBase: 70,  atkBase: 10, defBase: 1, spdBase: 6,  goldBase: 7,  xpBase: 20, verb: '撞擊' },
+    { id: 'rat',   tier: 1, name: '賊鼠',    icon: '🐀', hpBase: 65,  atkBase: 11, defBase: 2, spdBase: 9,  goldBase: 8,  xpBase: 24, verb: '撕咬' },
+    // tier 2（玩家 Lv 4-8）
+    { id: 'spider',tier: 2, name: '蜘蛛',    icon: '🕷', hpBase: 95,  atkBase: 14, defBase: 5, spdBase: 11, goldBase: 18, xpBase: 50, verb: '毒咬' },
+    { id: 'gob',   tier: 2, name: '哥布林',  icon: '👺', hpBase: 110, atkBase: 15, defBase: 4, spdBase: 8,  goldBase: 20, xpBase: 55, verb: '亂砍' },
+    { id: 'wolf',  tier: 2, name: '惡狼',    icon: '🐺', hpBase: 90,  atkBase: 17, defBase: 3, spdBase: 13, goldBase: 22, xpBase: 58, verb: '猛撲' },
+    // tier 3（玩家 Lv 8-14）
+    { id: 'orc',   tier: 3, name: '獸人',    icon: '👹', hpBase: 170, atkBase: 22, defBase: 8, spdBase: 7,  goldBase: 38, xpBase: 95, verb: '怒吼' },
+    { id: 'mummy', tier: 3, name: '木乃伊',  icon: '🧟', hpBase: 200, atkBase: 20, defBase: 12,spdBase: 4,  goldBase: 42, xpBase: 105, verb: '詛咒' },
+    { id: 'troll', tier: 3, name: '巨魔',    icon: '🧌', hpBase: 230, atkBase: 25, defBase: 11,spdBase: 5,  goldBase: 50, xpBase: 125, verb: '巨拳' },
+    // tier 4（玩家 Lv 14-22）
+    { id: 'lich',   tier: 4, name: '巫妖',   icon: '☠️', hpBase: 310, atkBase: 40, defBase: 10, spdBase: 12, goldBase: 110,xpBase: 280, verb: '死亡之觸' },
+    { id: 'dragon', tier: 4, name: '幼龍',   icon: '🐲', hpBase: 380, atkBase: 35, defBase: 14, spdBase: 11, goldBase: 100,xpBase: 260, verb: '龍息' },
+    // tier 5（玩家 Lv 22+）
+    { id: 'demon',  tier: 5, name: '惡魔',   icon: '😈', hpBase: 520, atkBase: 46, defBase: 16, spdBase: 14, goldBase: 170,xpBase: 420, verb: '地獄火' },
+    { id: 'titan',  tier: 5, name: '泰坦',   icon: '🗿', hpBase: 680, atkBase: 38, defBase: 22, spdBase: 8,  goldBase: 180,xpBase: 440, verb: '大地碎裂' },
   ];
 
   const ITEMS = [
@@ -1139,14 +1140,16 @@
     const tierMin = Math.max(1, tierMax - 1);
     const candidates = MONSTERS.filter(m => m.tier <= tierMax && m.tier >= tierMin);
     const m = candidates[Math.floor(Math.random() * candidates.length)];
-    const lv = Math.max(1, playerLv + Math.floor(Math.random() * 5) - 2);
+    // 等級變化縮小到 ±1，戰鬥節奏更穩定
+    const lv = Math.max(1, playerLv + Math.floor(Math.random() * 3) - 1);
     const k = 1 + (lv - 1) * 0.18;
     return {
       ...m,
       level: lv,
       hp: Math.round(m.hpBase * k),
       maxHp: Math.round(m.hpBase * k),
-      atk: Math.round(m.atkBase * k * 1.5),
+      // atk 倍率 1.5 → 1.3：因為 atkBase 已重新調高，總體 atk 仍變強
+      atk: Math.round(m.atkBase * k * 1.3),
       def: Math.round(m.defBase * k * 0.7),
       spd: Math.round(m.spdBase + lv * 0.4),
       goldDrop: Math.round(m.goldBase + lv * 1.8 + Math.random() * lv * 0.6),
