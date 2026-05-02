@@ -625,6 +625,33 @@
     border: 1px dashed #c4b5fd;
     color: #8b6f9b;
   }
+
+  /* Debug 按鈕（右上角小齒輪） */
+  .debug-btn {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(124, 58, 237, 0.6);
+    color: #fff;
+    border: 2px solid rgba(255,255,255,0.6);
+    font-size: 16px;
+    cursor: pointer;
+    z-index: 990;
+    opacity: 0.35;
+    transition: opacity 0.2s, transform 0.2s;
+    font-family: inherit;
+  }
+  .debug-btn:hover { opacity: 1; transform: rotate(45deg); }
+  .debug-btn.unlocked { background: rgba(245, 158, 11, 0.85); opacity: 0.7; }
+  .debug-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .debug-grid .btn { margin-top: 0; padding: 8px 4px; font-size: 12px; }
   .sync-badge.ok  { background: #f0fdf4; border-color: #86efac; color: #16a34a; }
   .sync-badge.err { background: #fef2f2; border-color: #fca5a5; color: #dc2626; }
 
@@ -717,6 +744,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<button class="debug-btn" id="debugBtn" onclick="onDebugClick()" title="Debug">⚙️</button>
 
 <div id="genericModal" class="modal-overlay hidden" onclick="hideModal(event)">
   <div class="modal-content" onclick="event.stopPropagation()">
@@ -1792,10 +1820,168 @@
   window.unequip = unequip;
 
   // ============================================================
+  // Debug 模式（密碼 admin 解鎖）
+  // ============================================================
+  const DEBUG_PASS = 'admin';
+  const DEBUG_KEY = 'mahjong-debug-unlocked';
+  function isDebugUnlocked() { return localStorage.getItem(DEBUG_KEY) === '1'; }
+  function refreshDebugBtn() {
+    const btn = document.getElementById('debugBtn');
+    if (btn) btn.classList.toggle('unlocked', isDebugUnlocked());
+  }
+  function onDebugClick() {
+    if (!isDebugUnlocked()) {
+      const pw = prompt('🔐 Debug 密碼');
+      if (pw === null) return;
+      if (pw !== DEBUG_PASS) { showToast('❌ 密碼錯誤'); return; }
+      localStorage.setItem(DEBUG_KEY, '1');
+      showToast('🛠 Debug 模式已解鎖');
+      refreshDebugBtn();
+    }
+    showDebugModal();
+  }
+  window.onDebugClick = onDebugClick;
+
+  function showDebugModal() {
+    const me = getMe();
+    if (!me) { showToast('先選身份'); return; }
+    const r = getRpg(me);
+    const myCoins = getCoins(me.id);
+    const html = `
+      <div style="font-size:13px; line-height:1.7; background:#f3e8ff; padding:8px 12px; border-radius:10px; margin-bottom:12px;">
+        🪞 ${escapeHtml(me.name)}　·　🪙 <b>${myCoins}</b> 鵝鵝幣<br>
+        ⭐ Lv <b>${r.level}</b>　·　${r.xp} / ${xpForLevel(r.level)} XP<br>
+        職業 <b>${r.class || '未選擇'}</b>　·　勝 ${r.fightsWon} / 敗 ${r.fightsLost}
+      </div>
+
+      <div class="shop-section-title">💰 鵝鵝幣</div>
+      <div class="debug-grid">
+        <button class="btn btn-secondary" onclick="adminAddCoins(100)">+100</button>
+        <button class="btn btn-secondary" onclick="adminAddCoins(1000)">+1,000</button>
+        <button class="btn btn-secondary" onclick="adminAddCoins(10000)">+10,000</button>
+      </div>
+
+      <div class="shop-section-title">⭐ 經驗值（會自動升級）</div>
+      <div class="debug-grid">
+        <button class="btn btn-secondary" onclick="adminAddXp(100)">+100</button>
+        <button class="btn btn-secondary" onclick="adminAddXp(1000)">+1,000</button>
+        <button class="btn btn-secondary" onclick="adminAddXp(10000)">+10,000</button>
+      </div>
+
+      <div class="shop-section-title">🎯 直接設定等級</div>
+      <div style="display:flex; gap:6px; align-items:center; margin-bottom:10px;">
+        <input id="adminLvInput" type="number" min="1" max="50" value="${r.level}"
+               style="flex:1; padding:8px; border:2px solid #ddd6fe; border-radius:8px; text-align:center; font-family:inherit; font-size:14px;">
+        <button class="btn btn-primary" style="width:auto; padding:8px 16px;" onclick="adminSetLevel(document.getElementById('adminLvInput').value)">設定</button>
+      </div>
+
+      <div class="shop-section-title">🛠 其他</div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:8px;">
+        <button class="btn btn-secondary" onclick="adminFullHeal()">💚 滿血滿體力</button>
+        <button class="btn btn-secondary" onclick="adminGiveLegendary()">🌟 神話全套</button>
+      </div>
+      <button class="btn btn-danger" onclick="adminResetRpg()">⚠️ 重置 RPG 角色（保留幣）</button>
+      <button class="btn btn-secondary" onclick="adminLockDebug()" style="margin-top:6px;">🔐 鎖回 Debug</button>
+
+      <div style="margin-top:10px; font-size:11px; color:#8b6f9b; text-align:center;">
+        所有操作會同步到 Firebase（朋友會看到）
+      </div>
+    `;
+    showModal('🛠 Debug 模式', html);
+  }
+
+  function adminAddCoins(amount) {
+    const me = getMe(); if (!me) return;
+    me.coinsSpent = (me.coinsSpent || 0) - amount;
+    saveData(); render(); showDebugModal();
+    showToast(`🪙 +${amount} 鵝鵝幣`);
+  }
+  window.adminAddCoins = adminAddCoins;
+
+  function adminAddXp(amount) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    if (!r.class) { showToast('先選職業'); return; }
+    r.xp = (r.xp || 0) + amount;
+    let leveled = 0;
+    while (r.xp >= xpForLevel(r.level)) {
+      r.xp -= xpForLevel(r.level);
+      r.level += 1;
+      leveled++;
+      if (r.level > 50) break;
+    }
+    r.hp = computeStats(me).maxHp;
+    r.deathAt = null;
+    syncEquipped(me); saveData(); render(); showDebugModal();
+    showToast(`⭐ +${amount} XP${leveled ? `，升 ${leveled} 級` : ''}`);
+  }
+  window.adminAddXp = adminAddXp;
+
+  function adminSetLevel(lvStr) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    if (!r.class) { showToast('先選職業'); return; }
+    const lv = Math.max(1, Math.min(50, parseInt(lvStr) || 1));
+    r.level = lv; r.xp = 0;
+    r.hp = computeStats(me).maxHp;
+    r.deathAt = null;
+    syncEquipped(me); saveData(); render(); showDebugModal();
+    showToast(`🎯 等級設為 Lv ${lv}`);
+  }
+  window.adminSetLevel = adminSetLevel;
+
+  function adminFullHeal() {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    r.hp = computeStats(me).maxHp;
+    r.stamina = STAMINA_MAX;
+    r.deathAt = null;
+    saveData(); render(); showDebugModal();
+    showToast('💚 滿血滿體力');
+  }
+  window.adminFullHeal = adminFullHeal;
+
+  function adminGiveLegendary() {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    if (!r.class) { showToast('先選職業'); return; }
+    // 把現有裝備丟回背包
+    ['weapon','armor','accessory'].forEach(s => {
+      if (r.equipment[s]) r.inventory.push(r.equipment[s]);
+    });
+    r.equipment = { weapon: 'shop_w_28', armor: 'shop_a_28', accessory: 'shop_c_28' };
+    if (r.level < 28) r.level = 28;
+    r.hp = computeStats(me).maxHp;
+    syncEquipped(me); saveData(); render(); showDebugModal();
+    showToast('🌟 神話套裝穿戴完成');
+  }
+  window.adminGiveLegendary = adminGiveLegendary;
+
+  function adminResetRpg() {
+    if (!confirm('重置 RPG 角色（職業、等級、裝備全清；鵝鵝幣保留）？')) return;
+    const me = getMe(); if (!me) return;
+    delete me.rpg;
+    getRpg(me); // 重建預設
+    syncEquipped(me); saveData(); render();
+    hideModal();
+    showToast('🔄 RPG 已重置');
+  }
+  window.adminResetRpg = adminResetRpg;
+
+  function adminLockDebug() {
+    localStorage.removeItem(DEBUG_KEY);
+    refreshDebugBtn();
+    hideModal();
+    showToast('🔐 Debug 已鎖回');
+  }
+  window.adminLockDebug = adminLockDebug;
+
+  // ============================================================
   // 啟動
   // ============================================================
   loadData();
   render();
+  refreshDebugBtn();
 </script>
 
 <script type="module">
