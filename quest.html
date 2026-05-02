@@ -1479,11 +1479,74 @@
     return ITEMS.find(i => i.id === id) || SHOP_ITEMS.find(i => i.id === id);
   }
 
-  // 賣價：商店物品 = 原價 40%；其他依等級換算
+  // 通用物品解析（背包項目可能是 string ID 或物件 instance）
+  function resolveItem(entry) {
+    if (!entry) return null;
+    if (typeof entry === 'string') return findItem(entry);
+    return entry; // 已經是 drop instance 物件
+  }
+
+  // === 掉落物隨機詞綴系統 ===
+  const AFFIXES = [
+    { type: 'atk', name: '鋒利', perLv: 0.35 },
+    { type: 'def', name: '堅固', perLv: 0.35 },
+    { type: 'spd', name: '迅速', perLv: 0.25 },
+    { type: 'hp',  name: '健壯', perLv: 4 },
+    { type: 'atk', name: '暴怒', perLv: 0.3 },
+    { type: 'def', name: '鋼鐵', perLv: 0.3 },
+    { type: 'hp',  name: '巨魂', perLv: 5 },
+  ];
+  const RARITY = {
+    common:    { color: '#9ca3af', label: '普通',  affixes: 0, mult: 1.0 },
+    magic:     { color: '#3b82f6', label: '魔法',  affixes: 1, mult: 1.0 },
+    rare:      { color: '#a855f7', label: '稀有',  affixes: 2, mult: 1.4 },
+    legendary: { color: '#f59e0b', label: '傳說',  affixes: 3, mult: 2.0 },
+  };
+  function rollRarity() {
+    const r = Math.random();
+    if (r < 0.55) return 'common';
+    if (r < 0.85) return 'magic';
+    if (r < 0.97) return 'rare';
+    return 'legendary';
+  }
+  function generateDropItem(playerLv, monsterLv = playerLv) {
+    const eligible = ITEMS.filter(i => (i.lv || 1) <= playerLv + 2 && (i.lv || 1) >= Math.max(1, playerLv - 5));
+    if (eligible.length === 0) return null;
+    const base = eligible[Math.floor(Math.random() * eligible.length)];
+    const rarity = rollRarity();
+    const def = RARITY[rarity];
+    const drop = {
+      id: 'drop_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      baseId: base.id,
+      rarity,
+      name: base.name,
+      icon: base.icon,
+      slot: base.slot,
+      lv: base.lv || 1,
+      atk: base.atk || 0,
+      def: base.def || 0,
+      spd: base.spd || 0,
+      hp:  base.hp  || 0,
+      affixes: [],
+    };
+    for (let i = 0; i < def.affixes; i++) {
+      const a = AFFIXES[Math.floor(Math.random() * AFFIXES.length)];
+      const val = Math.max(1, Math.round((1 + drop.lv * a.perLv) * def.mult));
+      drop[a.type] = (drop[a.type] || 0) + val;
+      drop.affixes.push({ type: a.type, name: a.name, val });
+    }
+    if (drop.affixes.length > 0) {
+      drop.name = `${drop.affixes[0].name}的 ${base.name}`;
+    }
+    return drop;
+  }
+
+  // 賣價：商店物品 = 原價 40%；掉落物按等級 + 稀有度
   function getSellValue(item) {
     if (!item) return 0;
     if (item.cost) return Math.max(5, Math.floor(item.cost * 0.4));
-    return Math.max(8, (item.lv || 1) * 20);
+    const rarMult = item.rarity ? ({ common: 1, magic: 2.2, rare: 4, legendary: 9 }[item.rarity] || 1) : 1;
+    return Math.max(8, Math.round((item.lv || 1) * 20 * rarMult));
   }
 
   // 把裝備 lv 轉成 1..10 階（用於紙娃娃 CSS filter 對應）
@@ -1698,7 +1761,7 @@
     for (const slot of ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape']) {
       const itemId = rpg.equipment?.[slot];
       if (itemId) {
-        const item = findItem(itemId);
+        const item = resolveItem(itemId);
         if (item) {
           if (item.atk) stats.atk += item.atk;
           if (item.def) stats.def += item.def;
@@ -1734,9 +1797,7 @@
   }
   function rollItemDrop(playerLv, monsterLv) {
     if (Math.random() > 0.28) return null; // 28% 掉落
-    const eligible = ITEMS.filter(i => i.lv <= playerLv + 2);
-    if (eligible.length === 0) return null;
-    return eligible[Math.floor(Math.random() * eligible.length)];
+    return generateDropItem(playerLv, monsterLv);
   }
 
   // ============================================================
@@ -2376,9 +2437,9 @@
 
     // 從同步好的 equipped 物件讀紙娃娃 SVG 路徑（裝備物品 ID 仍存在 rpg.equipment）
     const equipped = rpg.equipped || {};
-    const weaponItem = rpg.equipment?.weapon ? findItem(rpg.equipment.weapon) : null;
-    const armorItem  = rpg.equipment?.armor  ? findItem(rpg.equipment.armor)  : null;
-    const accItem    = rpg.equipment?.accessory ? findItem(rpg.equipment.accessory) : null;
+    const weaponItem = rpg.equipment?.weapon ? resolveItem(rpg.equipment.weapon) : null;
+    const armorItem  = rpg.equipment?.armor  ? resolveItem(rpg.equipment.armor)  : null;
+    const accItem    = rpg.equipment?.accessory ? resolveItem(rpg.equipment.accessory) : null;
     const wTier = weaponItem ? itemTier(weaponItem) : 0;
     const aTier = armorItem  ? itemTier(armorItem)  : 0;
     const cTier = accItem    ? itemTier(accItem)    : 0;
@@ -2449,13 +2510,14 @@
     const slotLabels = { weapon: '武器', armor: '防具', accessory: '飾品', helmet: '頭盔', gloves: '手套', boots: '鞋子', cape: '披風' };
     document.getElementById('equipRow').innerHTML = slots.map(s => {
       const id = rpg.equipment?.[s];
-      const item = id ? findItem(id) : null;
+      const item = id ? resolveItem(id) : null;
       if (!item) {
         return `<div class="equip-slot empty"><div class="es-icon">➕</div><div class="es-name">${slotLabels[s]}</div></div>`;
       }
-      return `<button class="equip-slot" onclick="unequip('${s}')">
+      const rarColor = item.rarity ? RARITY[item.rarity]?.color : null;
+      return `<button class="equip-slot" onclick="unequip('${s}')" style="${rarColor ? `border-color:${rarColor};` : ''}">
         <div class="es-icon">${item.icon}</div>
-        <div class="es-name">${item.name}</div>
+        <div class="es-name" style="${rarColor ? `color:${rarColor};` : ''}">${item.name}</div>
         <div class="es-stat">${formatItemStats(item)}</div>
       </button>`;
     }).join('');
@@ -2465,12 +2527,13 @@
     if (inv.length === 0) {
       document.getElementById('invGrid').innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#8b6f9b; font-size:11px; padding:8px;">背包空空 ♡</div>';
     } else {
-      document.getElementById('invGrid').innerHTML = inv.map((id, idx) => {
-        const item = findItem(id);
+      document.getElementById('invGrid').innerHTML = inv.map((entry, idx) => {
+        const item = resolveItem(entry);
         if (!item) return '';
-        return `<button class="inv-item" onclick="openInvItemActions(${idx})">
+        const rarColor = item.rarity ? RARITY[item.rarity]?.color : null;
+        return `<button class="inv-item" onclick="openInvItemActions(${idx})" style="${rarColor ? `border-color:${rarColor}; background:linear-gradient(135deg,#fff,${rarColor}1a);` : ''}">
           <div class="ii-icon">${item.icon}</div>
-          <div class="ii-name">${item.name}</div>
+          <div class="ii-name" style="${rarColor ? `color:${rarColor};` : ''}">${item.name}</div>
           <div class="ii-stat">${formatItemStats(item)}</div>
         </button>`;
       }).join('');
@@ -2480,18 +2543,25 @@
   function openInvItemActions(idx) {
     const me = getMe(); if (!me) return;
     const r = getRpg(me);
-    const itemId = r.inventory[idx];
-    const item = findItem(itemId);
+    const entry = r.inventory[idx];
+    const item = resolveItem(entry);
     if (!item) return;
     const sellValue = getSellValue(item);
     const canEquip = !item.lv || r.level >= item.lv;
+    const rarColor = item.rarity ? RARITY[item.rarity]?.color : '#7c3aed';
+    const rarLabel = item.rarity ? RARITY[item.rarity]?.label : '';
+    const affixHtml = item.affixes && item.affixes.length
+      ? `<div style="margin-top:6px; padding:6px 8px; background:${rarColor}20; border-radius:8px; font-size:11px;">${item.affixes.map(a => `<div style="color:${rarColor};">+${a.val} ${a.type.toUpperCase()}（${a.name}）</div>`).join('')}</div>`
+      : '';
     const html = `
       <div style="text-align:center; padding:8px 0;">
         <div style="font-size:52px; margin-bottom:4px;">${item.icon}</div>
-        <div style="font-weight:700; font-size:16px; color:#7c3aed;">${escapeHtml(item.name)}</div>
+        ${rarLabel ? `<div style="font-size:10px; color:${rarColor}; font-weight:700; letter-spacing:1px;">[${rarLabel}]</div>` : ''}
+        <div style="font-weight:700; font-size:16px; color:${rarColor};">${escapeHtml(item.name)}</div>
         <div style="font-size:12px; color:#8b6f9b; margin-top:4px;">
           ${item.lv ? `Lv ${item.lv} 需求　·　` : ''}${formatItemStats(item)}
         </div>
+        ${affixHtml}
         ${!canEquip ? `<div style="font-size:11px; color:#dc2626; margin-top:6px;">🔒 等級不足無法裝備</div>` : ''}
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:14px;">
           <button class="btn btn-primary" onclick="equipFromInvAndClose(${idx})" ${canEquip ? '' : 'disabled'}>裝備</button>
@@ -2513,8 +2583,8 @@
   function sellInvItem(idx) {
     const me = getMe(); if (!me) return;
     const r = getRpg(me);
-    const itemId = r.inventory[idx];
-    const item = findItem(itemId);
+    const entry = r.inventory[idx];
+    const item = resolveItem(entry);
     if (!item) return;
     const value = getSellValue(item);
     r.inventory.splice(idx, 1);
@@ -2533,7 +2603,9 @@
     if (item.def) parts.push(`DEF+${item.def}`);
     if (item.spd) parts.push(`SPD+${item.spd}`);
     if (item.hp)  parts.push(`HP+${item.hp}`);
-    return parts.join(' · ');
+    let s = parts.join(' · ');
+    if (item.affixes && item.affixes.length) s += ` ✨${item.affixes.length}`;
+    return s;
   }
 
   function renderRpgStats() {
@@ -2912,14 +2984,13 @@
       resultText = `+${amt} 鵝鵝幣`; resultColor = '#16a34a';
       showToast(`🎣 +${amt} 鵝鵝幣`);
     } else if (ev.type === 'equip') {
-      // 給一件 lv 等級附近的隨機裝備
-      const eligible = ITEMS.filter(i => (i.lv || 1) <= r.level + 2 && (i.lv || 1) >= Math.max(1, r.level - 5));
-      const drop = eligible.length > 0 ? eligible[Math.floor(Math.random() * eligible.length)] : null;
+      const drop = generateDropItem(r.level);
       if (drop) {
         if (!r.inventory) r.inventory = [];
-        r.inventory.push(drop.id);
-        resultText = `獲得 ${drop.icon} ${drop.name}（背包 +1）`;
-        resultColor = '#7c3aed';
+        r.inventory.push(drop);
+        const rarLabel = RARITY[drop.rarity]?.label || '';
+        resultText = `獲得 [${rarLabel}] ${drop.icon} ${drop.name}（背包 +1）`;
+        resultColor = RARITY[drop.rarity]?.color || '#7c3aed';
         showToast(`🎒 +${drop.icon} ${drop.name}`);
       } else {
         resultText = '結果什麼裝備都看不上，隨手丟掉了。';
@@ -3085,7 +3156,7 @@
       // 獎勵鵝鵝幣
       refundCoins(player.id, monster.goldDrop);
       const drop = rollItemDrop(rpg.level, monster.level);
-      if (drop) rpg.inventory.push(drop.id);
+      if (drop) rpg.inventory.push(drop); // drop instance（含詞綴）直接存物件
       // 升級檢查
       let leveledUp = 0;
       while (rpg.xp >= xpForLevel(rpg.level)) {
@@ -3155,8 +3226,8 @@
   function equipFromInv(idx) {
     const me = getMe();
     const rpg = getRpg(me);
-    const itemId = rpg.inventory[idx];
-    const item = findItem(itemId);
+    const entry = rpg.inventory[idx];
+    const item = resolveItem(entry);
     if (!item) return;
     if (item.lv && rpg.level < item.lv) {
       showToast(`等級不足（需 Lv ${item.lv}）`);
@@ -3165,7 +3236,7 @@
     // 把現有同 slot 裝備丟回背包
     const cur = rpg.equipment[item.slot];
     if (cur) rpg.inventory.push(cur);
-    rpg.equipment[item.slot] = itemId;
+    rpg.equipment[item.slot] = entry;
     rpg.inventory.splice(idx, 1);
     syncEquipped(me);
     saveData();
