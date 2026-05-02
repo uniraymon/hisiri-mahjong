@@ -637,7 +637,9 @@
 
   const STAMINA_MAX = 100;
   const STAMINA_PER_FIGHT = 10;
-  const TICK_MS = 60 * 1000; // 1 分鐘 +1 體力 +1 HP
+  const TICK_MS = 60 * 1000;     // 1 分鐘 +1 體力 +1 HP
+  const REST_MS = 10 * 60 * 1000; // HP=0 → 10 分後恢復到 50%
+  const REST_HP_RATIO = 0.5;
 
   const SHOP_ITEMS = (() => {
     const items = [
@@ -847,18 +849,42 @@
   }
 
   // 體力 / HP 自動回復（不存資料庫，每次讀取時算）
+  // HP=0 進入休息：10 分鐘後恢復 50% HP，期間 HP 不會自然回；體力照常每分鐘 +1
   function tickRecovery(player) {
     const rpg = getRpg(player);
     const stats = computeStats(player);
     if (!stats) return null;
     if (rpg.hp == null) rpg.hp = stats.maxHp;
+
+    // 體力不論狀態都自然回復
     const elapsed = Date.now() - rpg.lastTickAt;
     const ticks = Math.floor(elapsed / TICK_MS);
     if (ticks > 0) {
       rpg.stamina = Math.min(STAMINA_MAX, rpg.stamina + ticks);
-      rpg.hp = Math.min(stats.maxHp, rpg.hp + ticks);
+      // HP 只有 > 0 時才自然回（< maxHp 才需要回）
+      if (rpg.hp > 0 && rpg.hp < stats.maxHp) {
+        rpg.hp = Math.min(stats.maxHp, rpg.hp + ticks);
+      }
       rpg.lastTickAt += ticks * TICK_MS;
     }
+
+    // 死亡休息（HP = 0 時）
+    let resting = false, restLeftMs = 0;
+    if (rpg.hp <= 0) {
+      if (!rpg.deathAt) rpg.deathAt = Date.now();
+      const restElapsed = Date.now() - rpg.deathAt;
+      if (restElapsed >= REST_MS) {
+        rpg.hp = Math.max(1, Math.floor(stats.maxHp * REST_HP_RATIO));
+        rpg.deathAt = null;
+      } else {
+        resting = true;
+        restLeftMs = REST_MS - restElapsed;
+      }
+    } else {
+      // HP > 0 → 確保沒卡 deathAt
+      if (rpg.deathAt) rpg.deathAt = null;
+    }
+
     const sinceLast = Date.now() - rpg.lastTickAt;
     return {
       stamina: rpg.stamina,
@@ -866,6 +892,8 @@
       hp: rpg.hp,
       hpMax: stats.maxHp,
       untilNextTick: Math.max(0, TICK_MS - sinceLast),
+      resting,
+      restLeftMs,
     };
   }
   function xpForLevel(lv) { return lv * lv * 100; }
@@ -907,7 +935,7 @@
       level: lv,
       hp: Math.round(m.hpBase * k),
       maxHp: Math.round(m.hpBase * k),
-      atk: Math.round(m.atkBase * k * 0.85),
+      atk: Math.round(m.atkBase * k * 1.5),
       def: Math.round(m.defBase * k * 0.7),
       spd: Math.round(m.spdBase + lv * 0.4),
       goldDrop: Math.round(m.goldBase + lv * 1.8 + Math.random() * lv * 0.6),
@@ -1115,10 +1143,12 @@
       }
       if (it.effect.hp === 'full') {
         rpg.hp = stats.maxHp;
+        rpg.deathAt = null;
         msg = `❤️ HP 回滿`;
       } else if (it.effect.hpRatio) {
         const recover = Math.round(stats.maxHp * it.effect.hpRatio);
         rpg.hp = Math.min(stats.maxHp, (rpg.hp || 0) + recover);
+        if (rpg.hp > 0) rpg.deathAt = null;
         msg = `❤️ +${recover} HP`;
       }
       if (it.effect.xp) {
@@ -1279,13 +1309,20 @@
     const fightBtn = document.getElementById('fightBtn');
     const info = document.getElementById('cooldownInfo');
     if (!info || !fightBtn) return;
-    const sec = Math.ceil(state.untilNextTick / 1000);
     const canFight = state.stamina >= STAMINA_PER_FIGHT && state.hp > 0;
     fightBtn.disabled = !canFight;
     let parts = [`⚡ 體力 ${state.stamina}/${state.staminaMax}`];
-    if (state.stamina < state.staminaMax || state.hp < state.hpMax) parts.push(`下次回復 ${sec} 秒`);
-    if (state.hp <= 0) parts.push(`💀 HP 已歸零，等自然恢復或買治療藥`);
-    else if (state.stamina < STAMINA_PER_FIGHT) parts.push(`需 ${STAMINA_PER_FIGHT} 才能出戰`);
+    if (state.resting) {
+      const m = Math.floor(state.restLeftMs / 60000);
+      const s = Math.floor((state.restLeftMs % 60000) / 1000);
+      parts.push(`💀 休息中：${m}:${s.toString().padStart(2,'0')} 後恢復 50% HP`);
+    } else {
+      const sec = Math.ceil(state.untilNextTick / 1000);
+      if (state.stamina < state.staminaMax || state.hp < state.hpMax) {
+        parts.push(`下次 +1 還有 ${sec} 秒`);
+      }
+      if (state.stamina < STAMINA_PER_FIGHT) parts.push(`需 ${STAMINA_PER_FIGHT} 體力才能出戰`);
+    }
     info.textContent = parts.join(' · ');
   }
   setInterval(() => {
@@ -1424,6 +1461,7 @@
       if (leveledUp) {
         const newStats = computeStats(player);
         rpg.hp = newStats.maxHp;
+        rpg.deathAt = null;
       }
 
       const div = document.createElement('div');
@@ -1443,14 +1481,16 @@
     } else {
       rpg.fightsLost = (rpg.fightsLost || 0) + 1;
       rpg.hp = 0;
+      rpg.deathAt = Date.now();
       const div = document.createElement('div');
       div.className = 'log-line log-defeat';
-      div.textContent = `💀 你被打倒了…`;
+      div.textContent = `💀 你被打倒了… 必須休息 10 分鐘恢復 50% HP（或喝藥）`;
       logEl.appendChild(div);
       rewardHtml = `
         <div class="reward-list reward-loss">
           <div class="rl-title">😭 失敗了</div>
-          <div class="rl-item">沒有獎勵 · 等冷卻完自動回復</div>
+          <div class="rl-item">💀 進入休息：10 分鐘後恢復到 50% HP</div>
+          <div class="rl-item" style="margin-top:4px;">想立刻回血可用治療藥</div>
         </div>
       `;
     }
