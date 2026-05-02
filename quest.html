@@ -1935,6 +1935,87 @@
         { req: 5, bonus: { hp: 150, def: 25, atk: 12 },               desc: '5 件：HP +150、DEF +25、ATK +12' },
       ],
     },
+    // ⭐ 試煉戰場專屬套裝（5 套，各專精一個能力）
+    blade_lord: {
+      name: '劍主', color: '#dc2626',
+      pieces: [
+        { id: 'bl_helmet', name: '劍主之冠',   icon: '🗡', slot: 'helmet', atk: 8,  hp: 15, lv: 5 },
+        { id: 'bl_armor',  name: '劍主之鎧',   icon: '⚔️', slot: 'armor',  atk: 6,  hp: 30, lv: 5 },
+        { id: 'bl_gloves', name: '劍主之握',   icon: '🤜', slot: 'gloves', atk: 14, lv: 5 },
+        { id: 'bl_boots',  name: '劍主之履',   icon: '👟', slot: 'boots',  atk: 6,  spd: 4, lv: 5 },
+        { id: 'bl_cape',   name: '劍主之披',   icon: '🟥', slot: 'cape',   atk: 8,  hp: 25, lv: 5 },
+      ],
+      tiers: [
+        { req: 2, bonus: { atk: 12 },                       desc: '2 件：ATK +12' },
+        { req: 3, bonus: { atk: 18 },                       desc: '3 件：ATK +18' },
+        { req: 4, bonus: { atk: 25 },                       desc: '4 件：ATK +25' },
+        { req: 5, bonus: { atk: 40, critChance: 0.05 },     desc: '5 件：ATK +40、暴擊率 +5%' },
+      ],
+    },
+    iron_wall: {
+      name: '鐵壁', color: '#475569',
+      pieces: [
+        { id: 'iw_helmet', name: '鐵壁盔',     icon: '🛡', slot: 'helmet', def: 12, hp: 25, lv: 5 },
+        { id: 'iw_armor',  name: '鐵壁鎧',     icon: '🟦', slot: 'armor',  def: 22, hp: 50, lv: 5 },
+        { id: 'iw_gloves', name: '鐵壁手',     icon: '🤛', slot: 'gloves', def: 10, hp: 20, lv: 5 },
+        { id: 'iw_boots',  name: '鐵壁靴',     icon: '🥾', slot: 'boots',  def: 8,  hp: 30, lv: 5 },
+        { id: 'iw_cape',   name: '鐵壁披',     icon: '⬛', slot: 'cape',   def: 14, hp: 35, lv: 5 },
+      ],
+      tiers: [
+        { req: 2, bonus: { def: 15 },                       desc: '2 件：DEF +15' },
+        { req: 3, bonus: { hp: 60 },                        desc: '3 件：HP +60' },
+        { req: 4, bonus: { def: 20 },                       desc: '4 件：DEF +20' },
+        { req: 5, bonus: { def: 30, hp: 100 },              desc: '5 件：DEF +30、HP +100' },
+      ],
+    },
+    sniper: {
+      name: '狙擊', color: '#16a34a',
+      pieces: [
+        { id: 'sn_helmet', name: '狙擊鏡',     icon: '🔭', slot: 'helmet', critChance: 0.04, lv: 5 },
+        { id: 'sn_armor',  name: '狙擊衣',     icon: '🟩', slot: 'armor',  critChance: 0.03, hp: 25, lv: 5 },
+        { id: 'sn_gloves', name: '狙擊手',     icon: '🎯', slot: 'gloves', critChance: 0.06, atk: 6, lv: 5 },
+        { id: 'sn_boots',  name: '狙擊靴',     icon: '🦶', slot: 'boots',  spd: 6,  critChance: 0.03, lv: 5 },
+        { id: 'sn_cape',   name: '狙擊披',     icon: '🌳', slot: 'cape',   atk: 8,  critChance: 0.03, lv: 5 },
+      ],
+      tiers: [
+        { req: 2, bonus: { critChance: 0.05 },              desc: '2 件：暴擊率 +5%' },
+        { req: 3, bonus: { spd: 6 },                        desc: '3 件：SPD +6' },
+        { req: 4, bonus: { critChance: 0.08 },              desc: '4 件：暴擊率 +8%' },
+        { req: 5, bonus: { critChance: 0.15, atk: 12 },     desc: '5 件：暴擊率 +15%、ATK +12' },
+      ],
+    },
+    demolisher: {
+      name: '爆裂', color: '#f97316',
+      pieces: [
+        { id: 'dm_helmet', name: '爆裂帽',     icon: '💥', slot: 'helmet', critDmg: 0.10, lv: 5 },
+        { id: 'dm_armor',  name: '爆裂鎧',     icon: '🟧', slot: 'armor',  critDmg: 0.08, hp: 30, lv: 5 },
+        { id: 'dm_gloves', name: '爆裂拳',     icon: '👊', slot: 'gloves', critDmg: 0.12, atk: 10, lv: 5 },
+        { id: 'dm_boots',  name: '爆裂靴',     icon: '🥿', slot: 'boots',  critDmg: 0.08, spd: 4, lv: 5 },
+        { id: 'dm_cape',   name: '爆裂披',     icon: '🟠', slot: 'cape',   critDmg: 0.10, atk: 6, lv: 5 },
+      ],
+      tiers: [
+        { req: 2, bonus: { critDmg: 0.20 },                 desc: '2 件：暴擊傷害 +20%' },
+        { req: 3, bonus: { atk: 12 },                       desc: '3 件：ATK +12' },
+        { req: 4, bonus: { critDmg: 0.30 },                 desc: '4 件：暴擊傷害 +30%' },
+        { req: 5, bonus: { critDmg: 0.50, critChance: 0.05 }, desc: '5 件：暴擊傷害 +50%、暴擊率 +5%' },
+      ],
+    },
+    wind_rider: {
+      name: '疾風', color: '#0ea5e9',
+      pieces: [
+        { id: 'wr_helmet', name: '疾風冠',     icon: '🌬', slot: 'helmet', spd: 6,  lv: 5 },
+        { id: 'wr_armor',  name: '疾風衣',     icon: '🟦', slot: 'armor',  spd: 7,  hp: 25, lv: 5 },
+        { id: 'wr_gloves', name: '疾風手',     icon: '🪶', slot: 'gloves', atk: 6,  spd: 5, lv: 5 },
+        { id: 'wr_boots',  name: '疾風靴',     icon: '👟', slot: 'boots',  spd: 14, lv: 5 },
+        { id: 'wr_cape',   name: '疾風披',     icon: '💨', slot: 'cape',   spd: 6,  hp: 20, lv: 5 },
+      ],
+      tiers: [
+        { req: 2, bonus: { spd: 8 },                        desc: '2 件：SPD +8' },
+        { req: 3, bonus: { critChance: 0.05 },              desc: '3 件：暴擊率 +5%' },
+        { req: 4, bonus: { spd: 12 },                       desc: '4 件：SPD +12' },
+        { req: 5, bonus: { spd: 20, atk: 15 },              desc: '5 件：SPD +20、ATK +15' },
+      ],
+    },
   };
 
   // ⭐ 寶物庫（探險打怪掉落）
@@ -3364,7 +3445,9 @@
       def:   Math.round(cls.def + (lv - 1) * cls.defPer) + b.def + ab.def,
       spd:   Math.round(cls.spd + (lv - 1) * cls.spdPer) + b.spd + ab.spd,
     };
-    // 裝備加成（10 個槽）
+    // 裝備加成（10 個槽）— 同時累積裝備本身的 critChance / critDmg
+    let itemCritChance = 0;
+    let itemCritDmg = 0;
     for (const slot of ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape', 'wings', 'pet', 'guide']) {
       const itemId = rpg.equipment?.[slot];
       if (itemId) {
@@ -3374,6 +3457,8 @@
           if (item.def) stats.def += item.def;
           if (item.spd) stats.spd += item.spd;
           if (item.hp)  stats.maxHp += item.hp;
+          if (item.critChance) itemCritChance += item.critChance;
+          if (item.critDmg)    itemCritDmg    += item.critDmg;
         }
       }
     }
@@ -3384,9 +3469,26 @@
     if (setInfo.bonuses.spd) stats.spd += setInfo.bonuses.spd;
     if (setInfo.bonuses.hp)  stats.maxHp += setInfo.bonuses.hp;
     if (setInfo.bonuses.mp)  stats.maxMp += setInfo.bonuses.mp;
-    // critChance / critDmg 在 autoFight 直接讀，這裡也帶出去
-    stats.setBonuses = setInfo.bonuses;
+    // critChance / critDmg：把裝備本身加成併到 setBonuses，autoFight 直接讀
+    const mergedBonuses = { ...setInfo.bonuses };
+    mergedBonuses.critChance = (mergedBonuses.critChance || 0) + itemCritChance;
+    mergedBonuses.critDmg    = (mergedBonuses.critDmg    || 0) + itemCritDmg;
+    stats.setBonuses = mergedBonuses;
     stats.setCounts = setInfo.counts;
+    // 給 UI 顯示用：總暴擊率 / 總爆傷倍率（包含職業底、技能、能力、被動、裝備、套裝）
+    const cBonus = computeSkillBonuses(player);
+    const cAbil  = computeAbilityBonuses(player);
+    const cPass  = (typeof computePassiveBonuses === 'function') ? computePassiveBonuses(player) : {};
+    stats.totalCritChance = 0.08
+      + (cls.critBonus || 0)
+      + (cBonus.critChance || 0)
+      + (cAbil.critChance || 0)
+      + (cPass.critChance || 0)
+      + (mergedBonuses.critChance || 0);
+    stats.totalCritDmg = 1.7
+      + (cAbil.critDmgBonus || 0)
+      + (cPass.critDmg || 0)
+      + (mergedBonuses.critDmg || 0);
     return stats;
   }
   function generateMonster(playerLv, opts) {
@@ -5395,6 +5497,8 @@
           <div class="stat-cell"><div class="sc-label">ATK</div><div class="sc-value">${stats.atk}</div></div>
           <div class="stat-cell"><div class="sc-label">DEF</div><div class="sc-value">${stats.def}</div></div>
           <div class="stat-cell"><div class="sc-label">SPD</div><div class="sc-value">${stats.spd}</div></div>
+          <div class="stat-cell"><div class="sc-label">爆擊率</div><div class="sc-value">${Math.round((stats.totalCritChance || 0) * 100)}%</div></div>
+          <div class="stat-cell"><div class="sc-label">爆傷</div><div class="sc-value">${Math.round((stats.totalCritDmg || 1.7) * 100)}%</div></div>
         </div>
         ${(() => {
           const setIds = Object.keys(stats.setCounts || {});
@@ -5559,6 +5663,8 @@
     if (item.spd) parts.push(`SPD+${item.spd}`);
     if (item.hp)  parts.push(`HP+${item.hp}`);
     if (item.mp)  parts.push(`MP+${item.mp}`);
+    if (item.critChance) parts.push(`暴擊+${Math.round(item.critChance * 100)}%`);
+    if (item.critDmg)    parts.push(`爆傷+${Math.round(item.critDmg * 100)}%`);
     let s = parts.join(' · ');
     if (item.affixes && item.affixes.length) s += ` ✨${item.affixes.length}`;
     if (item.setId) s += ' 🛡';
@@ -5984,37 +6090,29 @@
     let rewardHtml = '';
     if (result.won) {
       rpg.fightsWon = (rpg.fightsWon || 0) + 1;
-      let totalXp = 0, totalGold = 0;
-      for (const m of monsters) { totalXp += m.xpDrop || 0; totalGold += m.goldDrop || 0; }
-      rpg.xp = (rpg.xp || 0) + totalXp;
-      rpg.totalGold = (rpg.totalGold || 0) + totalGold;
+      // 試煉戰場：不給 XP / 不給金幣，只給試煉專屬套裝其中一件
       const mpBack = Math.round(stats.maxMp * 0.25);
       rpg.mp = Math.min(stats.maxMp, rpg.mp + mpBack);
-      refundCoins(player.id, totalGold);
-      // 機率掉裝（多怪 → 多次 roll）
+      const TRIAL_SETS = ['blade_lord', 'iron_wall', 'sniper', 'demolisher', 'wind_rider'];
       const drops = [];
-      for (let i = 0; i < monsters.length; i++) {
-        const drop = rollItemDrop(rpg.level, {});
-        if (drop) { rpg.inventory = rpg.inventory || []; rpg.inventory.push(drop); drops.push(drop); }
-      }
-      let leveledUp = 0;
-      while (rpg.xp >= xpForLevel(rpg.level)) {
-        rpg.xp -= xpForLevel(rpg.level);
-        rpg.level += 1;
-        rpg.skillPoints = (rpg.skillPoints || 0) + POINTS_PER_LEVEL.skill;
-        rpg.abilityPoints = (rpg.abilityPoints || 0) + POINTS_PER_LEVEL.ability;
-        leveledUp++;
-      }
-      if (leveledUp) {
-        const ns = computeStats(player);
-        rpg.hp = ns.maxHp; rpg.mp = ns.maxMp; rpg.deathAt = null;
+      // 每打贏一次掉 1 件（從 5 套隨機）
+      const setId = TRIAL_SETS[Math.floor(Math.random() * TRIAL_SETS.length)];
+      const set = SETS[setId];
+      if (set && set.pieces && set.pieces.length) {
+        const piece = set.pieces[Math.floor(Math.random() * set.pieces.length)];
+        rpg.inventory = rpg.inventory || [];
+        rpg.inventory.push(piece.id);
+        drops.push(piece);
       }
       rewardHtml = `
-        <div class="reward-list" style="background:linear-gradient(135deg,#f3e8ff,#e9d5ff); border-color:#a78bfa;">
-          <div class="rl-title" style="color:#5b21b6;">🎉 試煉勝利！</div>
-          <div class="rl-item">⭐ +${totalXp} XP　·　🪙 +${totalGold} 鵝鵝幣</div>
-          ${drops.map(d => `<div class="rl-item">${d.icon} ${d.name}</div>`).join('')}
-          ${leveledUp ? `<div style="margin-top:8px; color:#7c3aed; font-weight:700;">🎊 升級到 Lv ${rpg.level}！</div>` : ''}
+        <div class="reward-list" style="background:linear-gradient(135deg,#fde68a,#fbbf24); border-color:#f59e0b;">
+          <div class="rl-title" style="color:#7c2d12;">🏆 試煉勝利！</div>
+          <div class="rl-item">💙 MP 回復 +${mpBack}</div>
+          ${drops.map(d => {
+            const s = SETS[d.setId];
+            return `<div class="rl-item" style="color:${s?.color || '#7c2d12'};">${d.icon} <b>${d.name}</b><span style="font-size:10px; opacity:0.85;">　·　${s?.name || ''} 套裝件</span></div>`;
+          }).join('')}
+          <div style="margin-top:6px; font-size:11px; color:#7c2d12; opacity:0.8;">※ 試煉戰場不給 XP / 鵝鵝幣，只掉專屬套裝</div>
         </div>
       `;
     } else {
