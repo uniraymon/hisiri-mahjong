@@ -1479,44 +1479,32 @@
     }
   }
 
-  // 給 Firebase module script 用：把雲端資料蓋進來
-  window.__applyRemote = function(data) {
+  // ⭐ 拆檔架構下的同步介面
+  // 雲端結構：
+  //   meta 文件 = 共用資料（history / gifts / comments / pendingBets / betPool / worldBoss / baseMoney / basePoint）
+  //   players 子集合 = 每個玩家獨立文件
+  // 所以「我的裝備、我的鵝幣、我的角色資料」永遠只由我自己寫入，別人覆蓋不到
+  function __persistLocalSnapshot() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ players, history, gifts, comments, pendingBets, betPool, worldBoss, baseMoney, basePoint }));
+    } catch (e) {}
+  }
+
+  window.__getMeId = function() { return getMeId(); };
+
+  // 共用 meta 變更
+  window.__applyRemoteMeta = function(data) {
     if (!data) return;
     __isApplyingRemote = true;
-    let needRepush = false;  // 若本地比雲端新，需要把本地推回去把雲端救回來
     try {
-      if (Array.isArray(data.players)) {
-        // ⭐ 智能合併：避免「我剛拿到的裝備被別的客戶端用 stale 資料覆蓋掉」
-        // 規則：每個玩家逐一比 lastTouchedAt，新的勝
-        const localById = Object.fromEntries((players || []).map(p => p && p.id ? [p.id, p] : [null, null]).filter(([k]) => k));
-        const merged = data.players.map(remote => {
-          if (!remote || !remote.id) return remote;
-          const local = localById[remote.id];
-          if (!local) return remote;
-          const remoteTs = Number(remote.lastTouchedAt) || 0;
-          const localTs  = Number(local.lastTouchedAt)  || 0;
-          if (localTs > remoteTs) {
-            // 本地比較新 → 表示這個 remote 是 stale 客戶端 push 回來的舊版本
-            needRepush = true;
-            return local;
-          }
-          return remote;
-        });
-        // 雲端沒有但本地有的玩家（理論上不會，但保險）
-        for (const local of (players || [])) {
-          if (local && local.id && !merged.find(m => m && m.id === local.id)) merged.push(local);
-        }
-        players = merged;
-      }
       if (Array.isArray(data.history)) history = data.history;
       if (Array.isArray(data.gifts)) gifts = data.gifts;
       if (Array.isArray(data.comments)) comments = data.comments;
       if (Array.isArray(data.pendingBets)) pendingBets = data.pendingBets;
-      // 彩池：遠端有就吃遠端、遠端無或非法數值就用「兩邊取大」保護（避免被舊客戶端的 0 蓋掉）
+      // 彩池：遠端有就吃遠端、遠端無或非法數值就用「兩邊取大」保護
       if (Number.isFinite(data.betPool)) {
         const remote = Math.max(0, Math.floor(data.betPool));
         const local = Number.isFinite(betPool) ? Math.max(0, Math.floor(betPool)) : 0;
-        // 一般情況下遠端就是真相；但若本地大於遠端（代表本端剛剛加了池但還沒同步上去），保留較大值
         betPool = Math.max(remote, local);
       } else if (!Number.isFinite(betPool)) {
         betPool = 0;
@@ -1524,9 +1512,7 @@
       if (data.worldBoss && typeof data.worldBoss === 'object') worldBoss = data.worldBoss;
       if (typeof data.baseMoney === 'number') baseMoney = data.baseMoney;
       if (typeof data.basePoint === 'number') basePoint = data.basePoint;
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ players, history, gifts, comments, pendingBets, betPool, worldBoss, baseMoney, basePoint }));
-      } catch (e) {}
+      __persistLocalSnapshot();
       const bm = document.getElementById('baseMoney');
       const bp = document.getElementById('basePoint');
       if (bm) bm.value = baseMoney;
@@ -1534,16 +1520,77 @@
       renderTabs();
       render();
     } finally { __isApplyingRemote = false; }
-    // 雲端被 stale 客戶端覆蓋了，把本地較新的版本推回去把雲端救回來
-    // 延遲 300ms 避免跟剛剛 setDoc 的 echo 撞在一起
+  };
+
+  // 一次匯入所有玩家（首次載入 / 全量補回）
+  window.__applyRemotePlayers = function(remotePlayers) {
+    if (!Array.isArray(remotePlayers)) return;
+    __isApplyingRemote = true;
+    let needRepush = false;
+    try {
+      const localById = Object.fromEntries((players || []).map(p => p && p.id ? [p.id, p] : [null, null]).filter(([k]) => k));
+      const merged = remotePlayers.map(remote => {
+        if (!remote || !remote.id) return remote;
+        const local = localById[remote.id];
+        if (!local) return remote;
+        const remoteTs = Number(remote.lastTouchedAt) || 0;
+        const localTs  = Number(local.lastTouchedAt)  || 0;
+        if (localTs > remoteTs) { needRepush = true; return local; }
+        return remote;
+      });
+      for (const local of (players || [])) {
+        if (local && local.id && !merged.find(m => m && m.id === local.id)) merged.push(local);
+      }
+      players = merged;
+      __persistLocalSnapshot();
+      renderTabs();
+      render();
+    } finally { __isApplyingRemote = false; }
     if (needRepush) {
       setTimeout(() => {
-        if (!__isApplyingRemote && window.__firebaseSync && window.__firebaseSync.ready) {
-          console.log('[sync] re-pushing local-newer state to fix stale cloud');
-          saveData();
-        }
+        if (!__isApplyingRemote && window.__firebaseSync && window.__firebaseSync.ready) saveData();
       }, 300);
     }
+  };
+
+  // 單個玩家的變更（後續 onSnapshot 增量更新）
+  window.__applyRemotePlayer = function(remote) {
+    if (!remote || !remote.id) return;
+    __isApplyingRemote = true;
+    let needRepush = false;
+    try {
+      const idx = players.findIndex(p => p && p.id === remote.id);
+      if (idx === -1) {
+        players.push(remote);
+      } else {
+        const local = players[idx];
+        const remoteTs = Number(remote.lastTouchedAt) || 0;
+        const localTs  = Number(local.lastTouchedAt)  || 0;
+        if (localTs > remoteTs) {
+          needRepush = true; // 罕見：自己的舊狀態被遠端覆蓋（理論上拆檔後不會發生）
+        } else {
+          players[idx] = remote;
+        }
+      }
+      __persistLocalSnapshot();
+      renderTabs();
+      render();
+    } finally { __isApplyingRemote = false; }
+    if (needRepush) {
+      setTimeout(() => {
+        if (!__isApplyingRemote && window.__firebaseSync && window.__firebaseSync.ready) saveData();
+      }, 300);
+    }
+  };
+
+  window.__applyRemotePlayerDelete = function(pid) {
+    __isApplyingRemote = true;
+    try {
+      players = (players || []).filter(p => p && p.id !== pid);
+      __persistLocalSnapshot();
+      renderTabs();
+      render();
+    } finally { __isApplyingRemote = false; }
   };
 
   // 給 module script 用：取得目前本地狀態（用來首次推上雲）
@@ -3046,6 +3093,10 @@
     players = players.filter(x => x.id !== pid);
     currentPick = currentPick.filter(x => x !== pid);
     saveData();
+    // 拆檔架構：刪除雲端的玩家文件
+    if (window.__firebaseSync && window.__firebaseSync.deletePlayer) {
+      window.__firebaseSync.deletePlayer(pid);
+    }
     if (currentTab === pid) currentTab = 'overview';
     renderTabs();
     switchTab(currentTab);
@@ -3793,7 +3844,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-  import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+  import { getFirestore, doc, collection, onSnapshot, setDoc, getDoc, deleteDoc, deleteField } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyA1dzTX6COdDAab7gojdXaycx7Vr9EydN8",
@@ -3812,59 +3863,196 @@
     const hashParams = new URLSearchParams(location.hash.replace(/^#/, '?'));
     const ROOM_ID = hashParams.get('room') || localStorage.getItem('mahjong-room-id') || 'shared';
     localStorage.setItem('mahjong-room-id', ROOM_ID);
-    const docRef = doc(db, 'rooms', ROOM_ID);
+
+    // ⭐ 新結構：
+    //   rooms/{ROOM_ID}                    ← meta（history / gifts / comments / pendingBets / betPool / worldBoss / baseMoney / basePoint）
+    //   rooms/{ROOM_ID}/players/{pid}      ← 每個玩家獨立文件，避免互相覆蓋
+    const metaRef = doc(db, 'rooms', ROOM_ID);
+    const playersCol = collection(db, 'rooms', ROOM_ID, 'players');
     console.log('Firebase room:', ROOM_ID);
 
-    let firstSnapshot = true;
-    let saveTimer = null;
+    let firstMetaSnap = true;
+    let firstPlayersSnap = true;
+    let metaSaveTimer = null;
+    const playerSaveTimers = {}; // pid -> timer
+    let metaReady = false;
+    let playersReady = false;
+    const seenPlayerIds = new Set(); // 雲端已存在的玩家 id（從 onSnapshot 累積）
+
+    function checkReady() {
+      if (metaReady && playersReady && !window.__firebaseSync.ready) {
+        window.__firebaseSync.ready = true;
+        window.__updateSyncStatus?.('☁️ 已同步', 'ok');
+      }
+    }
+
     window.__firebaseSync = {
       ready: false,
       roomId: ROOM_ID,
-      save: (data) => {
-        clearTimeout(saveTimer);
-        saveTimer = setTimeout(async () => {
+      deletePlayer: async (pid) => {
+        try {
+          await deleteDoc(doc(playersCol, pid));
+          seenPlayerIds.delete(pid);
+        } catch (e) { console.error('Player delete failed:', e); }
+      },
+      save: (payload) => {
+        // 拆成兩部分：meta（共用）+ 我自己的 player（獨立文件）
+        // 別人的 player 不會被我寫入，所以絕對不可能蓋掉別人剛拿到的裝備
+        const meId = window.__getMeId?.();
+
+        const meta = {
+          history: payload.history,
+          gifts: payload.gifts,
+          comments: payload.comments,
+          pendingBets: payload.pendingBets,
+          betPool: payload.betPool,
+          worldBoss: payload.worldBoss,
+          baseMoney: payload.baseMoney,
+          basePoint: payload.basePoint,
+        };
+
+        clearTimeout(metaSaveTimer);
+        metaSaveTimer = setTimeout(async () => {
           try {
-            await setDoc(docRef, data);
+            await setDoc(metaRef, meta, { merge: true });
             window.__updateSyncStatus?.('☁️ 已同步', 'ok');
           } catch (e) {
-            console.error('Sync save failed:', e);
+            console.error('Meta save failed:', e);
             window.__updateSyncStatus?.('☁️ 同步失敗', 'err');
           }
         }, 250);
-      }
+
+        // 寫我自己這一個玩家文件
+        const playersToWrite = [];
+        if (meId && Array.isArray(payload.players)) {
+          const me = payload.players.find(p => p && p.id === meId);
+          if (me) playersToWrite.push(me);
+          // 順便把「雲端還沒有的玩家」一起寫上去（addPlayer 新增的人）
+          for (const p of payload.players) {
+            if (p && p.id && p.id !== meId && !seenPlayerIds.has(p.id)) {
+              playersToWrite.push(p);
+            }
+          }
+        }
+        for (const p of playersToWrite) {
+          clearTimeout(playerSaveTimers[p.id]);
+          playerSaveTimers[p.id] = setTimeout(async () => {
+            try {
+              await setDoc(doc(playersCol, p.id), p);
+              seenPlayerIds.add(p.id);
+            } catch (e) {
+              console.error('Player ' + p.id + ' save failed:', e);
+            }
+          }, 250);
+        }
+      },
     };
 
-    onSnapshot(docRef, async (snap) => {
-      if (firstSnapshot) {
-        firstSnapshot = false;
-        if (!snap.exists()) {
-          // 雲端沒資料 → 把目前本地推上去當種子
-          const local = window.__getCurrentData?.();
-          if (local && (local.players?.length || local.history?.length)) {
-            try {
-              await setDoc(docRef, local);
-              window.__updateSyncStatus?.('☁️ 已同步（首次上傳）', 'ok');
-            } catch (e) { console.error(e); window.__updateSyncStatus?.('☁️ 上傳失敗', 'err'); }
-          } else {
-            window.__updateSyncStatus?.('☁️ 已連線', 'ok');
+    // === Migration：把舊結構（players 陣列在 meta 文件內）拆成子集合 ===
+    async function migrateIfNeeded() {
+      try {
+        const snap = await getDoc(metaRef);
+        if (!snap.exists()) return;
+        const data = snap.data();
+        if (Array.isArray(data.players) && data.players.length > 0) {
+          console.log('[migrate] 偵測到舊結構，開始拆分 ' + data.players.length + ' 個玩家文件');
+          for (const p of data.players) {
+            if (p && p.id) {
+              await setDoc(doc(playersCol, p.id), p);
+            }
           }
-        } else {
-          // 雲端有資料 → 蓋過本地
-          window.__applyRemote?.(snap.data());
-          window.__updateSyncStatus?.('☁️ 已同步', 'ok');
+          await setDoc(metaRef, { players: deleteField() }, { merge: true });
+          console.log('[migrate] 完成');
         }
-        window.__firebaseSync.ready = true;
-        return;
+      } catch (e) {
+        console.error('[migrate] 失敗：', e);
       }
-      // 後續更新（其他朋友改的，或自己 save 後 echo 回來）
-      if (snap.exists()) {
-        window.__applyRemote?.(snap.data());
-        window.__updateSyncStatus?.('☁️ 已同步', 'ok');
-      }
-    }, (err) => {
-      console.error('Sync listen failed:', err);
-      window.__updateSyncStatus?.('☁️ 連線錯誤', 'err');
-    });
+    }
+
+    (async () => {
+      await migrateIfNeeded();
+
+      // ── 監聽 meta（共用部分）
+      onSnapshot(metaRef, async (snap) => {
+        if (firstMetaSnap) {
+          firstMetaSnap = false;
+          if (!snap.exists()) {
+            // 雲端沒 meta → 推本地共用資料上去當種子
+            const local = window.__getCurrentData?.();
+            if (local && (local.history?.length || local.players?.length)) {
+              try {
+                await setDoc(metaRef, {
+                  history: local.history,
+                  gifts: local.gifts,
+                  comments: local.comments,
+                  pendingBets: local.pendingBets,
+                  betPool: local.betPool,
+                  worldBoss: local.worldBoss,
+                  baseMoney: local.baseMoney,
+                  basePoint: local.basePoint,
+                });
+                window.__updateSyncStatus?.('☁️ 已同步（首次上傳）', 'ok');
+              } catch (e) { console.error(e); }
+            }
+          } else {
+            window.__applyRemoteMeta?.(snap.data());
+          }
+          metaReady = true;
+          checkReady();
+          return;
+        }
+        if (snap.exists()) {
+          window.__applyRemoteMeta?.(snap.data());
+        }
+      }, (err) => {
+        console.error('Meta listen failed:', err);
+        window.__updateSyncStatus?.('☁️ 連線錯誤', 'err');
+      });
+
+      // ── 監聽 players 子集合（每人一份文件）
+      onSnapshot(playersCol, async (snap) => {
+        // 累積目前雲端存在的玩家 id（用來判斷哪些玩家是「新加但還沒上雲」）
+        snap.docs.forEach(d => seenPlayerIds.add(d.id));
+
+        if (firstPlayersSnap) {
+          firstPlayersSnap = false;
+          if (snap.empty) {
+            // 雲端沒 players → 把本地 players 推上去當種子
+            const local = window.__getCurrentData?.();
+            if (local && Array.isArray(local.players)) {
+              for (const p of local.players) {
+                if (p && p.id) {
+                  try {
+                    await setDoc(doc(playersCol, p.id), p);
+                    seenPlayerIds.add(p.id);
+                  } catch (e) { console.error(e); }
+                }
+              }
+            }
+          } else {
+            const remotePlayers = snap.docs.map(d => d.data());
+            window.__applyRemotePlayers?.(remotePlayers);
+          }
+          playersReady = true;
+          checkReady();
+          return;
+        }
+        // 後續：只處理變動的文件
+        const changes = snap.docChanges();
+        for (const c of changes) {
+          if (c.type === 'removed') {
+            seenPlayerIds.delete(c.doc.id);
+            window.__applyRemotePlayerDelete?.(c.doc.id);
+          } else {
+            seenPlayerIds.add(c.doc.id);
+            window.__applyRemotePlayer?.(c.doc.data());
+          }
+        }
+      }, (err) => {
+        console.error('Players listen failed:', err);
+        window.__updateSyncStatus?.('☁️ 連線錯誤', 'err');
+      });
+    })();
   } catch (e) {
     console.error('Firebase 初始化失敗:', e);
     window.__updateSyncStatus?.('☁️ 未連線', 'err');

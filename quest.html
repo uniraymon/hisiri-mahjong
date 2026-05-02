@@ -1601,33 +1601,17 @@
     }
   }
 
-  // 給 Firebase module 用
-  window.__applyRemote = function(data) {
+  // ⭐ 拆檔架構同步介面
+  function __persistLocalSnapshot() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ players, history, gifts, comments, pendingBets, worldBoss, baseMoney, basePoint })); } catch (e) {}
+  }
+
+  window.__getMeId = function() { return getMeId(); };
+
+  window.__applyRemoteMeta = function(data) {
     if (!data) return;
     __isApplyingRemote = true;
-    let needRepush = false;
     try {
-      if (Array.isArray(data.players)) {
-        // ⭐ 智能合併：每個玩家逐一比 lastTouchedAt，新的勝
-        // 防止別的客戶端用 stale 資料覆蓋掉我剛拿到的裝備 / 鵝幣
-        const localById = Object.fromEntries((players || []).map(p => p && p.id ? [p.id, p] : [null, null]).filter(([k]) => k));
-        const merged = data.players.map(remote => {
-          if (!remote || !remote.id) return remote;
-          const local = localById[remote.id];
-          if (!local) return remote;
-          const remoteTs = Number(remote.lastTouchedAt) || 0;
-          const localTs  = Number(local.lastTouchedAt)  || 0;
-          if (localTs > remoteTs) {
-            needRepush = true;
-            return local;
-          }
-          return remote;
-        });
-        for (const local of (players || [])) {
-          if (local && local.id && !merged.find(m => m && m.id === local.id)) merged.push(local);
-        }
-        players = merged;
-      }
       if (Array.isArray(data.history)) history = data.history;
       if (Array.isArray(data.gifts)) gifts = data.gifts;
       if (Array.isArray(data.comments)) comments = data.comments;
@@ -1635,18 +1619,74 @@
       if (data.worldBoss && typeof data.worldBoss === 'object') worldBoss = data.worldBoss;
       if (typeof data.baseMoney === 'number') baseMoney = data.baseMoney;
       if (typeof data.basePoint === 'number') basePoint = data.basePoint;
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ players, history, gifts, comments, pendingBets, worldBoss, baseMoney, basePoint })); } catch (e) {}
+      __persistLocalSnapshot();
+      render();
+    } finally { __isApplyingRemote = false; }
+  };
+
+  window.__applyRemotePlayers = function(remotePlayers) {
+    if (!Array.isArray(remotePlayers)) return;
+    __isApplyingRemote = true;
+    let needRepush = false;
+    try {
+      const localById = Object.fromEntries((players || []).map(p => p && p.id ? [p.id, p] : [null, null]).filter(([k]) => k));
+      const merged = remotePlayers.map(remote => {
+        if (!remote || !remote.id) return remote;
+        const local = localById[remote.id];
+        if (!local) return remote;
+        const remoteTs = Number(remote.lastTouchedAt) || 0;
+        const localTs  = Number(local.lastTouchedAt)  || 0;
+        if (localTs > remoteTs) { needRepush = true; return local; }
+        return remote;
+      });
+      for (const local of (players || [])) {
+        if (local && local.id && !merged.find(m => m && m.id === local.id)) merged.push(local);
+      }
+      players = merged;
+      __persistLocalSnapshot();
       render();
     } finally { __isApplyingRemote = false; }
     if (needRepush) {
       setTimeout(() => {
-        if (!__isApplyingRemote && window.__firebaseSync && window.__firebaseSync.ready) {
-          console.log('[sync] re-pushing local-newer state to fix stale cloud');
-          saveData();
-        }
+        if (!__isApplyingRemote && window.__firebaseSync && window.__firebaseSync.ready) saveData();
       }, 300);
     }
   };
+
+  window.__applyRemotePlayer = function(remote) {
+    if (!remote || !remote.id) return;
+    __isApplyingRemote = true;
+    let needRepush = false;
+    try {
+      const idx = players.findIndex(p => p && p.id === remote.id);
+      if (idx === -1) {
+        players.push(remote);
+      } else {
+        const local = players[idx];
+        const remoteTs = Number(remote.lastTouchedAt) || 0;
+        const localTs  = Number(local.lastTouchedAt)  || 0;
+        if (localTs > remoteTs) needRepush = true;
+        else                    players[idx] = remote;
+      }
+      __persistLocalSnapshot();
+      render();
+    } finally { __isApplyingRemote = false; }
+    if (needRepush) {
+      setTimeout(() => {
+        if (!__isApplyingRemote && window.__firebaseSync && window.__firebaseSync.ready) saveData();
+      }, 300);
+    }
+  };
+
+  window.__applyRemotePlayerDelete = function(pid) {
+    __isApplyingRemote = true;
+    try {
+      players = (players || []).filter(p => p && p.id !== pid);
+      __persistLocalSnapshot();
+      render();
+    } finally { __isApplyingRemote = false; }
+  };
+
   window.__getCurrentData = function() {
     return { players, history, gifts, comments, pendingBets, worldBoss, baseMoney, basePoint };
   };
@@ -3807,7 +3847,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-  import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+  import { getFirestore, doc, collection, onSnapshot, setDoc, getDoc, deleteField } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyA1dzTX6COdDAab7gojdXaycx7Vr9EydN8",
@@ -3823,46 +3863,165 @@
     const hashParams = new URLSearchParams(location.hash.replace(/^#/, '?'));
     const ROOM_ID = hashParams.get('room') || localStorage.getItem('mahjong-room-id') || 'shared';
     localStorage.setItem('mahjong-room-id', ROOM_ID);
-    const docRef = doc(db, 'rooms', ROOM_ID);
 
-    let firstSnapshot = true;
-    let saveTimer = null;
+    // ⭐ 拆檔結構：rooms/{ROOM_ID}（meta）+ rooms/{ROOM_ID}/players/{pid}
+    const metaRef = doc(db, 'rooms', ROOM_ID);
+    const playersCol = collection(db, 'rooms', ROOM_ID, 'players');
+
+    let firstMetaSnap = true;
+    let firstPlayersSnap = true;
+    let metaSaveTimer = null;
+    const playerSaveTimers = {};
+    let metaReady = false;
+    let playersReady = false;
+    const seenPlayerIds = new Set();
+
+    function checkReady() {
+      if (metaReady && playersReady && !window.__firebaseSync.ready) {
+        window.__firebaseSync.ready = true;
+        window.__updateSyncStatus?.('☁️ 已同步', 'ok');
+      }
+    }
+
     window.__firebaseSync = {
       ready: false,
       roomId: ROOM_ID,
-      save: (data) => {
-        clearTimeout(saveTimer);
-        saveTimer = setTimeout(async () => {
+      save: (payload) => {
+        const meId = window.__getMeId?.();
+
+        const meta = {
+          history: payload.history,
+          gifts: payload.gifts,
+          comments: payload.comments,
+          pendingBets: payload.pendingBets,
+          betPool: payload.betPool,
+          worldBoss: payload.worldBoss,
+          baseMoney: payload.baseMoney,
+          basePoint: payload.basePoint,
+        };
+
+        clearTimeout(metaSaveTimer);
+        metaSaveTimer = setTimeout(async () => {
           try {
-            await setDoc(docRef, data);
+            await setDoc(metaRef, meta, { merge: true });
             window.__updateSyncStatus?.('☁️ 已同步', 'ok');
-          } catch (e) { console.error(e); window.__updateSyncStatus?.('☁️ 同步失敗', 'err'); }
+          } catch (e) {
+            console.error('Meta save failed:', e);
+            window.__updateSyncStatus?.('☁️ 同步失敗', 'err');
+          }
         }, 250);
-      }
+
+        const playersToWrite = [];
+        if (meId && Array.isArray(payload.players)) {
+          const me = payload.players.find(p => p && p.id === meId);
+          if (me) playersToWrite.push(me);
+          for (const p of payload.players) {
+            if (p && p.id && p.id !== meId && !seenPlayerIds.has(p.id)) {
+              playersToWrite.push(p);
+            }
+          }
+        }
+        for (const p of playersToWrite) {
+          clearTimeout(playerSaveTimers[p.id]);
+          playerSaveTimers[p.id] = setTimeout(async () => {
+            try {
+              await setDoc(doc(playersCol, p.id), p);
+              seenPlayerIds.add(p.id);
+            } catch (e) { console.error('Player ' + p.id + ' save failed:', e); }
+          }, 250);
+        }
+      },
     };
 
-    onSnapshot(docRef, async (snap) => {
-      if (firstSnapshot) {
-        firstSnapshot = false;
-        if (!snap.exists()) {
-          const local = window.__getCurrentData?.();
-          if (local) await setDoc(docRef, local);
-          window.__updateSyncStatus?.('☁️ 已連線', 'ok');
-        } else {
-          window.__applyRemote?.(snap.data());
-          window.__updateSyncStatus?.('☁️ 已同步', 'ok');
+    async function migrateIfNeeded() {
+      try {
+        const snap = await getDoc(metaRef);
+        if (!snap.exists()) return;
+        const data = snap.data();
+        if (Array.isArray(data.players) && data.players.length > 0) {
+          console.log('[migrate] 偵測舊結構，拆分 ' + data.players.length + ' 個玩家');
+          for (const p of data.players) {
+            if (p && p.id) await setDoc(doc(playersCol, p.id), p);
+          }
+          await setDoc(metaRef, { players: deleteField() }, { merge: true });
+          console.log('[migrate] 完成');
         }
-        window.__firebaseSync.ready = true;
-        return;
-      }
-      if (snap.exists()) {
-        window.__applyRemote?.(snap.data());
-        window.__updateSyncStatus?.('☁️ 已同步', 'ok');
-      }
-    }, (err) => {
-      console.error(err);
-      window.__updateSyncStatus?.('☁️ 連線錯誤', 'err');
-    });
+      } catch (e) { console.error('[migrate] 失敗：', e); }
+    }
+
+    (async () => {
+      await migrateIfNeeded();
+
+      onSnapshot(metaRef, async (snap) => {
+        if (firstMetaSnap) {
+          firstMetaSnap = false;
+          if (!snap.exists()) {
+            const local = window.__getCurrentData?.();
+            if (local && (local.history?.length || local.players?.length)) {
+              try {
+                await setDoc(metaRef, {
+                  history: local.history,
+                  gifts: local.gifts,
+                  comments: local.comments,
+                  pendingBets: local.pendingBets,
+                  betPool: local.betPool,
+                  worldBoss: local.worldBoss,
+                  baseMoney: local.baseMoney,
+                  basePoint: local.basePoint,
+                });
+              } catch (e) { console.error(e); }
+            }
+          } else {
+            window.__applyRemoteMeta?.(snap.data());
+          }
+          metaReady = true;
+          checkReady();
+          return;
+        }
+        if (snap.exists()) window.__applyRemoteMeta?.(snap.data());
+      }, (err) => {
+        console.error('Meta listen failed:', err);
+        window.__updateSyncStatus?.('☁️ 連線錯誤', 'err');
+      });
+
+      onSnapshot(playersCol, async (snap) => {
+        snap.docs.forEach(d => seenPlayerIds.add(d.id));
+        if (firstPlayersSnap) {
+          firstPlayersSnap = false;
+          if (snap.empty) {
+            const local = window.__getCurrentData?.();
+            if (local && Array.isArray(local.players)) {
+              for (const p of local.players) {
+                if (p && p.id) {
+                  try {
+                    await setDoc(doc(playersCol, p.id), p);
+                    seenPlayerIds.add(p.id);
+                  } catch (e) { console.error(e); }
+                }
+              }
+            }
+          } else {
+            window.__applyRemotePlayers?.(snap.docs.map(d => d.data()));
+          }
+          playersReady = true;
+          checkReady();
+          return;
+        }
+        const changes = snap.docChanges();
+        for (const c of changes) {
+          if (c.type === 'removed') {
+            seenPlayerIds.delete(c.doc.id);
+            window.__applyRemotePlayerDelete?.(c.doc.id);
+          } else {
+            seenPlayerIds.add(c.doc.id);
+            window.__applyRemotePlayer?.(c.doc.data());
+          }
+        }
+      }, (err) => {
+        console.error('Players listen failed:', err);
+        window.__updateSyncStatus?.('☁️ 連線錯誤', 'err');
+      });
+    })();
   } catch (e) {
     console.error(e);
     window.__updateSyncStatus?.('☁️ 未連線', 'err');
