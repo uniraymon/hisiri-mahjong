@@ -1578,7 +1578,7 @@
         xp: 0,
         hp: null,
         mp: null,
-        equipment: { weapon: null, armor: null, accessory: null, helmet: null, gloves: null, boots: null, cape: null },
+        equipment: { weapon: null, armor: null, accessory: null, helmet: null, gloves: null, boots: null, cape: null, wings: null, pet: null },
         equipped:  { weapon: null, shield: null, accessory: null, armor: null },
         inventory: [],
         skillPoints: 0,
@@ -1766,7 +1766,7 @@
       spd:   Math.round(cls.spd + (lv - 1) * cls.spdPer) + b.spd + ab.spd,
     };
     // 裝備加成（7 個槽）
-    for (const slot of ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape']) {
+    for (const slot of ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape', 'wings', 'pet']) {
       const itemId = rpg.equipment?.[slot];
       if (itemId) {
         const item = resolveItem(itemId);
@@ -2514,8 +2514,8 @@
   function renderEquipment() {
     const me = getMe();
     const rpg = getRpg(me);
-    const slots = ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape'];
-    const slotLabels = { weapon: '武器', armor: '防具', accessory: '飾品', helmet: '頭盔', gloves: '手套', boots: '鞋子', cape: '披風' };
+    const slots = ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape', 'wings', 'pet'];
+    const slotLabels = { weapon: '武器', armor: '防具', accessory: '飾品', helmet: '頭盔', gloves: '手套', boots: '鞋子', cape: '披風', wings: '翅膀', pet: '寵物' };
     document.getElementById('equipRow').innerHTML = slots.map(s => {
       const id = rpg.equipment?.[s];
       const item = id ? resolveItem(id) : null;

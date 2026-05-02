@@ -1307,6 +1307,25 @@
     { id: 'gacha_crown',   icon: '👑', title: '加冕者' },
     { id: 'gacha_rainbow', icon: '🌈', title: '彩虹尊者' },
   ];
+  // 扭蛋限定裝備（只有扭蛋抽得到，槽位 wings / pet）
+  const GACHA_EQUIPMENTS = [
+    // 翅膀 (wings)
+    { id: 'g_wings_pure',    name: '純白翼',  icon: '🪽',  slot: 'wings', atk: 6,  def: 6,  spd: 6, hp: 30, gachaOnly: true },
+    { id: 'g_wings_dark',    name: '暗影翼',  icon: '🌑',  slot: 'wings', atk: 14, hp: 40,           gachaOnly: true },
+    { id: 'g_wings_dragon',  name: '龍翼',    icon: '🐉',  slot: 'wings', atk: 8,  def: 8, hp: 60,   gachaOnly: true },
+    { id: 'g_wings_phoenix', name: '鳳凰翼',  icon: '🔥',  slot: 'wings', atk: 14, spd: 8,           gachaOnly: true },
+    { id: 'g_wings_thunder', name: '雷霆翼',  icon: '⚡', slot: 'wings', spd: 14, atk: 8,           gachaOnly: true },
+    { id: 'g_wings_moon',    name: '月光翼',  icon: '🌙', slot: 'wings', hp: 100, def: 8,           gachaOnly: true },
+    { id: 'g_wings_diamond', name: '鑽石翼',  icon: '💎', slot: 'wings', atk: 10, def: 10, hp: 50,  gachaOnly: true },
+    // 寵物 (pet)
+    { id: 'g_pet_cat',       name: '小貓鵝',  icon: '🐱', slot: 'pet', atk: 4,  spd: 10, hp: 25,    gachaOnly: true },
+    { id: 'g_pet_dog',       name: '小狗鵝',  icon: '🐶', slot: 'pet', def: 8,  hp: 60,             gachaOnly: true },
+    { id: 'g_pet_hamster',   name: '小倉鵝',  icon: '🐹', slot: 'pet', spd: 12, hp: 30,             gachaOnly: true },
+    { id: 'g_pet_unicorn',   name: '獨角鵝',  icon: '🦄', slot: 'pet', atk: 6,  def: 6, hp: 40,     gachaOnly: true },
+    { id: 'g_pet_eagle',     name: '雛鵰鵝',  icon: '🦅', slot: 'pet', atk: 12, spd: 6,             gachaOnly: true },
+    { id: 'g_pet_panda',     name: '熊貓鵝',  icon: '🐼', slot: 'pet', hp: 80,  def: 10,            gachaOnly: true },
+    { id: 'g_pet_tiger',     name: '虎鵝',    icon: '🐯', slot: 'pet', atk: 10, def: 5, hp: 35,     gachaOnly: true },
+  ];
   const GIFT_TYPES = {
     flower:    { icon: '💐', name: '花',     cost: 50 },
     cake:      { icon: '🍰', name: '蛋糕',   cost: 50 },
@@ -2102,7 +2121,9 @@
     { id: 'quest_win100',    cat: '冒險島', icon: '🏰', name: '無雙王者',   title: '無雙王者',   desc: '冒險島累計勝 100 場',        check: s => s.rpgWins >= 100 },
     { id: 'quest_full',      cat: '冒險島', icon: '👕', name: '全副武裝',   title: '全副武裝',   desc: '同時裝備 3 個槽以上',         check: s => s.rpgEquippedSlots >= 3 },
     { id: 'quest_full_5',    cat: '冒險島', icon: '🛡',  name: '裝備齊全',   title: '裝備齊全',   desc: '同時裝備 5 個槽',             check: s => s.rpgEquippedSlots >= 5 },
-    { id: 'quest_full_7',    cat: '冒險島', icon: '🏆', name: '全身武裝',   title: '全身武裝',   desc: '7 個槽全部裝備（武器+防具+飾品+頭盔+手套+鞋子+披風）', check: s => s.rpgEquippedSlots >= 7 },
+    { id: 'quest_full_7',    cat: '冒險島', icon: '🏆', name: '全身武裝',   title: '全身武裝',   desc: '7 個基礎槽全部裝備', check: s => s.rpgEquippedSlots >= 7 },
+    { id: 'quest_full_9',    cat: '冒險島', icon: '🌟', name: '神鵝臨世',   title: '神鵝臨世',   desc: '9 個槽全部裝備（含扭蛋限定 翅膀+寵物）', check: s => s.rpgEquippedSlots >= 9 },
+    { id: 'quest_gacha_eq_3', cat: '冒險島', icon: '🪽', name: '收藏家',     title: '扭蛋收藏家', desc: '收集 3 件扭蛋限定裝備（翅膀/寵物）', check: s => (s.gachaEquipCount || 0) >= 3 },
     { id: 'quest_collect10', cat: '冒險島', icon: '🎒', name: '收藏家',     title: '收藏家',     desc: '背包累積 10 件裝備',         check: s => s.rpgInv >= 10 },
     { id: 'quest_legendary', cat: '冒險島', icon: '🌟', name: '神話戰士',   title: '神話戰士',   desc: '裝備上 Lv 28 神話級裝備',    check: s => s.rpgHasLegendary },
     // 鵝幣
@@ -2172,10 +2193,24 @@
     const rpgLosses   = rpg.fightsLost || 0;
     const rpgInv      = (rpg.inventory || []).length;
     const eq = rpg.equipment || {};
-    const ALL_EQ_SLOTS = ['weapon','armor','accessory','helmet','gloves','boots','cape'];
+    const ALL_EQ_SLOTS = ['weapon','armor','accessory','helmet','gloves','boots','cape','wings','pet'];
     const rpgEquippedSlots = ALL_EQ_SLOTS.filter(s => eq[s]).length;
-    const rpgHasLegendary = ALL_EQ_SLOTS
-      .some(s => eq[s] && String(eq[s]).endsWith('_28'));
+    const rpgHasLegendary = ALL_EQ_SLOTS.some(s => {
+      const v = eq[s];
+      const id = typeof v === 'object' ? v?.id : v;
+      return id && String(id).endsWith('_28');
+    });
+    // 扭蛋限定裝備數量（背包 + 已穿）
+    const gachaIdSet = new Set();
+    (rpg.inventory || []).forEach(it => {
+      const id = typeof it === 'object' ? it?.id : it;
+      if (id && id.startsWith('g_')) gachaIdSet.add(id);
+    });
+    Object.values(eq).forEach(it => {
+      const id = typeof it === 'object' ? it?.id : it;
+      if (id && id.startsWith('g_')) gachaIdSet.add(id);
+    });
+    const gachaEquipCount = gachaIdSet.size;
     const metGreenTea = rpg.metGreenTea || 0;
     const rpgKills    = rpg.kills || {};
     const rpgCrits    = rpg.critCount || 0;
@@ -2191,6 +2226,7 @@
       rpgClass, rpgLevel, rpgWins, rpgLosses, rpgInv, rpgEquippedSlots, rpgHasLegendary,
       metGreenTea, rpgKills, rpgCrits,
       rpgWorkCount, rpgForageCount, rpgForageBattles,
+      gachaEquipCount,
       coinsEarned, coinsSpent, coinsBalance
     };
   }
@@ -2571,22 +2607,40 @@
     const myCoins = getCoins(me.id);
     const ua = me.unlockedAvatars || [];
     const ut = me.unlockedTitles || [];
+    // 已收集的限定裝備（從 rpg 找）
+    const ueIds = new Set();
+    if (me.rpg) {
+      (me.rpg.inventory || []).forEach(it => {
+        const id = typeof it === 'object' ? it?.id : it;
+        if (id && id.startsWith('g_')) ueIds.add(id);
+      });
+      Object.values(me.rpg.equipment || {}).forEach(it => {
+        const id = typeof it === 'object' ? it?.id : it;
+        if (id && id.startsWith('g_')) ueIds.add(id);
+      });
+    }
     const html = `
       <div style="text-align:center; margin-bottom:12px;">
         <span class="coin-badge">🪙 ${myCoins} 鵝鵝幣</span>
       </div>
       <div style="font-size:12px; color:#b88a8a; text-align:center; margin-bottom:10px;">
-        100 幣 / 抽　·　50% 限定頭像 + 50% 限定稱號<br>重複退 ${GACHA_DUP_REFUND} 幣
+        100 幣 / 抽　·　35% 頭像 / 35% 稱號 / 30% 限定裝備<br>重複退 ${GACHA_DUP_REFUND} 幣
       </div>
       <button class="btn btn-primary" onclick="spinGacha()" ${myCoins < GACHA_COST ? 'disabled' : ''}>🎰 抽 1 次（100 幣）</button>
       <div id="gachaResult" style="margin-top:12px;"></div>
       <div style="margin-top:14px; font-size:12px; color:#b88a8a;">
-        <b>已收集頭像</b>：${ua.length > 0 ? ua.map(a => `<span style="font-size:18px; margin:0 2px;">${a}</span>`).join('') : '（無）'}
+        <b>已收集頭像</b> (${ua.length}/${GACHA_AVATARS.length})：${ua.length > 0 ? ua.map(a => `<span style="font-size:18px; margin:0 2px;">${a}</span>`).join('') : '（無）'}
       </div>
       <div style="margin-top:6px; font-size:12px; color:#b88a8a;">
-        <b>已收集稱號</b>：${ut.length > 0 ? ut.map(id => {
+        <b>已收集稱號</b> (${ut.length}/${GACHA_TITLES.length})：${ut.length > 0 ? ut.map(id => {
           const t = GACHA_TITLES.find(x => x.id === id);
           return t ? `<span class="gift-badge">${t.icon} ${t.title}</span>` : '';
+        }).join(' ') : '（無）'}
+      </div>
+      <div style="margin-top:6px; font-size:12px; color:#b88a8a;">
+        <b>已收集限定裝備</b> (${ueIds.size}/${GACHA_EQUIPMENTS.length})：${ueIds.size > 0 ? [...ueIds].map(id => {
+          const e = GACHA_EQUIPMENTS.find(x => x.id === id);
+          return e ? `<span class="gift-badge">${e.icon} ${escapeHtml(e.name)}</span>` : '';
         }).join(' ') : '（無）'}
       </div>
     `;
@@ -2596,10 +2650,12 @@
     const me = getMe();
     if (!me) return;
     if (!spendCoins(me.id, GACHA_COST)) { showToast('幣不夠 ♡'); return; }
-    const isAvatar = Math.random() < 0.5;
+    // 30% 限定裝備 / 35% 頭像 / 35% 稱號
+    const r = Math.random();
+    const kind = r < 0.30 ? 'equipment' : r < 0.65 ? 'avatar' : 'title';
     let resultHtml = '';
     const DUP_XP = 50;
-    if (isAvatar) {
+    if (kind === 'avatar') {
       const a = GACHA_AVATARS[Math.floor(Math.random() * GACHA_AVATARS.length)];
       if (!me.unlockedAvatars) me.unlockedAvatars = [];
       if (me.unlockedAvatars.includes(a)) {
@@ -2610,7 +2666,7 @@
         me.unlockedAvatars.push(a);
         resultHtml = `<div class="gacha-result"><div class="gr-icon">${a}</div><div class="gr-text">✨ 抽到新頭像！<br><small>到個人頁點頭像可換</small></div></div>`;
       }
-    } else {
+    } else if (kind === 'title') {
       const t = GACHA_TITLES[Math.floor(Math.random() * GACHA_TITLES.length)];
       if (!me.unlockedTitles) me.unlockedTitles = [];
       if (me.unlockedTitles.includes(t.id)) {
@@ -2620,6 +2676,23 @@
       } else {
         me.unlockedTitles.push(t.id);
         resultHtml = `<div class="gacha-result"><div class="gr-icon">${t.icon}</div><div class="gr-text">✨ 抽到新稱號！<br><b>${t.title}</b></div></div>`;
+      }
+    } else {
+      // 限定裝備
+      const eq = GACHA_EQUIPMENTS[Math.floor(Math.random() * GACHA_EQUIPMENTS.length)];
+      if (!me.rpg) me.rpg = { inventory: [], equipment: {} };
+      if (!me.rpg.inventory) me.rpg.inventory = [];
+      if (!me.rpg.equipment) me.rpg.equipment = {};
+      const owned = me.rpg.inventory.some(it => (typeof it === 'object' ? it?.id : it) === eq.id)
+        || Object.values(me.rpg.equipment).some(it => (typeof it === 'object' ? it?.id : it) === eq.id);
+      if (owned) {
+        refundCoins(me.id, GACHA_DUP_REFUND);
+        me.bonusXp = (me.bonusXp || 0) + DUP_XP;
+        resultHtml = `<div class="gacha-result"><div class="gr-icon">${eq.icon}</div><div class="gr-text">重複了「${eq.name}」<br>退 ${GACHA_DUP_REFUND} 幣 + ${DUP_XP} XP</div></div>`;
+      } else {
+        me.rpg.inventory.push({ ...eq, rarity: 'legendary' }); // 一律當作傳說稀有度顯示
+        const stats = ['atk','def','spd','hp'].filter(k => eq[k]).map(k => `${k.toUpperCase()}+${eq[k]}`).join(' / ');
+        resultHtml = `<div class="gacha-result"><div class="gr-icon">${eq.icon}</div><div class="gr-text">✨ 抽到限定裝備！<br><b style="color:#fde047;">${eq.name}</b><br><small>${stats}</small><br><small style="opacity:0.85;">到冒險島背包查看</small></div></div>`;
       }
     }
     saveData();
