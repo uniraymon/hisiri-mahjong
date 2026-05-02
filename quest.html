@@ -3473,19 +3473,23 @@
     // 體力藥限購狀態提示（只在消耗品分頁顯示）
     let stamLimitNote = '';
     if (active.id === 'consumable') {
-      const rpg = getRpg(me);
-      const st = getStamPotState(rpg);
-      const used = STAM_POT_HOURLY_LIMIT - st.remaining;
-      if (st.remaining > 0) {
-        let extra = '';
-        if (used > 0 && rpg.stamPotPurchases && rpg.stamPotPurchases.length > 0) {
-          const minLeft = Math.ceil((STAM_POT_WINDOW_MS - (Date.now() - rpg.stamPotPurchases[0])) / 60000);
-          extra = `（${minLeft} 分鐘後第 1 瓶過期）`;
-        }
-        stamLimitNote = `<div style="font-size:11px; color:#8b6f9b; padding:6px 10px; background:#fef3c7; border-radius:8px; margin-bottom:6px; border:1px dashed #f59e0b;">🧪 體力藥本小時已購 <b>${used}/${STAM_POT_HOURLY_LIMIT}</b>${extra}</div>`;
+      if (STAM_POT_UNLIMITED) {
+        stamLimitNote = `<div style="font-size:11px; color:#15803d; padding:6px 10px; background:#dcfce7; border-radius:8px; margin-bottom:6px; border:1px dashed #16a34a;">🧪 封測期間：體力藥<b>無限制購買</b>（之後會恢復每小時 ${STAM_POT_HOURLY_LIMIT} 瓶）</div>`;
       } else {
-        const m = Math.ceil(st.nextRefillMs / 60000);
-        stamLimitNote = `<div style="font-size:11px; color:#dc2626; padding:6px 10px; background:#fee2e2; border-radius:8px; margin-bottom:6px; border:1px dashed #f87171;">🚫 體力藥已達本小時上限 ${STAM_POT_HOURLY_LIMIT} 瓶（${m} 分鐘後可再買）</div>`;
+        const rpg = getRpg(me);
+        const st = getStamPotState(rpg);
+        const used = STAM_POT_HOURLY_LIMIT - st.remaining;
+        if (st.remaining > 0) {
+          let extra = '';
+          if (used > 0 && rpg.stamPotPurchases && rpg.stamPotPurchases.length > 0) {
+            const minLeft = Math.ceil((STAM_POT_WINDOW_MS - (Date.now() - rpg.stamPotPurchases[0])) / 60000);
+            extra = `（${minLeft} 分鐘後第 1 瓶過期）`;
+          }
+          stamLimitNote = `<div style="font-size:11px; color:#8b6f9b; padding:6px 10px; background:#fef3c7; border-radius:8px; margin-bottom:6px; border:1px dashed #f59e0b;">🧪 體力藥本小時已購 <b>${used}/${STAM_POT_HOURLY_LIMIT}</b>${extra}</div>`;
+        } else {
+          const m = Math.ceil(st.nextRefillMs / 60000);
+          stamLimitNote = `<div style="font-size:11px; color:#dc2626; padding:6px 10px; background:#fee2e2; border-radius:8px; margin-bottom:6px; border:1px dashed #f87171;">🚫 體力藥已達本小時上限 ${STAM_POT_HOURLY_LIMIT} 瓶（${m} 分鐘後可再買）</div>`;
+        }
       }
     }
 
@@ -3499,6 +3503,8 @@
   window.setShopTab = setShopTab;
 
   // 體力藥每小時限購 5 瓶（避免「打工 → 買體力 → 打工」無限 loop）
+  // 封測期間：體力藥無限購買（要關回來把 STAM_POT_UNLIMITED 改成 false 即可）
+  const STAM_POT_UNLIMITED = true;
   const STAM_POT_HOURLY_LIMIT = 5;
   const STAM_POT_WINDOW_MS = 60 * 60 * 1000;
   function getStamPotState(rpg) {
@@ -3519,8 +3525,8 @@
     const it = SHOP_ITEMS.find(x => x.id === itemId);
     if (!it) return;
     if (getCoins(me.id) < it.cost) { showToast('幣不夠 ♡'); return; }
-    // 體力藥限購檢查
-    if (itemId.startsWith('pot_stam_')) {
+    // 體力藥限購檢查（封測期間 STAM_POT_UNLIMITED = true → 跳過）
+    if (!STAM_POT_UNLIMITED && itemId.startsWith('pot_stam_')) {
       const rpg = getRpg(me);
       const st = getStamPotState(rpg);
       if (st.remaining <= 0) {
@@ -3565,8 +3571,8 @@
     if (!me) return;
     const it = SHOP_ITEMS.find(x => x.id === itemId);
     if (!it) return;
-    // 體力藥限購防呆（前面 buyShop 已檢查過，這裡再驗一次以防直接呼叫）
-    if (itemId.startsWith('pot_stam_')) {
+    // 體力藥限購防呆（封測期間 STAM_POT_UNLIMITED = true → 跳過）
+    if (!STAM_POT_UNLIMITED && itemId.startsWith('pot_stam_')) {
       const rpgCheck = getRpg(me);
       const st = getStamPotState(rpgCheck);
       if (st.remaining <= 0) {
