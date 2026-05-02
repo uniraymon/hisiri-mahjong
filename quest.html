@@ -301,6 +301,7 @@
     border-radius: 6px;
   }
   .hp-fill   { background: linear-gradient(90deg, #fca5a5, #ef4444); }
+  .mp-fill   { background: linear-gradient(90deg, #93c5fd, #3b82f6); }
   .xp-fill   { background: linear-gradient(90deg, #c4b5fd, #8b5cf6); }
   .mhp-fill  { background: linear-gradient(90deg, #fcd34d, #f59e0b); }
 
@@ -765,8 +766,10 @@
       accImage:    'assets/equipment/helmet.svg',
       desc: '高 HP / 高 ATK / 慢',
       hp: 130, atk: 14, def: 8, spd: 7,
+      mp: 25, mpPer: 4,
       hpPer: 14, atkPer: 2.2, defPer: 1.2, spdPer: 0.4,
       attackVerb: '揮砍',
+      skill: { name: '狂怒斬', icon: '🔥', cooldown: 3, mpCost: 14, type: 'damage', mult: 1.8 },
     },
     archer: {
       icon: '🧝', name: '弓手',
@@ -775,8 +778,10 @@
       accImage:    'assets/equipment/wing-amulet.svg',
       desc: '速度先攻 / 平衡',
       hp: 95, atk: 12, def: 5, spd: 14,
+      mp: 30, mpPer: 4,
       hpPer: 9, atkPer: 1.5, defPer: 0.6, spdPer: 1.2,
       attackVerb: '射擊',
+      skill: { name: '精準射擊', icon: '🎯', cooldown: 3, mpCost: 12, type: 'damage', mult: 1.4, alwaysCrit: true },
     },
     mage: {
       icon: '🧙', name: '法師',
@@ -785,9 +790,11 @@
       accImage:    'assets/equipment/crown.svg',
       desc: '高暴擊 / 紙片',
       hp: 80, atk: 17, def: 4, spd: 10,
+      mp: 50, mpPer: 6,
       hpPer: 7, atkPer: 2.6, defPer: 0.5, spdPer: 0.7,
       attackVerb: '魔法',
       critBonus: 0.18,
+      skill: { name: '火球術', icon: '🔥', cooldown: 3, mpCost: 25, type: 'damage', flat: 50, perLv: 3, ignoreDef: true },
     },
     paladin: {
       icon: '🦸', name: '聖騎',
@@ -797,9 +804,11 @@
       hasShield: true,
       desc: '高防禦 / 自癒',
       hp: 115, atk: 11, def: 11, spd: 7,
+      mp: 35, mpPer: 5,
       hpPer: 12, atkPer: 1.4, defPer: 1.6, spdPer: 0.4,
       attackVerb: '聖光斬',
       regenPer: 0.05,
+      skill: { name: '神聖治癒', icon: '✨', cooldown: 5, mpCost: 30, type: 'heal', healPct: 0.3 },
     },
   };
 
@@ -860,6 +869,8 @@
       { id: 'pot_stam_l', name: '體力藥 (大)', icon: '🍹', desc: '+100 體力', cost: 140, type: 'consumable', effect: { stamina: 100 } },
       { id: 'pot_hp_s',   name: '治療藥 (小)', icon: '🍵', desc: 'HP +50%',   cost: 30,  type: 'consumable', effect: { hpRatio: 0.5 } },
       { id: 'pot_hp_l',   name: '治療藥 (大)', icon: '❤️', desc: 'HP 回滿',   cost: 60,  type: 'consumable', effect: { hp: 'full' } },
+      { id: 'pot_mp_s',   name: '藍藥 (小)',  icon: '🧙', desc: 'MP +50%',   cost: 50,  type: 'consumable', effect: { mpRatio: 0.5 } },
+      { id: 'pot_mp_l',   name: '藍藥 (大)',  icon: '💎', desc: 'MP 回滿',   cost: 120, type: 'consumable', effect: { mp: 'full' } },
       { id: 'pot_xp',     name: '智慧藥水',   icon: '📚', desc: '+100 XP',   cost: 120, type: 'consumable', effect: { xp: 100 } },
     ];
     // 每 3 等一階，10 階（Lv 1 / 4 / 7 / 10 / 13 / 16 / 19 / 22 / 25 / 28）
@@ -1057,6 +1068,7 @@
         level: 1,
         xp: 0,
         hp: null, // 第一次選職業時設為 maxHp
+        mp: null, // 同上
         equipment: { weapon: null, armor: null, accessory: null },
         equipped:  { weapon: null, shield: null, accessory: null, armor: null }, // 紙娃娃 SVG 路徑
         inventory: [],
@@ -1095,15 +1107,19 @@
     const stats = computeStats(player);
     if (!stats) return null;
     if (rpg.hp == null) rpg.hp = stats.maxHp;
+    if (rpg.mp == null) rpg.mp = stats.maxMp;
 
-    // 體力不論狀態都自然回復
+    // 體力 / HP / MP 自然回復
     const elapsed = Date.now() - rpg.lastTickAt;
     const ticks = Math.floor(elapsed / TICK_MS);
     if (ticks > 0) {
       rpg.stamina = Math.min(STAMINA_MAX, rpg.stamina + ticks);
-      // HP 只有 > 0 時才自然回（< maxHp 才需要回）
       if (rpg.hp > 0 && rpg.hp < stats.maxHp) {
         rpg.hp = Math.min(stats.maxHp, rpg.hp + ticks);
+      }
+      // MP 每分鐘 +2（比 HP 快一點）
+      if (rpg.mp < stats.maxMp) {
+        rpg.mp = Math.min(stats.maxMp, (rpg.mp || 0) + ticks * 2);
       }
       rpg.lastTickAt += ticks * TICK_MS;
     }
@@ -1144,6 +1160,7 @@
     const lv = rpg.level || 1;
     let stats = {
       maxHp: Math.round(cls.hp + (lv - 1) * cls.hpPer),
+      maxMp: Math.round((cls.mp || 30) + (lv - 1) * (cls.mpPer || 5)),
       atk:   Math.round(cls.atk + (lv - 1) * cls.atkPer),
       def:   Math.round(cls.def + (lv - 1) * cls.defPer),
       spd:   Math.round(cls.spd + (lv - 1) * cls.spdPer),
@@ -1199,33 +1216,84 @@
     const cls = CLASSES[player.rpg.class];
     const stats = computeStats(player);
     let pHp = Math.min(player.rpg.hp ?? stats.maxHp, stats.maxHp);
+    let pMp = Math.min(player.rpg.mp ?? stats.maxMp, stats.maxMp);
     let mHp = monster.hp;
     let pTurn = stats.spd >= monster.spd;
     let round = 0;
+    let playerActions = 0;
+    let nextSkillAction = 1; // 第 1 次行動嘗試放技能
 
     log.push({ type: 'system', text: `═══ ⚔️ ${player.name} VS ${monster.icon} ${monster.name} Lv ${monster.level} ═══` });
 
     while (pHp > 0 && mHp > 0 && round < 50) {
       round++;
-      // 聖騎自癒
+      // 聖騎被動自癒（每回合輪到自己時）
       if (pTurn && cls.regenPer && pHp < stats.maxHp) {
         const heal = Math.round(stats.maxHp * cls.regenPer);
         pHp = Math.min(stats.maxHp, pHp + heal);
-        log.push({ type: 'player', text: `回合 ${round}：聖光自癒 +${heal} HP`, hp: { player: pHp, monster: mHp } });
+        log.push({ type: 'player', text: `回合 ${round}：聖光自癒 +${heal} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
       }
       if (pTurn) {
-        const isCrit = Math.random() < (0.08 + (cls.critBonus || 0));
-        let dmg = Math.max(1, stats.atk - Math.floor(monster.def / 2));
-        dmg *= (0.85 + Math.random() * 0.3);
-        if (isCrit) dmg *= 1.7;
-        dmg = Math.max(1, Math.round(dmg));
-        mHp -= dmg;
-        log.push({
-          type: isCrit ? 'crit-player' : 'player',
-          text: `回合 ${round}：${cls.attackVerb}${isCrit ? '【暴擊】' : ''} → ${monster.name} -${dmg} HP`,
-          hp: { player: pHp, monster: Math.max(0, mHp) }
-        });
-        if (mHp <= 0) break;
+        playerActions++;
+        // 判斷是否觸發技能：到 cooldown 時間 + MP 夠
+        let useSkill = false;
+        const skill = cls.skill;
+        if (skill && playerActions >= nextSkillAction && pMp >= skill.mpCost) {
+          if (skill.type === 'heal') {
+            // 治癒只在 HP < 70% 時觸發
+            if (pHp < stats.maxHp * 0.7) useSkill = true;
+          } else {
+            useSkill = true;
+          }
+        }
+
+        if (useSkill) {
+          pMp -= skill.mpCost;
+          nextSkillAction = playerActions + skill.cooldown;
+          if (skill.type === 'damage') {
+            let dmg;
+            if (skill.flat != null) {
+              dmg = skill.flat + (skill.perLv || 0) * (player.rpg.level || 1);
+              if (!skill.ignoreDef) dmg -= Math.floor(monster.def / 2);
+            } else {
+              dmg = stats.atk * (skill.mult || 1) - Math.floor(monster.def / 2);
+            }
+            const isCrit = skill.alwaysCrit || Math.random() < (0.08 + (cls.critBonus || 0));
+            dmg *= (0.9 + Math.random() * 0.2);
+            if (isCrit) dmg *= 1.7;
+            dmg = Math.max(1, Math.round(dmg));
+            mHp -= dmg;
+            log.push({
+              type: 'crit-player',
+              text: `回合 ${round}：${skill.icon} ${skill.name}${isCrit ? '【暴擊】' : ''} → ${monster.name} -${dmg} HP（-${skill.mpCost} MP）`,
+              hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp }
+            });
+            if (mHp <= 0) break;
+          } else if (skill.type === 'heal') {
+            const before = pHp;
+            const heal = Math.round(stats.maxHp * skill.healPct);
+            pHp = Math.min(stats.maxHp, pHp + heal);
+            log.push({
+              type: 'player',
+              text: `回合 ${round}：${skill.icon} ${skill.name} +${pHp - before} HP（-${skill.mpCost} MP）`,
+              hp: { player: pHp, monster: mHp, mp: pMp }
+            });
+          }
+        } else {
+          // 普攻
+          const isCrit = Math.random() < (0.08 + (cls.critBonus || 0));
+          let dmg = Math.max(1, stats.atk - Math.floor(monster.def / 2));
+          dmg *= (0.85 + Math.random() * 0.3);
+          if (isCrit) dmg *= 1.7;
+          dmg = Math.max(1, Math.round(dmg));
+          mHp -= dmg;
+          log.push({
+            type: isCrit ? 'crit-player' : 'player',
+            text: `回合 ${round}：${cls.attackVerb}${isCrit ? '【暴擊】' : ''} → ${monster.name} -${dmg} HP`,
+            hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp }
+          });
+          if (mHp <= 0) break;
+        }
       } else {
         let dmg = Math.max(1, monster.atk - Math.floor(stats.def / 2));
         dmg *= (0.85 + Math.random() * 0.3);
@@ -1234,7 +1302,7 @@
         log.push({
           type: 'monster',
           text: `回合 ${round}：${monster.name} ${monster.verb} → ${player.name} -${dmg} HP`,
-          hp: { player: Math.max(0, pHp), monster: mHp }
+          hp: { player: Math.max(0, pHp), monster: mHp, mp: pMp }
         });
         if (pHp <= 0) break;
       }
@@ -1244,8 +1312,10 @@
     return {
       won,
       pHpFinal: Math.max(0, pHp),
+      pMpFinal: pMp,
       mHpFinal: Math.max(0, mHp),
       maxHp: stats.maxHp,
+      maxMp: stats.maxMp,
       log
     };
   }
@@ -1394,6 +1464,14 @@
         if (rpg.hp > 0) rpg.deathAt = null;
         msg = `❤️ +${recover} HP`;
       }
+      if (it.effect.mp === 'full') {
+        rpg.mp = stats.maxMp;
+        msg = `💙 MP 回滿`;
+      } else if (it.effect.mpRatio) {
+        const recover = Math.round(stats.maxMp * it.effect.mpRatio);
+        rpg.mp = Math.min(stats.maxMp, (rpg.mp || 0) + recover);
+        msg = `💙 +${recover} MP`;
+      }
       if (it.effect.xp) {
         rpg.xp = (rpg.xp || 0) + it.effect.xp;
         let leveledUp = false;
@@ -1453,10 +1531,12 @@
     const stats = computeStats(me);
     tickRecovery(me); // 確保 hp/體力已更新
     if (rpg.hp == null || rpg.hp > stats.maxHp) rpg.hp = stats.maxHp;
+    if (rpg.mp == null || rpg.mp > stats.maxMp) rpg.mp = stats.maxMp;
     const xpCur = rpg.xp;
     const xpNeed = xpForLevel(rpg.level);
     const xpPercent = Math.min(100, Math.round((xpCur / xpNeed) * 100));
     const hpPercent = Math.round((rpg.hp / stats.maxHp) * 100);
+    const mpPercent = Math.round((rpg.mp / stats.maxMp) * 100);
     const stamPercent = Math.round((rpg.stamina / STAMINA_MAX) * 100);
     const coins = getCoins(me.id);
 
@@ -1498,6 +1578,10 @@
           <div class="stat-bar-track"><div class="stat-bar-fill hp-fill" style="width:${hpPercent}%"></div></div>
         </div>
         <div class="stat-bar">
+          <div class="stat-bar-label"><span>💙 MP</span><span>${rpg.mp} / ${stats.maxMp}</span></div>
+          <div class="stat-bar-track"><div class="stat-bar-fill mp-fill" style="width:${mpPercent}%"></div></div>
+        </div>
+        <div class="stat-bar">
           <div class="stat-bar-label"><span>⚡ 體力</span><span>${rpg.stamina} / ${STAMINA_MAX}</span></div>
           <div class="stat-bar-track"><div class="stat-bar-fill mhp-fill" style="width:${stamPercent}%"></div></div>
         </div>
@@ -1510,6 +1594,9 @@
           <div class="stat-cell"><div class="sc-label">DEF</div><div class="sc-value">${stats.def}</div></div>
           <div class="stat-cell"><div class="sc-label">SPD</div><div class="sc-value">${stats.spd}</div></div>
         </div>
+        ${cls.skill ? `<div style="margin-top:10px; padding:6px 10px; background:linear-gradient(135deg,#dbeafe,#bfdbfe); border:2px dashed #60a5fa; border-radius:10px; font-size:11px; color:#1e3a8a;">
+          <b>${cls.skill.icon} ${cls.skill.name}</b>　${cls.skill.cooldown} 回合 / ${cls.skill.mpCost} MP
+        </div>` : ''}
       </div>
     `;
   }
@@ -1617,6 +1704,7 @@
     rpg.xp = 0;
     const stats = computeStats(me);
     rpg.hp = stats.maxHp;
+    rpg.mp = stats.maxMp;
     rpg.stamina = STAMINA_MAX;
     rpg.lastTickAt = Date.now();
     syncEquipped(me);
@@ -1654,6 +1742,8 @@
           <div class="combatant-name">${escapeHtml(me.name)} Lv${rpg.level}</div>
           <div class="combatant-hp-track"><div class="combatant-hp-fill" id="pHpBar" style="width:${(rpg.hp/stats.maxHp)*100}%"></div></div>
           <div class="combatant-hp-text" id="pHpText">${rpg.hp}/${stats.maxHp}</div>
+          <div class="combatant-hp-track" style="margin-top:2px;"><div class="combatant-hp-fill" id="pMpBar" style="width:${(rpg.mp/stats.maxMp)*100}%; background:linear-gradient(90deg,#93c5fd,#3b82f6);"></div></div>
+          <div class="combatant-hp-text" id="pMpText" style="color:#1e40af;">MP ${rpg.mp}/${stats.maxMp}</div>
         </div>
         <div class="vs-icon">⚔️</div>
         <div class="combatant" id="combatMonster">
@@ -1686,12 +1776,16 @@
       div.textContent = entry.text;
       logEl.appendChild(div);
       logEl.scrollTop = logEl.scrollHeight;
-      // 更新 HP 條
+      // 更新 HP / MP 條
       if (entry.hp) {
         document.getElementById('pHpBar').style.width = (entry.hp.player / stats.maxHp * 100) + '%';
         document.getElementById('pHpText').textContent = `${entry.hp.player}/${stats.maxHp}`;
         document.getElementById('mHpBar').style.width = (entry.hp.monster / monster.maxHp * 100) + '%';
         document.getElementById('mHpText').textContent = `${entry.hp.monster}/${monster.maxHp}`;
+        if (entry.hp.mp != null) {
+          document.getElementById('pMpBar').style.width = (entry.hp.mp / stats.maxMp * 100) + '%';
+          document.getElementById('pMpText').textContent = `MP ${entry.hp.mp}/${stats.maxMp}`;
+        }
         // shake 動畫
         if (entry.type === 'player' || entry.type === 'crit-player') {
           const m = document.getElementById('combatMonster');
@@ -1710,6 +1804,7 @@
   function finalizeFight(player, monster, result, stats) {
     const rpg = getRpg(player);
     rpg.hp = result.pHpFinal;
+    rpg.mp = result.pMpFinal;
     const logEl = document.getElementById('battleLog');
     let rewardHtml = '';
 
@@ -1717,6 +1812,9 @@
       rpg.fightsWon = (rpg.fightsWon || 0) + 1;
       rpg.xp = (rpg.xp || 0) + monster.xpDrop;
       rpg.totalGold = (rpg.totalGold || 0) + monster.goldDrop;
+      // 勝利補 20% MP
+      const mpBack = Math.round(stats.maxMp * 0.2);
+      rpg.mp = Math.min(stats.maxMp, rpg.mp + mpBack);
       // 獎勵鵝鵝幣
       refundCoins(player.id, monster.goldDrop);
       const drop = rollItemDrop(rpg.level, monster.level);
@@ -1933,11 +2031,13 @@
   function adminFullHeal() {
     const me = getMe(); if (!me) return;
     const r = getRpg(me);
-    r.hp = computeStats(me).maxHp;
+    const s = computeStats(me);
+    r.hp = s.maxHp;
+    r.mp = s.maxMp;
     r.stamina = STAMINA_MAX;
     r.deathAt = null;
     saveData(); render(); showDebugModal();
-    showToast('💚 滿血滿體力');
+    showToast('💚 HP / MP / 體力 全滿');
   }
   window.adminFullHeal = adminFullHeal;
 
