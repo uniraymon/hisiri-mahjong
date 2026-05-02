@@ -675,6 +675,110 @@
   .boss-card .btn { margin-top: 0; }
   .boss-card .btn:disabled { background: #4b5563; box-shadow: none; }
 
+  /* 行動規則編輯器 */
+  .ap-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .ap-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 8px;
+    background: #fff;
+    border: 2px solid #e9d5e3;
+    border-radius: 10px;
+    flex-wrap: wrap;
+  }
+  .ap-num {
+    font-size: 11px;
+    font-weight: 700;
+    color: #8b6f9b;
+    width: 24px;
+    text-align: center;
+  }
+  .ap-judge, .ap-skill {
+    flex: 1;
+    min-width: 110px;
+    padding: 5px 6px;
+    border: 1px solid #e9d5e3;
+    border-radius: 6px;
+    font-size: 12px;
+    background: #fef9ff;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .ap-judge:focus, .ap-skill:focus {
+    outline: none;
+    border-color: #c4b5fd;
+  }
+  .ap-param {
+    width: 50px;
+    padding: 5px 4px;
+    border: 1px solid #e9d5e3;
+    border-radius: 6px;
+    font-size: 12px;
+    text-align: center;
+    background: #fef9ff;
+    font-family: inherit;
+  }
+  .ap-param:focus {
+    outline: none;
+    border-color: #c4b5fd;
+  }
+  .ap-suffix {
+    font-size: 11px;
+    color: #8b6f9b;
+    margin-right: 2px;
+  }
+  .ap-param-na {
+    width: 50px;
+    text-align: center;
+    color: #c4b5fd;
+    font-size: 14px;
+  }
+  .ap-arrow {
+    color: #8b6f9b;
+    font-weight: 700;
+  }
+  .ap-btn-icon {
+    width: 26px;
+    height: 26px;
+    border: 1px solid #e9d5e3;
+    background: #fef9ff;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #5b3d62;
+    padding: 0;
+    font-family: inherit;
+  }
+  .ap-btn-icon:hover:not(:disabled) {
+    background: #f3e8ff;
+    border-color: #c4b5fd;
+  }
+  .ap-btn-icon:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+  .ap-btn-del {
+    color: #dc2626;
+    border-color: #fecaca;
+  }
+  .ap-btn-del:hover {
+    background: #fee2e2;
+    border-color: #f87171;
+  }
+  .ap-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .ap-add { background: linear-gradient(135deg, #c4b5fd, #a78bfa); box-shadow: 0 4px 0 #8b5cf6; color: #fff; }
+  .ap-reset { background: #fef3c7; color: #92400e; box-shadow: 0 3px 0 #d97706; }
+
   /* 探險分支選項 */
   .forage-choices {
     display: flex;
@@ -1159,6 +1263,11 @@
     <div class="card">
       <h2 id="skillCardHeader"><span>📚 技能</span></h2>
       <div id="skillTreeBody"></div>
+    </div>
+
+    <div class="card">
+      <h2><span>📋 行動規則</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（HOF 風格 AI：從上到下檢查，第一條成立的觸發）</span></h2>
+      <div id="actionPatternBody"></div>
     </div>
 
     <div class="card">
@@ -3038,9 +3147,16 @@
     let coinsStolen = 0;
     let critCount = 0;
     const mAbility = monster.ability;
-    // 每個技能各自的 nextActionForSkill（順序：強→中→弱，優先發強的）
+    // 每個技能的冷卻記錄（key = skillId）
     const skills = cls.skills || (cls.skill ? [cls.skill] : []);
-    const nextActionForSkill = skills.map(() => 1);
+    const skillById = Object.fromEntries(skills.map((s, i) => [s.id, { skill: s, idx: i }]));
+    const nextActionForSkill = {};
+    // 每條規則的本場使用次數（給 judge 1920「最多用 X 次」用）
+    const ruleUseCount = {};
+    // ⭐ HOF 行動規則表：玩家自訂 / 預設值
+    const actionPattern = (player.rpg.actionPattern && player.rpg.actionPattern.length)
+      ? player.rpg.actionPattern
+      : getDefaultActionPattern(player.rpg.class);
 
     // ATB（Active Time Battle）：每個單位的「行動條」依速度填滿
     // 條滿（達到 ATB_THRESHOLD）即出手；速度越快、填滿越快、出手越頻繁
@@ -3087,26 +3203,53 @@
       if (pTurn) {
         pGauge -= ATB_THRESHOLD;
         playerActions++;
-        // 從強到弱掃技能，第一個 cooldown 完且 MP 夠 + 條件 OK 的就放
+        // ⭐ HOF：依玩家的 actionPattern 規則表決定動作
+        // 從上到下評估每條規則，第一條 judge 成立 + 技能可用就放；都不成立 → 普攻
         let useSkill = null;
         let useSkillIdx = -1;
-        for (let i = 0; i < skills.length; i++) {
-          const s = skills[i];
-          if ((s.unlockLv || 1) > (player.rpg.level || 1)) continue; // 等級不夠未解鎖
-          if (playerActions < nextActionForSkill[i]) continue;
+        let usedRuleIdx = -1;
+        const judgeCtx = {
+          pHp, maxHp: stats.maxHp,
+          pMp, maxMp: stats.maxMp,
+          mHp, maxMHp: monster.maxHp,
+          playerActions,
+          ruleUseCount,
+        };
+        for (let r = 0; r < actionPattern.length; r++) {
+          const rule = actionPattern[r];
+          if (!rule || !evaluateJudge(rule.judgeId, rule.param, judgeCtx, r)) continue;
+
+          if (rule.skillId === 'basic') {
+            // 普攻
+            useSkill = null;
+            useSkillIdx = -1;
+            usedRuleIdx = r;
+            break;
+          }
+
+          const sInfo = skillById[rule.skillId];
+          if (!sInfo) continue; // 規則指向不存在的技能（職業改了？）
+          const s = sInfo.skill;
+          if ((s.unlockLv || 1) > (player.rpg.level || 1)) continue;
+          if (playerActions < (nextActionForSkill[s.id] || 0)) continue;
           const effMpCost = Math.round(s.mpCost * (1 - (passive.mpDiscount || 0)));
           if (pMp < effMpCost) continue;
-          if (s.type === 'heal' && pHp >= stats.maxHp * 0.7) continue;
+          // judge 已過、技能也可用 → 採用這條
           useSkill = s;
-          useSkillIdx = i;
+          useSkillIdx = sInfo.idx;
+          usedRuleIdx = r;
           break;
+        }
+        // 累積規則使用次數（給 1920「最多 X 次」用）
+        if (usedRuleIdx >= 0) {
+          ruleUseCount[usedRuleIdx] = (ruleUseCount[usedRuleIdx] || 0) + 1;
         }
 
         if (useSkill) {
           const skill = useSkill;
           const effMpCost = Math.round(skill.mpCost * (1 - (passive.mpDiscount || 0)));
           pMp -= effMpCost;
-          nextActionForSkill[useSkillIdx] = playerActions + skill.cooldown;
+          nextActionForSkill[skill.id] = playerActions + skill.cooldown;
           if (skill.type === 'damage') {
             let dmg;
             const isFlat = skill.flat != null;
@@ -3260,6 +3403,7 @@
     renderRpgStats();
     renderLeaderboard();
     renderZoneSelector();
+    renderActionPattern();
     updateStaminaUI();
     checkBossKillBanners();
     maybeShowBetaCompModal();
@@ -3412,6 +3556,134 @@
     showToast(`🔄 退回 ${total} 點能力`);
   }
   window.resetAbilities = resetAbilities;
+
+  // ⭐ HOF 行動規則編輯器
+  function renderActionPattern() {
+    const me = getMe();
+    if (!me) return;
+    const rpg = getRpg(me);
+    const host = document.getElementById('actionPatternBody');
+    if (!host) return;
+    if (!rpg.class) {
+      host.innerHTML = '<div style="font-size:12px; color:#8b6f9b; padding:8px; text-align:center;">先選職業 ♡</div>';
+      return;
+    }
+    const cls = CLASSES[rpg.class];
+    const skills = cls.skills || [];
+    const pattern = (rpg.actionPattern && rpg.actionPattern.length)
+      ? rpg.actionPattern
+      : getDefaultActionPattern(rpg.class);
+
+    // 技能 dropdown 選項：basic + 各職業技能
+    const skillOptions = (selectedId) => {
+      let opts = `<option value="basic" ${selectedId === 'basic' ? 'selected' : ''}>${cls.attackVerb || '普攻'}（普攻）</option>`;
+      for (const s of skills) {
+        const locked = (s.unlockLv || 1) > (rpg.level || 1);
+        opts += `<option value="${s.id}" ${selectedId === s.id ? 'selected' : ''} ${locked ? 'disabled' : ''}>${s.icon} ${s.name}${locked ? ` (Lv ${s.unlockLv} 解鎖)` : ''}</option>`;
+      }
+      return opts;
+    };
+    // judge dropdown 選項
+    const judgeOptions = (selectedId) => {
+      return Object.values(JUDGES).map(j =>
+        `<option value="${j.id}" ${selectedId === j.id ? 'selected' : ''}>${j.label}</option>`
+      ).join('');
+    };
+
+    const rows = pattern.map((rule, i) => {
+      const judge = JUDGES[rule.judgeId];
+      const showParam = judge && judge.paramType !== 'none';
+      const paramSuffix = judge && judge.paramType === 'percent' ? '%'
+        : judge && judge.paramType === 'count' ? '次' : '';
+      return `
+        <div class="ap-row">
+          <span class="ap-num">#${i + 1}</span>
+          <select class="ap-judge" onchange="updateActionRule(${i}, 'judgeId', this.value)">${judgeOptions(rule.judgeId)}</select>
+          ${showParam
+            ? `<input class="ap-param" type="number" value="${rule.param}" onchange="updateActionRule(${i}, 'param', this.value)">${paramSuffix ? `<span class="ap-suffix">${paramSuffix}</span>` : ''}`
+            : `<span class="ap-param-na">—</span>`}
+          <span class="ap-arrow">→</span>
+          <select class="ap-skill" onchange="updateActionRule(${i}, 'skillId', this.value)">${skillOptions(rule.skillId)}</select>
+          <button class="ap-btn-icon" onclick="moveActionRule(${i}, -1)" ${i === 0 ? 'disabled' : ''} title="上移">↑</button>
+          <button class="ap-btn-icon" onclick="moveActionRule(${i}, 1)" ${i === pattern.length - 1 ? 'disabled' : ''} title="下移">↓</button>
+          <button class="ap-btn-icon ap-btn-del" onclick="deleteActionRule(${i})" title="刪除">✕</button>
+        </div>
+      `;
+    }).join('');
+
+    host.innerHTML = `
+      <div style="font-size:11px; color:#8b6f9b; padding:6px 10px; background:#fffaf0; border-radius:8px; margin-bottom:8px; border:1px dashed #fbbf24;">
+        💡 從上到下檢查，第一條 <b>條件成立</b> 且 <b>技能可用</b>（MP/CD/等級）的就執行；都不成立會自動普攻。
+      </div>
+      <div class="ap-list">${rows}</div>
+      <div class="ap-controls">
+        <button class="btn btn-primary ap-add" onclick="addActionRule()">+ 加一條規則</button>
+        <button class="btn btn-secondary ap-reset" onclick="resetActionPattern()">↺ 重置為預設</button>
+      </div>
+    `;
+  }
+  window.renderActionPattern = renderActionPattern;
+
+  function updateActionRule(idx, field, value) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (!rpg.actionPattern || !rpg.actionPattern[idx]) return;
+    const r = rpg.actionPattern[idx];
+    if (field === 'judgeId') r.judgeId = Number(value) || 1000;
+    else if (field === 'param') r.param = Math.max(0, Number(value) || 0);
+    else if (field === 'skillId') r.skillId = String(value);
+    saveData();
+    renderActionPattern();
+  }
+  window.updateActionRule = updateActionRule;
+
+  function addActionRule() {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    rpg.actionPattern = rpg.actionPattern || [];
+    rpg.actionPattern.push({ judgeId: 1000, param: 0, skillId: 'basic' });
+    saveData();
+    renderActionPattern();
+  }
+  window.addActionRule = addActionRule;
+
+  function deleteActionRule(idx) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (!rpg.actionPattern) return;
+    rpg.actionPattern.splice(idx, 1);
+    if (rpg.actionPattern.length === 0) {
+      // 空表退回預設，否則戰鬥沒招
+      rpg.actionPattern = getDefaultActionPattern(rpg.class);
+    }
+    saveData();
+    renderActionPattern();
+  }
+  window.deleteActionRule = deleteActionRule;
+
+  function moveActionRule(idx, delta) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (!rpg.actionPattern) return;
+    const j = idx + delta;
+    if (j < 0 || j >= rpg.actionPattern.length) return;
+    const tmp = rpg.actionPattern[idx];
+    rpg.actionPattern[idx] = rpg.actionPattern[j];
+    rpg.actionPattern[j] = tmp;
+    saveData();
+    renderActionPattern();
+  }
+  window.moveActionRule = moveActionRule;
+
+  function resetActionPattern() {
+    if (!confirm('確定重置為預設規則表？目前的設定會清掉。')) return;
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    rpg.actionPattern = getDefaultActionPattern(rpg.class);
+    saveData();
+    renderActionPattern();
+  }
+  window.resetActionPattern = resetActionPattern;
 
   function renderSkillTree() {
     const me = getMe(); if (!me) return;
