@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚔️ 冒險島 — 麻將戰績小本本</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif;
+    background:
+      radial-gradient(circle at 20% 10%, #ddd6fe 0%, transparent 40%),
+      radial-gradient(circle at 80% 30%, #fbcfe8 0%, transparent 40%),
+      radial-gradient(circle at 50% 80%, #fde68a 0%, transparent 40%),
+      linear-gradient(135deg, #f3e8ff 0%, #fef3c7 100%);
+    min-height: 100vh;
+    padding: 16px;
+    padding-bottom: 100px;
+    color: #5a4a4a;
+  }
+  .container { max-width: 600px; margin: 0 auto; position: relative; z-index: 1; }
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .back-link {
+    color: #8b5cf6;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 13px;
+    background: rgba(255,255,255,0.7);
+    padding: 6px 12px;
+    border-radius: 16px;
+    border: 2px dashed #c4b5fd;
+  }
+  .back-link:hover { background: #fff; }
+  h1 {
+    font-size: 24px;
+    color: #7c3aed;
+    text-shadow: 2px 2px 0 #fff, 3px 3px 0 #ddd6fe;
+    letter-spacing: 1px;
+  }
+
+  .card {
+    background: rgba(255, 255, 255, 0.88);
+    border: 2px solid #ddd6fe;
+    border-radius: 20px;
+    padding: 18px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 0 #c4b5fd, 0 8px 20px rgba(167, 139, 250, 0.18);
+  }
+  .card h2 {
+    font-size: 16px;
+    margin-bottom: 12px;
+    color: #7c3aed;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .hidden { display: none !important; }
+
+  /* 職業選擇 */
+  .class-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .class-card {
+    background: linear-gradient(135deg, #fff, #fff8fb);
+    border: 2px solid #ddd6fe;
+    border-radius: 14px;
+    padding: 14px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .class-card:hover { transform: translateY(-2px); box-shadow: 0 4px 0 #a78bfa; }
+  .class-card .cls-icon { font-size: 42px; margin-bottom: 4px; }
+  .class-card .cls-name { font-weight: 700; color: #7c3aed; font-size: 14px; }
+  .class-card .cls-desc { font-size: 10px; color: #8b6f9b; margin-top: 4px; line-height: 1.4; }
+  .class-card .cls-stats {
+    font-size: 10px;
+    color: #5a4a4a;
+    margin-top: 6px;
+    background: #f3e8ff;
+    border-radius: 8px;
+    padding: 4px;
+    line-height: 1.4;
+  }
+
+  /* 角色卡 */
+  .char-card { display: flex; gap: 14px; align-items: flex-start; }
+  .char-portrait {
+    font-size: 56px;
+    width: 80px; height: 80px;
+    background: linear-gradient(135deg, #ddd6fe, #c4b5fd);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: default;
+  }
+  .char-info { flex: 1; min-width: 0; }
+  .char-name { font-weight: 700; color: #7c3aed; font-size: 18px; }
+  .char-class { font-size: 12px; color: #8b6f9b; margin-bottom: 8px; }
+  .char-coins { font-size: 12px; color: #d4806b; font-weight: 700; }
+
+  .stat-bar { margin-top: 6px; }
+  .stat-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .stat-bar-track {
+    background: #f3f0ff;
+    border: 1px solid #ddd6fe;
+    border-radius: 8px;
+    height: 12px;
+    overflow: hidden;
+  }
+  .stat-bar-fill {
+    height: 100%;
+    transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border-radius: 6px;
+  }
+  .hp-fill   { background: linear-gradient(90deg, #fca5a5, #ef4444); }
+  .xp-fill   { background: linear-gradient(90deg, #c4b5fd, #8b5cf6); }
+  .mhp-fill  { background: linear-gradient(90deg, #fcd34d, #f59e0b); }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .stat-cell {
+    background: #f3e8ff;
+    border: 1px solid #ddd6fe;
+    border-radius: 8px;
+    padding: 6px;
+    text-align: center;
+  }
+  .stat-cell .sc-label { font-size: 10px; color: #8b6f9b; font-weight: 600; }
+  .stat-cell .sc-value { font-weight: 700; color: #7c3aed; font-size: 14px; }
+
+  /* 行動按鈕 */
+  .btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 16px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 1px;
+    transition: transform 0.1s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary {
+    background: linear-gradient(135deg, #c4b5fd, #8b5cf6);
+    color: #fff;
+    box-shadow: 0 4px 0 #7c3aed, 0 6px 12px rgba(124, 58, 237, 0.3);
+  }
+  .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: 0 2px 0 #c4b5fd; }
+  .btn-secondary {
+    background: #fff;
+    color: #7c3aed;
+    border: 2px solid #ddd6fe;
+    margin-top: 8px;
+  }
+  .btn-warning {
+    background: linear-gradient(135deg, #fde68a, #f59e0b);
+    color: #fff;
+    box-shadow: 0 4px 0 #d97706;
+  }
+  .btn-danger {
+    background: linear-gradient(135deg, #fda4af, #ef4444);
+    color: #fff;
+    box-shadow: 0 4px 0 #dc2626;
+  }
+
+  .cooldown-info {
+    text-align: center;
+    margin-top: 8px;
+    font-size: 13px;
+    color: #8b6f9b;
+    font-weight: 600;
+  }
+
+  /* 戰鬥場 */
+  .battle-arena {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 8px;
+    align-items: center;
+    padding: 12px;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border: 2px solid #f59e0b;
+    border-radius: 14px;
+    margin-bottom: 10px;
+  }
+  .combatant { text-align: center; min-width: 0; }
+  .combatant-icon {
+    font-size: 44px;
+    line-height: 1;
+    transition: transform 0.3s;
+  }
+  .combatant.attacking .combatant-icon { transform: scale(1.2) rotate(-10deg); }
+  .combatant.hurt .combatant-icon { animation: shake 0.4s; }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+  .combatant-name { font-size: 11px; font-weight: 700; color: #5a4a4a; margin: 4px 0; }
+  .combatant-hp-track {
+    background: #fff;
+    border: 1px solid #d97706;
+    border-radius: 6px;
+    height: 10px;
+    overflow: hidden;
+  }
+  .combatant-hp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #fca5a5, #ef4444);
+    transition: width 0.4s ease;
+  }
+  .combatant-hp-text { font-size: 10px; color: #5a4a4a; margin-top: 2px; font-weight: 600; }
+  .vs-icon { font-size: 30px; color: #d97706; }
+
+  .battle-log {
+    background: #1e1b4b;
+    color: #ddd6fe;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.6;
+    max-height: 180px;
+    overflow-y: auto;
+    font-family: "Consolas", "Microsoft JhengHei", monospace;
+  }
+  .battle-log .log-line { margin-bottom: 2px; }
+  .battle-log .log-player { color: #93c5fd; }
+  .battle-log .log-monster { color: #fca5a5; }
+  .battle-log .log-crit { color: #fde047; font-weight: 700; }
+  .battle-log .log-system { color: #c4b5fd; font-style: italic; }
+  .battle-log .log-victory { color: #86efac; font-weight: 700; }
+  .battle-log .log-defeat { color: #f87171; font-weight: 700; }
+
+  .reward-list {
+    background: #f0fdf4;
+    border: 2px dashed #86efac;
+    border-radius: 12px;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 13px;
+    text-align: center;
+  }
+  .reward-list .rl-title { font-weight: 700; color: #16a34a; margin-bottom: 6px; }
+  .reward-list .rl-item { display: inline-block; margin: 2px 4px; }
+  .reward-loss {
+    background: #fef2f2;
+    border-color: #fca5a5;
+  }
+  .reward-loss .rl-title { color: #dc2626; }
+
+  /* 裝備 / 背包 */
+  .equip-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .equip-slot {
+    background: #f3e8ff;
+    border: 2px dashed #c4b5fd;
+    border-radius: 12px;
+    padding: 10px 4px;
+    text-align: center;
+    min-height: 70px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .equip-slot:hover { background: #ede9fe; }
+  .equip-slot.empty { color: #b5a5d4; }
+  .equip-slot .es-icon { font-size: 24px; margin-bottom: 2px; }
+  .equip-slot .es-name { font-size: 10px; font-weight: 700; color: #5a4a4a; }
+  .equip-slot .es-stat { font-size: 9px; color: #8b6f9b; }
+
+  .inv-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 6px;
+  }
+  .inv-item {
+    background: #fff;
+    border: 1px solid #ddd6fe;
+    border-radius: 10px;
+    padding: 6px;
+    text-align: center;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .inv-item:hover { background: #f3e8ff; }
+  .inv-item .ii-icon { font-size: 20px; }
+  .inv-item .ii-name { font-size: 10px; font-weight: 700; color: #5a4a4a; }
+  .inv-item .ii-stat { font-size: 9px; color: #7c3aed; }
+  .inv-item.equipped {
+    background: linear-gradient(135deg, #c4b5fd, #a78bfa);
+    border-color: #7c3aed;
+  }
+  .inv-item.equipped .ii-name, .inv-item.equipped .ii-stat { color: #fff; }
+
+  /* Modal & toast */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(30, 27, 75, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .modal-content {
+    background: linear-gradient(135deg, #ffffff, #f3e8ff);
+    border: 2px solid #c4b5fd;
+    border-radius: 18px;
+    padding: 18px;
+    max-width: 400px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 30px rgba(124, 58, 237, 0.3);
+  }
+  .modal-content h3 {
+    color: #7c3aed;
+    font-size: 17px;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(120px);
+    background: linear-gradient(135deg, #c4b5fd, #8b5cf6);
+    color: #fff;
+    padding: 14px 24px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 700;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 1000;
+    box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .sync-badge {
+    display: inline-block;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    background: rgba(255,255,255,0.7);
+    border: 1px dashed #c4b5fd;
+    color: #8b6f9b;
+  }
+  .sync-badge.ok  { background: #f0fdf4; border-color: #86efac; color: #16a34a; }
+  .sync-badge.err { background: #fef2f2; border-color: #fca5a5; color: #dc2626; }
+
+  .level-up-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(124, 58, 237, 0.7);
+    z-index: 998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    animation: fadeOut 2s 1.2s forwards;
+  }
+  .level-up-text {
+    background: linear-gradient(135deg, #fde68a, #f59e0b);
+    color: #fff;
+    padding: 24px 36px;
+    border-radius: 20px;
+    font-size: 32px;
+    font-weight: 800;
+    text-shadow: 2px 2px 0 #d97706;
+    animation: popIn 0.5s;
+  }
+  @keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    60% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); }
+  }
+  @keyframes fadeOut {
+    to { opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="top-bar">
+    <a href="index.html" class="back-link">← 戰績小本本</a>
+    <span class="sync-badge" id="syncBadge">⏳ 連線中…</span>
+  </div>
+  <h1 style="text-align:center;">⚔️ 冒險島 🗡</h1>
+  <div style="text-align:center; font-size:12px; color:#8b6f9b; margin-bottom:14px;">
+    每 30 分鐘可打一次怪 · 升級 · 收集裝備 · 共用鵝鵝幣
+  </div>
+
+  <!-- Stage A: 沒選身份 -->
+  <div id="stageNoMe" class="card hidden">
+    <div style="text-align:center; padding:14px 0;">
+      <div style="font-size:48px; margin-bottom:8px;">🪞</div>
+      <p style="font-size:13px; color:#8b6f9b; margin-bottom:14px;">先到首頁選身份才能冒險 ♡</p>
+      <a href="index.html" class="btn btn-primary" style="display:inline-block; text-decoration:none; padding:12px 24px;">回首頁</a>
+    </div>
+  </div>
+
+  <!-- Stage B: 沒選職業 -->
+  <div id="stageClassPick" class="card hidden">
+    <h2><span>🎭 選擇你的職業</span></h2>
+    <div style="font-size:12px; color:#8b6f9b; margin-bottom:10px;">⚠️ 一旦選定無法更換</div>
+    <div class="class-grid" id="classGrid"></div>
+  </div>
+
+  <!-- Stage C: 主畫面 -->
+  <div id="stageGame" class="hidden">
+    <div class="card char-card" id="charCard"></div>
+
+    <div class="card">
+      <h2><span>⚔️ 行動</span></h2>
+      <button id="fightBtn" class="btn btn-primary" onclick="onFight()">⚔️ 出發打怪</button>
+      <div class="cooldown-info" id="cooldownInfo"></div>
+      <div id="fightResult"></div>
+    </div>
+
+    <div class="card">
+      <h2><span>🎒 裝備</span></h2>
+      <div class="equip-row" id="equipRow"></div>
+      <div style="font-size:12px; color:#8b6f9b; margin:8px 0 6px; font-weight:600;">背包（點擊裝備 / 解除）</div>
+      <div class="inv-grid" id="invGrid"></div>
+    </div>
+
+    <div class="card">
+      <h2><span>📊 戰績</span></h2>
+      <div id="rpgStats" style="font-size:13px; line-height:1.8;"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ============================================================
+  // 常數
+  // ============================================================
+  const CLASSES = {
+    warrior: {
+      icon: '⚔️', name: '戰士',
+      desc: '高 HP / 高 ATK / 慢',
+      hp: 130, atk: 14, def: 8, spd: 7,
+      hpPer: 14, atkPer: 2.2, defPer: 1.2, spdPer: 0.4,
+      attackVerb: '揮砍',
+    },
+    archer: {
+      icon: '🏹', name: '弓手',
+      desc: '速度先攻 / 平衡',
+      hp: 95, atk: 12, def: 5, spd: 14,
+      hpPer: 9, atkPer: 1.5, defPer: 0.6, spdPer: 1.2,
+      attackVerb: '射擊',
+    },
+    mage: {
+      icon: '🔮', name: '法師',
+      desc: '高暴擊 / 紙片',
+      hp: 80, atk: 17, def: 4, spd: 10,
+      hpPer: 7, atkPer: 2.6, defPer: 0.5, spdPer: 0.7,
+      attackVerb: '魔法',
+      critBonus: 0.18,
+    },
+    paladin: {
+      icon: '🛡', name: '聖騎',
+      desc: '高防禦 / 自癒',
+      hp: 115, atk: 11, def: 11, spd: 7,
+      hpPer: 12, atkPer: 1.4, defPer: 1.6, spdPer: 0.4,
+      attackVerb: '聖光斬',
+      regenPer: 0.05, // 每回合回 5% maxHp
+    },
+  };
+
+  const MONSTERS = [
+    // tier 1
+    { id: 'slime', tier: 1, name: '史萊姆',  icon: '🟢', hpBase: 30,  atkBase: 5,  defBase: 1, spdBase: 6,  goldBase: 5,  xpBase: 15, verb: '撞擊' },
+    { id: 'rat',   tier: 1, name: '賊鼠',    icon: '🐀', hpBase: 26,  atkBase: 7,  defBase: 2, spdBase: 9,  goldBase: 6,  xpBase: 18, verb: '撕咬' },
+    { id: 'bat',   tier: 1, name: '蝙蝠',    icon: '🦇', hpBase: 22,  atkBase: 6,  defBase: 1, spdBase: 11, goldBase: 6,  xpBase: 20, verb: '俯衝' },
+    // tier 2
+    { id: 'gob',   tier: 2, name: '哥布林',  icon: '👺', hpBase: 55,  atkBase: 10, defBase: 4, spdBase: 8,  goldBase: 14, xpBase: 38, verb: '亂砍' },
+    { id: 'wolf',  tier: 2, name: '惡狼',    icon: '🐺', hpBase: 50,  atkBase: 13, defBase: 3, spdBase: 13, goldBase: 16, xpBase: 42, verb: '猛撲' },
+    { id: 'spider',tier: 2, name: '蜘蛛',    icon: '🕷', hpBase: 45,  atkBase: 11, defBase: 5, spdBase: 11, goldBase: 15, xpBase: 40, verb: '毒咬' },
+    // tier 3
+    { id: 'orc',   tier: 3, name: '獸人',    icon: '👹', hpBase: 90,  atkBase: 17, defBase: 8, spdBase: 7,  goldBase: 30, xpBase: 70, verb: '怒吼' },
+    { id: 'troll', tier: 3, name: '巨魔',    icon: '🧌', hpBase: 130, atkBase: 20, defBase: 11,spdBase: 5,  goldBase: 40, xpBase: 95, verb: '巨拳' },
+    { id: 'mummy', tier: 3, name: '木乃伊',  icon: '🧟', hpBase: 110, atkBase: 16, defBase: 12,spdBase: 4,  goldBase: 35, xpBase: 80, verb: '詛咒' },
+    // tier 4
+    { id: 'dragon', tier: 4, name: '幼龍',   icon: '🐲', hpBase: 220, atkBase: 28, defBase: 14, spdBase: 11, goldBase: 90, xpBase: 220, verb: '龍息' },
+    { id: 'lich',   tier: 4, name: '巫妖',   icon: '☠️', hpBase: 180, atkBase: 32, defBase: 10, spdBase: 12, goldBase: 100,xpBase: 240, verb: '死亡之觸' },
+    // tier 5
+    { id: 'demon',  tier: 5, name: '惡魔',   icon: '😈', hpBase: 320, atkBase: 36, defBase: 16, spdBase: 14, goldBase: 150,xpBase: 350, verb: '地獄火' },
+    { id: 'titan',  tier: 5, name: '泰坦',   icon: '🗿', hpBase: 420, atkBase: 30, defBase: 22, spdBase: 8,  goldBase: 160,xpBase: 380, verb: '大地碎裂' },
+  ];
+
+  const ITEMS = [
+    // 武器
+    { id: 'w_wood',   name: '木劍',     icon: '🪵', slot: 'weapon', atk: 2,  lv: 1 },
+    { id: 'w_iron',   name: '鐵劍',     icon: '⚔️', slot: 'weapon', atk: 5,  lv: 4 },
+    { id: 'w_steel',  name: '精鋼劍',   icon: '🗡️', slot: 'weapon', atk: 9,  lv: 8 },
+    { id: 'w_magic',  name: '魔劍',     icon: '✨', slot: 'weapon', atk: 14, lv: 13 },
+    { id: 'w_holy',   name: '神劍',     icon: '🌟', slot: 'weapon', atk: 22, lv: 20 },
+    // 防具
+    { id: 'a_cloth',  name: '布衣',     icon: '👕', slot: 'armor', def: 2,  lv: 1 },
+    { id: 'a_leather',name: '皮甲',     icon: '🦺', slot: 'armor', def: 5,  lv: 4 },
+    { id: 'a_chain',  name: '鎖鏈甲',   icon: '⛓', slot: 'armor', def: 9,  lv: 8 },
+    { id: 'a_plate',  name: '板甲',     icon: '🛡️', slot: 'armor', def: 14, lv: 13 },
+    { id: 'a_dragon', name: '龍鱗甲',   icon: '🐉', slot: 'armor', def: 22, lv: 20 },
+    // 飾品
+    { id: 'c_ring',   name: '銅戒',     icon: '💍', slot: 'accessory', atk: 2, lv: 2 },
+    { id: 'c_foot',   name: '兔腳',     icon: '🐰', slot: 'accessory', spd: 4, lv: 5 },
+    { id: 'c_ruby',   name: '紅寶石',   icon: '💎', slot: 'accessory', atk: 4, hp: 10, lv: 8 },
+    { id: 'c_heart',  name: '心形吊墜', icon: '💖', slot: 'accessory', hp: 40, def: 3, lv: 12 },
+    { id: 'c_oracle', name: '神諭',     icon: '🌠', slot: 'accessory', atk: 6, def: 6, spd: 4, hp: 30, lv: 18 },
+  ];
+
+  const FIGHT_COOLDOWN_MS = 30 * 60 * 1000; // 30 分
+
+  // ============================================================
+  // 狀態
+  // ============================================================
+  let players = [];
+  let history = [];
+  let gifts = [];
+  let comments = [];
+  let pendingBets = [];
+  let baseMoney = 1000;
+  let basePoint = 25000;
+
+  let __isApplyingRemote = false;
+  let __initialSyncDone = false;
+  const STORAGE_KEY = 'mahjong-tracker-v2';
+  const ME_KEY = 'mahjong-me-id';
+  const PASS_KEY = 'mahjong-pass-ok';
+
+  // ============================================================
+  // 工具
+  // ============================================================
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    })[c]);
+  }
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  function getMeId() { return localStorage.getItem(ME_KEY); }
+  function isPassVerified() { return localStorage.getItem(PASS_KEY) === '1'; }
+  function getPlayer(id) { return players.find(p => p.id === id); }
+  function getMe() {
+    const id = getMeId();
+    return id ? getPlayer(id) : null;
+  }
+
+  // 從同套計算（複製主檔邏輯，避免雙頁差異）
+  function pointToMoney(point) { return (point - basePoint) * baseMoney / basePoint; }
+  function getPlayerMatchData(pid) {
+    const records = [];
+    history.forEach((h, i) => {
+      const slot = h.participants.indexOf(pid);
+      if (slot < 0) return;
+      const myMoney = h.money[slot];
+      const sorted = h.money.map((m, idx) => ({m, idx})).sort((a,b) => b.m - a.m);
+      const rank = sorted.findIndex(s => s.idx === slot) + 1;
+      records.push({ money: myMoney, rank });
+    });
+    return records;
+  }
+  function calcCoinsEarned(records) {
+    let coins = 0;
+    for (const r of records) {
+      if (r.rank === 1) coins += 50;
+      else if (r.rank === 2) coins += 20;
+      if (r.money > 0) coins += Math.floor(r.money / 100);
+    }
+    return coins;
+  }
+  function getCoins(playerId) {
+    const p = getPlayer(playerId);
+    if (!p) return 0;
+    return calcCoinsEarned(getPlayerMatchData(playerId)) - (p.coinsSpent || 0);
+  }
+  function spendCoins(playerId, amount) {
+    const p = getPlayer(playerId);
+    if (!p) return false;
+    if (getCoins(playerId) < amount) return false;
+    p.coinsSpent = (p.coinsSpent || 0) + amount;
+    return true;
+  }
+  function refundCoins(playerId, amount) {
+    const p = getPlayer(playerId);
+    if (!p) return;
+    p.coinsSpent = (p.coinsSpent || 0) - amount;
+  }
+
+  // ============================================================
+  // 載入 / 儲存（主檔同 schema）
+  // ============================================================
+  function loadData() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (data.players) players = data.players;
+        if (data.history) history = data.history;
+        if (data.gifts) gifts = data.gifts;
+        if (data.comments) comments = data.comments;
+        if (data.pendingBets) pendingBets = data.pendingBets;
+        if (data.baseMoney) baseMoney = data.baseMoney;
+        if (data.basePoint) basePoint = data.basePoint;
+      }
+    } catch (e) { console.error(e); }
+  }
+  function saveData() {
+    const payload = { players, history, gifts, comments, pendingBets, baseMoney, basePoint };
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch (e) {}
+    if (!__isApplyingRemote && window.__firebaseSync && window.__firebaseSync.ready) {
+      window.__firebaseSync.save(payload);
+    }
+  }
+
+  // 給 Firebase module 用
+  window.__applyRemote = function(data) {
+    if (!data) return;
+    __isApplyingRemote = true;
+    try {
+      if (Array.isArray(data.players)) players = data.players;
+      if (Array.isArray(data.history)) history = data.history;
+      if (Array.isArray(data.gifts)) gifts = data.gifts;
+      if (Array.isArray(data.comments)) comments = data.comments;
+      if (Array.isArray(data.pendingBets)) pendingBets = data.pendingBets;
+      if (typeof data.baseMoney === 'number') baseMoney = data.baseMoney;
+      if (typeof data.basePoint === 'number') basePoint = data.basePoint;
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+      render();
+    } finally { __isApplyingRemote = false; }
+  };
+  window.__getCurrentData = function() {
+    return { players, history, gifts, comments, pendingBets, baseMoney, basePoint };
+  };
+  window.__updateSyncStatus = function(text, cls) {
+    const el = document.getElementById('syncBadge');
+    if (!el) return;
+    el.textContent = text;
+    el.className = 'sync-badge' + (cls === 'ok' ? ' ok' : cls === 'err' ? ' err' : '');
+  };
+
+  // ============================================================
+  // 角色資料 helpers
+  // ============================================================
+  function getRpg(player) {
+    if (!player) return null;
+    if (!player.rpg) {
+      player.rpg = {
+        class: null,
+        level: 1,
+        xp: 0,
+        hp: null, // 第一次選職業時設為 maxHp
+        equipment: { weapon: null, armor: null, accessory: null },
+        inventory: [],
+        lastFightAt: 0,
+        fightsWon: 0,
+        fightsLost: 0,
+        totalGold: 0,
+      };
+    }
+    return player.rpg;
+  }
+  function xpForLevel(lv) { return lv * lv * 100; }
+  function computeStats(player) {
+    const rpg = getRpg(player);
+    const cls = CLASSES[rpg.class];
+    if (!cls) return null;
+    const lv = rpg.level || 1;
+    let stats = {
+      maxHp: Math.round(cls.hp + (lv - 1) * cls.hpPer),
+      atk:   Math.round(cls.atk + (lv - 1) * cls.atkPer),
+      def:   Math.round(cls.def + (lv - 1) * cls.defPer),
+      spd:   Math.round(cls.spd + (lv - 1) * cls.spdPer),
+    };
+    // 裝備加成
+    for (const slot of ['weapon', 'armor', 'accessory']) {
+      const itemId = rpg.equipment?.[slot];
+      if (itemId) {
+        const item = ITEMS.find(i => i.id === itemId);
+        if (item) {
+          if (item.atk) stats.atk += item.atk;
+          if (item.def) stats.def += item.def;
+          if (item.spd) stats.spd += item.spd;
+          if (item.hp)  stats.maxHp += item.hp;
+        }
+      }
+    }
+    return stats;
+  }
+  function generateMonster(playerLv) {
+    const tierMax = Math.min(5, Math.ceil(playerLv / 4));
+    const tierMin = Math.max(1, tierMax - 1);
+    const candidates = MONSTERS.filter(m => m.tier <= tierMax && m.tier >= tierMin);
+    const m = candidates[Math.floor(Math.random() * candidates.length)];
+    const lv = Math.max(1, playerLv + Math.floor(Math.random() * 5) - 2);
+    const k = 1 + (lv - 1) * 0.18;
+    return {
+      ...m,
+      level: lv,
+      hp: Math.round(m.hpBase * k),
+      maxHp: Math.round(m.hpBase * k),
+      atk: Math.round(m.atkBase * k * 0.85),
+      def: Math.round(m.defBase * k * 0.7),
+      spd: Math.round(m.spdBase + lv * 0.4),
+      goldDrop: Math.round(m.goldBase + lv * 1.8 + Math.random() * lv * 0.6),
+      xpDrop: Math.round(m.xpBase + lv * 4 + Math.random() * lv * 2),
+    };
+  }
+  function rollItemDrop(playerLv, monsterLv) {
+    if (Math.random() > 0.28) return null; // 28% 掉落
+    const eligible = ITEMS.filter(i => i.lv <= playerLv + 2);
+    if (eligible.length === 0) return null;
+    return eligible[Math.floor(Math.random() * eligible.length)];
+  }
+
+  // ============================================================
+  // 戰鬥邏輯
+  // ============================================================
+  function autoFight(player, monster) {
+    const log = [];
+    const cls = CLASSES[player.rpg.class];
+    const stats = computeStats(player);
+    let pHp = Math.min(player.rpg.hp ?? stats.maxHp, stats.maxHp);
+    let mHp = monster.hp;
+    let pTurn = stats.spd >= monster.spd;
+    let round = 0;
+
+    log.push({ type: 'system', text: `═══ ⚔️ ${player.name} VS ${monster.icon} ${monster.name} Lv ${monster.level} ═══` });
+
+    while (pHp > 0 && mHp > 0 && round < 50) {
+      round++;
+      // 聖騎自癒
+      if (pTurn && cls.regenPer && pHp < stats.maxHp) {
+        const heal = Math.round(stats.maxHp * cls.regenPer);
+        pHp = Math.min(stats.maxHp, pHp + heal);
+        log.push({ type: 'player', text: `回合 ${round}：聖光自癒 +${heal} HP`, hp: { player: pHp, monster: mHp } });
+      }
+      if (pTurn) {
+        const isCrit = Math.random() < (0.08 + (cls.critBonus || 0));
+        let dmg = Math.max(1, stats.atk - Math.floor(monster.def / 2));
+        dmg *= (0.85 + Math.random() * 0.3);
+        if (isCrit) dmg *= 1.7;
+        dmg = Math.max(1, Math.round(dmg));
+        mHp -= dmg;
+        log.push({
+          type: isCrit ? 'crit-player' : 'player',
+          text: `回合 ${round}：${cls.attackVerb}${isCrit ? '【暴擊】' : ''} → ${monster.name} -${dmg} HP`,
+          hp: { player: pHp, monster: Math.max(0, mHp) }
+        });
+        if (mHp <= 0) break;
+      } else {
+        let dmg = Math.max(1, monster.atk - Math.floor(stats.def / 2));
+        dmg *= (0.85 + Math.random() * 0.3);
+        dmg = Math.max(1, Math.round(dmg));
+        pHp -= dmg;
+        log.push({
+          type: 'monster',
+          text: `回合 ${round}：${monster.name} ${monster.verb} → ${player.name} -${dmg} HP`,
+          hp: { player: Math.max(0, pHp), monster: mHp }
+        });
+        if (pHp <= 0) break;
+      }
+      pTurn = !pTurn;
+    }
+    const won = pHp > 0 && mHp <= 0;
+    return {
+      won,
+      pHpFinal: Math.max(0, pHp),
+      mHpFinal: Math.max(0, mHp),
+      maxHp: stats.maxHp,
+      log
+    };
+  }
+
+  // ============================================================
+  // 渲染
+  // ============================================================
+  function render() {
+    if (!isPassVerified() || !getMeId()) {
+      document.getElementById('stageNoMe').classList.remove('hidden');
+      document.getElementById('stageClassPick').classList.add('hidden');
+      document.getElementById('stageGame').classList.add('hidden');
+      return;
+    }
+    const me = getMe();
+    if (!me) {
+      document.getElementById('stageNoMe').classList.remove('hidden');
+      return;
+    }
+    document.getElementById('stageNoMe').classList.add('hidden');
+
+    const rpg = getRpg(me);
+    if (!rpg.class) {
+      document.getElementById('stageClassPick').classList.remove('hidden');
+      document.getElementById('stageGame').classList.add('hidden');
+      renderClassPicker();
+      return;
+    }
+    document.getElementById('stageClassPick').classList.add('hidden');
+    document.getElementById('stageGame').classList.remove('hidden');
+
+    renderCharCard();
+    renderEquipment();
+    renderRpgStats();
+    updateCooldown();
+  }
+
+  function renderClassPicker() {
+    const grid = document.getElementById('classGrid');
+    grid.innerHTML = Object.entries(CLASSES).map(([id, c]) => `
+      <button class="class-card" onclick="pickClass('${id}')">
+        <div class="cls-icon">${c.icon}</div>
+        <div class="cls-name">${c.name}</div>
+        <div class="cls-desc">${c.desc}</div>
+        <div class="cls-stats">HP ${c.hp} / ATK ${c.atk}<br>DEF ${c.def} / SPD ${c.spd}</div>
+      </button>
+    `).join('');
+  }
+
+  function renderCharCard() {
+    const me = getMe();
+    const rpg = getRpg(me);
+    const cls = CLASSES[rpg.class];
+    const stats = computeStats(me);
+    if (rpg.hp == null || rpg.hp > stats.maxHp) rpg.hp = stats.maxHp;
+    const xpCur = rpg.xp;
+    const xpNeed = xpForLevel(rpg.level);
+    const xpPercent = Math.min(100, Math.round((xpCur / xpNeed) * 100));
+    const hpPercent = Math.round((rpg.hp / stats.maxHp) * 100);
+    const coins = getCoins(me.id);
+
+    document.getElementById('charCard').innerHTML = `
+      <div class="char-portrait">${cls.icon}</div>
+      <div class="char-info">
+        <div class="char-name">${escapeHtml(me.name)}</div>
+        <div class="char-class">${cls.name} · Lv ${rpg.level}</div>
+        <div class="char-coins">🪙 ${coins} 鵝鵝幣</div>
+        <div class="stat-bar">
+          <div class="stat-bar-label"><span>❤️ HP</span><span>${rpg.hp} / ${stats.maxHp}</span></div>
+          <div class="stat-bar-track"><div class="stat-bar-fill hp-fill" style="width:${hpPercent}%"></div></div>
+        </div>
+        <div class="stat-bar">
+          <div class="stat-bar-label"><span>⭐ XP</span><span>${xpCur} / ${xpNeed}</span></div>
+          <div class="stat-bar-track"><div class="stat-bar-fill xp-fill" style="width:${xpPercent}%"></div></div>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-cell"><div class="sc-label">ATK</div><div class="sc-value">${stats.atk}</div></div>
+          <div class="stat-cell"><div class="sc-label">DEF</div><div class="sc-value">${stats.def}</div></div>
+          <div class="stat-cell"><div class="sc-label">SPD</div><div class="sc-value">${stats.spd}</div></div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderEquipment() {
+    const me = getMe();
+    const rpg = getRpg(me);
+    const slots = ['weapon', 'armor', 'accessory'];
+    const slotLabels = { weapon: '武器', armor: '防具', accessory: '飾品' };
+    document.getElementById('equipRow').innerHTML = slots.map(s => {
+      const id = rpg.equipment?.[s];
+      const item = id ? ITEMS.find(i => i.id === id) : null;
+      if (!item) {
+        return `<div class="equip-slot empty"><div class="es-icon">➕</div><div class="es-name">${slotLabels[s]}</div></div>`;
+      }
+      return `<button class="equip-slot" onclick="unequip('${s}')">
+        <div class="es-icon">${item.icon}</div>
+        <div class="es-name">${item.name}</div>
+        <div class="es-stat">${formatItemStats(item)}</div>
+      </button>`;
+    }).join('');
+
+    // 背包
+    const inv = (rpg.inventory || []).slice();
+    if (inv.length === 0) {
+      document.getElementById('invGrid').innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#8b6f9b; font-size:11px; padding:8px;">背包空空 ♡</div>';
+    } else {
+      document.getElementById('invGrid').innerHTML = inv.map((id, idx) => {
+        const item = ITEMS.find(i => i.id === id);
+        if (!item) return '';
+        return `<button class="inv-item" onclick="equipFromInv(${idx})">
+          <div class="ii-icon">${item.icon}</div>
+          <div class="ii-name">${item.name}</div>
+          <div class="ii-stat">${formatItemStats(item)}</div>
+        </button>`;
+      }).join('');
+    }
+  }
+  function formatItemStats(item) {
+    const parts = [];
+    if (item.atk) parts.push(`ATK+${item.atk}`);
+    if (item.def) parts.push(`DEF+${item.def}`);
+    if (item.spd) parts.push(`SPD+${item.spd}`);
+    if (item.hp)  parts.push(`HP+${item.hp}`);
+    return parts.join(' · ');
+  }
+
+  function renderRpgStats() {
+    const me = getMe();
+    const rpg = getRpg(me);
+    const total = rpg.fightsWon + rpg.fightsLost;
+    const winRate = total > 0 ? Math.round((rpg.fightsWon / total) * 100) : 0;
+    document.getElementById('rpgStats').innerHTML = `
+      ⚔️ 勝場：<b>${rpg.fightsWon}</b><br>
+      💀 敗場：<b>${rpg.fightsLost}</b><br>
+      🏆 勝率：<b>${winRate}%</b><br>
+      💰 累計獲得金幣：<b>${rpg.totalGold || 0}</b>
+    `;
+  }
+
+  function updateCooldown() {
+    const me = getMe();
+    const rpg = getRpg(me);
+    const stats = computeStats(me);
+    const now = Date.now();
+    const last = rpg.lastFightAt || 0;
+    const left = (last + FIGHT_COOLDOWN_MS) - now;
+    const fightBtn = document.getElementById('fightBtn');
+    const info = document.getElementById('cooldownInfo');
+    if (rpg.hp <= 0) {
+      // 自動恢復後再戰
+      const hpRecover = Math.max(1, Math.round(stats.maxHp * 0.3));
+      fightBtn.disabled = true;
+      info.textContent = `💀 你被打倒了，等冷卻完成自動回復 HP`;
+      // 計時恢復
+      if (left <= 0) {
+        rpg.hp = stats.maxHp;
+        saveData();
+        renderCharCard();
+        updateCooldown();
+        return;
+      }
+    }
+    if (left > 0) {
+      fightBtn.disabled = true;
+      const m = Math.floor(left / 60000);
+      const s = Math.floor((left % 60000) / 1000);
+      info.textContent = `⏳ 冷卻中：${m} 分 ${s.toString().padStart(2,'0')} 秒`;
+    } else if (rpg.hp > 0) {
+      fightBtn.disabled = false;
+      info.textContent = '可以出發了 ♡';
+    }
+  }
+  setInterval(() => {
+    if (document.getElementById('stageGame') && !document.getElementById('stageGame').classList.contains('hidden')) {
+      updateCooldown();
+    }
+  }, 1000);
+
+  // ============================================================
+  // 互動
+  // ============================================================
+  function pickClass(classId) {
+    const me = getMe();
+    if (!me) return;
+    const rpg = getRpg(me);
+    if (rpg.class) return;
+    rpg.class = classId;
+    rpg.level = 1;
+    rpg.xp = 0;
+    const stats = computeStats(me);
+    rpg.hp = stats.maxHp;
+    rpg.lastFightAt = 0;
+    saveData();
+    showToast(`✨ 選擇了 ${CLASSES[classId].icon} ${CLASSES[classId].name}`);
+    render();
+  }
+  window.pickClass = pickClass;
+
+  function onFight() {
+    const me = getMe();
+    if (!me) return;
+    const rpg = getRpg(me);
+    if (!rpg.class) return;
+    const now = Date.now();
+    if (rpg.lastFightAt && (now - rpg.lastFightAt) < FIGHT_COOLDOWN_MS) {
+      showToast('⏳ 還在冷卻中');
+      return;
+    }
+    if (rpg.hp <= 0) { showToast('💀 HP 不足'); return; }
+
+    // 鎖按鈕
+    document.getElementById('fightBtn').disabled = true;
+
+    const monster = generateMonster(rpg.level);
+    const result = autoFight(me, monster);
+
+    // 把 lastFightAt 設下去（不論輸贏都進入冷卻）
+    rpg.lastFightAt = now;
+
+    // 渲染戰鬥場景，依序播放
+    const stats = computeStats(me);
+    const arenaHtml = `
+      <div class="battle-arena" id="battleArena">
+        <div class="combatant" id="combatPlayer">
+          <div class="combatant-icon">${CLASSES[rpg.class].icon}</div>
+          <div class="combatant-name">${escapeHtml(me.name)} Lv${rpg.level}</div>
+          <div class="combatant-hp-track"><div class="combatant-hp-fill" id="pHpBar" style="width:${(rpg.hp/stats.maxHp)*100}%"></div></div>
+          <div class="combatant-hp-text" id="pHpText">${rpg.hp}/${stats.maxHp}</div>
+        </div>
+        <div class="vs-icon">⚔️</div>
+        <div class="combatant" id="combatMonster">
+          <div class="combatant-icon">${monster.icon}</div>
+          <div class="combatant-name">${monster.name} Lv${monster.level}</div>
+          <div class="combatant-hp-track"><div class="combatant-hp-fill" id="mHpBar" style="width:100%"></div></div>
+          <div class="combatant-hp-text" id="mHpText">${monster.hp}/${monster.maxHp}</div>
+        </div>
+      </div>
+      <div class="battle-log" id="battleLog"></div>
+    `;
+    document.getElementById('fightResult').innerHTML = arenaHtml;
+
+    // 播放 log
+    const logEl = document.getElementById('battleLog');
+    let i = 0;
+    const playStep = () => {
+      if (i >= result.log.length) {
+        // 結算
+        finalizeFight(me, monster, result, stats);
+        return;
+      }
+      const entry = result.log[i++];
+      const cls = entry.type === 'crit-player' ? 'log-crit'
+        : entry.type === 'player' ? 'log-player'
+        : entry.type === 'monster' ? 'log-monster'
+        : 'log-system';
+      const div = document.createElement('div');
+      div.className = `log-line ${cls}`;
+      div.textContent = entry.text;
+      logEl.appendChild(div);
+      logEl.scrollTop = logEl.scrollHeight;
+      // 更新 HP 條
+      if (entry.hp) {
+        document.getElementById('pHpBar').style.width = (entry.hp.player / stats.maxHp * 100) + '%';
+        document.getElementById('pHpText').textContent = `${entry.hp.player}/${stats.maxHp}`;
+        document.getElementById('mHpBar').style.width = (entry.hp.monster / monster.maxHp * 100) + '%';
+        document.getElementById('mHpText').textContent = `${entry.hp.monster}/${monster.maxHp}`;
+        // shake 動畫
+        if (entry.type === 'player' || entry.type === 'crit-player') {
+          const m = document.getElementById('combatMonster');
+          m.classList.remove('hurt'); void m.offsetWidth; m.classList.add('hurt');
+        } else if (entry.type === 'monster') {
+          const p = document.getElementById('combatPlayer');
+          p.classList.remove('hurt'); void p.offsetWidth; p.classList.add('hurt');
+        }
+      }
+      setTimeout(playStep, 550);
+    };
+    playStep();
+  }
+  window.onFight = onFight;
+
+  function finalizeFight(player, monster, result, stats) {
+    const rpg = getRpg(player);
+    rpg.hp = result.pHpFinal;
+    const logEl = document.getElementById('battleLog');
+    let rewardHtml = '';
+
+    if (result.won) {
+      rpg.fightsWon = (rpg.fightsWon || 0) + 1;
+      rpg.xp = (rpg.xp || 0) + monster.xpDrop;
+      rpg.totalGold = (rpg.totalGold || 0) + monster.goldDrop;
+      // 獎勵鵝鵝幣
+      refundCoins(player.id, monster.goldDrop);
+      const drop = rollItemDrop(rpg.level, monster.level);
+      if (drop) rpg.inventory.push(drop.id);
+      // 升級檢查
+      let leveledUp = false;
+      while (rpg.xp >= xpForLevel(rpg.level)) {
+        rpg.xp -= xpForLevel(rpg.level);
+        rpg.level += 1;
+        leveledUp = true;
+      }
+      // 升級回滿 HP
+      if (leveledUp) {
+        const newStats = computeStats(player);
+        rpg.hp = newStats.maxHp;
+      }
+
+      const div = document.createElement('div');
+      div.className = 'log-line log-victory';
+      div.textContent = `✨ ${monster.name}倒下！`;
+      logEl.appendChild(div);
+      rewardHtml = `
+        <div class="reward-list">
+          <div class="rl-title">🎉 戰利品</div>
+          <div class="rl-item">⭐ +${monster.xpDrop} XP</div>
+          <div class="rl-item">🪙 +${monster.goldDrop} 鵝鵝幣</div>
+          ${drop ? `<div class="rl-item">${drop.icon} ${drop.name}</div>` : ''}
+          ${leveledUp ? `<div style="margin-top:8px; color:#7c3aed; font-weight:700;">🎊 升級到 Lv ${rpg.level}！HP 回滿</div>` : ''}
+        </div>
+      `;
+      if (leveledUp) showLevelUp(rpg.level);
+    } else {
+      rpg.fightsLost = (rpg.fightsLost || 0) + 1;
+      rpg.hp = 0;
+      const div = document.createElement('div');
+      div.className = 'log-line log-defeat';
+      div.textContent = `💀 你被打倒了…`;
+      logEl.appendChild(div);
+      rewardHtml = `
+        <div class="reward-list reward-loss">
+          <div class="rl-title">😭 失敗了</div>
+          <div class="rl-item">沒有獎勵 · 等冷卻完自動回復</div>
+        </div>
+      `;
+    }
+    document.getElementById('fightResult').insertAdjacentHTML('beforeend', rewardHtml);
+    saveData();
+    renderCharCard();
+    renderEquipment();
+    renderRpgStats();
+    updateCooldown();
+  }
+
+  function showLevelUp(lv) {
+    const overlay = document.createElement('div');
+    overlay.className = 'level-up-overlay';
+    overlay.innerHTML = `<div class="level-up-text">🎊 LV ${lv}!</div>`;
+    document.body.appendChild(overlay);
+    setTimeout(() => overlay.remove(), 3500);
+  }
+
+  function equipFromInv(idx) {
+    const me = getMe();
+    const rpg = getRpg(me);
+    const itemId = rpg.inventory[idx];
+    const item = ITEMS.find(i => i.id === itemId);
+    if (!item) return;
+    // 把現有同 slot 裝備丟回背包
+    const cur = rpg.equipment[item.slot];
+    if (cur) rpg.inventory.push(cur);
+    rpg.equipment[item.slot] = itemId;
+    rpg.inventory.splice(idx, 1);
+    saveData();
+    renderCharCard();
+    renderEquipment();
+    showToast(`已裝備 ${item.icon} ${item.name}`);
+  }
+  window.equipFromInv = equipFromInv;
+
+  function unequip(slot) {
+    const me = getMe();
+    const rpg = getRpg(me);
+    const cur = rpg.equipment[slot];
+    if (!cur) return;
+    rpg.inventory.push(cur);
+    rpg.equipment[slot] = null;
+    saveData();
+    renderCharCard();
+    renderEquipment();
+  }
+  window.unequip = unequip;
+
+  // ============================================================
+  // 啟動
+  // ============================================================
+  loadData();
+  render();
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+  import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA1dzTX6COdDAab7gojdXaycx7Vr9EydN8",
+    authDomain: "hisiri-mahjong.firebaseapp.com",
+    projectId: "hisiri-mahjong",
+    storageBucket: "hisiri-mahjong.firebasestorage.app",
+    messagingSenderId: "565503631941",
+    appId: "1:565503631941:web:be3c8a762292960527792c"
+  };
+  try {
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const hashParams = new URLSearchParams(location.hash.replace(/^#/, '?'));
+    const ROOM_ID = hashParams.get('room') || localStorage.getItem('mahjong-room-id') || 'shared';
+    localStorage.setItem('mahjong-room-id', ROOM_ID);
+    const docRef = doc(db, 'rooms', ROOM_ID);
+
+    let firstSnapshot = true;
+    let saveTimer = null;
+    window.__firebaseSync = {
+      ready: false,
+      roomId: ROOM_ID,
+      save: (data) => {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(async () => {
+          try {
+            await setDoc(docRef, data);
+            window.__updateSyncStatus?.('☁️ 已同步', 'ok');
+          } catch (e) { console.error(e); window.__updateSyncStatus?.('☁️ 同步失敗', 'err'); }
+        }, 250);
+      }
+    };
+
+    onSnapshot(docRef, async (snap) => {
+      if (firstSnapshot) {
+        firstSnapshot = false;
+        if (!snap.exists()) {
+          const local = window.__getCurrentData?.();
+          if (local) await setDoc(docRef, local);
+          window.__updateSyncStatus?.('☁️ 已連線', 'ok');
+        } else {
+          window.__applyRemote?.(snap.data());
+          window.__updateSyncStatus?.('☁️ 已同步', 'ok');
+        }
+        window.__firebaseSync.ready = true;
+        return;
+      }
+      if (snap.exists()) {
+        window.__applyRemote?.(snap.data());
+        window.__updateSyncStatus?.('☁️ 已同步', 'ok');
+      }
+    }, (err) => {
+      console.error(err);
+      window.__updateSyncStatus?.('☁️ 連線錯誤', 'err');
+    });
+  } catch (e) {
+    console.error(e);
+    window.__updateSyncStatus?.('☁️ 未連線', 'err');
+  }
+</script>
+</body>
+</html>
