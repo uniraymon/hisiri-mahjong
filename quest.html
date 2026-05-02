@@ -1249,7 +1249,7 @@
 
   const STAMINA_MAX = 150;
   const STAMINA_PER_FIGHT = 10;
-  const STAMINA_PER_TICK = 5;     // 每分鐘 +5 體力（過去 +1）
+  const STAMINA_PER_TICK = 4;     // 每分鐘 +4 體力（原本 +5，慢 20%）
   const HP_PER_TICK = 1;
   const MP_PER_TICK = 2;
   const TICK_MS = 60 * 1000;
@@ -1269,14 +1269,14 @@
   const SHOP_ITEMS = (() => {
     const items = [
       // 消耗品
-      { id: 'pot_stam_s', name: '體力藥 (小)', icon: '🧪', desc: '+30 體力',  cost: 50,  type: 'consumable', effect: { stamina: 30 } },
-      { id: 'pot_stam_m', name: '體力藥 (中)', icon: '🍶', desc: '+60 體力',  cost: 90,  type: 'consumable', effect: { stamina: 60 } },
-      { id: 'pot_stam_l', name: '體力藥 (大)', icon: '🍹', desc: '+100 體力', cost: 140, type: 'consumable', effect: { stamina: 100 } },
+      { id: 'pot_stam_s', name: '體力藥 (小)', icon: '🧪', desc: '+30 體力',  cost: 100, type: 'consumable', effect: { stamina: 30 } },
+      { id: 'pot_stam_m', name: '體力藥 (中)', icon: '🍶', desc: '+60 體力',  cost: 180, type: 'consumable', effect: { stamina: 60 } },
+      { id: 'pot_stam_l', name: '體力藥 (大)', icon: '🍹', desc: '+100 體力', cost: 280, type: 'consumable', effect: { stamina: 100 } },
       { id: 'pot_hp_s',   name: '治療藥 (小)', icon: '🍵', desc: 'HP +50%',   cost: 30,  type: 'consumable', effect: { hpRatio: 0.5 } },
       { id: 'pot_hp_l',   name: '治療藥 (大)', icon: '❤️', desc: 'HP 回滿',   cost: 60,  type: 'consumable', effect: { hp: 'full' } },
       { id: 'pot_mp_s',   name: '藍藥 (小)',  icon: '🧙', desc: 'MP +50%',   cost: 50,  type: 'consumable', effect: { mpRatio: 0.5 } },
       { id: 'pot_mp_l',   name: '藍藥 (大)',  icon: '💎', desc: 'MP 回滿',   cost: 120, type: 'consumable', effect: { mp: 'full' } },
-      { id: 'pot_xp',     name: '智慧藥水',   icon: '📚', desc: '+100 XP',   cost: 120, type: 'consumable', effect: { xp: 100 } },
+      { id: 'pot_xp',     name: '智慧藥水',   icon: '📚', desc: '+300 XP',   cost: 120, type: 'consumable', effect: { xp: 300 } },
     ];
     // 每 3 等一階，10 階（Lv 1 / 4 / 7 / 10 / 13 / 16 / 19 / 22 / 25 / 28）
     const levels = [1, 4, 7, 10, 13, 16, 19, 22, 25, 28];
@@ -1518,7 +1518,10 @@
   }
   function generateDropItem(playerLv, opts) {
     const boosted = opts === true || (opts && opts.boosted);
-    const eligible = ITEMS.filter(i => (i.lv || 1) <= playerLv + 2 && (i.lv || 1) >= Math.max(1, playerLv - 5));
+    // 過濾：上限 playerLv+2；下限取靠近的（避免高等級玩家拿不到任何掉落）
+    let eligible = ITEMS.filter(i => (i.lv || 1) <= playerLv + 2 && (i.lv || 1) >= Math.max(1, playerLv - 5));
+    if (eligible.length === 0) eligible = ITEMS.filter(i => (i.lv || 1) <= playerLv + 2);
+    if (eligible.length === 0) eligible = ITEMS.slice(); // 終極 fallback：任何物品
     if (eligible.length === 0) return null;
     const base = eligible[Math.floor(Math.random() * eligible.length)];
     const rarity = rollRarity(boosted);
@@ -2638,7 +2641,7 @@
     const fightBtn = document.getElementById('fightBtn');
     const info = document.getElementById('cooldownInfo');
     if (!info || !fightBtn) return;
-    const canFight = state.stamina >= STAMINA_PER_FIGHT && state.hp > 0;
+    const canFight = !__fightInProgress && state.stamina >= STAMINA_PER_FIGHT && state.hp > 0;
     fightBtn.disabled = !canFight;
     let parts = [`⚡ 體力 ${state.stamina}/${state.staminaMax}`];
     if (state.resting) {
@@ -3023,7 +3026,9 @@
   }
   window.doForage = doForage;
 
+  let __fightInProgress = false;
   function onFight(opts) {
+    if (__fightInProgress) { showToast('⏳ 戰鬥進行中…請稍候'); return; }
     const skipStamina = opts && opts.skipStamina;
     const me = getMe();
     if (!me) return;
@@ -3040,6 +3045,7 @@
 
     // 鎖按鈕，扣體力
     document.getElementById('fightBtn').disabled = true;
+    __fightInProgress = true;
     if (!skipStamina) rpg.stamina -= STAMINA_PER_FIGHT;
 
     const monster = generateMonster(rpg.level);
@@ -3077,6 +3083,7 @@
       if (i >= result.log.length) {
         // 結算
         finalizeFight(me, monster, result, stats);
+        __fightInProgress = false;
         return;
       }
       const entry = result.log[i++];
