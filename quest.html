@@ -1253,6 +1253,13 @@
     return ITEMS.find(i => i.id === id) || SHOP_ITEMS.find(i => i.id === id);
   }
 
+  // 賣價：商店物品 = 原價 40%；其他依等級換算
+  function getSellValue(item) {
+    if (!item) return 0;
+    if (item.cost) return Math.max(5, Math.floor(item.cost * 0.4));
+    return Math.max(8, (item.lv || 1) * 20);
+  }
+
   // 把裝備 lv 轉成 1..10 階（用於紙娃娃 CSS filter 對應）
   // 商店裝備等級：1, 4, 7, 10, 13, 16, 19, 22, 25, 28
   // ITEMS（怪物掉落）等級：1, 2, 3, 4, 5, 7, 8, 12, 18, 20 等不規則 → 用 ceil(lv/3)
@@ -2191,7 +2198,7 @@
       document.getElementById('invGrid').innerHTML = inv.map((id, idx) => {
         const item = findItem(id);
         if (!item) return '';
-        return `<button class="inv-item" onclick="equipFromInv(${idx})">
+        return `<button class="inv-item" onclick="openInvItemActions(${idx})">
           <div class="ii-icon">${item.icon}</div>
           <div class="ii-name">${item.name}</div>
           <div class="ii-stat">${formatItemStats(item)}</div>
@@ -2199,6 +2206,57 @@
       }).join('');
     }
   }
+
+  function openInvItemActions(idx) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const itemId = r.inventory[idx];
+    const item = findItem(itemId);
+    if (!item) return;
+    const sellValue = getSellValue(item);
+    const canEquip = !item.lv || r.level >= item.lv;
+    const html = `
+      <div style="text-align:center; padding:8px 0;">
+        <div style="font-size:52px; margin-bottom:4px;">${item.icon}</div>
+        <div style="font-weight:700; font-size:16px; color:#7c3aed;">${escapeHtml(item.name)}</div>
+        <div style="font-size:12px; color:#8b6f9b; margin-top:4px;">
+          ${item.lv ? `Lv ${item.lv} 需求　·　` : ''}${formatItemStats(item)}
+        </div>
+        ${!canEquip ? `<div style="font-size:11px; color:#dc2626; margin-top:6px;">🔒 等級不足無法裝備</div>` : ''}
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:14px;">
+          <button class="btn btn-primary" onclick="equipFromInvAndClose(${idx})" ${canEquip ? '' : 'disabled'}>裝備</button>
+          <button class="btn btn-warning" onclick="sellInvItem(${idx})">賣掉（🪙 ${sellValue}）</button>
+        </div>
+        <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:6px;">取消</button>
+      </div>
+    `;
+    showModal('🎒 ' + item.name, html);
+  }
+  window.openInvItemActions = openInvItemActions;
+
+  function equipFromInvAndClose(idx) {
+    hideModal();
+    equipFromInv(idx);
+  }
+  window.equipFromInvAndClose = equipFromInvAndClose;
+
+  function sellInvItem(idx) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const itemId = r.inventory[idx];
+    const item = findItem(itemId);
+    if (!item) return;
+    const value = getSellValue(item);
+    r.inventory.splice(idx, 1);
+    refundCoins(me.id, value); // 退錢 = 餘額增加
+    saveData();
+    hideModal();
+    renderCharCard();
+    renderEquipment();
+    renderShop();
+    showToast(`💰 賣了 ${item.icon} ${item.name} +${value} 鵝鵝幣`);
+  }
+  window.sellInvItem = sellInvItem;
   function formatItemStats(item) {
     const parts = [];
     if (item.atk) parts.push(`ATK+${item.atk}`);
