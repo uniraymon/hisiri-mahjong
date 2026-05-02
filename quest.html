@@ -884,6 +884,42 @@
     font-weight: 600;
   }
 
+  /* 試煉戰場（多怪戰鬥） */
+  .trial-arena {
+    background: linear-gradient(135deg, #f3e8ff, #e9d5ff);
+    border: 2px solid #a78bfa;
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 8px;
+    display: grid;
+    grid-template-columns: 1fr auto 2fr;
+    gap: 8px;
+    align-items: center;
+  }
+  .trial-arena .t-player, .trial-arena .t-monster {
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 10px;
+    padding: 6px;
+    text-align: center;
+  }
+  .trial-arena .t-monster { font-size: 11px; }
+  .trial-arena .t-monsters {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .trial-arena .t-vs { font-size: 22px; text-align: center; }
+  .trial-arena .t-icon { font-size: 32px; line-height: 1; }
+  .trial-arena .t-monster .t-icon { font-size: 24px; }
+  .trial-arena .t-name { font-size: 11px; font-weight: 700; color: #5b3d62; margin: 2px 0; }
+  .trial-arena .t-hp { height: 6px; background: #e9d5ff; border-radius: 3px; overflow: hidden; margin-top: 2px; }
+  .trial-arena .t-hp-fill { height: 100%; background: linear-gradient(90deg, #ef4444, #dc2626); transition: width 0.4s; }
+  .trial-arena .t-mfill { background: linear-gradient(90deg, #f87171, #b91c1c); }
+  .trial-arena .t-hp-text { font-size: 9px; color: #6b7280; margin-top: 1px; }
+  .trial-arena .t-mp { height: 4px; background: #dbeafe; border-radius: 2px; overflow: hidden; margin-top: 2px; }
+  .trial-arena .t-mp-fill { height: 100%; background: linear-gradient(90deg, #93c5fd, #3b82f6); }
+  .trial-arena .t-mp-text { font-size: 9px; color: #1e40af; margin-top: 1px; }
+
   /* Boss 排隊 */
   .boss-queue {
     background: rgba(0,0,0,0.25);
@@ -1371,6 +1407,11 @@
     </div>
 
     <div class="card">
+      <h2><span>🌌 試煉戰場</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（最多 3 隻怪物同時上場、AOE / 多目標技能）</span></h2>
+      <div id="trialBody"></div>
+    </div>
+
+    <div class="card">
       <h2><span>🎒 日常</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（用體力換錢與物品）</span></h2>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
         <button class="btn btn-primary" id="workBtn" style="background:linear-gradient(135deg,#fde68a,#f59e0b); box-shadow:0 4px 0 #d97706;" onclick="doWork()">💼 打工 (15 ⚡)</button>
@@ -1487,10 +1528,12 @@
         { id: 'a_god_arrow',   name: '神之矢',   icon: '🌟', unlockLv: 12, cooldown: 7, mpCost: 32, type: 'damage', mult: 2.8, alwaysCrit: true },
         { id: 'a_multishot',   name: '多重射擊', icon: '🏹', unlockLv: 5,  cooldown: 4, mpCost: 16, type: 'damage', mult: 1.8 },
         { id: 'a_precise_shot',name: '精準射擊', icon: '🎯', unlockLv: 1,  cooldown: 3, mpCost: 12, type: 'damage', mult: 1.4, alwaysCrit: true },
-        // 弓手 MP regen：靠專注補魔
         { id: 'a_concentrate', name: '集中',     icon: '🧘', unlockLv: 4,  cooldown: 4, mpCost: 0,  type: 'heal', mpPct: 0.20 },
         { id: 'a_barrage',     name: '連射',     icon: '🌊', unlockLv: 8,  cooldown: 5, mpCost: 28, type: 'damage', mult: 2.4 },
         { id: 'a_lethal_aim',  name: '致命瞄準', icon: '💀', unlockLv: 14, cooldown: 8, mpCost: 40, type: 'damage', mult: 3.5, alwaysCrit: true, ignoreDef: true },
+        // ⭐ 多目標：雙箭齊發、毒箭
+        { id: 'a_twin_shot',   name: '雙箭齊發', icon: '🏹', unlockLv: 6,  cooldown: 4, mpCost: 24, type: 'damage', mult: 1.5, targetCount: 2 },
+        { id: 'a_poison_arrow',name: '毒箭',     icon: '🐍', unlockLv: 9,  cooldown: 5, mpCost: 26, type: 'damage', mult: 1.2, applyStatus: { type: 'poison', turns: 3, dmg: 12, chance: 0.7 } },
       ],
       skillTree: [
         { id: 'a_s0', name: '神之矢強化',   icon: '🌟', desc: '+10% 神之矢傷害',   maxLevel: 5, effect: 'skill0Pct', per: 0.10 },
@@ -1519,13 +1562,15 @@
       critBonus: 0.18,
       skills: [
         { id: 'm_meteor',         name: '隕石術',     icon: '☄️', unlockLv: 12, cooldown: 7, mpCost: 50, type: 'damage', flat: 120, perLv: 5, ignoreDef: true },
-        { id: 'm_ice_lance',      name: '冰錐術',     icon: '❄️', unlockLv: 5,  cooldown: 4, mpCost: 20, type: 'damage', mult: 1.6, alwaysCrit: true },
+        { id: 'm_ice_lance',      name: '冰錐術',     icon: '❄️', unlockLv: 5,  cooldown: 4, mpCost: 20, type: 'damage', mult: 1.6, alwaysCrit: true, applyStatus: { type: 'paralyze', turns: 1, chance: 0.25 } },
         { id: 'm_fireball',       name: '火球術',     icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 25, type: 'damage', flat: 50, perLv: 3, ignoreDef: true },
-        // 法師核心：法力湧泉（MP regen），沒這個 MP 一下就用光
         { id: 'm_mana_spring',    name: '法力湧泉',   icon: '💧', unlockLv: 3,  cooldown: 4, mpCost: 0,  type: 'heal', mpPct: 0.30 },
         { id: 'm_chain_lightning',name: '連環閃電',   icon: '⚡', unlockLv: 8,  cooldown: 5, mpCost: 35, type: 'damage', flat: 85, perLv: 4, ignoreDef: true },
         { id: 'm_arcane_shield',  name: '魔力護盾',   icon: '🛡️', unlockLv: 9,  cooldown: 6, mpCost: 30, type: 'heal', healPct: 0.20 },
         { id: 'm_destruction',    name: '毀滅之怒',   icon: '💀', unlockLv: 16, cooldown: 9, mpCost: 65, type: 'damage', flat: 220, perLv: 8, ignoreDef: true },
+        // ⭐ 全體 AOE：火焰風暴 / 毒霧
+        { id: 'm_firestorm',      name: '火焰風暴',   icon: '🌋', unlockLv: 11, cooldown: 7, mpCost: 55, type: 'damage', flat: 75, perLv: 4, ignoreDef: true, targetCount: 'all' },
+        { id: 'm_poison_cloud',   name: '毒霧',       icon: '☠️', unlockLv: 7,  cooldown: 6, mpCost: 30, type: 'damage', flat: 30, perLv: 2, ignoreDef: true, targetCount: 'all', applyStatus: { type: 'poison', turns: 4, dmg: 10, chance: 0.85 } },
       ],
       skillTree: [
         { id: 'm_s0', name: '隕石術強化', icon: '☄️', desc: '+10% 隕石術傷害', maxLevel: 5, effect: 'skill0Pct', per: 0.10 },
@@ -1557,10 +1602,12 @@
         { id: 'p_judgment',  name: '審判',     icon: '⚖️', unlockLv: 12, cooldown: 7, mpCost: 38, type: 'damage', mult: 2.5, alwaysCrit: true },
         { id: 'p_holy_slash',name: '聖光斬',   icon: '✝️', unlockLv: 5,  cooldown: 4, mpCost: 22, type: 'damage', mult: 1.6, healCaster: 0.05 },
         { id: 'p_holy_heal', name: '神聖治癒', icon: '✨', unlockLv: 1,  cooldown: 5, mpCost: 30, type: 'heal', healPct: 0.3 },
-        // 聖騎 MP regen：祈禱
         { id: 'p_pray',      name: '祈禱',     icon: '🙏', unlockLv: 3,  cooldown: 4, mpCost: 0,  type: 'heal', mpPct: 0.25, healPct: 0.05 },
         { id: 'p_shelter',   name: '庇護術',   icon: '🤲', unlockLv: 7,  cooldown: 6, mpCost: 25, type: 'heal', healPct: 0.40 },
         { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 10, cooldown: 5, mpCost: 35, type: 'damage', mult: 2.0, alwaysCrit: true, healCaster: 0.10 },
+        // ⭐ 多目標：神聖光波（兩個敵人）/ 神之拳（兩個敵人 + 麻痺）
+        { id: 'p_holy_wave', name: '神聖光波', icon: '🌟', unlockLv: 6,  cooldown: 5, mpCost: 30, type: 'damage', mult: 1.4, healCaster: 0.06, targetCount: 2 },
+        { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 11, cooldown: 6, mpCost: 35, type: 'damage', mult: 1.7, targetCount: 2, applyStatus: { type: 'paralyze', turns: 1, chance: 0.4 } },
       ],
       skillTree: [
         { id: 'p_s0', name: '審判強化',   icon: '⚖️', desc: '+10% 審判傷害',   maxLevel: 5, effect: 'skill0Pct', per: 0.10 },
@@ -1929,9 +1976,11 @@
         ];
       case 'archer':
         return [
-          { judgeId: 1300, param: 25, skillId: 'a_lethal_aim' },     // 敵血 ≤ 25% → 致命瞄準
-          { judgeId: 1300, param: 40, skillId: 'a_god_arrow' },      // 敵血 ≤ 40% → 神之矢
-          { judgeId: 1201, param: 25, skillId: 'a_concentrate' },    // MP ≤ 25% → 集中（純 MP regen）
+          { judgeId: 1300, param: 25, skillId: 'a_lethal_aim' },
+          { judgeId: 1300, param: 40, skillId: 'a_god_arrow' },
+          { judgeId: 1201, param: 25, skillId: 'a_concentrate' },
+          { judgeId: 1000, param: 0,  skillId: 'a_twin_shot' },      // 雙箭齊發（2 目標）
+          { judgeId: 1000, param: 0,  skillId: 'a_poison_arrow' },   // 毒箭（中毒）
           { judgeId: 1000, param: 0,  skillId: 'a_barrage' },
           { judgeId: 1000, param: 0,  skillId: 'a_multishot' },
           { judgeId: 1000, param: 0,  skillId: 'a_precise_shot' },
@@ -1939,10 +1988,12 @@
         ];
       case 'mage':
         return [
-          { judgeId: 1201, param: 25, skillId: 'm_mana_spring' },    // MP ≤ 25% → 法力湧泉（必須先補 MP）
-          { judgeId: 1101, param: 40, skillId: 'm_arcane_shield' },  // 自身 HP ≤ 40% → 魔力護盾
-          { judgeId: 1300, param: 20, skillId: 'm_destruction' },    // 敵血 ≤ 20% → 毀滅之怒
-          { judgeId: 1300, param: 50, skillId: 'm_meteor' },         // 敵血 ≤ 50% → 隕石術
+          { judgeId: 1201, param: 25, skillId: 'm_mana_spring' },
+          { judgeId: 1101, param: 40, skillId: 'm_arcane_shield' },
+          { judgeId: 1300, param: 20, skillId: 'm_destruction' },
+          { judgeId: 1000, param: 0,  skillId: 'm_firestorm' },      // 火焰風暴（AOE）
+          { judgeId: 1000, param: 0,  skillId: 'm_poison_cloud' },   // 毒霧（AOE + 中毒）
+          { judgeId: 1300, param: 50, skillId: 'm_meteor' },
           { judgeId: 1000, param: 0,  skillId: 'm_chain_lightning' },
           { judgeId: 1000, param: 0,  skillId: 'm_ice_lance' },
           { judgeId: 1000, param: 0,  skillId: 'm_fireball' },
@@ -1950,10 +2001,12 @@
         ];
       case 'paladin':
         return [
-          { judgeId: 1101, param: 35, skillId: 'p_shelter' },        // 自身 HP ≤ 35% → 庇護術（大補）
-          { judgeId: 1101, param: 60, skillId: 'p_holy_heal' },      // 自身 HP ≤ 60% → 神聖治癒
-          { judgeId: 1201, param: 25, skillId: 'p_pray' },           // MP ≤ 25% → 祈禱（MP regen）
-          { judgeId: 1300, param: 30, skillId: 'p_judgment' },       // 敵血 ≤ 30% → 審判
+          { judgeId: 1101, param: 35, skillId: 'p_shelter' },
+          { judgeId: 1101, param: 60, skillId: 'p_holy_heal' },
+          { judgeId: 1201, param: 25, skillId: 'p_pray' },
+          { judgeId: 1300, param: 30, skillId: 'p_judgment' },
+          { judgeId: 1000, param: 0,  skillId: 'p_godfist' },        // 神之拳（2 目標 + 麻痺）
+          { judgeId: 1000, param: 0,  skillId: 'p_holy_wave' },      // 神聖光波（2 目標 + 自癒）
           { judgeId: 1000, param: 0,  skillId: 'p_holy_smite' },
           { judgeId: 1000, param: 0,  skillId: 'p_holy_slash' },
           { judgeId: 1000, param: 0,  skillId: 'basic' },
@@ -2949,6 +3002,11 @@
       player.rpg.actionPattern = getDefaultActionPattern(player.rpg.class);
       player.rpg.actionPatternV2 = true;
     }
+    // V3：加入多目標 / AOE / 狀態技能後再升級一次
+    if (!player.rpg.actionPatternV3 && player.rpg.class) {
+      player.rpg.actionPattern = getDefaultActionPattern(player.rpg.class);
+      player.rpg.actionPatternV3 = true;
+    }
     // 補發：以前遇過綠茶但還沒拿到對應指南書的，現在補回去
     if ((player.rpg.metGreenTea || 0) > 0) {
       const before = player.rpg.greenTeaGuidesGranted.length;
@@ -3649,6 +3707,337 @@
   }
 
   // ============================================================
+  // 異常狀態系統 + 多目標戰鬥引擎（試煉戰場用）
+  // ============================================================
+  // 狀態結構：{ type: 'poison'|'paralyze', turns, dmg }
+  // poison: 每回合扣 dmg；paralyze: 玩家回合 30% 機率跳過、怪物 100% 跳過
+  function applyStatus(target, status) {
+    target.statuses = target.statuses || [];
+    // 同類覆蓋（取較長 turns）
+    const existing = target.statuses.find(s => s.type === status.type);
+    if (existing) {
+      existing.turns = Math.max(existing.turns, status.turns);
+      existing.dmg = Math.max(existing.dmg || 0, status.dmg || 0);
+    } else {
+      target.statuses.push({ ...status });
+    }
+  }
+  function tickStatuses(target) {
+    if (!target.statuses || target.statuses.length === 0) return [];
+    const events = []; // [{type, dmg}]
+    for (const s of target.statuses) {
+      if (s.type === 'poison' && s.dmg) {
+        events.push({ type: 'poison', dmg: s.dmg });
+      }
+      s.turns = (s.turns || 0) - 1;
+    }
+    target.statuses = target.statuses.filter(s => s.turns > 0);
+    return events;
+  }
+  function hasStatus(target, type) {
+    return (target.statuses || []).some(s => s.type === type);
+  }
+  function statusEmoji(type) {
+    return type === 'poison' ? '☠️' : type === 'paralyze' ? '⚡' : '✨';
+  }
+  function statusLabel(type) {
+    return type === 'poison' ? '中毒' : type === 'paralyze' ? '麻痺' : type;
+  }
+
+  // 多目標戰鬥（最多 N 隻怪物 vs 玩家），用在「試煉戰場」
+  function autoFightMulti(player, monsters) {
+    const log = [];
+    const cls = CLASSES[player.rpg.class];
+    const stats = computeStats(player);
+    const bonus = computeSkillBonuses(player);
+    const abil  = computeAbilityBonuses(player);
+    const passive = computePassiveBonuses(player);
+    const effectiveSpd = stats.spd + (passive.spd || 0);
+    const setB = stats.setBonuses || {};
+    const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0) + (setB.critChance || 0);
+    const critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
+    const regenPer = (cls.regenPer || 0) + (bonus.regen || 0);
+
+    let pHp = Math.min(player.rpg.hp ?? stats.maxHp, stats.maxHp);
+    let pMp = Math.min(player.rpg.mp ?? stats.maxMp, stats.maxMp);
+    const playerObj = { statuses: [] };
+
+    // 怪物列表，每隻獨立 ATB gauge
+    const mList = monsters.map((m, i) => ({
+      ...m,
+      idx: i,
+      hp: m.hp,
+      maxHp: m.maxHp || m.hp,
+      gauge: 0,
+      statuses: [],
+      alive: true,
+    }));
+
+    const skills = cls.skills || [];
+    const skillById = Object.fromEntries(skills.map((s, i) => [s.id, { skill: s, idx: i }]));
+    const nextActionForSkill = {};
+    const ruleUseCount = {};
+    const actionPattern = (player.rpg.actionPattern && player.rpg.actionPattern.length)
+      ? player.rpg.actionPattern
+      : getDefaultActionPattern(player.rpg.class);
+
+    const ATB_THRESHOLD = 100;
+    const pSpd = Math.max(1, effectiveSpd);
+    let pGauge = 0;
+
+    log.push({ type: 'system', text: `═══ ⚔️ 試煉戰場 ═══` });
+    log.push({ type: 'system', text: `${player.name} VS ${monsters.map(m => m.icon + m.name).join(' / ')}` });
+    log.push({ type: 'system', text: `🌬 你 SPD ${pSpd}　·　${monsters.map(m => m.name + ' ' + m.spd).join(' / ')}` });
+
+    let round = 0, playerActions = 0, critCount = 0;
+    const hpsSnapshot = () => ({ player: pHp, mp: pMp, monsters: mList.map(m => Math.max(0, m.hp)) });
+
+    while (pHp > 0 && mList.some(m => m.alive) && round < 120) {
+      // ATB 推進
+      const aliveM = mList.filter(m => m.alive);
+      const pNeed = Math.max(0, ATB_THRESHOLD - pGauge);
+      const pTime = pNeed / pSpd;
+      const mTimes = aliveM.map(m => Math.max(0, ATB_THRESHOLD - m.gauge) / Math.max(1, m.spd));
+      const dt = Math.min(pTime, ...(mTimes.length ? mTimes : [Infinity]));
+      pGauge += dt * pSpd;
+      aliveM.forEach(m => m.gauge += dt * m.spd);
+
+      // 決定動作者：所有 gauge ≥ 100 的中，最大者；同分玩家先
+      let actor = null; // 'player' or monster ref
+      let bestG = -1;
+      if (pGauge >= ATB_THRESHOLD - 0.001) { actor = 'player'; bestG = pGauge; }
+      for (const m of aliveM) {
+        if (m.gauge >= ATB_THRESHOLD - 0.001 && m.gauge > bestG) {
+          actor = m; bestG = m.gauge;
+        }
+      }
+      if (!actor) continue;
+
+      round++;
+
+      if (actor === 'player') {
+        pGauge -= ATB_THRESHOLD;
+        playerActions++;
+
+        // 自身狀態 tick（中毒等）
+        const evs = tickStatuses(playerObj);
+        for (const ev of evs) {
+          pHp = Math.max(0, pHp - ev.dmg);
+          log.push({ type: 'monster', text: `回合 ${round}：${player.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${ev.dmg} HP`, hp: hpsSnapshot() });
+        }
+        if (pHp <= 0) break;
+
+        // 麻痺 → 30% 機率跳過行動
+        if (hasStatus(playerObj, 'paralyze') && Math.random() < 0.3) {
+          log.push({ type: 'system', text: `回合 ${round}：${player.name} 麻痺，無法行動！`, hp: hpsSnapshot() });
+          continue;
+        }
+        // 自癒
+        if (regenPer > 0 && pHp < stats.maxHp) {
+          const heal = Math.max(1, Math.round(stats.maxHp * regenPer));
+          pHp = Math.min(stats.maxHp, pHp + heal);
+          log.push({ type: 'player', text: `回合 ${round}：自癒 +${heal} HP`, hp: hpsSnapshot() });
+        }
+
+        // 評估規則表（用最低血敵人當「敵 HP」context）
+        const lowHpM = aliveM.slice().sort((a, b) => a.hp - b.hp)[0];
+        const judgeCtx = {
+          pHp, maxHp: stats.maxHp,
+          pMp, maxMp: stats.maxMp,
+          mHp: lowHpM ? lowHpM.hp : 0, maxMHp: lowHpM ? lowHpM.maxHp : 1,
+          aliveCount: aliveM.length,
+          playerActions,
+          ruleUseCount,
+        };
+        let useSkill = null, useSkillIdx = -1, usedRuleIdx = -1;
+        for (let r = 0; r < actionPattern.length; r++) {
+          const rule = actionPattern[r];
+          if (!rule || !evaluateJudge(rule.judgeId, rule.param, judgeCtx, r)) continue;
+          if (rule.skillId === 'basic') { useSkill = null; useSkillIdx = -1; usedRuleIdx = r; break; }
+          const sInfo = skillById[rule.skillId];
+          if (!sInfo) continue;
+          const s = sInfo.skill;
+          if ((s.unlockLv || 1) > (player.rpg.level || 1)) continue;
+          if (playerActions < (nextActionForSkill[s.id] || 0)) continue;
+          const effMpCost = Math.round((s.mpCost || 0) * (1 - (passive.mpDiscount || 0)));
+          if (pMp < effMpCost) continue;
+          if (s.hpCost) {
+            const need = Math.max(1, Math.round(stats.maxHp * s.hpCost));
+            if (pHp <= need) continue;
+          }
+          if (s.hpCostFlat) { if (pHp <= s.hpCostFlat) continue; }
+          useSkill = s; useSkillIdx = sInfo.idx; usedRuleIdx = r; break;
+        }
+        if (usedRuleIdx >= 0) ruleUseCount[usedRuleIdx] = (ruleUseCount[usedRuleIdx] || 0) + 1;
+
+        // 決定目標
+        const targetCount = useSkill ? (useSkill.targetCount === 'all' ? aliveM.length : (useSkill.targetCount || 1)) : 1;
+        const targets = aliveM.slice().sort((a, b) => a.hp - b.hp).slice(0, targetCount);
+
+        if (useSkill) {
+          const skill = useSkill;
+          const effMpCost = Math.round((skill.mpCost || 0) * (1 - (passive.mpDiscount || 0)));
+          pMp -= effMpCost;
+          let hpPaid = 0;
+          if (skill.hpCost) {
+            hpPaid = Math.max(1, Math.round(stats.maxHp * skill.hpCost));
+            pHp = Math.max(1, pHp - hpPaid);
+          }
+          if (skill.hpCostFlat) { hpPaid += skill.hpCostFlat; pHp = Math.max(1, pHp - skill.hpCostFlat); }
+          nextActionForSkill[skill.id] = playerActions + skill.cooldown;
+          const costParts = [];
+          if (effMpCost > 0) costParts.push(`-${effMpCost} MP`);
+          if (hpPaid > 0)    costParts.push(`-${hpPaid} HP`);
+          const costStr = costParts.length ? `（${costParts.join('，')}）` : '';
+
+          if (skill.type === 'damage') {
+            const isFlat = skill.flat != null;
+            const isMagic = isFlat || skill.magic;
+            // 對每個目標各打一發（不分散傷害）
+            const hits = [];
+            for (const tgt of targets) {
+              let dmg;
+              if (isFlat) {
+                dmg = (skill.flat + (bonus.skillFlat || 0) + (abil.skillFlat || 0)) + (skill.perLv || 0) * (player.rpg.level || 1);
+                if (!skill.ignoreDef) dmg -= Math.floor(tgt.def / 2);
+              } else {
+                dmg = stats.atk * (skill.mult || 1) - Math.floor(tgt.def / 2);
+              }
+              const perSkillKey = `skill${useSkillIdx}Pct`;
+              dmg *= (1 + (bonus[perSkillKey] || 0));
+              dmg *= (1 + (bonus.skillDmgPct || 0));
+              if (isMagic) dmg *= (1 + (passive.flatPct || 0));
+              else         dmg *= (1 + (passive.physPct || 0));
+              if (isMagic && tgt.ability?.type === 'magicResist') dmg *= (1 - tgt.ability.resist);
+              if (!isMagic && tgt.ability?.type === 'physResist') dmg *= (1 - tgt.ability.resist);
+              const isCrit = skill.alwaysCrit || Math.random() < baseCritChance;
+              dmg *= (0.9 + Math.random() * 0.2);
+              if (isCrit) { dmg *= critMult; critCount++; }
+              dmg = Math.max(1, Math.round(dmg));
+              tgt.hp = Math.max(0, tgt.hp - dmg);
+              if (tgt.hp <= 0) tgt.alive = false;
+              hits.push({ tgt, dmg, isCrit });
+              // 套用狀態
+              if (skill.applyStatus && Math.random() < (skill.applyStatus.chance || 1)) {
+                applyStatus(tgt, skill.applyStatus);
+              }
+            }
+            // 吸血（總和）
+            let extra = '';
+            if (skill.lifesteal && hits.length) {
+              const totalDmg = hits.reduce((s, h) => s + h.dmg, 0);
+              const heal = Math.max(1, Math.round(totalDmg * skill.lifesteal));
+              const before = pHp;
+              pHp = Math.min(stats.maxHp, pHp + heal);
+              const gained = pHp - before;
+              if (gained > 0) extra += ` 🩸+${gained} HP`;
+            }
+            if (skill.healCaster) {
+              const heal = Math.max(1, Math.round(stats.maxHp * skill.healCaster));
+              const before = pHp;
+              pHp = Math.min(stats.maxHp, pHp + heal);
+              const gained = pHp - before;
+              if (gained > 0) extra += ` 💚+${gained} HP`;
+            }
+            const targetSummary = hits.map(h => `${h.tgt.icon}${h.tgt.name} -${h.dmg}${h.isCrit ? '【爆】' : ''}`).join(' / ');
+            log.push({
+              type: 'crit-player',
+              text: `回合 ${round}：${skill.icon} ${skill.name}${isMagic ? '【魔攻】' : ''} → ${targetSummary}${extra}${costStr}`,
+              hp: hpsSnapshot(),
+            });
+            // 套狀態的 log
+            if (skill.applyStatus) {
+              const stuck = hits.filter(h => h.tgt.statuses.find(s => s.type === skill.applyStatus.type));
+              if (stuck.length) {
+                log.push({ type: 'system', text: `${stuck.map(h => h.tgt.name).join(' / ')} 進入 ${statusEmoji(skill.applyStatus.type)}${statusLabel(skill.applyStatus.type)} 狀態`, hp: hpsSnapshot() });
+              }
+            }
+          } else if (skill.type === 'heal') {
+            const gainedParts = [];
+            if (skill.healPct) {
+              const before = pHp;
+              const heal = Math.round(stats.maxHp * skill.healPct * (1 + (bonus.skillHealPct || 0)) * (1 + (passive.healPct || 0)));
+              pHp = Math.min(stats.maxHp, pHp + heal);
+              if (pHp - before > 0) gainedParts.push(`💚+${pHp - before} HP`);
+            }
+            if (skill.mpPct) {
+              const before = pMp;
+              const mpHeal = Math.round(stats.maxMp * skill.mpPct);
+              pMp = Math.min(stats.maxMp, pMp + mpHeal);
+              if (pMp - before > 0) gainedParts.push(`💙+${pMp - before} MP`);
+            }
+            log.push({
+              type: 'player',
+              text: `回合 ${round}：${skill.icon} ${skill.name} ${gainedParts.join(' ') || '無效果'}${costStr}`,
+              hp: hpsSnapshot(),
+            });
+          }
+        } else {
+          // 普攻：打 lowHp 那隻
+          const tgt = targets[0];
+          const isCrit = Math.random() < baseCritChance;
+          let dmg = Math.max(1, stats.atk - Math.floor(tgt.def / 2));
+          dmg *= (0.85 + Math.random() * 0.3);
+          if (isCrit) { dmg *= critMult; critCount++; }
+          if (tgt.ability?.type === 'physResist') dmg *= (1 - tgt.ability.resist);
+          dmg = Math.max(1, Math.round(dmg));
+          tgt.hp = Math.max(0, tgt.hp - dmg);
+          if (tgt.hp <= 0) tgt.alive = false;
+          log.push({
+            type: isCrit ? 'crit-player' : 'player',
+            text: `回合 ${round}：${cls.attackVerb}${isCrit ? '【暴擊】' : ''} → ${tgt.icon}${tgt.name} -${dmg} HP`,
+            hp: hpsSnapshot(),
+          });
+        }
+      } else {
+        // 怪物的回合
+        const m = actor;
+        m.gauge -= ATB_THRESHOLD;
+        // 怪物中毒等狀態 tick
+        const evs = tickStatuses(m);
+        for (const ev of evs) {
+          m.hp = Math.max(0, m.hp - ev.dmg);
+          if (m.hp <= 0) m.alive = false;
+          log.push({ type: 'player', text: `回合 ${round}：${m.icon}${m.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${ev.dmg} HP`, hp: hpsSnapshot() });
+        }
+        if (!m.alive) continue;
+        // 麻痺 → 完全跳過
+        if (hasStatus(m, 'paralyze')) {
+          log.push({ type: 'system', text: `回合 ${round}：${m.icon}${m.name} ⚡麻痺，行動被取消`, hp: hpsSnapshot() });
+          continue;
+        }
+        // 攻擊（含多段）
+        const hits = (m.ability?.type === 'multiHit') ? Math.max(1, m.ability.hits || 2) : 1;
+        const perHitMult = hits === 1 ? 1.0 : (1.3 / hits);
+        for (let h = 0; h < hits; h++) {
+          let dmg = Math.max(1, m.atk - Math.floor(stats.def / 2));
+          dmg *= (0.85 + Math.random() * 0.3);
+          dmg *= perHitMult;
+          dmg *= (1 - (passive.dmgReduction || 0));
+          dmg = Math.max(1, Math.round(dmg));
+          pHp = Math.max(0, pHp - dmg);
+          log.push({
+            type: 'monster',
+            text: `回合 ${round}：${m.icon}${m.name} ${m.verb || '攻擊'}${hits > 1 ? ` (${h+1}/${hits})` : ''} → ${player.name} -${dmg} HP`,
+            hp: hpsSnapshot(),
+          });
+          if (pHp <= 0) break;
+        }
+        if (pHp <= 0) break;
+      }
+    }
+    const won = pHp > 0 && mList.every(m => !m.alive);
+    return {
+      won, fled: false,
+      pHpFinal: Math.max(0, pHp),
+      pMpFinal: pMp,
+      monsters: mList.map(m => ({ id: m.id, name: m.name, icon: m.icon, hp: Math.max(0, m.hp), maxHp: m.maxHp, alive: m.alive, level: m.level, xpDrop: m.xpDrop, goldDrop: m.goldDrop })),
+      maxHp: stats.maxHp, maxMp: stats.maxMp,
+      coinsStolen: 0, critCount, log,
+    };
+  }
+
+  // ============================================================
   // 渲染
   // ============================================================
   function render() {
@@ -3690,6 +4079,7 @@
     renderLeaderboard();
     renderZoneSelector();
     renderActionPattern();
+    renderTrial();
     maybeFlashHelp();
     refreshBugBadge();
     updateStaminaUI();
@@ -5123,6 +5513,237 @@
       state.lastHit = null;
     }
     return state;
+  }
+
+  // ⭐ 試煉戰場：3 隻怪物同時打
+  const TRIAL_STAMINA = 25;
+  let __trialInProgress = false;
+  function generateTrialMonsters(playerLv) {
+    // 用目前所在地區的怪物池，但等級 = 玩家等級
+    const me = getMe();
+    const rpg = me ? getRpg(me) : null;
+    const zoneId = rpg?.currentZone || 'forest';
+    const zone = ZONES.find(z => z.id === zoneId) || ZONES[0];
+    const pool = MONSTERS.filter(m => zone.monsters.includes(m.id));
+    if (pool.length === 0) return [];
+    // 抽 1-3 隻
+    const count = 2 + Math.floor(Math.random() * 2); // 2-3 隻
+    const out = [];
+    for (let i = 0; i < count; i++) {
+      const m = pool[Math.floor(Math.random() * pool.length)];
+      const lv = Math.max(1, playerLv);
+      const k = 1 + (lv - 1) * 0.18;
+      out.push({
+        ...m,
+        level: lv,
+        hp: Math.round(m.hpBase * k * 0.6),
+        maxHp: Math.round(m.hpBase * k * 0.6),
+        atk: Math.round(m.atkBase * k * 0.9),
+        def: Math.round(m.defBase * k * 0.6),
+        spd: Math.round(m.spdBase + lv * 0.4),
+        goldDrop: Math.round(m.goldBase * 0.5 + lv * 1),
+        xpDrop: Math.round((m.xpBase + lv * 6) * 1.3),
+      });
+    }
+    return out;
+  }
+  function renderTrial() {
+    const host = document.getElementById('trialBody');
+    if (!host) return;
+    const me = getMe();
+    if (!me) { host.innerHTML = ''; return; }
+    const rpg = getRpg(me);
+    if (!rpg.class) {
+      host.innerHTML = '<div style="font-size:12px; color:#8b6f9b; padding:8px; text-align:center;">先選職業 ♡</div>';
+      return;
+    }
+    const state = tickRecovery(me);
+    const canEnter = !__trialInProgress && state.stamina >= TRIAL_STAMINA && state.hp > 0;
+    host.innerHTML = `
+      <div style="font-size:12px; color:#5b3d62; padding:6px 10px; background:#f3e8ff; border-radius:8px; margin-bottom:8px; border:1px dashed #c4b5fd;">
+        💡 一次面對 2-3 隻怪物（用目前地區怪物池）<br>
+        花 ${TRIAL_STAMINA} ⚡，獎勵 = 全部怪物 XP+鵝幣相加。法師 / 弓手 / 聖騎可發揮多目標技能！
+      </div>
+      <button class="btn btn-primary" onclick="onTrialFight()" ${canEnter ? '' : 'disabled'} style="background:linear-gradient(135deg,#c4b5fd,#7c3aed); box-shadow:0 4px 0 #5b21b6;">
+        ${__trialInProgress ? '⚔️ 戰鬥中…' : `🌌 進入試煉（${TRIAL_STAMINA} ⚡）`}
+      </button>
+      <div id="trialResult"></div>
+    `;
+  }
+  window.renderTrial = renderTrial;
+
+  async function onTrialFight() {
+    if (__trialInProgress) { showToast('⏳ 戰鬥進行中…'); return; }
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (!rpg.class) return;
+    tickRecovery(me);
+    if (rpg.stamina < TRIAL_STAMINA) { showToast(`⚡ 體力不足（需 ${TRIAL_STAMINA}）`); return; }
+    if (rpg.hp <= 0) { showToast('💀 HP 不足'); return; }
+    rpg.stamina -= TRIAL_STAMINA;
+    __trialInProgress = true;
+
+    const monsters = generateTrialMonsters(rpg.level);
+    if (monsters.length === 0) { __trialInProgress = false; showToast('地區沒有怪物可抽'); return; }
+
+    const stats = computeStats(me);
+    const result = autoFightMulti(me, monsters);
+
+    // 渲染戰鬥場
+    const trialResult = document.getElementById('trialResult');
+    if (!trialResult) { __trialInProgress = false; return; }
+    const arenaHtml = `
+      <div class="trial-arena" id="trialArena">
+        <div class="t-player">
+          <div class="t-icon">${CLASSES[rpg.class].icon}</div>
+          <div class="t-name">${escapeHtml(me.name)} Lv${rpg.level}</div>
+          <div class="t-hp"><div class="t-hp-fill" id="tpHpFill" style="width:${(rpg.hp/stats.maxHp)*100}%"></div></div>
+          <div class="t-hp-text" id="tpHpText">${rpg.hp}/${stats.maxHp}</div>
+          <div class="t-mp"><div class="t-mp-fill" id="tpMpFill" style="width:${(rpg.mp/stats.maxMp)*100}%"></div></div>
+          <div class="t-mp-text" id="tpMpText">MP ${rpg.mp}/${stats.maxMp}</div>
+        </div>
+        <div class="t-vs">⚔️</div>
+        <div class="t-monsters">
+          ${monsters.map((m, i) => `
+            <div class="t-monster" id="tm${i}">
+              <div class="t-icon">${m.icon}</div>
+              <div class="t-name">${escapeHtml(m.name)} Lv${m.level}</div>
+              <div class="t-hp"><div class="t-hp-fill t-mfill" id="tmHpFill${i}" style="width:100%"></div></div>
+              <div class="t-hp-text" id="tmHpText${i}">${m.hp}/${m.maxHp}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div class="battle-log" id="trialLog"></div>
+    `;
+    trialResult.innerHTML = arenaHtml;
+
+    const logEl = document.getElementById('trialLog');
+    let i = 0;
+    const playStep = () => {
+      if (i >= result.log.length) {
+        finalizeTrialFight(me, result, stats, monsters);
+        snapshotLastFight({ name: '試煉戰場', isElite: false }, result);
+        try {
+          const fr = document.getElementById('trialResult');
+          if (fr) {
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-secondary';
+            btn.style.cssText = 'margin-top:8px; padding:6px 10px; font-size:12px; background:#fef2f2; color:#991b1b; border:1px dashed #f87171;';
+            btn.textContent = '🐛 這場有 BUG？回報一下';
+            btn.onclick = () => openBugReport(true);
+            fr.appendChild(btn);
+          }
+        } catch (e) {}
+        __trialInProgress = false;
+        renderTrial();
+        return;
+      }
+      const entry = result.log[i++];
+      const cls = entry.type === 'crit-player' ? 'log-crit'
+        : entry.type === 'player' ? 'log-player'
+        : entry.type === 'monster' ? 'log-monster' : 'log-system';
+      const div = document.createElement('div');
+      div.className = `log-line ${cls}`;
+      div.textContent = entry.text;
+      logEl.appendChild(div);
+      logEl.scrollTop = logEl.scrollHeight;
+      // 更新血條
+      if (entry.hp) {
+        const tpFill = document.getElementById('tpHpFill');
+        const tpText = document.getElementById('tpHpText');
+        const tpMpF = document.getElementById('tpMpFill');
+        const tpMpT = document.getElementById('tpMpText');
+        if (tpFill) tpFill.style.width = (entry.hp.player / stats.maxHp * 100) + '%';
+        if (tpText) tpText.textContent = `${entry.hp.player}/${stats.maxHp}`;
+        if (entry.hp.mp != null && tpMpF) {
+          tpMpF.style.width = (entry.hp.mp / stats.maxMp * 100) + '%';
+          tpMpT.textContent = `MP ${entry.hp.mp}/${stats.maxMp}`;
+        }
+        if (Array.isArray(entry.hp.monsters)) {
+          entry.hp.monsters.forEach((mh, idx) => {
+            const f = document.getElementById('tmHpFill' + idx);
+            const t = document.getElementById('tmHpText' + idx);
+            if (f) f.style.width = (mh / monsters[idx].maxHp * 100) + '%';
+            if (t) t.textContent = `${mh}/${monsters[idx].maxHp}`;
+          });
+        }
+      }
+      setTimeout(playStep, 450);
+    };
+    playStep();
+  }
+  window.onTrialFight = onTrialFight;
+
+  function finalizeTrialFight(player, result, stats, monsters) {
+    const rpg = getRpg(player);
+    rpg.hp = result.pHpFinal;
+    rpg.mp = result.pMpFinal;
+    if (result.critCount) rpg.critCount = (rpg.critCount || 0) + result.critCount;
+    let rewardHtml = '';
+    if (result.won) {
+      rpg.fightsWon = (rpg.fightsWon || 0) + 1;
+      let totalXp = 0, totalGold = 0;
+      for (const m of monsters) { totalXp += m.xpDrop || 0; totalGold += m.goldDrop || 0; }
+      rpg.xp = (rpg.xp || 0) + totalXp;
+      rpg.totalGold = (rpg.totalGold || 0) + totalGold;
+      const mpBack = Math.round(stats.maxMp * 0.25);
+      rpg.mp = Math.min(stats.maxMp, rpg.mp + mpBack);
+      refundCoins(player.id, totalGold);
+      // 機率掉裝（多怪 → 多次 roll）
+      const drops = [];
+      for (let i = 0; i < monsters.length; i++) {
+        const drop = rollItemDrop(rpg.level, {});
+        if (drop) { rpg.inventory = rpg.inventory || []; rpg.inventory.push(drop); drops.push(drop); }
+      }
+      let leveledUp = 0;
+      while (rpg.xp >= xpForLevel(rpg.level)) {
+        rpg.xp -= xpForLevel(rpg.level);
+        rpg.level += 1;
+        rpg.skillPoints = (rpg.skillPoints || 0) + POINTS_PER_LEVEL.skill;
+        rpg.abilityPoints = (rpg.abilityPoints || 0) + POINTS_PER_LEVEL.ability;
+        leveledUp++;
+      }
+      if (leveledUp) {
+        const ns = computeStats(player);
+        rpg.hp = ns.maxHp; rpg.mp = ns.maxMp; rpg.deathAt = null;
+      }
+      rewardHtml = `
+        <div class="reward-list" style="background:linear-gradient(135deg,#f3e8ff,#e9d5ff); border-color:#a78bfa;">
+          <div class="rl-title" style="color:#5b21b6;">🎉 試煉勝利！</div>
+          <div class="rl-item">⭐ +${totalXp} XP　·　🪙 +${totalGold} 鵝鵝幣</div>
+          ${drops.map(d => `<div class="rl-item">${d.icon} ${d.name}</div>`).join('')}
+          ${leveledUp ? `<div style="margin-top:8px; color:#7c3aed; font-weight:700;">🎊 升級到 Lv ${rpg.level}！</div>` : ''}
+        </div>
+      `;
+    } else {
+      rpg.fightsLost = (rpg.fightsLost || 0) + 1;
+      if ((rpg.level || 1) <= 4) {
+        const ns = computeStats(player);
+        rpg.hp = ns.maxHp; rpg.deathAt = null;
+        rewardHtml = `
+          <div class="reward-list" style="background:#fef9c3; border-color:#fde047;">
+            <div class="rl-title" style="color:#a16207;">😭 試煉失敗</div>
+            <div class="rl-item">🍀 新手保護啟動：HP 已自動回滿</div>
+          </div>
+        `;
+      } else {
+        rpg.hp = 0;
+        rpg.deathAt = Date.now();
+        rewardHtml = `
+          <div class="reward-list reward-loss">
+            <div class="rl-title">😭 試煉失敗</div>
+            <div class="rl-item">💀 進入休息：10 分鐘後恢復到 50% HP</div>
+          </div>
+        `;
+      }
+    }
+    document.getElementById('trialResult').insertAdjacentHTML('beforeend', rewardHtml);
+    saveData();
+    renderCharCard();
+    renderEquipment();
+    renderRpgStats();
+    updateStaminaUI();
   }
 
   function renderWorldBoss() {
