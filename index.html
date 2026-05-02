@@ -1713,7 +1713,7 @@
     const minMoney = Math.min(...myMoney);
     const maxScore = Math.max(...records.map(r => r.score));
     const minScore = Math.min(...records.map(r => r.score));
-    const sumStats = getStats(records);
+    const sumStats = getStats(records, p);
     const hasStats = (sumStats.totalRiichi + sumStats.totalRon + sumStats.totalTsumo + sumStats.totalHouju) > 0;
 
     // 對戰分析 - 只算同桌過的
@@ -1734,7 +1734,7 @@
     const bestVs = vsStats[0];
     const worstVs = vsStats[vsStats.length - 1];
 
-    const achievements = calcAchievements(records);
+    const achievements = calcAchievements(records, p);
     const unlockedCount = achievements.filter(a => a.unlocked).length;
     const titleObj = getDisplayTitle(p, records);
     const currentTitleId = titleObj.id;
@@ -2058,9 +2058,30 @@
     { id: 'agari_50',  cat: '胡牌總數', icon: '🃏', name: '胡牌好手', title: '胡牌好手', desc: '胡牌 50 次（榮+摸）',  check: s => s.totalAgari >= 50 },
     { id: 'agari_100', cat: '胡牌總數', icon: '🀄', name: '胡牌大師', title: '胡牌大師', desc: '胡牌 100 次',          check: s => s.totalAgari >= 100 },
     { id: 'agari_200', cat: '胡牌總數', icon: '👑', name: '胡牌之神', title: '胡牌之神', desc: '胡牌 200 次',          check: s => s.totalAgari >= 200 },
+    // 冒險島（quest.html）
+    { id: 'quest_class',     cat: '冒險島', icon: '🎭', name: '冒險開始',   title: '冒險者',     desc: '在冒險島選擇職業',           check: s => !!s.rpgClass },
+    { id: 'quest_lv5',       cat: '冒險島', icon: '🌱', name: '初出茅廬',   title: '初出茅廬',   desc: '冒險島達到 Lv 5',           check: s => s.rpgLevel >= 5 },
+    { id: 'quest_lv10',      cat: '冒險島', icon: '⚔️', name: '熟練冒險者', title: '熟練冒險者', desc: '冒險島達到 Lv 10',          check: s => s.rpgLevel >= 10 },
+    { id: 'quest_lv20',      cat: '冒險島', icon: '🦸', name: '戰鬥英雄',   title: '戰鬥英雄',   desc: '冒險島達到 Lv 20',          check: s => s.rpgLevel >= 20 },
+    { id: 'quest_lv30',      cat: '冒險島', icon: '🏆', name: '冒險大師',   title: '冒險大師',   desc: '冒險島達到 Lv 30',          check: s => s.rpgLevel >= 30 },
+    { id: 'quest_loss1',     cat: '冒險島', icon: '💀', name: '塵土的味道', title: '塵土的味道', desc: '在冒險島第一次戰敗',         check: s => s.rpgLosses >= 1 },
+    { id: 'quest_win10',     cat: '冒險島', icon: '💪', name: '連戰連勝',   title: '連戰連勝',   desc: '冒險島累計勝 10 場',         check: s => s.rpgWins >= 10 },
+    { id: 'quest_win50',     cat: '冒險島', icon: '🎖', name: '戰役老兵',   title: '戰役老兵',   desc: '冒險島累計勝 50 場',         check: s => s.rpgWins >= 50 },
+    { id: 'quest_win100',    cat: '冒險島', icon: '🏰', name: '無雙王者',   title: '無雙王者',   desc: '冒險島累計勝 100 場',        check: s => s.rpgWins >= 100 },
+    { id: 'quest_full',      cat: '冒險島', icon: '👕', name: '全副武裝',   title: '全副武裝',   desc: '同時裝備 武器+防具+飾品',     check: s => s.rpgEquippedSlots >= 3 },
+    { id: 'quest_collect10', cat: '冒險島', icon: '🎒', name: '收藏家',     title: '收藏家',     desc: '背包累積 10 件裝備',         check: s => s.rpgInv >= 10 },
+    { id: 'quest_legendary', cat: '冒險島', icon: '🌟', name: '神話戰士',   title: '神話戰士',   desc: '裝備上 Lv 28 神話級裝備',    check: s => s.rpgHasLegendary },
+    // 鵝幣
+    { id: 'coin_100',   cat: '鵝幣', icon: '🪙', name: '幼獸理財', title: '幼獸理財', desc: '累計賺 100 鵝鵝幣',    check: s => s.coinsEarned >= 100 },
+    { id: 'coin_500',   cat: '鵝幣', icon: '💰', name: '小有積蓄', title: '小有積蓄', desc: '累計賺 500 鵝鵝幣',    check: s => s.coinsEarned >= 500 },
+    { id: 'coin_1k',    cat: '鵝幣', icon: '💎', name: '千金鵝',   title: '千金鵝',   desc: '累計賺 1,000 鵝鵝幣',  check: s => s.coinsEarned >= 1000 },
+    { id: 'coin_5k',    cat: '鵝幣', icon: '🏦', name: '鵝鵝銀行', title: '鵝鵝銀行', desc: '累計賺 5,000 鵝鵝幣',  check: s => s.coinsEarned >= 5000 },
+    { id: 'coin_10k',   cat: '鵝幣', icon: '🤑', name: '萬鵝齊發', title: '萬鵝齊發', desc: '累計賺 10,000 鵝鵝幣', check: s => s.coinsEarned >= 10000 },
+    { id: 'spend_500',  cat: '鵝幣', icon: '🛍', name: '愛買鵝',   title: '愛買鵝',   desc: '累計花 500 鵝鵝幣',    check: s => s.coinsSpent >= 500 },
+    { id: 'spend_2000', cat: '鵝幣', icon: '💸', name: '大手筆',   title: '大手筆',   desc: '累計花 2,000 鵝鵝幣',  check: s => s.coinsSpent >= 2000 },
   ];
 
-  function getStats(records) {
+  function getStats(records, player) {
     const myMoney = records.map(r => r.money);
     const myScores = records.map(r => r.score);
     const myRanks = records.map(r => r.rank);
@@ -2085,12 +2106,30 @@
     const totalTsumo  = records.reduce((a, r) => a + (r.tsumo  || 0), 0);
     const totalHouju  = records.reduce((a, r) => a + (r.houju  || 0), 0);
     const totalAgari  = totalRon + totalTsumo;
-    return { games, total, wins, lasts, flews, maxWin, maxLose, avgMoney, winRate, maxStreak, maxLoseStreak, reversal,
-             totalRiichi, totalRon, totalTsumo, totalHouju, totalAgari };
+    // 冒險島 + 鵝幣（player 為選填，沒給就回 0）
+    const rpg = (player && player.rpg) || {};
+    const rpgClass    = rpg.class || null;
+    const rpgLevel    = rpg.level || 0;
+    const rpgWins     = rpg.fightsWon || 0;
+    const rpgLosses   = rpg.fightsLost || 0;
+    const rpgInv      = (rpg.inventory || []).length;
+    const eq = rpg.equipment || {};
+    const rpgEquippedSlots = ['weapon','armor','accessory'].filter(s => eq[s]).length;
+    const rpgHasLegendary = ['weapon','armor','accessory']
+      .some(s => eq[s] && String(eq[s]).endsWith('_28'));
+    const coinsEarned = calcCoinsEarned(records);
+    const coinsSpent  = player ? (player.coinsSpent || 0) : 0;
+    const coinsBalance = coinsEarned - coinsSpent;
+    return {
+      games, total, wins, lasts, flews, maxWin, maxLose, avgMoney, winRate, maxStreak, maxLoseStreak, reversal,
+      totalRiichi, totalRon, totalTsumo, totalHouju, totalAgari,
+      rpgClass, rpgLevel, rpgWins, rpgLosses, rpgInv, rpgEquippedSlots, rpgHasLegendary,
+      coinsEarned, coinsSpent, coinsBalance
+    };
   }
 
-  function calcAchievements(records) {
-    const stats = getStats(records);
+  function calcAchievements(records, player) {
+    const stats = getStats(records, player);
     return ACHIEVEMENTS.map(a => ({ ...a, unlocked: a.check(stats) }));
   }
 
@@ -2104,12 +2143,10 @@
       xp += rankBonus[r.rank] || 0;
       if (r.money > 0) xp += Math.min(50, Math.floor(r.money / 100));
     }
-    const unlockedCount = ACHIEVEMENTS.filter(a => a.check(getStats(records))).length;
+    const player = playerId ? getPlayer(playerId) : null;
+    const unlockedCount = ACHIEVEMENTS.filter(a => a.check(getStats(records, player))).length;
     xp += unlockedCount * 50;
-    if (playerId) {
-      const p = getPlayer(playerId);
-      if (p && typeof p.bonusXp === 'number') xp += p.bonusXp;
-    }
+    if (player && typeof player.bonusXp === 'number') xp += player.bonusXp;
     return xp;
   }
 
@@ -2581,8 +2618,8 @@
   }
 
   // 自動推薦稱號（fallback：玩家未自選或選的稱號目前沒解鎖時）
-  function getAutoTitle(records) {
-    const stats = getStats(records);
+  function getAutoTitle(records, player) {
+    const stats = getStats(records, player);
     if (stats.games === 0) return { icon: '🌸', title: '尚未出戰', id: null };
     if (stats.games < 3) return { icon: '🌱', title: '麻將新手', id: null };
     const lastRate = stats.lasts / stats.games;
@@ -2598,18 +2635,17 @@
 
   function getDisplayTitle(player, records) {
     if (player && player.chosenTitle) {
-      // 先查抽蛋稱號（要在 unlockedTitles 裡）
       const gt = GACHA_TITLES.find(t => t.id === player.chosenTitle);
       if (gt && (player.unlockedTitles || []).includes(gt.id)) {
         return { icon: gt.icon, title: gt.title, id: gt.id, gacha: true };
       }
       const ach = ACHIEVEMENTS.find(a => a.id === player.chosenTitle);
       if (ach) {
-        const stats = getStats(records);
+        const stats = getStats(records, player);
         if (ach.check(stats)) return { icon: ach.icon, title: ach.title, id: ach.id };
       }
     }
-    return getAutoTitle(records);
+    return getAutoTitle(records, player);
   }
 
   // === 互動 ===
@@ -2752,7 +2788,7 @@
     const p = getPlayer(pid);
     if (!p) return;
     const records = getPlayerData(pid);
-    const stats = getStats(records);
+    const stats = getStats(records, p);
     const titleObj = getDisplayTitle(p, records);
     const lvInfo = calcLevel(calcXP(records, pid));
     const winRate = stats.games > 0 ? Math.round(stats.winRate * 100) : 0;
@@ -3309,10 +3345,10 @@
     const player = getPlayer(pid);
     if (!player) return;
     const records = getPlayerData(pid);
-    const stats = getStats(records);
+    const stats = getStats(records, player);
     const all = ACHIEVEMENTS.map(a => ({ ...a, unlocked: a.check(stats) }));
     const unlocked = all.filter(a => a.unlocked);
-    const auto = getAutoTitle(records);
+    const auto = getAutoTitle(records, player);
     const isAutoSelected = !player.chosenTitle || !ACHIEVEMENTS.find(a => a.id === player.chosenTitle && a.check(stats));
 
     document.getElementById('titleModalHeader').innerHTML =
