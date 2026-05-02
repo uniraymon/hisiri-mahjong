@@ -1800,7 +1800,7 @@
       def: Math.round(m.defBase * k * 0.7),
       spd: Math.round(m.spdBase + lv * 0.4),
       goldDrop: Math.round(m.goldBase + lv * 1.8 + Math.random() * lv * 0.6),
-      xpDrop: Math.round(m.xpBase + lv * 4 + Math.random() * lv * 2),
+      xpDrop: Math.round((m.xpBase + lv * 6 + Math.random() * lv * 3) * 2),
     };
   }
   function rollItemDrop(playerLv, monsterLv) {
@@ -2825,8 +2825,8 @@
     state.currentHp = Math.max(0, result.mHpFinal);
     state.damageLog[me.id] = (state.damageLog[me.id] || 0) + dmgDealt;
 
-    // 玩家獲得：傷害 × 0.5 XP / 傷害 × 0.1 鵝鵝幣
-    const xpGain = Math.round(dmgDealt * 0.5);
+    // 玩家獲得：傷害 × 0.8 XP / 傷害 × 0.1 鵝鵝幣
+    const xpGain = Math.round(dmgDealt * 0.8);
     const coinGain = Math.round(dmgDealt * 0.1);
     r.xp = (r.xp || 0) + xpGain;
     let leveled = 0;
