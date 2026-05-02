@@ -174,6 +174,69 @@
     padding: 4px 8px;
     backdrop-filter: blur(4px);
   }
+  /* 角色圖右側選單（寶物庫，未來會多） */
+  .cp-side-menu {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 8;
+  }
+  .cp-side-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(135deg, #fef3c7, #fde047);
+    border: 2px solid #f59e0b;
+    border-radius: 10px;
+    padding: 4px 6px 3px;
+    cursor: pointer;
+    box-shadow: 0 2px 0 #d97706;
+    font-family: inherit;
+    transition: transform 0.1s;
+    min-width: 50px;
+  }
+  .cp-side-btn:hover { transform: translateY(-1px); background: linear-gradient(135deg, #fffaf0, #fbbf24); }
+  .cp-side-btn .cpsb-icon { font-size: 18px; line-height: 1; }
+  .cp-side-btn .cpsb-label { font-size: 9px; font-weight: 700; color: #92400e; margin-top: 2px; }
+  .cp-side-btn .cpsb-badge { font-size: 9px; color: #78350f; opacity: 0.8; }
+  /* 寶物庫卡 */
+  .tv-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .tv-card {
+    background: #fff;
+    border: 2px solid #e9d5e3;
+    border-radius: 12px;
+    padding: 10px 6px;
+    text-align: center;
+    transition: transform 0.1s;
+  }
+  .tv-card.owned {
+    background: linear-gradient(135deg, #faf5ff, #e9d5ff);
+    border-color: #a78bfa;
+    box-shadow: 0 3px 0 #8b5cf6;
+  }
+  .tv-card.locked { opacity: 0.4; filter: grayscale(0.6); }
+  .tv-icon { font-size: 28px; line-height: 1; }
+  .tv-name { font-size: 11px; font-weight: 700; color: #5b3d62; margin-top: 4px; }
+  .tv-card.locked .tv-name { color: #9ca3af; }
+  .tv-bonus { font-size: 10px; color: #7c3aed; margin-top: 2px; font-weight: 600; }
+  .tv-card.locked .tv-bonus { color: #9ca3af; }
+  .tv-summary {
+    background: linear-gradient(135deg, #f3e8ff, #e9d5ff);
+    border: 2px dashed #a78bfa;
+    border-radius: 10px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    font-size: 12px;
+  }
+  .tv-summary-row { display: flex; justify-content: space-between; padding: 1px 0; }
+  .tv-summary-row b { color: #5b21b6; }
   .cp-collection .cc-item {
     font-size: 16px;
     line-height: 1;
@@ -1771,6 +1834,37 @@
     },
   };
 
+  // ⭐ 寶物庫（探險打怪掉落）
+  // 每個寶物對應一個能力 (str/vit/agi/dex/int/luk) 與點數 (1-3)
+  // 拿到 = 永久 +N 該能力。重複 = +1000 XP。
+  const TREASURES = {
+    // 力量 STR
+    t_str_1: { id: 't_str_1', name: '鵝拳手套',   icon: '🥊', ability: 'str', value: 1, desc: '一只破舊但有點分量的拳套' },
+    t_str_2: { id: 't_str_2', name: '巨力符石',   icon: '🪨', ability: 'str', value: 2, desc: '據說搬運鵝石時會發光' },
+    t_str_3: { id: 't_str_3', name: '泰坦之心',   icon: '💪', ability: 'str', value: 3, desc: '鵝鵝吃了能變鵝霸天下' },
+    // 體力 VIT
+    t_vit_1: { id: 't_vit_1', name: '鵝鵝補品',   icon: '🍵', ability: 'vit', value: 1, desc: '裝著神秘湯汁的小瓶' },
+    t_vit_2: { id: 't_vit_2', name: '龍鱗胸甲片', icon: '🐲', ability: 'vit', value: 2, desc: '從龍鵝身上掉下來的一片' },
+    t_vit_3: { id: 't_vit_3', name: '不滅之卵',   icon: '🥚', ability: 'vit', value: 3, desc: '據說孵不出來但永遠不會壞' },
+    // 敏捷 AGI
+    t_agi_1: { id: 't_agi_1', name: '鵝風羽',     icon: '🪶', ability: 'agi', value: 1, desc: '一根輕得不可思議的羽毛' },
+    t_agi_2: { id: 't_agi_2', name: '疾走鞋墊',   icon: '👟', ability: 'agi', value: 2, desc: '穿上覺得腳變輕了' },
+    t_agi_3: { id: 't_agi_3', name: '雷神之翼',   icon: '⚡', ability: 'agi', value: 3, desc: '雷光閃爍的迷你翅膀' },
+    // 技巧 DEX
+    t_dex_1: { id: 't_dex_1', name: '靈巧鵝指',   icon: '☝️', ability: 'dex', value: 1, desc: '收藏家鵝送的小護身符' },
+    t_dex_2: { id: 't_dex_2', name: '鷹眼石',     icon: '👁', ability: 'dex', value: 2, desc: '盯著看會看到別人看不到的東西' },
+    t_dex_3: { id: 't_dex_3', name: '完美瞄準鏡', icon: '🎯', ability: 'dex', value: 3, desc: '據說能看穿一切防禦的破綻' },
+    // 智慧 INT
+    t_int_1: { id: 't_int_1', name: '鵝學問題集', icon: '📓', ability: 'int', value: 1, desc: '寫滿了奇怪鵝鵝公式' },
+    t_int_2: { id: 't_int_2', name: '法師舊筆記', icon: '📚', ability: 'int', value: 2, desc: '某個禿頭法師遺失的筆記本' },
+    t_int_3: { id: 't_int_3', name: '宇宙真理書', icon: '🌌', ability: 'int', value: 3, desc: '看懂後鵝鵝就頓悟了' },
+    // 幸運 LUK
+    t_luk_1: { id: 't_luk_1', name: '四葉草',     icon: '🍀', ability: 'luk', value: 1, desc: '童叟無欺的好運草' },
+    t_luk_2: { id: 't_luk_2', name: '招財金鵝蛋', icon: '🥚', ability: 'luk', value: 2, desc: '亮晶晶的看了就想笑' },
+    t_luk_3: { id: 't_luk_3', name: '命運抽蛋券', icon: '🎰', ability: 'luk', value: 3, desc: '永遠有用、永遠不過期' },
+  };
+  const TREASURE_DUP_XP = 1000;
+
   // 職業 → 該職業專屬套裝（探險精英怪會掉這個）
   const CLASS_SET = {
     warrior: 'warrior_iron',
@@ -2144,21 +2238,20 @@
           text: '💵 買一顆 (60 幣)',
           requiresCoins: 60,
           outcomes: [
-            { p: 0.18, line: '吃下去身體發光！永久 +1 STR！', coins: -60, stat: 'str' },
-            { p: 0.18, line: '吃下去眼睛發光！永久 +1 DEX！', coins: -60, stat: 'dex' },
-            { p: 0.10, line: '吃下去頭頂發光！永久 +1 INT！', coins: -60, stat: 'int' },
-            { p: 0.07, line: '吃下去全身發光！運氣爆棚 +1 LUK！', coins: -60, stat: 'luk' },
+            { p: 0.18, line: '蘋果格外甜，吃完精神抖擻，獲得大量經驗。', coins: -60, xp: 250 },
+            { p: 0.18, line: '蘋果裡夾了張古地圖，賣給收藏家鵝賺一筆。', coins: 100, xp: 80 },
             { p: 0.10, line: '蘋果裡居然有顆寶石，掉出一件裝備！', coins: -60, item: 'drop' },
-            { p: 0.07, line: '吃完開始打嗝，每打一次就掉一塊錢。', coins: [-60, -60], xp: 50 },
-            { p: 0.05, line: '蘋果有蟲，但蟲是稀有蟲，賣回攤主賺更多！', coins: [40, 80] },
+            { p: 0.10, line: '吃下去後找到傳說中的隱藏蘋果園，撿了一袋鵝幣！', coins: [150, 280] },
+            { p: 0.07, line: '吃完開始打嗝，每打一次就掉一塊錢。', coins: [-60, -60], xp: 80 },
+            { p: 0.05, line: '蘋果有蟲，但蟲是稀有蟲，賣回攤主賺更多！', coins: [80, 150] },
             { p: 0.05, line: '吃完發現攤主也是綠茶鵝偽裝，順手把你錢包也偷了！', greentea: true },
-            { p: 0.20, line: '......就是普通蘋果。但很甜。', coins: -60, hp: 30, xp: 30 },
+            { p: 0.27, line: '......就是普通蘋果。但很甜。', coins: -60, hp: 30, xp: 30 },
           ],
         },
         {
           text: '🦹 偷一顆',
           outcomes: [
-            { p: 0.20, line: '成功偷走！而且偏偏偷到神奇的那顆！+1 LUK！', stat: 'luk' },
+            { p: 0.20, line: '成功偷走！攤主忙著叫客，沒發現！', coins: [60, 120], item: 'drop' },
             { p: 0.15, line: '不只偷到蘋果，順手摸走攤位下的小錢箱！', coins: [80, 150], item: 'drop' },
             { p: 0.10, line: '偷蘋果還順便偷到一籃，賣給黑市賺一筆！', coins: [120, 220] },
             { p: 0.05, line: '攤主居然沒發現，還補貨給你「這位客人剛剛拿了什麼？」', coins: [30, 60], item: 'drop' },
@@ -2175,7 +2268,7 @@
             { p: 0.15, line: '路上有人塞免費試吃，吃到肚子飽飽。', hp: 25 },
             { p: 0.10, line: '隔壁攤位有送贈品活動。', item: 'drop' },
             { p: 0.10, line: '走著走著走進另一個事件，但決定先回家了。', coins: [10, 20] },
-            { p: 0.05, line: '攤主追上來：「等等！這顆免費送！」順手塞給你。', hp: 30, stat: 'str' },
+            { p: 0.05, line: '攤主追上來：「等等！這顆免費送！」順手塞給你。', hp: 30, xp: 50 },
           ],
         },
       ],
@@ -2215,7 +2308,7 @@
           outcomes: [
             { p: 0.10, line: '你變網紅！整條街都在打賞！', coins: [150, 250], xp: 80 },
             { p: 0.10, line: '一夜爆紅！經紀人鵝塞了一件超神道具給你！', coins: [80, 150], item: 'drop' },
-            { p: 0.10, line: '彈到一半電流通過全身，獲得永久靈感 +1 INT！', stat: 'int' },
+            { p: 0.10, line: '彈到一半電流通過全身，靈感大爆發！獲得大量經驗。', xp: 300 },
             { p: 0.05, line: '彈到一半發現吉他裡藏著一袋金幣！', coins: [200, 350], item: 'drop' },
             { p: 0.05, line: '原來吉他是綠茶鵝放的陷阱，被踢一腳！', greentea: true },
             { p: 0.60, line: '吉他被原主人搶回。歌手鵝氣到變身！', battle: true, battleLine: '🎤 走音歌手原來是金屬搖滾界的隱世強者！' },
@@ -2232,9 +2325,9 @@
           text: '🙏 給香油錢 (100 幣)',
           requiresCoins: 100,
           outcomes: [
-            { p: 0.10, line: '居然真的是高僧！心靈受到洗禮。', coins: -100, stat: 'int', xp: 300 },
+            { p: 0.10, line: '居然真的是高僧！心靈受到洗禮，獲得頓悟。', coins: -100, xp: 500 },
             { p: 0.15, line: '高僧贈你一件禪意法器！', coins: -100, xp: 150, item: 'drop' },
-            { p: 0.10, line: '高僧傳你一招冥想，永久 +1 LUK！', coins: -100, stat: 'luk' },
+            { p: 0.10, line: '高僧贈你一袋幸運符，賣到二手市場大賺一筆！', coins: 250, xp: 100 },
             { p: 0.10, line: '僧鵝邀你共修，三小時後你獲得頓悟。', coins: -100, xp: 400 },
             { p: 0.05, line: '僧鵝為你算出明天會發財，順手把今天的香油倒給你。', coins: 50 },
             { p: 0.05, line: '原來是綠茶鵝偽裝高僧！收完錢還偷你裝備！', coins: -100, greentea: true },
@@ -2247,7 +2340,7 @@
           outcomes: [
             { p: 0.30, line: '僧鵝答不出來，灰溜溜走了。圍觀群眾鼓掌。', xp: [120, 200], coins: [20, 40] },
             { p: 0.15, line: '你的問題太精采，被路過的學者鵝重金邀請當研究助理。', coins: [120, 200], xp: 80 },
-            { p: 0.10, line: '僧鵝認真回答了一段佛理，你聽到頓悟了 +1 INT！', stat: 'int' },
+            { p: 0.10, line: '僧鵝認真回答了一段佛理，你聽到頓悟了！', xp: 250 },
             { p: 0.10, line: '僧鵝發現你的問題太深，跪下說「您才是高僧」並送你裝備。', xp: 60, item: 'drop' },
             { p: 0.05, line: '僧鵝答到一半，路人忍不住塞錢給你「跟你一起 debug」。', coins: [60, 120] },
             { p: 0.30, line: '僧鵝惱羞變身武僧：「真理需要拳頭！」', battle: true, battleLine: '🧘 假和尚露出肌肉，原來是試煉武鵝！' },
@@ -2278,7 +2371,7 @@
             { p: 0.20, line: '裡面是一件裝備！', item: 'drop' },
             { p: 0.10, line: '裡面是大袋金幣 + 一件東西！', coins: [150, 250], item: 'drop' },
             { p: 0.05, line: '裡面是傳說裝備 + 巨額金幣！', coins: [400, 600], item: 'drop' },
-            { p: 0.05, line: '裡面塞著一本書，看完永久 +1 INT！', stat: 'int' },
+            { p: 0.05, line: '裡面塞著一本書，看完功力大增！', xp: 350 },
             { p: 0.05, line: '箱子是壞的，裡面卻夾著別人忘記的會員卡。', coins: [30, 60], xp: 40 },
             { p: 0.05, line: '打開時冒出煙霧，醒來口袋多了東西也少了東西。', coins: [-50, 100], xp: 30 },
             { p: 0.20, line: '彈簧鵝跳出來，原來是試煉守護者！', battle: true, battleLine: '📦 神秘箱子的守護者現身！' },
@@ -2845,6 +2938,7 @@
     if (!player.rpg.zoneProgress) player.rpg.zoneProgress = {};
     if (!player.rpg.equipment.guide) player.rpg.equipment.guide = null;
     if (!Array.isArray(player.rpg.greenTeaGuidesGranted)) player.rpg.greenTeaGuidesGranted = [];
+    if (!Array.isArray(player.rpg.treasures)) player.rpg.treasures = [];
     // HOF 行動規則：沒有就帶入該職業的預設規則
     if (!Array.isArray(player.rpg.actionPattern) || player.rpg.actionPattern.length === 0) {
       player.rpg.actionPattern = player.rpg.class ? getDefaultActionPattern(player.rpg.class) : [];
@@ -2901,9 +2995,33 @@
   }
 
   // 把已點的能力換算成屬性加成
+  // 寶物庫帶來的永久能力加成（彙總成 { str, vit, agi, dex, int, luk }）
+  function computeTreasureBonuses(rpg) {
+    const out = { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0 };
+    const owned = (rpg && rpg.treasures) || [];
+    for (const tid of owned) {
+      const t = TREASURES[tid];
+      if (!t) continue;
+      out[t.ability] = (out[t.ability] || 0) + (t.value || 0);
+    }
+    return out;
+  }
+  // 玩家有效的能力值（自選的 + 寶物給的）
+  function getEffectiveAbilities(rpg) {
+    const a = (rpg && rpg.abilities) || {};
+    const t = computeTreasureBonuses(rpg);
+    return {
+      str: (a.str || 0) + t.str,
+      vit: (a.vit || 0) + t.vit,
+      agi: (a.agi || 0) + t.agi,
+      dex: (a.dex || 0) + t.dex,
+      int: (a.int || 0) + t.int,
+      luk: (a.luk || 0) + t.luk,
+    };
+  }
   function computeAbilityBonuses(player) {
     const r = getRpg(player);
-    const a = r.abilities || {};
+    const a = getEffectiveAbilities(r); // 含寶物加成
     return {
       atk: (a.str || 0),
       hp: (a.vit || 0) * 5,
@@ -2961,7 +3079,7 @@
   function computePassiveBonuses(player) {
     const r = getRpg(player);
     const cls = r && r.class ? CLASSES[r.class] : null;
-    const a = r.abilities || {};
+    const a = getEffectiveAbilities(r); // 寶物加成也算 passive 觸發門檻
     const b = { physPct: 0, flatPct: 0, dmgReduction: 0, mpDiscount: 0, healPct: 0, spd: 0, critChance: 0, critDmg: 0 };
     if (!cls || !cls.passives) return b;
     for (const p of cls.passives) {
@@ -3730,6 +3848,61 @@
   // ⭐ HOF 行動規則小教學
   const HELP_SEEN_KEY = 'hof-action-pattern-help-seen';
   // ========================================================================
+  // 🎁 寶物庫
+  // ========================================================================
+  function showTreasureVault() {
+    const me = getMe();
+    if (!me) { showToast('先選職業'); return; }
+    const rpg = getRpg(me);
+    const owned = new Set(rpg.treasures || []);
+    const tBonus = computeTreasureBonuses(rpg);
+    // 依能力分組顯示
+    const groups = { str: [], vit: [], agi: [], dex: [], int: [], luk: [] };
+    for (const t of Object.values(TREASURES)) groups[t.ability].push(t);
+    for (const k of Object.keys(groups)) groups[k].sort((a, b) => a.value - b.value);
+    const labels = { str: '💪 力量', vit: '🛡 體力', agi: '🦅 敏捷', dex: '🎯 技巧', int: '🧠 智慧', luk: '🍀 幸運' };
+    const sectionsHtml = Object.keys(groups).map(ab => {
+      const cards = groups[ab].map(t => {
+        const isOwned = owned.has(t.id);
+        return `
+          <div class="tv-card ${isOwned ? 'owned' : 'locked'}" title="${escapeHtml(t.desc || '')}">
+            <div class="tv-icon">${t.icon}</div>
+            <div class="tv-name">${isOwned ? escapeHtml(t.name) : '???'}</div>
+            <div class="tv-bonus">+${t.value} ${ab.toUpperCase()}</div>
+          </div>
+        `;
+      }).join('');
+      return `
+        <div style="margin-bottom:10px;">
+          <div style="font-size:12px; font-weight:700; color:#5b3d62; margin-bottom:4px;">${labels[ab]}　<span style="color:#a78bfa;">+${tBonus[ab] || 0}</span></div>
+          <div class="tv-grid">${cards}</div>
+        </div>
+      `;
+    }).join('');
+    const totalOwned = (rpg.treasures || []).length;
+    const totalAll = Object.keys(TREASURES).length;
+    const html = `
+      <div style="font-size:12px; color:#5b3d62; padding:4px 0;">
+        <div class="tv-summary">
+          <div style="font-weight:700; margin-bottom:6px; color:#5b21b6;">📦 已收集 ${totalOwned} / ${totalAll}</div>
+          ${Object.keys(tBonus).filter(k => tBonus[k] > 0).map(k => `
+            <div class="tv-summary-row">
+              <span>${labels[k]}</span><b>+${tBonus[k]}</b>
+            </div>
+          `).join('') || '<div style="color:#8b6f9b; font-size:11px;">還沒拿到任何寶物。打贏探險精英試煉鵝就會掉。</div>'}
+        </div>
+        <div style="font-size:11px; color:#8b6f9b; margin-bottom:6px; padding:6px 8px; background:#fef9ff; border-radius:8px; border:1px dashed #c4b5fd;">
+          💡 探險選錯路會進入精英戰，打贏掉一個寶物。重複會變 +${TREASURE_DUP_XP} XP。
+        </div>
+        ${sectionsHtml}
+        <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:8px;">關閉</button>
+      </div>
+    `;
+    showModal(`🎁 寶物庫`, html);
+  }
+  window.showTreasureVault = showTreasureVault;
+
+  // ========================================================================
   // 🐛 BUG 回報系統
   // ========================================================================
   function snapshotLastFight(monster, result) {
@@ -4490,12 +4663,21 @@
     if (equipped.weapon) dollLayers.push(`<img class="pd-layer pd-weapon" data-tier="${wTier}" src="${equipped.weapon}" alt="">`);
     if (equipped.accessory) dollLayers.push(`<img class="pd-layer pd-acc" data-tier="${cTier}" src="${equipped.accessory}" alt="">`);
 
+    const treasureCount = (rpg.treasures || []).length;
+    const treasureMax = Object.keys(TREASURES).length;
     document.getElementById('charCard').innerHTML = `
       <div class="char-portrait">
         <div class="cp-lv-badge">Lv ${rpg.level}</div>
         <div class="cp-coin-badge">🪙 ${coins >= 1000 ? (coins/1000).toFixed(1) + 'k' : coins}</div>
         <div class="paper-doll">${dollLayers.join('')}</div>
         <div class="cp-collection">${collectionHtml}</div>
+        <div class="cp-side-menu">
+          <button class="cp-side-btn" onclick="showTreasureVault()" title="寶物庫">
+            <span class="cpsb-icon">🎁</span>
+            <span class="cpsb-label">寶物庫</span>
+            <span class="cpsb-badge">${treasureCount}/${treasureMax}</span>
+          </button>
+        </div>
       </div>
       <div class="char-info">
         <div class="char-name">${escapeHtml(me.name)}</div>
@@ -5512,12 +5694,11 @@
         ? `<span style="color:#7c3aed;">+${amt} XP</span>${leveled ? `<span style="color:#7c3aed; font-weight:700;">（升級到 Lv ${r.level}！）</span>` : ''}`
         : `<span style="color:#9ca3af;">${amt} XP</span>`);
     }
-    // 永久屬性 +1
+    // 永久屬性的舊路徑已移除——統一從寶物庫取得。
+    // 萬一還有舊事件帶 stat:，靜默轉成 50 XP，避免出錯。
     if (outcome.stat) {
-      r.abilities = r.abilities || { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0 };
-      r.abilities[outcome.stat] = (r.abilities[outcome.stat] || 0) + 1;
-      const labels = { str: '力量', vit: '體力', agi: '敏捷', dex: '技巧', int: '智慧', luk: '幸運' };
-      parts.push(`<span style="color:#f59e0b; font-weight:700;">✨ ${labels[outcome.stat] || outcome.stat.toUpperCase()} +1（永久）</span>`);
+      r.xp = (r.xp || 0) + 50;
+      parts.push(`<span style="color:#7c3aed;">+50 XP</span>`);
     }
     // 隨機掉落
     if (outcome.item === 'drop') {
@@ -5731,17 +5912,33 @@
       const _zone = ZONES.find(z => z.id === (rpg.currentZone || 'forest'));
       const drop = rollItemDrop(rpg.level, { slotBias: _zone ? _zone.dropBias : null });
       if (drop) rpg.inventory.push(drop); // drop instance（含詞綴）直接存物件
-      // 精英怪：必掉一件套裝（隨機從該套挑一件）
-      // 推「物件複本」而非 id，確保 SET_PIECES 查表掛掉時 inventory 仍保有完整資料
+      // 精英怪：必掉一件套裝（其他地區精英還是給套裝；探險精英改給寶物）
       let elitePiece = null;
-      if (monster.isElite && monster.dropSet) {
+      let treasureDropped = null;     // 拿到的寶物本體（首次取得才會有）
+      let treasureDupXp = 0;           // 重複的話換 XP
+      if (monster.isElite && !monster.isForageElite && monster.dropSet) {
+        // 地區精英：給該地區套裝
         const set = SETS[monster.dropSet];
         if (set && set.pieces.length > 0) {
           const piece = set.pieces[Math.floor(Math.random() * set.pieces.length)];
           const clone = { ...piece, setId: monster.dropSet, isSetPiece: true };
           rpg.inventory.push(clone);
           elitePiece = piece;
-          console.log('[forage elite drop]', monster.name, '→', piece.id, piece.name);
+        }
+      } else if (monster.isForageElite) {
+        // ⭐ 探險精英：改成給寶物（重複→ +1000 XP）
+        rpg.treasures = rpg.treasures || [];
+        const allIds = Object.keys(TREASURES);
+        const tid = allIds[Math.floor(Math.random() * allIds.length)];
+        const treasure = TREASURES[tid];
+        if (rpg.treasures.includes(tid)) {
+          rpg.xp = (rpg.xp || 0) + TREASURE_DUP_XP;
+          treasureDupXp = TREASURE_DUP_XP;
+          treasureDropped = { ...treasure, duplicate: true };
+        } else {
+          rpg.treasures.push(tid);
+          treasureDropped = { ...treasure, duplicate: false };
+          // 寶物給的能力加成是 derived（透過 computeTreasureBonuses），不直接改 abilities
         }
       }
       // 紀錄地區進度：通關目前層數 → 解鎖下一層
@@ -5781,6 +5978,17 @@
           <div class="rl-item">🪙 +${monster.goldDrop} 鵝鵝幣</div>
           ${drop ? `<div class="rl-item">${drop.icon} ${drop.name}</div>` : ''}
           ${elitePiece ? `<div class="rl-item" style="color:${SETS[monster.dropSet]?.color || '#7c3aed'}; font-weight:700;">🛡 [套裝] ${elitePiece.icon} ${elitePiece.name}（${SETS[monster.dropSet]?.name}）</div>` : ''}
+          ${treasureDropped && !treasureDropped.duplicate ? `
+            <div class="rl-item" style="color:#7c3aed; font-weight:700; padding:6px 8px; background:#f3e8ff; border-radius:8px; margin-top:4px;">
+              🎁 寶物入庫：${treasureDropped.icon} <b>${escapeHtml(treasureDropped.name)}</b>
+              <div style="font-size:11px; color:#5b21b6; font-weight:500; margin-top:2px;">永久 +${treasureDropped.value} ${treasureDropped.ability.toUpperCase()}</div>
+            </div>
+          ` : ''}
+          ${treasureDropped && treasureDropped.duplicate ? `
+            <div class="rl-item" style="color:#92400e; padding:6px 8px; background:#fef3c7; border-radius:8px; margin-top:4px;">
+              🎁 重複了「${treasureDropped.icon} ${escapeHtml(treasureDropped.name)}」 → +${treasureDupXp} XP
+            </div>
+          ` : ''}
           ${result.coinsStolen > 0 ? `<div class="rl-item" style="color:#dc2626;">💰 被偷走 −${result.coinsStolen} 鵝鵝幣</div>` : ''}
           ${leveledUp ? `<div style="margin-top:8px; color:#7c3aed; font-weight:700;">🎊 升級到 Lv ${rpg.level}！HP/MP 回滿、+${leveledUp * POINTS_PER_LEVEL.skill} 技能點 / +${leveledUp * POINTS_PER_LEVEL.ability} 能力點</div>` : ''}
         </div>
