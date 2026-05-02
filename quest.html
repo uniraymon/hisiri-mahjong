@@ -1391,6 +1391,32 @@
     };
   }
 
+  // 驗證 / 補回應有的技能點 + 能力點（修補早期 XP 藥水沒給點的 bug）
+  // 只補不扣：current < expected 時才補到 expected
+  function validateRpgPoints(player) {
+    if (!player || !player.rpg) return false;
+    const r = player.rpg;
+    if (!r.class) return false;
+    let corrected = false;
+
+    const expectedSk = Math.max(0, (r.level || 1) - 1) * POINTS_PER_LEVEL.skill;
+    const usedSk = Object.values(r.skills || {}).reduce((a, b) => a + (b || 0), 0);
+    const correctSk = Math.max(0, expectedSk - usedSk);
+    if ((r.skillPoints || 0) < correctSk) {
+      r.skillPoints = correctSk;
+      corrected = true;
+    }
+
+    const expectedAb = 5 + Math.max(0, (r.level || 1) - 1) * POINTS_PER_LEVEL.ability;
+    const usedAb = Object.values(r.abilities || {}).reduce((a, b) => a + (b || 0), 0);
+    const correctAb = Math.max(0, expectedAb - usedAb);
+    if ((r.abilityPoints || 0) < correctAb) {
+      r.abilityPoints = correctAb;
+      corrected = true;
+    }
+    return corrected;
+  }
+
   // 把已點的技能換算成各種屬性加成
   function computeSkillBonuses(player) {
     const rpg = getRpg(player);
@@ -1780,7 +1806,11 @@
     document.getElementById('stageClassPick').classList.add('hidden');
     document.getElementById('stageGame').classList.remove('hidden');
 
-    syncEquipped(me); // 雲端載入後可能 equipped 還沒填
+    // 驗證所有玩家的技能點 / 能力點，少了補回去（雲端來的舊資料可能有 bug）
+    let anyCorrected = false;
+    players.forEach(p => { if (validateRpgPoints(p)) anyCorrected = true; });
+    if (anyCorrected && !__isApplyingRemote) saveData();
+    syncEquipped(me);
     renderCharCard();
     renderEquipment();
     renderAbilityTree();
@@ -2100,17 +2130,23 @@
       }
       if (it.effect.xp) {
         rpg.xp = (rpg.xp || 0) + it.effect.xp;
-        let leveledUp = false;
+        let leveled = 0;
         while (rpg.xp >= xpForLevel(rpg.level)) {
           rpg.xp -= xpForLevel(rpg.level);
           rpg.level += 1;
-          leveledUp = true;
+          rpg.skillPoints = (rpg.skillPoints || 0) + POINTS_PER_LEVEL.skill;
+          rpg.abilityPoints = (rpg.abilityPoints || 0) + POINTS_PER_LEVEL.ability;
+          leveled++;
+          if (rpg.level > 50) break;
         }
-        if (leveledUp) {
-          rpg.hp = computeStats(me).maxHp;
+        if (leveled) {
+          const s2 = computeStats(me);
+          rpg.hp = s2.maxHp;
+          rpg.mp = s2.maxMp;
+          rpg.deathAt = null;
           showLevelUp(rpg.level);
         }
-        msg = `⭐ +${it.effect.xp} XP`;
+        msg = `⭐ +${it.effect.xp} XP${leveled ? `，升 ${leveled} 級 +${leveled * POINTS_PER_LEVEL.skill} 技能 +${leveled * POINTS_PER_LEVEL.ability} 能力點` : ''}`;
       }
       showToast(`✨ 使用 ${it.icon} ${it.name}：${msg}`);
     } else if (it.type === 'equipment') {
