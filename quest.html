@@ -3552,13 +3552,24 @@
     try {
       txOut = await window.__firebaseSync.applyBossAttack(bossId, dmgRaw, me.id, boss);
     } catch (e) {
-      console.warn('Boss attack tx failed:', e?.message || e);
-      // 王在我動手前已倒下 → 退回體力 + 冷卻
+      const msg = e?.message || String(e);
+      const code = e?.code || '';
+      console.warn('Boss attack tx failed:', code, msg);
+      // 退回體力與冷卻（純本地）
       r.stamina += BOSS_STAMINA;
       delete r.lastBossAttack[bossId];
-      saveData();
-      showToast('🦢 王已倒下，體力已退回');
+      // 配額爆了 / 連線錯誤 → 不要再 saveData，會繼續燒配額
+      if (code === 'resource-exhausted' || msg.includes('429') || msg.includes('resource-exhausted')) {
+        showToast('☁️ Firestore 配額用完了，明天 UTC 0 點會重置（或升 Blaze 方案）');
+      } else if (msg === 'boss-already-dead' || msg.includes('boss-already-dead')) {
+        showToast('🦢 王已倒下，體力已退回');
+        // 只有「王死了」是邏輯錯誤、本地需要存一下取消冷卻
+        try { saveData(); } catch (e2) {}
+      } else {
+        showToast('☁️ 連線出錯：' + (code || msg.slice(0, 40)));
+      }
       renderWorldBoss();
+      updateStaminaUI();
       return;
     }
     const dmgDealt = txOut.actualDmg;  // 雲端實際接受的傷害（可能比 dmgRaw 少：王只剩 50 HP 時你打 1000 也只算 50）
