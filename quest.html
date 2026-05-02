@@ -1467,9 +1467,12 @@
 
   // === 探索 / 採集 ===
   const FORAGE_STAMINA = 20;
-  const FORAGE_BATTLE_CHANCE = 0.18; // 18% 觸發戰鬥（其餘走分支事件）
   // 新版：分支事件（玩家做選擇 → 影響結果）
-  // outcome 欄位：coins (數字 or [min,max])、hp (扣血)、xp、item ('drop'=隨機掉落)、greentea (true 觸發綠茶)、stat (永久 +1 屬性)
+  // outcome 欄位：
+  //   coins (數字 or [min,max])、hp (扣血)、xp、stat (永久 +1 屬性)
+  //   item: 'drop' = 隨機掉落、'rare' = 提升稀有度的掉落
+  //   greentea: true = 觸發綠茶事件、battle: true = 進入戰鬥（怪物從這次選擇衍生）
+  //   battleLine: 戰鬥前的描述（在 dailyResult 顯示）
   const FORAGE_QUESTS = [
     {
       id: 'sleeping_sloth',
@@ -1479,14 +1482,15 @@
         {
           text: '🤫 偷偷摸走錢袋',
           outcomes: [
-            { p: 0.65, line: '成功！樹懶鵝還在打呼，鵝鵝沒醒。', coins: [25, 45] },
-            { p: 0.35, line: '樹懶鵝突然張開眼：「鵝...你...」一巴掌打飛你。', hp: -8, coins: -10 },
+            { p: 0.45, line: '成功！樹懶鵝還在打呼。', coins: [30, 50] },
+            { p: 0.20, line: '錢袋裡居然還塞了一件不錯的東西！', coins: [15, 30], item: 'drop' },
+            { p: 0.35, line: '樹懶鵝突然張開眼：「鵝...你...想試試嗎...」', battle: true, battleLine: '🦥 樹懶鵝怒了，從草叢召出護衛！' },
           ],
         },
         {
           text: '📷 跟牠合照自拍',
           outcomes: [
-            { p: 1.0, line: '樹懶鵝在睡夢中露出微笑，這張圖可以發 IG 了。', xp: [60, 90] },
+            { p: 1.0, line: '樹懶鵝在睡夢中露出微笑。可以發 IG 了。', xp: [60, 90] },
           ],
         },
         {
@@ -1506,15 +1510,16 @@
           text: '💰 買！(花 80 幣)',
           requiresCoins: 80,
           outcomes: [
-            { p: 0.05, line: '欸真的漲了！？！？這次運氣爆棚！', coins: 600 },
-            { p: 0.05, line: '隔天平台 rug pull 了，但你保留下來給孫子看。', coins: -80, xp: 100 },
-            { p: 0.90, line: '檔案連打開都打不開。鵝鵝盤子確認。', coins: -80 },
+            { p: 0.05, line: '欸真的暴漲！？這次運氣爆棚！', coins: 600 },
+            { p: 0.10, line: '附贈一個實體紀念品，意外有用。', coins: -80, item: 'drop' },
+            { p: 0.85, line: '檔案連打開都打不開。鵝鵝盤子確認。', coins: -80 },
           ],
         },
         {
           text: '😤 嗆「鵝鵝才不想當盤子」',
           outcomes: [
-            { p: 1.0, line: '蛇鵝氣噗噗離開。圍觀路鵝給你拍手鼓勵。', xp: [40, 70] },
+            { p: 0.55, line: '蛇鵝氣噗噗離開。圍觀路鵝給你拍手。', xp: [40, 70] },
+            { p: 0.45, line: '蛇鵝惱羞成怒：「兄弟你給我等著！」', battle: true, battleLine: '🐍 蛇鵝召來一群盤子受害者組成憤怒幫派！' },
           ],
         },
         {
@@ -1534,9 +1539,10 @@
           text: '🎲 下 50 幣賭一把',
           requiresCoins: 50,
           outcomes: [
-            { p: 0.45, line: '鵝鵝賭神出列！翻倍！', coins: 50 },
+            { p: 0.40, line: '鵝鵝賭神出列！翻倍！', coins: 50 },
+            { p: 0.10, line: '一把 All In 全槓！還賺到一件東西！', coins: 100, item: 'drop' },
             { p: 0.45, line: '骰盅打開：鵝鵝鵝鵝鵝。輸了。', coins: -50 },
-            { p: 0.10, line: '骰子滾出去掉進水溝，黑鵝罵罵咧咧跑了。沒輸沒贏。', coins: 0 },
+            { p: 0.05, line: '骰子滾出去掉進水溝，黑鵝罵罵咧咧跑了。', coins: 0 },
           ],
         },
         {
@@ -1548,8 +1554,9 @@
         {
           text: '📞 報警',
           outcomes: [
-            { p: 0.6, line: '警察鵝出現了！檢舉獎金到帳。', coins: 80 },
-            { p: 0.4, line: '電話打不通。回來時黑鵝已經跑了。', coins: 0 },
+            { p: 0.5, line: '警察鵝出現了！檢舉獎金到帳。', coins: 80 },
+            { p: 0.2, line: '警察鵝丟了沒收到的贓物給你當謝禮。', coins: 50, item: 'drop' },
+            { p: 0.3, line: '黑鵝發現你報警，召集小弟堵你！', battle: true, battleLine: '🎰 黑鵝幫派包圍上來！' },
           ],
         },
       ],
@@ -1562,9 +1569,11 @@
         {
           text: '🤗 上前安慰',
           outcomes: [
-            { p: 0.55, line: '原來只是被甩了。聽完牠哭兩小時，賺到一袋謝禮。', coins: [30, 50], xp: 80 },
-            { p: 0.40, line: '是綠茶鵝偽裝的！你被踢了一腳還被偷錢！', greentea: true },
-            { p: 0.05, line: '居然是失蹤多年的鵝鵝富翁，重重有賞！', coins: 200 },
+            { p: 0.40, line: '原來只是被甩了。聽完牠哭兩小時，賺到一袋謝禮。', coins: [30, 50], xp: 80 },
+            { p: 0.10, line: '失戀鵝送你前任送的禮物：「拿走拿走拿走！」', xp: 40, item: 'drop' },
+            { p: 0.30, line: '是綠茶鵝偽裝的！你被踢了一腳還被偷錢！', greentea: true },
+            { p: 0.15, line: '其實是埋伏！草叢裡跳出一群劫匪！', battle: true, battleLine: '👻 哭聲是陷阱，劫匪鵝群跳了出來！' },
+            { p: 0.05, line: '居然是失蹤多年的鵝鵝富翁，重重有賞！', coins: 200, item: 'drop' },
           ],
         },
         {
@@ -1592,14 +1601,16 @@
           outcomes: [
             { p: 0.20, line: '吃下去身體發光！永久 +1 STR！', coins: -60, stat: 'str' },
             { p: 0.20, line: '吃下去眼睛發光！永久 +1 DEX！', coins: -60, stat: 'dex' },
-            { p: 0.60, line: '......就是普通蘋果。但很甜。', coins: -60, hp: 15 },
+            { p: 0.10, line: '蘋果裡居然有顆寶石，掉出一件裝備！', coins: -60, item: 'drop' },
+            { p: 0.50, line: '......就是普通蘋果。但很甜。', coins: -60, hp: 15 },
           ],
         },
         {
           text: '🦹 偷一顆',
           outcomes: [
-            { p: 0.45, line: '成功偷走！而且偏偏偷到神奇的那顆！+1 LUK！', stat: 'luk' },
-            { p: 0.55, line: '被攤主發現追殺，跑掉時掉了一些錢。', coins: -30, hp: -5 },
+            { p: 0.30, line: '成功偷走！而且偏偏偷到神奇的那顆！+1 LUK！', stat: 'luk' },
+            { p: 0.20, line: '不只偷到蘋果，順手摸走攤位下的小錢箱！', coins: [40, 80], item: 'drop' },
+            { p: 0.50, line: '攤主：「給我抓住那隻鵝！」', battle: true, battleLine: '🍎 水果攤主帶著鄰居衝過來圍堵！' },
           ],
         },
         {
@@ -1619,21 +1630,23 @@
           text: '💝 打賞 20 幣',
           requiresCoins: 20,
           outcomes: [
-            { p: 1.0, line: '鵝鵝音樂家感動到唱不下去，給了你一張簽名照。', coins: -20, xp: 100 },
+            { p: 0.7, line: '鵝鵝音樂家感動到唱不下去，給了你一張簽名照。', coins: -20, xp: 100 },
+            { p: 0.3, line: '鵝鵝音樂家把家傳吉他撥片送給你（看似普通卻有奇效）！', coins: -20, xp: 50, item: 'drop' },
           ],
         },
         {
           text: '🔇 嗆「太難聽了！」',
           outcomes: [
-            { p: 0.5, line: '鵝鵝大哭跑掉了。你深深感受到罪惡感。', xp: -10 },
-            { p: 0.5, line: '鵝鵝回嘴：「鵝鵝也覺得！」附近的人聽到笑出聲、丟錢給你打圓場。', coins: [20, 40] },
+            { p: 0.4, line: '鵝鵝大哭跑掉了。你深深感受到罪惡感。', xp: -10 },
+            { p: 0.6, line: '附近的人聽到笑出聲、丟錢給你打圓場。', coins: [20, 40] },
           ],
         },
         {
           text: '🎸 上去搶吉他自彈',
           outcomes: [
-            { p: 0.30, line: '你變網紅！整條街都在打賞！', coins: [80, 150], xp: 50 },
-            { p: 0.70, line: '吉他被原主人搶回。你跌坐在地上。', hp: -10 },
+            { p: 0.20, line: '你變網紅！整條街都在打賞！', coins: [80, 150], xp: 50 },
+            { p: 0.10, line: '一夜爆紅！經紀人鵝塞了一件超神道具給你！', coins: [50, 100], item: 'drop' },
+            { p: 0.70, line: '吉他被原主人搶回。歌手鵝氣到變身！', battle: true, battleLine: '🎤 走音歌手鵝爆青筋變身金屬搖滾鵝！' },
           ],
         },
       ],
@@ -1647,22 +1660,24 @@
           text: '🙏 給香油錢 (100 幣)',
           requiresCoins: 100,
           outcomes: [
-            { p: 0.15, line: '居然真的是高僧！心靈受到洗禮。', coins: -100, stat: 'int', xp: 200 },
-            { p: 0.85, line: '鵝鵝才剛起步出家，那 100 幣他直接拿去買鵝鵝奶茶了。', coins: -100 },
+            { p: 0.10, line: '居然真的是高僧！心靈受到洗禮。', coins: -100, stat: 'int', xp: 200 },
+            { p: 0.10, line: '高僧贈你一件禪意法器！', coins: -100, xp: 100, item: 'drop' },
+            { p: 0.80, line: '鵝鵝才剛出家，那 100 幣他直接拿去買鵝鵝奶茶了。', coins: -100 },
           ],
         },
         {
           text: '🤔 反問「鵝鵝消的是什麼災？」',
           outcomes: [
-            { p: 0.7, line: '僧鵝答不出來，灰溜溜走了。圍觀群眾鼓掌。', xp: [60, 100] },
-            { p: 0.3, line: '僧鵝開口背了 30 分鐘經文，你聽到睡著。', xp: 20 },
+            { p: 0.65, line: '僧鵝答不出來，灰溜溜走了。圍觀群眾鼓掌。', xp: [60, 100] },
+            { p: 0.35, line: '僧鵝惱羞變身武僧：「真理需要拳頭！」', battle: true, battleLine: '🧘 假和尚鵝甩開袈裟露出肌肉！' },
           ],
         },
         {
           text: '🦢 比僧鵝更兇地驅趕他',
           outcomes: [
-            { p: 0.5, line: '僧鵝跑掉時掉了個袋子，裡面全是別人的香油錢。', coins: [50, 100] },
-            { p: 0.5, line: '不料僧鵝身手矯健，反過來搶你錢就跑！', coins: -30 },
+            { p: 0.40, line: '僧鵝跑掉時掉了個袋子，裡面全是別人的香油錢。', coins: [50, 100] },
+            { p: 0.20, line: '袋子裡還有一件神秘物品！', coins: [30, 60], item: 'drop' },
+            { p: 0.40, line: '僧鵝其實是真武僧偽裝，氣到爆開！', battle: true, battleLine: '🧘 假和尚扯下袈裟召喚十八銅鵝！' },
           ],
         },
       ],
@@ -1675,17 +1690,18 @@
         {
           text: '📦 打開',
           outcomes: [
-            { p: 0.40, line: '裡面是一袋鵝鵝幣！', coins: [50, 100] },
-            { p: 0.30, line: '裡面是裝備！', item: 'drop' },
-            { p: 0.20, line: '裡面跳出一隻彈簧鵝，打你一下逃跑。', hp: -10 },
+            { p: 0.30, line: '裡面是一袋鵝鵝幣！', coins: [50, 100] },
+            { p: 0.30, line: '裡面是一件裝備！', item: 'drop' },
+            { p: 0.10, line: '裡面是大袋金幣 + 一件東西！', coins: [80, 150], item: 'drop' },
+            { p: 0.20, line: '彈簧鵝跳出來，旁邊冒出一群守護鵝！', battle: true, battleLine: '📦 神秘箱子是陷阱，守箱鵝群現身！' },
             { p: 0.10, line: '裡面是綠茶鵝。', greentea: true },
           ],
         },
         {
           text: '🦶 用腳踢一下測試',
           outcomes: [
-            { p: 0.5, line: '什麼也沒發生，但路人覺得你有病。', coins: 0 },
-            { p: 0.5, line: '彈簧鵝被踢到外太空，箱底有鵝鵝幣！', coins: [25, 50] },
+            { p: 0.4, line: '什麼也沒發生，但路人覺得你有病。', coins: 0 },
+            { p: 0.6, line: '彈簧鵝被踢到外太空，箱底有鵝鵝幣！', coins: [25, 50] },
           ],
         },
         {
@@ -4098,27 +4114,13 @@
     const r = getRpg(me); if (!r.class) { showToast('先選職業'); return; }
     tickRecovery(me);
     if (r.stamina < FORAGE_STAMINA) { showToast(`⚡ 體力不足（需 ${FORAGE_STAMINA}）`); return; }
+    if (r.hp <= 0) { showToast('💀 HP 太低，先回滿再探險'); return; }
     r.stamina -= FORAGE_STAMINA;
     r.forageCount = (r.forageCount || 0) + 1;
 
-    // 18% 機率：探索路上遭遇怪物
-    if (Math.random() < FORAGE_BATTLE_CHANCE && r.hp > 0) {
-      r.forageBattles = (r.forageBattles || 0) + 1;
-      saveData();
-      document.getElementById('dailyResult').innerHTML = `
-        <div class="reward-list" style="background:linear-gradient(135deg,#fee2e2,#fecaca); border-color:#dc2626;">
-          <div class="rl-title" style="color:#991b1b;">⚠️ 突然遭遇怪物！</div>
-          <div class="rl-item" style="color:#5a4a4a;">探索的時候，從草叢裡跳出一隻怪物鵝...</div>
-          <div class="rl-item" style="margin-top:4px; font-size:11px; color:#7f1d1d;">↓ 戰鬥開始 ↓</div>
-        </div>
-      `;
-      onFight({ skipStamina: true });
-      return;
-    }
-
-    // 隨機抽一個分支事件
+    // 一律走分支事件 — 戰鬥只在玩家「選錯」時觸發（事件 outcome 帶 battle: true）
     const quest = FORAGE_QUESTS[Math.floor(Math.random() * FORAGE_QUESTS.length)];
-    saveData(); // 把扣體力的狀態先存起來
+    saveData();
     showForageQuest(quest);
   }
   window.doForage = doForage;
@@ -4166,6 +4168,27 @@
     for (const o of choice.outcomes) {
       acc += (o.p || 0);
       if (roll < acc) { outcome = o; break; }
+    }
+    // 戰鬥 outcome：扣費已扣（如有），跳出 modal 直接進戰鬥
+    if (outcome.battle) {
+      r.forageBattles = (r.forageBattles || 0) + 1;
+      // 處理 outcome 的 coins 扣費（例如賭博花了錢還被打）
+      if (outcome.coins) {
+        const amt = Array.isArray(outcome.coins) ? outcome.coins[0] + Math.floor(Math.random() * (outcome.coins[1] - outcome.coins[0] + 1)) : Number(outcome.coins) || 0;
+        if (amt > 0) refundCoins(me.id, amt);
+        else if (amt < 0) spendCoins(me.id, -amt);
+      }
+      saveData();
+      hideModal();
+      document.getElementById('dailyResult').innerHTML = `
+        <div class="reward-list" style="background:linear-gradient(135deg,#fee2e2,#fecaca); border-color:#dc2626;">
+          <div class="rl-title" style="color:#991b1b;">⚔️ 進入戰鬥！</div>
+          <div class="rl-item" style="color:#5a4a4a;">${escapeHtml(outcome.battleLine || '怪物從草叢跳出來！')}</div>
+          <div class="rl-item" style="margin-top:4px; font-size:11px; color:#7f1d1d;">↓ 戰鬥開始 ↓</div>
+        </div>
+      `;
+      onFight({ skipStamina: true });
+      return;
     }
     // 處理 outcome
     let parts = [];
