@@ -1565,7 +1565,7 @@
       list.innerHTML = totals.map(p => {
         const rank = rankMap[p.id];
         const rankCls = p.games > 0 ? `rank-${rank <= 4 ? rank : 4}` : '';
-        const lvInfo = calcLevel(calcXP(getPlayerData(p.id)));
+        const lvInfo = calcLevel(calcXP(getPlayerData(p.id), p.id));
         return `
           <div class="player-row">
             <span class="avatar-wrap"
@@ -1734,7 +1734,7 @@
     const unlockedCount = achievements.filter(a => a.unlocked).length;
     const titleObj = getDisplayTitle(p, records);
     const currentTitleId = titleObj.id;
-    const lvInfo = calcLevel(calcXP(records));
+    const lvInfo = calcLevel(calcXP(records, pid));
     const lvPercent = Math.round((lvInfo.xpInLevel / lvInfo.xpForNext) * 100);
 
     const cumulative = [];
@@ -2091,7 +2091,8 @@
   }
 
   // 經驗值：每場 +10、名次 1/2/3/4 = +30/+15/+5/0、淨贏每 100 萬基納 +1（單局上限 +50）、每解鎖成就 +50
-  function calcXP(records) {
+  // 加上 player.bonusXp（抽蛋安慰獎、管理員手動加）
+  function calcXP(records, playerId) {
     let xp = 0;
     const rankBonus = [0, 30, 15, 5, 0];
     for (const r of records) {
@@ -2101,6 +2102,10 @@
     }
     const unlockedCount = ACHIEVEMENTS.filter(a => a.check(getStats(records))).length;
     xp += unlockedCount * 50;
+    if (playerId) {
+      const p = getPlayer(playerId);
+      if (p && typeof p.bonusXp === 'number') xp += p.bonusXp;
+    }
     return xp;
   }
 
@@ -2485,12 +2490,14 @@
     if (!spendCoins(me.id, GACHA_COST)) { showToast('幣不夠 ♡'); return; }
     const isAvatar = Math.random() < 0.5;
     let resultHtml = '';
+    const DUP_XP = 50;
     if (isAvatar) {
       const a = GACHA_AVATARS[Math.floor(Math.random() * GACHA_AVATARS.length)];
       if (!me.unlockedAvatars) me.unlockedAvatars = [];
       if (me.unlockedAvatars.includes(a)) {
         refundCoins(me.id, GACHA_DUP_REFUND);
-        resultHtml = `<div class="gacha-result"><div class="gr-icon">${a}</div><div class="gr-text">重複了…<br>退 ${GACHA_DUP_REFUND} 幣</div></div>`;
+        me.bonusXp = (me.bonusXp || 0) + DUP_XP;
+        resultHtml = `<div class="gacha-result"><div class="gr-icon">${a}</div><div class="gr-text">重複了…<br>退 ${GACHA_DUP_REFUND} 幣 + ${DUP_XP} XP</div></div>`;
       } else {
         me.unlockedAvatars.push(a);
         resultHtml = `<div class="gacha-result"><div class="gr-icon">${a}</div><div class="gr-text">✨ 抽到新頭像！<br><small>到個人頁點頭像可換</small></div></div>`;
@@ -2500,7 +2507,8 @@
       if (!me.unlockedTitles) me.unlockedTitles = [];
       if (me.unlockedTitles.includes(t.id)) {
         refundCoins(me.id, GACHA_DUP_REFUND);
-        resultHtml = `<div class="gacha-result"><div class="gr-icon">${t.icon}</div><div class="gr-text">重複了「${t.title}」<br>退 ${GACHA_DUP_REFUND} 幣</div></div>`;
+        me.bonusXp = (me.bonusXp || 0) + DUP_XP;
+        resultHtml = `<div class="gacha-result"><div class="gr-icon">${t.icon}</div><div class="gr-text">重複了「${t.title}」<br>退 ${GACHA_DUP_REFUND} 幣 + ${DUP_XP} XP</div></div>`;
       } else {
         me.unlockedTitles.push(t.id);
         resultHtml = `<div class="gacha-result"><div class="gr-icon">${t.icon}</div><div class="gr-text">✨ 抽到新稱號！<br><b>${t.title}</b></div></div>`;
@@ -2742,7 +2750,7 @@
     const records = getPlayerData(pid);
     const stats = getStats(records);
     const titleObj = getDisplayTitle(p, records);
-    const lvInfo = calcLevel(calcXP(records));
+    const lvInfo = calcLevel(calcXP(records, pid));
     const winRate = stats.games > 0 ? Math.round(stats.winRate * 100) : 0;
     let avgRankStr = '-';
     if (stats.games > 0) {
