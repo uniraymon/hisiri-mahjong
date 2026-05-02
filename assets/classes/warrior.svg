@@ -1,76 +1,69 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 250" width="200" height="250">
-  <!-- 戰士 Warrior -->
+  <!-- 戰士天鵝 Warrior Swan -->
   <defs>
-    <linearGradient id="war-skin" x1="0" x2="0" y1="0" y2="1">
-      <stop offset="0" stop-color="#ffd9b3"/>
-      <stop offset="1" stop-color="#f3b98a"/>
+    <linearGradient id="war-feather" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dde2eb"/>
     </linearGradient>
-    <linearGradient id="war-hair" x1="0" x2="0" y1="0" y2="1">
-      <stop offset="0" stop-color="#7a3a1f"/>
-      <stop offset="1" stop-color="#4d2110"/>
+    <linearGradient id="war-beak" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffb74d"/>
+      <stop offset="1" stop-color="#e8780b"/>
     </linearGradient>
     <linearGradient id="war-armor" x1="0" x2="0" y1="0" y2="1">
       <stop offset="0" stop-color="#a3a8b3"/>
-      <stop offset="1" stop-color="#6d7280"/>
-    </linearGradient>
-    <linearGradient id="war-belt" x1="0" x2="0" y1="0" y2="1">
-      <stop offset="0" stop-color="#6b4226"/>
-      <stop offset="1" stop-color="#3d2614"/>
+      <stop offset="1" stop-color="#5d6270"/>
     </linearGradient>
   </defs>
 
   <!-- 影子 -->
-  <ellipse cx="100" cy="238" rx="42" ry="6" fill="#000" opacity="0.18"/>
+  <ellipse cx="100" cy="238" rx="50" ry="6" fill="#000" opacity="0.18"/>
 
-  <!-- 腿 -->
-  <rect x="78" y="170" width="18" height="60" rx="6" fill="url(#war-belt)"/>
-  <rect x="104" y="170" width="18" height="60" rx="6" fill="url(#war-belt)"/>
-  <!-- 鞋 -->
-  <ellipse cx="87" cy="232" rx="14" ry="6" fill="#2a1810"/>
-  <ellipse cx="113" cy="232" rx="14" ry="6" fill="#2a1810"/>
+  <!-- 蹼足 -->
+  <path d="M 76 220 Q 68 234 76 236 Q 86 236 88 232 Q 92 236 96 232 L 96 220 Z" fill="url(#war-beak)" stroke="#9c4a05" stroke-width="1"/>
+  <path d="M 124 220 Q 132 234 124 236 Q 114 236 112 232 Q 108 236 104 232 L 104 220 Z" fill="url(#war-beak)" stroke="#9c4a05" stroke-width="1"/>
 
-  <!-- 身體（鎧甲） -->
-  <path d="M 60 110 Q 60 100 70 100 L 130 100 Q 140 100 140 110 L 140 175 Q 140 180 135 180 L 65 180 Q 60 180 60 175 Z" fill="url(#war-armor)" stroke="#3a3e47" stroke-width="2"/>
-  <!-- 鎧甲腹線 -->
-  <line x1="100" y1="105" x2="100" y2="175" stroke="#3a3e47" stroke-width="2" opacity="0.6"/>
-  <line x1="70" y1="135" x2="130" y2="135" stroke="#3a3e47" stroke-width="2" opacity="0.6"/>
-  <!-- 腰帶 -->
-  <rect x="60" y="160" width="80" height="14" fill="url(#war-belt)" stroke="#2a1810" stroke-width="1"/>
-  <circle cx="100" cy="167" r="4" fill="#d4af37" stroke="#7a5a1a" stroke-width="1"/>
+  <!-- 身體 -->
+  <ellipse cx="100" cy="170" rx="55" ry="58" fill="url(#war-feather)" stroke="#a8b0bd" stroke-width="2"/>
 
-  <!-- 手臂 -->
-  <ellipse cx="55" cy="135" rx="14" ry="22" fill="url(#war-armor)" stroke="#3a3e47" stroke-width="1.5"/>
-  <ellipse cx="145" cy="135" rx="14" ry="22" fill="url(#war-armor)" stroke="#3a3e47" stroke-width="1.5"/>
-  <!-- 手 -->
-  <circle cx="50" cy="160" r="9" fill="url(#war-skin)" stroke="#a17042" stroke-width="1"/>
-  <circle cx="150" cy="160" r="9" fill="url(#war-skin)" stroke="#a17042" stroke-width="1"/>
+  <!-- 羽毛紋路 -->
+  <path d="M 70 175 Q 80 182 92 178" stroke="#cbd5e1" stroke-width="1.2" fill="none"/>
+  <path d="M 108 178 Q 120 182 130 175" stroke="#cbd5e1" stroke-width="1.2" fill="none"/>
+  <path d="M 75 200 Q 100 208 125 200" stroke="#cbd5e1" stroke-width="1.2" fill="none"/>
 
-  <!-- 護肩 -->
-  <ellipse cx="55" cy="115" rx="18" ry="10" fill="url(#war-armor)" stroke="#3a3e47" stroke-width="1.5"/>
-  <ellipse cx="145" cy="115" rx="18" ry="10" fill="url(#war-armor)" stroke="#3a3e47" stroke-width="1.5"/>
+  <!-- 胸甲 -->
+  <path d="M 70 138 Q 70 130 80 128 L 120 128 Q 130 130 130 138 L 130 175 Q 130 180 125 180 L 75 180 Q 70 180 70 175 Z" fill="url(#war-armor)" stroke="#3a3e47" stroke-width="1.5"/>
+  <line x1="100" y1="130" x2="100" y2="178" stroke="#3a3e47" stroke-width="1.5" opacity="0.7"/>
+  <circle cx="80" cy="138" r="2" fill="#2a2e37"/>
+  <circle cx="120" cy="138" r="2" fill="#2a2e37"/>
 
-  <!-- 脖子 -->
-  <rect x="92" y="92" width="16" height="14" fill="url(#war-skin)"/>
+  <!-- 翅膀（末端在 50/150,160 對齊裝備） -->
+  <path d="M 58 138 Q 36 152 42 178 Q 50 168 58 162 L 60 158 Q 56 148 58 138 Z" fill="url(#war-feather)" stroke="#a8b0bd" stroke-width="1.5"/>
+  <path d="M 142 138 Q 164 152 158 178 Q 150 168 142 162 L 140 158 Q 144 148 142 138 Z" fill="url(#war-feather)" stroke="#a8b0bd" stroke-width="1.5"/>
+  <path d="M 48 148 Q 46 165 46 178" stroke="#cbd5e1" stroke-width="1" fill="none"/>
+  <path d="M 54 144 Q 52 162 52 175" stroke="#cbd5e1" stroke-width="1" fill="none"/>
+  <path d="M 152 148 Q 154 165 154 178" stroke="#cbd5e1" stroke-width="1" fill="none"/>
+  <path d="M 146 144 Q 148 162 148 175" stroke="#cbd5e1" stroke-width="1" fill="none"/>
+
+  <!-- 脖子（S 曲線） -->
+  <path d="M 90 115 Q 76 95 86 75 Q 96 65 110 70 Q 114 90 105 105 Z" fill="url(#war-feather)" stroke="#a8b0bd" stroke-width="2"/>
 
   <!-- 頭 -->
-  <circle cx="100" cy="65" r="32" fill="url(#war-skin)" stroke="#a17042" stroke-width="1.5"/>
+  <circle cx="100" cy="55" r="22" fill="url(#war-feather)" stroke="#a8b0bd" stroke-width="2"/>
 
-  <!-- 頭髮 -->
-  <path d="M 70 55 Q 68 35 90 32 Q 100 22 110 32 Q 132 35 130 55 Q 130 48 122 48 Q 118 42 110 44 Q 100 38 90 44 Q 82 42 78 48 Q 70 48 70 55 Z" fill="url(#war-hair)"/>
+  <!-- 嘴喙 -->
+  <path d="M 118 50 L 138 48 Q 142 52 138 60 L 118 60 Z" fill="url(#war-beak)" stroke="#9c4a05" stroke-width="1.2"/>
+  <line x1="120" y1="55" x2="138" y2="55" stroke="#9c4a05" stroke-width="0.8" opacity="0.7"/>
+  <ellipse cx="124" cy="51" rx="1" ry="1.2" fill="#3a1f10"/>
 
-  <!-- 頭巾/額帶 -->
-  <rect x="68" y="56" width="64" height="6" fill="#8b1a1a" stroke="#4a0d0d" stroke-width="1"/>
+  <!-- 眼睛（兇眼） -->
+  <ellipse cx="108" cy="46" rx="3" ry="3.5" fill="#1a1a1a"/>
+  <circle cx="109" cy="44.5" r="1" fill="#fff"/>
+  <path d="M 102 38 L 114 41" stroke="#3a1f10" stroke-width="2" stroke-linecap="round"/>
 
-  <!-- 眼睛 -->
-  <ellipse cx="89" cy="70" rx="3" ry="4" fill="#2a1810"/>
-  <ellipse cx="111" cy="70" rx="3" ry="4" fill="#2a1810"/>
-  <circle cx="90" cy="69" r="1" fill="#fff"/>
-  <circle cx="112" cy="69" r="1" fill="#fff"/>
+  <!-- 紅色頭巾 -->
+  <path d="M 78 36 Q 100 28 120 36 L 122 42 Q 100 36 78 42 Z" fill="#8b1a1a" stroke="#4a0d0d" stroke-width="1"/>
+  <path d="M 78 38 Q 70 42 66 50 L 72 50 Q 76 44 80 42 Z" fill="#8b1a1a" stroke="#4a0d0d" stroke-width="1"/>
 
-  <!-- 眉毛 -->
-  <path d="M 84 63 L 94 64" stroke="#3a1f10" stroke-width="2" stroke-linecap="round"/>
-  <path d="M 106 64 L 116 63" stroke="#3a1f10" stroke-width="2" stroke-linecap="round"/>
-
-  <!-- 嘴 -->
-  <path d="M 95 82 Q 100 86 105 82" stroke="#7a3a1f" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <!-- 呆毛（從頭頂頭巾上方翹出） -->
+  <path d="M 102 30 Q 100 18 105 12 Q 110 16 107 24 Q 105 28 103 30 Z" fill="url(#war-feather)" stroke="#a8b0bd" stroke-width="1.2"/>
 </svg>

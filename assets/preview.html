@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"/>
-<title>紙娃娃素材預覽 - Paper Doll Asset Preview</title>
+<title>鵝鵝紙娃娃素材預覽 - Swan Paper Doll Preview</title>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <style>
   body {
@@ -129,10 +129,10 @@
   <h2>怎麼接到 Claude Code 的遊戲</h2>
   <p>每個 SVG 都是 <code>200×250</code> viewBox，全部對齊好；你只要把它們疊在同一個容器裡（絕對定位），盔甲光暈放最底層，角色底圖中間，武器/飾品最上層。範例：</p>
   <pre><code>&lt;div class="paper-doll"&gt;
-  &lt;img class="layer armor-glow" src="character-assets/equipment/armor-glow.svg"/&gt;
-  &lt;img class="layer base"       src="character-assets/base/warrior.svg"/&gt;
-  &lt;img class="layer weapon"     src="character-assets/equipment/sword.svg"/&gt;
-  &lt;img class="layer accessory"  src="character-assets/equipment/crown.svg"/&gt;
+  &lt;img class="layer armor-glow" src="assets/equipment/armor-glow.svg"/&gt;
+  &lt;img class="layer base"       src="assets/classes/warrior.svg"/&gt;
+  &lt;img class="layer weapon"     src="assets/equipment/sword.svg"/&gt;
+  &lt;img class="layer accessory"  src="assets/equipment/crown.svg"/&gt;
 &lt;/div&gt;
 
 &lt;style&gt;
@@ -144,20 +144,20 @@
   <pre><code>function PaperDoll({ klass, weapon, accessory, armor }) {
   return (
     &lt;div className="relative w-[200px] h-[250px]"&gt;
-      {armor &amp;&amp; &lt;img src={`/character-assets/equipment/${armor}.svg`} className="absolute inset-0" /&gt;}
-      &lt;img src={`/character-assets/base/${klass}.svg`} className="absolute inset-0" /&gt;
-      {weapon &amp;&amp; &lt;img src={`/character-assets/equipment/${weapon}.svg`} className="absolute inset-0" /&gt;}
-      {accessory &amp;&amp; &lt;img src={`/character-assets/equipment/${accessory}.svg`} className="absolute inset-0" /&gt;}
+      {armor &amp;&amp; &lt;img src={`/assets/equipment/${armor}.svg`} className="absolute inset-0" /&gt;}
+      &lt;img src={`/assets/classes/${klass}.svg`} className="absolute inset-0" /&gt;
+      {weapon &amp;&amp; &lt;img src={`/assets/equipment/${weapon}.svg`} className="absolute inset-0" /&gt;}
+      {accessory &amp;&amp; &lt;img src={`/assets/equipment/${accessory}.svg`} className="absolute inset-0" /&gt;}
     &lt;/div&gt;
   );
 }</code></pre>
 
 <script>
 const BASES = [
-  { id: "warrior",  name: "戰士",     role: "Warrior" },
-  { id: "archer",   name: "精靈弓手", role: "Elf Archer" },
-  { id: "wizard",   name: "巫師",     role: "Wizard" },
-  { id: "paladin",  name: "聖騎士",   role: "Paladin" },
+  { id: "warrior",  name: "戰士鵝", role: "Warrior" },
+  { id: "archer",   name: "弓手鵝", role: "Archer" },
+  { id: "mage",     name: "法師鵝", role: "Mage" },
+  { id: "paladin",  name: "聖騎鵝", role: "Paladin" },
 ];
 const EQUIPS = [
   { id: "sword",       name: "鐵劍",    cat: "weapon" },
@@ -175,7 +175,7 @@ const baseRow = document.getElementById("bases");
 BASES.forEach(b => {
   baseRow.innerHTML += `
     <div class="card">
-      <div class="stage"><img src="base/${b.id}.svg" alt="${b.name}"/></div>
+      <div class="stage"><img src="classes/${b.id}.svg" alt="${b.name}"/></div>
       <div class="name">${b.name}</div>
       <div class="role">${b.role}</div>
     </div>`;
@@ -197,7 +197,7 @@ const state = { klass: "warrior", weapon: null, accessory: null, armor: null, sh
 function render() {
   stage.innerHTML = "";
   if (state.armor)   stage.innerHTML += `<img src="equipment/${state.armor}.svg"/>`;
-  stage.innerHTML += `<img src="base/${state.klass}.svg"/>`;
+  stage.innerHTML += `<img src="classes/${state.klass}.svg"/>`;
   if (state.shield)  stage.innerHTML += `<img src="equipment/${state.shield}.svg"/>`;
   if (state.weapon)  stage.innerHTML += `<img src="equipment/${state.weapon}.svg"/>`;
   if (state.accessory) stage.innerHTML += `<img src="equipment/${state.accessory}.svg"/>`;
