@@ -214,6 +214,17 @@
     text-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
     line-height: 1;
   }
+  .pd-base-img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    height: 80%;
+    width: auto;
+    z-index: 2;
+    filter: drop-shadow(0 4px 12px rgba(124, 58, 237, 0.4));
+    pointer-events: none;
+  }
   .pd-weapon {
     position: absolute;
     right: 16px;
@@ -701,21 +712,21 @@
   // ============================================================
   const CLASSES = {
     warrior: {
-      icon: '🤺', name: '戰士',
+      icon: '🤺', image: 'assets/classes/warrior.png', name: '戰士',
       desc: '高 HP / 高 ATK / 慢',
       hp: 130, atk: 14, def: 8, spd: 7,
       hpPer: 14, atkPer: 2.2, defPer: 1.2, spdPer: 0.4,
       attackVerb: '揮砍',
     },
     archer: {
-      icon: '🧝', name: '弓手',
+      icon: '🧝', image: 'assets/classes/archer.png', name: '弓手',
       desc: '速度先攻 / 平衡',
       hp: 95, atk: 12, def: 5, spd: 14,
       hpPer: 9, atkPer: 1.5, defPer: 0.6, spdPer: 1.2,
       attackVerb: '射擊',
     },
     mage: {
-      icon: '🧙', name: '法師',
+      icon: '🧙', image: 'assets/classes/mage.png', name: '法師',
       desc: '高暴擊 / 紙片',
       hp: 80, atk: 17, def: 4, spd: 10,
       hpPer: 7, atkPer: 2.6, defPer: 0.5, spdPer: 0.7,
@@ -723,12 +734,12 @@
       critBonus: 0.18,
     },
     paladin: {
-      icon: '🦸', name: '聖騎',
+      icon: '🦸', image: 'assets/classes/paladin.png', name: '聖騎',
       desc: '高防禦 / 自癒',
       hp: 115, atk: 11, def: 11, spd: 7,
       hpPer: 12, atkPer: 1.4, defPer: 1.6, spdPer: 0.4,
       attackVerb: '聖光斬',
-      regenPer: 0.05, // 每回合回 5% maxHp
+      regenPer: 0.05,
     },
   };
 
@@ -1369,7 +1380,10 @@
         <div class="cp-coin-badge">🪙 ${coins >= 1000 ? (coins/1000).toFixed(1) + 'k' : coins}</div>
         <div class="paper-doll">
           ${aIcon ? `<div class="pd-armor">${aIcon}</div>` : ''}
-          <div class="pd-base">${cls.icon}</div>
+          ${cls.image
+            ? `<img class="pd-base-img" src="${cls.image}" alt="${cls.name}"
+                    onerror="this.outerHTML = '<div class=\\'pd-base\\'>${cls.icon}</div>';">`
+            : `<div class="pd-base">${cls.icon}</div>`}
           ${wIcon ? `<div class="pd-weapon">${wIcon}</div>` : ''}
           ${cIcon ? `<div class="pd-acc">${cIcon}</div>` : ''}
         </div>
