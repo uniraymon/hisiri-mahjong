@@ -2959,6 +2959,43 @@
   let bugs = []; // [{ id, reporter, reporterName, text, ts, snapshot }]
   // 暫存最近一場戰鬥的 log，回報 bug 時帶過去
   let __lastFightSnapshot = null; // { bossId: { currentHp, deadAt, nextSpawnAt, damageLog, lastHit, killCount, lastKill } }
+  // ⭐ Console ring buffer：把 console.log/warn/error 都鏡射一份到記憶體，BUG 回報時一併附上
+  const __consoleBuf = [];
+  const __CONSOLE_BUF_MAX = 250;
+  (function hookConsole() {
+    const fmt = (args) => Array.from(args).map(a => {
+      if (a == null) return String(a);
+      if (typeof a === 'string') return a;
+      if (a instanceof Error) return a.stack || a.message;
+      try { return JSON.stringify(a, null, 0).slice(0, 500); } catch { return String(a); }
+    }).join(' ');
+    ['log','warn','error','info'].forEach(level => {
+      const orig = console[level].bind(console);
+      console[level] = function(...args) {
+        try {
+          __consoleBuf.push({ t: Date.now(), level, msg: fmt(args).slice(0, 800) });
+          if (__consoleBuf.length > __CONSOLE_BUF_MAX) __consoleBuf.shift();
+        } catch (e) { /* swallow */ }
+        return orig(...args);
+      };
+    });
+    // 全域錯誤一起抓
+    window.addEventListener('error', (e) => {
+      __consoleBuf.push({ t: Date.now(), level: 'error', msg: `[onerror] ${e.message} @ ${e.filename}:${e.lineno}:${e.colno}` });
+    });
+    window.addEventListener('unhandledrejection', (e) => {
+      __consoleBuf.push({ t: Date.now(), level: 'error', msg: `[unhandledrejection] ${e.reason && (e.reason.stack || e.reason.message || String(e.reason))}` });
+    });
+  })();
+  // 探險專用 trace（不打到 console，只進 buffer 不污染 devtools）
+  const __forageTrace = [];
+  const __FORAGE_TRACE_MAX = 50;
+  function forageTrace(tag, data) {
+    try {
+      __forageTrace.push({ t: Date.now(), tag, data });
+      if (__forageTrace.length > __FORAGE_TRACE_MAX) __forageTrace.shift();
+    } catch {}
+  }
   let baseMoney = 1000;
   let basePoint = 25000;
 
@@ -3647,6 +3684,7 @@
       const myClass = me?.rpg?.class || 'warrior';
       const setId = CLASS_SET[myClass] || 'warrior_iron';
       const lv = Math.max(1, playerLv);
+      forageTrace('generateMonster:forageElite', { class: myClass, setId, lv, opts });
       const k = 1 + (lv - 1) * 0.18;
       const FORAGE_ELITE_TEMPLATES = {
         warrior: { name: '★ 戰士試煉鵝', icon: '⚔️', verb: '試煉揮砍', dialogue: ['想成為戰士？先撐過我這關！', '揮砍吧！讓我看看你的覺悟！'], deathLine: ['果然...是個合格的戰士...', '繼承...這份意志...'] },
@@ -4803,7 +4841,7 @@
   function snapshotLastFight(monster, result) {
     try {
       __lastFightSnapshot = {
-        monster: monster ? { id: monster.id, name: monster.name, level: monster.level, hp: monster.maxHp, atk: monster.atk, def: monster.def, isElite: !!monster.isElite, dropSet: monster.dropSet } : null,
+        monster: monster ? { id: monster.id, name: monster.name, level: monster.level, hp: monster.maxHp, atk: monster.atk, def: monster.def, spd: monster.spd, isElite: !!monster.isElite, isForageElite: !!monster.isForageElite, dropSet: monster.dropSet, ability: monster.ability, skillsCount: Array.isArray(monster.skills) ? monster.skills.length : 0 } : null,
         result: result ? {
           won: !!result.won,
           fled: !!result.fled,
@@ -4811,17 +4849,83 @@
           pMp: result.pMpFinal,
           mHp: result.mHpFinal,
           critCount: result.critCount,
+          coinsStolen: result.coinsStolen || 0,
         } : null,
-        log: result && Array.isArray(result.log) ? result.log.slice(-30).map(l => ({ type: l.type, text: l.text })) : [],
+        log: result && Array.isArray(result.log) ? result.log.slice(-60).map(l => ({ type: l.type, text: l.text })) : [],
         ts: Date.now(),
       };
     } catch (e) { console.warn('snapshot fail', e); }
   }
 
+  // ⭐ 完整狀態快照：玩家、屬性、最近戰鬥、最近探險、console buffer
+  function captureFullSnapshot() {
+    const me = getMe();
+    const rpg = me ? getRpg(me) : null;
+    let stats = null;
+    try { stats = me && rpg && rpg.class ? computeStats(me) : null; } catch (e) { stats = { error: String(e) }; }
+    const safeRpg = rpg ? {
+      class: rpg.class, level: rpg.level, xp: rpg.xp, hp: rpg.hp, mp: rpg.mp, stamina: rpg.stamina,
+      skillPoints: rpg.skillPoints, abilityPoints: rpg.abilityPoints,
+      equipment: rpg.equipment,
+      inventory: (rpg.inventory || []).map(it => typeof it === 'string' ? it : (it && it.id) ? `${it.id}${it.rarity ? `[${it.rarity}]` : ''}${it.affixes ? `(${it.affixes.length} affix)` : ''}` : '?'),
+      skills: rpg.skills, skillLevels: rpg.skillLevels, abilities: rpg.abilities,
+      treasures: rpg.treasures, dexSeenCount: (rpg.dexSeen || []).length,
+      currentZone: rpg.currentZone, currentFloor: rpg.currentFloor,
+      forageCount: rpg.forageCount, forageBattles: rpg.forageBattles, greenTeaPity: rpg.greenTeaPity,
+      fightsWon: rpg.fightsWon, fightsLost: rpg.fightsLost,
+      kills: rpg.kills,
+      deathAt: rpg.deathAt,
+      actionPatternLen: (rpg.actionPattern || []).length,
+      actionPatternTop5: (rpg.actionPattern || []).slice(0, 5),
+    } : null;
+    return {
+      ts: Date.now(),
+      tsIso: new Date().toISOString(),
+      ua: navigator.userAgent,
+      url: location.href,
+      me: me ? { id: me.id, name: me.name, avatar: me.avatar } : null,
+      rpg: safeRpg,
+      stats: stats ? {
+        atk: stats.atk, def: stats.def, spd: stats.spd, maxHp: stats.maxHp, maxMp: stats.maxMp,
+        totalCritChance: stats.totalCritChance, totalCritDmg: stats.totalCritDmg,
+        setBonuses: stats.setBonuses, setCounts: stats.setCounts,
+      } : null,
+      lastFight: __lastFightSnapshot,
+      forageTrace: __forageTrace.slice(),
+      console: __consoleBuf.slice(),
+    };
+  }
+  function snapshotToText(snap, userText) {
+    const head = userText ? `--- 使用者描述 ---\n${userText}\n` : '';
+    return head + '--- SNAPSHOT (JSON) ---\n' + JSON.stringify(snap, null, 2);
+  }
+  // 一鍵複製到剪貼簿
+  async function copyToClipboard(text) {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch (e) { /* fall through */ }
+    // fallback：textarea + execCommand
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed'; ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch (e) { return false; }
+  }
+  window.__captureFullSnapshot = captureFullSnapshot; // 給 console 手動呼叫
+
   function openBugReport(includeLastFight) {
     const me = getMe();
     if (!me) { showToast('先登入再回報'); return; }
     const snap = includeLastFight && __lastFightSnapshot ? __lastFightSnapshot : null;
+    const full = captureFullSnapshot();
     const html = `
       <div style="text-align:left; padding:4px 0;">
         <div style="font-size:13px; color:#5b3d62; margin-bottom:8px;">說一下你遇到了什麼問題（裝備消失？戰鬥怪怪的？UI 跑版？）</div>
@@ -4831,7 +4935,11 @@
             📎 將附上「最近一場戰鬥」的快照（怪物：${escapeHtml(snap.monster?.name || '?')} Lv${snap.monster?.level || '?'} / ${snap.result?.won ? '勝' : snap.result?.fled ? '逃跑' : '敗'} / 戰鬥 log ${snap.log.length} 條）
           </div>
         ` : ''}
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px;">
+        <div style="margin-top:8px; padding:8px 10px; background:#ede9fe; border-radius:8px; font-size:11px; color:#5b21b6; border:1px dashed #a78bfa;">
+          📎 一律附上完整狀態：${full.console.length} 條 console、${full.forageTrace.length} 條探險 trace、玩家 / 屬性 / 背包 / 規則表
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-top:14px;">
+          <button class="btn btn-secondary" onclick="copyBugStateToClipboard()" style="margin-top:0; background:#ede9fe; color:#5b21b6;" title="複製到剪貼簿（不送 BUG）">📋 複製</button>
           <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:0;">取消</button>
           <button class="btn btn-primary" onclick="submitBugReport(${snap ? 'true' : 'false'})" style="background:linear-gradient(135deg,#fca5a5,#dc2626); box-shadow:0 4px 0 #991b1b;">📤 送出</button>
         </div>
@@ -4841,6 +4949,13 @@
     setTimeout(() => document.getElementById('bugReportText')?.focus(), 50);
   }
   window.openBugReport = openBugReport;
+  async function copyBugStateToClipboard() {
+    const text = (document.getElementById('bugReportText')?.value || '').trim();
+    const snap = captureFullSnapshot();
+    const ok = await copyToClipboard(snapshotToText(snap, text));
+    showToast(ok ? '✅ 已複製完整狀態到剪貼簿' : '⚠ 複製失敗，請手動 select');
+  }
+  window.copyBugStateToClipboard = copyBugStateToClipboard;
 
   function submitBugReport(withSnapshot) {
     const me = getMe();
@@ -4857,6 +4972,8 @@
       ts: Date.now(),
       status: 'open',
       snapshot: withSnapshot && __lastFightSnapshot ? __lastFightSnapshot : null,
+      // ⭐ 一律附完整狀態（玩家/屬性/console/forage trace），方便事後複製貼給開發
+      fullSnap: captureFullSnapshot(),
     });
     saveData();
     hideModal();
@@ -4865,6 +4982,22 @@
     refreshBugBadge();
   }
   window.submitBugReport = submitBugReport;
+  // 一鍵把某筆 BUG 連同完整狀態複製
+  async function copyBugById(id) {
+    const b = (bugs || []).find(x => x.id === id);
+    if (!b) { showToast('找不到 BUG'); return; }
+    const text = `--- BUG ${b.id} ---
+回報人：${b.reporterName} (${b.reporter})
+時間：${new Date(b.ts).toISOString()}
+狀態：${b.status}
+描述：
+${b.text}
+` + (b.fullSnap ? '\n' + JSON.stringify(b.fullSnap, null, 2) : '\n[沒有完整狀態快照（舊回報）]')
+      + (b.snapshot && !b.fullSnap ? '\n--- 戰鬥快照 ---\n' + JSON.stringify(b.snapshot, null, 2) : '');
+    const ok = await copyToClipboard(text);
+    showToast(ok ? '✅ 已複製到剪貼簿' : '⚠ 複製失敗');
+  }
+  window.copyBugById = copyBugById;
 
   function showBugList() {
     const me = getMe();
@@ -4898,13 +5031,14 @@
               </div>
             </details>
           ` : ''}
-          ${isMine || isDebugUnlocked() ? `
-            <div style="display:flex; gap:4px; margin-top:6px;">
+          <div style="display:flex; gap:4px; margin-top:6px; flex-wrap:wrap;">
+            <button class="btn btn-secondary" style="font-size:10px; padding:4px 8px; margin:0; flex:1; background:#ede9fe; color:#5b21b6;" onclick="copyBugById('${b.id}')" title="複製完整 JSON">📋 複製</button>
+            ${isMine || isDebugUnlocked() ? `
               ${b.status !== 'fixed' ? `<button class="btn btn-secondary" style="font-size:10px; padding:4px 8px; margin:0; flex:1;" onclick="setBugStatus('${b.id}','fixed')">標記已修</button>` : ''}
               ${b.status !== 'wontfix' ? `<button class="btn btn-secondary" style="font-size:10px; padding:4px 8px; margin:0; flex:1;" onclick="setBugStatus('${b.id}','wontfix')">不修</button>` : ''}
               <button class="btn btn-secondary" style="font-size:10px; padding:4px 8px; margin:0; color:#dc2626;" onclick="deleteBug('${b.id}')">刪除</button>
-            </div>
-          ` : ''}
+            ` : ''}
+          </div>
         </div>
       `;
     };
@@ -4920,7 +5054,8 @@
           ${[...closed].reverse().slice(0, 10).map(renderBug).join('')}
           ${closed.length > 10 ? `<div style="font-size:11px; color:#9ca3af; text-align:center; margin-top:6px;">還有 ${closed.length - 10} 筆，省略</div>` : ''}
         ` : ''}
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-top:14px;">
+          <button class="btn btn-secondary" onclick="copyCurrentStateOnly()" style="margin-top:0; background:#ede9fe; color:#5b21b6;" title="複製目前狀態（不送 BUG）">📋 複製當前狀態</button>
           <button class="btn btn-primary" onclick="hideModal(); openBugReport(false)" style="background:linear-gradient(135deg,#fca5a5,#dc2626); box-shadow:0 4px 0 #991b1b;">+ 新增回報</button>
           <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:0;">關閉</button>
         </div>
@@ -4928,6 +5063,11 @@
     `;
     showModal(`🐛 BUG 列表（${bugs.length}）`, html);
   }
+  async function copyCurrentStateOnly() {
+    const ok = await copyToClipboard(snapshotToText(captureFullSnapshot(), ''));
+    showToast(ok ? '✅ 已複製當前狀態' : '⚠ 複製失敗');
+  }
+  window.copyCurrentStateOnly = copyCurrentStateOnly;
   window.showBugList = showBugList;
 
   function setBugStatus(id, status) {
@@ -6993,6 +7133,7 @@
 
     // 一律走分支事件 — 戰鬥只在玩家「選錯」時觸發（事件 outcome 帶 battle: true）
     const quest = FORAGE_QUESTS[Math.floor(Math.random() * FORAGE_QUESTS.length)];
+    forageTrace('doForage', { questId: quest.id, level: r.level, class: r.class, currentZone: r.currentZone, currentFloor: r.currentFloor, forageCount: r.forageCount });
     saveData();
     showForageQuest(quest);
   }
@@ -7045,6 +7186,7 @@
     // 戰鬥 outcome：扣費已扣（如有），跳出 modal 直接進戰鬥
     if (outcome.battle) {
       r.forageBattles = (r.forageBattles || 0) + 1;
+      forageTrace('resolveForageChoice→battle', { questId, choiceIdx, outcomeP: outcome.p, battleLine: outcome.battleLine, forageBattles: r.forageBattles });
       // 處理 outcome 的 coins 扣費（例如賭博花了錢還被打）
       if (outcome.coins) {
         const amt = Array.isArray(outcome.coins) ? outcome.coins[0] + Math.floor(Math.random() * (outcome.coins[1] - outcome.coins[0] + 1)) : Number(outcome.coins) || 0;
@@ -7330,6 +7472,7 @@
       const _zone = ZONES.find(z => z.id === (rpg.currentZone || 'forest'));
       const drop = rollItemDrop(rpg.level, { slotBias: _zone ? _zone.dropBias : null });
       if (drop) rpg.inventory.push(drop); // drop instance（含詞綴）直接存物件
+      forageTrace('rollItemDrop', { zoneId: _zone?.id, dropBias: _zone?.dropBias, gotDrop: !!drop, dropId: drop?.id, dropName: drop?.name, rarity: drop?.rarity });
       // 精英怪：必掉一件套裝（其他地區精英還是給套裝；探險精英改給寶物）
       let elitePiece = null;
       let treasureDropped = null;     // 拿到的寶物本體（首次取得才會有）
@@ -7342,6 +7485,9 @@
           const clone = { ...piece, setId: monster.dropSet, isSetPiece: true };
           rpg.inventory.push(clone);
           elitePiece = piece;
+          forageTrace('zone-elite drop', { setId: monster.dropSet, pieceId: piece.id, pieceName: piece.name });
+        } else {
+          forageTrace('zone-elite NO-DROP', { dropSet: monster.dropSet, setExists: !!set, piecesLen: set?.pieces?.length });
         }
       } else if (monster.isForageElite) {
         // ⭐ 探險精英：改成給寶物（重複→ +1000 XP）
@@ -7353,11 +7499,16 @@
           rpg.xp = (rpg.xp || 0) + TREASURE_DUP_XP;
           treasureDupXp = TREASURE_DUP_XP;
           treasureDropped = { ...treasure, duplicate: true };
+          forageTrace('forage-elite treasure DUP', { tid, name: treasure?.name, dupXp: TREASURE_DUP_XP, ownedCount: rpg.treasures.length });
         } else {
           rpg.treasures.push(tid);
           treasureDropped = { ...treasure, duplicate: false };
+          forageTrace('forage-elite treasure NEW', { tid, name: treasure?.name, ownedCount: rpg.treasures.length });
           // 寶物給的能力加成是 derived（透過 computeTreasureBonuses），不直接改 abilities
         }
+      } else {
+        // 普通怪 / 沒掉裝（不是精英）— 也記一筆方便除錯
+        forageTrace('non-elite or no-drop', { isElite: !!monster.isElite, isForageElite: !!monster.isForageElite, dropSet: monster.dropSet, monsterId: monster.id });
       }
       // 紀錄地區進度：通關目前層數 → 解鎖下一層
       if (_zone) {
