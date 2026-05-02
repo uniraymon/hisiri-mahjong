@@ -3329,7 +3329,8 @@
         <button class="btn btn-secondary" onclick="adminFullHeal()">💚 滿血滿體力</button>
         <button class="btn btn-secondary" onclick="adminGiveLegendary()">🌟 神話全套</button>
       </div>
-      <button class="btn btn-danger" onclick="adminResetRpg()">⚠️ 重置 RPG 角色（保留幣）</button>
+      <button class="btn btn-secondary" onclick="adminResetPoints()" style="background:linear-gradient(135deg,#a7f3d0,#10b981); color:#fff;">🔄 退回所有技能點 + 能力點</button>
+      <button class="btn btn-danger" onclick="adminResetRpg()" style="margin-top:6px;">⚠️ 重置 RPG 角色（保留幣）</button>
       <button class="btn btn-secondary" onclick="adminLockDebug()" style="margin-top:6px;">🔐 鎖回 Debug</button>
 
       <div style="margin-top:10px; font-size:11px; color:#8b6f9b; text-align:center;">
@@ -3416,6 +3417,25 @@
     showToast('🌟 神話套裝穿戴完成');
   }
   window.adminGiveLegendary = adminGiveLegendary;
+
+  function adminResetPoints() {
+    const me = getMe(); if (!me) return;
+    if (!confirm('退回所有技能點 + 能力點？（職業 / 等級 / 裝備不變）')) return;
+    const r = getRpg(me);
+    const usedSk = Object.values(r.skills || {}).reduce((a, b) => a + (b || 0), 0);
+    const usedAb = Object.values(r.abilities || {}).reduce((a, b) => a + (b || 0), 0);
+    r.skillPoints = (r.skillPoints || 0) + usedSk;
+    r.abilityPoints = (r.abilityPoints || 0) + usedAb;
+    r.skills = {};
+    r.abilities = { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0 };
+    // HP/MP 上限可能因屬性歸零而變小，擋一下
+    const s = computeStats(me);
+    if (r.hp > s.maxHp) r.hp = s.maxHp;
+    if (r.mp > s.maxMp) r.mp = s.maxMp;
+    saveData(); render(); showDebugModal();
+    showToast(`🔄 退回 ${usedSk} 技能點 + ${usedAb} 能力點`);
+  }
+  window.adminResetPoints = adminResetPoints;
 
   function adminResetRpg() {
     if (!confirm('重置 RPG 角色（職業、等級、裝備全清；鵝鵝幣保留）？')) return;
