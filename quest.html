@@ -3693,20 +3693,39 @@
       if (leveledUp) showLevelUp(rpg.level);
     } else {
       rpg.fightsLost = (rpg.fightsLost || 0) + 1;
-      rpg.hp = 0;
-      rpg.deathAt = Date.now();
-      const div = document.createElement('div');
-      div.className = 'log-line log-defeat';
-      div.textContent = `💀 你被打倒了… 必須休息 10 分鐘恢復 50% HP（或喝藥）`;
-      logEl.appendChild(div);
-      rewardHtml = `
-        <div class="reward-list reward-loss">
-          <div class="rl-title">😭 失敗了</div>
-          <div class="rl-item">💀 進入休息：10 分鐘後恢復到 50% HP</div>
-          ${result.coinsStolen > 0 ? `<div class="rl-item" style="color:#dc2626;">💰 被偷走 −${result.coinsStolen} 鵝鵝幣</div>` : ''}
-          <div class="rl-item" style="margin-top:4px;">想立刻回血可用治療藥</div>
-        </div>
-      `;
+      // 新手保護：頭 4 等死掉直接 HP 回滿、不進入休息
+      if ((rpg.level || 1) <= 4) {
+        const newStats = computeStats(player);
+        rpg.hp = newStats.maxHp;
+        rpg.deathAt = null;
+        const div = document.createElement('div');
+        div.className = 'log-line log-system';
+        div.textContent = `🍀 新手保護：HP 自動回滿（Lv 5 起死亡需休息 10 分鐘）`;
+        logEl.appendChild(div);
+        rewardHtml = `
+          <div class="reward-list" style="background:#fef9c3; border-color:#fde047;">
+            <div class="rl-title" style="color:#a16207;">😭 失敗了…但</div>
+            <div class="rl-item">🍀 <b>新手保護啟動</b>：HP 已自動回滿</div>
+            <div class="rl-item" style="font-size:11px; color:#92400e;">Lv 5 起，敗北後需休息 10 分鐘</div>
+            ${result.coinsStolen > 0 ? `<div class="rl-item" style="color:#dc2626;">💰 被偷走 −${result.coinsStolen} 鵝鵝幣</div>` : ''}
+          </div>
+        `;
+      } else {
+        rpg.hp = 0;
+        rpg.deathAt = Date.now();
+        const div = document.createElement('div');
+        div.className = 'log-line log-defeat';
+        div.textContent = `💀 你被打倒了… 必須休息 10 分鐘恢復 50% HP（或喝藥）`;
+        logEl.appendChild(div);
+        rewardHtml = `
+          <div class="reward-list reward-loss">
+            <div class="rl-title">😭 失敗了</div>
+            <div class="rl-item">💀 進入休息：10 分鐘後恢復到 50% HP</div>
+            ${result.coinsStolen > 0 ? `<div class="rl-item" style="color:#dc2626;">💰 被偷走 −${result.coinsStolen} 鵝鵝幣</div>` : ''}
+            <div class="rl-item" style="margin-top:4px;">想立刻回血可用治療藥</div>
+          </div>
+        `;
+      }
     }
     document.getElementById('fightResult').insertAdjacentHTML('beforeend', rewardHtml);
     saveData();
