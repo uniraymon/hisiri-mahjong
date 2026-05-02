@@ -177,6 +177,141 @@
     color: #b88a8a;
     box-shadow: 0 2px 4px rgba(0,0,0,0.08);
   }
+
+  /* 等級徽章 + 大頭像角落 Lv */
+  .avatar-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .lv-corner {
+    position: absolute;
+    bottom: -4px;
+    right: -6px;
+    background: linear-gradient(135deg, #c4b5fd, #a78bfa);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 8px;
+    border: 2px solid #fff;
+    line-height: 1.1;
+    letter-spacing: 0.3px;
+    box-shadow: 0 2px 4px rgba(167, 139, 250, 0.3);
+    pointer-events: none;
+  }
+
+  /* 個人頁等級卡 */
+  .level-card { padding: 10px 4px; }
+  .level-num {
+    font-size: 36px;
+    font-weight: 800;
+    color: #a78bfa;
+    text-align: center;
+    text-shadow: 2px 2px 0 #fff, 3px 3px 0 #ddd6fe;
+    letter-spacing: 1px;
+  }
+  .level-bar-wrap {
+    background: #f3f0ff;
+    border: 2px solid #ddd6fe;
+    border-radius: 12px;
+    height: 18px;
+    margin: 10px 0;
+    overflow: hidden;
+    position: relative;
+  }
+  .level-bar {
+    background: linear-gradient(90deg, #c4b5fd, #a78bfa, #8b5cf6);
+    height: 100%;
+    transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border-radius: 10px;
+  }
+  .level-info {
+    text-align: center;
+    font-size: 12px;
+    color: #8b6f9b;
+    font-weight: 600;
+  }
+
+  /* Steam 風格 hover 卡 */
+  .hover-card {
+    position: absolute;
+    z-index: 200;
+    background: linear-gradient(135deg, #ffffff, #fff8fb);
+    border: 2px solid #ffabbf;
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(239, 107, 138, 0.25);
+    padding: 12px;
+    width: 240px;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.15s, transform 0.15s;
+    display: none;
+  }
+  .hover-card.show {
+    opacity: 1;
+    transform: translateY(0);
+    display: block;
+  }
+  .hover-card .hc-header {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 8px;
+    border-bottom: 2px dashed #ffe4ec;
+    padding-bottom: 8px;
+  }
+  .hover-card .hc-avatar {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffd6e0, #ffabbf);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+  }
+  .hover-card .hc-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: #d4806b;
+    line-height: 1.2;
+  }
+  .hover-card .hc-title {
+    font-size: 10px;
+    color: #8b6f47;
+    background: linear-gradient(135deg, #fff4d6, #ffdb9b);
+    padding: 1px 6px;
+    border-radius: 7px;
+    display: inline-block;
+    margin-top: 2px;
+    font-weight: 600;
+  }
+  .hover-card .hc-level {
+    font-size: 11px;
+    color: #a78bfa;
+    font-weight: 700;
+    margin-top: 3px;
+  }
+  .hover-card .hc-stats {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 3px 10px;
+    font-size: 11px;
+  }
+  .hover-card .hc-stat-label { color: #b88a8a; font-weight: 600; }
+  .hover-card .hc-stat-value { font-weight: 700; color: #5a4a4a; text-align: right; }
+  .hover-card .hc-ach {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 2px dashed #ffe4ec;
+    font-size: 11px;
+    color: #b88a8a;
+    text-align: center;
+    font-weight: 600;
+  }
   .rank-1 {
     background: linear-gradient(135deg,#ffd700,#ffa500);
     color:#fff;
@@ -878,6 +1013,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="hover-card" id="hoverCard"></div>
 
 <div id="titleModal" class="modal-overlay hidden" onclick="closeTitleModal(event)">
   <div class="modal-content" onclick="event.stopPropagation()">
@@ -1130,9 +1266,15 @@
       list.innerHTML = totals.map(p => {
         const rank = rankMap[p.id];
         const rankCls = p.games > 0 ? `rank-${rank <= 4 ? rank : 4}` : '';
+        const lvInfo = calcLevel(calcXP(getPlayerData(p.id)));
         return `
           <div class="player-row">
-            <span class="avatar" onclick="switchTab('${p.id}')">${p.avatar}</span>
+            <span class="avatar-wrap"
+                  onmouseenter="showHoverCard('${p.id}', this)"
+                  onmouseleave="hideHoverCard()">
+              <span class="avatar" onclick="switchTab('${p.id}')">${p.avatar}</span>
+              <span class="lv-corner">Lv${lvInfo.level}</span>
+            </span>
             <input class="player-name" value="${escapeHtml(p.name)}"
                    onchange="updateName('${p.id}', this.value)">
             <span class="rank-badge ${rankCls}" title="${p.games} 局">${p.games > 0 ? rank : '-'}</span>
@@ -1291,6 +1433,8 @@
     const unlockedCount = achievements.filter(a => a.unlocked).length;
     const titleObj = getDisplayTitle(p, records);
     const currentTitleId = titleObj.id;
+    const lvInfo = calcLevel(calcXP(records));
+    const lvPercent = Math.round((lvInfo.xpInLevel / lvInfo.xpForNext) * 100);
 
     const cumulative = [];
     let acc = 0;
@@ -1316,6 +1460,15 @@
             <div class="stat-value big">${games}</div>
           </div>
         </div>
+      </div>
+
+      <div class="card level-card">
+        <h2><span class="h2-text">⭐ 等級</span> <span style="font-size:11px; color:#b88a8a; font-weight:500;">（每場 / 名次 / 大贏 / 成就 都會加 XP）</span></h2>
+        <div class="level-num">Lv ${lvInfo.level}</div>
+        <div class="level-bar-wrap">
+          <div class="level-bar" style="width: ${lvPercent}%"></div>
+        </div>
+        <div class="level-info">${lvInfo.xpInLevel.toLocaleString()} / ${lvInfo.xpForNext.toLocaleString()} XP　·　累計 ${lvInfo.xp.toLocaleString()} XP</div>
       </div>
 
       <div class="card">
@@ -1619,6 +1772,39 @@
     return ACHIEVEMENTS.map(a => ({ ...a, unlocked: a.check(stats) }));
   }
 
+  // 經驗值：每場 +10、名次 1/2/3/4 = +30/+15/+5/0、淨贏每 100 萬基納 +1（單局上限 +50）、每解鎖成就 +50
+  function calcXP(records) {
+    let xp = 0;
+    const rankBonus = [0, 30, 15, 5, 0];
+    for (const r of records) {
+      xp += 10;
+      xp += rankBonus[r.rank] || 0;
+      if (r.money > 0) xp += Math.min(50, Math.floor(r.money / 100));
+    }
+    const unlockedCount = ACHIEVEMENTS.filter(a => a.check(getStats(records))).length;
+    xp += unlockedCount * 50;
+    return xp;
+  }
+
+  // 等級曲線：Lv n → n+1 需要 100×n XP（cumulativeXP for level n = 100 × n×(n-1)/2）
+  function calcLevel(xp) {
+    let level = 1, cum = 0;
+    while (true) {
+      const cost = 100 * level;
+      if (cum + cost > xp) break;
+      cum += cost;
+      level++;
+      if (level > 999) break;
+    }
+    return {
+      level,
+      xp,
+      xpInLevel: xp - cum,
+      xpForNext: 100 * level,
+      cumulativeXp: cum
+    };
+  }
+
   // 自動推薦稱號（fallback：玩家未自選或選的稱號目前沒解鎖時）
   function getAutoTitle(records) {
     const stats = getStats(records);
@@ -1778,6 +1964,63 @@
     saveData();
     render();
   });
+
+  // === Hover 個人卡（Steam 風） ===
+  function showHoverCard(pid, anchor) {
+    if (window.matchMedia && window.matchMedia('(hover: none)').matches) return; // 觸控裝置不顯示
+    const p = getPlayer(pid);
+    if (!p) return;
+    const records = getPlayerData(pid);
+    const stats = getStats(records);
+    const titleObj = getDisplayTitle(p, records);
+    const lvInfo = calcLevel(calcXP(records));
+    const winRate = stats.games > 0 ? Math.round(stats.winRate * 100) : 0;
+    let avgRankStr = '-';
+    if (stats.games > 0) {
+      const sumRank = records.reduce((s, r) => s + r.rank, 0);
+      avgRankStr = (sumRank / stats.games).toFixed(2);
+    }
+    const unlockedCount = ACHIEVEMENTS.filter(a => a.check(stats)).length;
+    const xpToNext = lvInfo.xpForNext - lvInfo.xpInLevel;
+
+    const card = document.getElementById('hoverCard');
+    card.innerHTML = `
+      <div class="hc-header">
+        <div class="hc-avatar">${p.avatar}</div>
+        <div style="min-width:0;">
+          <div class="hc-name">${escapeHtml(p.name)}</div>
+          <div class="hc-title">${titleObj.icon} ${escapeHtml(titleObj.title)}</div>
+          <div class="hc-level">⭐ Lv ${lvInfo.level} · ${lvInfo.xp.toLocaleString()} XP</div>
+        </div>
+      </div>
+      <div class="hc-stats">
+        <div class="hc-stat-label">出場</div><div class="hc-stat-value">${stats.games} 局</div>
+        <div class="hc-stat-label">總輸贏</div><div class="hc-stat-value ${moneyClass(stats.total)}">${fmtMoney(stats.total)}</div>
+        <div class="hc-stat-label">勝率（一位）</div><div class="hc-stat-value">${winRate}%</div>
+        <div class="hc-stat-label">平均名次</div><div class="hc-stat-value">${avgRankStr}</div>
+      </div>
+      <div class="hc-ach">🏅 已解鎖 ${unlockedCount} / ${ACHIEVEMENTS.length} 個成就 · 距 Lv ${lvInfo.level + 1} 還差 ${xpToNext} XP</div>
+    `;
+
+    const rect = anchor.getBoundingClientRect();
+    const cardWidth = 240;
+    let left = rect.right + 10 + window.scrollX;
+    let top = rect.top + window.scrollY - 4;
+    // 螢幕右邊不夠 → 改放左側
+    if (rect.right + cardWidth + 16 > window.innerWidth) {
+      left = rect.left - cardWidth - 10 + window.scrollX;
+    }
+    // 防止跑到視窗外左邊
+    if (left < 4) left = 4;
+    card.style.left = left + 'px';
+    card.style.top = top + 'px';
+    card.classList.add('show');
+  }
+
+  function hideHoverCard() {
+    const card = document.getElementById('hoverCard');
+    if (card) card.classList.remove('show');
+  }
 
   // === OCR 截圖匯入 ===
   let ocrWorker = null;
