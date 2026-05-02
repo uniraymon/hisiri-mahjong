@@ -1154,7 +1154,7 @@
 
   // === 打工 ===
   const WORK_STAMINA = 15;
-  const WORK_BASE_PAY = 60; // 體力較高、報酬也提高
+  const WORK_BASE_PAY = 100; // 拉高底薪
   const JOB_EVENTS = [
     // good (1.5x), normal (1x), bad (0.6x)
     { mood: 'good',   icon: '🍜', name: '鵝肉店搬運', line: '老闆娘看你可憐多給了一份小費！' },
@@ -1502,18 +1502,26 @@
     rare:      { color: '#a855f7', label: '稀有',  affixes: 2, mult: 1.4 },
     legendary: { color: '#f59e0b', label: '傳說',  affixes: 3, mult: 2.0 },
   };
-  function rollRarity() {
+  function rollRarity(boosted) {
     const r = Math.random();
+    if (boosted) {
+      // 探索專用：稀有度加倍
+      if (r < 0.25) return 'common';     // 25% (原 55%)
+      if (r < 0.60) return 'magic';      // 35% (原 30%)
+      if (r < 0.88) return 'rare';       // 28% (原 12%)
+      return 'legendary';                 // 12% (原 3%)
+    }
     if (r < 0.55) return 'common';
     if (r < 0.85) return 'magic';
     if (r < 0.97) return 'rare';
     return 'legendary';
   }
-  function generateDropItem(playerLv, monsterLv = playerLv) {
+  function generateDropItem(playerLv, opts) {
+    const boosted = opts === true || (opts && opts.boosted);
     const eligible = ITEMS.filter(i => (i.lv || 1) <= playerLv + 2 && (i.lv || 1) >= Math.max(1, playerLv - 5));
     if (eligible.length === 0) return null;
     const base = eligible[Math.floor(Math.random() * eligible.length)];
-    const rarity = rollRarity();
+    const rarity = rollRarity(boosted);
     const def = RARITY[rarity];
     const drop = {
       id: 'drop_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
@@ -2984,7 +2992,7 @@
       resultText = `+${amt} 鵝鵝幣`; resultColor = '#16a34a';
       showToast(`🎣 +${amt} 鵝鵝幣`);
     } else if (ev.type === 'equip') {
-      const drop = generateDropItem(r.level);
+      const drop = generateDropItem(r.level, true); // 探索：稀有度加倍
       if (drop) {
         if (!r.inventory) r.inventory = [];
         r.inventory.push(drop);
