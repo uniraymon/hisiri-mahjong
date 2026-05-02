@@ -1050,9 +1050,12 @@
     { id: 'c_oracle', name: '神諭',     icon: '🌠', slot: 'accessory', atk: 6, def: 6, spd: 4, hp: 30, lv: 18 },
   ];
 
-  const STAMINA_MAX = 100;
+  const STAMINA_MAX = 150;
   const STAMINA_PER_FIGHT = 10;
-  const TICK_MS = 60 * 1000;     // 1 分鐘 +1 體力 +1 HP
+  const STAMINA_PER_TICK = 5;     // 每分鐘 +5 體力（過去 +1）
+  const HP_PER_TICK = 1;
+  const MP_PER_TICK = 2;
+  const TICK_MS = 60 * 1000;
   const REST_MS = 10 * 60 * 1000; // HP=0 → 10 分後恢復到 50%
   const REST_HP_RATIO = 0.5;
 
@@ -1389,13 +1392,12 @@
     const elapsed = Date.now() - rpg.lastTickAt;
     const ticks = Math.floor(elapsed / TICK_MS);
     if (ticks > 0) {
-      rpg.stamina = Math.min(STAMINA_MAX, rpg.stamina + ticks);
+      rpg.stamina = Math.min(STAMINA_MAX, (rpg.stamina || 0) + ticks * STAMINA_PER_TICK);
       if (rpg.hp > 0 && rpg.hp < stats.maxHp) {
-        rpg.hp = Math.min(stats.maxHp, rpg.hp + ticks);
+        rpg.hp = Math.min(stats.maxHp, rpg.hp + ticks * HP_PER_TICK);
       }
-      // MP 每分鐘 +2（比 HP 快一點）
       if (rpg.mp < stats.maxMp) {
-        rpg.mp = Math.min(stats.maxMp, (rpg.mp || 0) + ticks * 2);
+        rpg.mp = Math.min(stats.maxMp, (rpg.mp || 0) + ticks * MP_PER_TICK);
       }
       rpg.lastTickAt += ticks * TICK_MS;
     }
@@ -2301,7 +2303,7 @@
     } else {
       const sec = Math.ceil(state.untilNextTick / 1000);
       if (state.stamina < state.staminaMax || state.hp < state.hpMax) {
-        parts.push(`下次 +1 還有 ${sec} 秒`);
+        parts.push(`每分鐘 +${STAMINA_PER_TICK} 體力 / +${HP_PER_TICK} HP / +${MP_PER_TICK} MP（${sec}s）`);
       }
       if (state.stamina < STAMINA_PER_FIGHT) parts.push(`需 ${STAMINA_PER_FIGHT} 體力才能出戰`);
     }
