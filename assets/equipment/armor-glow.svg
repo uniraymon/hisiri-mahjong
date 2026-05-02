@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 250" width="200" height="250">
+  <!-- 盔甲光暈（套在身體外圈，提示已裝備護甲） -->
+  <defs>
+    <radialGradient id="armor-aura" cx="0.5" cy="0.55" r="0.5">
+      <stop offset="0.55" stop-color="#7dd3fc" stop-opacity="0"/>
+      <stop offset="0.85" stop-color="#7dd3fc" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#0ea5e9" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="100" cy="140" rx="78" ry="110" fill="url(#armor-aura)"/>
+  <!-- 幾顆飄浮粒子 -->
+  <circle cx="40" cy="100" r="2" fill="#bae6fd" opacity="0.9"/>
+  <circle cx="160" cy="115" r="2.5" fill="#bae6fd" opacity="0.9"/>
+  <circle cx="35" cy="180" r="1.5" fill="#bae6fd" opacity="0.9"/>
+  <circle cx="170" cy="170" r="2" fill="#bae6fd" opacity="0.9"/>
+  <circle cx="100" cy="40" r="2.5" fill="#bae6fd" opacity="0.9"/>
+</svg>

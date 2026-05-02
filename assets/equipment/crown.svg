@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 250" width="200" height="250">
+  <!-- 皇冠飾品（飄在頭頂） -->
+  <defs>
+    <linearGradient id="crown-gold" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#fff7c2"/>
+      <stop offset="0.5" stop-color="#ffd966"/>
+      <stop offset="1" stop-color="#c69a2a"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(100,18)">
+    <!-- 皇冠主體 -->
+    <path d="M -22 8 L -18 -8 L -10 4 L 0 -10 L 10 4 L 18 -8 L 22 8 Z" fill="url(#crown-gold)" stroke="#7a5a1a" stroke-width="1.5"/>
+    <!-- 底環 -->
+    <rect x="-22" y="6" width="44" height="6" fill="url(#crown-gold)" stroke="#7a5a1a" stroke-width="1"/>
+    <!-- 寶石 -->
+    <circle cx="-14" cy="-2" r="2.2" fill="#e63a3a" stroke="#7a1010" stroke-width="0.6"/>
+    <circle cx="0" cy="-4" r="2.5" fill="#3aa0e8" stroke="#1a4a8a" stroke-width="0.6"/>
+    <circle cx="14" cy="-2" r="2.2" fill="#5fa055" stroke="#1f4a1a" stroke-width="0.6"/>
+    <!-- 高光 -->
+    <line x1="-22" y1="9" x2="22" y2="9" stroke="#fff" stroke-width="0.8" opacity="0.7"/>
+  </g>
+</svg>

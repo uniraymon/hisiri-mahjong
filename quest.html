@@ -125,14 +125,15 @@
     pointer-events: none;
     z-index: 5;
   }
-  /* 卡片角落裝飾 */
+  /* 卡片角落裝飾 — 飄浮在頂部中央，不擋徽章 */
   .char-portrait::after {
     content: '✨';
     position: absolute;
-    top: 4px;
-    right: 8px;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
     font-size: 16px;
-    opacity: 0.6;
+    opacity: 0.7;
     animation: sparkleFloat 2.5s ease-in-out infinite;
     z-index: 6;
   }
@@ -155,7 +156,8 @@
     box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
   }
   .cp-lv-badge { top: 8px; left: 8px; }
-  .cp-coin-badge { bottom: 60px; right: 8px; background: linear-gradient(135deg, #fff, #fed7aa); border-color: #ea580c; color: #c2410c; }
+  .cp-coin-badge { top: 8px; right: 8px; background: linear-gradient(135deg, #fff, #fed7aa); border-color: #ea580c; color: #c2410c; }
+  /* sparkle 移到中央上方避免擋徽章 */
 
   /* 卡片下方收藏列 */
   .cp-collection {
@@ -182,81 +184,56 @@
     font-style: italic;
   }
 
-  /* 紙娃娃（大卡版本） */
+  /* 紙娃娃（SVG 5 層疊圖；每張 SVG 都是 200×250 已對齊） */
   .paper-doll {
-    position: relative;
-    width: 100%; height: 100%;
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    height: 250px;
     z-index: 4;
+    pointer-events: none;
   }
-  .pd-armor {
+  .pd-layer {
+    position: absolute;
+    inset: 0;
+    width: 200px;
+    height: 250px;
+    pointer-events: none;
+    user-select: none;
+  }
+  .pd-armor  { z-index: 1; animation: pdPulse 3s ease-in-out infinite; filter: drop-shadow(0 0 6px rgba(125,211,252,0.5)); }
+  .pd-base   { z-index: 2; filter: drop-shadow(0 4px 8px rgba(124,58,237,0.25)); }
+  .pd-shield { z-index: 3; }
+  .pd-weapon { z-index: 4; animation: pdSwayWeapon 2.6s ease-in-out infinite; transform-origin: center; }
+  .pd-acc    { z-index: 5; animation: pdFloatAcc 2.4s ease-in-out infinite; }
+  /* emoji fallback：當 SVG 載不到時用 emoji 撐住中央位置 */
+  .pd-base-emoji {
     position: absolute;
     inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 200px;
-    opacity: 0.22;
-    z-index: 1;
-    filter: drop-shadow(0 0 10px rgba(255,255,255,0.6));
-    animation: pdPulse 3s ease-in-out infinite;
+    font-size: 110px;
+    z-index: 2;
+    text-shadow: 0 4px 12px rgba(124,58,237,0.3);
   }
   @keyframes pdPulse {
-    0%, 100% { transform: scale(1); }
-    50%      { transform: scale(1.06); }
-  }
-  .pd-base {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -45%);
-    font-size: 130px;
-    z-index: 2;
-    text-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
-    line-height: 1;
-  }
-  .pd-base-img {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    height: 80%;
-    width: auto;
-    z-index: 2;
-    filter: drop-shadow(0 4px 12px rgba(124, 58, 237, 0.4));
-    pointer-events: none;
-  }
-  .pd-weapon {
-    position: absolute;
-    right: 16px;
-    bottom: 60px;
-    font-size: 64px;
-    z-index: 3;
-    transform: rotate(-25deg);
-    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
-    animation: pdSwayWeapon 2.6s ease-in-out infinite;
+    0%, 100% { transform: scale(1); opacity: 0.85; }
+    50%      { transform: scale(1.04); opacity: 1; }
   }
   @keyframes pdSwayWeapon {
-    0%, 100% { transform: rotate(-25deg) translateY(0); }
-    50%      { transform: rotate(-20deg) translateY(-3px); }
-  }
-  .pd-acc {
-    position: absolute;
-    top: 14px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 38px;
-    z-index: 4;
-    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.9));
-    animation: pdFloatAcc 2.4s ease-in-out infinite;
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-2px); }
   }
   @keyframes pdFloatAcc {
-    0%, 100% { transform: translateX(-50%) translateY(0); }
-    50%      { transform: translateX(-50%) translateY(-3px); }
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-2px); }
   }
 
-  /* 角色資訊（下方） */
-  .char-info { width: 100%; }
-  .char-info { flex: 1; min-width: 0; }
+  /* 角色資訊（卡片下方） */
+  .char-info { width: 100%; min-width: 0; }
   .char-name { font-weight: 700; color: #7c3aed; font-size: 18px; }
   .char-class { font-size: 12px; color: #8b6f9b; margin-bottom: 8px; }
   .char-coins { font-size: 12px; color: #d4806b; font-weight: 700; }
@@ -712,21 +689,30 @@
   // ============================================================
   const CLASSES = {
     warrior: {
-      icon: '🤺', image: 'assets/classes/warrior.png', name: '戰士',
+      icon: '🤺', name: '戰士',
+      baseImage:   'assets/classes/warrior.svg',
+      weaponImage: 'assets/equipment/sword.svg',
+      accImage:    'assets/equipment/helmet.svg',
       desc: '高 HP / 高 ATK / 慢',
       hp: 130, atk: 14, def: 8, spd: 7,
       hpPer: 14, atkPer: 2.2, defPer: 1.2, spdPer: 0.4,
       attackVerb: '揮砍',
     },
     archer: {
-      icon: '🧝', image: 'assets/classes/archer.png', name: '弓手',
+      icon: '🧝', name: '弓手',
+      baseImage:   'assets/classes/archer.svg',
+      weaponImage: 'assets/equipment/bow.svg',
+      accImage:    'assets/equipment/wing-amulet.svg',
       desc: '速度先攻 / 平衡',
       hp: 95, atk: 12, def: 5, spd: 14,
       hpPer: 9, atkPer: 1.5, defPer: 0.6, spdPer: 1.2,
       attackVerb: '射擊',
     },
     mage: {
-      icon: '🧙', image: 'assets/classes/mage.png', name: '法師',
+      icon: '🧙', name: '法師',
+      baseImage:   'assets/classes/mage.svg',
+      weaponImage: 'assets/equipment/staff.svg',
+      accImage:    'assets/equipment/crown.svg',
       desc: '高暴擊 / 紙片',
       hp: 80, atk: 17, def: 4, spd: 10,
       hpPer: 7, atkPer: 2.6, defPer: 0.5, spdPer: 0.7,
@@ -734,7 +720,11 @@
       critBonus: 0.18,
     },
     paladin: {
-      icon: '🦸', image: 'assets/classes/paladin.png', name: '聖騎',
+      icon: '🦸', name: '聖騎',
+      baseImage:   'assets/classes/paladin.svg',
+      weaponImage: 'assets/equipment/holy-sword.svg',
+      accImage:    'assets/equipment/crown.svg',
+      hasShield: true,
       desc: '高防禦 / 自癒',
       hp: 115, atk: 11, def: 11, spd: 7,
       hpPer: 12, atkPer: 1.4, defPer: 1.6, spdPer: 0.4,
@@ -1367,26 +1357,28 @@
     const stamPercent = Math.round((rpg.stamina / STAMINA_MAX) * 100);
     const coins = getCoins(me.id);
 
-    const wIcon = rpg.equipment?.weapon ? findItem(rpg.equipment.weapon)?.icon : '';
-    const aIcon = rpg.equipment?.armor ? findItem(rpg.equipment.armor)?.icon : '';
-    const cIcon = rpg.equipment?.accessory ? findItem(rpg.equipment.accessory)?.icon : '';
+    const hasWeapon = !!rpg.equipment?.weapon;
+    const hasArmor = !!rpg.equipment?.armor;
+    const hasAcc = !!rpg.equipment?.accessory;
     const unlockedAvatars = (me.unlockedAvatars || []).slice(0, 6);
     const collectionHtml = unlockedAvatars.length > 0
       ? unlockedAvatars.map(a => `<span class="cc-item">${a}</span>`).join('')
       : `<span class="cc-empty">主頁抽蛋可解鎖收藏</span>`;
+    // 紙娃娃 5 層（順序由下到上：armor-glow → base → shield → weapon → accessory）
+    // 每張 SVG 都是 200×250、位置已對齊
+    const dollLayers = [];
+    if (hasArmor) dollLayers.push(`<img class="pd-layer pd-armor" src="assets/equipment/armor-glow.svg" alt="">`);
+    dollLayers.push(`<img class="pd-layer pd-base" src="${cls.baseImage}" alt="${cls.name}"
+       onerror="this.outerHTML='<div class=\\'pd-base-emoji\\'>${cls.icon}</div>';">`);
+    if (cls.hasShield) dollLayers.push(`<img class="pd-layer pd-shield" src="assets/equipment/shield.svg" alt="">`);
+    if (hasWeapon && cls.weaponImage) dollLayers.push(`<img class="pd-layer pd-weapon" src="${cls.weaponImage}" alt="">`);
+    if (hasAcc && cls.accImage) dollLayers.push(`<img class="pd-layer pd-acc" src="${cls.accImage}" alt="">`);
+
     document.getElementById('charCard').innerHTML = `
       <div class="char-portrait">
         <div class="cp-lv-badge">Lv ${rpg.level}</div>
         <div class="cp-coin-badge">🪙 ${coins >= 1000 ? (coins/1000).toFixed(1) + 'k' : coins}</div>
-        <div class="paper-doll">
-          ${aIcon ? `<div class="pd-armor">${aIcon}</div>` : ''}
-          ${cls.image
-            ? `<img class="pd-base-img" src="${cls.image}" alt="${cls.name}"
-                    onerror="this.outerHTML = '<div class=\\'pd-base\\'>${cls.icon}</div>';">`
-            : `<div class="pd-base">${cls.icon}</div>`}
-          ${wIcon ? `<div class="pd-weapon">${wIcon}</div>` : ''}
-          ${cIcon ? `<div class="pd-acc">${cIcon}</div>` : ''}
-        </div>
+        <div class="paper-doll">${dollLayers.join('')}</div>
         <div class="cp-collection">${collectionHtml}</div>
       </div>
       <div class="char-info">

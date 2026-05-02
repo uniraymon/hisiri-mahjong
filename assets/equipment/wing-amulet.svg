@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 250" width="200" height="250">
+  <!-- 翅膀護符（飄在頭頂） -->
+  <defs>
+    <linearGradient id="wing-feather" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#cbd5e1"/>
+    </linearGradient>
+    <radialGradient id="wing-gem" cx="0.4" cy="0.35" r="0.6">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset="0.5" stop-color="#a78bfa"/>
+      <stop offset="1" stop-color="#5b21b6"/>
+    </radialGradient>
+  </defs>
+  <g transform="translate(100,18)">
+    <!-- 左翼 -->
+    <path d="M 0 0 Q -10 -8 -22 -4 Q -28 4 -16 6 Q -6 4 0 0 Z" fill="url(#wing-feather)" stroke="#9ca3af" stroke-width="1"/>
+    <path d="M -6 0 Q -14 -2 -22 -4" stroke="#9ca3af" stroke-width="0.6" fill="none"/>
+    <!-- 右翼 -->
+    <path d="M 0 0 Q 10 -8 22 -4 Q 28 4 16 6 Q 6 4 0 0 Z" fill="url(#wing-feather)" stroke="#9ca3af" stroke-width="1"/>
+    <path d="M 6 0 Q 14 -2 22 -4" stroke="#9ca3af" stroke-width="0.6" fill="none"/>
+    <!-- 中間寶石 -->
+    <circle cx="0" cy="2" r="5" fill="url(#wing-gem)" stroke="#5b21b6" stroke-width="1"/>
+    <circle cx="-1.5" cy="0.5" r="1.5" fill="#fff" opacity="0.8"/>
+  </g>
+</svg>

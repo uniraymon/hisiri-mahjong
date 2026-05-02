@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 250" width="200" height="250">
+  <!-- 圓盾（疊在左手） -->
+  <defs>
+    <radialGradient id="shield-base" cx="0.4" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#7c8794"/>
+      <stop offset="1" stop-color="#3a3e47"/>
+    </radialGradient>
+  </defs>
+  <g transform="translate(50,160)">
+    <!-- 盾外圈 -->
+    <path d="M 0 -38 Q 26 -34 26 0 Q 26 36 0 40 Q -26 36 -26 0 Q -26 -34 0 -38 Z" fill="url(#shield-base)" stroke="#1e293b" stroke-width="2"/>
+    <!-- 盾內圈 -->
+    <path d="M 0 -32 Q 20 -28 20 0 Q 20 30 0 34 Q -20 30 -20 0 Q -20 -28 0 -32 Z" fill="none" stroke="#c69a2a" stroke-width="2"/>
+    <!-- 中央十字 -->
+    <rect x="-3" y="-18" width="6" height="36" fill="#c69a2a" stroke="#7a5a1a" stroke-width="0.8"/>
+    <rect x="-12" y="-3" width="24" height="6" fill="#c69a2a" stroke="#7a5a1a" stroke-width="0.8"/>
+    <!-- 高光 -->
+    <path d="M -16 -28 Q -22 -10 -18 8" stroke="#fff" stroke-width="2" fill="none" opacity="0.4"/>
+  </g>
+</svg>

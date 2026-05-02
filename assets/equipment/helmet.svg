@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 250" width="200" height="250">
+  <!-- 戰士頭盔（蓋在頭部） -->
+  <defs>
+    <linearGradient id="helm-metal" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#cbd5e1"/>
+      <stop offset="1" stop-color="#475569"/>
+    </linearGradient>
+  </defs>
+  <g>
+    <!-- 頭盔本體 -->
+    <path d="M 70 60 Q 70 32 100 30 Q 130 32 130 60 L 132 70 L 68 70 Z" fill="url(#helm-metal)" stroke="#1e293b" stroke-width="1.8"/>
+    <!-- 護鼻 -->
+    <rect x="97" y="48" width="6" height="22" fill="url(#helm-metal)" stroke="#1e293b" stroke-width="1"/>
+    <!-- 鉚釘 -->
+    <circle cx="78" cy="54" r="2" fill="#1e293b"/>
+    <circle cx="122" cy="54" r="2" fill="#1e293b"/>
+    <!-- 頂飾（紅色羽毛） -->
+    <path d="M 95 28 Q 100 8 110 8 Q 105 18 100 30" fill="#e63a3a" stroke="#7a1010" stroke-width="1"/>
+    <path d="M 100 30 Q 110 12 118 14 Q 110 22 105 32" fill="#e63a3a" stroke="#7a1010" stroke-width="1"/>
+  </g>
+</svg>
