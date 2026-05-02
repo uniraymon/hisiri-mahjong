@@ -40,6 +40,20 @@
     border-radius: 20px;
     border: 1px dashed #ffc4d0;
   }
+  .sync-badge {
+    display: inline-block;
+    font-size: 11px;
+    padding: 4px 10px;
+    margin-left: 6px;
+    border-radius: 12px;
+    font-weight: 600;
+    background: rgba(255,255,255,0.7);
+    border: 1px dashed #ffd6e0;
+    color: #b88a8a;
+    vertical-align: middle;
+  }
+  .sync-badge.ok  { background: #f0fff4; border-color: #b8e6c5; color: #4ade80; }
+  .sync-badge.err { background: #fff0f3; border-color: #ffabbf; color: #ef6b8a; }
 
   .tab-bar {
     display: flex;
@@ -809,6 +823,7 @@
   <h1>🀄 麻將戰績小本本 🌸</h1>
   <div class="subtitle-wrap">
     <span class="subtitle" id="rateInfo">25,000 分 = 1,000 萬基納 ♡</span>
+    <span class="sync-badge" id="syncBadge">⏳ 連線中…</span>
   </div>
 
   <div class="tab-bar" id="tabBar"></div>
@@ -969,13 +984,53 @@
     render();
   }
 
+  let __isApplyingRemote = false;
+
   function saveData() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         players, history, baseMoney, basePoint
       }));
     } catch (e) { console.error(e); }
+    // 推到 Firebase（如果已連線、且不是因為遠端推回來的更新）
+    if (!__isApplyingRemote && window.__firebaseSync && window.__firebaseSync.ready) {
+      window.__firebaseSync.save({ players, history, baseMoney, basePoint });
+    }
   }
+
+  // 給 Firebase module script 用：把雲端資料蓋進來
+  window.__applyRemote = function(data) {
+    if (!data) return;
+    __isApplyingRemote = true;
+    try {
+      if (Array.isArray(data.players)) players = data.players;
+      if (Array.isArray(data.history)) history = data.history;
+      if (typeof data.baseMoney === 'number') baseMoney = data.baseMoney;
+      if (typeof data.basePoint === 'number') basePoint = data.basePoint;
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ players, history, baseMoney, basePoint }));
+      } catch (e) {}
+      const bm = document.getElementById('baseMoney');
+      const bp = document.getElementById('basePoint');
+      if (bm) bm.value = baseMoney;
+      if (bp) bp.value = basePoint;
+      renderTabs();
+      render();
+    } finally { __isApplyingRemote = false; }
+  };
+
+  // 給 module script 用：取得目前本地狀態（用來首次推上雲）
+  window.__getCurrentData = function() {
+    return { players, history, baseMoney, basePoint };
+  };
+
+  // 給 module script 用：更新同步狀態 badge
+  window.__updateSyncStatus = function(text, cls) {
+    const el = document.getElementById('syncBadge');
+    if (!el) return;
+    el.textContent = text;
+    el.className = 'sync-badge' + (cls === 'ok' ? ' ok' : cls === 'err' ? ' err' : '');
+  };
 
   function pointToMoney(point) {
     return (point - basePoint) * baseMoney / basePoint;
@@ -2288,6 +2343,86 @@
   }
 
   loadData();
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+  import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA1dzTX6COdDAab7gojdXaycx7Vr9EydN8",
+    authDomain: "hisiri-mahjong.firebaseapp.com",
+    projectId: "hisiri-mahjong",
+    storageBucket: "hisiri-mahjong.firebasestorage.app",
+    messagingSenderId: "565503631941",
+    appId: "1:565503631941:web:be3c8a762292960527792c"
+  };
+
+  try {
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Room id：URL hash > localStorage > 預設 'shared'
+    const hashParams = new URLSearchParams(location.hash.replace(/^#/, '?'));
+    const ROOM_ID = hashParams.get('room') || localStorage.getItem('mahjong-room-id') || 'shared';
+    localStorage.setItem('mahjong-room-id', ROOM_ID);
+    const docRef = doc(db, 'rooms', ROOM_ID);
+    console.log('Firebase room:', ROOM_ID);
+
+    let firstSnapshot = true;
+    let saveTimer = null;
+    window.__firebaseSync = {
+      ready: false,
+      roomId: ROOM_ID,
+      save: (data) => {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(async () => {
+          try {
+            await setDoc(docRef, data);
+            window.__updateSyncStatus?.('☁️ 已同步', 'ok');
+          } catch (e) {
+            console.error('Sync save failed:', e);
+            window.__updateSyncStatus?.('☁️ 同步失敗', 'err');
+          }
+        }, 250);
+      }
+    };
+
+    onSnapshot(docRef, async (snap) => {
+      if (firstSnapshot) {
+        firstSnapshot = false;
+        if (!snap.exists()) {
+          // 雲端沒資料 → 把目前本地推上去當種子
+          const local = window.__getCurrentData?.();
+          if (local && (local.players?.length || local.history?.length)) {
+            try {
+              await setDoc(docRef, local);
+              window.__updateSyncStatus?.('☁️ 已同步（首次上傳）', 'ok');
+            } catch (e) { console.error(e); window.__updateSyncStatus?.('☁️ 上傳失敗', 'err'); }
+          } else {
+            window.__updateSyncStatus?.('☁️ 已連線', 'ok');
+          }
+        } else {
+          // 雲端有資料 → 蓋過本地
+          window.__applyRemote?.(snap.data());
+          window.__updateSyncStatus?.('☁️ 已同步', 'ok');
+        }
+        window.__firebaseSync.ready = true;
+        return;
+      }
+      // 後續更新（其他朋友改的，或自己 save 後 echo 回來）
+      if (snap.exists()) {
+        window.__applyRemote?.(snap.data());
+        window.__updateSyncStatus?.('☁️ 已同步', 'ok');
+      }
+    }, (err) => {
+      console.error('Sync listen failed:', err);
+      window.__updateSyncStatus?.('☁️ 連線錯誤', 'err');
+    });
+  } catch (e) {
+    console.error('Firebase 初始化失敗:', e);
+    window.__updateSyncStatus?.('☁️ 未連線', 'err');
+  }
 </script>
 </body>
 </html>
