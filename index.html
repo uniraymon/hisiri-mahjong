@@ -312,6 +312,212 @@
     text-align: center;
     font-weight: 600;
   }
+  .hover-card .hc-coins {
+    font-size: 11px;
+    color: #d4806b;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+
+  /* 鵝鵝幣徽章 */
+  .coin-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: linear-gradient(135deg, #fff4d6, #ffdb9b);
+    border: 2px solid #ffb84d;
+    border-radius: 14px;
+    color: #8b6f47;
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .coin-badge.small { padding: 2px 8px; font-size: 11px; border-width: 1px; }
+
+  /* 我是誰 selector */
+  .me-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: linear-gradient(135deg, #fff8fb, #ffeef5);
+    border: 2px dashed #ffabbf;
+    border-radius: 16px;
+    margin-bottom: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .me-selector:hover { transform: translateY(-1px); box-shadow: 0 3px 0 #ffc4d0; }
+  .me-selector .me-avatar {
+    font-size: 24px;
+    width: 36px; height: 36px;
+    background: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .me-selector .me-info { flex: 1; }
+  .me-selector .me-label { font-size: 10px; color: #b88a8a; font-weight: 600; }
+  .me-selector .me-name { font-weight: 700; color: #d4806b; font-size: 14px; }
+
+  /* 對局 detail 展開 */
+  .history-row { cursor: pointer; }
+  .history-row:hover { background: #fff5f8; }
+  .history-detail-expand {
+    background: linear-gradient(135deg, #fff8fb, #fff5e6);
+    border: 2px dashed #ffd6e0;
+    border-radius: 12px;
+    padding: 10px;
+    margin: 4px 0 8px;
+    font-size: 12px;
+  }
+  .hd-time { font-size: 11px; color: #b88a8a; margin-bottom: 8px; text-align: center; font-weight: 600; }
+  .hd-row {
+    display: grid;
+    grid-template-columns: 28px 22px 1fr auto auto;
+    gap: 6px;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px dashed #ffe4ec;
+  }
+  .hd-row:last-child { border-bottom: none; }
+  .hd-rank { font-weight: 700; font-size: 11px; color: #d4806b; }
+  .hd-avatar { font-size: 16px; }
+  .hd-name { font-weight: 600; color: #5a4a4a; font-size: 12px; }
+  .hd-score { font-size: 11px; color: #b88a8a; }
+  .hd-money { font-weight: 700; font-size: 12px; }
+  .hd-stats {
+    grid-column: 1 / -1;
+    font-size: 10px;
+    color: #b88a8a;
+    text-align: right;
+    padding-left: 56px;
+  }
+
+  /* 禮物 / 留言 / 押注 / 抽蛋 */
+  .gift-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+  }
+  .gift-item {
+    background: #fff8fb;
+    border: 2px solid #ffe4ec;
+    border-radius: 12px;
+    padding: 10px 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .gift-item:hover { transform: translateY(-2px); box-shadow: 0 3px 0 #ffc4d0; }
+  .gift-icon { font-size: 30px; display: block; margin-bottom: 4px; }
+  .gift-name { font-size: 11px; font-weight: 700; color: #5a4a4a; }
+  .gift-cost { font-size: 10px; color: #d4806b; margin-top: 2px; }
+  .received-gifts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .gift-badge {
+    background: linear-gradient(135deg, #fff4d6, #ffdb9b);
+    border: 1px solid #ffb84d;
+    border-radius: 12px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #8b6f47;
+  }
+  .gift-badge .gb-from { color: #b88a8a; font-size: 10px; }
+
+  .comment-list { margin-top: 8px; }
+  .comment-row {
+    background: #fff8fb;
+    border: 2px solid #ffe4ec;
+    border-radius: 12px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+  .comment-row .c-author {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: #b88a8a;
+    margin-bottom: 4px;
+  }
+  .comment-row .c-author b { color: #d4806b; font-size: 12px; }
+  .comment-row .c-text { color: #5a4a4a; line-height: 1.4; word-break: break-word; }
+  .comment-row .c-del { background: transparent; border: none; color: #ef6b8a; font-size: 12px; cursor: pointer; padding: 0; }
+  .comment-input-wrap {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .comment-input {
+    flex: 1;
+    background: #fff;
+    border: 2px solid #ffd6e0;
+    border-radius: 10px;
+    padding: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    color: #5a4a4a;
+    resize: none;
+  }
+  .comment-input:focus { outline: none; border-color: #ff8fa3; }
+
+  .bet-card {
+    background: linear-gradient(135deg, #fff4d6, #ffdb9b);
+    border: 2px dashed #ffb84d;
+  }
+  .bet-card h2 { color: #8b6f47; }
+  .bet-active {
+    background: rgba(255,255,255,0.6);
+    border: 2px solid #ffb84d;
+    border-radius: 12px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+
+  .gacha-result {
+    background: linear-gradient(135deg, #c4b5fd, #a78bfa);
+    color: #fff;
+    border-radius: 14px;
+    padding: 18px;
+    text-align: center;
+    margin: 12px 0;
+  }
+  .gacha-result .gr-icon { font-size: 56px; margin-bottom: 8px; }
+  .gacha-result .gr-text { font-weight: 700; font-size: 14px; }
+
+  .avatar-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+    gap: 6px;
+  }
+  .avatar-pick-btn {
+    background: #fff8fb;
+    border: 2px solid #ffe4ec;
+    border-radius: 10px;
+    padding: 6px 0;
+    font-size: 22px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform 0.15s;
+  }
+  .avatar-pick-btn:hover { transform: scale(1.1); }
+  .avatar-pick-btn.current {
+    background: linear-gradient(135deg, #ffabbf, #ff8fa3);
+    border-color: #ef6b8a;
+    box-shadow: 0 2px 0 #ef6b8a;
+  }
+  .avatar-pick-btn.locked { opacity: 0.3; cursor: not-allowed; }
   .rank-1 {
     background: linear-gradient(135deg,#ffd700,#ffa500);
     color:#fff;
@@ -964,6 +1170,13 @@
   <div class="tab-bar" id="tabBar"></div>
 
   <div id="page-overview">
+    <div id="meSelector"></div>
+
+    <div class="card bet-card" id="betGachaCard">
+      <h2><span class="h2-text">🎮 互動 / 抽蛋 / 押注</span></h2>
+      <div id="betGachaContent"></div>
+    </div>
+
     <details class="card">
       <summary>⚙️ 設定 / 換算比例</summary>
       <div>
@@ -1015,6 +1228,14 @@
 <div class="toast" id="toast"></div>
 <div class="hover-card" id="hoverCard"></div>
 
+<div id="genericModal" class="modal-overlay hidden" onclick="closeGenericModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <h3 id="genericModalTitle"></h3>
+    <div id="genericModalBody"></div>
+    <button class="btn btn-secondary" onclick="closeGenericModal()" style="margin-top:10px;">關閉</button>
+  </div>
+</div>
+
 <div id="titleModal" class="modal-overlay hidden" onclick="closeTitleModal(event)">
   <div class="modal-content" onclick="event.stopPropagation()">
     <h3 id="titleModalHeader">🌟 選擇稱號</h3>
@@ -1041,6 +1262,33 @@
   // participants[i] 對應 scores[i]、money[i]，是該局四位玩家的順序
 
   const AVATAR_POOL = ['🌸', '🐶', '❄️', '🦢', '🐱', '🦊', '🐰', '🐼', '🐧', '🐯', '🦁', '🐨', '🐸', '🐵', '🦄', '🐹'];
+  const GACHA_AVATARS = ['🌺', '🍑', '🍓', '🍒', '🐲', '👻', '🤖', '🦋', '🐢', '🐙', '🦒', '🦔', '🐳', '🦩', '🦚', '🦜', '🐝', '🦂'];
+  const GACHA_TITLES = [
+    { id: 'gacha_lucky',   icon: '🍀', title: '幸運寶寶' },
+    { id: 'gacha_star',    icon: '⭐', title: '亮晶晶' },
+    { id: 'gacha_dragon',  icon: '🐉', title: '神龍降臨' },
+    { id: 'gacha_pizza',   icon: '🍕', title: '披薩戰士' },
+    { id: 'gacha_rocket',  icon: '🚀', title: '太空人' },
+    { id: 'gacha_donut',   icon: '🍩', title: '甜甜圈狂熱者' },
+    { id: 'gacha_diamond', icon: '💍', title: '鑽石婚' },
+    { id: 'gacha_clown',   icon: '🤡', title: '小丑王' },
+    { id: 'gacha_ghost',   icon: '👻', title: '鬼來電' },
+    { id: 'gacha_ninja',   icon: '🥷', title: '忍者大師' },
+    { id: 'gacha_crown',   icon: '👑', title: '加冕者' },
+    { id: 'gacha_rainbow', icon: '🌈', title: '彩虹尊者' },
+  ];
+  const GIFT_TYPES = {
+    flower:    { icon: '💐', name: '花',     cost: 50 },
+    cake:      { icon: '🍰', name: '蛋糕',   cost: 50 },
+    redpacket: { icon: '🧧', name: '紅包',   cost: 50 },
+    heart:     { icon: '💖', name: '愛心',   cost: 50 },
+    trophy:    { icon: '🏆', name: '獎杯',   cost: 100 },
+    star:      { icon: '⭐', name: '星星',   cost: 30 },
+  };
+  const COMMENT_COST = 5;
+  const BET_REWARD = 30;
+  const GACHA_COST = 100;
+  const GACHA_DUP_REFUND = 50;
 
   let players = [
     { id: 'p1', name: '小燈泡掉頭走了', avatar: '🌸' },
@@ -1049,10 +1297,14 @@
     { id: 'p4', name: '鵝霸天下', avatar: '🦢' }
   ];
   let history = [];
+  let gifts = [];        // [{ id, from, to, type, ts }]
+  let comments = [];     // [{ id, from, on, text, ts }]
+  let pendingBets = [];  // [{ id, better, predicted, ts }]
   let baseMoney = 1000;
   let basePoint = 25000;
   let currentTab = 'overview';
   let currentPick = []; // 本局正在選的 4 個玩家 id
+  let expandedHistory = new Set(); // 展開中的對局 id（純 UI 狀態，不同步）
 
   const STORAGE_KEY = 'mahjong-tracker-v2';
   const SEEDED_KEY = 'mahjong-tracker-seeded-v2';
@@ -1066,6 +1318,9 @@
         const data = JSON.parse(raw);
         if (data.players) players = data.players;
         if (data.history) history = data.history;
+        if (data.gifts) gifts = data.gifts;
+        if (data.comments) comments = data.comments;
+        if (data.pendingBets) pendingBets = data.pendingBets;
         if (data.baseMoney) baseMoney = data.baseMoney;
         if (data.basePoint) basePoint = data.basePoint;
         loaded = true;
@@ -1123,14 +1378,13 @@
   let __isApplyingRemote = false;
 
   function saveData() {
+    const payload = { players, history, gifts, comments, pendingBets, baseMoney, basePoint };
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        players, history, baseMoney, basePoint
-      }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     } catch (e) { console.error(e); }
     // 推到 Firebase（如果已連線、且不是因為遠端推回來的更新）
     if (!__isApplyingRemote && window.__firebaseSync && window.__firebaseSync.ready) {
-      window.__firebaseSync.save({ players, history, baseMoney, basePoint });
+      window.__firebaseSync.save(payload);
     }
   }
 
@@ -1141,10 +1395,13 @@
     try {
       if (Array.isArray(data.players)) players = data.players;
       if (Array.isArray(data.history)) history = data.history;
+      if (Array.isArray(data.gifts)) gifts = data.gifts;
+      if (Array.isArray(data.comments)) comments = data.comments;
+      if (Array.isArray(data.pendingBets)) pendingBets = data.pendingBets;
       if (typeof data.baseMoney === 'number') baseMoney = data.baseMoney;
       if (typeof data.basePoint === 'number') basePoint = data.basePoint;
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ players, history, baseMoney, basePoint }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ players, history, gifts, comments, pendingBets, baseMoney, basePoint }));
       } catch (e) {}
       const bm = document.getElementById('baseMoney');
       const bp = document.getElementById('basePoint');
@@ -1157,7 +1414,7 @@
 
   // 給 module script 用：取得目前本地狀態（用來首次推上雲）
   window.__getCurrentData = function() {
-    return { players, history, baseMoney, basePoint };
+    return { players, history, gifts, comments, pendingBets, baseMoney, basePoint };
   };
 
   // 給 module script 用：更新同步狀態 badge
@@ -1249,6 +1506,47 @@
     document.getElementById('rateDetail').textContent =
       `1 分 ≈ ${(baseMoney/basePoint).toFixed(4)} 萬基納 ✨`;
 
+    // 我是誰 selector
+    const me = getMe();
+    const myCoins = me ? getCoins(me.id) : 0;
+    document.getElementById('meSelector').innerHTML = `
+      <div class="me-selector" onclick="openMePicker()">
+        <div class="me-avatar">${me ? me.avatar : '🪞'}</div>
+        <div class="me-info">
+          <div class="me-label">這個裝置目前是…</div>
+          <div class="me-name">${me ? escapeHtml(me.name) : '未指定，點擊選身份'}</div>
+        </div>
+        ${me ? `<span class="coin-badge">🪙 ${myCoins}</span>` : ''}
+      </div>
+    `;
+
+    // 押注 / 抽蛋 / 送禮提示卡
+    const myBet = me ? pendingBets.find(b => b.better === me.id) : null;
+    const recentGiftsToMe = me ? gifts.filter(g => g.to === me.id).slice(-5).reverse() : [];
+    const recentCommentsToMe = me ? comments.filter(c => c.on === me.id).slice(-3).reverse() : [];
+    document.getElementById('betGachaContent').innerHTML = `
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <button class="btn btn-primary" onclick="openBetModal()">🎯 押下一局</button>
+        <button class="btn btn-primary" style="background:linear-gradient(135deg,#c4b5fd,#a78bfa); box-shadow:0 4px 0 #8b5cf6;" onclick="openGachaModal()">🎰 抽蛋機</button>
+      </div>
+      ${myBet ? `<div class="bet-active" style="margin-top:8px;">🎯 你目前押 <b>${getPlayer(myBet.predicted)?.avatar || '?'} ${escapeHtml(getPlayer(myBet.predicted)?.name || '?')}</b> 拿 1 位</div>` : ''}
+      ${recentGiftsToMe.length > 0 ? `
+        <div style="margin-top:8px; font-size:11px; color:#b88a8a;">💝 最近收到：
+          ${recentGiftsToMe.map(g => {
+            const sender = getPlayer(g.from);
+            const gt = GIFT_TYPES[g.type] || { icon: '🎀' };
+            return `<span class="gift-badge">${gt.icon} <span class="gb-from">${sender?.avatar || '?'}</span></span>`;
+          }).join(' ')}
+        </div>` : ''}
+      ${recentCommentsToMe.length > 0 ? `
+        <div style="margin-top:8px; font-size:11px; color:#b88a8a;">💬 最近留言：
+          ${recentCommentsToMe.map(c => {
+            const sender = getPlayer(c.from);
+            return `<div style="margin-top:4px; padding:4px 8px; background:#fff8fb; border-radius:8px;"><b>${sender?.avatar || '?'} ${escapeHtml(sender?.name || '?')}：</b> ${escapeHtml(c.text)}</div>`;
+          }).join('')}
+        </div>` : ''}
+    `;
+
     // 累計戰績
     const totals = players.map(p => {
       const records = getPlayerData(p.id);
@@ -1303,12 +1601,14 @@
           const av = p ? p.avatar : '❓';
           return `<span class="${cls}">${av} ${fmtMoney(m)}</span>`;
         }).join(' ');
+        const isOpen = expandedHistory.has(h.id);
         return `
-          <div class="history-row">
+          <div class="history-row" onclick="toggleHistoryExpand(${h.id})">
             <span class="history-num">#${realIdx + 1}</span>
-            <span class="history-detail">${detail}</span>
-            <button class="history-del" onclick="deleteRound(${realIdx})">×</button>
+            <span class="history-detail">${detail} <span style="font-size:10px; color:#b88a8a;">${isOpen ? '▲' : '▼'}</span></span>
+            <button class="history-del" onclick="event.stopPropagation(); deleteRound(${realIdx})">×</button>
           </div>
+          ${isOpen ? renderHistoryDetail(h) : ''}
         `;
       }).join('');
     }
@@ -1443,12 +1743,19 @@
 
     const rankCounts = [1,2,3,4].map(r => myRanks.filter(x => x === r).length);
 
+    const me = getMe();
+    const isMe = me && me.id === pid;
+    const myCoinsDisplay = getCoins(pid);
     document.getElementById('playerPageContent').innerHTML = `
       <div class="card">
         <div class="player-header">
-          <div class="player-avatar-big" style="background: linear-gradient(135deg, ${getColor(pid)}33, ${getColor(pid)}88);">${p.avatar}</div>
+          <div class="player-avatar-big" style="background: linear-gradient(135deg, ${getColor(pid)}33, ${getColor(pid)}88); cursor:pointer;" onclick="openAvatarPicker('${pid}')" title="${isMe ? '點擊換頭像' : '只有本人能換'}">${p.avatar}</div>
           <div class="player-title-name">${escapeHtml(p.name)}</div>
           <div class="player-nickname" onclick="openTitleModal('${pid}')" title="點選更換稱號">${titleObj.icon} ${escapeHtml(titleObj.title)}</div>
+          <div style="margin-top:8px;">
+            <span class="coin-badge">🪙 ${myCoinsDisplay} 鵝鵝幣</span>
+          </div>
+          ${me && !isMe ? `<div style="margin-top:10px;"><button class="btn btn-primary" style="width:auto; padding:8px 16px;" onclick="openGiftModal('${pid}')">🎁 送禮給 ${escapeHtml(p.name)}</button></div>` : ''}
         </div>
         <div class="stat-grid" style="margin-top:14px;">
           <div class="stat-box">
@@ -1576,6 +1883,16 @@
         ` : ''}
       </div>
       ` : ''}
+
+      <div class="card">
+        <h2><span class="h2-text">💝 收到的禮物</span></h2>
+        ${renderReceivedGifts(pid)}
+      </div>
+
+      <div class="card">
+        <h2><span class="h2-text">💬 戰績留言板</span></h2>
+        ${renderCommentBoard(pid)}
+      </div>
 
       <div class="card">
         <h2><span class="h2-text">🏅 成就徽章</span> <span style="font-size:12px; color:#b88a8a; font-weight:500;">（${unlockedCount}/${achievements.length}）</span></h2>
@@ -1786,6 +2103,404 @@
     return xp;
   }
 
+  // === 鵝鵝幣 ===
+  function calcCoinsEarned(records) {
+    let coins = 0;
+    for (const r of records) {
+      if (r.rank === 1) coins += 50;
+      else if (r.rank === 2) coins += 20;
+      if (r.money > 0) coins += Math.floor(r.money / 100);
+    }
+    return coins;
+  }
+  function getCoins(playerId) {
+    const p = getPlayer(playerId);
+    if (!p) return 0;
+    const records = getPlayerData(playerId);
+    return calcCoinsEarned(records) - (p.coinsSpent || 0);
+  }
+  function spendCoins(playerId, amount) {
+    const p = getPlayer(playerId);
+    if (!p) return false;
+    if (getCoins(playerId) < amount) return false;
+    p.coinsSpent = (p.coinsSpent || 0) + amount;
+    return true;
+  }
+  function refundCoins(playerId, amount) {
+    const p = getPlayer(playerId);
+    if (!p) return;
+    p.coinsSpent = Math.max(0, (p.coinsSpent || 0) - amount);
+  }
+
+  // === 身份識別（每個裝置選自己是誰） ===
+  const ME_KEY = 'mahjong-me-id';
+  function getMeId() { return localStorage.getItem(ME_KEY); }
+  function setMeId(pid) {
+    if (pid) localStorage.setItem(ME_KEY, pid);
+    else localStorage.removeItem(ME_KEY);
+    render();
+  }
+  function getMe() {
+    const id = getMeId();
+    return id ? getPlayer(id) : null;
+  }
+  function ensureMe(actionLabel) {
+    if (getMe()) return true;
+    showToast(`先在首頁點「我是誰」選一個身份才能${actionLabel || '操作'} ♡`);
+    return false;
+  }
+  function openMePicker() {
+    const html = `
+      <div style="margin-bottom:8px; font-size:12px; color:#b88a8a; text-align:center;">選擇你是哪一位（這個裝置才認）</div>
+      ${players.map(p => `
+        <button class="player-pick" onclick="selectMe('${p.id}')">
+          <span class="pick-avatar">${p.avatar}</span>
+          <span>${escapeHtml(p.name)}</span>
+        </button>
+      `).join('')}
+      ${getMeId() ? `<button class="btn btn-secondary" style="margin-top:10px;" onclick="selectMe('')">登出（不指定身份）</button>` : ''}
+    `;
+    openGenericModal('🪞 我是誰', html);
+  }
+  function selectMe(pid) {
+    setMeId(pid || null);
+    closeGenericModal();
+    showToast(pid ? `✨ 你現在是 ${getPlayer(pid)?.name}` : '已登出');
+  }
+
+  // === 通用 modal ===
+  function openGenericModal(title, contentHtml) {
+    const wrap = document.getElementById('genericModal');
+    document.getElementById('genericModalTitle').textContent = title;
+    document.getElementById('genericModalBody').innerHTML = contentHtml;
+    wrap.classList.remove('hidden');
+  }
+  function closeGenericModal(e) {
+    if (e && e.target.id !== 'genericModal') return;
+    document.getElementById('genericModal').classList.add('hidden');
+  }
+
+  // === 對局 detail 展開 ===
+  function toggleHistoryExpand(hid) {
+    if (expandedHistory.has(hid)) expandedHistory.delete(hid);
+    else expandedHistory.add(hid);
+    render();
+  }
+  function renderHistoryDetail(h) {
+    const date = h.ts ? new Date(h.ts).toLocaleString('zh-TW', { hour12: false }) : '—';
+    const hasStats = (h.riichi || h.ron || h.tsumo || h.houju);
+    const ranking = h.participants.map((pid, i) => ({
+      pid, slot: i,
+      score: h.scores[i],
+      money: h.money[i],
+      riichi: h.riichi?.[i],
+      ron: h.ron?.[i],
+      tsumo: h.tsumo?.[i],
+      houju: h.houju?.[i],
+    })).sort((a, b) => b.money - a.money);
+    return `
+      <div class="history-detail-expand">
+        <div class="hd-time">🕐 ${date}</div>
+        ${ranking.map((r, idx) => {
+          const p = getPlayer(r.pid);
+          return `
+            <div class="hd-row">
+              <span class="hd-rank">${idx+1}位</span>
+              <span class="hd-avatar">${p?.avatar || '❓'}</span>
+              <span class="hd-name">${escapeHtml(p?.name || '已刪除')}</span>
+              <span class="hd-score">${r.score?.toLocaleString?.() ?? '—'} 點</span>
+              <span class="hd-money ${moneyClass(r.money)}">${fmtMoney(r.money)}</span>
+              ${hasStats ? `<span class="hd-stats">立直 ${r.riichi||0} · 榮和 ${r.ron||0} · 自摸 ${r.tsumo||0} · 放銃 ${r.houju||0}</span>` : ''}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  // === 禮物 ===
+  function openGiftModal(toPid) {
+    if (!ensureMe('送禮')) return;
+    const me = getMe();
+    if (me.id === toPid) { showToast('不能送自己 ♡'); return; }
+    const target = getPlayer(toPid);
+    const myCoins = getCoins(me.id);
+    const html = `
+      <div style="text-align:center; margin-bottom:10px; font-size:13px;">
+        <b>${me.avatar} ${escapeHtml(me.name)}</b> → <b>${target.avatar} ${escapeHtml(target.name)}</b>
+      </div>
+      <div style="text-align:center; margin-bottom:12px;">
+        <span class="coin-badge small">🪙 你有 ${myCoins} 鵝鵝幣</span>
+      </div>
+      <div class="gift-grid">
+        ${Object.entries(GIFT_TYPES).map(([k, g]) => `
+          <button class="gift-item" onclick="sendGift('${toPid}', '${k}')" ${myCoins < g.cost ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''}>
+            <span class="gift-icon">${g.icon}</span>
+            <div class="gift-name">${g.name}</div>
+            <div class="gift-cost">🪙 ${g.cost}</div>
+          </button>
+        `).join('')}
+      </div>
+    `;
+    openGenericModal(`🎁 送禮給 ${target.name}`, html);
+  }
+  function sendGift(toPid, type) {
+    const me = getMe();
+    if (!me) return;
+    const g = GIFT_TYPES[type];
+    if (!g) return;
+    if (!spendCoins(me.id, g.cost)) { showToast('幣不夠 ♡'); return; }
+    gifts.push({
+      id: Date.now() + '_' + Math.random().toString(36).slice(2,6),
+      from: me.id, to: toPid, type, ts: new Date().toISOString()
+    });
+    saveData();
+    closeGenericModal();
+    showToast(`已送出 ${g.icon} ${g.name}`);
+    if (currentTab === toPid) renderPlayerPage(toPid);
+    render();
+  }
+  function renderReceivedGifts(pid) {
+    const recv = gifts.filter(g => g.to === pid).slice().reverse();
+    if (recv.length === 0) return '<div style="font-size:11px; color:#b88a8a; text-align:center; padding:6px;">還沒收到禮物 ♡</div>';
+    return `
+      <div class="received-gifts">
+        ${recv.slice(0, 30).map(g => {
+          const sender = getPlayer(g.from);
+          const gt = GIFT_TYPES[g.type] || { icon: '🎀', name: '?' };
+          return `<span class="gift-badge" title="${new Date(g.ts).toLocaleString('zh-TW')}">${gt.icon} <span class="gb-from">來自 ${sender?.avatar || '?'}</span></span>`;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  // === 留言板 ===
+  function postComment(targetPid) {
+    if (!ensureMe('留言')) return;
+    const me = getMe();
+    const ta = document.getElementById(`commentInput-${targetPid}`);
+    if (!ta) return;
+    const text = ta.value.trim();
+    if (!text) { showToast('要寫點東西 ♡'); return; }
+    if (!spendCoins(me.id, COMMENT_COST)) {
+      showToast(`幣不夠（留言需 ${COMMENT_COST} 幣）`);
+      return;
+    }
+    comments.push({
+      id: Date.now() + '_' + Math.random().toString(36).slice(2,6),
+      from: me.id, on: targetPid, text: text.substring(0, 200), ts: new Date().toISOString()
+    });
+    saveData();
+    ta.value = '';
+    showToast('💬 留言已送出');
+    renderPlayerPage(targetPid);
+  }
+  function deleteComment(cid) {
+    const me = getMe();
+    if (!me) return;
+    const c = comments.find(x => x.id === cid);
+    if (!c) return;
+    if (c.from !== me.id && c.on !== me.id) { showToast('只能刪自己留的或自己頁的留言'); return; }
+    comments = comments.filter(x => x.id !== cid);
+    saveData();
+    renderPlayerPage(c.on);
+  }
+  function renderCommentBoard(pid) {
+    const me = getMe();
+    const list = comments.filter(c => c.on === pid).slice().reverse();
+    return `
+      <div class="comment-list">
+        ${list.length === 0 ? '<div style="font-size:11px; color:#b88a8a; text-align:center; padding:6px;">還沒有留言 ♡</div>' :
+          list.map(c => {
+            const author = getPlayer(c.from);
+            const canDel = me && (me.id === c.from || me.id === c.on);
+            return `
+              <div class="comment-row">
+                <div class="c-author">
+                  <span><b>${author?.avatar || '?'} ${escapeHtml(author?.name || '已刪除')}</b> · ${new Date(c.ts).toLocaleDateString('zh-TW')}</span>
+                  ${canDel ? `<button class="c-del" onclick="deleteComment('${c.id}')">刪</button>` : ''}
+                </div>
+                <div class="c-text">${escapeHtml(c.text)}</div>
+              </div>
+            `;
+          }).join('')
+        }
+      </div>
+      ${me ? `
+        <div class="comment-input-wrap">
+          <textarea class="comment-input" id="commentInput-${pid}" rows="2" placeholder="留言給 ${escapeHtml(getPlayer(pid)?.name || '')}（${COMMENT_COST} 幣 / 200 字）" maxlength="200"></textarea>
+          <button class="btn btn-primary" style="width:auto; padding:8px 14px;" onclick="postComment('${pid}')">送出</button>
+        </div>
+      ` : `<div style="font-size:11px; color:#b88a8a; text-align:center; padding:6px;">點首頁「我是誰」選身份才能留言</div>`}
+    `;
+  }
+
+  // === 押注 ===
+  function openBetModal() {
+    if (!ensureMe('押注')) return;
+    const me = getMe();
+    const existing = pendingBets.find(b => b.better === me.id);
+    const candidates = players.filter(p => p.id !== me.id);
+    const html = `
+      <div style="font-size:12px; color:#b88a8a; text-align:center; margin-bottom:8px;">
+        押誰下次出場拿 1 位 → 押中 +${BET_REWARD} 幣<br>免費，每人同時只能 1 個押注
+      </div>
+      ${existing ? `<div class="bet-active">目前押的是：<b>${getPlayer(existing.predicted)?.avatar || '?'} ${escapeHtml(getPlayer(existing.predicted)?.name || '?')}</b><br><button class="btn btn-secondary" style="margin-top:6px;" onclick="cancelBet()">取消押注</button></div>` : ''}
+      <div class="player-pick-grid">
+        ${candidates.map(p => `
+          <button class="player-pick ${existing?.predicted === p.id ? 'selected' : ''}" onclick="placeBet('${p.id}')">
+            <span class="pick-avatar">${p.avatar}</span>
+            <span>${escapeHtml(p.name)}</span>
+          </button>
+        `).join('')}
+      </div>
+    `;
+    openGenericModal('🎯 押下一局', html);
+  }
+  function placeBet(predictedId) {
+    const me = getMe();
+    if (!me) return;
+    pendingBets = pendingBets.filter(b => b.better !== me.id);
+    pendingBets.push({
+      id: Date.now() + '_' + Math.random().toString(36).slice(2,6),
+      better: me.id, predicted: predictedId, ts: new Date().toISOString()
+    });
+    saveData();
+    closeGenericModal();
+    showToast(`🎯 已押 ${getPlayer(predictedId)?.name} 拿 1 位`);
+    render();
+  }
+  function cancelBet() {
+    const me = getMe();
+    if (!me) return;
+    pendingBets = pendingBets.filter(b => b.better !== me.id);
+    saveData();
+    closeGenericModal();
+    showToast('已取消押注');
+    render();
+  }
+  function settleBetsForRound(participants, scores, money) {
+    if (!Array.isArray(pendingBets) || pendingBets.length === 0) return;
+    const maxMoney = Math.max(...money);
+    const winnerIdx = money.indexOf(maxMoney);
+    const winner = participants[winnerIdx];
+    const remaining = [];
+    const winners = [];
+    for (const b of pendingBets) {
+      if (participants.includes(b.predicted)) {
+        if (b.predicted === winner) {
+          refundCoins(b.better, BET_REWARD);
+          winners.push(b);
+        }
+      } else {
+        remaining.push(b);
+      }
+    }
+    pendingBets = remaining;
+    if (winners.length > 0) {
+      const names = winners.map(w => getPlayer(w.better)?.name || '?').join('、');
+      setTimeout(() => showToast(`🎯 押中：${names} +${BET_REWARD} 幣`), 800);
+    }
+  }
+
+  // === 抽蛋機 ===
+  function openGachaModal() {
+    if (!ensureMe('抽蛋')) return;
+    const me = getMe();
+    const myCoins = getCoins(me.id);
+    const ua = me.unlockedAvatars || [];
+    const ut = me.unlockedTitles || [];
+    const html = `
+      <div style="text-align:center; margin-bottom:12px;">
+        <span class="coin-badge">🪙 ${myCoins} 鵝鵝幣</span>
+      </div>
+      <div style="font-size:12px; color:#b88a8a; text-align:center; margin-bottom:10px;">
+        100 幣 / 抽　·　50% 限定頭像 + 50% 限定稱號<br>重複退 ${GACHA_DUP_REFUND} 幣
+      </div>
+      <button class="btn btn-primary" onclick="spinGacha()" ${myCoins < GACHA_COST ? 'disabled' : ''}>🎰 抽 1 次（100 幣）</button>
+      <div id="gachaResult" style="margin-top:12px;"></div>
+      <div style="margin-top:14px; font-size:12px; color:#b88a8a;">
+        <b>已收集頭像</b>：${ua.length > 0 ? ua.map(a => `<span style="font-size:18px; margin:0 2px;">${a}</span>`).join('') : '（無）'}
+      </div>
+      <div style="margin-top:6px; font-size:12px; color:#b88a8a;">
+        <b>已收集稱號</b>：${ut.length > 0 ? ut.map(id => {
+          const t = GACHA_TITLES.find(x => x.id === id);
+          return t ? `<span class="gift-badge">${t.icon} ${t.title}</span>` : '';
+        }).join(' ') : '（無）'}
+      </div>
+    `;
+    openGenericModal('🎰 抽蛋機', html);
+  }
+  function spinGacha() {
+    const me = getMe();
+    if (!me) return;
+    if (!spendCoins(me.id, GACHA_COST)) { showToast('幣不夠 ♡'); return; }
+    const isAvatar = Math.random() < 0.5;
+    let resultHtml = '';
+    if (isAvatar) {
+      const a = GACHA_AVATARS[Math.floor(Math.random() * GACHA_AVATARS.length)];
+      if (!me.unlockedAvatars) me.unlockedAvatars = [];
+      if (me.unlockedAvatars.includes(a)) {
+        refundCoins(me.id, GACHA_DUP_REFUND);
+        resultHtml = `<div class="gacha-result"><div class="gr-icon">${a}</div><div class="gr-text">重複了…<br>退 ${GACHA_DUP_REFUND} 幣</div></div>`;
+      } else {
+        me.unlockedAvatars.push(a);
+        resultHtml = `<div class="gacha-result"><div class="gr-icon">${a}</div><div class="gr-text">✨ 抽到新頭像！<br><small>到個人頁點頭像可換</small></div></div>`;
+      }
+    } else {
+      const t = GACHA_TITLES[Math.floor(Math.random() * GACHA_TITLES.length)];
+      if (!me.unlockedTitles) me.unlockedTitles = [];
+      if (me.unlockedTitles.includes(t.id)) {
+        refundCoins(me.id, GACHA_DUP_REFUND);
+        resultHtml = `<div class="gacha-result"><div class="gr-icon">${t.icon}</div><div class="gr-text">重複了「${t.title}」<br>退 ${GACHA_DUP_REFUND} 幣</div></div>`;
+      } else {
+        me.unlockedTitles.push(t.id);
+        resultHtml = `<div class="gacha-result"><div class="gr-icon">${t.icon}</div><div class="gr-text">✨ 抽到新稱號！<br><b>${t.title}</b></div></div>`;
+      }
+    }
+    saveData();
+    document.getElementById('gachaResult').innerHTML = resultHtml;
+    // 重新打開（更新顯示）
+    const me2 = getMe();
+    setTimeout(() => openGachaModal(), 0);
+    render();
+  }
+
+  // === 頭像挑選 modal ===
+  function openAvatarPicker(pid) {
+    const me = getMe();
+    const isMe = me && me.id === pid;
+    const p = getPlayer(pid);
+    if (!p) return;
+    const unlocked = p.unlockedAvatars || [];
+    const all = [...AVATAR_POOL, ...unlocked];
+    const html = `
+      <div style="font-size:12px; color:#b88a8a; text-align:center; margin-bottom:10px;">
+        ${isMe ? '點下面的頭像來換' : `這是 ${escapeHtml(p.name)} 的頭像，只有本人能換`}
+      </div>
+      <div class="avatar-picker-grid">
+        ${all.map(a => `
+          <button class="avatar-pick-btn ${a === p.avatar ? 'current' : ''}" ${isMe ? `onclick="selectAvatar('${pid}', '${a}')"` : 'disabled style="cursor:not-allowed;"'}>${a}</button>
+        `).join('')}
+      </div>
+      ${isMe ? `<div style="font-size:10px; color:#b88a8a; text-align:center; margin-top:8px;">抽蛋機可獲得更多限定頭像</div>` : ''}
+    `;
+    openGenericModal('🎨 換頭像', html);
+  }
+  function selectAvatar(pid, avatar) {
+    const p = getPlayer(pid);
+    if (!p) return;
+    const unlocked = p.unlockedAvatars || [];
+    if (!AVATAR_POOL.includes(avatar) && !unlocked.includes(avatar)) return;
+    p.avatar = avatar;
+    saveData();
+    closeGenericModal();
+    showToast('🎨 頭像已更新');
+    renderTabs();
+    render();
+    if (currentTab === pid) renderPlayerPage(pid);
+  }
+
   // 等級曲線：Lv n → n+1 需要 100×n XP（cumulativeXP for level n = 100 × n×(n-1)/2）
   function calcLevel(xp) {
     let level = 1, cum = 0;
@@ -1823,6 +2538,11 @@
 
   function getDisplayTitle(player, records) {
     if (player && player.chosenTitle) {
+      // 先查抽蛋稱號（要在 unlockedTitles 裡）
+      const gt = GACHA_TITLES.find(t => t.id === player.chosenTitle);
+      if (gt && (player.unlockedTitles || []).includes(gt.id)) {
+        return { icon: gt.icon, title: gt.title, id: gt.id, gacha: true };
+      }
       const ach = ACHIEVEMENTS.find(a => a.id === player.chosenTitle);
       if (ach) {
         const stats = getStats(records);
@@ -1927,6 +2647,7 @@
       participants: [...currentPick],
       scores, money
     });
+    settleBetsForRound([...currentPick], scores, money);
     saveData();
     currentPick = [];
     render();
@@ -1991,6 +2712,7 @@
           <div class="hc-name">${escapeHtml(p.name)}</div>
           <div class="hc-title">${titleObj.icon} ${escapeHtml(titleObj.title)}</div>
           <div class="hc-level">⭐ Lv ${lvInfo.level} · ${lvInfo.xp.toLocaleString()} XP</div>
+          <div class="hc-coins">🪙 ${getCoins(pid)} 鵝鵝幣</div>
         </div>
       </div>
       <div class="hc-stats">
@@ -2504,6 +3226,7 @@
       money,
       riichi, ron, tsumo, houju
     });
+    settleBetsForRound(participants, scores, money);
     saveData();
     closeOcrModal();
     render();
@@ -2550,6 +3273,19 @@
           <span class="title-icon">${a.icon}</span>
           <span class="title-text">${escapeHtml(a.title)}</span>
           <span class="title-cond">${escapeHtml(a.desc)}</span>
+        </button>
+      `).join('');
+    }
+    // 抽蛋稱號（gacha）
+    const gachaUnlocked = (player.unlockedTitles || [])
+      .map(id => GACHA_TITLES.find(t => t.id === id))
+      .filter(Boolean);
+    if (gachaUnlocked.length > 0) {
+      html += gachaUnlocked.map(t => `
+        <button class="title-option ${player.chosenTitle === t.id ? 'current' : ''}" onclick="selectTitle('${pid}', '${t.id}')" style="border-color:#a78bfa; background:linear-gradient(135deg,#f3f0ff,#ddd6fe);">
+          <span class="title-icon">${t.icon}</span>
+          <span class="title-text">${escapeHtml(t.title)}</span>
+          <span class="title-cond">🎰 抽蛋限定</span>
         </button>
       `).join('');
     }
