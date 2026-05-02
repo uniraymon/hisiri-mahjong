@@ -1462,6 +1462,13 @@
   let __isApplyingRemote = false;
 
   function saveData() {
+    // 在每個 saveData 蓋上「我自己」的時間戳，applyRemote 時用來判斷誰新誰舊
+    // 防止 stale 客戶端把我剛剛拿到的裝備 / 鵝幣覆蓋掉
+    const meId = getMeId && getMeId();
+    if (meId && Array.isArray(players)) {
+      const meRec = players.find(p => p && p.id === meId);
+      if (meRec) meRec.lastTouchedAt = Date.now();
+    }
     const payload = { players, history, gifts, comments, pendingBets, betPool, worldBoss, baseMoney, basePoint };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
@@ -1476,8 +1483,31 @@
   window.__applyRemote = function(data) {
     if (!data) return;
     __isApplyingRemote = true;
+    let needRepush = false;  // 若本地比雲端新，需要把本地推回去把雲端救回來
     try {
-      if (Array.isArray(data.players)) players = data.players;
+      if (Array.isArray(data.players)) {
+        // ⭐ 智能合併：避免「我剛拿到的裝備被別的客戶端用 stale 資料覆蓋掉」
+        // 規則：每個玩家逐一比 lastTouchedAt，新的勝
+        const localById = Object.fromEntries((players || []).map(p => p && p.id ? [p.id, p] : [null, null]).filter(([k]) => k));
+        const merged = data.players.map(remote => {
+          if (!remote || !remote.id) return remote;
+          const local = localById[remote.id];
+          if (!local) return remote;
+          const remoteTs = Number(remote.lastTouchedAt) || 0;
+          const localTs  = Number(local.lastTouchedAt)  || 0;
+          if (localTs > remoteTs) {
+            // 本地比較新 → 表示這個 remote 是 stale 客戶端 push 回來的舊版本
+            needRepush = true;
+            return local;
+          }
+          return remote;
+        });
+        // 雲端沒有但本地有的玩家（理論上不會，但保險）
+        for (const local of (players || [])) {
+          if (local && local.id && !merged.find(m => m && m.id === local.id)) merged.push(local);
+        }
+        players = merged;
+      }
       if (Array.isArray(data.history)) history = data.history;
       if (Array.isArray(data.gifts)) gifts = data.gifts;
       if (Array.isArray(data.comments)) comments = data.comments;
@@ -1504,6 +1534,16 @@
       renderTabs();
       render();
     } finally { __isApplyingRemote = false; }
+    // 雲端被 stale 客戶端覆蓋了，把本地較新的版本推回去把雲端救回來
+    // 延遲 300ms 避免跟剛剛 setDoc 的 echo 撞在一起
+    if (needRepush) {
+      setTimeout(() => {
+        if (!__isApplyingRemote && window.__firebaseSync && window.__firebaseSync.ready) {
+          console.log('[sync] re-pushing local-newer state to fix stale cloud');
+          saveData();
+        }
+      }, 300);
+    }
   };
 
   // 給 module script 用：取得目前本地狀態（用來首次推上雲）

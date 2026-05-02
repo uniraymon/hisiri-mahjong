@@ -1588,6 +1588,12 @@
     } catch (e) { console.error(e); }
   }
   function saveData() {
+    // 蓋上「我自己」的時間戳，applyRemote 時防 stale 客戶端覆蓋掉我剛拿到的裝備
+    const meId = getMeId && getMeId();
+    if (meId && Array.isArray(players)) {
+      const meRec = players.find(p => p && p.id === meId);
+      if (meRec) meRec.lastTouchedAt = Date.now();
+    }
     const payload = { players, history, gifts, comments, pendingBets, worldBoss, baseMoney, basePoint };
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch (e) {}
     if (!__isApplyingRemote && window.__firebaseSync && window.__firebaseSync.ready) {
@@ -1599,8 +1605,29 @@
   window.__applyRemote = function(data) {
     if (!data) return;
     __isApplyingRemote = true;
+    let needRepush = false;
     try {
-      if (Array.isArray(data.players)) players = data.players;
+      if (Array.isArray(data.players)) {
+        // ⭐ 智能合併：每個玩家逐一比 lastTouchedAt，新的勝
+        // 防止別的客戶端用 stale 資料覆蓋掉我剛拿到的裝備 / 鵝幣
+        const localById = Object.fromEntries((players || []).map(p => p && p.id ? [p.id, p] : [null, null]).filter(([k]) => k));
+        const merged = data.players.map(remote => {
+          if (!remote || !remote.id) return remote;
+          const local = localById[remote.id];
+          if (!local) return remote;
+          const remoteTs = Number(remote.lastTouchedAt) || 0;
+          const localTs  = Number(local.lastTouchedAt)  || 0;
+          if (localTs > remoteTs) {
+            needRepush = true;
+            return local;
+          }
+          return remote;
+        });
+        for (const local of (players || [])) {
+          if (local && local.id && !merged.find(m => m && m.id === local.id)) merged.push(local);
+        }
+        players = merged;
+      }
       if (Array.isArray(data.history)) history = data.history;
       if (Array.isArray(data.gifts)) gifts = data.gifts;
       if (Array.isArray(data.comments)) comments = data.comments;
@@ -1608,9 +1635,17 @@
       if (data.worldBoss && typeof data.worldBoss === 'object') worldBoss = data.worldBoss;
       if (typeof data.baseMoney === 'number') baseMoney = data.baseMoney;
       if (typeof data.basePoint === 'number') basePoint = data.basePoint;
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ players, history, gifts, comments, pendingBets, worldBoss, baseMoney, basePoint })); } catch (e) {}
       render();
     } finally { __isApplyingRemote = false; }
+    if (needRepush) {
+      setTimeout(() => {
+        if (!__isApplyingRemote && window.__firebaseSync && window.__firebaseSync.ready) {
+          console.log('[sync] re-pushing local-newer state to fix stale cloud');
+          saveData();
+        }
+      }, 300);
+    }
   };
   window.__getCurrentData = function() {
     return { players, history, gifts, comments, pendingBets, worldBoss, baseMoney, basePoint };
