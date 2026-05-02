@@ -494,6 +494,100 @@
   }
   .inv-item.equipped .ii-name, .inv-item.equipped .ii-stat { color: #fff; }
 
+  /* 世界王 */
+  .boss-card {
+    background: linear-gradient(135deg, #1e1b4b, #4c1d95);
+    border: 3px solid #f59e0b;
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 10px;
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+  }
+  .boss-card.dead { background: linear-gradient(135deg, #374151, #6b7280); border-color: #9ca3af; opacity: 0.85; }
+  .boss-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .boss-icon { font-size: 38px; }
+  .boss-name { font-size: 18px; font-weight: 800; color: #fde68a; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+  .boss-status { font-size: 11px; color: #ddd6fe; margin-top: 2px; }
+  .boss-hp-bar {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid #f59e0b;
+    border-radius: 10px;
+    height: 22px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .boss-hp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ef4444, #dc2626, #991b1b);
+    transition: width 0.5s;
+    box-shadow: inset 0 -2px 4px rgba(0,0,0,0.3);
+  }
+  .boss-hp-text {
+    position: absolute;
+    inset: 0;
+    text-align: center;
+    line-height: 22px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+  }
+  .boss-leaderboard {
+    background: rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+  }
+  .boss-leaderboard .bl-title { font-size: 11px; color: #fde68a; font-weight: 700; margin-bottom: 4px; }
+  .boss-leaderboard .bl-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    padding: 2px 0;
+  }
+  .boss-leaderboard .bl-rank {
+    background: #f59e0b; color: #fff;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 18px;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .boss-leaderboard .bl-row:nth-child(2) .bl-rank { background: #fde047; color: #78350f; }
+  .boss-leaderboard .bl-row:nth-child(3) .bl-rank { background: #d1d5db; color: #1f2937; }
+  .boss-leaderboard .bl-row:nth-child(4) .bl-rank { background: #c4814b; color: #fff; }
+  .boss-leaderboard .bl-name { flex: 1; font-weight: 600; }
+  .boss-leaderboard .bl-dmg { color: #fca5a5; font-weight: 700; }
+  .boss-card .btn { margin-top: 0; }
+  .boss-card .btn:disabled { background: #4b5563; box-shadow: none; }
+
+  .boss-killed-banner {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-200px);
+    background: linear-gradient(135deg, #f59e0b, #dc2626);
+    color: #fff;
+    padding: 16px 28px;
+    border-radius: 16px;
+    border: 3px solid #fde047;
+    font-weight: 800;
+    z-index: 1100;
+    box-shadow: 0 8px 32px rgba(245, 158, 11, 0.5);
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    font-size: 14px;
+    text-align: center;
+    max-width: 90vw;
+  }
+  .boss-killed-banner.show { transform: translateX(-50%) translateY(0); }
+  .boss-killed-banner .bk-icon { font-size: 32px; }
+  .boss-killed-banner .bk-title { font-size: 18px; margin: 4px 0; }
+
   /* 商店 */
   .shop-tabs {
     display: flex;
@@ -785,6 +879,11 @@
     </div>
 
     <div class="card">
+      <h2><span>🌍 世界王挑戰</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（共享 BOSS、所有人合力擊殺）</span></h2>
+      <div id="worldBossBody"></div>
+    </div>
+
+    <div class="card">
       <h2><span>🎒 日常</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（用體力換錢與物品）</span></h2>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
         <button class="btn btn-primary" id="workBtn" style="background:linear-gradient(135deg,#fde68a,#f59e0b); box-shadow:0 4px 0 #d97706;" onclick="doWork()">💼 打工 (15 ⚡)</button>
@@ -1012,6 +1111,47 @@
       deathLine: ['...感謝指教。', '......（沉睡）', '...再會。'] },
   ];
 
+  // === 世界王 ===
+  const BOSS_STAMINA = 30;
+  const WORLD_BOSSES = [
+    {
+      id: 'goose_king',
+      name: '🦢 鵝皇',
+      icon: '🦢',
+      hp: 50000,
+      atk: 60, def: 25, spd: 12,
+      level: 30,
+      respawnMs: 4 * 60 * 60 * 1000, // 4 小時
+      verb: '皇者懲戒',
+      ability: { type: 'multiHit', hits: 2 },
+      dialogue: ['吾乃鵝中之王！跪下臣服！', '弱者，退散吧！', '凡夫俗子也敢挑戰皇威？'],
+      deathLine: ['啊...吾的皇位...就此...', '不...不可能...凡人怎能...', '記住...吾鵝皇...終將復生...'],
+      rewardKiller: { coins: 2000, item: 'shop_w_28' },
+      rewardTop:    { coins: 1000 },
+      rewardSecond: { coins: 500 },
+      rewardThird:  { coins: 250 },
+      rewardParticipant: { coins: 100 },
+    },
+    {
+      id: 'dragon_goose',
+      name: '🐉 古龍鵝',
+      icon: '🐉',
+      hp: 100000,
+      atk: 80, def: 30, spd: 14,
+      level: 40,
+      respawnMs: 8 * 60 * 60 * 1000, // 8 小時
+      verb: '龍焰之息',
+      ability: { type: 'physResist', resist: 0.25 },
+      dialogue: ['古老的龍威甦醒...', '吾將焚盡一切！', '微不足道的鵝鵝...'],
+      deathLine: ['千年龍威...化為塵土...', '吾將...沉睡...再起...', '汝...名留龍譜...'],
+      rewardKiller: { coins: 5000, item: 'shop_a_28' },
+      rewardTop:    { coins: 2500 },
+      rewardSecond: { coins: 1500 },
+      rewardThird:  { coins: 750 },
+      rewardParticipant: { coins: 200 },
+    },
+  ];
+
   // === 打工 ===
   const WORK_STAMINA = 15;
   const WORK_BASE_PAY = 60; // 體力較高、報酬也提高
@@ -1181,6 +1321,7 @@
   let gifts = [];
   let comments = [];
   let pendingBets = [];
+  let worldBoss = {}; // { bossId: { currentHp, deadAt, nextSpawnAt, damageLog, lastHit, killCount, lastKill } }
   let baseMoney = 1000;
   let basePoint = 25000;
 
@@ -1267,13 +1408,14 @@
         if (data.gifts) gifts = data.gifts;
         if (data.comments) comments = data.comments;
         if (data.pendingBets) pendingBets = data.pendingBets;
+        if (data.worldBoss) worldBoss = data.worldBoss;
         if (data.baseMoney) baseMoney = data.baseMoney;
         if (data.basePoint) basePoint = data.basePoint;
       }
     } catch (e) { console.error(e); }
   }
   function saveData() {
-    const payload = { players, history, gifts, comments, pendingBets, baseMoney, basePoint };
+    const payload = { players, history, gifts, comments, pendingBets, worldBoss, baseMoney, basePoint };
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch (e) {}
     if (!__isApplyingRemote && window.__firebaseSync && window.__firebaseSync.ready) {
       window.__firebaseSync.save(payload);
@@ -1290,6 +1432,7 @@
       if (Array.isArray(data.gifts)) gifts = data.gifts;
       if (Array.isArray(data.comments)) comments = data.comments;
       if (Array.isArray(data.pendingBets)) pendingBets = data.pendingBets;
+      if (data.worldBoss && typeof data.worldBoss === 'object') worldBoss = data.worldBoss;
       if (typeof data.baseMoney === 'number') baseMoney = data.baseMoney;
       if (typeof data.basePoint === 'number') basePoint = data.basePoint;
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
@@ -1297,7 +1440,7 @@
     } finally { __isApplyingRemote = false; }
   };
   window.__getCurrentData = function() {
-    return { players, history, gifts, comments, pendingBets, baseMoney, basePoint };
+    return { players, history, gifts, comments, pendingBets, worldBoss, baseMoney, basePoint };
   };
   window.__updateSyncStatus = function(text, cls) {
     const el = document.getElementById('syncBadge');
@@ -1816,8 +1959,10 @@
     renderAbilityTree();
     renderSkillTree();
     renderShop();
+    renderWorldBoss();
     renderRpgStats();
     updateStaminaUI();
+    checkBossKillBanners();
   }
 
   function renderAbilityTree() {
@@ -2406,7 +2551,9 @@
     const stage = document.getElementById('stageGame');
     if (stage && !stage.classList.contains('hidden')) {
       updateStaminaUI();
-      // 每 30 秒同步一次（避免頻繁 Firebase 寫入）
+      // 世界王倒數刷新
+      const anyDead = WORLD_BOSSES.some(b => worldBoss?.[b.id]?.deadAt);
+      if (anyDead) renderWorldBoss();
       if (Math.floor(Date.now() / 1000) % 30 === 0) renderCharCard();
     }
   }, 1000);
@@ -2437,6 +2584,238 @@
     render();
   }
   window.pickClass = pickClass;
+
+  // === 世界王 ===
+  function getBossState(bossId) {
+    if (!worldBoss) worldBoss = {};
+    const boss = WORLD_BOSSES.find(b => b.id === bossId);
+    if (!boss) return null;
+    if (!worldBoss[bossId]) {
+      worldBoss[bossId] = {
+        currentHp: boss.hp,
+        spawnedAt: Date.now(),
+        deadAt: null,
+        nextSpawnAt: null,
+        damageLog: {},
+        lastHit: null,
+        killCount: 0,
+        lastKill: null,
+      };
+    }
+    const state = worldBoss[bossId];
+    // 自動復活
+    if (state.deadAt && state.nextSpawnAt && Date.now() >= state.nextSpawnAt) {
+      state.currentHp = boss.hp;
+      state.deadAt = null;
+      state.nextSpawnAt = null;
+      state.spawnedAt = Date.now();
+      state.damageLog = {};
+      state.lastHit = null;
+    }
+    return state;
+  }
+
+  function renderWorldBoss() {
+    const html = WORLD_BOSSES.map(boss => {
+      const state = getBossState(boss.id);
+      const isDead = !!state.deadAt;
+      const hpPct = isDead ? 0 : Math.max(0, (state.currentHp / boss.hp) * 100);
+      const remainingMs = isDead ? Math.max(0, state.nextSpawnAt - Date.now()) : 0;
+      const hr = Math.floor(remainingMs / 3600000);
+      const min = Math.floor((remainingMs % 3600000) / 60000);
+      const sec = Math.floor((remainingMs % 60000) / 1000);
+      const sortedDmg = Object.entries(state.damageLog || {}).sort((a, b) => b[1] - a[1]);
+      const top5 = sortedDmg.slice(0, 5);
+      return `
+        <div class="boss-card ${isDead ? 'dead' : ''}">
+          <div class="boss-header">
+            <span class="boss-icon">${boss.icon}</span>
+            <div>
+              <div class="boss-name">${boss.name} Lv ${boss.level}</div>
+              <div class="boss-status">${isDead ? `💀 倒下　·　${hr}:${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')} 後復活` : `⚔️ 存活　·　ATK ${boss.atk} / DEF ${boss.def}　·　${describeAbility(boss.ability) || '無特殊能力'}`}</div>
+            </div>
+          </div>
+          <div class="boss-hp-bar">
+            <div class="boss-hp-fill" style="width:${hpPct}%"></div>
+            <div class="boss-hp-text">${Math.max(0, state.currentHp).toLocaleString()} / ${boss.hp.toLocaleString()}　(${hpPct.toFixed(1)}%)</div>
+          </div>
+          ${top5.length > 0 ? `
+            <div class="boss-leaderboard">
+              <div class="bl-title">⚔️ 傷害排行榜</div>
+              ${top5.map(([pid, dmg], i) => {
+                const p = getPlayer(pid);
+                return `<div class="bl-row">
+                  <span class="bl-rank">${i+1}</span>
+                  <span class="bl-name">${p ? p.avatar + ' ' + escapeHtml(p.name) : '?'}</span>
+                  <span class="bl-dmg">${dmg.toLocaleString()}</span>
+                </div>`;
+              }).join('')}
+            </div>
+          ` : '<div style="font-size:11px; color:#fde68a; text-align:center; padding:8px; opacity:0.7;">尚無人挑戰</div>'}
+          ${state.lastKill ? `
+            <div style="font-size:11px; color:#fde047; text-align:center; margin-bottom:8px;">
+              🏆 第 ${state.killCount} 次擊殺：${getPlayer(state.lastKill.killer)?.name || '?'}
+            </div>
+          ` : ''}
+          <button class="btn btn-primary" onclick="runBossFight('${boss.id}')" ${isDead ? 'disabled' : ''} style="background:linear-gradient(135deg,#f59e0b,#dc2626); box-shadow:0 4px 0 #991b1b;">
+            ${isDead ? `⏳ 等待復活` : `⚔️ 挑戰（${BOSS_STAMINA} ⚡）`}
+          </button>
+        </div>
+      `;
+    }).join('');
+    document.getElementById('worldBossBody').innerHTML = html;
+  }
+
+  function distributeBossRewards(bossId, boss, state) {
+    const sortedDmg = Object.entries(state.damageLog || {}).sort((a, b) => b[1] - a[1]);
+    const ranks = [boss.rewardTop, boss.rewardSecond, boss.rewardThird];
+    // 尾刀大獎
+    const killerP = getPlayer(state.lastHit);
+    if (killerP) {
+      killerP.coinsSpent = (killerP.coinsSpent || 0) - boss.rewardKiller.coins;
+      if (boss.rewardKiller.item) {
+        const kr = getRpg(killerP); kr.inventory = kr.inventory || [];
+        kr.inventory.push(boss.rewardKiller.item);
+      }
+    }
+    // 排行 1-3 額外
+    sortedDmg.slice(0, 3).forEach(([pid, dmg], idx) => {
+      const reward = ranks[idx];
+      if (!reward) return;
+      const p = getPlayer(pid);
+      if (p) p.coinsSpent = (p.coinsSpent || 0) - reward.coins;
+    });
+    // 其餘參與者
+    sortedDmg.slice(3).forEach(([pid]) => {
+      const p = getPlayer(pid);
+      if (p && boss.rewardParticipant) p.coinsSpent = (p.coinsSpent || 0) - boss.rewardParticipant.coins;
+    });
+  }
+
+  function runBossFight(bossId) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me); if (!r.class) return;
+    tickRecovery(me);
+    const boss = WORLD_BOSSES.find(b => b.id === bossId);
+    if (!boss) return;
+    const state = getBossState(bossId);
+    if (state.deadAt) { showToast('🦢 王還沒復活'); return; }
+    if (r.stamina < BOSS_STAMINA) { showToast(`⚡ 體力不足（需 ${BOSS_STAMINA}）`); return; }
+    if (r.hp <= 0) { showToast('💀 HP 不足'); return; }
+    r.stamina -= BOSS_STAMINA;
+
+    const monster = {
+      id: boss.id, tier: 99,
+      name: boss.name, icon: boss.icon, level: boss.level,
+      hp: state.currentHp, maxHp: boss.hp,
+      atk: boss.atk, def: boss.def, spd: boss.spd,
+      verb: boss.verb, dialogue: boss.dialogue, deathLine: boss.deathLine,
+      ability: boss.ability,
+      goldDrop: 0, xpDrop: 0,
+    };
+    const result = autoFight(me, monster);
+    const dmgDealt = state.currentHp - result.mHpFinal;
+    state.currentHp = Math.max(0, result.mHpFinal);
+    state.damageLog[me.id] = (state.damageLog[me.id] || 0) + dmgDealt;
+
+    // 玩家獲得：傷害 × 0.5 XP / 傷害 × 0.1 鵝鵝幣
+    const xpGain = Math.round(dmgDealt * 0.5);
+    const coinGain = Math.round(dmgDealt * 0.1);
+    r.xp = (r.xp || 0) + xpGain;
+    let leveled = 0;
+    while (r.xp >= xpForLevel(r.level)) {
+      r.xp -= xpForLevel(r.level);
+      r.level += 1;
+      r.skillPoints = (r.skillPoints || 0) + POINTS_PER_LEVEL.skill;
+      r.abilityPoints = (r.abilityPoints || 0) + POINTS_PER_LEVEL.ability;
+      leveled++;
+    }
+    refundCoins(me.id, coinGain);
+    r.hp = result.pHpFinal;
+    r.mp = result.pMpFinal;
+    if (result.critCount) r.critCount = (r.critCount || 0) + result.critCount;
+    if (leveled) {
+      const s = computeStats(me); r.hp = s.maxHp; r.mp = s.maxMp;
+    }
+
+    // 擊殺判定
+    let killed = false;
+    if (state.currentHp <= 0) {
+      killed = true;
+      state.deadAt = Date.now();
+      state.nextSpawnAt = state.deadAt + boss.respawnMs;
+      state.lastHit = me.id;
+      state.killCount = (state.killCount || 0) + 1;
+      state.lastKill = { killer: me.id, when: state.deadAt, killCount: state.killCount };
+      distributeBossRewards(bossId, boss, state);
+    }
+
+    saveData();
+    renderCharCard();
+    updateStaminaUI();
+    renderWorldBoss();
+
+    // 結果顯示在 fightResult
+    document.getElementById('fightResult').innerHTML = `
+      <div class="reward-list" style="background:linear-gradient(135deg,#1e1b4b,#4c1d95); border-color:#f59e0b; color:#fff;">
+        <div class="rl-title" style="color:#fde68a;">🌍 ${boss.name} 戰報</div>
+        <div class="rl-item">⚔️ 你造成 <b style="color:#fca5a5;">${dmgDealt.toLocaleString()}</b> 傷害</div>
+        <div class="rl-item">⭐ +${xpGain} XP　·　🪙 +${coinGain} 鵝鵝幣</div>
+        ${killed
+          ? `<div style="margin-top:8px; padding:8px; background:rgba(245,158,11,0.3); border-radius:8px; color:#fde047; font-weight:700;">🏆 你給了尾刀！+${boss.rewardKiller.coins} 鵝鵝幣 + 1 件神話裝備</div>`
+          : `<div class="rl-item">${boss.icon} ${boss.name} 還剩 ${state.currentHp.toLocaleString()} HP（${(state.currentHp/boss.hp*100).toFixed(1)}%）</div>`}
+      </div>
+    `;
+
+    // 戰鬥日誌
+    const logHtml = result.log.map(l => {
+      const cls = l.type === 'crit-player' ? 'log-crit'
+        : l.type === 'player' ? 'log-player'
+        : l.type === 'monster' ? 'log-monster'
+        : 'log-system';
+      return `<div class="log-line ${cls}">${escapeHtml(l.text)}</div>`;
+    }).join('');
+    document.getElementById('fightResult').innerHTML += `<div class="battle-log">${logHtml}</div>`;
+  }
+  window.runBossFight = runBossFight;
+
+  // 上次擊殺通知（每個 killCount 只跳一次）
+  function checkBossKillBanners() {
+    for (const boss of WORLD_BOSSES) {
+      const state = worldBoss && worldBoss[boss.id];
+      if (!state || !state.lastKill) continue;
+      const seenKey = `boss-killed-${boss.id}-${state.lastKill.killCount}`;
+      if (localStorage.getItem(seenKey)) continue;
+      // 1 小時內才通知
+      if (Date.now() - state.lastKill.when > 60 * 60 * 1000) {
+        localStorage.setItem(seenKey, '1');
+        continue;
+      }
+      localStorage.setItem(seenKey, '1');
+      showBossKillBanner(boss, state.lastKill);
+    }
+  }
+  function showBossKillBanner(boss, lastKill) {
+    const killer = getPlayer(lastKill.killer);
+    const el = document.createElement('div');
+    el.className = 'boss-killed-banner';
+    el.innerHTML = `
+      <div class="bk-icon">${boss.icon}</div>
+      <div class="bk-title">${boss.name} 被擊殺！</div>
+      <div>尾刀英雄：<b>${killer ? killer.avatar + ' ' + escapeHtml(killer.name) : '?'}</b></div>
+      <div style="font-size:11px; opacity:0.85; margin-top:4px;">第 ${lastKill.killCount} 次擊殺　·　${boss.respawnMs/3600000} 小時後復活</div>
+    `;
+    document.body.appendChild(el);
+    setTimeout(() => el.classList.add('show'), 80);
+    setTimeout(() => {
+      el.classList.remove('show');
+      setTimeout(() => el.remove(), 500);
+    }, 6000);
+    el.addEventListener('click', () => {
+      el.classList.remove('show');
+      setTimeout(() => el.remove(), 500);
+    });
+  }
 
   function doWork() {
     const me = getMe(); if (!me) return;

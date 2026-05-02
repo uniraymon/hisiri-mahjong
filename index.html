@@ -1330,6 +1330,7 @@
   let gifts = [];        // [{ id, from, to, type, ts }]
   let comments = [];     // [{ id, from, on, text, ts }]
   let pendingBets = [];  // [{ id, better, predicted, ts }]
+  let worldBoss = {};
   let baseMoney = 1000;
   let basePoint = 25000;
   let currentTab = 'overview';
@@ -1351,6 +1352,7 @@
         if (data.gifts) gifts = data.gifts;
         if (data.comments) comments = data.comments;
         if (data.pendingBets) pendingBets = data.pendingBets;
+        if (data.worldBoss) worldBoss = data.worldBoss;
         if (data.baseMoney) baseMoney = data.baseMoney;
         if (data.basePoint) basePoint = data.basePoint;
         loaded = true;
@@ -1408,7 +1410,7 @@
   let __isApplyingRemote = false;
 
   function saveData() {
-    const payload = { players, history, gifts, comments, pendingBets, baseMoney, basePoint };
+    const payload = { players, history, gifts, comments, pendingBets, worldBoss, baseMoney, basePoint };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     } catch (e) { console.error(e); }
@@ -1428,10 +1430,11 @@
       if (Array.isArray(data.gifts)) gifts = data.gifts;
       if (Array.isArray(data.comments)) comments = data.comments;
       if (Array.isArray(data.pendingBets)) pendingBets = data.pendingBets;
+      if (data.worldBoss && typeof data.worldBoss === 'object') worldBoss = data.worldBoss;
       if (typeof data.baseMoney === 'number') baseMoney = data.baseMoney;
       if (typeof data.basePoint === 'number') basePoint = data.basePoint;
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ players, history, gifts, comments, pendingBets, baseMoney, basePoint }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ players, history, gifts, comments, pendingBets, worldBoss, baseMoney, basePoint }));
       } catch (e) {}
       const bm = document.getElementById('baseMoney');
       const bp = document.getElementById('basePoint');
@@ -1444,7 +1447,7 @@
 
   // 給 module script 用：取得目前本地狀態（用來首次推上雲）
   window.__getCurrentData = function() {
-    return { players, history, gifts, comments, pendingBets, baseMoney, basePoint };
+    return { players, history, gifts, comments, pendingBets, worldBoss, baseMoney, basePoint };
   };
 
   // 給 module script 用：更新同步狀態 badge
