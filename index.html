@@ -3900,7 +3900,21 @@
         // 別人的 player 不會被我寫入，所以絕對不可能蓋掉別人剛拿到的裝備
         const meId = window.__getMeId?.();
 
-        const meta = {
+        // Firestore 不接受 undefined。深度遞迴遞掉 undefined（陣列/物件）
+        const pruneUndef = (v) => {
+          if (Array.isArray(v)) return v.map(pruneUndef).filter(x => x !== undefined);
+          if (v !== null && typeof v === 'object') {
+            const out = {};
+            for (const k of Object.keys(v)) {
+              const x = pruneUndef(v[k]);
+              if (x !== undefined) out[k] = x;
+            }
+            return out;
+          }
+          return v;
+        };
+
+        const rawMeta = {
           history: payload.history,
           gifts: payload.gifts,
           comments: payload.comments,
@@ -3910,6 +3924,7 @@
           baseMoney: payload.baseMoney,
           basePoint: payload.basePoint,
         };
+        const meta = pruneUndef(rawMeta);
 
         clearTimeout(metaSaveTimer);
         metaSaveTimer = setTimeout(async () => {
@@ -3935,10 +3950,11 @@
           }
         }
         for (const p of playersToWrite) {
+          const cleanP = pruneUndef(p);
           clearTimeout(playerSaveTimers[p.id]);
           playerSaveTimers[p.id] = setTimeout(async () => {
             try {
-              await setDoc(doc(playersCol, p.id), p);
+              await setDoc(doc(playersCol, p.id), cleanP);
               seenPlayerIds.add(p.id);
             } catch (e) {
               console.error('Player ' + p.id + ' save failed:', e);

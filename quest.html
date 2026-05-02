@@ -1204,9 +1204,9 @@
       hpPer: 14, atkPer: 2.2, defPer: 1.2, spdPer: 0.4,
       attackVerb: '揮砍',
       skills: [
-        { name: '怒之炎', icon: '☄️', unlockLv: 12, cooldown: 7, mpCost: 35, type: 'damage', mult: 2.5 },
-        { name: '重擊',   icon: '⚡', unlockLv: 5,  cooldown: 4, mpCost: 18, type: 'damage', mult: 1.3, alwaysCrit: true },
-        { name: '狂怒斬', icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 14, type: 'damage', mult: 1.8 },
+        { id: 'w_rage_flame',   name: '怒之炎', icon: '☄️', unlockLv: 12, cooldown: 7, mpCost: 35, type: 'damage', mult: 2.5 },
+        { id: 'w_heavy_strike', name: '重擊',   icon: '⚡', unlockLv: 5,  cooldown: 4, mpCost: 18, type: 'damage', mult: 1.3, alwaysCrit: true },
+        { id: 'w_rage_slash',   name: '狂怒斬', icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 14, type: 'damage', mult: 1.8 },
       ],
       skillTree: [
         { id: 'w_s0', name: '怒之炎強化', icon: '☄️', desc: '+10% 怒之炎傷害', maxLevel: 5, effect: 'skill0Pct', per: 0.10 },
@@ -1233,9 +1233,9 @@
       hpPer: 9, atkPer: 1.5, defPer: 0.6, spdPer: 1.2,
       attackVerb: '射擊',
       skills: [
-        { name: '神之矢',   icon: '🌟', unlockLv: 12, cooldown: 7, mpCost: 32, type: 'damage', mult: 2.8, alwaysCrit: true },
-        { name: '多重射擊', icon: '🏹', unlockLv: 5,  cooldown: 4, mpCost: 16, type: 'damage', mult: 1.8 },
-        { name: '精準射擊', icon: '🎯', unlockLv: 1,  cooldown: 3, mpCost: 12, type: 'damage', mult: 1.4, alwaysCrit: true },
+        { id: 'a_god_arrow',   name: '神之矢',   icon: '🌟', unlockLv: 12, cooldown: 7, mpCost: 32, type: 'damage', mult: 2.8, alwaysCrit: true },
+        { id: 'a_multishot',   name: '多重射擊', icon: '🏹', unlockLv: 5,  cooldown: 4, mpCost: 16, type: 'damage', mult: 1.8 },
+        { id: 'a_precise_shot',name: '精準射擊', icon: '🎯', unlockLv: 1,  cooldown: 3, mpCost: 12, type: 'damage', mult: 1.4, alwaysCrit: true },
       ],
       skillTree: [
         { id: 'a_s0', name: '神之矢強化',   icon: '🌟', desc: '+10% 神之矢傷害',   maxLevel: 5, effect: 'skill0Pct', per: 0.10 },
@@ -1263,9 +1263,9 @@
       attackVerb: '魔法',
       critBonus: 0.18,
       skills: [
-        { name: '隕石術', icon: '☄️', unlockLv: 12, cooldown: 7, mpCost: 50, type: 'damage', flat: 120, perLv: 5, ignoreDef: true },
-        { name: '冰錐術', icon: '❄️', unlockLv: 5,  cooldown: 4, mpCost: 20, type: 'damage', mult: 1.6, alwaysCrit: true },
-        { name: '火球術', icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 25, type: 'damage', flat: 50, perLv: 3, ignoreDef: true },
+        { id: 'm_meteor',   name: '隕石術', icon: '☄️', unlockLv: 12, cooldown: 7, mpCost: 50, type: 'damage', flat: 120, perLv: 5, ignoreDef: true },
+        { id: 'm_ice_lance',name: '冰錐術', icon: '❄️', unlockLv: 5,  cooldown: 4, mpCost: 20, type: 'damage', mult: 1.6, alwaysCrit: true },
+        { id: 'm_fireball', name: '火球術', icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 25, type: 'damage', flat: 50, perLv: 3, ignoreDef: true },
       ],
       skillTree: [
         { id: 'm_s0', name: '隕石術強化', icon: '☄️', desc: '+10% 隕石術傷害', maxLevel: 5, effect: 'skill0Pct', per: 0.10 },
@@ -1294,9 +1294,9 @@
       attackVerb: '聖光斬',
       regenPer: 0.05,
       skills: [
-        { name: '審判',     icon: '⚖️', unlockLv: 12, cooldown: 7, mpCost: 38, type: 'damage', mult: 2.5, alwaysCrit: true },
-        { name: '聖光斬',   icon: '✝️', unlockLv: 5,  cooldown: 4, mpCost: 22, type: 'damage', mult: 1.6, healCaster: 0.05 },
-        { name: '神聖治癒', icon: '✨', unlockLv: 1,  cooldown: 5, mpCost: 30, type: 'heal', healPct: 0.3 },
+        { id: 'p_judgment', name: '審判',     icon: '⚖️', unlockLv: 12, cooldown: 7, mpCost: 38, type: 'damage', mult: 2.5, alwaysCrit: true },
+        { id: 'p_holy_slash',name: '聖光斬',  icon: '✝️', unlockLv: 5,  cooldown: 4, mpCost: 22, type: 'damage', mult: 1.6, healCaster: 0.05 },
+        { id: 'p_holy_heal',name: '神聖治癒', icon: '✨', unlockLv: 1,  cooldown: 5, mpCost: 30, type: 'heal', healPct: 0.3 },
       ],
       skillTree: [
         { id: 'p_s0', name: '審判強化',   icon: '⚖️', desc: '+10% 審判傷害',   maxLevel: 5, effect: 'skill0Pct', per: 0.10 },
@@ -1577,6 +1577,83 @@
     mage:    'mage_arcane',
     paladin: 'paladin_holy',
   };
+
+  // === HOF Judge / Gambit 系統 ===
+  // 玩家為每個職業設定一張「行動規則表」(actionPattern)：
+  //   [{ judgeId, param, skillId }]
+  // 戰鬥引擎逐條檢查，第一條成立就執行對應技能
+  const JUDGES = {
+    1000: { id: 1000, label: '必ず（一定觸發）',     paramType: 'none' },
+    1100: { id: 1100, label: '自身 HP ≥ X%',         paramType: 'percent' },
+    1101: { id: 1101, label: '自身 HP ≤ X%',         paramType: 'percent' },
+    1200: { id: 1200, label: '自身 MP ≥ X%',         paramType: 'percent' },
+    1201: { id: 1201, label: '自身 MP ≤ X%',         paramType: 'percent' },
+    1205: { id: 1205, label: '自身 MP ≥ X (絕對)',   paramType: 'absolute' },
+    1300: { id: 1300, label: '敵方 HP ≤ X%',         paramType: 'percent' },
+    1301: { id: 1301, label: '敵方 HP ≥ X%',         paramType: 'percent' },
+    1900: { id: 1900, label: '我的第 X 次行動',       paramType: 'count' },
+    1901: { id: 1901, label: '我已行動 ≥ X 次',       paramType: 'count' },
+    1920: { id: 1920, label: '本場最多用 X 次',       paramType: 'count' },
+    1940: { id: 1940, label: 'X% 機率',              paramType: 'percent' },
+  };
+
+  // 評估一條 judge 是否成立
+  // ctx = { pHp, maxHp, pMp, maxMp, mHp, maxMHp, playerActions, ruleUseCount }
+  function evaluateJudge(judgeId, param, ctx, ruleIdx) {
+    const v = Number(param) || 0;
+    switch (judgeId) {
+      case 1000: return true;
+      case 1100: return ctx.maxHp > 0 && (ctx.pHp / ctx.maxHp * 100) >= v;
+      case 1101: return ctx.maxHp > 0 && (ctx.pHp / ctx.maxHp * 100) <= v;
+      case 1200: return ctx.maxMp > 0 && (ctx.pMp / ctx.maxMp * 100) >= v;
+      case 1201: return ctx.maxMp > 0 && (ctx.pMp / ctx.maxMp * 100) <= v;
+      case 1205: return ctx.pMp >= v;
+      case 1300: return ctx.maxMHp > 0 && (ctx.mHp / ctx.maxMHp * 100) <= v;
+      case 1301: return ctx.maxMHp > 0 && (ctx.mHp / ctx.maxMHp * 100) >= v;
+      case 1900: return ctx.playerActions === v;
+      case 1901: return ctx.playerActions >= v;
+      case 1920: return (ctx.ruleUseCount[ruleIdx] || 0) < v;
+      case 1940: return Math.random() < (v / 100);
+      default:   return false;
+    }
+  }
+
+  // 各職業的預設行動規則（玩家可在 UI 自由編輯）
+  function getDefaultActionPattern(classId) {
+    switch (classId) {
+      case 'warrior':
+        return [
+          { judgeId: 1300, param: 30, skillId: 'w_rage_flame' },
+          { judgeId: 1000, param: 0,  skillId: 'w_heavy_strike' },
+          { judgeId: 1000, param: 0,  skillId: 'w_rage_slash' },
+          { judgeId: 1000, param: 0,  skillId: 'basic' },
+        ];
+      case 'archer':
+        return [
+          { judgeId: 1300, param: 25, skillId: 'a_god_arrow' },
+          { judgeId: 1000, param: 0,  skillId: 'a_multishot' },
+          { judgeId: 1000, param: 0,  skillId: 'a_precise_shot' },
+          { judgeId: 1000, param: 0,  skillId: 'basic' },
+        ];
+      case 'mage':
+        return [
+          { judgeId: 1300, param: 20, skillId: 'm_meteor' },
+          { judgeId: 1200, param: 30, skillId: 'm_fireball' },
+          { judgeId: 1000, param: 0,  skillId: 'm_ice_lance' },
+          { judgeId: 1000, param: 0,  skillId: 'm_fireball' },
+          { judgeId: 1000, param: 0,  skillId: 'basic' },
+        ];
+      case 'paladin':
+        return [
+          { judgeId: 1101, param: 50, skillId: 'p_holy_heal' },
+          { judgeId: 1300, param: 30, skillId: 'p_judgment' },
+          { judgeId: 1000, param: 0,  skillId: 'p_holy_slash' },
+          { judgeId: 1000, param: 0,  skillId: 'basic' },
+        ];
+      default:
+        return [{ judgeId: 1000, param: 0, skillId: 'basic' }];
+    }
+  }
 
   // 把所有 set piece 加上 setId 標記，並建立 id → 件的查表
   const SET_PIECES = {};
@@ -2549,6 +2626,10 @@
     if (!player.rpg.zoneProgress) player.rpg.zoneProgress = {};
     if (!player.rpg.equipment.guide) player.rpg.equipment.guide = null;
     if (!Array.isArray(player.rpg.greenTeaGuidesGranted)) player.rpg.greenTeaGuidesGranted = [];
+    // HOF 行動規則：沒有就帶入該職業的預設規則
+    if (!Array.isArray(player.rpg.actionPattern) || player.rpg.actionPattern.length === 0) {
+      player.rpg.actionPattern = player.rpg.class ? getDefaultActionPattern(player.rpg.class) : [];
+    }
     // 補發：以前遇過綠茶但還沒拿到對應指南書的，現在補回去
     if ((player.rpg.metGreenTea || 0) > 0) {
       const before = player.rpg.greenTeaGuidesGranted.length;
@@ -4121,6 +4202,7 @@
     rpg.skills = {};
     rpg.abilityPoints = 5;
     rpg.abilities = { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0 };
+    rpg.actionPattern = getDefaultActionPattern(classId);
     const stats = computeStats(me);
     rpg.hp = stats.maxHp;
     rpg.mp = stats.maxMp;
@@ -5492,7 +5574,23 @@
       save: (payload) => {
         const meId = window.__getMeId?.();
 
-        const meta = {
+        // Firestore 不接受 undefined。深度遞迴遞掉 undefined（陣列/物件）
+        const pruneUndef = (v) => {
+          if (Array.isArray(v)) return v.map(pruneUndef).filter(x => x !== undefined);
+          if (v !== null && typeof v === 'object') {
+            const out = {};
+            for (const k of Object.keys(v)) {
+              const x = pruneUndef(v[k]);
+              if (x !== undefined) out[k] = x;
+            }
+            return out;
+          }
+          return v;
+        };
+
+        // 把 undefined 欄位過濾掉
+        // 注意：merge:true 下，缺漏的欄位會保留雲端原值；只丟掉 undefined 不會誤刪
+        const rawMeta = {
           history: payload.history,
           gifts: payload.gifts,
           comments: payload.comments,
@@ -5502,6 +5600,7 @@
           baseMoney: payload.baseMoney,
           basePoint: payload.basePoint,
         };
+        const meta = pruneUndef(rawMeta);
 
         clearTimeout(metaSaveTimer);
         metaSaveTimer = setTimeout(async () => {
@@ -5525,10 +5624,11 @@
           }
         }
         for (const p of playersToWrite) {
+          const cleanP = pruneUndef(p);
           clearTimeout(playerSaveTimers[p.id]);
           playerSaveTimers[p.id] = setTimeout(async () => {
             try {
-              await setDoc(doc(playersCol, p.id), p);
+              await setDoc(doc(playersCol, p.id), cleanP);
               seenPlayerIds.add(p.id);
             } catch (e) { console.error('Player ' + p.id + ' save failed:', e); }
           }, 250);
