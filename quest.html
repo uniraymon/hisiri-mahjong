@@ -785,6 +785,15 @@
     </div>
 
     <div class="card">
+      <h2><span>🎒 日常</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（用體力換錢與物品）</span></h2>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <button class="btn btn-primary" id="workBtn" style="background:linear-gradient(135deg,#fde68a,#f59e0b); box-shadow:0 4px 0 #d97706;" onclick="doWork()">💼 打工 (5 ⚡)</button>
+        <button class="btn btn-primary" id="forageBtn" style="background:linear-gradient(135deg,#a7f3d0,#10b981); box-shadow:0 4px 0 #059669;" onclick="doForage()">🎣 探索 (5 ⚡)</button>
+      </div>
+      <div id="dailyResult" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="card">
       <h2><span>🎒 裝備</span></h2>
       <div class="equip-row" id="equipRow"></div>
       <div style="font-size:12px; color:#8b6f9b; margin:8px 0 6px; font-weight:600;">背包（點擊裝備 / 解除）</div>
@@ -1001,6 +1010,53 @@
     { id: 'titan',  tier: 5, name: '泰坦鵝',   icon: '🗿', hpBase: 680, atkBase: 38, defBase: 22, spdBase: 8,  goldBase: 180,xpBase: 440, verb: '大地碎裂', ability: { type: 'physResist', resist: 0.3 },
       dialogue: ['...', '...嗯。', '......（凝視）'],
       deathLine: ['...感謝指教。', '......（沉睡）', '...再會。'] },
+  ];
+
+  // === 打工 ===
+  const WORK_STAMINA = 5;
+  const WORK_BASE_PAY = 25;
+  const JOB_EVENTS = [
+    // good (1.5x), normal (1x), bad (0.6x)
+    { mood: 'good',   icon: '🍜', name: '鵝肉店搬運', line: '老闆娘看你可憐多給了一份小費！' },
+    { mood: 'normal', icon: '🍜', name: '鵝肉店搬運', line: '今天客人特別多，鵝鵝差點過勞...' },
+    { mood: 'bad',    icon: '🍜', name: '鵝肉店搬運', line: '老闆說「鵝鵝快點端菜！」結果端到一半滑倒了...' },
+
+    { mood: 'good',   icon: '🎤', name: '街頭賣唱',   line: '一位大姐覺得你的歌聲很動人，多打賞一些！' },
+    { mood: 'normal', icon: '🎤', name: '街頭賣唱',   line: '路人以為你是真的鵝，丟了麵包屑給你...' },
+    { mood: 'bad',    icon: '🎤', name: '街頭賣唱',   line: '你唱了一首「鵝啊鵝啊鵝」，路人投幣表示「夠了快停下」...' },
+
+    { mood: 'good',   icon: '💼', name: '鵝鵝上班族', line: '提案被誇獎，主管請喝咖啡還塞了紅包！' },
+    { mood: 'normal', icon: '💼', name: '鵝鵝上班族', line: '今天加班加到半夜，主管還是覺得你不夠努力...' },
+    { mood: 'bad',    icon: '💼', name: '鵝鵝上班族', line: '同事偷吃你便當，你假裝沒看到拿了薪水就走。' },
+
+    { mood: 'good',   icon: '🚖', name: '計程車司機', line: '載到一位有錢老闆，多給了一倍小費！' },
+    { mood: 'normal', icon: '🚖', name: '計程車司機', line: '客人沒帶錢，拿了三顆蛋抵車資，你接受了...' },
+    { mood: 'bad',    icon: '🚖', name: '計程車司機', line: '今天載到一隻醉酒鵝，吐了你一身...' },
+
+    { mood: 'good',   icon: '🛵', name: '外送鵝鵝',   line: '客人給五星評價，附註「鵝鵝辛苦了」並加倍小費！' },
+    { mood: 'normal', icon: '🛵', name: '外送鵝鵝',   line: '路上塞車差點遲到，還好趕上...' },
+    { mood: 'bad',    icon: '🛵', name: '外送鵝鵝',   line: '訂單地址寫錯，跑了三趟才送到，客人還扣分...' },
+
+    { mood: 'good',   icon: '🌾', name: '鵝鵝農場',   line: '今天豐收，農夫多給你一袋鵝鵝幣！' },
+    { mood: 'normal', icon: '🌾', name: '鵝鵝農場',   line: '你以為很簡單，結果累到差點變成晚餐...' },
+    { mood: 'bad',    icon: '🌾', name: '鵝鵝農場',   line: '幫農夫趕走偷菜的鵝（你的同類），心情很複雜...' },
+  ];
+
+  // === 探索 / 採集 ===
+  const FORAGE_STAMINA = 5;
+  const FORAGE_EVENTS = [
+    // type: coins / equip / none
+    { type: 'coins', minCoins: 8,  maxCoins: 18, line: '🌳 在樹下撿到幾枚鵝鵝幣，閃閃發亮！' },
+    { type: 'coins', minCoins: 10, maxCoins: 22, line: '💧 河邊一隻好心鵝丟了零錢給你...你也不知道為什麼。' },
+    { type: 'coins', minCoins: 5,  maxCoins: 15, line: '🍂 從草叢翻出舊錢袋，至少還有點錢。' },
+    { type: 'coins', minCoins: 15, maxCoins: 30, line: '⛲ 許願池裡的硬幣...偷了！希望沒人看到。' },
+    { type: 'coins', minCoins: 20, maxCoins: 40, line: '🌟 大發現！前任冒險者掉的小錢包！' },
+    { type: 'equip', line: '⚔️ 你在洞穴裡找到一件被棄置的裝備！' },
+    { type: 'equip', line: '📦 路邊木箱裡塞了一件不錯的東西！' },
+    { type: 'equip', line: '🦴 從怪物的窩裡撿到沾血的裝備...好像可以用？' },
+    { type: 'none',  line: '🌫 走了一圈什麼都沒找到，浪費時間了...' },
+    { type: 'none',  line: '😴 看見遠方有寶箱，但鵝鵝太懶不想走過去...' },
+    { type: 'none',  line: '🍃 今天運氣很差，連野生史萊姆鵝都沒看到。' },
   ];
 
   function describeAbility(ab) {
@@ -2344,6 +2400,87 @@
     render();
   }
   window.pickClass = pickClass;
+
+  function doWork() {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me); if (!r.class) { showToast('先選職業'); return; }
+    tickRecovery(me);
+    if (r.stamina < WORK_STAMINA) { showToast(`⚡ 體力不足（需 ${WORK_STAMINA}）`); return; }
+    r.stamina -= WORK_STAMINA;
+    const ev = JOB_EVENTS[Math.floor(Math.random() * JOB_EVENTS.length)];
+    const mult = ev.mood === 'good' ? 1.5 : ev.mood === 'bad' ? 0.6 : 1.0;
+    const variance = 0.85 + Math.random() * 0.3;
+    const pay = Math.max(5, Math.round(WORK_BASE_PAY * mult * variance));
+    refundCoins(me.id, pay);
+    saveData();
+    renderCharCard();
+    updateStaminaUI();
+    document.getElementById('dailyResult').innerHTML = `
+      <div class="reward-list" style="background:linear-gradient(135deg,#fef3c7,#fde68a); border-color:#f59e0b;">
+        <div class="rl-title" style="color:#92400e;">${ev.icon} ${ev.name}</div>
+        <div class="rl-item" style="color:#5a4a4a;">「${escapeHtml(ev.line)}」</div>
+        <div class="rl-item" style="margin-top:6px; color:${ev.mood === 'good' ? '#16a34a' : ev.mood === 'bad' ? '#dc2626' : '#d97706'}; font-weight:700;">
+          ${ev.mood === 'good' ? '🎉 好運加成' : ev.mood === 'bad' ? '😩 衰運' : '🙂 普通'} → +${pay} 鵝鵝幣
+        </div>
+      </div>
+    `;
+    showToast(`💼 +${pay} 鵝鵝幣`);
+  }
+  window.doWork = doWork;
+
+  function doForage() {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me); if (!r.class) { showToast('先選職業'); return; }
+    tickRecovery(me);
+    if (r.stamina < FORAGE_STAMINA) { showToast(`⚡ 體力不足（需 ${FORAGE_STAMINA}）`); return; }
+    r.stamina -= FORAGE_STAMINA;
+    // 加權：65% 錢 / 30% 裝備 / 5% 啥都沒
+    const roll = Math.random();
+    const pool = roll < 0.65
+      ? FORAGE_EVENTS.filter(e => e.type === 'coins')
+      : roll < 0.95
+        ? FORAGE_EVENTS.filter(e => e.type === 'equip')
+        : FORAGE_EVENTS.filter(e => e.type === 'none');
+    const ev = pool[Math.floor(Math.random() * pool.length)];
+    let resultText = '';
+    let resultColor = '#5a4a4a';
+    if (ev.type === 'coins') {
+      const amt = ev.minCoins + Math.floor(Math.random() * (ev.maxCoins - ev.minCoins + 1));
+      refundCoins(me.id, amt);
+      resultText = `+${amt} 鵝鵝幣`; resultColor = '#16a34a';
+      showToast(`🎣 +${amt} 鵝鵝幣`);
+    } else if (ev.type === 'equip') {
+      // 給一件 lv 等級附近的隨機裝備
+      const eligible = ITEMS.filter(i => (i.lv || 1) <= r.level + 2 && (i.lv || 1) >= Math.max(1, r.level - 5));
+      const drop = eligible.length > 0 ? eligible[Math.floor(Math.random() * eligible.length)] : null;
+      if (drop) {
+        if (!r.inventory) r.inventory = [];
+        r.inventory.push(drop.id);
+        resultText = `獲得 ${drop.icon} ${drop.name}（背包 +1）`;
+        resultColor = '#7c3aed';
+        showToast(`🎒 +${drop.icon} ${drop.name}`);
+      } else {
+        resultText = '結果什麼裝備都看不上，隨手丟掉了。';
+        resultColor = '#9ca3af';
+      }
+    } else {
+      resultText = '空手而回。';
+      resultColor = '#9ca3af';
+      showToast('🌫 什麼都沒找到');
+    }
+    saveData();
+    renderCharCard();
+    renderEquipment();
+    updateStaminaUI();
+    document.getElementById('dailyResult').innerHTML = `
+      <div class="reward-list" style="background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-color:#10b981;">
+        <div class="rl-title" style="color:#047857;">🎣 探索結果</div>
+        <div class="rl-item" style="color:#5a4a4a;">「${escapeHtml(ev.line)}」</div>
+        <div class="rl-item" style="margin-top:6px; color:${resultColor}; font-weight:700;">${escapeHtml(resultText)}</div>
+      </div>
+    `;
+  }
+  window.doForage = doForage;
 
   function onFight() {
     const me = getMe();
