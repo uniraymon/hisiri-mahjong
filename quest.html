@@ -7716,6 +7716,7 @@ ${b.text}
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:8px;">
         <button class="btn btn-secondary" onclick="adminFullHeal()">💚 滿血滿體力</button>
         <button class="btn btn-secondary" onclick="adminGiveLegendary()">🌟 神話全套</button>
+        <button class="btn btn-secondary" onclick="adminPickSet()" style="grid-column:1/-1; background:linear-gradient(135deg,#fef3c7,#f59e0b); color:#7c2d12;">🛡 直接拿整套套裝（選一套）</button>
       </div>
       <button class="btn btn-secondary" onclick="adminResetPoints()" style="background:linear-gradient(135deg,#a7f3d0,#10b981); color:#fff;">🔄 退回所有技能點 + 能力點</button>
       <button class="btn btn-danger" onclick="adminResetRpg()" style="margin-top:6px;">⚠️ 重置 RPG 角色（保留幣）</button>
@@ -7806,6 +7807,48 @@ ${b.text}
     showToast('🌟 神話套裝穿戴完成');
   }
   window.adminGiveLegendary = adminGiveLegendary;
+
+  // ⭐ 選一套套裝、把所有件丟進背包
+  function adminPickSet() {
+    const setIds = Object.keys(SETS);
+    const html = `
+      <div style="text-align:left;">
+        <div style="font-size:12px; color:#5b3d62; padding:8px 10px; background:#fef3c7; border-radius:8px; margin-bottom:10px; border:1px dashed #f59e0b;">
+          選一套，所有 5 件直接進你背包（沒有等級限制檢查、不影響現有裝備）。
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+          ${setIds.map(sid => {
+            const s = SETS[sid];
+            return `<button class="btn btn-secondary" onclick="adminGiveSet('${sid}')" style="border:2px solid ${s.color}; background:${s.color}1a; color:${s.color}; font-weight:700; padding:10px 8px; text-align:left;">
+              <div style="font-size:13px;">🛡 ${escapeHtml(s.name)}</div>
+              <div style="font-size:10px; opacity:0.8; margin-top:2px;">${s.pieces.length} 件　·　Lv ${s.pieces[0]?.lv || 1}</div>
+            </button>`;
+          }).join('')}
+        </div>
+        <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:10px;">取消</button>
+      </div>
+    `;
+    showModal('🛡 選一套套裝', html);
+  }
+  window.adminPickSet = adminPickSet;
+
+  function adminGiveSet(setId) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const set = SETS[setId];
+    if (!set) { showToast('找不到套裝'); return; }
+    r.inventory = r.inventory || [];
+    set.pieces.forEach(p => {
+      // 用 id 字串塞背包（resolveItem 會從 SET_PIECES 還原）
+      r.inventory.push(p.id);
+    });
+    saveData();
+    hideModal();
+    render();
+    showDebugModal();
+    showToast(`🛡 ${set.name} ×${set.pieces.length} 件已進背包`);
+  }
+  window.adminGiveSet = adminGiveSet;
 
   function adminResetPoints() {
     const me = getMe(); if (!me) return;
