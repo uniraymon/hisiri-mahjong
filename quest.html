@@ -1834,8 +1834,9 @@
   ];
 
   // === 世界王 ===
-  // 世界王已改為「排隊制」：不扣體力、改成全域 20 分鐘冷卻（任何一隻王都共用此冷卻）
-  const BOSS_COOLDOWN_MS = 20 * 60 * 1000; // 全域：上次參戰後 20 分鐘才能再排隊任何王
+  // 世界王：原本是排隊制 + 20 分鐘全域冷卻 + 死後 4-8 小時復活
+  //         開放式：冷卻歸 0、死後立刻重生，所有人可以一直打
+  const BOSS_COOLDOWN_MS = 0;        // ⭐ 玩家冷卻關閉
   const BOSS_QUEUE_STALE_MS = 5 * 60 * 1000; // 排隊頭 5 分鐘沒動作 → 視為過期、可被略過
   const WORLD_BOSSES = [
     {
@@ -1845,7 +1846,7 @@
       hp: 90000,        // 50000 → 90000：更耐打
       atk: 48, def: 38, spd: 12,  // ATK 60→48（比之前低）、DEF 25→38（更扛）
       level: 30,
-      respawnMs: 4 * 60 * 60 * 1000, // 4 小時
+      respawnMs: 0,     // ⭐ 立刻重生
       verb: '皇者懲戒',
       ability: { type: 'multiHit', hits: 2 },
       dialogue: ['吾乃鵝中之王！跪下臣服！', '弱者，退散吧！', '凡夫俗子也敢挑戰皇威？'],
@@ -1863,7 +1864,7 @@
       hp: 200000,       // 100000 → 200000
       atk: 65, def: 50, spd: 14,  // ATK 80→65、DEF 30→50
       level: 40,
-      respawnMs: 8 * 60 * 60 * 1000, // 8 小時
+      respawnMs: 0,     // ⭐ 立刻重生
       verb: '龍焰之息',
       ability: { type: 'physResist', resist: 0.25 },
       dialogue: ['古老的龍威甦醒...', '吾將焚盡一切！', '微不足道的鵝鵝...'],
@@ -6447,8 +6448,9 @@ ${b.text}
       };
     }
     const state = worldBoss[bossId];
-    // 自動復活
-    if (state.deadAt && state.nextSpawnAt && Date.now() >= state.nextSpawnAt) {
+    // 自動復活：respawnMs=0 → 死了就立刻重生；否則等到 nextSpawnAt
+    const instant = !boss.respawnMs;
+    if (state.deadAt && (instant || (state.nextSpawnAt && Date.now() >= state.nextSpawnAt))) {
       state.currentHp = boss.hp;
       state.deadAt = null;
       state.nextSpawnAt = null;
@@ -7080,7 +7082,7 @@ ${b.text}
       <div class="bk-icon">${boss.icon}</div>
       <div class="bk-title">${boss.name} 被擊殺！</div>
       <div>尾刀英雄：<b>${killer ? killer.avatar + ' ' + escapeHtml(killer.name) : '?'}</b></div>
-      <div style="font-size:11px; opacity:0.85; margin-top:4px;">第 ${lastKill.killCount} 次擊殺　·　${boss.respawnMs/3600000} 小時後復活</div>
+      <div style="font-size:11px; opacity:0.85; margin-top:4px;">第 ${lastKill.killCount} 次擊殺　·　${boss.respawnMs ? `${boss.respawnMs/3600000} 小時後復活` : '立刻重生 ♻'}</div>
     `;
     document.body.appendChild(el);
     setTimeout(() => el.classList.add('show'), 80);
@@ -7905,7 +7907,9 @@ ${b.text}
           const data = snap.exists() ? snap.data() : {};
           const wb = data.worldBoss ? { ...data.worldBoss } : {};
           let state = wb[bossId];
-          if (!state || (state.deadAt && state.nextSpawnAt && Date.now() >= state.nextSpawnAt)) {
+          // respawnMs=0 → 死了就立刻重生（不用等 nextSpawnAt）
+          const __instantRespawn = !bossDef.respawnMs;
+          if (!state || (state.deadAt && (__instantRespawn || (state.nextSpawnAt && Date.now() >= state.nextSpawnAt)))) {
             state = {
               currentHp: bossDef.hp,
               spawnedAt: Date.now(),
@@ -7966,8 +7970,10 @@ ${b.text}
           const data = snap.exists() ? snap.data() : {};
           const wb = data.worldBoss ? { ...data.worldBoss } : {};
           let state = wb[bossId];
+          // respawnMs=0 → 死了就立刻重生（不用等 nextSpawnAt）
+          const __instantRespawn = !bossDef.respawnMs;
           // 若沒有狀態 / 已經到復活時間 → 重生
-          if (!state || (state.deadAt && state.nextSpawnAt && Date.now() >= state.nextSpawnAt)) {
+          if (!state || (state.deadAt && (__instantRespawn || (state.nextSpawnAt && Date.now() >= state.nextSpawnAt)))) {
             state = {
               currentHp: bossDef.hp,
               spawnedAt: Date.now(),
