@@ -1154,6 +1154,34 @@
   }
   .debug-btn:hover { opacity: 1; transform: rotate(45deg); }
   .debug-btn.unlocked { background: rgba(245, 158, 11, 0.85); opacity: 0.7; }
+
+  /* 教學按鈕（右上角，齒輪左邊） */
+  .help-btn {
+    position: fixed;
+    top: 10px;
+    right: 56px;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #fde047, #f59e0b);
+    color: #7c2d12;
+    border: 2px solid rgba(255,255,255,0.8);
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 990;
+    opacity: 0.85;
+    transition: opacity 0.2s, transform 0.2s;
+    font-family: inherit;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+  }
+  .help-btn:hover { opacity: 1; transform: scale(1.1); }
+  .help-btn.pulse {
+    animation: helpPulse 1.5s ease-in-out infinite;
+  }
+  @keyframes helpPulse {
+    0%, 100% { box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4); }
+    50% { box-shadow: 0 2px 18px rgba(245, 158, 11, 0.95); }
+  }
   .debug-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -1288,6 +1316,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<button class="help-btn" id="helpBtn" onclick="showActionPatternHelp()" title="HOF 行動規則教學">?</button>
 <button class="debug-btn" id="debugBtn" onclick="onDebugClick()" title="Debug">⚙️</button>
 
 <div id="genericModal" class="modal-overlay hidden" onclick="hideModal(event)">
@@ -2992,23 +3021,28 @@
     return stats;
   }
   function generateMonster(playerLv, opts) {
-    // 綠茶事件：頭 5 場固定 5%，第 6 場起每場 +2% 慢慢加，第 30 場保底必出
-    // 計數器存在 me.rpg.greenTeaPity 上（每次出現後歸零）
     const me = (typeof getMe === 'function') ? getMe() : null;
     const rpg = me && me.rpg ? me.rpg : null;
-    if (rpg) {
-      rpg.greenTeaPity = (rpg.greenTeaPity || 0) + 1;
-      const baseRate = 0.05;
-      const rate = rpg.greenTeaPity <= 5
-        ? baseRate
-        : baseRate + (rpg.greenTeaPity - 5) * 0.02; // 第 6 場 7%、第 10 場 15%、第 20 場 35%
-      const guaranteed = rpg.greenTeaPity >= 30;
-      if (guaranteed || Math.random() < rate) {
-        rpg.greenTeaPity = 0;
+    // ⭐ 探險選錯路觸發的戰鬥：強制 forage 精英，跳過綠茶判斷
+    // （否則綠茶有機率攔截，玩家以為打精英但其實打到綠茶 → 沒掉裝）
+    if (opts && opts.forageElite) {
+      // 落入下面的 forage elite 分支
+    } else {
+      // 綠茶事件：頭 5 場固定 5%，第 6 場起每場 +2% 慢慢加，第 30 場保底必出
+      if (rpg) {
+        rpg.greenTeaPity = (rpg.greenTeaPity || 0) + 1;
+        const baseRate = 0.05;
+        const rate = rpg.greenTeaPity <= 5
+          ? baseRate
+          : baseRate + (rpg.greenTeaPity - 5) * 0.02;
+        const guaranteed = rpg.greenTeaPity >= 30;
+        if (guaranteed || Math.random() < rate) {
+          rpg.greenTeaPity = 0;
+          return createGreenTea(playerLv);
+        }
+      } else if (Math.random() < 0.05) {
         return createGreenTea(playerLv);
       }
-    } else if (Math.random() < 0.05) {
-      return createGreenTea(playerLv);
     }
     // 探險強制觸發：100% 精英怪、掉「玩家職業套裝」
     if (opts && opts.forageElite) {
@@ -3404,6 +3438,7 @@
     renderLeaderboard();
     renderZoneSelector();
     renderActionPattern();
+    maybeFlashHelp();
     updateStaminaUI();
     checkBossKillBanners();
     maybeShowBetaCompModal();
@@ -3556,6 +3591,75 @@
     showToast(`🔄 退回 ${total} 點能力`);
   }
   window.resetAbilities = resetAbilities;
+
+  // ⭐ HOF 行動規則小教學
+  const HELP_SEEN_KEY = 'hof-action-pattern-help-seen';
+  function showActionPatternHelp() {
+    localStorage.setItem(HELP_SEEN_KEY, '1');
+    document.getElementById('helpBtn')?.classList.remove('pulse');
+    const html = `
+      <div style="text-align:left; padding:4px 0; font-size:13px; line-height:1.7; color:#5b3d62;">
+        <div style="font-size:14px; font-weight:700; color:#7c3aed; margin-bottom:6px;">📋 什麼是「行動規則」？</div>
+        <div style="background:#fef3c7; border:1px dashed #f59e0b; border-radius:8px; padding:8px 10px; margin-bottom:10px;">
+          以前戰鬥是電腦自動決定放什麼技能。<br>
+          現在你可以<b>自己寫一張規則表</b>，戰鬥時引擎會照表決定動作——<b>HOF（Hall of Fame）</b>那款老遊戲的核心玩法。
+        </div>
+
+        <div style="font-size:13px; font-weight:700; color:#7c3aed; margin:8px 0 4px;">🧠 怎麼運作？</div>
+        <div style="margin-bottom:8px;">
+          每回合戰鬥引擎會<b>從上往下</b>檢查你的規則：<br>
+          ✓ <b>條件成立</b>（HP/MP/敵血/機率…）<br>
+          ✓ <b>技能可用</b>（等級夠、CD 過了、MP 夠）<br>
+          → 兩個都符合的<b>第一條</b>就觸發。<br>
+          全部都不行 → 自動普攻。
+        </div>
+
+        <div style="font-size:13px; font-weight:700; color:#7c3aed; margin:8px 0 4px;">📝 範例（聖騎預設）</div>
+        <div style="background:#f3e8ff; border-radius:8px; padding:8px 10px; margin-bottom:10px; font-family:monospace; font-size:11px; line-height:1.8;">
+          #1 自身 HP ≤ 50%   → ✨ 神聖治癒<br>
+          #2 敵方 HP ≤ 30%   → ⚖️ 審判<br>
+          #3 必ず             → ✝️ 聖光斬<br>
+          #4 必ず             → 普攻
+        </div>
+        <div style="font-size:11px; color:#8b6f9b; margin-bottom:10px;">
+          意思：「血少先補血、敵人快死秒殺、平時放聖光斬、MP 用光打普攻」。
+        </div>
+
+        <div style="font-size:13px; font-weight:700; color:#7c3aed; margin:8px 0 4px;">🛠 怎麼改？</div>
+        <div style="margin-bottom:8px;">
+          往下滑到 <b>「📋 行動規則」</b>卡：<br>
+          • 每行 3 個下拉：<b>條件 → 數值 → 技能</b><br>
+          • 旁邊 <b>↑↓</b> 可調順序、<b>✕</b> 刪掉一條<br>
+          • <b>+ 加一條</b> 增加新規則<br>
+          • <b>↺ 重置為預設</b> 一鍵還原<br>
+          改完<b>立刻生效</b>，下一次戰鬥就會用新規則。
+        </div>
+
+        <div style="font-size:13px; font-weight:700; color:#7c3aed; margin:8px 0 4px;">💡 進階小技巧</div>
+        <ul style="margin:4px 0 8px 18px; padding:0; font-size:12px;">
+          <li><b>「我的第 X 次行動」</b>可以做開場連擊（第 1 動先重擊）</li>
+          <li><b>「本場最多用 X 次」</b>限制大招（一場戰鬥只放 1 次隕石術）</li>
+          <li><b>「X% 機率」</b>做隨機性（30% 機率放暴擊技）</li>
+          <li>同一技能放在多條規則裡：條件不同、優先級不同</li>
+        </ul>
+
+        <div style="background:#dcfce7; border:1px dashed #16a34a; border-radius:8px; padding:8px 10px; font-size:12px; color:#15803d;">
+          🌟 試試看——同一個職業，不同人寫的規則打起來感覺完全不同。
+        </div>
+
+        <button class="btn btn-primary" onclick="hideModal()" style="margin-top:14px;">了解了 ✨</button>
+      </div>
+    `;
+    showModal('🦢 HOF 行動規則教學', html);
+  }
+  window.showActionPatternHelp = showActionPatternHelp;
+
+  // 沒看過教學 → 按鈕動畫吸引注意
+  function maybeFlashHelp() {
+    if (!localStorage.getItem(HELP_SEEN_KEY)) {
+      document.getElementById('helpBtn')?.classList.add('pulse');
+    }
+  }
 
   // ⭐ HOF 行動規則編輯器
   function renderActionPattern() {
