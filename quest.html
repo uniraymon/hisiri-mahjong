@@ -4051,13 +4051,19 @@
           log.push({ type: 'system', text: `回合 ${round}：${monster.name} ⚡麻痺，行動被取消`, hp: { player: pHp, monster: mHp, mp: pMp } });
           continue;
         }
-        // 怪物技能挑選：50% 機率嘗試使用某個冷卻好的技能
+        // 怪物技能挑選：65% 機率嘗試使用某招冷卻好的技能（從所有冷卻好的招隨機抽）
         let mSkill = null;
-        if (Array.isArray(monster.skills) && monster.skills.length && Math.random() < 0.5) {
+        if (Array.isArray(monster.skills) && monster.skills.length && Math.random() < 0.65) {
+          const ready = [];
           for (let si = 0; si < monster.skills.length; si++) {
             const s = monster.skills[si];
             const last = mSkillLast[si] ?? -999;
-            if (round - last >= (s.cooldown || 3)) { mSkill = s; mSkillLast[si] = round; break; }
+            if (round - last >= (s.cooldown || 3)) ready.push({ s, si });
+          }
+          if (ready.length) {
+            const pick = ready[Math.floor(Math.random() * ready.length)];
+            mSkill = pick.s;
+            mSkillLast[pick.si] = round;
           }
         }
         // 防禦受 buff 影響
@@ -4472,14 +4478,20 @@
         }
         // 防禦受 buff 影響
         const effDef = stats.def * (1 + (pBuff.defPct || 0));
-        // 怪物技能挑選：50% 機率嘗試使用某個冷卻好的技能
+        // 怪物技能挑選：65% 機率嘗試使用某招冷卻好的技能（從所有冷卻好的招隨機抽）
         let mSkill = null;
-        if (Array.isArray(m.skills) && m.skills.length && Math.random() < 0.5) {
+        if (Array.isArray(m.skills) && m.skills.length && Math.random() < 0.65) {
           const cdMap = mSkillLastByIdx[m.idx] = mSkillLastByIdx[m.idx] || {};
+          const ready = [];
           for (let si = 0; si < m.skills.length; si++) {
             const s = m.skills[si];
             const last = cdMap[si] ?? -999;
-            if (round - last >= (s.cooldown || 3)) { mSkill = s; cdMap[si] = round; break; }
+            if (round - last >= (s.cooldown || 3)) ready.push({ s, si });
+          }
+          if (ready.length) {
+            const pick = ready[Math.floor(Math.random() * ready.length)];
+            mSkill = pick.s;
+            cdMap[pick.si] = round;
           }
         }
         if (mSkill) {
