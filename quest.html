@@ -3798,8 +3798,18 @@
     } else {
       document.getElementById('invGrid').innerHTML = inv.map((entry, idx) => {
         const item = resolveItem(entry);
-        if (!item) return '';
-        const rarColor = item.rarity ? RARITY[item.rarity]?.color : null;
+        if (!item) {
+          // 防呆：找不到對應 item 也要顯示，免得 push 進去結果看不到
+          return `<button class="inv-item" onclick="openInvItemActions(${idx})" style="border-color:#dc2626; background:#fee2e2;">
+            <div class="ii-icon">❓</div>
+            <div class="ii-name" style="color:#991b1b;">未知物品</div>
+            <div class="ii-stat" style="font-size:9px;">${escapeHtml(typeof entry === 'string' ? entry : (entry?.id || JSON.stringify(entry).slice(0,40)))}</div>
+          </button>`;
+        }
+        // 顏色：稀有度 > 套裝色 > 預設無色
+        const rarColor = item.rarity ? RARITY[item.rarity]?.color
+          : item.setId ? (SETS[item.setId]?.color || '#f59e0b')
+          : null;
         return `<button class="inv-item" onclick="openInvItemActions(${idx})" style="${rarColor ? `border-color:${rarColor}; background:linear-gradient(135deg,#fff,${rarColor}1a);` : ''}">
           <div class="ii-icon">${item.icon}</div>
           <div class="ii-name" style="${rarColor ? `color:${rarColor};` : ''}">${item.name}</div>
@@ -3891,8 +3901,10 @@
     if (item.def) parts.push(`DEF+${item.def}`);
     if (item.spd) parts.push(`SPD+${item.spd}`);
     if (item.hp)  parts.push(`HP+${item.hp}`);
+    if (item.mp)  parts.push(`MP+${item.mp}`);
     let s = parts.join(' · ');
     if (item.affixes && item.affixes.length) s += ` ✨${item.affixes.length}`;
+    if (item.setId) s += ' 🛡';
     return s;
   }
 
@@ -4921,13 +4933,16 @@
       const drop = rollItemDrop(rpg.level, { slotBias: _zone ? _zone.dropBias : null });
       if (drop) rpg.inventory.push(drop); // drop instance（含詞綴）直接存物件
       // 精英怪：必掉一件套裝（隨機從該套挑一件）
+      // 推「物件複本」而非 id，確保 SET_PIECES 查表掛掉時 inventory 仍保有完整資料
       let elitePiece = null;
       if (monster.isElite && monster.dropSet) {
         const set = SETS[monster.dropSet];
         if (set && set.pieces.length > 0) {
           const piece = set.pieces[Math.floor(Math.random() * set.pieces.length)];
-          rpg.inventory.push(piece.id);
+          const clone = { ...piece, setId: monster.dropSet, isSetPiece: true };
+          rpg.inventory.push(clone);
           elitePiece = piece;
+          console.log('[forage elite drop]', monster.name, '→', piece.id, piece.name);
         }
       }
       // 紀錄地區進度：通關目前層數 → 解鎖下一層
