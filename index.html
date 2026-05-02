@@ -1403,7 +1403,7 @@
         if (data.gifts) gifts = data.gifts;
         if (data.comments) comments = data.comments;
         if (data.pendingBets) pendingBets = data.pendingBets;
-        if (typeof data.betPool === 'number') betPool = data.betPool;
+        if (Number.isFinite(data.betPool)) betPool = Math.max(0, Math.floor(data.betPool));
         if (data.worldBoss) worldBoss = data.worldBoss;
         if (data.baseMoney) baseMoney = data.baseMoney;
         if (data.basePoint) basePoint = data.basePoint;
@@ -1482,7 +1482,15 @@
       if (Array.isArray(data.gifts)) gifts = data.gifts;
       if (Array.isArray(data.comments)) comments = data.comments;
       if (Array.isArray(data.pendingBets)) pendingBets = data.pendingBets;
-      if (typeof data.betPool === 'number') betPool = data.betPool;
+      // 彩池：遠端有就吃遠端、遠端無或非法數值就用「兩邊取大」保護（避免被舊客戶端的 0 蓋掉）
+      if (Number.isFinite(data.betPool)) {
+        const remote = Math.max(0, Math.floor(data.betPool));
+        const local = Number.isFinite(betPool) ? Math.max(0, Math.floor(betPool)) : 0;
+        // 一般情況下遠端就是真相；但若本地大於遠端（代表本端剛剛加了池但還沒同步上去），保留較大值
+        betPool = Math.max(remote, local);
+      } else if (!Number.isFinite(betPool)) {
+        betPool = 0;
+      }
       if (data.worldBoss && typeof data.worldBoss === 'object') worldBoss = data.worldBoss;
       if (typeof data.baseMoney === 'number') baseMoney = data.baseMoney;
       if (typeof data.basePoint === 'number') basePoint = data.basePoint;
@@ -2687,6 +2695,8 @@
   }
   function settleBetsForRound(participants, scores, money) {
     if (!Array.isArray(pendingBets) || pendingBets.length === 0) return;
+    if (!Number.isFinite(betPool)) betPool = 0;
+    const poolBefore = betPool;
     const maxMoney = Math.max(...money);
     const winnerIdx = money.indexOf(maxMoney);
     const winner = participants[winnerIdx];
@@ -2695,14 +2705,14 @@
     const losers = [];
     for (const b of pendingBets) {
       if (participants.includes(b.predicted)) {
-        const stake = b.amount || 0;
+        const stake = Math.max(0, Math.floor(Number(b.amount) || 0));
         if (b.predicted === winner) {
           // 押中：拿回 2 倍注額
-          refundCoins(b.better, stake * 2);
+          if (stake > 0) refundCoins(b.better, stake * 2);
           winners.push({ ...b, payout: stake * 2 });
         } else {
           // 沒中：注額進彩池
-          betPool = (betPool || 0) + stake;
+          betPool += stake;
           losers.push(b);
         }
       } else {
@@ -2711,13 +2721,14 @@
       }
     }
     pendingBets = remaining;
+    betPool = Math.max(0, Math.floor(betPool));
     if (winners.length > 0) {
       const summary = winners.map(w => `${getPlayer(w.better)?.name || '?'} +${w.payout}`).join('、');
       setTimeout(() => showToast(`🎯 押中：${summary} 幣`), 800);
     }
     if (losers.length > 0) {
-      const total = losers.reduce((s, b) => s + (b.amount || 0), 0);
-      setTimeout(() => showToast(`🏆 彩池 +${total} 幣（共 ${losers.length} 注沒中）`), 1200);
+      const total = losers.reduce((s, b) => s + (Math.max(0, Math.floor(Number(b.amount) || 0))), 0);
+      setTimeout(() => showToast(`🏆 彩池 +${total} 幣（${poolBefore} → ${betPool}）`), 1200);
     }
   }
 
