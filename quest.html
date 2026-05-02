@@ -2021,8 +2021,22 @@
     return stats;
   }
   function generateMonster(playerLv, opts) {
-    // 5% 機率：綠茶事件（地區戰鬥也適用）
-    if (Math.random() < 0.05) return createGreenTea(playerLv);
+    // 綠茶事件：基礎 8%，每場沒遇到 +1 點保底，第 25 場必定觸發
+    // 計數器存在 me.rpg.greenTeaPity 上
+    const me = (typeof getMe === 'function') ? getMe() : null;
+    const rpg = me && me.rpg ? me.rpg : null;
+    if (rpg) {
+      rpg.greenTeaPity = (rpg.greenTeaPity || 0) + 1;
+      const baseRate = 0.08;
+      const pityRate = baseRate + Math.max(0, rpg.greenTeaPity - 8) * 0.04; // 第 9 場起每場 +4%
+      const guaranteed = rpg.greenTeaPity >= 25;
+      if (guaranteed || Math.random() < pityRate) {
+        rpg.greenTeaPity = 0;
+        return createGreenTea(playerLv);
+      }
+    } else if (Math.random() < 0.08) {
+      return createGreenTea(playerLv);
+    }
     let candidates;
     let levelMin = playerLv, levelMax = playerLv;
     if (opts && opts.zoneId) {
