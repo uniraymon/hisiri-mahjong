@@ -953,39 +953,54 @@
   const MONSTERS = [
     // tier 1（玩家 Lv 1-4）
     { id: 'bat',   tier: 1, name: '蝙蝠鵝',    icon: '🦇', hpBase: 50,  atkBase: 8,  defBase: 1, spdBase: 11, goldBase: 6,  xpBase: 22, verb: '俯衝啄', ability: { type: 'multiHit', hits: 2 },
-      dialogue: ['夜の翼降臨...黑暗契約者已現身...', '翼之鵝・降臨！我的左眼開始疼了...', '凡人，準備迎接夜之審判...'] },
+      dialogue: ['夜の翼降臨...黑暗契約者已現身...', '翼之鵝・降臨！我的左眼開始疼了...', '凡人，準備迎接夜之審判...'],
+      deathLine: ['夜...結束了...', '黑暗...也會迎來黎明...嗎...', '我的左眼...終於不痛了...'] },
     { id: 'slime', tier: 1, name: '史萊姆鵝',  icon: '🟢', hpBase: 70,  atkBase: 10, defBase: 1, spdBase: 6,  goldBase: 7,  xpBase: 20, verb: '撞擊',
-      dialogue: ['呱嘰...呱嘰...是新朋友嗎？', '我...我什麼都不會喔...嗚嘰...', '黏黏的我，請對我溫柔一點...'] },
+      dialogue: ['呱嘰...呱嘰...是新朋友嗎？', '我...我什麼都不會喔...嗚嘰...', '黏黏的我，請對我溫柔一點...'],
+      deathLine: ['呱嘰...我融化了...', '嗚嘰...掰掰...', '下次見面...我會更努力的...'] },
     { id: 'thief', tier: 1, name: '賊鵝',      icon: '🦝', hpBase: 60,  atkBase: 9,  defBase: 2, spdBase: 12, goldBase: 8,  xpBase: 26, verb: '偷襲', ability: { type: 'steal', min: 5, max: 10 },
-      dialogue: ['嘿嘿~你的鵝鵝幣看起來很好吃喔！', '你不會發現我偷東西的對吧～對吧？', '小爺出馬，分你錢的全跑不掉！'] },
+      dialogue: ['嘿嘿~你的鵝鵝幣看起來很好吃喔！', '你不會發現我偷東西的對吧～對吧？', '小爺出馬，分你錢的全跑不掉！'],
+      deathLine: ['可惡！這次跑不掉了！', '賊小爺認栽...', '下次絕不再讓你抓到！'] },
     // tier 2（玩家 Lv 4-8）
     { id: 'spider',tier: 2, name: '蜘蛛鵝',    icon: '🕷', hpBase: 95,  atkBase: 14, defBase: 5, spdBase: 11, goldBase: 18, xpBase: 50, verb: '毒咬', ability: { type: 'multiHit', hits: 2 },
-      dialogue: ['汝已陷入吾之八腳神羅...', '毒之絲，將融化爾之靈魂...', '蛛網中、唯有絕望...'] },
+      dialogue: ['汝已陷入吾之八腳神羅...', '毒之絲，將融化爾之靈魂...', '蛛網中、唯有絕望...'],
+      deathLine: ['蛛網...崩塌了...', '汝...贏得了這一回合...', '吾...將消逝於陰影...'] },
     { id: 'gob',   tier: 2, name: '哥布鵝',    icon: '👺', hpBase: 110, atkBase: 15, defBase: 4, spdBase: 8,  goldBase: 20, xpBase: 55, verb: '亂砍',
-      dialogue: ['我超強的！我超強的！打打打！', '鵝鵝最棒了！你輸定了輸定了！', '嘎嘎！來啊來啊！誰怕誰！'] },
+      dialogue: ['我超強的！我超強的！打打打！', '鵝鵝最棒了！你輸定了輸定了！', '嘎嘎！來啊來啊！誰怕誰！'],
+      deathLine: ['嗚嗚...我才不是你打贏的！', '鵝媽媽會幫我報仇的！', '我下次會更強！記著！'] },
     { id: 'wolf',  tier: 2, name: '狼鵝',      icon: '🐺', hpBase: 90,  atkBase: 17, defBase: 3, spdBase: 13, goldBase: 22, xpBase: 58, verb: '猛撲',
-      dialogue: ['哼...又是個來送菜的。', '別讓我浪費時間，速戰速決吧。', '嗷嗚——獵物膽敢闖入吾領地。'] },
+      dialogue: ['哼...又是個來送菜的。', '別讓我浪費時間，速戰速決吧。', '嗷嗚——獵物膽敢闖入吾領地。'],
+      deathLine: ['...承認你比我強...', '呼...有趣的對手...', '嗚嗷...再會。'] },
     { id: 'pirate',tier: 2, name: '海盜鵝',    icon: '🏴',  hpBase: 100, atkBase: 14, defBase: 4, spdBase: 10, goldBase: 25, xpBase: 62, verb: '搶劫', ability: { type: 'steal', min: 10, max: 18 },
-      dialogue: ['Yo-ho-ho！把寶藏鵝鵝幣交出來！', '我是傳說中的海盜鵝・黑鬚！', '不交錢的下場就是踩跳板！'] },
+      dialogue: ['Yo-ho-ho！把寶藏鵝鵝幣交出來！', '我是傳說中的海盜鵝・黑鬚！', '不交錢的下場就是踩跳板！'],
+      deathLine: ['Yarr! 寶藏...就在...咕嘟...', '我會...回到...深海...', '船長...失敗了...'] },
     // tier 3（玩家 Lv 8-14）
     { id: 'orc',   tier: 3, name: '獸人鵝',    icon: '👹', hpBase: 170, atkBase: 22, defBase: 8, spdBase: 7,  goldBase: 38, xpBase: 95, verb: '怒吼',
-      dialogue: ['鵝啊啊啊啊啊啊！！', '鵝鵝撕碎你！碎屑碎屑！', '鵝來砸碎你！！'] },
+      dialogue: ['鵝啊啊啊啊啊啊！！', '鵝鵝撕碎你！碎屑碎屑！', '鵝來砸碎你！！'],
+      deathLine: ['鵝...啊啊啊...', '鵝鵝...倒下...', '鵝鵝會...回來的...！'] },
     { id: 'mummy', tier: 3, name: '木乃鵝',    icon: '🧟', hpBase: 200, atkBase: 20, defBase: 12,spdBase: 4,  goldBase: 42, xpBase: 105, verb: '詛咒', ability: { type: 'magicResist', resist: 0.5 },
-      dialogue: ['我都死這麼久了...你還來吵...真的好過分...', '三千年的怨念...也不是針對你...只是恰好遇到...', '我又沒做什麼...為什麼總是被打...嗚...'] },
+      dialogue: ['我都死這麼久了...你還來吵...真的好過分...', '三千年的怨念...也不是針對你...只是恰好遇到...', '我又沒做什麼...為什麼總是被打...嗚...'],
+      deathLine: ['唉...又被打死了...都是我的錯吧...', '三千年的修為...就這樣...沒事的習慣了...', '你開心就好...我繼續沉睡...'] },
     { id: 'troll', tier: 3, name: '巨魔鵝',    icon: '🧌', hpBase: 230, atkBase: 25, defBase: 11,spdBase: 5,  goldBase: 50, xpBase: 125, verb: '巨拳', ability: { type: 'multiHit', hits: 2 },
-      dialogue: ['笨笨鵝鵝要打架啦~笨笨鵝鵝要打架~', '哥哥可以打嗎？哥哥可以痛嗎？我可以喔！', '鵝鵝想要你的閃亮亮~給鵝鵝~'] },
+      dialogue: ['笨笨鵝鵝要打架啦~笨笨鵝鵝要打架~', '哥哥可以打嗎？哥哥可以痛嗎？我可以喔！', '鵝鵝想要你的閃亮亮~給鵝鵝~'],
+      deathLine: ['嗚嗚嗚~好痛~~', '鵝鵝不玩了！哭哭~', '媽媽~~~~'] },
     { id: 'merch', tier: 3, name: '商人鵝',    icon: '💰', hpBase: 130, atkBase: 16, defBase: 6, spdBase: 8,  goldBase: 130,xpBase: 75,  verb: '推銷',
-      dialogue: ['客倌！買賣不成仁義在嘛~買條命吧！', '限時優惠！打折戰鬥！只要打輸 50% HP！', '童叟無欺！戰勝我有大禮包！'] },
+      dialogue: ['客倌！買賣不成仁義在嘛~買條命吧！', '限時優惠！打折戰鬥！只要打輸 50% HP！', '童叟無欺！戰勝我有大禮包！'],
+      deathLine: ['客倌承讓承讓！下次再來惠顧！', '今日生意失敗，明日重新開張！', '拿好你的戰利品，慢走不送！'] },
     // tier 4（玩家 Lv 14-22）
     { id: 'lich',   tier: 4, name: '巫妖鵝',   icon: '☠️', hpBase: 310, atkBase: 40, defBase: 10, spdBase: 12, goldBase: 110,xpBase: 280, verb: '死亡之觸', ability: { type: 'magicResist', resist: 0.6 },
-      dialogue: ['於虛無中我獲得了永恆...名為鵝の死亡...', '千年沉睡...此時・此地，吾將品嘗汝之絕望...', '汝之靈魂、將成為吾之養分...覺悟吧...'] },
+      dialogue: ['於虛無中我獲得了永恆...名為鵝の死亡...', '千年沉睡...此時・此地，吾將品嘗汝之絕望...', '汝之靈魂、將成為吾之養分...覺悟吧...'],
+      deathLine: ['歸於塵土...歸於虛無...', '千年計畫...終究...化為泡影...', '汝之名...吾將銘記於黃泉...'] },
     { id: 'dragon', tier: 4, name: '龍鵝',     icon: '🐲', hpBase: 380, atkBase: 35, defBase: 14, spdBase: 11, goldBase: 100,xpBase: 260, verb: '龍息',
-      dialogue: ['凡人...跪下感受真正的龍威吧。', '汝之勇氣，將化為龍焰中的灰燼。', '吾乃天空之主，膽敢挑戰？'] },
+      dialogue: ['凡人...跪下感受真正的龍威吧。', '汝之勇氣，將化為龍焰中的灰燼。', '吾乃天空之主，膽敢挑戰？'],
+      deathLine: ['強者...也有殞落之時...', '汝乃...真正的勇者...', '龍焰...將熄滅...'] },
     // tier 5（玩家 Lv 22+）
     { id: 'demon',  tier: 5, name: '惡魔鵝',   icon: '😈', hpBase: 520, atkBase: 46, defBase: 16, spdBase: 14, goldBase: 170,xpBase: 420, verb: '地獄火', ability: { type: 'multiHit', hits: 3 },
-      dialogue: ['人家也不想傷害你的呀~規矩就是規矩嘛~', '你看你，那麼可愛...讓我多痛你幾下嘛~♡', '哎呀流血啦~是你體質問題吧~與我無關喔~'] },
+      dialogue: ['人家也不想傷害你的呀~規矩就是規矩嘛~', '你看你，那麼可愛...讓我多痛你幾下嘛~♡', '哎呀流血啦~是你體質問題吧~與我無關喔~'],
+      deathLine: ['嗚嗚~你怎麼真的下手呀~人家受傷了啦~', '好過分喔~我也只是工作而已...', '下次別這麼用力嘛~人家會記恨的喔...'] },
     { id: 'titan',  tier: 5, name: '泰坦鵝',   icon: '🗿', hpBase: 680, atkBase: 38, defBase: 22, spdBase: 8,  goldBase: 180,xpBase: 440, verb: '大地碎裂', ability: { type: 'physResist', resist: 0.3 },
-      dialogue: ['...', '...嗯。', '......（凝視）'] },
+      dialogue: ['...', '...嗯。', '......（凝視）'],
+      deathLine: ['...感謝指教。', '......（沉睡）', '...再會。'] },
   ];
 
   function describeAbility(ab) {
@@ -1517,11 +1532,16 @@
     const nextActionForSkill = skills.map(() => 1);
 
     log.push({ type: 'system', text: `═══ ⚔️ ${player.name} VS ${monster.icon} ${monster.name} Lv ${monster.level} ═══` });
-    // 怪物開場台詞（看心情）
     if (monster.dialogue && monster.dialogue.length) {
       const line = monster.dialogue[Math.floor(Math.random() * monster.dialogue.length)];
       log.push({ type: 'monster', text: `${monster.icon} ${monster.name}：「${line}」` });
     }
+    const pushDeathLine = () => {
+      if (monster.deathLine && monster.deathLine.length) {
+        const line = monster.deathLine[Math.floor(Math.random() * monster.deathLine.length)];
+        log.push({ type: 'monster', text: `${monster.icon} ${monster.name}：「${line}」`, hp: { player: pHp, monster: 0, mp: pMp } });
+      }
+    };
 
     while (pHp > 0 && mHp > 0 && round < 50) {
       round++;
@@ -1591,7 +1611,7 @@
               text: `回合 ${round}：${skill.icon} ${skill.name}${isCrit ? '【暴擊】' : ''} → ${monster.name} -${dmg} HP${extra}（-${effMpCost} MP）`,
               hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp }
             });
-            if (mHp <= 0) break;
+            if (mHp <= 0) { pushDeathLine(); break; }
           } else if (skill.type === 'heal') {
             const before = pHp;
             const heal = Math.round(stats.maxHp * skill.healPct * (1 + (bonus.skillHealPct || 0)) * (1 + (passive.healPct || 0)));
@@ -1616,7 +1636,7 @@
             text: `回合 ${round}：${cls.attackVerb}${isCrit ? '【暴擊】' : ''} → ${monster.name} -${dmg} HP`,
             hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp }
           });
-          if (mHp <= 0) break;
+          if (mHp <= 0) { pushDeathLine(); break; }
         }
       } else {
         // 多段攻擊：1.3x 總傷害平均分散
