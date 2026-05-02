@@ -324,6 +324,44 @@
   }
   .inv-item.equipped .ii-name, .inv-item.equipped .ii-stat { color: #fff; }
 
+  /* 商店 */
+  .shop-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #8b6f9b;
+    margin: 8px 0 6px;
+  }
+  .shop-section-title:first-child { margin-top: 0; }
+  .shop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 6px;
+  }
+  .shop-item {
+    background: linear-gradient(135deg, #fff, #fef3c7);
+    border: 2px solid #fde68a;
+    border-radius: 12px;
+    padding: 8px 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .shop-item:hover { transform: translateY(-2px); box-shadow: 0 3px 0 #f59e0b; }
+  .shop-item:disabled { opacity: 0.45; cursor: not-allowed; }
+  .shop-item .si-icon { font-size: 28px; margin-bottom: 2px; }
+  .shop-item .si-name { font-size: 11px; font-weight: 700; color: #5a4a4a; line-height: 1.2; }
+  .shop-item .si-desc { font-size: 9px; color: #8b6f9b; margin-top: 2px; line-height: 1.3; }
+  .shop-item .si-cost {
+    font-size: 11px;
+    color: #d97706;
+    font-weight: 700;
+    margin-top: 4px;
+    background: rgba(255,255,255,0.7);
+    border-radius: 6px;
+    padding: 2px;
+  }
+
   /* Modal & toast */
   .modal-overlay {
     position: fixed;
@@ -461,6 +499,11 @@
     </div>
 
     <div class="card">
+      <h2><span>🛒 商店</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（用鵝鵝幣購買）</span></h2>
+      <div id="shopGrid"></div>
+    </div>
+
+    <div class="card">
       <h2><span>📊 戰績</span></h2>
       <div id="rpgStats" style="font-size:13px; line-height:1.8;"></div>
     </div>
@@ -548,7 +591,26 @@
     { id: 'c_oracle', name: '神諭',     icon: '🌠', slot: 'accessory', atk: 6, def: 6, spd: 4, hp: 30, lv: 18 },
   ];
 
-  const FIGHT_COOLDOWN_MS = 30 * 60 * 1000; // 30 分
+  const STAMINA_MAX = 100;
+  const STAMINA_PER_FIGHT = 10;
+  const TICK_MS = 60 * 1000; // 1 分鐘 +1 體力 +1 HP
+
+  const SHOP_ITEMS = [
+    // 消耗品
+    { id: 'pot_stam_s', name: '體力藥 (小)', icon: '🧪', desc: '+30 體力',  cost: 50,  type: 'consumable', effect: { stamina: 30 } },
+    { id: 'pot_stam_m', name: '體力藥 (中)', icon: '🍶', desc: '+60 體力',  cost: 90,  type: 'consumable', effect: { stamina: 60 } },
+    { id: 'pot_stam_l', name: '體力藥 (大)', icon: '🍹', desc: '+100 體力', cost: 140, type: 'consumable', effect: { stamina: 100 } },
+    { id: 'pot_hp_s',   name: '治療藥 (小)', icon: '🍵', desc: 'HP +50%',   cost: 30,  type: 'consumable', effect: { hpRatio: 0.5 } },
+    { id: 'pot_hp_l',   name: '治療藥 (大)', icon: '❤️', desc: 'HP 回滿',   cost: 60,  type: 'consumable', effect: { hp: 'full' } },
+    { id: 'pot_xp',     name: '智慧藥水',   icon: '📚', desc: '+100 XP',   cost: 120, type: 'consumable', effect: { xp: 100 } },
+    // 商店限定裝備
+    { id: 'shop_w_m',   name: '商會劍',     icon: '🔱', slot: 'weapon', atk: 7,  lv: 6,  cost: 350, type: 'equipment' },
+    { id: 'shop_w_h',   name: '炎魔劍',     icon: '🔥', slot: 'weapon', atk: 13, lv: 12, cost: 800, type: 'equipment' },
+    { id: 'shop_a_m',   name: '商會盾甲',   icon: '🪖', slot: 'armor',  def: 7,  lv: 6,  cost: 350, type: 'equipment' },
+    { id: 'shop_a_h',   name: '聖光鎧',     icon: '✝️', slot: 'armor',  def: 13, lv: 12, cost: 800, type: 'equipment' },
+    { id: 'shop_c_m',   name: '幸運符',     icon: '🎴', slot: 'accessory', atk: 3, def: 3, lv: 5,  cost: 280, type: 'equipment' },
+    { id: 'shop_c_h',   name: '魔法戒',     icon: '💍', slot: 'accessory', atk: 5, spd: 5, hp: 30, lv: 14, cost: 900, type: 'equipment' },
+  ];
 
   // ============================================================
   // 狀態
@@ -696,13 +758,39 @@
         hp: null, // 第一次選職業時設為 maxHp
         equipment: { weapon: null, armor: null, accessory: null },
         inventory: [],
-        lastFightAt: 0,
+        stamina: STAMINA_MAX,
+        lastTickAt: Date.now(),
         fightsWon: 0,
         fightsLost: 0,
         totalGold: 0,
       };
     }
+    if (player.rpg.stamina == null) player.rpg.stamina = STAMINA_MAX;
+    if (player.rpg.lastTickAt == null) player.rpg.lastTickAt = Date.now();
     return player.rpg;
+  }
+
+  // 體力 / HP 自動回復（不存資料庫，每次讀取時算）
+  function tickRecovery(player) {
+    const rpg = getRpg(player);
+    const stats = computeStats(player);
+    if (!stats) return null;
+    if (rpg.hp == null) rpg.hp = stats.maxHp;
+    const elapsed = Date.now() - rpg.lastTickAt;
+    const ticks = Math.floor(elapsed / TICK_MS);
+    if (ticks > 0) {
+      rpg.stamina = Math.min(STAMINA_MAX, rpg.stamina + ticks);
+      rpg.hp = Math.min(stats.maxHp, rpg.hp + ticks);
+      rpg.lastTickAt += ticks * TICK_MS;
+    }
+    const sinceLast = Date.now() - rpg.lastTickAt;
+    return {
+      stamina: rpg.stamina,
+      staminaMax: STAMINA_MAX,
+      hp: rpg.hp,
+      hpMax: stats.maxHp,
+      untilNextTick: Math.max(0, TICK_MS - sinceLast),
+    };
   }
   function xpForLevel(lv) { return lv * lv * 100; }
   function computeStats(player) {
@@ -845,9 +933,84 @@
 
     renderCharCard();
     renderEquipment();
+    renderShop();
     renderRpgStats();
-    updateCooldown();
+    updateStaminaUI();
   }
+
+  function renderShop() {
+    const me = getMe();
+    if (!me) return;
+    const myCoins = getCoins(me.id);
+    const consumables = SHOP_ITEMS.filter(i => i.type === 'consumable');
+    const equipment = SHOP_ITEMS.filter(i => i.type === 'equipment');
+    const itemBtn = (it) => `
+      <button class="shop-item" onclick="buyShop('${it.id}')" ${myCoins < it.cost ? 'disabled' : ''}>
+        <div class="si-icon">${it.icon}</div>
+        <div class="si-name">${escapeHtml(it.name)}</div>
+        <div class="si-desc">${it.type === 'equipment'
+          ? `Lv${it.lv}+ ` + ['atk','def','spd','hp'].filter(k=>it[k]).map(k=>`${k.toUpperCase()}+${it[k]}`).join(' ')
+          : escapeHtml(it.desc)}</div>
+        <div class="si-cost">🪙 ${it.cost}</div>
+      </button>
+    `;
+    document.getElementById('shopGrid').innerHTML = `
+      <div class="shop-section-title">🧪 消耗品</div>
+      <div class="shop-grid">${consumables.map(itemBtn).join('')}</div>
+      <div class="shop-section-title">⚔️ 商店裝備</div>
+      <div class="shop-grid">${equipment.map(itemBtn).join('')}</div>
+    `;
+  }
+
+  function buyShop(itemId) {
+    const me = getMe();
+    if (!me) return;
+    const it = SHOP_ITEMS.find(x => x.id === itemId);
+    if (!it) return;
+    if (getCoins(me.id) < it.cost) { showToast('幣不夠 ♡'); return; }
+    if (!spendCoins(me.id, it.cost)) { showToast('幣不夠 ♡'); return; }
+    const rpg = getRpg(me);
+    if (it.type === 'consumable') {
+      tickRecovery(me);
+      const stats = computeStats(me);
+      let msg = '';
+      if (it.effect.stamina) {
+        rpg.stamina = Math.min(STAMINA_MAX, (rpg.stamina || 0) + it.effect.stamina);
+        msg = `⚡ +${it.effect.stamina} 體力`;
+      }
+      if (it.effect.hp === 'full') {
+        rpg.hp = stats.maxHp;
+        msg = `❤️ HP 回滿`;
+      } else if (it.effect.hpRatio) {
+        const recover = Math.round(stats.maxHp * it.effect.hpRatio);
+        rpg.hp = Math.min(stats.maxHp, (rpg.hp || 0) + recover);
+        msg = `❤️ +${recover} HP`;
+      }
+      if (it.effect.xp) {
+        rpg.xp = (rpg.xp || 0) + it.effect.xp;
+        let leveledUp = false;
+        while (rpg.xp >= xpForLevel(rpg.level)) {
+          rpg.xp -= xpForLevel(rpg.level);
+          rpg.level += 1;
+          leveledUp = true;
+        }
+        if (leveledUp) {
+          rpg.hp = computeStats(me).maxHp;
+          showLevelUp(rpg.level);
+        }
+        msg = `⭐ +${it.effect.xp} XP`;
+      }
+      showToast(`✨ 使用 ${it.icon} ${it.name}：${msg}`);
+    } else if (it.type === 'equipment') {
+      rpg.inventory.push(it.id);
+      showToast(`🛒 購入 ${it.icon} ${it.name}`);
+    }
+    saveData();
+    renderCharCard();
+    renderEquipment();
+    renderShop();
+  }
+  window.buyShop = buyShop;
 
   function renderClassPicker() {
     const grid = document.getElementById('classGrid');
@@ -866,11 +1029,13 @@
     const rpg = getRpg(me);
     const cls = CLASSES[rpg.class];
     const stats = computeStats(me);
+    tickRecovery(me); // 確保 hp/體力已更新
     if (rpg.hp == null || rpg.hp > stats.maxHp) rpg.hp = stats.maxHp;
     const xpCur = rpg.xp;
     const xpNeed = xpForLevel(rpg.level);
     const xpPercent = Math.min(100, Math.round((xpCur / xpNeed) * 100));
     const hpPercent = Math.round((rpg.hp / stats.maxHp) * 100);
+    const stamPercent = Math.round((rpg.stamina / STAMINA_MAX) * 100);
     const coins = getCoins(me.id);
 
     document.getElementById('charCard').innerHTML = `
@@ -882,6 +1047,10 @@
         <div class="stat-bar">
           <div class="stat-bar-label"><span>❤️ HP</span><span>${rpg.hp} / ${stats.maxHp}</span></div>
           <div class="stat-bar-track"><div class="stat-bar-fill hp-fill" style="width:${hpPercent}%"></div></div>
+        </div>
+        <div class="stat-bar">
+          <div class="stat-bar-label"><span>⚡ 體力</span><span>${rpg.stamina} / ${STAMINA_MAX}</span></div>
+          <div class="stat-bar-track"><div class="stat-bar-fill mhp-fill" style="width:${stamPercent}%"></div></div>
         </div>
         <div class="stat-bar">
           <div class="stat-bar-label"><span>⭐ XP</span><span>${xpCur} / ${xpNeed}</span></div>
@@ -952,42 +1121,30 @@
     `;
   }
 
-  function updateCooldown() {
+  function updateStaminaUI() {
     const me = getMe();
+    if (!me) return;
     const rpg = getRpg(me);
-    const stats = computeStats(me);
-    const now = Date.now();
-    const last = rpg.lastFightAt || 0;
-    const left = (last + FIGHT_COOLDOWN_MS) - now;
+    if (!rpg.class) return;
+    const state = tickRecovery(me);
     const fightBtn = document.getElementById('fightBtn');
     const info = document.getElementById('cooldownInfo');
-    if (rpg.hp <= 0) {
-      // 自動恢復後再戰
-      const hpRecover = Math.max(1, Math.round(stats.maxHp * 0.3));
-      fightBtn.disabled = true;
-      info.textContent = `💀 你被打倒了，等冷卻完成自動回復 HP`;
-      // 計時恢復
-      if (left <= 0) {
-        rpg.hp = stats.maxHp;
-        saveData();
-        renderCharCard();
-        updateCooldown();
-        return;
-      }
-    }
-    if (left > 0) {
-      fightBtn.disabled = true;
-      const m = Math.floor(left / 60000);
-      const s = Math.floor((left % 60000) / 1000);
-      info.textContent = `⏳ 冷卻中：${m} 分 ${s.toString().padStart(2,'0')} 秒`;
-    } else if (rpg.hp > 0) {
-      fightBtn.disabled = false;
-      info.textContent = '可以出發了 ♡';
-    }
+    if (!info || !fightBtn) return;
+    const sec = Math.ceil(state.untilNextTick / 1000);
+    const canFight = state.stamina >= STAMINA_PER_FIGHT && state.hp > 0;
+    fightBtn.disabled = !canFight;
+    let parts = [`⚡ 體力 ${state.stamina}/${state.staminaMax}`];
+    if (state.stamina < state.staminaMax || state.hp < state.hpMax) parts.push(`下次回復 ${sec} 秒`);
+    if (state.hp <= 0) parts.push(`💀 HP 已歸零，等自然恢復或買治療藥`);
+    else if (state.stamina < STAMINA_PER_FIGHT) parts.push(`需 ${STAMINA_PER_FIGHT} 才能出戰`);
+    info.textContent = parts.join(' · ');
   }
   setInterval(() => {
-    if (document.getElementById('stageGame') && !document.getElementById('stageGame').classList.contains('hidden')) {
-      updateCooldown();
+    const stage = document.getElementById('stageGame');
+    if (stage && !stage.classList.contains('hidden')) {
+      updateStaminaUI();
+      // 每 30 秒同步一次（避免頻繁 Firebase 寫入）
+      if (Math.floor(Date.now() / 1000) % 30 === 0) renderCharCard();
     }
   }, 1000);
 
@@ -1004,7 +1161,8 @@
     rpg.xp = 0;
     const stats = computeStats(me);
     rpg.hp = stats.maxHp;
-    rpg.lastFightAt = 0;
+    rpg.stamina = STAMINA_MAX;
+    rpg.lastTickAt = Date.now();
     saveData();
     showToast(`✨ 選擇了 ${CLASSES[classId].icon} ${CLASSES[classId].name}`);
     render();
@@ -1016,21 +1174,19 @@
     if (!me) return;
     const rpg = getRpg(me);
     if (!rpg.class) return;
-    const now = Date.now();
-    if (rpg.lastFightAt && (now - rpg.lastFightAt) < FIGHT_COOLDOWN_MS) {
-      showToast('⏳ 還在冷卻中');
+    tickRecovery(me);
+    if (rpg.stamina < STAMINA_PER_FIGHT) {
+      showToast(`⚡ 體力不足（需 ${STAMINA_PER_FIGHT}，目前 ${rpg.stamina}）`);
       return;
     }
-    if (rpg.hp <= 0) { showToast('💀 HP 不足'); return; }
+    if (rpg.hp <= 0) { showToast('💀 HP 不足，等回血或喝藥'); return; }
 
-    // 鎖按鈕
+    // 鎖按鈕，扣體力
     document.getElementById('fightBtn').disabled = true;
+    rpg.stamina -= STAMINA_PER_FIGHT;
 
     const monster = generateMonster(rpg.level);
     const result = autoFight(me, monster);
-
-    // 把 lastFightAt 設下去（不論輸贏都進入冷卻）
-    rpg.lastFightAt = now;
 
     // 渲染戰鬥場景，依序播放
     const stats = computeStats(me);
@@ -1153,8 +1309,9 @@
     saveData();
     renderCharCard();
     renderEquipment();
+    renderShop();
     renderRpgStats();
-    updateCooldown();
+    updateStaminaUI();
   }
 
   function showLevelUp(lv) {
