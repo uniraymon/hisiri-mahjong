@@ -1503,6 +1503,79 @@
         { req: 5, bonus: { hp: 100, def: 25, atk: 15 }, desc: '5 件：HP +100、DEF +25、ATK +15' },
       ],
     },
+    // 職業套裝：唯一從探險精英怪掉落（依玩家職業決定哪一套）
+    warrior_iron: {
+      name: '鐵血戰魂', color: '#b91c1c',
+      pieces: [
+        { id: 'wi_helmet', name: '鐵血盔',   icon: '🪖', slot: 'helmet', atk: 12, def: 10, lv: 8 },
+        { id: 'wi_armor',  name: '鐵血鎧',   icon: '🛡', slot: 'armor',  def: 24, hp: 70, lv: 8 },
+        { id: 'wi_gloves', name: '鐵血拳',   icon: '👊', slot: 'gloves', atk: 20, hp: 25, lv: 8 },
+        { id: 'wi_boots',  name: '鐵血靴',   icon: '🥾', slot: 'boots',  def: 10, spd: 5, lv: 8 },
+        { id: 'wi_cape',   name: '鐵血披',   icon: '🟥', slot: 'cape',   def: 12, hp: 70, lv: 8 },
+      ],
+      tiers: [
+        { req: 2, bonus: { atk: 12 },                desc: '2 件：ATK +12' },
+        { req: 3, bonus: { hp: 70 },                 desc: '3 件：HP +70' },
+        { req: 4, bonus: { def: 18 },                desc: '4 件：DEF +18' },
+        { req: 5, bonus: { atk: 30, def: 15, hp: 50 }, desc: '5 件：ATK +30、DEF +15、HP +50' },
+      ],
+    },
+    archer_swift: {
+      name: '疾風神射', color: '#16a34a',
+      pieces: [
+        { id: 'as_helmet', name: '疾風冠',   icon: '🎯', slot: 'helmet', atk: 10, spd: 5, lv: 8 },
+        { id: 'as_armor',  name: '疾風衣',   icon: '🟢', slot: 'armor',  hp: 50, spd: 8, def: 6, lv: 8 },
+        { id: 'as_gloves', name: '疾風指',   icon: '🏹', slot: 'gloves', atk: 22, spd: 4, lv: 8 },
+        { id: 'as_boots',  name: '疾風靴',   icon: '👟', slot: 'boots',  spd: 14, hp: 25, lv: 8 },
+        { id: 'as_cape',   name: '疾風披',   icon: '🍃', slot: 'cape',   spd: 6,  atk: 6, hp: 45, lv: 8 },
+      ],
+      tiers: [
+        { req: 2, bonus: { spd: 8 },                                 desc: '2 件：SPD +8' },
+        { req: 3, bonus: { critChance: 0.10 },                       desc: '3 件：暴擊率 +10%' },
+        { req: 4, bonus: { atk: 18 },                                desc: '4 件：ATK +18' },
+        { req: 5, bonus: { spd: 12, critChance: 0.08, critDmg: 0.20 }, desc: '5 件：SPD +12、暴擊率 +8%、暴擊傷害 +20%' },
+      ],
+    },
+    mage_arcane: {
+      name: '元素奧義', color: '#8b5cf6',
+      pieces: [
+        { id: 'ma_helmet', name: '奧義冠',   icon: '🔮', slot: 'helmet', atk: 8,  mp: 25, lv: 8 },
+        { id: 'ma_armor',  name: '奧義袍',   icon: '🟣', slot: 'armor',  hp: 60, mp: 35, lv: 8 },
+        { id: 'ma_gloves', name: '奧義指',   icon: '✨', slot: 'gloves', atk: 18, mp: 20, lv: 8 },
+        { id: 'ma_boots',  name: '奧義靴',   icon: '👞', slot: 'boots',  spd: 7,  mp: 25, lv: 8 },
+        { id: 'ma_cape',   name: '奧義披',   icon: '🌌', slot: 'cape',   hp: 40, mp: 50, lv: 8 },
+      ],
+      tiers: [
+        { req: 2, bonus: { mp: 40 },                                  desc: '2 件：MP +40' },
+        { req: 3, bonus: { atk: 14 },                                 desc: '3 件：ATK +14' },
+        { req: 4, bonus: { critChance: 0.08 },                        desc: '4 件：暴擊率 +8%' },
+        { req: 5, bonus: { atk: 25, critDmg: 0.30, mp: 50 },           desc: '5 件：ATK +25、暴擊傷害 +30%、MP +50' },
+      ],
+    },
+    paladin_holy: {
+      name: '神聖守護', color: '#fbbf24',
+      pieces: [
+        { id: 'ph_helmet', name: '神聖冠',   icon: '👑', slot: 'helmet', def: 14, hp: 40, lv: 8 },
+        { id: 'ph_armor',  name: '神聖鎧',   icon: '🟡', slot: 'armor',  def: 26, hp: 80, mp: 20, lv: 8 },
+        { id: 'ph_gloves', name: '神聖手',   icon: '🤲', slot: 'gloves', def: 8,  hp: 30, lv: 8 },
+        { id: 'ph_boots',  name: '神聖靴',   icon: '🥿', slot: 'boots',  def: 8,  hp: 45, spd: 4, lv: 8 },
+        { id: 'ph_cape',   name: '神聖披',   icon: '😇', slot: 'cape',   def: 14, hp: 100, lv: 8 },
+      ],
+      tiers: [
+        { req: 2, bonus: { hp: 60 },                                  desc: '2 件：HP +60' },
+        { req: 3, bonus: { def: 14 },                                 desc: '3 件：DEF +14' },
+        { req: 4, bonus: { critDmg: 0.25 },                           desc: '4 件：暴擊傷害 +25%' },
+        { req: 5, bonus: { hp: 150, def: 25, atk: 12 },               desc: '5 件：HP +150、DEF +25、ATK +12' },
+      ],
+    },
+  };
+
+  // 職業 → 該職業專屬套裝（探險精英怪會掉這個）
+  const CLASS_SET = {
+    warrior: 'warrior_iron',
+    archer:  'archer_swift',
+    mage:    'mage_arcane',
+    paladin: 'paladin_holy',
   };
 
   // 把所有 set piece 加上 setId 標記，並建立 id → 件的查表
@@ -1603,21 +1676,22 @@
         {
           text: '🤫 偷偷摸走錢袋',
           outcomes: [
-            { p: 0.45, line: '成功！樹懶鵝還在打呼。', coins: [30, 50] },
-            { p: 0.20, line: '錢袋裡居然還塞了一件不錯的東西！', coins: [15, 30], item: 'drop' },
-            { p: 0.35, line: '樹懶鵝突然張開眼：「鵝...你...想試試嗎...」', battle: true, battleLine: '🦥 樹懶鵝怒了，從草叢召出護衛！' },
+            { p: 0.40, line: '成功！樹懶鵝還在打呼。', coins: [60, 100] },
+            { p: 0.25, line: '錢袋裡居然還塞了一件不錯的東西！', coins: [30, 60], item: 'drop' },
+            { p: 0.35, line: '樹懶鵝突然張開眼：「鵝...你...想試試嗎...」', battle: true, battleLine: '🦥 樹懶鵝化身試煉守護者，向你發起挑戰！' },
           ],
         },
         {
           text: '📷 跟牠合照自拍',
           outcomes: [
-            { p: 1.0, line: '樹懶鵝在睡夢中露出微笑。可以發 IG 了。', xp: [60, 90] },
+            { p: 0.7, line: '樹懶鵝在睡夢中露出微笑。可以發 IG 了。', xp: [120, 180], coins: [10, 20] },
+            { p: 0.3, line: '樹懶鵝醒來居然送你紀念品！', xp: 80, item: 'drop' },
           ],
         },
         {
           text: '🚶 不關我事，繼續走',
           outcomes: [
-            { p: 1.0, line: '走了一段路，撿到幾顆人家不要的鵝鵝幣。', coins: [5, 12] },
+            { p: 1.0, line: '走了一段路，撿到幾顆人家不要的鵝鵝幣。', coins: [15, 30] },
           ],
         },
       ],
@@ -1631,22 +1705,22 @@
           text: '💰 買！(花 80 幣)',
           requiresCoins: 80,
           outcomes: [
-            { p: 0.05, line: '欸真的暴漲！？這次運氣爆棚！', coins: 600 },
-            { p: 0.10, line: '附贈一個實體紀念品，意外有用。', coins: -80, item: 'drop' },
-            { p: 0.85, line: '檔案連打開都打不開。鵝鵝盤子確認。', coins: -80 },
+            { p: 0.10, line: '欸真的暴漲！？這次運氣爆棚！', coins: 800 },
+            { p: 0.20, line: '附贈一個實體紀念品，意外有用！', coins: -80, item: 'drop' },
+            { p: 0.70, line: '檔案連打開都打不開。鵝鵝盤子確認。', coins: -80 },
           ],
         },
         {
           text: '😤 嗆「鵝鵝才不想當盤子」',
           outcomes: [
-            { p: 0.55, line: '蛇鵝氣噗噗離開。圍觀路鵝給你拍手。', xp: [40, 70] },
-            { p: 0.45, line: '蛇鵝惱羞成怒：「兄弟你給我等著！」', battle: true, battleLine: '🐍 蛇鵝召來一群盤子受害者組成憤怒幫派！' },
+            { p: 0.50, line: '蛇鵝氣噗噗離開。圍觀路鵝給你拍手。', xp: [80, 140], coins: [20, 40] },
+            { p: 0.50, line: '蛇鵝惱羞成怒：「兄弟你給我等著！」', battle: true, battleLine: '🐍 蛇鵝氣到變身盤子大魔王！' },
           ],
         },
         {
           text: '👀 假裝沒看見走掉',
           outcomes: [
-            { p: 1.0, line: '路邊撿到 5 塊。蛇鵝翻白眼。', coins: 5 },
+            { p: 1.0, line: '路邊撿到 10 塊。蛇鵝翻白眼。', coins: [10, 20] },
           ],
         },
       ],
@@ -1660,24 +1734,24 @@
           text: '🎲 下 50 幣賭一把',
           requiresCoins: 50,
           outcomes: [
-            { p: 0.40, line: '鵝鵝賭神出列！翻倍！', coins: 50 },
-            { p: 0.10, line: '一把 All In 全槓！還賺到一件東西！', coins: 100, item: 'drop' },
-            { p: 0.45, line: '骰盅打開：鵝鵝鵝鵝鵝。輸了。', coins: -50 },
+            { p: 0.40, line: '鵝鵝賭神出列！翻倍！', coins: 100 },
+            { p: 0.15, line: '一把 All In 全槓！還賺到一件東西！', coins: 150, item: 'drop' },
+            { p: 0.40, line: '骰盅打開：鵝鵝鵝鵝鵝。輸了。', coins: -50 },
             { p: 0.05, line: '骰子滾出去掉進水溝，黑鵝罵罵咧咧跑了。', coins: 0 },
           ],
         },
         {
           text: '👁 站旁邊看人賭、學經驗',
           outcomes: [
-            { p: 1.0, line: '看了 10 場，總結：「鵝鵝看不懂為什麼大家都在輸」。', xp: [50, 80] },
+            { p: 1.0, line: '看了 10 場，總結：「鵝鵝看不懂為什麼大家都在輸」。', xp: [100, 160], coins: [15, 30] },
           ],
         },
         {
           text: '📞 報警',
           outcomes: [
-            { p: 0.5, line: '警察鵝出現了！檢舉獎金到帳。', coins: 80 },
-            { p: 0.2, line: '警察鵝丟了沒收到的贓物給你當謝禮。', coins: 50, item: 'drop' },
-            { p: 0.3, line: '黑鵝發現你報警，召集小弟堵你！', battle: true, battleLine: '🎰 黑鵝幫派包圍上來！' },
+            { p: 0.45, line: '警察鵝出現了！檢舉獎金到帳。', coins: 150 },
+            { p: 0.20, line: '警察鵝丟了沒收到的贓物給你當謝禮。', coins: 100, item: 'drop' },
+            { p: 0.35, line: '黑鵝發現你報警，他自己跳出來想滅口！', battle: true, battleLine: '🎰 黑鵝甩開西裝顯露真身，是個試煉強者！' },
           ],
         },
       ],
@@ -1690,23 +1764,23 @@
         {
           text: '🤗 上前安慰',
           outcomes: [
-            { p: 0.40, line: '原來只是被甩了。聽完牠哭兩小時，賺到一袋謝禮。', coins: [30, 50], xp: 80 },
-            { p: 0.10, line: '失戀鵝送你前任送的禮物：「拿走拿走拿走！」', xp: 40, item: 'drop' },
-            { p: 0.30, line: '是綠茶鵝偽裝的！你被踢了一腳還被偷錢！', greentea: true },
-            { p: 0.15, line: '其實是埋伏！草叢裡跳出一群劫匪！', battle: true, battleLine: '👻 哭聲是陷阱，劫匪鵝群跳了出來！' },
-            { p: 0.05, line: '居然是失蹤多年的鵝鵝富翁，重重有賞！', coins: 200, item: 'drop' },
+            { p: 0.35, line: '原來只是被甩了。聽完牠哭兩小時，賺到一袋謝禮。', coins: [60, 100], xp: 120 },
+            { p: 0.15, line: '失戀鵝送你前任送的禮物：「拿走拿走拿走！」', xp: 80, item: 'drop' },
+            { p: 0.25, line: '是綠茶鵝偽裝的！你被踢了一腳還被偷錢！', greentea: true },
+            { p: 0.20, line: '其實是埋伏！跳出一隻試煉者！', battle: true, battleLine: '👻 哭聲是試煉者的偽裝，現出真身！' },
+            { p: 0.05, line: '居然是失蹤多年的鵝鵝富翁，重重有賞！', coins: 400, item: 'drop' },
           ],
         },
         {
           text: '🚷 假裝沒聽到默默離開',
           outcomes: [
-            { p: 1.0, line: '良心被狗叼走了。但路上撿到一些散錢。', coins: [5, 15] },
+            { p: 1.0, line: '良心被狗叼走了。但路上撿到一些散錢。', coins: [15, 35] },
           ],
         },
         {
           text: '😭 跟著一起哭',
           outcomes: [
-            { p: 1.0, line: '兩隻鵝在樹下哭整晚，路人看不下去丟了零錢給你。', coins: [10, 25], xp: 30 },
+            { p: 1.0, line: '兩隻鵝在樹下哭整晚，路人看不下去丟了零錢給你。', coins: [25, 50], xp: 60 },
           ],
         },
       ],
@@ -1720,24 +1794,24 @@
           text: '💵 買一顆 (60 幣)',
           requiresCoins: 60,
           outcomes: [
-            { p: 0.20, line: '吃下去身體發光！永久 +1 STR！', coins: -60, stat: 'str' },
-            { p: 0.20, line: '吃下去眼睛發光！永久 +1 DEX！', coins: -60, stat: 'dex' },
-            { p: 0.10, line: '蘋果裡居然有顆寶石，掉出一件裝備！', coins: -60, item: 'drop' },
-            { p: 0.50, line: '......就是普通蘋果。但很甜。', coins: -60, hp: 15 },
+            { p: 0.25, line: '吃下去身體發光！永久 +1 STR！', coins: -60, stat: 'str' },
+            { p: 0.25, line: '吃下去眼睛發光！永久 +1 DEX！', coins: -60, stat: 'dex' },
+            { p: 0.15, line: '蘋果裡居然有顆寶石，掉出一件裝備！', coins: -60, item: 'drop' },
+            { p: 0.35, line: '......就是普通蘋果。但很甜。', coins: -60, hp: 25, xp: 30 },
           ],
         },
         {
           text: '🦹 偷一顆',
           outcomes: [
             { p: 0.30, line: '成功偷走！而且偏偏偷到神奇的那顆！+1 LUK！', stat: 'luk' },
-            { p: 0.20, line: '不只偷到蘋果，順手摸走攤位下的小錢箱！', coins: [40, 80], item: 'drop' },
-            { p: 0.50, line: '攤主：「給我抓住那隻鵝！」', battle: true, battleLine: '🍎 水果攤主帶著鄰居衝過來圍堵！' },
+            { p: 0.20, line: '不只偷到蘋果，順手摸走攤位下的小錢箱！', coins: [80, 150], item: 'drop' },
+            { p: 0.50, line: '攤主：「給我抓住那隻鵝！」', battle: true, battleLine: '🍎 水果攤主放下鋤頭，露出昔日試煉者的身手！' },
           ],
         },
         {
           text: '🚶 路過不買',
           outcomes: [
-            { p: 1.0, line: '攤主大喊「不買也來看一下嘛！」鵝鵝沒理。', coins: 0 },
+            { p: 1.0, line: '攤主大喊「不買也來看一下嘛！」鵝鵝沒理。', coins: [5, 10] },
           ],
         },
       ],
@@ -1751,23 +1825,23 @@
           text: '💝 打賞 20 幣',
           requiresCoins: 20,
           outcomes: [
-            { p: 0.7, line: '鵝鵝音樂家感動到唱不下去，給了你一張簽名照。', coins: -20, xp: 100 },
-            { p: 0.3, line: '鵝鵝音樂家把家傳吉他撥片送給你（看似普通卻有奇效）！', coins: -20, xp: 50, item: 'drop' },
+            { p: 0.6, line: '鵝鵝音樂家感動到唱不下去，給了你一張簽名照。', coins: -20, xp: 160 },
+            { p: 0.4, line: '鵝鵝音樂家把家傳吉他撥片送給你（看似普通卻有奇效）！', coins: -20, xp: 80, item: 'drop' },
           ],
         },
         {
           text: '🔇 嗆「太難聽了！」',
           outcomes: [
-            { p: 0.4, line: '鵝鵝大哭跑掉了。你深深感受到罪惡感。', xp: -10 },
-            { p: 0.6, line: '附近的人聽到笑出聲、丟錢給你打圓場。', coins: [20, 40] },
+            { p: 0.4, line: '鵝鵝大哭跑掉了。你深深感受到罪惡感。', xp: 20 },
+            { p: 0.6, line: '附近的人聽到笑出聲、丟錢給你打圓場。', coins: [40, 80] },
           ],
         },
         {
           text: '🎸 上去搶吉他自彈',
           outcomes: [
-            { p: 0.20, line: '你變網紅！整條街都在打賞！', coins: [80, 150], xp: 50 },
-            { p: 0.10, line: '一夜爆紅！經紀人鵝塞了一件超神道具給你！', coins: [50, 100], item: 'drop' },
-            { p: 0.70, line: '吉他被原主人搶回。歌手鵝氣到變身！', battle: true, battleLine: '🎤 走音歌手鵝爆青筋變身金屬搖滾鵝！' },
+            { p: 0.20, line: '你變網紅！整條街都在打賞！', coins: [150, 250], xp: 80 },
+            { p: 0.10, line: '一夜爆紅！經紀人鵝塞了一件超神道具給你！', coins: [80, 150], item: 'drop' },
+            { p: 0.70, line: '吉他被原主人搶回。歌手鵝氣到變身！', battle: true, battleLine: '🎤 走音歌手原來是金屬搖滾界的隱世強者！' },
           ],
         },
       ],
@@ -1781,24 +1855,24 @@
           text: '🙏 給香油錢 (100 幣)',
           requiresCoins: 100,
           outcomes: [
-            { p: 0.10, line: '居然真的是高僧！心靈受到洗禮。', coins: -100, stat: 'int', xp: 200 },
-            { p: 0.10, line: '高僧贈你一件禪意法器！', coins: -100, xp: 100, item: 'drop' },
-            { p: 0.80, line: '鵝鵝才剛出家，那 100 幣他直接拿去買鵝鵝奶茶了。', coins: -100 },
+            { p: 0.15, line: '居然真的是高僧！心靈受到洗禮。', coins: -100, stat: 'int', xp: 300 },
+            { p: 0.20, line: '高僧贈你一件禪意法器！', coins: -100, xp: 150, item: 'drop' },
+            { p: 0.65, line: '鵝鵝才剛出家，那 100 幣他直接拿去買鵝鵝奶茶了。', coins: -100, xp: 30 },
           ],
         },
         {
           text: '🤔 反問「鵝鵝消的是什麼災？」',
           outcomes: [
-            { p: 0.65, line: '僧鵝答不出來，灰溜溜走了。圍觀群眾鼓掌。', xp: [60, 100] },
-            { p: 0.35, line: '僧鵝惱羞變身武僧：「真理需要拳頭！」', battle: true, battleLine: '🧘 假和尚鵝甩開袈裟露出肌肉！' },
+            { p: 0.60, line: '僧鵝答不出來，灰溜溜走了。圍觀群眾鼓掌。', xp: [120, 200], coins: [20, 40] },
+            { p: 0.40, line: '僧鵝惱羞變身武僧：「真理需要拳頭！」', battle: true, battleLine: '🧘 假和尚露出肌肉，原來是試煉武鵝！' },
           ],
         },
         {
           text: '🦢 比僧鵝更兇地驅趕他',
           outcomes: [
-            { p: 0.40, line: '僧鵝跑掉時掉了個袋子，裡面全是別人的香油錢。', coins: [50, 100] },
-            { p: 0.20, line: '袋子裡還有一件神秘物品！', coins: [30, 60], item: 'drop' },
-            { p: 0.40, line: '僧鵝其實是真武僧偽裝，氣到爆開！', battle: true, battleLine: '🧘 假和尚扯下袈裟召喚十八銅鵝！' },
+            { p: 0.35, line: '僧鵝跑掉時掉了個袋子，裡面全是別人的香油錢。', coins: [100, 180] },
+            { p: 0.25, line: '袋子裡還有一件神秘物品！', coins: [60, 120], item: 'drop' },
+            { p: 0.40, line: '僧鵝其實是真武僧偽裝！', battle: true, battleLine: '🧘 假和尚扯下袈裟，是隱世試煉者！' },
           ],
         },
       ],
@@ -1811,24 +1885,24 @@
         {
           text: '📦 打開',
           outcomes: [
-            { p: 0.30, line: '裡面是一袋鵝鵝幣！', coins: [50, 100] },
+            { p: 0.25, line: '裡面是一袋鵝鵝幣！', coins: [100, 180] },
             { p: 0.30, line: '裡面是一件裝備！', item: 'drop' },
-            { p: 0.10, line: '裡面是大袋金幣 + 一件東西！', coins: [80, 150], item: 'drop' },
-            { p: 0.20, line: '彈簧鵝跳出來，旁邊冒出一群守護鵝！', battle: true, battleLine: '📦 神秘箱子是陷阱，守箱鵝群現身！' },
+            { p: 0.15, line: '裡面是大袋金幣 + 一件東西！', coins: [150, 250], item: 'drop' },
+            { p: 0.20, line: '彈簧鵝跳出來，原來是試煉守護者！', battle: true, battleLine: '📦 神秘箱子的守護者現身！' },
             { p: 0.10, line: '裡面是綠茶鵝。', greentea: true },
           ],
         },
         {
           text: '🦶 用腳踢一下測試',
           outcomes: [
-            { p: 0.4, line: '什麼也沒發生，但路人覺得你有病。', coins: 0 },
-            { p: 0.6, line: '彈簧鵝被踢到外太空，箱底有鵝鵝幣！', coins: [25, 50] },
+            { p: 0.3, line: '什麼也沒發生，但路人覺得你有病。', coins: [5, 15] },
+            { p: 0.7, line: '彈簧鵝被踢到外太空，箱底有鵝鵝幣！', coins: [50, 100] },
           ],
         },
         {
           text: '🚶 走人，鵝鵝才不上當',
           outcomes: [
-            { p: 1.0, line: '智者鵝。沒得獎勵但也沒虧錢。', xp: 20 },
+            { p: 1.0, line: '智者鵝。沒得獎勵但也沒虧錢。', xp: 50 },
           ],
         },
       ],
@@ -2383,6 +2457,15 @@
         window.__pendingBetaComp.add(player.id);
       }
     }
+    // 封測補償 v2：再補一次 + 通知探險改版
+    if (!player.rpg.betaCompV2 && typeof getMeId === 'function' && player.id === getMeId()) {
+      player.rpg.stamina = STAMINA_MAX;
+      player.rpg.betaCompV2 = true;
+      if (typeof window !== 'undefined') {
+        window.__pendingBetaCompV2 = window.__pendingBetaCompV2 || new Set();
+        window.__pendingBetaCompV2.add(player.id);
+      }
+    }
     // skillPoints migration
     if (player.rpg.skillPoints == null) {
       const earned = Math.max(0, (player.rpg.level || 1) - 1) * POINTS_PER_LEVEL.skill;
@@ -2623,6 +2706,37 @@
       }
     } else if (Math.random() < 0.05) {
       return createGreenTea(playerLv);
+    }
+    // 探險強制觸發：100% 精英怪、掉「玩家職業套裝」
+    if (opts && opts.forageElite) {
+      const myClass = me?.rpg?.class || 'warrior';
+      const setId = CLASS_SET[myClass] || 'warrior_iron';
+      const lv = Math.max(1, playerLv);
+      const k = 1 + (lv - 1) * 0.18;
+      const FORAGE_ELITE_TEMPLATES = {
+        warrior: { name: '★ 戰士試煉鵝', icon: '⚔️', verb: '試煉揮砍', dialogue: ['想成為戰士？先撐過我這關！', '揮砍吧！讓我看看你的覺悟！'], deathLine: ['果然...是個合格的戰士...', '繼承...這份意志...'] },
+          archer:  { name: '★ 弓手試煉鵝', icon: '🏹', verb: '疾風射',  dialogue: ['風的速度，你跟得上嗎？', '一箭一個鵝鵝！'],         deathLine: ['風...教給你了...', '快、再快一點...'] },
+          mage:    { name: '★ 法師試煉鵝', icon: '🔮', verb: '元素之炎', dialogue: ['鵝鵝感受元素之力！', '魔法不是給弱者用的！'],     deathLine: ['元素...回應你...', '繼續...深入奧義...'] },
+          paladin: { name: '★ 聖騎試煉鵝', icon: '✨', verb: '聖光裁決', dialogue: ['以鵝鵝聖光之名審判你！', '正義永不消逝！'],         deathLine: ['信念...傳遞給你...', '聖光...歸於你...'] },
+      };
+      const tpl = FORAGE_ELITE_TEMPLATES[myClass] || FORAGE_ELITE_TEMPLATES.warrior;
+      return {
+        id: 'forage_elite_' + myClass,
+        name: tpl.name, icon: tpl.icon, verb: tpl.verb,
+        level: lv,
+        hp: Math.round(220 * k), maxHp: Math.round(220 * k),
+        atk: Math.round(20 * k * 1.3),
+        def: Math.round(8 * k * 0.7),
+        spd: Math.round(10 + lv * 0.4),
+        goldDrop: Math.round(120 + lv * 3 + Math.random() * lv * 2),
+        xpDrop: Math.round((280 + lv * 8) * 2),
+        ability: { type: 'multiHit', hits: 2 },
+        dialogue: tpl.dialogue,
+        deathLine: tpl.deathLine,
+        dropSet: setId,
+        isElite: true,
+        isForageElite: true,
+      };
     }
     // 精英怪：在指定地區內 7% 機率出現
     if (opts && opts.zoneId && Math.random() < 0.07) {
@@ -2957,11 +3071,36 @@
     maybeShowBetaCompModal();
   }
 
-  // 封測補償 v1 公告（每位玩家只跳一次）
+  // 封測補償公告（每位玩家每版只跳一次）
   function maybeShowBetaCompModal() {
-    if (!window.__pendingBetaComp) return;
     const me = getMe();
-    if (!me || !window.__pendingBetaComp.has(me.id)) return;
+    if (!me) return;
+    // v2 優先（最新）
+    if (window.__pendingBetaCompV2 && window.__pendingBetaCompV2.has(me.id)) {
+      window.__pendingBetaCompV2.delete(me.id);
+      const html = `
+        <div style="text-align:center; padding:6px 0;">
+          <div style="font-size:42px; margin-bottom:6px;">🎁</div>
+          <div style="font-weight:700; font-size:16px; color:#7c3aed; margin-bottom:8px;">封測補償 v2</div>
+          <div style="font-size:13px; color:#5b3d62; line-height:1.7; text-align:left; padding:8px 12px; background:#f3e8ff; border-radius:10px; border:2px dashed #c4b5fd;">
+            • 探險獎勵全面提升（鵝幣、XP、裝備機率）<br>
+            • 探險選擇分支戰鬥 → <b>必為精英怪</b><br>
+            • 精英怪掉落 <b>4 套全新職業套裝</b>（戰士/弓手/法師/聖騎）<br>
+            • 世界王新版：FIFO 排隊、20 分冷卻、獎勵自動入帳<br>
+            • Firestore 拆檔重構（裝備不再被覆蓋）<br>
+            <br>
+            📦 <b>補償內容</b>：體力已自動補滿至 ${STAMINA_MAX}<br>
+            繼續陪我一起測試 ♡
+          </div>
+          <button class="btn btn-primary" onclick="hideModal()" style="margin-top:14px;">收下 ✨</button>
+        </div>
+      `;
+      showModal('📣 封測補償 v2 公告', html);
+      saveData();
+      return;
+    }
+    if (!window.__pendingBetaComp) return;
+    if (!window.__pendingBetaComp.has(me.id)) return;
     window.__pendingBetaComp.delete(me.id);
     const html = `
       <div style="text-align:center; padding:6px 0;">
@@ -4404,13 +4543,13 @@
       saveData();
       hideModal();
       document.getElementById('dailyResult').innerHTML = `
-        <div class="reward-list" style="background:linear-gradient(135deg,#fee2e2,#fecaca); border-color:#dc2626;">
-          <div class="rl-title" style="color:#991b1b;">⚔️ 進入戰鬥！</div>
-          <div class="rl-item" style="color:#5a4a4a;">${escapeHtml(outcome.battleLine || '怪物從草叢跳出來！')}</div>
-          <div class="rl-item" style="margin-top:4px; font-size:11px; color:#7f1d1d;">↓ 戰鬥開始 ↓</div>
+        <div class="reward-list" style="background:linear-gradient(135deg,#fef3c7,#fde047); border-color:#f59e0b;">
+          <div class="rl-title" style="color:#92400e;">⭐ 精英試煉登場！</div>
+          <div class="rl-item" style="color:#5a4a4a;">${escapeHtml(outcome.battleLine || '一隻精英怪從草叢跳出來！')}</div>
+          <div class="rl-item" style="margin-top:4px; font-size:11px; color:#7c2d12;">↓ 戰鬥開始（必掉職業套裝！）↓</div>
         </div>
       `;
-      onFight({ skipStamina: true });
+      onFight({ skipStamina: true, forageElite: true });
       return;
     }
     // 處理 outcome
@@ -4538,7 +4677,7 @@
     const zoneId = rpg.currentZone || 'forest';
     const floor = rpg.currentFloor || 1;
     const zone = ZONES.find(z => z.id === zoneId) || ZONES[0];
-    const monster = generateMonster(rpg.level, { zoneId, floor });
+    const monster = generateMonster(rpg.level, { zoneId, floor, forageElite: !!(opts && opts.forageElite) });
     const result = autoFight(me, monster);
 
     // 渲染戰鬥場景，依序播放
