@@ -366,6 +366,115 @@
     font-weight: 600;
   }
 
+  /* 地區選擇 */
+  .zone-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .zone-tab {
+    background: #fff;
+    border: 2px solid #e9d5e3;
+    border-radius: 10px;
+    padding: 6px 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    box-shadow: 0 2px 0 #e9d5e3;
+    font-size: 12px;
+    user-select: none;
+  }
+  .zone-tab:hover:not(.locked):not(.active) {
+    transform: translateY(-1px);
+    background: #fef9ff;
+  }
+  .zone-tab.active {
+    background: linear-gradient(135deg, #fff, #fef3c7);
+    transform: translateY(-1px);
+  }
+  .zone-tab.locked {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: #f3f4f6;
+  }
+  .zone-tab-icon {
+    font-size: 22px;
+    line-height: 1.1;
+  }
+  .zone-tab-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: #5b3d62;
+    margin-top: 2px;
+  }
+  .zone-info {
+    background: linear-gradient(135deg, #fffaf0, #fef3c7);
+    border: 2px solid #f59e0b;
+    border-radius: 12px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+  }
+  .zone-info-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .zone-info-meta {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 11px;
+    color: #8b6f9b;
+    margin-bottom: 6px;
+  }
+  .floor-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+  .floor-btn {
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: 2px solid #e9d5e3;
+    background: #fff;
+    color: #5b3d62;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 2px 0 #e9d5e3;
+    transition: transform 0.1s;
+    padding: 0;
+  }
+  .floor-btn:hover:not(.locked):not(.active) {
+    transform: translateY(-1px);
+    background: #fef9ff;
+  }
+  .floor-btn.active {
+    background: linear-gradient(135deg, #fde68a, #f59e0b);
+    color: #fff;
+    border-color: #d97706;
+    box-shadow: 0 2px 0 #b45309;
+  }
+  .floor-btn.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f3f4f6;
+  }
+  .floor-meta {
+    font-size: 11px;
+    color: #8b6f9b;
+    text-align: right;
+    font-weight: 600;
+  }
+
   /* 戰鬥場 */
   .battle-arena {
     display: grid;
@@ -873,6 +982,7 @@
 
     <div class="card">
       <h2><span>⚔️ 行動</span></h2>
+      <div id="zoneSelector"></div>
       <button id="fightBtn" class="btn btn-primary" onclick="onFight()">⚔️ 出發打怪</button>
       <div class="cooldown-info" id="cooldownInfo"></div>
       <div id="fightResult"></div>
@@ -1111,6 +1221,30 @@
       deathLine: ['...感謝指教。', '......（沉睡）', '...再會。'] },
   ];
 
+  // === 打怪地區 ===
+  const ZONES = [
+    { id: 'forest',  name: '鵝森林',   icon: '🌳', desc: '新手村，弱小怪物聚集',
+      minLv: 1,  baseLv: 1,  floors: 6,
+      monsters: ['bat', 'slime', 'thief', 'spider', 'gob'],
+      dropBias: ['weapon', 'armor', 'accessory'],
+      color: '#22c55e' },
+    { id: 'ruins',   name: '廢墟洞窟', icon: '🏚',  desc: '不死陰森，法抗較高',
+      minLv: 8,  baseLv: 8,  floors: 8,
+      monsters: ['mummy', 'lich', 'troll', 'gob', 'wolf'],
+      dropBias: ['armor', 'helmet', 'cape'],
+      color: '#a855f7' },
+    { id: 'volcano', name: '火山遺跡', icon: '🌋', desc: '熔岩龍與惡魔的領地',
+      minLv: 15, baseLv: 15, floors: 10,
+      monsters: ['orc', 'wolf', 'dragon', 'demon', 'troll'],
+      dropBias: ['weapon', 'gloves', 'boots'],
+      color: '#dc2626' },
+    { id: 'ice',     name: '冰原荒野', icon: '❄️', desc: '極地巨人與遠古龍',
+      minLv: 22, baseLv: 22, floors: 12,
+      monsters: ['titan', 'dragon', 'demon', 'lich'],
+      dropBias: ['cape', 'helmet', 'boots'],
+      color: '#3b82f6' },
+  ];
+
   // === 世界王 ===
   const BOSS_STAMINA = 30;
   const WORLD_BOSSES = [
@@ -1245,6 +1379,22 @@
     { id: 'c_ruby',   name: '紅寶石',   icon: '💎', slot: 'accessory', atk: 4, hp: 10, lv: 8 },
     { id: 'c_heart',  name: '心形吊墜', icon: '💖', slot: 'accessory', hp: 40, def: 3, lv: 12 },
     { id: 'c_oracle', name: '神諭',     icon: '🌠', slot: 'accessory', atk: 6, def: 6, spd: 4, hp: 30, lv: 18 },
+    // 頭盔
+    { id: 'h_cap',    name: '布帽',     icon: '🎩', slot: 'helmet', def: 2, lv: 2 },
+    { id: 'h_iron',   name: '鐵盔',     icon: '🪖', slot: 'helmet', def: 6, lv: 8 },
+    { id: 'h_spirit', name: '靈光盔',   icon: '⛑', slot: 'helmet', def: 12, atk: 3, lv: 16 },
+    // 手套
+    { id: 'g_cloth',  name: '布手套',   icon: '🧤', slot: 'gloves', atk: 2, lv: 2 },
+    { id: 'g_iron',   name: '鐵拳套',   icon: '✊', slot: 'gloves', atk: 6, lv: 8 },
+    { id: 'g_thunder',name: '雷霆拳',   icon: '⚡', slot: 'gloves', atk: 12, spd: 4, lv: 16 },
+    // 鞋子
+    { id: 'b_cloth',  name: '草鞋',     icon: '👣', slot: 'boots', spd: 2, hp: 8, lv: 2 },
+    { id: 'b_iron',   name: '鐵靴',     icon: '🥾', slot: 'boots', spd: 5, hp: 20, lv: 8 },
+    { id: 'b_swift',  name: '疾風靴',   icon: '💨', slot: 'boots', spd: 10, hp: 40, lv: 16 },
+    // 披風
+    { id: 'p_cloth',  name: '布披風',   icon: '🧣', slot: 'cape', hp: 15, def: 1, lv: 2 },
+    { id: 'p_leather',name: '皮披風',   icon: '🦺', slot: 'cape', hp: 35, def: 3, lv: 8 },
+    { id: 'p_dragon', name: '龍鱗披',   icon: '🐲', slot: 'cape', hp: 80, def: 8, lv: 16 },
   ];
 
   const STAMINA_MAX = 150;
@@ -1518,11 +1668,17 @@
   }
   function generateDropItem(playerLv, opts) {
     const boosted = opts === true || (opts && opts.boosted);
+    const slotBias = opts && opts.slotBias;
     // 過濾：上限 playerLv+2；下限取靠近的（避免高等級玩家拿不到任何掉落）
     let eligible = ITEMS.filter(i => (i.lv || 1) <= playerLv + 2 && (i.lv || 1) >= Math.max(1, playerLv - 5));
     if (eligible.length === 0) eligible = ITEMS.filter(i => (i.lv || 1) <= playerLv + 2);
     if (eligible.length === 0) eligible = ITEMS.slice(); // 終極 fallback：任何物品
     if (eligible.length === 0) return null;
+    // 地區掉落偏好：70% 機率從偏好部位中選
+    if (slotBias && slotBias.length > 0 && Math.random() < 0.7) {
+      const biased = eligible.filter(i => slotBias.includes(i.slot));
+      if (biased.length > 0) eligible = biased;
+    }
     const base = eligible[Math.floor(Math.random() * eligible.length)];
     const rarity = rollRarity(boosted);
     const def = RARITY[rarity];
@@ -1582,6 +1738,9 @@
         hp: null,
         mp: null,
         equipment: { weapon: null, armor: null, accessory: null, helmet: null, gloves: null, boots: null, cape: null, wings: null, pet: null },
+        currentZone: 'forest',
+        currentFloor: 1,
+        zoneProgress: {},
         equipped:  { weapon: null, shield: null, accessory: null, armor: null },
         inventory: [],
         skillPoints: 0,
@@ -1600,6 +1759,9 @@
     if (!player.rpg.equipped) player.rpg.equipped = { weapon: null, shield: null, accessory: null, armor: null };
     if (!player.rpg.skills) player.rpg.skills = {};
     if (!player.rpg.abilities) player.rpg.abilities = { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0 };
+    if (!player.rpg.currentZone) player.rpg.currentZone = 'forest';
+    if (!player.rpg.currentFloor) player.rpg.currentFloor = 1;
+    if (!player.rpg.zoneProgress) player.rpg.zoneProgress = {};
     // skillPoints migration
     if (player.rpg.skillPoints == null) {
       const earned = Math.max(0, (player.rpg.level || 1) - 1) * POINTS_PER_LEVEL.skill;
@@ -1783,15 +1945,26 @@
     }
     return stats;
   }
-  function generateMonster(playerLv) {
-    // 5% 機率：綠茶事件
+  function generateMonster(playerLv, opts) {
+    // 5% 機率：綠茶事件（地區戰鬥也適用）
     if (Math.random() < 0.05) return createGreenTea(playerLv);
-    const tierMax = Math.min(5, Math.ceil(playerLv / 4));
-    const tierMin = Math.max(1, tierMax - 1);
-    const candidates = MONSTERS.filter(m => m.tier <= tierMax && m.tier >= tierMin);
+    let candidates;
+    let levelMin = playerLv, levelMax = playerLv;
+    if (opts && opts.zoneId) {
+      const zone = ZONES.find(z => z.id === opts.zoneId);
+      const floor = Math.max(1, opts.floor || 1);
+      candidates = MONSTERS.filter(m => zone.monsters.includes(m.id));
+      // 怪物等級 = 地區起始 + 樓層 - 1
+      const flv = zone.baseLv + floor - 1;
+      levelMin = flv; levelMax = flv;
+    } else {
+      const tierMax = Math.min(5, Math.ceil(playerLv / 4));
+      const tierMin = Math.max(1, tierMax - 1);
+      candidates = MONSTERS.filter(m => m.tier <= tierMax && m.tier >= tierMin);
+    }
+    if (!candidates || candidates.length === 0) candidates = MONSTERS.slice();
     const m = candidates[Math.floor(Math.random() * candidates.length)];
-    // 等級變化縮小到 ±1，戰鬥節奏更穩定
-    const lv = Math.max(1, playerLv + Math.floor(Math.random() * 3) - 1);
+    const lv = Math.max(1, levelMin + Math.floor(Math.random() * (levelMax - levelMin + 2)) - 1);
     const k = 1 + (lv - 1) * 0.18;
     return {
       ...m,
@@ -1806,9 +1979,9 @@
       xpDrop: Math.round((m.xpBase + lv * 6 + Math.random() * lv * 3) * 2),
     };
   }
-  function rollItemDrop(playerLv, monsterLv) {
+  function rollItemDrop(playerLv, opts) {
     if (Math.random() > 0.28) return null; // 28% 掉落
-    return generateDropItem(playerLv, monsterLv);
+    return generateDropItem(playerLv, opts || {});
   }
 
   // ============================================================
@@ -2056,6 +2229,7 @@
     renderShop();
     renderWorldBoss();
     renderRpgStats();
+    renderZoneSelector();
     updateStaminaUI();
     checkBossKillBanners();
   }
@@ -2632,6 +2806,93 @@
     `;
   }
 
+  function renderZoneSelector() {
+    const me = getMe();
+    if (!me) return;
+    const rpg = getRpg(me);
+    if (!rpg.class) return;
+    const host = document.getElementById('zoneSelector');
+    if (!host) return;
+    if (!rpg.currentZone) rpg.currentZone = 'forest';
+    if (!rpg.currentFloor) rpg.currentFloor = 1;
+    if (!rpg.zoneProgress) rpg.zoneProgress = {};
+    const tabsHtml = ZONES.map(z => {
+      const locked = rpg.level < z.minLv;
+      const active = rpg.currentZone === z.id;
+      const cls = `zone-tab${active ? ' active' : ''}${locked ? ' locked' : ''}`;
+      const style = active ? `style="--zone-color:${z.color}; border-color:${z.color}; box-shadow:0 3px 0 ${z.color};"` : '';
+      const onclick = locked ? '' : `onclick="selectZone('${z.id}')"`;
+      const lockText = locked ? `<span style="font-size:9px;">🔒 Lv${z.minLv}</span>` : '';
+      return `<div class="${cls}" ${style} ${onclick}>
+        <div class="zone-tab-icon">${z.icon}</div>
+        <div class="zone-tab-name">${z.name}</div>
+        ${lockText}
+      </div>`;
+    }).join('');
+    const cur = ZONES.find(z => z.id === rpg.currentZone) || ZONES[0];
+    const prog = rpg.zoneProgress[cur.id] || { maxFloor: 1 };
+    const floorButtons = [];
+    for (let f = 1; f <= cur.floors; f++) {
+      const reachable = f <= prog.maxFloor;
+      const active = f === rpg.currentFloor;
+      const flv = cur.baseLv + f - 1;
+      const cls = `floor-btn${active ? ' active' : ''}${reachable ? '' : ' locked'}`;
+      const onclick = reachable ? `onclick="selectFloor(${f})"` : '';
+      floorButtons.push(`<button class="${cls}" ${onclick} title="Lv${flv}">${reachable ? f : '🔒'}</button>`);
+    }
+    host.innerHTML = `
+      <div class="zone-tabs">${tabsHtml}</div>
+      <div class="zone-info" style="border-color:${cur.color};">
+        <div class="zone-info-head">
+          <span style="color:${cur.color}; font-weight:700;">${cur.icon} ${cur.name}</span>
+          <span style="font-size:11px; color:#8b6f9b;">${cur.desc}</span>
+        </div>
+        <div class="zone-info-meta">
+          <span>掉落偏好：${cur.dropBias.map(s=>SLOT_LABEL[s]||s).join('、')}</span>
+          <span>已解鎖 ${prog.maxFloor}/${cur.floors} 層</span>
+        </div>
+        <div class="floor-row">${floorButtons.join('')}</div>
+        <div class="floor-meta">第 <b>${rpg.currentFloor}</b> 層 · 怪物 Lv${cur.baseLv + rpg.currentFloor - 1}</div>
+      </div>
+    `;
+  }
+  window.renderZoneSelector = renderZoneSelector;
+
+  function selectZone(zoneId) {
+    const me = getMe();
+    if (!me) return;
+    const rpg = getRpg(me);
+    const z = ZONES.find(zz => zz.id === zoneId);
+    if (!z) return;
+    if (rpg.level < z.minLv) { showToast(`需 Lv${z.minLv} 才能進入${z.name}`); return; }
+    rpg.currentZone = zoneId;
+    if (!rpg.zoneProgress[zoneId]) rpg.zoneProgress[zoneId] = { maxFloor: 1 };
+    rpg.currentFloor = Math.min(rpg.currentFloor || 1, rpg.zoneProgress[zoneId].maxFloor);
+    if (!rpg.currentFloor || rpg.currentFloor < 1) rpg.currentFloor = 1;
+    saveData();
+    renderZoneSelector();
+  }
+  window.selectZone = selectZone;
+
+  function selectFloor(f) {
+    const me = getMe();
+    if (!me) return;
+    const rpg = getRpg(me);
+    const z = ZONES.find(zz => zz.id === rpg.currentZone) || ZONES[0];
+    const prog = rpg.zoneProgress[z.id] || { maxFloor: 1 };
+    if (f > prog.maxFloor) { showToast('此層尚未解鎖'); return; }
+    rpg.currentFloor = f;
+    saveData();
+    renderZoneSelector();
+  }
+  window.selectFloor = selectFloor;
+
+  const SLOT_LABEL = {
+    weapon: '武器', armor: '盔甲', accessory: '飾品',
+    helmet: '頭盔', gloves: '手套', boots: '鞋子',
+    cape: '披風', wings: '翅膀', pet: '寵物',
+  };
+
   function updateStaminaUI() {
     const me = getMe();
     if (!me) return;
@@ -3048,7 +3309,11 @@
     __fightInProgress = true;
     if (!skipStamina) rpg.stamina -= STAMINA_PER_FIGHT;
 
-    const monster = generateMonster(rpg.level);
+    // 使用目前選擇的地區/層數
+    const zoneId = rpg.currentZone || 'forest';
+    const floor = rpg.currentFloor || 1;
+    const zone = ZONES.find(z => z.id === zoneId) || ZONES[0];
+    const monster = generateMonster(rpg.level, { zoneId, floor });
     const result = autoFight(me, monster);
 
     // 渲染戰鬥場景，依序播放
@@ -3170,8 +3435,19 @@
       rpg.mp = Math.min(stats.maxMp, rpg.mp + mpBack);
       // 獎勵鵝鵝幣
       refundCoins(player.id, monster.goldDrop);
-      const drop = rollItemDrop(rpg.level, monster.level);
+      // 使用目前地區的掉落偏好
+      const _zone = ZONES.find(z => z.id === (rpg.currentZone || 'forest'));
+      const drop = rollItemDrop(rpg.level, { slotBias: _zone ? _zone.dropBias : null });
       if (drop) rpg.inventory.push(drop); // drop instance（含詞綴）直接存物件
+      // 紀錄地區進度：通關目前層數 → 解鎖下一層
+      if (_zone) {
+        if (!rpg.zoneProgress) rpg.zoneProgress = {};
+        const prog = rpg.zoneProgress[_zone.id] || { maxFloor: 1 };
+        if ((rpg.currentFloor || 1) >= prog.maxFloor && prog.maxFloor < _zone.floors) {
+          prog.maxFloor = Math.min(_zone.floors, prog.maxFloor + 1);
+        }
+        rpg.zoneProgress[_zone.id] = prog;
+      }
       // 升級檢查
       let leveledUp = 0;
       while (rpg.xp >= xpForLevel(rpg.level)) {
@@ -3227,6 +3503,7 @@
     renderEquipment();
     renderShop();
     renderRpgStats();
+    renderZoneSelector();
     updateStaminaUI();
   }
 
