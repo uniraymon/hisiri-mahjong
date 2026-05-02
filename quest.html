@@ -174,34 +174,55 @@
     padding: 4px 8px;
     backdrop-filter: blur(4px);
   }
-  /* 角色圖右側選單（寶物庫，未來會多） */
+  /* 角色圖選單（寶物庫等） — 移到角色卡下方、不擋圖 */
   .cp-side-menu {
     position: absolute;
-    top: 8px;
+    bottom: 8px;
     right: 8px;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 6px;
     z-index: 8;
   }
   .cp-side-btn {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
+    gap: 4px;
     background: linear-gradient(135deg, #fef3c7, #fde047);
     border: 2px solid #f59e0b;
     border-radius: 10px;
-    padding: 4px 6px 3px;
+    padding: 4px 8px;
     cursor: pointer;
     box-shadow: 0 2px 0 #d97706;
     font-family: inherit;
     transition: transform 0.1s;
-    min-width: 50px;
   }
   .cp-side-btn:hover { transform: translateY(-1px); background: linear-gradient(135deg, #fffaf0, #fbbf24); }
-  .cp-side-btn .cpsb-icon { font-size: 18px; line-height: 1; }
-  .cp-side-btn .cpsb-label { font-size: 9px; font-weight: 700; color: #92400e; margin-top: 2px; }
-  .cp-side-btn .cpsb-badge { font-size: 9px; color: #78350f; opacity: 0.8; }
+  .cp-side-btn .cpsb-icon { font-size: 16px; line-height: 1; }
+  .cp-side-btn .cpsb-label { font-size: 10px; font-weight: 700; color: #92400e; }
+  .cp-side-btn .cpsb-badge { font-size: 9px; color: #78350f; opacity: 0.8; background: rgba(255,255,255,0.5); padding: 1px 4px; border-radius: 4px; }
+
+  /* 角色卡 + 行動規則 並排佈局 */
+  .char-rules-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: stretch;
+    margin-bottom: 12px;
+  }
+  .char-rules-row > .card {
+    flex: 1 1 320px;
+    margin-bottom: 0;
+  }
+  .char-rules-card {
+    display: flex;
+    flex-direction: column;
+  }
+  .char-rules-card #actionPatternBody {
+    flex: 1;
+    overflow-y: auto;
+  }
   /* 寶物庫卡 */
   .tv-grid {
     display: grid;
@@ -1391,7 +1412,13 @@
 
   <!-- Stage C: 主畫面 -->
   <div id="stageGame" class="hidden">
-    <div class="card char-card" id="charCard"></div>
+    <div class="char-rules-row">
+      <div class="card char-card" id="charCard"></div>
+      <div class="card char-rules-card">
+        <h2><span>📋 行動規則</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（從上到下檢查、第一個成立的觸發）</span></h2>
+        <div id="actionPatternBody"></div>
+      </div>
+    </div>
 
     <div class="card">
       <h2><span>⚔️ 行動</span></h2>
@@ -1437,10 +1464,6 @@
       <div id="skillTreeBody"></div>
     </div>
 
-    <div class="card">
-      <h2><span>📋 行動規則</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（HOF 風格 AI：從上到下檢查，第一條成立的觸發）</span></h2>
-      <div id="actionPatternBody"></div>
-    </div>
 
     <div class="card">
       <h2><span>🛒 商店</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（用鵝鵝幣購買）</span></h2>
@@ -1925,18 +1948,30 @@
   //   [{ judgeId, param, skillId }]
   // 戰鬥引擎逐條檢查，第一條成立就執行對應技能
   const JUDGES = {
-    1000: { id: 1000, label: '必ず（一定觸發）',     paramType: 'none' },
-    1100: { id: 1100, label: '自身 HP ≥ X%',         paramType: 'percent' },
-    1101: { id: 1101, label: '自身 HP ≤ X%',         paramType: 'percent' },
-    1200: { id: 1200, label: '自身 MP ≥ X%',         paramType: 'percent' },
-    1201: { id: 1201, label: '自身 MP ≤ X%',         paramType: 'percent' },
-    1205: { id: 1205, label: '自身 MP ≥ X (絕對)',   paramType: 'absolute' },
-    1300: { id: 1300, label: '敵方 HP ≤ X%',         paramType: 'percent' },
-    1301: { id: 1301, label: '敵方 HP ≥ X%',         paramType: 'percent' },
-    1900: { id: 1900, label: '我的第 X 次行動',       paramType: 'count' },
-    1901: { id: 1901, label: '我已行動 ≥ X 次',       paramType: 'count' },
-    1920: { id: 1920, label: '本場最多用 X 次',       paramType: 'count' },
-    1940: { id: 1940, label: 'X% 機率',              paramType: 'percent' },
+    1000: { id: 1000, label: '必ず（一定觸發）',         paramType: 'none' },
+    // 自身 HP / MP
+    1100: { id: 1100, label: '自身 HP ≥ X%',             paramType: 'percent' },
+    1101: { id: 1101, label: '自身 HP ≤ X%',             paramType: 'percent' },
+    1200: { id: 1200, label: '自身 MP ≥ X%',             paramType: 'percent' },
+    1201: { id: 1201, label: '自身 MP ≤ X%',             paramType: 'percent' },
+    1205: { id: 1205, label: '自身 MP ≥ X (絕對)',       paramType: 'absolute' },
+    // 敵方
+    1300: { id: 1300, label: '敵方 HP ≤ X%（最低血）',    paramType: 'percent' },
+    1301: { id: 1301, label: '敵方 HP ≥ X%（最低血）',    paramType: 'percent' },
+    1310: { id: 1310, label: '敵方最高血 ≤ X%',          paramType: 'percent' },
+    1450: { id: 1450, label: '敵方數量 ≥ X',             paramType: 'count' },
+    1451: { id: 1451, label: '敵方數量 ≤ X',             paramType: 'count' },
+    // 狀態
+    1600: { id: 1600, label: '自身中毒',                 paramType: 'none' },
+    1601: { id: 1601, label: '自身麻痺',                 paramType: 'none' },
+    1610: { id: 1610, label: '敵方有人中毒',             paramType: 'none' },
+    1611: { id: 1611, label: '敵方有人麻痺',             paramType: 'none' },
+    1620: { id: 1620, label: '敵方全部中毒',             paramType: 'none' },
+    // 行動次數
+    1900: { id: 1900, label: '我的第 X 次行動',           paramType: 'count' },
+    1901: { id: 1901, label: '我已行動 ≥ X 次',           paramType: 'count' },
+    1920: { id: 1920, label: '本場最多用 X 次',           paramType: 'count' },
+    1940: { id: 1940, label: 'X% 機率',                  paramType: 'percent' },
   };
 
   // 評估一條 judge 是否成立
@@ -1945,13 +1980,26 @@
     const v = Number(param) || 0;
     switch (judgeId) {
       case 1000: return true;
+      // 自身 HP / MP
       case 1100: return ctx.maxHp > 0 && (ctx.pHp / ctx.maxHp * 100) >= v;
       case 1101: return ctx.maxHp > 0 && (ctx.pHp / ctx.maxHp * 100) <= v;
       case 1200: return ctx.maxMp > 0 && (ctx.pMp / ctx.maxMp * 100) >= v;
       case 1201: return ctx.maxMp > 0 && (ctx.pMp / ctx.maxMp * 100) <= v;
       case 1205: return ctx.pMp >= v;
+      // 敵方 HP（用「最低血」當主視角；最高血另判）
       case 1300: return ctx.maxMHp > 0 && (ctx.mHp / ctx.maxMHp * 100) <= v;
       case 1301: return ctx.maxMHp > 0 && (ctx.mHp / ctx.maxMHp * 100) >= v;
+      case 1310: return ctx.maxMHpMax > 0 && (ctx.mHpMax / ctx.maxMHpMax * 100) <= v;
+      // 敵方數量
+      case 1450: return (ctx.aliveCount || 1) >= v;
+      case 1451: return (ctx.aliveCount || 1) <= v;
+      // 狀態
+      case 1600: return !!ctx.selfPoisoned;
+      case 1601: return !!ctx.selfParalyzed;
+      case 1610: return !!ctx.anyEnemyPoisoned;
+      case 1611: return !!ctx.anyEnemyParalyzed;
+      case 1620: return !!ctx.allEnemyPoisoned;
+      // 行動次數 / 機率
       case 1900: return ctx.playerActions === v;
       case 1901: return ctx.playerActions >= v;
       case 1920: return (ctx.ruleUseCount[ruleIdx] || 0) < v;
@@ -2993,19 +3041,10 @@
     if (!Array.isArray(player.rpg.greenTeaGuidesGranted)) player.rpg.greenTeaGuidesGranted = [];
     if (!Array.isArray(player.rpg.treasures)) player.rpg.treasures = [];
     // HOF 行動規則：沒有就帶入該職業的預設規則
+    // ⚠️ 之前的 actionPatternV2/V3 強制升級會在每次 render 重跑而覆蓋玩家自訂 → 已移除
+    //     新技能用 UI 的「+ 加一條規則」自己加，或按「↺ 重置為預設」
     if (!Array.isArray(player.rpg.actionPattern) || player.rpg.actionPattern.length === 0) {
       player.rpg.actionPattern = player.rpg.class ? getDefaultActionPattern(player.rpg.class) : [];
-    }
-    // 一次性升級：舊規則表沒有 MP regen / HP cost 等新技能 → 升級為新預設
-    // actionPatternV2 旗標確保只跑一次，玩家後續自訂的不會被重設
-    if (!player.rpg.actionPatternV2 && player.rpg.class) {
-      player.rpg.actionPattern = getDefaultActionPattern(player.rpg.class);
-      player.rpg.actionPatternV2 = true;
-    }
-    // V3：加入多目標 / AOE / 狀態技能後再升級一次
-    if (!player.rpg.actionPatternV3 && player.rpg.class) {
-      player.rpg.actionPattern = getDefaultActionPattern(player.rpg.class);
-      player.rpg.actionPatternV3 = true;
     }
     // 補發：以前遇過綠茶但還沒拿到對應指南書的，現在補回去
     if ((player.rpg.metGreenTea || 0) > 0) {
