@@ -2100,7 +2100,9 @@
     { id: 'quest_win10',     cat: '冒險島', icon: '💪', name: '連戰連勝',   title: '連戰連勝',   desc: '冒險島累計勝 10 場',         check: s => s.rpgWins >= 10 },
     { id: 'quest_win50',     cat: '冒險島', icon: '🎖', name: '戰役老兵',   title: '戰役老兵',   desc: '冒險島累計勝 50 場',         check: s => s.rpgWins >= 50 },
     { id: 'quest_win100',    cat: '冒險島', icon: '🏰', name: '無雙王者',   title: '無雙王者',   desc: '冒險島累計勝 100 場',        check: s => s.rpgWins >= 100 },
-    { id: 'quest_full',      cat: '冒險島', icon: '👕', name: '全副武裝',   title: '全副武裝',   desc: '同時裝備 武器+防具+飾品',     check: s => s.rpgEquippedSlots >= 3 },
+    { id: 'quest_full',      cat: '冒險島', icon: '👕', name: '全副武裝',   title: '全副武裝',   desc: '同時裝備 3 個槽以上',         check: s => s.rpgEquippedSlots >= 3 },
+    { id: 'quest_full_5',    cat: '冒險島', icon: '🛡',  name: '裝備齊全',   title: '裝備齊全',   desc: '同時裝備 5 個槽',             check: s => s.rpgEquippedSlots >= 5 },
+    { id: 'quest_full_7',    cat: '冒險島', icon: '🏆', name: '全身武裝',   title: '全身武裝',   desc: '7 個槽全部裝備（武器+防具+飾品+頭盔+手套+鞋子+披風）', check: s => s.rpgEquippedSlots >= 7 },
     { id: 'quest_collect10', cat: '冒險島', icon: '🎒', name: '收藏家',     title: '收藏家',     desc: '背包累積 10 件裝備',         check: s => s.rpgInv >= 10 },
     { id: 'quest_legendary', cat: '冒險島', icon: '🌟', name: '神話戰士',   title: '神話戰士',   desc: '裝備上 Lv 28 神話級裝備',    check: s => s.rpgHasLegendary },
     // 鵝幣
@@ -2170,8 +2172,9 @@
     const rpgLosses   = rpg.fightsLost || 0;
     const rpgInv      = (rpg.inventory || []).length;
     const eq = rpg.equipment || {};
-    const rpgEquippedSlots = ['weapon','armor','accessory'].filter(s => eq[s]).length;
-    const rpgHasLegendary = ['weapon','armor','accessory']
+    const ALL_EQ_SLOTS = ['weapon','armor','accessory','helmet','gloves','boots','cape'];
+    const rpgEquippedSlots = ALL_EQ_SLOTS.filter(s => eq[s]).length;
+    const rpgHasLegendary = ALL_EQ_SLOTS
       .some(s => eq[s] && String(eq[s]).endsWith('_28'));
     const metGreenTea = rpg.metGreenTea || 0;
     const rpgKills    = rpg.kills || {};

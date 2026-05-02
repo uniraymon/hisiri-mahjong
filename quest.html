@@ -446,8 +446,8 @@
   /* 裝備 / 背包 */
   .equip-row {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    gap: 6px;
     margin-bottom: 10px;
   }
   .equip-slot {
@@ -1292,23 +1292,46 @@
       ['銅戒','💍'],['幸運符','🎴'],['銀戒','💎'],['紅寶石','🔴'],['兔腳','🐰'],
       ['心形墜','💖'],['神諭','🌠'],['雷符','⚡'],['龍珠','🐲'],['創世神器','🌌']
     ];
+    // 4 個新槽位
+    const hMeta = [
+      ['布帽','🎩'],['皮帽','🧢'],['鐵盔','🪖'],['鋼盔','⛑'],['銀冠','👑'],
+      ['聖光盔','😇'],['邪冠','😈'],['雷神盔','⚡'],['龍頭盔','🐲'],['創世冠','🌌']
+    ];
+    const gMeta = [
+      ['布手套','🧤'],['皮手套','🤲'],['鐵拳套','✊'],['鋼拳套','🤜'],['銀指環','💍'],
+      ['聖光手套','✋'],['邪術指甲','💀'],['雷霆拳','⚡'],['龍爪','🐉'],['神拳','👊']
+    ];
+    const bMeta = [
+      ['草鞋','👣'],['皮靴','👞'],['鐵靴','🥾'],['銀靴','🥿'],['疾風靴','💨'],
+      ['聖光靴','✨'],['幽影靴','👤'],['雷靴','⚡'],['龍靴','🐲'],['神步','🚀']
+    ];
+    const pMeta = [
+      ['布披風','🧣'],['皮披風','🦺'],['禮披','🎽'],['銀披','🪡'],['魔法袍','✨'],
+      ['聖光披風','👼'],['黑斗篷','🦇'],['雷神披','⚡'],['龍鱗披','🐲'],['傳說披','🌌']
+    ];
     levels.forEach((lv, i) => {
       const cost = 100 + lv * 50;
-      items.push({
-        id: `shop_w_${lv}`, name: wMeta[i][0], icon: wMeta[i][1], slot: 'weapon',
-        lv, atk: Math.round(2 + lv * 0.75), cost, type: 'equipment'
-      });
-      items.push({
-        id: `shop_a_${lv}`, name: aMeta[i][0], icon: aMeta[i][1], slot: 'armor',
-        lv, def: Math.round(2 + lv * 0.75), cost, type: 'equipment'
-      });
-      // 飾品依 tier 給不同混合詞條
+      items.push({ id: `shop_w_${lv}`, name: wMeta[i][0], icon: wMeta[i][1], slot: 'weapon',
+        lv, atk: Math.round(2 + lv * 0.75), cost, type: 'equipment' });
+      items.push({ id: `shop_a_${lv}`, name: aMeta[i][0], icon: aMeta[i][1], slot: 'armor',
+        lv, def: Math.round(2 + lv * 0.75), cost, type: 'equipment' });
+      // 飾品（已有混合詞條）
       const acc = { id: `shop_c_${lv}`, name: cMeta[i][0], icon: cMeta[i][1], slot: 'accessory', lv, cost: cost + 30, type: 'equipment' };
       const flavor = i % 3;
       if (flavor === 0) { acc.atk = Math.round(1 + lv * 0.4); acc.spd = Math.round(1 + lv * 0.3); }
       else if (flavor === 1) { acc.hp = Math.round(10 + lv * 5); acc.def = Math.round(1 + lv * 0.3); }
       else { acc.spd = Math.round(2 + lv * 0.4); acc.hp = Math.round(5 + lv * 3); acc.atk = Math.round(lv * 0.2); }
       items.push(acc);
+      // 新槽位（每件較便宜，屬性較輕）
+      const subCost = Math.max(60, cost - 30);
+      items.push({ id: `shop_h_${lv}`, name: hMeta[i][0], icon: hMeta[i][1], slot: 'helmet',
+        lv, def: Math.round(1 + lv * 0.5), atk: Math.round(lv * 0.15), cost: subCost, type: 'equipment' });
+      items.push({ id: `shop_g_${lv}`, name: gMeta[i][0], icon: gMeta[i][1], slot: 'gloves',
+        lv, atk: Math.round(1 + lv * 0.5), spd: Math.max(0, Math.round(lv * 0.15)), cost: subCost, type: 'equipment' });
+      items.push({ id: `shop_b_${lv}`, name: bMeta[i][0], icon: bMeta[i][1], slot: 'boots',
+        lv, spd: Math.max(1, Math.round(lv * 0.4)), hp: Math.round(5 + lv * 2), cost: subCost, type: 'equipment' });
+      items.push({ id: `shop_p_${lv}`, name: pMeta[i][0], icon: pMeta[i][1], slot: 'cape',
+        lv, hp: Math.round(15 + lv * 5), def: Math.round(lv * 0.3), cost: subCost, type: 'equipment' });
     });
     return items;
   })();
@@ -1484,7 +1507,7 @@
         xp: 0,
         hp: null,
         mp: null,
-        equipment: { weapon: null, armor: null, accessory: null },
+        equipment: { weapon: null, armor: null, accessory: null, helmet: null, gloves: null, boots: null, cape: null },
         equipped:  { weapon: null, shield: null, accessory: null, armor: null },
         inventory: [],
         skillPoints: 0,
@@ -1671,8 +1694,8 @@
       def:   Math.round(cls.def + (lv - 1) * cls.defPer) + b.def + ab.def,
       spd:   Math.round(cls.spd + (lv - 1) * cls.spdPer) + b.spd + ab.spd,
     };
-    // 裝備加成
-    for (const slot of ['weapon', 'armor', 'accessory']) {
+    // 裝備加成（7 個槽）
+    for (const slot of ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape']) {
       const itemId = rpg.equipment?.[slot];
       if (itemId) {
         const item = findItem(itemId);
@@ -2168,6 +2191,10 @@
       { id: 'weapon',     label: '⚔️ 武器', filter: i => i.type === 'equipment' && i.slot === 'weapon' },
       { id: 'armor',      label: '🛡 防具', filter: i => i.type === 'equipment' && i.slot === 'armor' },
       { id: 'accessory',  label: '💎 飾品', filter: i => i.type === 'equipment' && i.slot === 'accessory' },
+      { id: 'helmet',     label: '🪖 頭盔', filter: i => i.type === 'equipment' && i.slot === 'helmet' },
+      { id: 'gloves',     label: '🧤 手套', filter: i => i.type === 'equipment' && i.slot === 'gloves' },
+      { id: 'boots',      label: '🥾 鞋子', filter: i => i.type === 'equipment' && i.slot === 'boots' },
+      { id: 'cape',       label: '🎽 披風', filter: i => i.type === 'equipment' && i.slot === 'cape' },
     ];
     const active = TABS.find(t => t.id === __shopTab) || TABS[0];
     const list = SHOP_ITEMS.filter(active.filter);
@@ -2418,8 +2445,8 @@
   function renderEquipment() {
     const me = getMe();
     const rpg = getRpg(me);
-    const slots = ['weapon', 'armor', 'accessory'];
-    const slotLabels = { weapon: '武器', armor: '防具', accessory: '飾品' };
+    const slots = ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape'];
+    const slotLabels = { weapon: '武器', armor: '防具', accessory: '飾品', helmet: '頭盔', gloves: '手套', boots: '鞋子', cape: '披風' };
     document.getElementById('equipRow').innerHTML = slots.map(s => {
       const id = rpg.equipment?.[s];
       const item = id ? findItem(id) : null;
