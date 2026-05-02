@@ -979,7 +979,19 @@
     if (ab.type === 'steal')        return `💰 偷 ${ab.min}-${ab.max} 鵝鵝幣`;
     if (ab.type === 'magicResist')  return `🔮 法抗 ${Math.round(ab.resist*100)}%`;
     if (ab.type === 'physResist')   return `🛡 物抗 ${Math.round(ab.resist*100)}%`;
+    if (ab.type === 'cameo')        return `🍵 神秘事件`;
     return '';
+  }
+
+  // 5% 機率出現的綠茶事件怪
+  function createGreenTea(playerLv) {
+    return {
+      id: 'greentea', tier: 0, name: '綠茶',  icon: '🍵',
+      level: playerLv, hp: 1, maxHp: 1,
+      atk: 1, def: 0, spd: 999,
+      verb: '裝清純', goldDrop: 0, xpDrop: 0,
+      ability: { type: 'cameo' },
+    };
   }
 
   const ITEMS = [
@@ -1405,6 +1417,8 @@
     return stats;
   }
   function generateMonster(playerLv) {
+    // 5% 機率：綠茶事件
+    if (Math.random() < 0.05) return createGreenTea(playerLv);
     const tierMax = Math.min(5, Math.ceil(playerLv / 4));
     const tierMin = Math.max(1, tierMax - 1);
     const candidates = MONSTERS.filter(m => m.tier <= tierMax && m.tier >= tierMin);
@@ -1439,6 +1453,25 @@
     const log = [];
     const cls = CLASSES[player.rpg.class];
     const stats = computeStats(player);
+
+    // 綠茶事件：腳本式遭遇，跳過正常戰鬥
+    if (monster.ability?.type === 'cameo') {
+      const startHp = Math.min(player.rpg.hp ?? stats.maxHp, stats.maxHp);
+      const startMp = Math.min(player.rpg.mp ?? stats.maxMp, stats.maxMp);
+      const kickDmg = 5 + Math.floor(Math.random() * 5); // 5-9 隨機踢
+      const newHp = Math.max(1, startHp - kickDmg); // 最少留 1 HP
+      log.push({ type: 'system', text: `═══ 🍵 綠茶突然飄了過來 ═══` });
+      log.push({ type: 'monster', text: `回合 1：綠茶踢了你一腳 → -${kickDmg} HP`, hp: { player: newHp, monster: 1, mp: startMp } });
+      log.push({ type: 'monster', text: `回合 2：綠茶順手摸走 💰 10 鵝鵝幣`, hp: { player: newHp, monster: 1, mp: startMp } });
+      log.push({ type: 'system', text: `綠茶丟下一句「鵝鵝沒有錯」就跑掉了 ☕💨` });
+      return {
+        won: false, fled: true,
+        pHpFinal: newHp, pMpFinal: startMp, mHpFinal: 1,
+        maxHp: stats.maxHp, maxMp: stats.maxMp,
+        coinsStolen: 10, kickDmg, log,
+      };
+    }
+
     const bonus = computeSkillBonuses(player);
     const abil  = computeAbilityBonuses(player);
     const passive = computePassiveBonuses(player);
@@ -2292,12 +2325,35 @@
     const rpg = getRpg(player);
     rpg.hp = result.pHpFinal;
     rpg.mp = result.pMpFinal;
-    // 怪物偷的錢，扣到玩家
     if (result.coinsStolen > 0) {
       player.coinsSpent = (player.coinsSpent || 0) + result.coinsStolen;
     }
     const logEl = document.getElementById('battleLog');
     let rewardHtml = '';
+
+    // 綠茶事件：不算勝負，直接結算
+    if (result.fled) {
+      const div = document.createElement('div');
+      div.className = 'log-line log-system';
+      div.textContent = `🍵 綠茶逃走了，這次的相遇不算戰鬥`;
+      logEl.appendChild(div);
+      rewardHtml = `
+        <div class="reward-list" style="background:#dcfce7; border-color:#86efac;">
+          <div class="rl-title" style="color:#15803d;">🍵 綠茶反撒了一波</div>
+          <div class="rl-item">「鵝鵝沒有錯」</div>
+          <div class="rl-item" style="color:#dc2626;">💰 −${result.coinsStolen} 鵝鵝幣　❤️ −${result.kickDmg || 0} HP</div>
+          <div class="rl-item" style="margin-top:4px; font-size:11px; color:#16a34a;">無 XP / 無金幣 / 無戰利品</div>
+        </div>
+      `;
+      document.getElementById('fightResult').insertAdjacentHTML('beforeend', rewardHtml);
+      saveData();
+      renderCharCard();
+      renderEquipment();
+      renderShop();
+      renderRpgStats();
+      updateStaminaUI();
+      return;
+    }
 
     if (result.won) {
       rpg.fightsWon = (rpg.fightsWon || 0) + 1;
