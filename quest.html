@@ -675,6 +675,44 @@
   .boss-card .btn { margin-top: 0; }
   .boss-card .btn:disabled { background: #4b5563; box-shadow: none; }
 
+  /* Boss 排隊 */
+  .boss-queue {
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(245,158,11,0.4);
+    border-radius: 8px;
+    padding: 6px 8px;
+    margin: 0 0 8px 0;
+  }
+  .bq-title {
+    font-size: 11px;
+    color: #fde68a;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .bq-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 4px;
+    font-size: 12px;
+    color: #fef3c7;
+    border-radius: 4px;
+  }
+  .bq-row.bq-head {
+    background: rgba(245,158,11,0.25);
+    color: #fde047;
+    font-weight: 700;
+  }
+  .bq-row.bq-me {
+    border: 1px dashed #fde047;
+  }
+  .bq-pos {
+    width: 22px;
+    text-align: center;
+    font-size: 13px;
+  }
+  .bq-name { flex: 1; }
+
   /* 排行榜 */
   .lb-section { margin-bottom: 14px; }
   .lb-section:last-child { margin-bottom: 0; }
@@ -1313,8 +1351,9 @@
   ];
 
   // === 世界王 ===
-  const BOSS_STAMINA = 30;
-  const BOSS_COOLDOWN_MS = 5 * 60 * 1000; // 每位玩家每隻王 5 分鐘冷卻
+  // 世界王已改為「排隊制」：不扣體力、改成全域 20 分鐘冷卻（任何一隻王都共用此冷卻）
+  const BOSS_COOLDOWN_MS = 20 * 60 * 1000; // 全域：上次參戰後 20 分鐘才能再排隊任何王
+  const BOSS_QUEUE_STALE_MS = 5 * 60 * 1000; // 排隊頭 5 分鐘沒動作 → 視為過期、可被略過
   const WORLD_BOSSES = [
     {
       id: 'goose_king',
@@ -3290,15 +3329,13 @@
     const stage = document.getElementById('stageGame');
     if (stage && !stage.classList.contains('hidden')) {
       updateStaminaUI();
-      // 世界王倒數刷新（復活倒數 + 我的攻擊冷卻倒數）
+      // 世界王倒數刷新（復活倒數 + 全域冷卻倒數 + 排隊狀態）
       const anyDead = WORLD_BOSSES.some(b => worldBoss?.[b.id]?.deadAt);
       const me = getMe();
       const myRpg = me ? getRpg(me) : null;
-      const anyCd = myRpg && myRpg.lastBossAttack && WORLD_BOSSES.some(b => {
-        const t = myRpg.lastBossAttack[b.id] || 0;
-        return Date.now() - t < BOSS_COOLDOWN_MS;
-      });
-      if (anyDead || anyCd) renderWorldBoss();
+      const onCd = myRpg && (Date.now() - (myRpg.lastBossAttackTime || 0)) < BOSS_COOLDOWN_MS;
+      const inQueue = WORLD_BOSSES.some(b => (worldBoss?.[b.id]?.queue || []).find(q => q.pid === me?.id));
+      if (anyDead || onCd || inQueue) renderWorldBoss();
       if (Math.floor(Date.now() / 1000) % 30 === 0) renderCharCard();
     }
   }, 1000);
@@ -3363,6 +3400,17 @@
   function renderWorldBoss() {
     const me = getMe();
     const myRpg = me ? getRpg(me) : null;
+    // 全域 20 分冷卻（任何王共用）
+    const myGlobalCdMs = myRpg ? Math.max(0, (myRpg.lastBossAttackTime || 0) + BOSS_COOLDOWN_MS - Date.now()) : 0;
+    const onGlobalCd = myGlobalCdMs > 0;
+    // 我目前在哪個王的排隊
+    let myQueuedBossId = null;
+    if (me) {
+      for (const b of WORLD_BOSSES) {
+        const q = (worldBoss?.[b.id]?.queue) || [];
+        if (q.find(qi => qi.pid === me.id)) { myQueuedBossId = b.id; break; }
+      }
+    }
     const html = WORLD_BOSSES.map(boss => {
       const state = getBossState(boss.id);
       const isDead = !!state.deadAt;
@@ -3371,13 +3419,51 @@
       const hr = Math.floor(remainingMs / 3600000);
       const min = Math.floor((remainingMs % 3600000) / 60000);
       const sec = Math.floor((remainingMs % 60000) / 1000);
-      // 我自己對這隻王的冷卻
-      const myCdMs = myRpg && myRpg.lastBossAttack ? Math.max(0, (myRpg.lastBossAttack[boss.id] || 0) + BOSS_COOLDOWN_MS - Date.now()) : 0;
-      const cdM = Math.floor(myCdMs / 60000);
-      const cdS = Math.ceil((myCdMs % 60000) / 1000);
-      const onCd = myCdMs > 0;
       const sortedDmg = Object.entries(state.damageLog || {}).sort((a, b) => b[1] - a[1]);
       const top5 = sortedDmg.slice(0, 5);
+      // 排隊狀態
+      const queue = (state.queue || []).filter(q => q && q.pid);
+      const myPos = me ? queue.findIndex(q => q.pid === me.id) : -1;
+      const isMyTurn = myPos === 0;
+      const queuedHere = myPos >= 0;
+      const queuedElsewhere = myQueuedBossId && myQueuedBossId !== boss.id;
+      const queueHtml = queue.length > 0 ? `
+        <div class="boss-queue">
+          <div class="bq-title">📋 排隊（${queue.length}）</div>
+          ${queue.slice(0, 6).map((q, i) => {
+            const p = getPlayer(q.pid);
+            const stale = (Date.now() - (q.joinedAt || 0)) > BOSS_QUEUE_STALE_MS;
+            return `<div class="bq-row ${i === 0 ? 'bq-head' : ''} ${q.pid === me?.id ? 'bq-me' : ''}">
+              <span class="bq-pos">${i === 0 ? '🔥' : i + 1}</span>
+              <span class="bq-name">${p ? (p.avatar || '🎴') + ' ' + escapeHtml(p.name) : '?'}${stale ? ' <span style="color:#dc2626;">(過期)</span>' : ''}</span>
+            </div>`;
+          }).join('')}
+        </div>` : '';
+      // 動作按鈕邏輯
+      let actionHtml = '';
+      if (isDead) {
+        actionHtml = `<button class="btn btn-primary" disabled style="background:#4b5563;">⏳ 等待復活</button>`;
+      } else if (onGlobalCd) {
+        const m = Math.floor(myGlobalCdMs / 60000);
+        const s = Math.ceil((myGlobalCdMs % 60000) / 1000);
+        actionHtml = `<button class="btn btn-primary" disabled style="background:#4b5563;">⏳ 冷卻 ${m}:${String(s).padStart(2,'0')}（任何王共用）</button>`;
+      } else if (isMyTurn) {
+        actionHtml = `
+          <button class="btn btn-primary" onclick="runBossFight('${boss.id}')" style="background:linear-gradient(135deg,#fde047,#f59e0b); box-shadow:0 4px 0 #d97706; color:#7c2d12;">🔥 你的回合！攻擊</button>
+          <button class="btn btn-secondary" onclick="leaveBossQueue('${boss.id}')" style="margin-top:6px;">取消排隊</button>
+        `;
+      } else if (queuedHere) {
+        actionHtml = `
+          <button class="btn btn-primary" disabled style="background:#6b7280;">🕒 排隊中：第 ${myPos + 1} 位</button>
+          <button class="btn btn-secondary" onclick="leaveBossQueue('${boss.id}')" style="margin-top:6px;">取消排隊</button>
+        `;
+      } else if (queuedElsewhere) {
+        const otherBoss = WORLD_BOSSES.find(b => b.id === myQueuedBossId);
+        actionHtml = `<button class="btn btn-primary" disabled style="background:#4b5563;">已排隊在 ${otherBoss?.name || ''}</button>`;
+      } else {
+        const ahead = queue.length;
+        actionHtml = `<button class="btn btn-primary" onclick="joinBossQueue('${boss.id}')" style="background:linear-gradient(135deg,#f59e0b,#dc2626); box-shadow:0 4px 0 #991b1b;">📋 加入排隊${ahead > 0 ? `（前面 ${ahead} 人）` : ''}</button>`;
+      }
       return `
         <div class="boss-card ${isDead ? 'dead' : ''}">
           <div class="boss-header">
@@ -3391,6 +3477,7 @@
             <div class="boss-hp-fill" style="width:${hpPct}%"></div>
             <div class="boss-hp-text">${Math.max(0, state.currentHp).toLocaleString()} / ${boss.hp.toLocaleString()}　(${hpPct.toFixed(1)}%)</div>
           </div>
+          ${queueHtml}
           ${top5.length > 0 ? `
             <div class="boss-leaderboard">
               <div class="bl-title">⚔️ 傷害排行榜</div>
@@ -3409,11 +3496,7 @@
               🏆 第 ${state.killCount} 次擊殺：${getPlayer(state.lastKill.killer)?.name || '?'}
             </div>
           ` : ''}
-          <button class="btn btn-primary" onclick="runBossFight('${boss.id}')" ${isDead || onCd ? 'disabled' : ''} style="background:linear-gradient(135deg,#f59e0b,#dc2626); box-shadow:0 4px 0 #991b1b;">
-            ${isDead ? `⏳ 等待復活`
-              : onCd  ? `⏳ 冷卻 ${cdM > 0 ? cdM + ':' + String(cdS).padStart(2,'0') : cdS + 's'}`
-              :         `⚔️ 挑戰（${BOSS_STAMINA} ⚡）`}
-          </button>
+          ${actionHtml}
         </div>
       `;
     }).join('');
@@ -3509,6 +3592,66 @@
     });
   }
 
+  // 加入排隊（不扣體力、不打）
+  async function joinBossQueue(bossId) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me); if (!r.class) return;
+    const boss = WORLD_BOSSES.find(b => b.id === bossId);
+    if (!boss) return;
+    if (r.hp <= 0) { showToast('💀 HP 太低，先回滿再來'); return; }
+    // 全域 20 分鐘冷卻
+    const cdRemain = (r.lastBossAttackTime || 0) + BOSS_COOLDOWN_MS - Date.now();
+    if (cdRemain > 0) {
+      const m = Math.floor(cdRemain / 60000);
+      const s = Math.ceil((cdRemain % 60000) / 1000);
+      showToast(`⏳ 上次參戰冷卻中，還要等 ${m}:${String(s).padStart(2,'0')}`);
+      return;
+    }
+    if (!window.__firebaseSync || !window.__firebaseSync.joinBossQueue) {
+      showToast('☁️ 雲端尚未連線，稍後再試');
+      return;
+    }
+    try {
+      const out = await window.__firebaseSync.joinBossQueue(bossId, me.id, boss, BOSS_QUEUE_STALE_MS);
+      const pos = out.position;
+      if (pos === 0) showToast(`✅ 你目前是排隊頭，可以攻擊了！`);
+      else            showToast(`📋 已加入排隊：第 ${pos + 1} 位（前面 ${pos} 人）`);
+      renderWorldBoss();
+    } catch (e) {
+      const code = e?.code || '';
+      const msg = e?.message || String(e);
+      if (msg.startsWith('already-in-other-queue:')) {
+        const otherId = msg.split(':')[1];
+        const otherBoss = WORLD_BOSSES.find(b => b.id === otherId);
+        showToast(`你已排在 ${otherBoss?.name || otherId}，先取消才能改排這隻`);
+      } else if (msg === 'already-in-this-queue') {
+        showToast('你已經在這個排隊中');
+      } else if (msg === 'boss-already-dead') {
+        showToast('🦢 王已倒下，等復活吧');
+      } else if (code === 'resource-exhausted' || msg.includes('429')) {
+        showToast('☁️ Firestore 配額用完了');
+      } else {
+        showToast('☁️ 排隊失敗：' + (code || msg.slice(0, 40)));
+      }
+    }
+  }
+  window.joinBossQueue = joinBossQueue;
+
+  // 退出排隊
+  async function leaveBossQueue(bossId) {
+    const me = getMe(); if (!me) return;
+    if (!window.__firebaseSync || !window.__firebaseSync.leaveBossQueue) return;
+    try {
+      await window.__firebaseSync.leaveBossQueue(bossId, me.id);
+      showToast('已退出排隊');
+      renderWorldBoss();
+    } catch (e) {
+      console.warn('leave queue failed:', e);
+    }
+  }
+  window.leaveBossQueue = leaveBossQueue;
+
+  // 真正攻擊（必須是排隊頭）
   async function runBossFight(bossId) {
     const me = getMe(); if (!me) return;
     const r = getRpg(me); if (!r.class) return;
@@ -3517,23 +3660,22 @@
     if (!boss) return;
     const state = getBossState(bossId);
     if (state.deadAt) { showToast('🦢 王還沒復活'); return; }
-    if (r.stamina < BOSS_STAMINA) { showToast(`⚡ 體力不足（需 ${BOSS_STAMINA}）`); return; }
     if (r.hp <= 0) { showToast('💀 HP 不足'); return; }
-    // 每位玩家每隻王 5 分鐘冷卻
-    if (!r.lastBossAttack) r.lastBossAttack = {};
-    const cdRemain = (r.lastBossAttack[bossId] || 0) + BOSS_COOLDOWN_MS - Date.now();
-    if (cdRemain > 0) {
-      const m = Math.floor(cdRemain / 60000);
-      const s = Math.ceil((cdRemain % 60000) / 1000);
-      showToast(`⏳ 還要等 ${m > 0 ? m + ':' + String(s).padStart(2,'0') : s + 's'} 才能再挑戰這隻王`);
+    // 必須是排隊頭
+    const queue = (state.queue || []);
+    if (queue.length === 0 || queue[0].pid !== me.id) {
+      // 是不是過期 head？讓 transaction 自己處理
+      if (queue.length > 0 && queue[0].pid !== me.id) {
+        showToast('⏳ 還沒輪到你');
+        return;
+      }
+      showToast('先按「加入排隊」再來打');
       return;
     }
     if (!window.__firebaseSync || !window.__firebaseSync.applyBossAttack) {
       showToast('☁️ 雲端尚未連線，稍後再試');
       return;
     }
-    r.stamina -= BOSS_STAMINA;
-    r.lastBossAttack[bossId] = Date.now();
 
     const monster = {
       id: boss.id, tier: 99,
@@ -3547,31 +3689,30 @@
     const result = autoFight(me, monster);
     const dmgRaw = Math.max(0, state.currentHp - result.mHpFinal);
 
-    // 把傷害透過 transaction 原子地寫上雲端，避免兩個玩家 race
+    // 把傷害透過 transaction 原子地寫上雲端
     let txOut;
     try {
-      txOut = await window.__firebaseSync.applyBossAttack(bossId, dmgRaw, me.id, boss);
+      txOut = await window.__firebaseSync.applyBossAttack(bossId, dmgRaw, me.id, boss, BOSS_QUEUE_STALE_MS);
     } catch (e) {
       const msg = e?.message || String(e);
       const code = e?.code || '';
       console.warn('Boss attack tx failed:', code, msg);
-      // 退回體力與冷卻（純本地）
-      r.stamina += BOSS_STAMINA;
-      delete r.lastBossAttack[bossId];
-      // 配額爆了 / 連線錯誤 → 不要再 saveData，會繼續燒配額
-      if (code === 'resource-exhausted' || msg.includes('429') || msg.includes('resource-exhausted')) {
-        showToast('☁️ Firestore 配額用完了，明天 UTC 0 點會重置（或升 Blaze 方案）');
+      if (code === 'resource-exhausted' || msg.includes('429')) {
+        showToast('☁️ Firestore 配額用完了，明天 UTC 0 點會重置');
       } else if (msg === 'boss-already-dead' || msg.includes('boss-already-dead')) {
-        showToast('🦢 王已倒下，體力已退回');
-        // 只有「王死了」是邏輯錯誤、本地需要存一下取消冷卻
-        try { saveData(); } catch (e2) {}
+        showToast('🦢 王已倒下');
+      } else if (msg === 'not-your-turn' || msg.includes('not-your-turn')) {
+        showToast('⏳ 還沒輪到你');
+      } else if (msg === 'not-in-queue' || msg.includes('not-in-queue')) {
+        showToast('你已經不在排隊中');
       } else {
         showToast('☁️ 連線出錯：' + (code || msg.slice(0, 40)));
       }
       renderWorldBoss();
-      updateStaminaUI();
       return;
     }
+    // 攻擊成功 → 設置全域冷卻
+    r.lastBossAttackTime = Date.now();
     const dmgDealt = txOut.actualDmg;  // 雲端實際接受的傷害（可能比 dmgRaw 少：王只剩 50 HP 時你打 1000 也只算 50）
     const newState = txOut.newState;
     const killed = txOut.killed;
@@ -4294,7 +4435,70 @@
       // 世界王打擊：用 transaction 原子地讀 + 扣 HP + 寫回，避免兩個玩家互相蓋掉
       // bossDef 是 WORLD_BOSSES 裡的設定（要拿 hp / respawnMs / 各檔次獎勵）
       // 回傳 { actualDmg, newState, killed, pendingRewards }
-      applyBossAttack: async (bossId, requestedDmg, attackerId, bossDef) => {
+      // 加入排隊。若目前不在任何王的排隊裡才能加。回傳 { queue, position }
+      // bossDef 用來在第一次參戰時初始化王
+      joinBossQueue: async (bossId, attackerId, bossDef, staleMs) => {
+        return await runTransaction(db, async (tx) => {
+          const snap = await tx.get(metaRef);
+          const data = snap.exists() ? snap.data() : {};
+          const wb = data.worldBoss ? { ...data.worldBoss } : {};
+          let state = wb[bossId];
+          if (!state || (state.deadAt && state.nextSpawnAt && Date.now() >= state.nextSpawnAt)) {
+            state = {
+              currentHp: bossDef.hp,
+              spawnedAt: Date.now(),
+              deadAt: null, nextSpawnAt: null,
+              damageLog: {}, lastHit: null,
+              killCount: state ? (state.killCount || 0) : 0,
+              lastKill: state ? state.lastKill : null,
+              pendingRewards: state ? (state.pendingRewards || []) : [],
+              queue: [],
+            };
+          }
+          if (state.deadAt) throw new Error('boss-already-dead');
+          state.queue = Array.isArray(state.queue) ? state.queue : [];
+          // 清理過期 head（避免 AFK 玩家卡住排隊）
+          while (state.queue.length > 0) {
+            const head = state.queue[0];
+            if (head && head.joinedAt && Date.now() - head.joinedAt > staleMs) {
+              state.queue.shift();
+            } else break;
+          }
+          // 不能同時排兩個 boss
+          for (const bid of Object.keys(wb)) {
+            const q = (wb[bid] && wb[bid].queue) || [];
+            const stillThere = q.find(qi => qi.pid === attackerId);
+            if (stillThere) {
+              if (bid === bossId) throw new Error('already-in-this-queue');
+              throw new Error('already-in-other-queue:' + bid);
+            }
+          }
+          // 不能加進「同 pid」重複條目
+          if (state.queue.find(qi => qi.pid === attackerId)) {
+            throw new Error('already-in-this-queue');
+          }
+          state.queue.push({ pid: attackerId, joinedAt: Date.now() });
+          wb[bossId] = state;
+          tx.set(metaRef, { worldBoss: wb }, { merge: true });
+          const pos = state.queue.findIndex(qi => qi.pid === attackerId);
+          return { queue: state.queue, position: pos };
+        });
+      },
+      // 退出排隊
+      leaveBossQueue: async (bossId, attackerId) => {
+        return await runTransaction(db, async (tx) => {
+          const snap = await tx.get(metaRef);
+          const data = snap.exists() ? snap.data() : {};
+          const wb = data.worldBoss ? { ...data.worldBoss } : {};
+          const state = wb[bossId];
+          if (!state || !Array.isArray(state.queue)) return { queue: [] };
+          state.queue = state.queue.filter(qi => qi.pid !== attackerId);
+          wb[bossId] = state;
+          tx.set(metaRef, { worldBoss: wb }, { merge: true });
+          return { queue: state.queue };
+        });
+      },
+      applyBossAttack: async (bossId, requestedDmg, attackerId, bossDef, staleMs) => {
         return await runTransaction(db, async (tx) => {
           const snap = await tx.get(metaRef);
           const data = snap.exists() ? snap.data() : {};
@@ -4312,11 +4516,27 @@
               killCount: state ? (state.killCount || 0) : 0,
               lastKill: state ? state.lastKill : null,
               pendingRewards: state ? (state.pendingRewards || []) : [],
+              queue: [],
             };
           }
           if (state.deadAt) {
             // 王已倒下、還沒到復活時間
             throw new Error('boss-already-dead');
+          }
+          // 排隊驗證：必須是排隊頭（過期的可被略過）
+          state.queue = Array.isArray(state.queue) ? state.queue : [];
+          while (state.queue.length > 0) {
+            const head = state.queue[0];
+            if (head && head.pid === attackerId) break;
+            if (head && head.joinedAt && Date.now() - head.joinedAt > staleMs) {
+              state.queue.shift();
+              continue;
+            }
+            // head 是別人 + 還沒過期
+            throw new Error('not-your-turn');
+          }
+          if (state.queue.length === 0 || state.queue[0].pid !== attackerId) {
+            throw new Error('not-in-queue');
           }
           const actualDmg = Math.min(state.currentHp, Math.max(0, Math.floor(requestedDmg)));
           state.currentHp -= actualDmg;
@@ -4370,6 +4590,10 @@
               }
             });
             state.pendingRewards = (state.pendingRewards || []).concat(newPending);
+          }
+          // 攻擊完成 → 從排隊頭移除自己（讓下一位上場）
+          if (state.queue[0] && state.queue[0].pid === attackerId) {
+            state.queue.shift();
           }
           wb[bossId] = state;
           tx.set(metaRef, { worldBoss: wb }, { merge: true });
