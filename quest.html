@@ -1486,12 +1486,6 @@
       <div id="dailyResult" style="margin-top:10px;"></div>
     </div>
 
-    <div class="card">
-      <h2><span>🎒 裝備</span></h2>
-      <div class="equip-row" id="equipRow"></div>
-      <div style="font-size:12px; color:#8b6f9b; margin:8px 0 6px; font-weight:600;">背包（點擊裝備 / 解除）</div>
-      <div class="inv-grid" id="invGrid"></div>
-    </div>
 
     <div class="card">
       <h2 id="abilityCardHeader"><span>📊 能力值</span></h2>
@@ -4659,11 +4653,23 @@
     const tCount = (rpg.treasures || []).length;
     const tMax = Object.keys(TREASURES).length;
     const ruleCount = (rpg.actionPattern || []).length;
+    const sp = rpg.skillPoints || 0;
+    const invCount = (rpg.inventory || []).length;
     host.innerHTML = `
       <button class="cqm-btn" onclick="showActionPatternModal()" title="行動規則">
         <span class="cqm-icon">📋</span>
         <span class="cqm-label">規則</span>
         <span class="cqm-badge">${ruleCount}</span>
+      </button>
+      <button class="cqm-btn" onclick="showSkillsModal()" title="技能">
+        <span class="cqm-icon">⚡</span>
+        <span class="cqm-label">技能</span>
+        <span class="cqm-badge">${sp} SP</span>
+      </button>
+      <button class="cqm-btn" onclick="showEquipmentModal()" title="裝備">
+        <span class="cqm-icon">🎒</span>
+        <span class="cqm-label">裝備</span>
+        <span class="cqm-badge">${invCount}</span>
       </button>
       <button class="cqm-btn" onclick="showTreasureVault()" title="寶物庫">
         <span class="cqm-icon">🎁</span>
@@ -4744,6 +4750,7 @@
                 ? `<div style="font-size:12px; color:#16a34a; font-weight:700;">✓ 已滿級</div>`
                 : `<div style="font-size:12px; color:#dc2626;">技能點不足（你有 ${rpg.skillPoints || 0} SP）</div>`
           }
+          <div style="font-size:10px; color:#8b6f9b; margin-top:6px;">技能點與「技能樹」共用</div>
         </div>
         <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:8px;">關閉</button>
       </div>
@@ -4773,6 +4780,54 @@
     renderCharCard();
   }
   window.upgradeSkillLevel = upgradeSkillLevel;
+
+  // ⭐ 技能列表 modal — 顯示所有技能、點任一個看詳細
+  function showSkillsModal() {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const cls = CLASSES[rpg.class];
+    if (!cls) return;
+    const html = `
+      <div style="text-align:left;">
+        <div style="font-size:11px; color:#5b3d62; padding:6px 10px; background:#fef3c7; border-radius:8px; margin-bottom:8px; border:1px dashed #f59e0b;">
+          💡 點任一技能看詳細與升級。<br>
+          技能點 <b style="color:#7c3aed;">${rpg.skillPoints || 0} SP</b>（與「技能樹」共用同一個池）
+        </div>
+        ${cls.skills.map(s => {
+          const locked = (s.unlockLv || 1) > rpg.level;
+          const sLv = (rpg.skillLevels || {})[s.id] || 0;
+          return `<div class="skill-row${locked ? ' locked' : ''}" onclick="hideModal(); showSkillDetailModal('${s.id}')">
+            <span>${locked ? '🔒' : '✓'} <b>${s.icon} ${s.name}</b>${sLv > 0 ? ` <span class="skill-row-lv">Lv ${sLv}</span>` : ''}${locked ? ` <span style="font-size:10px;">(${s.unlockLv})</span>` : ''}</span>
+            <span style="opacity:0.85; font-size:10px; white-space:nowrap;">CD ${s.cooldown} · ${formatSkillCost(s)}</span>
+          </div>`;
+        }).join('')}
+        <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:10px;">關閉</button>
+      </div>
+    `;
+    showModal('⚡ 技能列表', html);
+  }
+  window.showSkillsModal = showSkillsModal;
+
+  // ⭐ 裝備 modal — 顯示裝備格 + 背包格
+  function showEquipmentModal() {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (!rpg.class) { showToast('先選職業'); return; }
+    const html = `
+      <div>
+        <div style="font-size:11px; color:#5b3d62; padding:6px 10px; background:#fef3c7; border-radius:8px; margin-bottom:8px; border:1px dashed #f59e0b;">
+          🎒 點裝備格 = 卸下；點背包物品 = 裝備 / 賣掉
+        </div>
+        <div class="equip-row" id="equipRow"></div>
+        <div style="font-size:12px; color:#8b6f9b; margin:10px 0 6px; font-weight:600;">背包</div>
+        <div class="inv-grid" id="invGrid"></div>
+        <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:10px;">關閉</button>
+      </div>
+    `;
+    showModal('🎒 裝備 / 背包', html);
+    if (typeof renderEquipment === 'function') renderEquipment();
+  }
+  window.showEquipmentModal = showEquipmentModal;
 
   // 用 modal 開行動規則編輯器（規則改完即時存）
   function showActionPatternModal() {
@@ -5362,27 +5417,20 @@
             }).join('')}
           </div>`;
         })()}
-        ${(cls.skills && cls.skills.length) ? `<div style="margin-top:10px; padding:8px 10px; background:linear-gradient(135deg,#dbeafe,#bfdbfe); border:2px dashed #60a5fa; border-radius:10px; font-size:11px; color:#1e3a8a;">
-          <div style="font-weight:700; margin-bottom:4px;">⚡ 主動技能（點擊看詳細 / 升級）</div>
-          ${cls.skills.map(s => {
-            const locked = (s.unlockLv || 1) > rpg.level;
-            const sLv = (rpg.skillLevels || {})[s.id] || 0;
-            return `<div class="skill-row${locked ? ' locked' : ''}" onclick="showSkillDetailModal('${s.id}')">
-              <span>${locked ? '🔒' : '✓'} <b>${s.icon} ${s.name}</b>${sLv > 0 ? ` <span class="skill-row-lv">Lv ${sLv}</span>` : ''}${locked ? ` <span style="font-size:10px;">(${s.unlockLv})</span>` : ''}</span>
-              <span style="opacity:0.85; font-size:10px; white-space:nowrap;">CD ${s.cooldown} · ${formatSkillCost(s)}</span>
-            </div>`;
-          }).join('')}
-        </div>` : ''}
       </div>
     `;
   }
 
   function renderEquipment() {
+    // 裝備 UI 已搬到 modal，平時不在 DOM。沒元素就略過（避免 null.innerHTML）
+    const equipRowEl = document.getElementById('equipRow');
+    const invGridEl = document.getElementById('invGrid');
+    if (!equipRowEl || !invGridEl) return;
     const me = getMe();
     const rpg = getRpg(me);
     const slots = ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape', 'wings', 'pet', 'guide'];
     const slotLabels = { weapon: '武器', armor: '防具', accessory: '飾品', helmet: '頭盔', gloves: '手套', boots: '鞋子', cape: '披風', wings: '翅膀', pet: '寵物', guide: '綠茶指南書' };
-    document.getElementById('equipRow').innerHTML = slots.map(s => {
+    equipRowEl.innerHTML = slots.map(s => {
       const id = rpg.equipment?.[s];
       const item = id ? resolveItem(id) : null;
       if (!item) {
@@ -5399,9 +5447,9 @@
     // 背包
     const inv = (rpg.inventory || []).slice();
     if (inv.length === 0) {
-      document.getElementById('invGrid').innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#8b6f9b; font-size:11px; padding:8px;">背包空空 ♡</div>';
+      invGridEl.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#8b6f9b; font-size:11px; padding:8px;">背包空空 ♡</div>';
     } else {
-      document.getElementById('invGrid').innerHTML = inv.map((entry, idx) => {
+      invGridEl.innerHTML = inv.map((entry, idx) => {
         const item = resolveItem(entry);
         if (!item) {
           // 防呆：找不到對應 item 也要顯示，免得 push 進去結果看不到
@@ -5480,6 +5528,8 @@
   function equipFromInvAndClose(idx) {
     hideModal();
     equipFromInv(idx);
+    // 回到裝備 modal 看結果
+    if (typeof showEquipmentModal === 'function') showEquipmentModal();
   }
   window.equipFromInvAndClose = equipFromInvAndClose;
 
@@ -5498,6 +5548,8 @@
     renderEquipment();
     renderShop();
     showToast(`💰 賣了 ${item.icon} ${item.name} +${value} 鵝鵝幣`);
+    // 回到裝備 modal 看結果
+    if (typeof showEquipmentModal === 'function') showEquipmentModal();
   }
   window.sellInvItem = sellInvItem;
   function formatItemStats(item) {
