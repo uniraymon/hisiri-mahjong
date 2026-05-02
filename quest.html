@@ -174,6 +174,48 @@
     padding: 4px 8px;
     backdrop-filter: blur(4px);
   }
+  /* 技能列表（角色卡內，每行可點看詳細） */
+  .skill-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+    margin: 1px 0;
+    border-radius: 6px;
+    gap: 6px;
+    cursor: pointer;
+    transition: background 0.1s;
+    background: rgba(255,255,255,0.4);
+  }
+  .skill-row:hover { background: rgba(196, 181, 253, 0.4); }
+  .skill-row.locked { opacity: 0.45; cursor: default; }
+  .skill-row.locked:hover { background: rgba(255,255,255,0.4); }
+  .skill-row-lv {
+    display: inline-block;
+    background: linear-gradient(135deg, #c4b5fd, #7c3aed);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 6px;
+    margin-left: 2px;
+  }
+  /* 技能等級 modal 內：等級表 */
+  .skl-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    margin: 2px 0;
+    border-radius: 6px;
+    font-size: 11px;
+    background: #fff;
+    border: 1px solid #e9d5e3;
+  }
+  .skl-row.owned { background: #f0fdf4; border-color: #86efac; color: #166534; }
+  .skl-row.next { background: #fef3c7; border-color: #fde047; color: #92400e; font-weight: 700; }
+  .skl-num { width: 36px; font-weight: 700; }
+
   /* 角色卡左側按鈕列（規則 / 寶物庫 / 未來擴充） */
   .char-with-menu {
     display: flex;
@@ -2003,6 +2045,39 @@
     }
   }
 
+  // ⭐ 技能等級系統：用技能點升級，最多 5 級
+  // 每級 +10% 效果（傷害 / 治療量 / MP 回復）
+  // Lv 3 強化 applyStatus（機率 / 持續 / 傷害）
+  // Lv 5 自動賦予「必中暴擊」（若該技能本來沒有）
+  const SKILL_MAX_LEVEL = 5;
+  function getSkillEffectiveStats(skill, level) {
+    const eff = { ...skill };
+    if (!level || level <= 0) return eff;
+    const dmgBonus = level * 0.10;
+    if (skill.mult)         eff.mult     = +(skill.mult * (1 + dmgBonus)).toFixed(3);
+    if (skill.flat != null) eff.flat     = Math.round(skill.flat * (1 + dmgBonus));
+    if (skill.healPct)      eff.healPct  = +(skill.healPct * (1 + dmgBonus)).toFixed(3);
+    if (skill.mpPct)        eff.mpPct    = +(skill.mpPct * (1 + dmgBonus)).toFixed(3);
+    if (level >= 3 && skill.applyStatus) {
+      eff.applyStatus = {
+        ...skill.applyStatus,
+        chance: Math.min(1, (skill.applyStatus.chance || 1) * (1 + (level - 2) * 0.15)),
+        turns: (skill.applyStatus.turns || 1) + (level >= 5 ? 2 : 1),
+        dmg: Math.round((skill.applyStatus.dmg || 0) * (1 + dmgBonus)),
+      };
+    }
+    if (level >= 5 && !skill.alwaysCrit) eff.alwaysCrit = true;
+    return eff;
+  }
+  // 描述某一級會帶來的好處（給 UI 用）
+  function describeSkillLevelEffect(skill, level) {
+    const parts = [`+${level * 10}% 效果`];
+    if (level === 3 && skill.applyStatus) parts.push(`${statusEmoji(skill.applyStatus.type)} ${statusLabel(skill.applyStatus.type)} 機率/持續 +`);
+    if (level === 5 && !skill.alwaysCrit) parts.push('💥 必中暴擊');
+    if (level === 5 && skill.applyStatus) parts.push(`${statusEmoji(skill.applyStatus.type)} 持續 +1`);
+    return parts.join('、');
+  }
+
   // 各職業的預設行動規則（玩家可在 UI 自由編輯）
   function getDefaultActionPattern(classId) {
     switch (classId) {
@@ -3035,6 +3110,7 @@
     if (!player.rpg.equipment.guide) player.rpg.equipment.guide = null;
     if (!Array.isArray(player.rpg.greenTeaGuidesGranted)) player.rpg.greenTeaGuidesGranted = [];
     if (!Array.isArray(player.rpg.treasures)) player.rpg.treasures = [];
+    if (!player.rpg.skillLevels || typeof player.rpg.skillLevels !== 'object') player.rpg.skillLevels = {};
     // HOF 行動規則：沒有就帶入該職業的預設規則
     // ⚠️ 之前的 actionPatternV2/V3 強制升級會在每次 render 重跑而覆蓋玩家自訂 → 已移除
     //     新技能用 UI 的「+ 加一條規則」自己加，或按「↺ 重置為預設」
@@ -3586,7 +3662,9 @@
         }
 
         if (useSkill) {
-          const skill = useSkill;
+          // ⭐ 套用技能等級加成：傷害/治療/MP 回復 +10%/級，Lv 3+ 強化狀態，Lv 5 必爆
+          const __skillLv = (player.rpg.skillLevels && player.rpg.skillLevels[useSkill.id]) || 0;
+          const skill = getSkillEffectiveStats(useSkill, __skillLv);
           const effMpCost = Math.round((skill.mpCost || 0) * (1 - (passive.mpDiscount || 0)));
           pMp -= effMpCost;
           // ⭐ HP 代價（戰士血祭系列）：施法時扣自身 HP（最少留 1）
@@ -3909,7 +3987,9 @@
         const targets = aliveM.slice().sort((a, b) => a.hp - b.hp).slice(0, targetCount);
 
         if (useSkill) {
-          const skill = useSkill;
+          // ⭐ 套用技能等級加成：傷害/治療/MP 回復 +10%/級，Lv 3+ 強化狀態，Lv 5 必爆
+          const __skillLv = (player.rpg.skillLevels && player.rpg.skillLevels[useSkill.id]) || 0;
+          const skill = getSkillEffectiveStats(useSkill, __skillLv);
           const effMpCost = Math.round((skill.mpCost || 0) * (1 - (passive.mpDiscount || 0)));
           pMp -= effMpCost;
           let hpPaid = 0;
@@ -4592,6 +4672,106 @@
   }
   window.renderCharQuickMenu = renderCharQuickMenu;
 
+  // ⭐ 技能詳細 + 升級
+  function showSkillDetailModal(skillId) {
+    const me = getMe();
+    if (!me) return;
+    const rpg = getRpg(me);
+    const cls = CLASSES[rpg.class];
+    if (!cls) return;
+    const skill = (cls.skills || []).find(s => s.id === skillId);
+    if (!skill) { showToast('找不到技能'); return; }
+    const lv = (rpg.skillLevels || {})[skillId] || 0;
+    const eff = getSkillEffectiveStats(skill, lv);
+    const isLocked = (skill.unlockLv || 1) > rpg.level;
+    const canUpgrade = !isLocked && lv < SKILL_MAX_LEVEL && (rpg.skillPoints || 0) >= 1;
+    // 等級 breakdown
+    const levelRows = [];
+    for (let i = 1; i <= SKILL_MAX_LEVEL; i++) {
+      const owned = i <= lv;
+      const isNext = i === lv + 1;
+      const desc = describeSkillLevelEffect(skill, i);
+      levelRows.push(`
+        <div class="skl-row ${owned ? 'owned' : ''} ${isNext ? 'next' : ''}">
+          <span class="skl-num">Lv ${i}</span>
+          <span class="skl-desc">${owned ? '✓ ' : isNext ? '➤ ' : '🔒 '}${desc}</span>
+        </div>
+      `);
+    }
+    // 對應的詞綴 / 自身 buff（用 effective）
+    const buffPairs = [];
+    if (eff.lifesteal) buffPairs.push(`🩸 吸血 ${Math.round(eff.lifesteal*100)}%`);
+    if (eff.healCaster) buffPairs.push(`💚 自癒 ${Math.round(eff.healCaster*100)}% maxHP`);
+    if (eff.applyStatus) {
+      const s = eff.applyStatus;
+      buffPairs.push(`${statusEmoji(s.type)} 賦予 ${statusLabel(s.type)}（${Math.round((s.chance||1)*100)}%、持續 ${s.turns} 回合${s.dmg ? `、每回合 ${s.dmg} 傷害` : ''}）`);
+    }
+    if (eff.targetCount && eff.targetCount !== 1) {
+      buffPairs.push(`🎯 同時打 ${eff.targetCount === 'all' ? '全體' : eff.targetCount + ' 個目標'}`);
+    }
+    if (eff.alwaysCrit) buffPairs.push('💥 必中暴擊');
+    if (eff.magic) buffPairs.push('🔮 魔攻（吃法抗）');
+    if (eff.ignoreDef) buffPairs.push('🗡 無視防禦');
+
+    const html = `
+      <div style="text-align:center; padding:4px 0;">
+        <div style="font-size:48px; line-height:1; margin-bottom:4px;">${skill.icon}</div>
+        <div style="font-weight:700; font-size:16px; color:#5b3d62;">${escapeHtml(skill.name)}</div>
+        <div style="font-size:11px; color:#8b6f9b; margin-top:2px;">
+          ${isLocked ? `🔒 Lv ${skill.unlockLv} 解鎖` : `等級 <b style="color:#7c3aed;">${lv}/${SKILL_MAX_LEVEL}</b>`}
+          　·　CD ${skill.cooldown}　·　${formatSkillCost(skill)}
+        </div>
+        <div style="font-size:12px; color:#7c3aed; margin-top:6px; padding:6px 8px; background:#f3e8ff; border-radius:8px;">
+          ${formatSkillDesc(eff)}
+        </div>
+        ${buffPairs.length > 0 ? `
+          <div style="margin-top:8px; padding:6px 10px; background:#fff8e6; border:1px dashed #f59e0b; border-radius:8px; font-size:11px; color:#92400e; text-align:left;">
+            ${buffPairs.map(p => `<div style="padding:1px 0;">${p}</div>`).join('')}
+          </div>
+        ` : ''}
+        <div style="margin-top:10px; text-align:left;">
+          <div style="font-size:11px; font-weight:700; color:#5b3d62; margin-bottom:4px;">📈 等級加成</div>
+          ${levelRows.join('')}
+        </div>
+        <div style="margin-top:14px;">
+          ${isLocked
+            ? `<div style="font-size:11px; color:#dc2626;">尚未解鎖（Lv ${skill.unlockLv} 才能升級）</div>`
+            : canUpgrade
+              ? `<button class="btn btn-primary" onclick="upgradeSkillLevel('${skillId}')" style="background:linear-gradient(135deg,#c4b5fd,#7c3aed); box-shadow:0 4px 0 #5b21b6;">升級到 Lv ${lv + 1}（-1 SP）</button>`
+              : lv >= SKILL_MAX_LEVEL
+                ? `<div style="font-size:12px; color:#16a34a; font-weight:700;">✓ 已滿級</div>`
+                : `<div style="font-size:12px; color:#dc2626;">技能點不足（你有 ${rpg.skillPoints || 0} SP）</div>`
+          }
+        </div>
+        <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:8px;">關閉</button>
+      </div>
+    `;
+    showModal(`${skill.icon} ${skill.name}`, html);
+  }
+  window.showSkillDetailModal = showSkillDetailModal;
+
+  function upgradeSkillLevel(skillId) {
+    const me = getMe();
+    if (!me) return;
+    const rpg = getRpg(me);
+    const cls = CLASSES[rpg.class];
+    if (!cls) return;
+    const skill = (cls.skills || []).find(s => s.id === skillId);
+    if (!skill) return;
+    if ((skill.unlockLv || 1) > rpg.level) { showToast('等級不足，未解鎖'); return; }
+    const cur = (rpg.skillLevels || {})[skillId] || 0;
+    if (cur >= SKILL_MAX_LEVEL) { showToast('已達最高等級'); return; }
+    if ((rpg.skillPoints || 0) < 1) { showToast('技能點不足'); return; }
+    rpg.skillLevels = rpg.skillLevels || {};
+    rpg.skillLevels[skillId] = cur + 1;
+    rpg.skillPoints -= 1;
+    saveData();
+    showToast(`✨ ${skill.icon} ${skill.name} → Lv ${cur + 1}`);
+    showSkillDetailModal(skillId); // refresh modal
+    renderCharCard();
+  }
+  window.upgradeSkillLevel = upgradeSkillLevel;
+
   // 用 modal 開行動規則編輯器（規則改完即時存）
   function showActionPatternModal() {
     const me = getMe();
@@ -5181,11 +5361,12 @@
           </div>`;
         })()}
         ${(cls.skills && cls.skills.length) ? `<div style="margin-top:10px; padding:8px 10px; background:linear-gradient(135deg,#dbeafe,#bfdbfe); border:2px dashed #60a5fa; border-radius:10px; font-size:11px; color:#1e3a8a;">
-          <div style="font-weight:700; margin-bottom:4px;">⚡ 主動技能（依「行動規則」自動使用）</div>
+          <div style="font-weight:700; margin-bottom:4px;">⚡ 主動技能（點擊看詳細 / 升級）</div>
           ${cls.skills.map(s => {
             const locked = (s.unlockLv || 1) > rpg.level;
-            return `<div style="display:flex; justify-content:space-between; padding:2px 0; gap:6px; ${locked ? 'opacity:0.45;' : ''}">
-              <span>${locked ? '🔒' : '✓'} <b>${s.icon} ${s.name}</b>${locked ? ` <span style="font-size:10px;">(Lv ${s.unlockLv})</span>` : ''}</span>
+            const sLv = (rpg.skillLevels || {})[s.id] || 0;
+            return `<div class="skill-row${locked ? ' locked' : ''}" onclick="showSkillDetailModal('${s.id}')">
+              <span>${locked ? '🔒' : '✓'} <b>${s.icon} ${s.name}</b>${sLv > 0 ? ` <span class="skill-row-lv">Lv ${sLv}</span>` : ''}${locked ? ` <span style="font-size:10px;">(${s.unlockLv})</span>` : ''}</span>
               <span style="opacity:0.85; font-size:10px; white-space:nowrap;">CD ${s.cooldown} · ${formatSkillCost(s)}</span>
             </div>`;
           }).join('')}
