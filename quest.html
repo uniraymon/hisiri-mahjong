@@ -1641,7 +1641,7 @@
       critBonus: 0.18,
       skills: [
         { id: 'm_meteor',         name: '隕石術',     icon: '☄️', unlockLv: 12, cooldown: 7, mpCost: 50, type: 'damage', flat: 120, perLv: 5, ignoreDef: true },
-        { id: 'm_ice_lance',      name: '冰錐術',     icon: '❄️', unlockLv: 5,  cooldown: 4, mpCost: 20, type: 'damage', mult: 1.6, alwaysCrit: true, applyStatus: { type: 'paralyze', turns: 1, chance: 0.25 } },
+        { id: 'm_ice_lance',      name: '冰錐術',     icon: '❄️', unlockLv: 5,  cooldown: 4, mpCost: 20, type: 'damage', mult: 1.6, alwaysCrit: true, applyStatus: { type: 'paralyze', turns: 2, chance: 0.25 } },
         { id: 'm_fireball',       name: '火球術',     icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 25, type: 'damage', flat: 50, perLv: 3, ignoreDef: true },
         { id: 'm_mana_spring',    name: '法力湧泉',   icon: '💧', unlockLv: 3,  cooldown: 4, mpCost: 0,  type: 'heal', mpPct: 0.30 },
         { id: 'm_chain_lightning',name: '連環閃電',   icon: '⚡', unlockLv: 8,  cooldown: 5, mpCost: 35, type: 'damage', flat: 85, perLv: 4, ignoreDef: true },
@@ -1688,7 +1688,7 @@
         { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 10, cooldown: 5, mpCost: 35, type: 'damage', mult: 2.0, alwaysCrit: true, healCaster: 0.10 },
         // ⭐ 多目標：神聖光波（兩個敵人）/ 神之拳（兩個敵人 + 麻痺）
         { id: 'p_holy_wave', name: '神聖光波', icon: '🌟', unlockLv: 6,  cooldown: 5, mpCost: 30, type: 'damage', mult: 1.4, healCaster: 0.06, targetCount: 2 },
-        { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 11, cooldown: 6, mpCost: 35, type: 'damage', mult: 1.7, targetCount: 2, applyStatus: { type: 'paralyze', turns: 1, chance: 0.4 } },
+        { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 11, cooldown: 6, mpCost: 35, type: 'damage', mult: 1.7, targetCount: 2, applyStatus: { type: 'paralyze', turns: 2, chance: 0.4 } },
         // ⭐ 自身 buff：神聖祝福（DEF +40% 3 回合）
         { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 5,  cooldown: 6, mpCost: 18, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.40, turns: 3 } },
       ],
@@ -1748,7 +1748,7 @@
     // tier 3（玩家 Lv 8-14）
     { id: 'orc',   tier: 3, name: '獸人鵝',    icon: '👹', hpBase: 170, atkBase: 22, defBase: 8, spdBase: 7,  goldBase: 38, xpBase: 95, verb: '怒吼',
       skills: [
-        { verb: '重斧揮砍', mult: 1.8, applyStatus: { type: 'paralyze', turns: 1, chance: 0.35 }, cooldown: 5 },
+        { verb: '重斧揮砍', mult: 1.8, applyStatus: { type: 'paralyze', turns: 2, chance: 0.35 }, cooldown: 5 },
         { verb: '狂暴猛擊', mult: 2.0, cooldown: 6 },
       ],
       dialogue: ['鵝啊啊啊啊啊啊！！', '鵝鵝撕碎你！碎屑碎屑！', '鵝來砸碎你！！'],
@@ -1756,14 +1756,14 @@
     { id: 'mummy', tier: 3, name: '木乃鵝',    icon: '🧟', hpBase: 200, atkBase: 20, defBase: 12,spdBase: 4,  goldBase: 42, xpBase: 105, verb: '詛咒', ability: { type: 'magicResist', resist: 0.5 },
       skills: [
         { verb: '痛苦詛咒', mult: 0.8, applyStatus: { type: 'poison', turns: 4, dmg: 14, chance: 1 }, cooldown: 4 },
-        { verb: '靈魂凝視', mult: 0.5, applyStatus: { type: 'paralyze', turns: 1, chance: 0.7 }, cooldown: 5 },
+        { verb: '靈魂凝視', mult: 0.5, applyStatus: { type: 'paralyze', turns: 2, chance: 0.7 }, cooldown: 5 },
       ],
       dialogue: ['我都死這麼久了...你還來吵...真的好過分...', '三千年的怨念...也不是針對你...只是恰好遇到...', '我又沒做什麼...為什麼總是被打...嗚...'],
       deathLine: ['唉...又被打死了...都是我的錯吧...', '三千年的修為...就這樣...沒事的習慣了...', '你開心就好...我繼續沉睡...'] },
     { id: 'troll', tier: 3, name: '巨魔鵝',    icon: '🧌', hpBase: 230, atkBase: 25, defBase: 11,spdBase: 5,  goldBase: 50, xpBase: 125, verb: '巨拳', ability: { type: 'multiHit', hits: 2 },
       skills: [
         { verb: '巨棒掃擊', mult: 1.7, cooldown: 4 },
-        { verb: '怒吼震地', mult: 1.0, applyStatus: { type: 'paralyze', turns: 1, chance: 0.4 }, cooldown: 6 },
+        { verb: '怒吼震地', mult: 1.0, applyStatus: { type: 'paralyze', turns: 2, chance: 0.4 }, cooldown: 6 },
       ],
       dialogue: ['笨笨鵝鵝要打架啦~笨笨鵝鵝要打架~', '哥哥可以打嗎？哥哥可以痛嗎？我可以喔！', '鵝鵝想要你的閃亮亮~給鵝鵝~'],
       deathLine: ['嗚嗚嗚~好痛~~', '鵝鵝不玩了！哭哭~', '媽媽~~~~'] },
@@ -1778,7 +1778,7 @@
     { id: 'lich',   tier: 4, name: '巫妖鵝',   icon: '☠️', hpBase: 310, atkBase: 40, defBase: 10, spdBase: 12, goldBase: 110,xpBase: 280, verb: '死亡之觸', ability: { type: 'magicResist', resist: 0.6 },
       skills: [
         { verb: '靈魂啃食', mult: 1.6, applyStatus: { type: 'poison', turns: 4, dmg: 18, chance: 0.9 }, cooldown: 4 },
-        { verb: '冰封凝視', mult: 1.2, applyStatus: { type: 'paralyze', turns: 1, chance: 0.55 }, cooldown: 5 },
+        { verb: '冰封凝視', mult: 1.2, applyStatus: { type: 'paralyze', turns: 2, chance: 0.55 }, cooldown: 5 },
         { verb: '骨之爆發', mult: 2.2, ignoreDef: true, cooldown: 7 },
       ],
       dialogue: ['於虛無中我獲得了永恆...名為鵝の死亡...', '千年沉睡...此時・此地，吾將品嘗汝之絕望...', '汝之靈魂、將成為吾之養分...覺悟吧...'],
@@ -1787,23 +1787,23 @@
       skills: [
         { verb: '火球', mult: 1.7, applyStatus: { type: 'poison', turns: 2, dmg: 20, chance: 0.7 }, cooldown: 4 },
         { verb: '尾掃', mult: 1.8, cooldown: 5 },
-        { verb: '龍威咆哮', mult: 1.0, applyStatus: { type: 'paralyze', turns: 1, chance: 0.5 }, cooldown: 6 },
+        { verb: '龍威咆哮', mult: 1.0, applyStatus: { type: 'paralyze', turns: 2, chance: 0.5 }, cooldown: 6 },
       ],
       dialogue: ['凡人...跪下感受真正的龍威吧。', '汝之勇氣，將化為龍焰中的灰燼。', '吾乃天空之主，膽敢挑戰？'],
       deathLine: ['強者...也有殞落之時...', '汝乃...真正的勇者...', '龍焰...將熄滅...'] },
     // tier 5（玩家 Lv 22+）
-    { id: 'demon',  tier: 5, name: '惡魔鵝',   icon: '😈', hpBase: 520, atkBase: 46, defBase: 16, spdBase: 14, goldBase: 170,xpBase: 420, verb: '地獄火', ability: { type: 'multiHit', hits: 3 },
+    { id: 'demon',  tier: 5, name: '惡魔鵝',   icon: '😈', hpBase: 520, atkBase: 46, defBase: 16, spdBase: 14, goldBase: 170,xpBase: 420, verb: '地獄火', ability: { type: 'multiHit', hits: 2 },
       skills: [
         { verb: '暗影斬', mult: 1.7, cooldown: 4 },
         { verb: '靈魂烈焰', mult: 1.4, applyStatus: { type: 'poison', turns: 3, dmg: 28, chance: 0.85 }, cooldown: 5 },
-        { verb: '混沌印記', mult: 1.0, applyStatus: { type: 'paralyze', turns: 1, chance: 0.5 }, cooldown: 7 },
+        { verb: '混沌印記', mult: 1.0, applyStatus: { type: 'paralyze', turns: 2, chance: 0.5 }, cooldown: 7 },
       ],
       dialogue: ['人家也不想傷害你的呀~規矩就是規矩嘛~', '你看你，那麼可愛...讓我多痛你幾下嘛~♡', '哎呀流血啦~是你體質問題吧~與我無關喔~'],
       deathLine: ['嗚嗚~你怎麼真的下手呀~人家受傷了啦~', '好過分喔~我也只是工作而已...', '下次別這麼用力嘛~人家會記恨的喔...'] },
     { id: 'titan',  tier: 5, name: '泰坦鵝',   icon: '🗿', hpBase: 680, atkBase: 38, defBase: 22, spdBase: 8,  goldBase: 180,xpBase: 440, verb: '大地碎裂', ability: { type: 'physResist', resist: 0.3 },
       skills: [
         { verb: '巨石擲', mult: 2.0, cooldown: 5 },
-        { verb: '震地波', mult: 1.2, applyStatus: { type: 'paralyze', turns: 1, chance: 0.6 }, cooldown: 6 },
+        { verb: '震地波', mult: 1.2, applyStatus: { type: 'paralyze', turns: 2, chance: 0.6 }, cooldown: 6 },
       ],
       dialogue: ['...', '...嗯。', '......（凝視）'],
       deathLine: ['...感謝指教。', '......（沉睡）', '...再會。'] },
@@ -3891,7 +3891,7 @@
         }
         if (pHp <= 0) break;
         // 麻痺 → 30% 機率跳過
-        if (hasStatus(playerObj, 'paralyze') && Math.random() < 0.3) {
+        if (hasStatus(playerObj, 'paralyze') && Math.random() < 0.5) {
           log.push({ type: 'system', text: `回合 ${round}：${player.name} ⚡麻痺，無法行動！`, hp: { player: pHp, monster: mHp, mp: pMp } });
           continue;
         }
@@ -4085,8 +4085,8 @@
           log.push({ type: 'player', text: `回合 ${round}：${monster.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${ev.dmg} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
         }
         if (mHp <= 0) { pushDeathLine(); break; }
-        // 麻痺 → 整回合跳過
-        if (hasStatus(monster, 'paralyze')) {
+        // 麻痺 → 50% 機率跳過
+        if (hasStatus(monster, 'paralyze') && Math.random() < 0.5) {
           log.push({ type: 'system', text: `回合 ${round}：${monster.name} ⚡麻痺，行動被取消`, hp: { player: pHp, monster: mHp, mp: pMp } });
           continue;
         }
@@ -4321,7 +4321,7 @@
         if (pHp <= 0) break;
 
         // 麻痺 → 30% 機率跳過行動
-        if (hasStatus(playerObj, 'paralyze') && Math.random() < 0.3) {
+        if (hasStatus(playerObj, 'paralyze') && Math.random() < 0.5) {
           log.push({ type: 'system', text: `回合 ${round}：${player.name} 麻痺，無法行動！`, hp: hpsSnapshot() });
           continue;
         }
@@ -4510,8 +4510,8 @@
           log.push({ type: 'player', text: `回合 ${round}：${m.icon}${m.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${ev.dmg} HP`, hp: hpsSnapshot() });
         }
         if (!m.alive) continue;
-        // 麻痺 → 完全跳過
-        if (hasStatus(m, 'paralyze')) {
+        // 麻痺 → 50% 機率跳過
+        if (hasStatus(m, 'paralyze') && Math.random() < 0.5) {
           log.push({ type: 'system', text: `回合 ${round}：${m.icon}${m.name} ⚡麻痺，行動被取消`, hp: hpsSnapshot() });
           continue;
         }
