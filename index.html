@@ -1930,8 +1930,28 @@
       const candidates = allNums.filter(n => Math.abs(n) >= 100 && Math.abs(n) <= 999999);
       if (candidates.length > 0) score = candidates.reduce((max, n) => Math.abs(n) > Math.abs(max) ? n : max);
 
-      let stats = [null, null, null, null];
+      // 找 score 在哪個 token，從之後的 stats-like token 拼出 statsText
+      let scoreTokenIdx = -1;
       if (score !== null) {
+        for (let i = 0; i < after.length; i++) {
+          const matches = after[i].text.match(/-?\d+/g);
+          if (matches && matches.some(m => parseInt(m) === score)) { scoreTokenIdx = i; break; }
+        }
+      }
+      let statsText = '';
+      if (scoreTokenIdx >= 0) {
+        for (let i = scoreTokenIdx + 1; i < after.length; i++) {
+          const t = after[i].text;
+          if (/^[\/\\0-9oO\s]+$/.test(t)) statsText += t;
+        }
+      }
+
+      let stats = [null, null, null, null];
+      const smartStats = parseStatsString(statsText);
+      if (smartStats.length > 0) {
+        for (let i = 0; i < 4 && i < smartStats.length; i++) stats[i] = smartStats[i];
+      } else if (score !== null) {
+        // fallback：舊邏輯（unmaskSlashSevens）
         const scoreIdx = allNums.indexOf(score);
         const afterScore = scoreIdx >= 0 ? allNums.slice(scoreIdx + 1) : allNums;
         let small = afterScore.filter(n => n >= 0 && n < 100);
@@ -1958,6 +1978,34 @@
     return small;
   }
 
+  // 直接解析雀魂 stats 字串，例如：
+  //   "27/37/1/0"  → [2, 3, 1, 0]   ('/' 黏成 '7'：27 表示 "2 + /")
+  //   "o/1/1/0"    → [0, 1, 1, 0]   ('0' 被讀成字母 'o')
+  //   "2/17/1/1"   → [2, 1, 1, 1]
+  //   "o/0/0/4"    → [0, 0, 0, 4]
+  function parseStatsString(text) {
+    if (!text) return [];
+    const cleaned = String(text).replace(/[oO]/g, '0');
+    const parts = cleaned.split(/[\/\\]+/)
+      .map(p => p.replace(/[^\d]/g, ''))
+      .filter(p => p.length > 0);
+    const out = [];
+    for (const p of parts) {
+      if (p.length === 1) out.push(parseInt(p));
+      else if (p.length === 2) {
+        // 「X7」末尾 7 多半是被黏進來的 slash → 取 X
+        if (p[1] === '7' && p[0] !== '7') out.push(parseInt(p[0]));
+        // 「7X」開頭 7 多半是被黏進來的 slash → 取 X
+        else if (p[0] === '7' && p[1] !== '7') out.push(parseInt(p[1]));
+        else out.push(parseInt(p));
+      } else {
+        // 3+ 位太罕見，原樣保留
+        out.push(parseInt(p));
+      }
+    }
+    return out;
+  }
+
   function parseOcrText(text) {
     const normalized = text
       .replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
@@ -1980,14 +2028,22 @@
       if (candidates.length > 0) {
         score = candidates.reduce((max, n) => Math.abs(n) > Math.abs(max) ? n : max);
       }
-      // stats: 分數之後的 4 個小數字（立直/榮和/自摸/放銃，0-99 範圍）
+      // stats: 從 score 之後的 substring 直接解析（處理 27→2、o→0 等）
       let stats = [null, null, null, null];
       if (score !== null) {
-        const scoreIdx = nums.indexOf(score);
-        const after = scoreIdx >= 0 ? nums.slice(scoreIdx + 1) : nums;
-        let small = after.filter(n => n >= 0 && n < 100);
-        small = unmaskSlashSevens(small);
-        for (let i = 0; i < 4 && i < small.length; i++) stats[i] = small[i];
+        const scoreStr = String(score);
+        const sIdx = gluedLine.indexOf(scoreStr);
+        const tail = sIdx >= 0 ? gluedLine.substring(sIdx + scoreStr.length) : '';
+        const smartStats = parseStatsString(tail);
+        if (smartStats.length > 0) {
+          for (let i = 0; i < 4 && i < smartStats.length; i++) stats[i] = smartStats[i];
+        } else {
+          const scoreIdx = nums.indexOf(score);
+          const after = scoreIdx >= 0 ? nums.slice(scoreIdx + 1) : nums;
+          let small = after.filter(n => n >= 0 && n < 100);
+          small = unmaskSlashSevens(small);
+          for (let i = 0; i < 4 && i < small.length; i++) stats[i] = small[i];
+        }
       }
       // 名字：去 X位 / 數字 / 符號 / 段位星 / 英文字母
       const name = lineNoRank
