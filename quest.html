@@ -2071,6 +2071,75 @@
     },
   ];
 
+  // === 精魂（王掉落）===
+  // 每隻王有自己的精魂，固定基礎屬性 + 2 條隨機詞條
+  // 玩家最多裝 5 個精魂（rpg.spirits[5]），未裝的放 rpg.spiritBag
+  const SPIRIT_AFFIX_COUNT = 2;
+  const SPIRIT_DEFS = [
+    // 個人王精魂
+    { id: 'sp_breakfast', sourceBossId: 'breakfast_goose', name: '早餐鵝精魂',  icon: '🍳', color: '#fbbf24',
+      base: { hp: 25,  atk: 2 } },
+    { id: 'sp_lunch',     sourceBossId: 'lunch_goose',     name: '午餐鵝精魂',  icon: '🍱', color: '#f59e0b',
+      base: { hp: 40,  atk: 3, def: 1 } },
+    { id: 'sp_dinner',    sourceBossId: 'dinner_goose',    name: '晚餐鵝精魂',  icon: '🍷', color: '#dc2626',
+      base: { hp: 60,  atk: 5, critChance: 0.03 } },
+    // 世界王精魂（傳說級）
+    { id: 'sp_goose_king',  sourceBossId: 'goose_king',  name: '鵝皇精魂',   icon: '🦢', color: '#fde047',
+      base: { hp: 80,  atk: 7, def: 3 } },
+    { id: 'sp_dragon_goose',sourceBossId: 'dragon_goose',name: '古龍鵝精魂', icon: '🐉', color: '#a855f7',
+      base: { hp: 120, atk: 10, def: 5, critDmg: 0.10 } },
+  ];
+  const SPIRIT_BY_BOSS = Object.fromEntries(SPIRIT_DEFS.map(s => [s.sourceBossId, s]));
+
+  // 由王 ID 抽出一隻精魂實體（隨機 2 詞條）
+  function generateSpirit(sourceBossId) {
+    const def = SPIRIT_BY_BOSS[sourceBossId];
+    if (!def) return null;
+    const inst = {
+      id: 'spirit_' + sourceBossId + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2,5),
+      defId: def.id,
+      sourceBossId,
+      name: def.name,
+      icon: def.icon,
+      color: def.color,
+      // 從固定基礎屬性開始
+      hp: def.base.hp || 0,
+      atk: def.base.atk || 0,
+      def: def.base.def || 0,
+      spd: def.base.spd || 0,
+      critChance: def.base.critChance || 0,
+      critDmg: def.base.critDmg || 0,
+      affixes: [],
+    };
+    // 滾 2 條隨機詞條（以王等級當「lv」算強度，這裡固定 30）
+    const refLv = 30;
+    for (let i = 0; i < SPIRIT_AFFIX_COUNT; i++) {
+      const a = AFFIXES[Math.floor(Math.random() * AFFIXES.length)];
+      const val = Math.max(1, Math.round((1 + refLv * a.perLv) * 1.0));
+      inst[a.type] = (inst[a.type] || 0) + val;
+      inst.affixes.push({ type: a.type, name: a.name, val });
+    }
+    if (inst.affixes.length > 0) inst.name = `${inst.affixes[0].name}的 ${def.name}`;
+    return inst;
+  }
+  function describeSpirit(s) {
+    if (!s) return '';
+    const parts = [];
+    if (s.hp)  parts.push(`HP+${s.hp}`);
+    if (s.atk) parts.push(`ATK+${s.atk}`);
+    if (s.def) parts.push(`DEF+${s.def}`);
+    if (s.spd) parts.push(`SPD+${s.spd}`);
+    if (s.critChance) parts.push(`暴擊+${Math.round(s.critChance * 100)}%`);
+    if (s.critDmg)    parts.push(`爆傷+${Math.round(s.critDmg * 100)}%`);
+    return parts.join(' · ');
+  }
+  function getSpiritSlots(rpg) {
+    if (!Array.isArray(rpg.spirits)) rpg.spirits = [null, null, null, null, null];
+    while (rpg.spirits.length < 5) rpg.spirits.push(null);
+    if (rpg.spirits.length > 5) rpg.spirits.length = 5;
+    return rpg.spirits;
+  }
+
   // === 套裝 ===
   // 每套 5 件（helmet/armor/gloves/boots/cape），固定屬性、不帶詞綴
   // 集滿件數有疊加 bonus（在 computeStats 內被疊上）
@@ -3603,6 +3672,8 @@
     if (!player.rpg.equipment.guide) player.rpg.equipment.guide = null;
     if (!Array.isArray(player.rpg.greenTeaGuidesGranted)) player.rpg.greenTeaGuidesGranted = [];
     if (!Array.isArray(player.rpg.treasures)) player.rpg.treasures = [];
+    if (!Array.isArray(player.rpg.spirits)) player.rpg.spirits = [null, null, null, null, null];
+    if (!Array.isArray(player.rpg.spiritBag)) player.rpg.spiritBag = [];
     if (!player.rpg.skillLevels || typeof player.rpg.skillLevels !== 'object') player.rpg.skillLevels = {};
     // HOF 行動規則：沒有就帶入該職業的預設規則
     // ⚠️ 之前的 actionPatternV2/V3 強制升級會在每次 render 重跑而覆蓋玩家自訂 → 已移除
@@ -3914,10 +3985,23 @@
     stats.atk   += treasure.atk || 0;
     stats.def   += treasure.def || 0;
     stats.spd   += treasure.spd || 0;
-    // critChance / critDmg：把裝備 + 寶物加成併到 setBonuses，autoFight 直接讀
+    // ⭐ 精魂加成（裝在 5 個槽中的）
+    let spiritCritChance = 0;
+    let spiritCritDmg = 0;
+    const spirits = getSpiritSlots(rpg);
+    for (const sp of spirits) {
+      if (!sp) continue;
+      stats.maxHp += sp.hp || 0;
+      stats.atk   += sp.atk || 0;
+      stats.def   += sp.def || 0;
+      stats.spd   += sp.spd || 0;
+      spiritCritChance += sp.critChance || 0;
+      spiritCritDmg    += sp.critDmg    || 0;
+    }
+    // critChance / critDmg：把裝備 + 寶物 + 精魂加成併到 setBonuses，autoFight 直接讀
     const mergedBonuses = { ...setInfo.bonuses };
-    mergedBonuses.critChance = (mergedBonuses.critChance || 0) + itemCritChance + (treasure.critChance || 0);
-    mergedBonuses.critDmg    = (mergedBonuses.critDmg    || 0) + itemCritDmg    + (treasure.critDmg || 0);
+    mergedBonuses.critChance = (mergedBonuses.critChance || 0) + itemCritChance + (treasure.critChance || 0) + spiritCritChance;
+    mergedBonuses.critDmg    = (mergedBonuses.critDmg    || 0) + itemCritDmg    + (treasure.critDmg || 0)    + spiritCritDmg;
     stats.setBonuses = mergedBonuses;
     stats.setCounts = setInfo.counts;
     // 給 UI 顯示用：總暴擊率 / 總爆傷倍率（包含職業底、技能、能力、被動、裝備、套裝）
@@ -5238,6 +5322,107 @@
   }
   window.showTreasureVault = showTreasureVault;
 
+  // ⭐ 精魂 modal — 5 個槽 + 精魂背包
+  function showSpiritsModal() {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const slots = getSpiritSlots(rpg);
+    const bag = rpg.spiritBag || [];
+    // 5 個裝備槽
+    const slotHtml = slots.map((sp, idx) => {
+      if (!sp) {
+        return `<button onclick="(()=>{ showToast('空槽位 — 從下面背包選一個精魂裝上'); })()" style="background:#f3e8ff; border:2px dashed #c4b5fd; border-radius:10px; padding:8px; min-height:78px; cursor:default; font-family:inherit;">
+          <div style="font-size:24px; opacity:0.4;">➕</div>
+          <div style="font-size:10px; color:#a78bfa;">空槽 ${idx+1}</div>
+        </button>`;
+      }
+      return `<button onclick="unequipSpirit(${idx})" style="background:linear-gradient(135deg,#fff,${sp.color}1a); border:2px solid ${sp.color}; border-radius:10px; padding:6px; cursor:pointer; font-family:inherit; min-height:78px;">
+        <div style="font-size:24px;">${sp.icon}</div>
+        <div style="font-size:10px; font-weight:700; color:${sp.color}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(sp.name)}</div>
+        <div style="font-size:8px; color:#8b6f9b; line-height:1.2; margin-top:1px;">${escapeHtml(describeSpirit(sp))}</div>
+      </button>`;
+    }).join('');
+    // 背包
+    const bagHtml = bag.length === 0
+      ? '<div style="font-size:11px; color:#9ca3af; padding:8px; text-align:center;">背包沒有未裝備的精魂 — 打王掉的精魂會放這</div>'
+      : bag.map((sp, idx) => `<button onclick="equipSpiritFromBag(${idx})" style="background:linear-gradient(135deg,#fff,${sp.color}1a); border:2px solid ${sp.color}; border-radius:10px; padding:6px; cursor:pointer; font-family:inherit;">
+        <div style="font-size:22px;">${sp.icon}</div>
+        <div style="font-size:10px; font-weight:700; color:${sp.color}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(sp.name)}</div>
+        <div style="font-size:8px; color:#8b6f9b; line-height:1.2;">${escapeHtml(describeSpirit(sp))}</div>
+        <div style="font-size:8px; color:#9ca3af; margin-top:2px;">點擊裝備</div>
+      </button>`).join('');
+    const html = `
+      <div>
+        <div style="font-size:11px; color:#5b3d62; padding:6px 10px; background:linear-gradient(135deg,#ede9fe,#ddd6fe); border-radius:8px; margin-bottom:10px; border:1px dashed #a78bfa;">
+          🌟 每位角色可裝 5 個精魂　·　每個精魂有「固定基礎屬性」+ 隨機 2 詞條<br>
+          打王（個人 BOSS / 世界王）會掉對應精魂
+        </div>
+        <div style="font-size:11px; color:#5b3d62; font-weight:700; margin-bottom:4px;">已裝備</div>
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:5px; margin-bottom:10px;">${slotHtml}</div>
+        <div style="font-size:11px; color:#5b3d62; font-weight:700; margin-bottom:4px;">背包（${bag.length}）</div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:5px; max-height:36vh; overflow-y:auto;">${bagHtml}</div>
+        <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:10px;">關閉</button>
+      </div>
+    `;
+    showModal('🌟 精魂', html);
+  }
+  window.showSpiritsModal = showSpiritsModal;
+
+  // 從背包裝備一個精魂（找第一個空槽，沒空就替換槽 1 然後把舊的丟回背包）
+  function equipSpiritFromBag(bagIdx) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const bag = rpg.spiritBag || [];
+    const sp = bag[bagIdx];
+    if (!sp) return;
+    const slots = getSpiritSlots(rpg);
+    const emptyIdx = slots.findIndex(x => !x);
+    if (emptyIdx >= 0) {
+      slots[emptyIdx] = sp;
+      bag.splice(bagIdx, 1);
+      saveData();
+      showSpiritsModal();
+      renderCharCard();
+      renderCharQuickMenu();
+      showToast(`✨ 裝備 ${sp.icon} ${sp.name}（槽 ${emptyIdx + 1}）`);
+      return;
+    }
+    // 滿了 — 問要替換哪一槽
+    const choice = prompt(`5 個槽都裝滿了。要替換第幾槽？(1-5，輸入 0 取消)\n目前槽：\n${slots.map((s, i) => `${i+1}. ${s ? s.icon + ' ' + s.name : '空'}`).join('\n')}`);
+    const n = parseInt(choice, 10);
+    if (!n || n < 1 || n > 5) return;
+    const targetIdx = n - 1;
+    if (slots[targetIdx]) bag.push(slots[targetIdx]);
+    slots[targetIdx] = sp;
+    // 從 bag 移除剛拿的（注意 push 會影響 idx，所以先計算）
+    // 找回 bagIdx 對應 sp（剛才可能因為 push 多了一筆）
+    const myIdx = bag.indexOf(sp);
+    if (myIdx >= 0) bag.splice(myIdx, 1);
+    saveData();
+    showSpiritsModal();
+    renderCharCard();
+    renderCharQuickMenu();
+    showToast(`✨ 替換到槽 ${n}：${sp.icon} ${sp.name}`);
+  }
+  window.equipSpiritFromBag = equipSpiritFromBag;
+
+  function unequipSpirit(slotIdx) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const slots = getSpiritSlots(rpg);
+    const sp = slots[slotIdx];
+    if (!sp) return;
+    rpg.spiritBag = rpg.spiritBag || [];
+    rpg.spiritBag.push(sp);
+    slots[slotIdx] = null;
+    saveData();
+    showSpiritsModal();
+    renderCharCard();
+    renderCharQuickMenu();
+    showToast(`📦 卸下 ${sp.icon} ${sp.name}`);
+  }
+  window.unequipSpirit = unequipSpirit;
+
   // ========================================================================
   // 🐛 BUG 回報系統
   // ========================================================================
@@ -5593,6 +5778,9 @@ ${b.text}
     const ruleCount = (rpg.actionPattern || []).length;
     const sp = rpg.skillPoints || 0;
     const invCount = (rpg.inventory || []).length;
+    const spiritSlots = getSpiritSlots(rpg);
+    const spiritEquipped = spiritSlots.filter(x => x).length;
+    const spiritBag = (rpg.spiritBag || []).length;
     host.innerHTML = `
       <button class="cqm-btn" onclick="showActionPatternModal()" title="行動規則">
         <span class="cqm-icon">📋</span>
@@ -5613,6 +5801,11 @@ ${b.text}
         <span class="cqm-icon">🎁</span>
         <span class="cqm-label">寶物</span>
         <span class="cqm-badge">${tCount}/${tMax}</span>
+      </button>
+      <button class="cqm-btn" onclick="showSpiritsModal()" title="精魂">
+        <span class="cqm-icon">🌟</span>
+        <span class="cqm-label">精魂</span>
+        <span class="cqm-badge">${spiritEquipped}/5${spiritBag ? ` +${spiritBag}` : ''}</span>
       </button>
     `;
   }
@@ -7405,10 +7598,24 @@ ${b.text}
       const s = computeStats(me); r.hp = r.deathAt ? 0 : s.maxHp; r.mp = s.maxMp;
     }
 
+    // ⭐ 世界王給尾刀者掉精魂
+    let worldSpiritDropped = null;
+    if (killed) {
+      try {
+        const sp = generateSpirit(boss.id);
+        if (sp) {
+          r.spiritBag = r.spiritBag || [];
+          r.spiritBag.push(sp);
+          worldSpiritDropped = sp;
+        }
+      } catch (e) {}
+    }
+
     saveData();
     // 領自己的待領獎勵（pendingRewards）
     claimMyBossRewards();
     renderCharCard();
+    renderCharQuickMenu();
     updateStaminaUI();
     renderWorldBoss();
 
@@ -7421,6 +7628,7 @@ ${b.text}
         ${killed
           ? `<div style="margin-top:8px; padding:8px; background:rgba(245,158,11,0.3); border-radius:8px; color:#fde047; font-weight:700;">🏆 你給了尾刀！獎勵已加到背包與鵝鵝幣</div>`
           : `<div class="rl-item">${boss.icon} ${boss.name} 還剩 ${newState.currentHp.toLocaleString()} HP（${(newState.currentHp/boss.hp*100).toFixed(1)}%）</div>`}
+        ${worldSpiritDropped ? `<div class="rl-item" style="color:${worldSpiritDropped.color}; font-weight:700; padding:6px; background:#fff8; border-radius:6px;">🌟 掉落精魂：${worldSpiritDropped.icon} ${escapeHtml(worldSpiritDropped.name)}<div style="font-size:10px; color:#5b3d62; font-weight:500; margin-top:1px;">${escapeHtml(describeSpirit(worldSpiritDropped))}</div></div>` : ''}
       </div>
     `;
 
@@ -7586,11 +7794,22 @@ ${b.text}
             rpg.abilityPoints = (rpg.abilityPoints || 0) + POINTS_PER_LEVEL.ability;
             leveled++;
           }
+          // ⭐ 掉精魂
+          let spiritDropped = null;
+          try {
+            const sp = generateSpirit(def.id);
+            if (sp) {
+              rpg.spiritBag = rpg.spiritBag || [];
+              rpg.spiritBag.push(sp);
+              spiritDropped = sp;
+            }
+          } catch (e) { /* swallow */ }
           rewardHtml = `
             <div class="reward-list" style="background:linear-gradient(135deg,#fef3c7,#fde047); border-color:#f59e0b; margin-top:8px;">
               <div class="rl-title" style="color:#7c2d12;">🏆 ${def.name} 被擊殺！</div>
               <div class="rl-item">💢 你打掉了 <b>${dmgDealt.toLocaleString()}</b> HP，給予最後一擊！</div>
               <div class="rl-item">🪙 +${def.reward.coins} 鵝鵝幣　·　⭐ +${def.reward.xp} XP${leveled ? `（升 ${leveled} 級）` : ''}</div>
+              ${spiritDropped ? `<div class="rl-item" style="color:${spiritDropped.color}; font-weight:700;">🌟 掉落精魂：${spiritDropped.icon} ${escapeHtml(spiritDropped.name)}<div style="font-size:10px; color:#8b6f9b; font-weight:500; margin-top:1px;">${escapeHtml(describeSpirit(spiritDropped))}</div></div>` : ''}
               <div class="rl-item" style="font-size:11px; color:#7c2d12;">王已重生（HP 回滿，5 分鐘後可再戰）</div>
             </div>`;
         } else {
