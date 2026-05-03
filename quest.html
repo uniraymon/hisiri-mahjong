@@ -3114,7 +3114,10 @@
   ];
 
   // === 探索 / 採集 ===
-  const FORAGE_STAMINA = 20;
+  const FORAGE_STAMINA = 40;
+  // ⭐ 探險幣（rpg.exploreCoins）— 探索取得，未來用於兌換物品 / 道具
+  const EXPLORE_COIN_BASE_MIN = 5;
+  const EXPLORE_COIN_BASE_MAX = 15;
   // 新版：分支事件（玩家做選擇 → 影響結果）
   // outcome 欄位：
   //   coins (數字 or [min,max])、hp (扣血)、xp、stat (永久 +1 屬性)
@@ -7145,7 +7148,7 @@ ${b.text}
       <div class="char-info">
         <div class="char-name">${escapeHtml(me.name)}</div>
         <div class="char-class">${cls.name} · Lv ${rpg.level}</div>
-        <div class="char-coins">🪙 ${coins} 鵝鵝幣</div>
+        <div class="char-coins">🪙 ${coins} 鵝鵝幣　·　🧭 ${rpg.exploreCoins || 0} 探險幣</div>
         <div class="stat-bar">
           <div class="stat-bar-label"><span>❤️ HP</span><span>${rpg.hp} / ${stats.maxHp}</span></div>
           <div class="stat-bar-track"><div class="stat-bar-fill hp-fill" style="width:${hpPercent}%"></div></div>
@@ -9191,16 +9194,16 @@ ${b.text}
       r.xp = (r.xp || 0) + 50;
       parts.push(`<span style="color:#7c3aed;">+50 XP</span>`);
     }
-    // 隨機掉落
-    if (outcome.item === 'drop') {
-      const drop = generateDropItem(r.level, true);
-      if (drop) {
-        r.inventory = r.inventory || [];
-        r.inventory.push(drop);
-        const rarLabel = RARITY[drop.rarity]?.label || '';
-        const rarColor = RARITY[drop.rarity]?.color || '#7c3aed';
-        parts.push(`<span style="color:${rarColor};">[${rarLabel}] ${drop.icon} ${escapeHtml(drop.name)}</span>`);
-      }
+    // ⭐ 探索不再掉裝備 — 改成給探險幣（未來用於兌換）
+    //   每次 outcome.item 觸發 → 5-15 隨機 + 等級 / 5（無條件進位）
+    if (outcome.item === 'drop' || outcome.item === 'rare') {
+      const lv = Math.max(1, r.level || 1);
+      const baseRoll = EXPLORE_COIN_BASE_MIN + Math.floor(Math.random() * (EXPLORE_COIN_BASE_MAX - EXPLORE_COIN_BASE_MIN + 1));
+      const lvBonus = Math.ceil(lv / 5);
+      const rareMult = (outcome.item === 'rare') ? 2 : 1; // 'rare' 翻倍
+      const explore = (baseRoll + lvBonus) * rareMult;
+      r.exploreCoins = (r.exploreCoins || 0) + explore;
+      parts.push(`<span style="color:#0ea5e9; font-weight:700;">🧭 +${explore} 探險幣</span>`);
     }
     // 觸發綠茶事件（探險選錯路觸發 — 不算真正戰鬥，固定 10 幣）
     if (outcome.greentea) {
