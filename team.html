@@ -14,12 +14,12 @@
     color: #5b3d62;
     min-height: 100vh;
   }
-  .wrap { max-width: 720px; margin: 0 auto; }
+  .wrap { max-width: 760px; margin: 0 auto; }
   header {
     display: flex; align-items: center; justify-content: space-between;
     padding: 8px 12px; background: linear-gradient(135deg,#fde047,#f59e0b);
     border-radius: 14px; color: #7c2d12; box-shadow: 0 3px 0 #d97706;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
   }
   header h1 { margin: 0; font-size: 18px; }
   .back-btn {
@@ -45,7 +45,6 @@
   .btn-danger { background: linear-gradient(135deg,#fca5a5,#dc2626); color: #fff; box-shadow: 0 3px 0 #991b1b; }
   .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-  /* Login overlay */
   .login-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100;
     display: flex; align-items: center; justify-content: center;
@@ -55,9 +54,18 @@
     background: #fff; border-radius: 14px; padding: 22px;
     width: min(360px, 92%);
   }
-  .login-box h2 { margin: 0 0 12px; }
 
-  /* Class selection */
+  .tabs {
+    display: flex; gap: 4px; padding: 4px;
+    background: #fff8e6; border-radius: 12px; margin-bottom: 12px;
+  }
+  .tab-btn {
+    flex: 1; padding: 8px 6px; background: transparent; border: none;
+    border-radius: 9px; font-family: inherit; cursor: pointer;
+    font-weight: 700; font-size: 13px; color: #92400e;
+  }
+  .tab-btn.active { background: linear-gradient(135deg,#fde047,#f59e0b); color: #7c2d12; }
+
   .class-grid {
     display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
   }
@@ -77,19 +85,19 @@
     margin-top: 6px; line-height: 1.4; color: #6b3a1a;
   }
 
-  /* Hero list */
   .hero-row {
     display: flex; align-items: center; gap: 10px; padding: 10px;
     background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;
-    margin-bottom: 6px;
+    margin-bottom: 6px; cursor: pointer; transition: all 0.1s;
   }
+  .hero-row:hover { background: #fef3c7; transform: translateX(2px); }
+  .hero-row.selected { background: linear-gradient(135deg,#fef3c7,#fde047); border-color: #f59e0b; box-shadow: 0 2px 0 #f59e0b; }
   .hero-icon { font-size: 30px; }
   .hero-meta { flex: 1; }
   .hero-name { font-weight: 700; color: #7c2d12; font-size: 13px; }
   .hero-sub { font-size: 10px; color: #92400e; }
   .hero-row .hero-actions { display: flex; gap: 4px; }
 
-  /* Stat panel */
   .stat-grid {
     display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
     margin-top: 8px;
@@ -102,6 +110,68 @@
   .stat-cell .sc-val { font-size: 14px; color: #7c2d12; font-weight: 700; margin-top: 2px; }
   .stat-cell .sc-grow { font-size: 9px; color: #c2410c; }
 
+  .skill-list { display: flex; flex-direction: column; gap: 5px; }
+  .skill-row {
+    display: flex; align-items: center; gap: 8px; padding: 7px 9px;
+    background: #fff8e6; border: 1px solid #fde68a; border-radius: 8px;
+  }
+  .skill-row.locked { opacity: 0.45; }
+  .skill-icon { font-size: 22px; }
+  .skill-meta { flex: 1; min-width: 0; }
+  .skill-name { font-weight: 700; color: #7c2d12; font-size: 12px; }
+  .skill-desc { font-size: 10px; color: #8b6f9b; line-height: 1.3; }
+  .skill-tags { font-size: 9px; color: #6b3a1a; }
+
+  .pattern-row {
+    display: grid; grid-template-columns: auto 1fr 1fr auto; gap: 5px;
+    align-items: center; padding: 6px 8px;
+    background: #fff8e6; border: 1px solid #fde68a; border-radius: 8px;
+    margin-bottom: 4px; font-size: 12px;
+  }
+  .pattern-row select, .pattern-row input {
+    padding: 4px 6px; border: 1px solid #fcd34d; border-radius: 6px;
+    background: #fff; font-family: inherit; font-size: 11px;
+  }
+  .pattern-row .pr-num { font-weight: 700; color: #b45309; min-width: 20px; }
+  .pattern-row .pr-x { background: transparent; border: none; cursor: pointer; color: #dc2626; font-weight: 700; font-size: 14px; }
+
+  /* Battle */
+  .battle-zone {
+    background: linear-gradient(135deg,#1e1b4b,#4c1d95);
+    color: #fff; border-radius: 12px; padding: 12px; margin-bottom: 10px;
+  }
+  .battle-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+  .combatant-card {
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px; padding: 6px 8px; min-width: 100px;
+  }
+  .combatant-card.dead { opacity: 0.35; }
+  .combatant-card.player { border-color: #fde047; }
+  .combatant-card.front { background: rgba(252, 165, 165, 0.15); }
+  .combatant-card.back { background: rgba(196, 181, 253, 0.10); }
+  .cc-name { font-size: 11px; font-weight: 700; }
+  .cc-bar {
+    height: 4px; background: rgba(0,0,0,0.4); border-radius: 2px; overflow: hidden;
+    margin-top: 3px;
+  }
+  .cc-bar-fill { height: 100%; background: linear-gradient(90deg,#fca5a5,#dc2626); transition: width 0.3s; }
+  .cc-bar-fill.sp { background: linear-gradient(90deg,#93c5fd,#3b82f6); }
+  .cc-bar-fill.atb { background: linear-gradient(90deg,#fde68a,#f59e0b); }
+  .cc-text { font-size: 9px; opacity: 0.85; margin-top: 1px; }
+
+  .log-line {
+    padding: 4px 6px; border-radius: 6px; font-size: 12px; margin-bottom: 2px;
+    line-height: 1.4;
+  }
+  .log-system { background: #f3e8ff; color: #5b21b6; }
+  .log-player  { background: #dcfce7; color: #15803d; }
+  .log-enemy   { background: #fee2e2; color: #991b1b; }
+  .log-cast    { background: #fef3c7; color: #92400e; font-style: italic; }
+  .log-crit    { background: #fde047; color: #7c2d12; font-weight: 700; }
+  .log-status  { background: #fce7f3; color: #9f1239; }
+  .log-heal    { background: #dbeafe; color: #1e40af; }
+  .log-gauge   { font-size: 10px; opacity: 0.65; margin-left: 4px; }
+
   .toast {
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
     background: #7c2d12; color: #fff; padding: 8px 14px; border-radius: 18px;
@@ -109,16 +179,25 @@
   }
   .toast.show { opacity: 1; }
 
+  .modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 90;
+    display: flex; align-items: center; justify-content: center; padding: 12px;
+  }
+  .modal.hidden { display: none; }
+  .modal-content {
+    background: #fff; border-radius: 14px; padding: 16px;
+    width: min(560px, 100%); max-height: 90vh; overflow-y: auto;
+  }
+
   .stub-banner {
     background: linear-gradient(135deg,#ede9fe,#ddd6fe); color: #5b21b6;
     padding: 10px 12px; border-radius: 10px; border: 1px dashed #a78bfa;
-    font-size: 12px; line-height: 1.6;
+    font-size: 11px; line-height: 1.6;
   }
 </style>
 </head>
 <body>
 
-<!-- Login overlay (reuses PASS_KEY from index.html localStorage) -->
 <div id="loginOverlay" class="login-overlay hidden">
   <div class="login-box">
     <h2>🔐 隊伍冒險島</h2>
@@ -130,37 +209,30 @@
 </div>
 
 <div class="wrap" id="mainWrap">
-
   <header>
-    <button class="back-btn" onclick="location.href='index.html'">← 返回主頁</button>
+    <button class="back-btn" onclick="location.href='index.html'">← 主頁</button>
     <h1>🛡️ 隊伍冒險島</h1>
     <div id="meTag" style="font-size:13px;"></div>
   </header>
 
-  <div id="content"></div>
-
-  <div class="card">
-    <h2>📋 系統路線圖</h2>
-    <div class="stub-banner">
-      <b>Phase 1（本次）</b>：八能力屬性系統 / 4 職業 / 角色建立 / 屬性面板 ✅<br>
-      <b>Phase 2</b>：技能樹 / 技能取得 / 規則表編輯<br>
-      <b>Phase 3</b>：戰鬥引擎（詠唱 / 硬直 / 前後排 / 掩護）<br>
-      <b>Phase 4</b>：5 人組隊副本 + 3-5 個關卡<br>
-      <b>Phase 5</b>：裝備掉落 / 多王副本 / 戰利品分配<br>
-      <br>
-      <span style="color:#7c2d12;">使用我們自己原創的鵝鵝風命名 + 平衡過的數值，不複製外部遊戲的具體內容。</span>
-    </div>
+  <div class="tabs" id="tabs">
+    <button class="tab-btn active" data-tab="heroes">👥 英雄</button>
+    <button class="tab-btn" data-tab="dungeons">🏰 副本</button>
   </div>
 
+  <div id="tabContent"></div>
 </div>
 
 <div class="toast" id="toast"></div>
+<div id="modalRoot"></div>
 
 <script>
 (() => {
   'use strict';
 
-  // === 共用 keys（跟 index.html 對齊）===
+  // ============================================================
+  // 共用 keys（跟 index.html 對齊）
+  // ============================================================
   const STORAGE_KEY = 'mahjong-tracker-v2';
   const ME_KEY = 'mahjong-me-id';
   const PASS_KEY = 'mahjong-pass-ok';
@@ -179,54 +251,278 @@
     LUK: { full: 'Luck',           desc: '暴擊機率、運氣判定' },
   };
   const STAT_KEYS = ['HP','SP','STR','INT','DEX','SPD','VIT','LUK'];
-
-  // 等級系統
   const POINTS_PER_LEVEL_TEAM = { ability: 5, skill: 2 };
   const LEVEL_MAX = 50;
   const ABILITY_CAP = 250;
 
   // ============================================================
-  // 4 個一轉職業（原創命名 + 平衡係數）
-  // 成長係數矩陣決定職業曲線：升級時 maxHP += VIT × hpCoef, 等等
-  // 也包含 ATK / DEF 成長係數（用 STR / VIT 對應）
+  // 4 個一轉職業
   // ============================================================
   const CLASSES = [
     {
       id: 'warrior', name: '鵝戰士', icon: '⚔️', role: '前排・物理坦', position: 'front',
       desc: '近戰肉搏，可裝盾。HP 高、SP 偏低，靠 STR + VIT 推進。',
-      // Lv 1 起手能力
       base: { HP: 300, SP: 50, STR: 10, INT: 2, DEX: 4, SPD: 4, VIT: 8, LUK: 1 },
-      // 成長係數（每點 VIT/INT/STR 對應的轉換）
       coef: { hpPerVit: 3.0, spPerInt: 0.5, atkPerStr: 1.0, defPerVit: 0.6 },
-      // 可裝備類型（後面 Phase 5 用）
-      equipTypes: ['sword1h', 'sword2h', 'shield', 'heavyArmor', 'clothArmor', 'robe', 'misc'],
+      equipTypes: ['sword1h','sword2h','shield','heavyArmor','clothArmor','robe','misc'],
     },
     {
       id: 'sorcerer', name: '鵝法師', icon: '🪄', role: '後排・魔法輸出', position: 'back',
       desc: '遠程魔法輸出，HP 低、SP 充足，主屬性 INT。',
       base: { HP: 150, SP: 100, STR: 2, INT: 10, DEX: 5, SPD: 3, VIT: 3, LUK: 1 },
       coef: { hpPerVit: 1.5, spPerInt: 1.2, atkPerStr: 1.0, defPerVit: 0.4, magAtkPerInt: 1.4 },
-      equipTypes: ['shortStaff', 'longStaff', 'tome', 'clothArmor', 'robe', 'misc'],
+      equipTypes: ['shortStaff','longStaff','tome','clothArmor','robe','misc'],
     },
     {
       id: 'priest', name: '鵝牧師', icon: '✨', role: '後排・治療輔助', position: 'back',
       desc: '治療為主、輕度輸出。HP / SP 均衡偏低。',
       base: { HP: 200, SP: 80, STR: 3, INT: 8, DEX: 5, SPD: 4, VIT: 4, LUK: 1 },
       coef: { hpPerVit: 2.0, spPerInt: 1.0, atkPerStr: 0.8, defPerVit: 0.5, magAtkPerInt: 1.0 },
-      equipTypes: ['shortStaff', 'tome', 'clothArmor', 'robe', 'misc'],
+      equipTypes: ['shortStaff','tome','clothArmor','robe','misc'],
     },
     {
       id: 'hunter', name: '鵝獵人', icon: '🏹', role: '後排・遠程物理', position: 'back',
       desc: '遠程物理輸出，DEX/SPD 並重，迴避型。',
       base: { HP: 250, SP: 60, STR: 2, INT: 2, DEX: 10, SPD: 6, VIT: 4, LUK: 1 },
       coef: { hpPerVit: 2.2, spPerInt: 0.8, atkPerStr: 1.0, atkPerDex: 0.8, defPerVit: 0.4 },
-      equipTypes: ['bow', 'clothArmor', 'robe', 'misc'],
+      equipTypes: ['bow','clothArmor','robe','misc'],
     },
   ];
   const CLASS_BY_ID = Object.fromEntries(CLASSES.map(c => [c.id, c]));
 
   // ============================================================
-  // 載入 / 儲存
+  // 技能（原創命名 + 自己平衡的數值）
+  // 欄位：
+  //   id / class / name / icon
+  //   kind: 'phys' | 'mag' | 'heal' | 'buff' | 'debuff'
+  //   sp:   消耗
+  //   pow:  威力倍率（100 = 1.0×，傷害技 = atk 倍率，治療技 = 數值 base）
+  //   target: 'enemy_single' / 'enemy_multi' / 'enemy_all'
+  //           'ally_single' / 'ally_multi' / 'ally_all' / 'self'
+  //   hits:  攻擊次數（預設 1）
+  //   cast:  詠唱（ATB 單位）
+  //   recover: 硬直（ATB 單位，施完後額外扣 gauge）
+  //   ignoreCover: 無視掩護
+  //   ignoreDef:   無視防禦
+  //   priority:    'lowHp' / 'backRow'（目標選擇優先）
+  //   buff:   { stat:'atkPct'/'defPct'/'spdPct', amount, turns }
+  //   debuff: { stat, amount, turns }
+  //   status: { type:'paralyze'/'poison', delay, dmg, turns }
+  //   delay:  整體 ATB 推遲（鵝鵝閃光那種）
+  //   restoreSpPct: 自身回復 SP %
+  //   healPct:  治療技回復 % maxHp
+  //   cleanseStatuses: 清狀態
+  //   unlockLv: 學會的等級
+  // ============================================================
+  const SKILLS = [
+    // ⚔️ 鵝戰士
+    { id:'tw_dual',   class:'warrior', name:'鵝爪雙擊',  icon:'⚔️',  kind:'phys', sp:12, pow:70,  target:'enemy_single', hits:2, cast:0, recover:18, unlockLv:1 },
+    { id:'tw_aid',    class:'warrior', name:'鵝鵝急救',  icon:'🩹', kind:'heal', sp:0,  target:'self', cast:0, recover:10, healPct:0.35, unlockLv:1 },
+    { id:'tw_break',  class:'warrior', name:'撞擊破鵝',  icon:'🪓', kind:'phys', sp:22, pow:100, target:'enemy_single', cast:0, recover:30, debuff:{stat:'defPct', amount:0.25, turns:3}, unlockLv:5 },
+    { id:'tw_roar',   class:'warrior', name:'戰意鵝吼',  icon:'📢', kind:'buff', sp:10, target:'self', cast:0, recover:5, buff:{stat:'atkPct', amount:0.35, turns:5}, unlockLv:6 },
+    { id:'tw_smash',  class:'warrior', name:'鵝劍奧義',  icon:'🗡', kind:'phys', sp:18, pow:165, target:'enemy_single', cast:0, recover:35, unlockLv:8 },
+    { id:'tw_recov',  class:'warrior', name:'鵝魂自癒',  icon:'💚', kind:'heal', sp:20, target:'self', cast:0, recover:15, healPct:0.55, unlockLv:10 },
+    { id:'tw_pierce', class:'warrior', name:'穿甲鵝擊',  icon:'⚡', kind:'phys', sp:30, pow:145, target:'enemy_single', cast:30, recover:35, ignoreDef:true, unlockLv:12 },
+    { id:'tw_storm',  class:'warrior', name:'鵝怒風暴',  icon:'🌪', kind:'phys', sp:35, pow:80,  target:'enemy_multi', hits:4, cast:30, recover:50, unlockLv:14 },
+    { id:'tw_doom',   class:'warrior', name:'鵝皇終斬',  icon:'☠️',  kind:'phys', sp:60, pow:320, target:'enemy_single', cast:0, recover:55, unlockLv:18 },
+
+    // 🪄 鵝法師
+    { id:'tm_recharge', class:'sorcerer', name:'鵝魂湧泉', icon:'💧', kind:'mag', sp:0,  target:'self', cast:25, recover:0, restoreSpPct:0.50, unlockLv:1 },
+    { id:'tm_icespear', class:'sorcerer', name:'冰鵝錐',   icon:'❄️', kind:'mag', sp:18, pow:80,  target:'enemy_single', hits:3, cast:25, recover:0, unlockLv:5 },
+    { id:'tm_flash',    class:'sorcerer', name:'鵝鵝閃光', icon:'✨', kind:'mag', sp:28, pow:0,   target:'enemy_all', cast:25, recover:0, delay:25, unlockLv:7 },
+    { id:'tm_pillar',   class:'sorcerer', name:'焰鵝柱擊', icon:'🔥', kind:'mag', sp:35, pow:115, target:'enemy_multi', hits:2, cast:40, recover:0, ignoreCover:true, debuff:{stat:'atkPct', amount:0.40, turns:2}, unlockLv:8 },
+    { id:'tm_paralyze', class:'sorcerer', name:'鵝鵝麻痺', icon:'⚡', kind:'mag', sp:15, pow:40,  target:'enemy_single', cast:25, recover:0, status:{type:'paralyze', delay:120}, unlockLv:9 },
+    { id:'tm_thunder',  class:'sorcerer', name:'雷鵝彈',   icon:'⚡', kind:'mag', sp:28, pow:340, target:'enemy_single', cast:45, recover:0, ignoreCover:true, unlockLv:11 },
+    { id:'tm_firestorm',class:'sorcerer', name:'火鵝旋風', icon:'🌋', kind:'mag', sp:60, pow:85,  target:'enemy_multi', hits:5, cast:60, recover:0, ignoreCover:true, unlockLv:12 },
+    { id:'tm_icejav',   class:'sorcerer', name:'冰鵝矛',   icon:'🧊', kind:'mag', sp:50, pow:130, target:'enemy_single', hits:3, cast:35, recover:0, unlockLv:14 },
+    { id:'tm_iceprison',class:'sorcerer', name:'冰鵝獄',   icon:'🟦', kind:'mag', sp:35, pow:155, target:'enemy_single', cast:35, recover:0, ignoreCover:true, debuff:{stat:'defPct', amount:0.30, turns:3}, unlockLv:16 },
+    { id:'tm_ball',     class:'sorcerer', name:'雷鵝球',   icon:'🔵', kind:'mag', sp:70, pow:195, target:'enemy_multi', hits:3, cast:60, recover:0, ignoreCover:true, unlockLv:18 },
+
+    // ✨ 鵝牧師
+    { id:'tp_holy',     class:'priest', name:'鵝光普照', icon:'✨', kind:'mag',  sp:10, pow:80,  target:'enemy_single', cast:10, recover:0, ignoreCover:true, unlockLv:1 },
+    { id:'tp_powerheal',class:'priest', name:'鵝強治癒', icon:'💚', kind:'heal', sp:22, pow:280, target:'ally_multi', hits:2, cast:45, recover:0, priority:'lowHp', unlockLv:5 },
+    { id:'tp_bless',    class:'priest', name:'鵝祝福',   icon:'🙏', kind:'buff', sp:20, target:'ally_all', cast:35, recover:0, buff:{stat:'atkPct', amount:0.18, turns:4}, unlockLv:8 },
+    { id:'tp_partyheal',class:'priest', name:'鵝隊治癒', icon:'🌟', kind:'heal', sp:30, pow:130, target:'ally_all', cast:45, recover:0, unlockLv:10 },
+    { id:'tp_cleanse',  class:'priest', name:'鵝清新',   icon:'🌬', kind:'heal', sp:30, pow:60,  target:'ally_all', cast:45, recover:0, cleanseStatuses:true, unlockLv:12 },
+    { id:'tp_quickheal',class:'priest', name:'鵝速治癒', icon:'⚕️', kind:'heal', sp:22, pow:160, target:'ally_multi', hits:2, cast:0, recover:0, priority:'lowHp', unlockLv:14 },
+    { id:'tp_smartheal',class:'priest', name:'鵝智治癒', icon:'💎', kind:'heal', sp:32, pow:175, target:'ally_multi', hits:3, cast:35, recover:0, priority:'lowHp', unlockLv:18 },
+
+    // 🏹 鵝獵人
+    { id:'th_shoot', class:'hunter', name:'鵝矢射擊', icon:'🏹', kind:'phys', sp:0,  pow:80,  target:'enemy_single', cast:0, recover:0, ignoreCover:true, priority:'backRow', unlockLv:1 },
+    { id:'th_power', class:'hunter', name:'鵝強箭',   icon:'🎯', kind:'phys', sp:10, pow:175, target:'enemy_single', cast:0, recover:25, ignoreCover:true, priority:'backRow', unlockLv:5 },
+    { id:'th_shower',class:'hunter', name:'鵝箭雨',   icon:'🌧', kind:'phys', sp:22, pow:50,  target:'enemy_multi', hits:5, cast:0, recover:0, ignoreCover:true, unlockLv:8 },
+    { id:'th_palsy', class:'hunter', name:'鵝麻箭',   icon:'⚡', kind:'phys', sp:12, pow:80,  target:'enemy_single', cast:0, recover:0, ignoreCover:true, priority:'backRow', status:{type:'paralyze', delay:80}, unlockLv:12 },
+    { id:'th_double',class:'hunter', name:'鵝雙箭',   icon:'🏹', kind:'phys', sp:28, pow:65,  target:'enemy_multi', hits:2, cast:0, recover:0, ignoreCover:true, priority:'backRow', unlockLv:16 },
+  ];
+  const SKILLS_BY_CLASS = {};
+  SKILLS.forEach(s => { (SKILLS_BY_CLASS[s.class] = SKILLS_BY_CLASS[s.class] || []).push(s); });
+  const SKILL_BY_ID = Object.fromEntries(SKILLS.map(s => [s.id, s]));
+
+  // ============================================================
+  // 規則表（行動規則）— Judge 系統
+  // ============================================================
+  const JUDGES = [
+    { id: 0,    label: '永遠成立',                     param: null },
+    { id: 100,  label: '自身 HP ≤ X%',                 param: 'pct' },
+    { id: 101,  label: '自身 HP ≥ X%',                 param: 'pct' },
+    { id: 110,  label: '自身 SP ≤ X%',                 param: 'pct' },
+    { id: 111,  label: '自身 SP ≥ X%',                 param: 'pct' },
+    { id: 200,  label: '任何隊友 HP ≤ X%',             param: 'pct' },
+    { id: 210,  label: '隊友存活數 ≤ X',               param: 'count' },
+    { id: 300,  label: '任何敵人 HP ≤ X%',             param: 'pct' },
+    { id: 310,  label: '所有敵人 HP ≥ X%',             param: 'pct' },
+    { id: 400,  label: '敵人數量 ≥ X',                 param: 'count' },
+    { id: 401,  label: '敵人數量 ≤ X',                 param: 'count' },
+    { id: 500,  label: '我的第 X 次行動',               param: 'count' },
+    { id: 510,  label: '本場最多用 X 次',               param: 'count' },
+    { id: 600,  label: 'X% 機率',                       param: 'pct' },
+  ];
+  function evaluateJudge(rule, ctx) {
+    const { judgeId, param: p } = rule;
+    const v = Number(p) || 0;
+    switch (judgeId) {
+      case 0:   return true;
+      case 100: return ctx.selfHpPct <= v;
+      case 101: return ctx.selfHpPct >= v;
+      case 110: return ctx.selfSpPct <= v;
+      case 111: return ctx.selfSpPct >= v;
+      case 200: return ctx.allies.some(a => a.alive && (a.hp / a.maxHp * 100) <= v);
+      case 210: return ctx.allies.filter(a => a.alive).length <= v;
+      case 300: return ctx.enemies.some(e => e.alive && (e.hp / e.maxHp * 100) <= v);
+      case 310: return ctx.enemies.every(e => !e.alive || (e.hp / e.maxHp * 100) >= v);
+      case 400: return ctx.enemies.filter(e => e.alive).length >= v;
+      case 401: return ctx.enemies.filter(e => e.alive).length <= v;
+      case 500: return ctx.actionCount === v;
+      case 510: return (ctx.ruleUsage[ctx.ruleIdx] || 0) < v;
+      case 600: return Math.random() * 100 < v;
+      default: return false;
+    }
+  }
+
+  // ============================================================
+  // 怪物（原創 + 鵝鵝主題）
+  // ============================================================
+  const TEAM_MONSTERS = [
+    { id:'mb_slime',  name:'果凍鵝',   icon:'🟢', hpBase: 80,  atkBase: 8,  defBase: 1, spdBase: 5,  position:'front', verb:'撞擊',
+      dialogue:['軟軟黏黏～','鵝鵝想被打嗎？','咕嘰咕嘰'], deathLine:['溶化了…','下次見…','嗚嘰…'] },
+    { id:'mb_bat',    name:'夜鵝蝠',   icon:'🦇', hpBase: 70,  atkBase: 10, defBase: 2, spdBase: 11, position:'back',  verb:'尖嘯啄',
+      dialogue:['夜の鵝降臨','黑暗已現','聽見尖嘯了嗎'], deathLine:['夜結束了…','黑暗回收…','再見…'] },
+    { id:'mb_thief',  name:'盜匪鵝',   icon:'🦝', hpBase: 90,  atkBase: 11, defBase: 3, spdBase: 12, position:'front', verb:'刺擊',
+      dialogue:['給我錢～','你的東西全是我的','哼嘿'], deathLine:['被抓了…','下次見…','可惡'] },
+    { id:'mb_spider', name:'毒蜘蛛鵝', icon:'🕷',  hpBase: 110, atkBase: 13, defBase: 4, spdBase: 10, position:'front', verb:'毒咬',
+      ability:{type:'multiHit', hits:2},
+      dialogue:['汝陷入吾蛛網','八腳神羅','吾將吞噬汝'], deathLine:['蛛網碎了…','陰影消散…','汝勝出…'] },
+    { id:'mb_archer', name:'弓鵝',     icon:'🏹', hpBase: 95,  atkBase: 14, defBase: 3, spdBase: 12, position:'back',  verb:'迅射',
+      dialogue:['後排殺手到場','一箭一個','瞄準嘍'], deathLine:['弓斷了…','技差一籌…','下回吧…'] },
+    { id:'mb_orc',    name:'獸人鵝',   icon:'👹', hpBase: 160, atkBase: 16, defBase: 5, spdBase: 7,  position:'front', verb:'怒吼揮砍',
+      dialogue:['鵝啊啊啊！','撕碎你！','鵝鵝粉碎'], deathLine:['啊…','倒下了…','下次回來…'] },
+    { id:'mb_mage',   name:'術士鵝',   icon:'🪄', hpBase: 100, atkBase: 18, defBase: 4, spdBase: 11, position:'back',  verb:'魔力光彈',
+      ability:{type:'magicResist', resist:0.4},
+      dialogue:['元素之力與我同在','法術才是真理','物理太low了'], deathLine:['法力枯竭…','元素回流…','嗚嗚…'] },
+    { id:'mb_priest', name:'邪牧鵝',   icon:'☠️', hpBase: 130, atkBase: 14, defBase: 6, spdBase: 8,  position:'back',  verb:'暗黑之觸',
+      dialogue:['暗黑神祝福你～','送你下地獄～','嘿嘿嘿'], deathLine:['暗影消逝…','黑暗回流…','下次再來…'] },
+    { id:'mb_troll',  name:'巨魔鵝',   icon:'🧌', hpBase: 220, atkBase: 22, defBase: 8, spdBase: 5,  position:'front', verb:'巨拳',
+      ability:{type:'multiHit', hits:2},
+      dialogue:['笨笨鵝鵝要打架','哥哥可以痛喔','鵝鵝想要閃亮亮'], deathLine:['好痛痛','哭哭','媽媽…'] },
+    { id:'mb_demon',  name:'惡魔鵝',   icon:'😈', hpBase: 280, atkBase: 28, defBase: 10, spdBase: 13, position:'front', verb:'地獄爪',
+      ability:{type:'multiHit', hits:2},
+      dialogue:['人家也很無奈～','疼痛是愛的證明～','流血是你的問題喔'], deathLine:['好過分喔～','人家受傷了～','下次別這麼粗喔～'] },
+    { id:'mb_dragon', name:'龍鵝',     icon:'🐲', hpBase: 360, atkBase: 32, defBase: 12, spdBase: 11, position:'front', verb:'龍息',
+      ability:{type:'physResist', resist:0.25},
+      dialogue:['凡人，跪下感受龍威','汝之勇氣將焚為灰燼','吾乃天空之主'], deathLine:['強者也有殞落…','汝乃真正勇者…','龍焰熄滅…'] },
+  ];
+  const MONSTER_BY_ID = Object.fromEntries(TEAM_MONSTERS.map(m => [m.id, m]));
+
+  // ============================================================
+  // 副本（3 個，各 4-5 場連戰）
+  // ============================================================
+  const DUNGEONS = [
+    { id:'d1', name:'幼鵝森林', icon:'🌳', enemyLv: 5, color:'#22c55e',
+      desc:'新手村級，1-2 隻雜兵',
+      stages: [
+        { enemies: ['mb_slime'] },
+        { enemies: ['mb_thief','mb_slime'] },
+        { enemies: ['mb_bat','mb_thief'] },
+        { enemies: ['mb_spider'] },
+        { enemies: ['mb_orc'], boss: true },
+      ],
+      reward: { coins: 800, xp: 1200, eqDrops: 2 } },
+    { id:'d2', name:'廢鵝洞穴', icon:'🏚', enemyLv: 12, color:'#a855f7',
+      desc:'中段難度，會有後排術士',
+      stages: [
+        { enemies: ['mb_archer','mb_thief'] },
+        { enemies: ['mb_mage','mb_orc'] },
+        { enemies: ['mb_spider','mb_priest','mb_archer'] },
+        { enemies: ['mb_troll','mb_priest'], boss: true },
+      ],
+      reward: { coins: 1800, xp: 3500, eqDrops: 3 } },
+    { id:'d3', name:'魔鵝深淵', icon:'🌋', enemyLv: 20, color:'#dc2626',
+      desc:'深層王戰，需要全隊配合',
+      stages: [
+        { enemies: ['mb_orc','mb_mage','mb_archer'] },
+        { enemies: ['mb_troll','mb_priest'] },
+        { enemies: ['mb_demon','mb_archer','mb_mage'] },
+        { enemies: ['mb_dragon'], boss: true },
+      ],
+      reward: { coins: 4500, xp: 9000, eqDrops: 4 } },
+  ];
+  const DUNGEON_BY_ID = Object.fromEntries(DUNGEONS.map(d => [d.id, d]));
+
+  // ============================================================
+  // 裝備類型 + 隨機裝備池（Phase 5 簡版）
+  // 每個英雄 5 槽：weapon / offhand / armor / helm / accessory
+  // ============================================================
+  const EQUIP_TYPES = {
+    sword1h:    { slot:'weapon',  label:'單手劍', stat:'atk', range:[5,10] },
+    sword2h:    { slot:'weapon',  label:'雙手劍', stat:'atk', range:[8,16] },
+    bow:        { slot:'weapon',  label:'弓',     stat:'atk', range:[6,12] },
+    shortStaff: { slot:'weapon',  label:'短杖',   stat:'magAtk', range:[5,10] },
+    longStaff:  { slot:'weapon',  label:'長杖',   stat:'magAtk', range:[8,15] },
+    tome:       { slot:'weapon',  label:'法書',   stat:'magAtk', range:[7,13] },
+    shield:     { slot:'offhand', label:'盾',     stat:'def', range:[4,9] },
+    heavyArmor: { slot:'armor',   label:'重甲',   stat:'def', range:[6,12] },
+    clothArmor: { slot:'armor',   label:'布甲',   stat:'def', range:[3,7] },
+    robe:       { slot:'armor',   label:'法袍',   stat:'magDef', range:[3,7] },
+    helm:       { slot:'helm',    label:'頭盔',   stat:'def', range:[2,5] },
+    boots:      { slot:'boots',   label:'靴子',   stat:'spd', range:[1,4] },
+    accessory:  { slot:'accessory', label:'飾品', stat:'critRate', range:[0.02,0.06] },
+  };
+  const EQUIP_NAMES = {
+    sword1h: ['鵝鋒劍','鋼鵝劍','銳鵝劍','破鵝劍','鵝皇劍'],
+    sword2h: ['鵝鵝大劍','破甲鵝劍','鵝鵝雙手劍','終鵝大劍','龍鵝劍'],
+    bow: ['白鵝弓','獵鵝弓','疾鵝弓','遠鵝弓','鵝皇弓'],
+    shortStaff: ['鵝枝杖','銀鵝杖','鵝魂杖','鵝法杖','鵝皇杖'],
+    longStaff: ['鵝鵝法杖','聖鵝杖','深淵鵝杖','龍鵝杖','終鵝杖'],
+    tome: ['鵝紋書','鵝魔典','鵝深奧義','鵝皇法書','終鵝典'],
+    shield: ['鵝鵝盾','鋼鵝盾','聖鵝盾','龍鵝盾','終鵝盾'],
+    heavyArmor: ['鵝鋼鎧','鵝皇鎧','破鵝鎧','龍鵝鎧','終鵝鎧'],
+    clothArmor: ['鵝皮甲','獵鵝甲','疾鵝甲','風鵝甲','鵝鵝甲'],
+    robe: ['鵝法袍','鵝鵝法袍','鵝深法袍','龍鵝袍','終鵝袍'],
+    helm: ['鵝盔','鋼鵝盔','聖鵝盔','龍鵝盔','終鵝盔'],
+    boots: ['鵝靴','疾鵝靴','風鵝靴','龍鵝靴','終鵝靴'],
+    accessory: ['鵝戒','鵝鵝戒','聖鵝戒','龍鵝戒','終鵝戒'],
+  };
+  // 由副本等級隨機生成裝備
+  function generateEquipForDungeon(dungeonLv, forceTypes) {
+    const allTypes = forceTypes && forceTypes.length ? forceTypes : Object.keys(EQUIP_TYPES);
+    const type = allTypes[Math.floor(Math.random() * allTypes.length)];
+    const def = EQUIP_TYPES[type];
+    const tier = Math.min(4, Math.floor(dungeonLv / 5));
+    const namePool = EQUIP_NAMES[type] || ['未命名鵝裝'];
+    const name = namePool[tier];
+    const [lo, hi] = def.range;
+    const baseVal = lo + Math.random() * (hi - lo);
+    const tierMult = 1 + tier * 0.6;
+    const val = (def.stat === 'critRate') ? +(baseVal * tierMult).toFixed(3) : Math.round(baseVal * tierMult);
+    return {
+      id: 'eq_' + Date.now().toString(36) + Math.random().toString(36).slice(2,5),
+      type, slot: def.slot, name, lv: tier * 5 + 1,
+      stat: def.stat, val, tier,
+    };
+  }
+
+  // ============================================================
+  // 載入 / 儲存（與 index.html 共用）
   // ============================================================
   function loadData() {
     try {
@@ -242,9 +538,7 @@
   function isPassVerified() { return localStorage.getItem(PASS_KEY) === '1'; }
 
   // ============================================================
-  // 角色（hero）資料結構
-  //   存在 player.heroes[] 下
-  //   一個玩家可有多個角色（5 人組隊用，未來副本選 1-5 個出戰）
+  // 英雄資料 + 屬性計算
   // ============================================================
   function newHero(name, classId) {
     const cls = CLASS_BY_ID[classId];
@@ -255,49 +549,491 @@
       classId,
       level: 1,
       exp: 0,
-      // 八能力（從職業 base 起，玩家可以後續加點）
       abilities: { ...cls.base },
-      // 已點技能（Phase 2 用）
-      skills: {},
-      // 行動規則表（Phase 2 用）
-      actionPattern: [],
-      // 裝備（Phase 5 用）
-      equipment: {},
-      // 預設前後排
+      skillsLearned: SKILLS.filter(s => s.class === classId && s.unlockLv === 1).map(s => s.id),
+      actionPattern: defaultActionPattern(classId),
+      equipment: { weapon:null, offhand:null, armor:null, helm:null, accessory:null },
+      inventory: [],
       position: cls.position,
-      // 升級點數結餘
       abilityPoints: 0,
       skillPoints: 0,
       createdAt: Date.now(),
     };
   }
-  // 計算 derived stats（HP/SP 上限、ATK、DEF 等）
+  function defaultActionPattern(classId) {
+    if (classId === 'warrior') {
+      return [
+        { judgeId: 100, param: 35, skillId: 'tw_recov' },
+        { judgeId: 100, param: 60, skillId: 'tw_aid' },
+        { judgeId: 0,   param: 0,  skillId: 'tw_roar' },
+        { judgeId: 300, param: 30, skillId: 'tw_doom' },
+        { judgeId: 0,   param: 0,  skillId: 'tw_smash' },
+        { judgeId: 0,   param: 0,  skillId: 'tw_dual' },
+        { judgeId: 0,   param: 0,  skillId: 'basic' },
+      ];
+    }
+    if (classId === 'sorcerer') {
+      return [
+        { judgeId: 110, param: 25, skillId: 'tm_recharge' },
+        { judgeId: 400, param: 3,  skillId: 'tm_firestorm' },
+        { judgeId: 400, param: 2,  skillId: 'tm_ball' },
+        { judgeId: 300, param: 30, skillId: 'tm_thunder' },
+        { judgeId: 0,   param: 0,  skillId: 'tm_icejav' },
+        { judgeId: 0,   param: 0,  skillId: 'tm_icespear' },
+        { judgeId: 0,   param: 0,  skillId: 'basic' },
+      ];
+    }
+    if (classId === 'priest') {
+      return [
+        { judgeId: 200, param: 40, skillId: 'tp_powerheal' },
+        { judgeId: 200, param: 60, skillId: 'tp_quickheal' },
+        { judgeId: 0,   param: 0,  skillId: 'tp_bless' },
+        { judgeId: 0,   param: 0,  skillId: 'tp_holy' },
+        { judgeId: 0,   param: 0,  skillId: 'basic' },
+      ];
+    }
+    if (classId === 'hunter') {
+      return [
+        { judgeId: 400, param: 3, skillId: 'th_shower' },
+        { judgeId: 400, param: 2, skillId: 'th_double' },
+        { judgeId: 0,   param: 0, skillId: 'th_palsy' },
+        { judgeId: 0,   param: 0, skillId: 'th_power' },
+        { judgeId: 0,   param: 0, skillId: 'th_shoot' },
+        { judgeId: 0,   param: 0, skillId: 'basic' },
+      ];
+    }
+    return [{ judgeId: 0, param: 0, skillId: 'basic' }];
+  }
   function computeHeroStats(hero) {
     const cls = CLASS_BY_ID[hero.classId];
     if (!cls) return null;
     const a = hero.abilities;
     const lv = hero.level || 1;
-    const maxHp = Math.round(cls.base.HP + (a.VIT - cls.base.VIT) * cls.coef.hpPerVit + (lv - 1) * 5);
-    const maxSp = Math.round(cls.base.SP + (a.INT - cls.base.INT) * cls.coef.spPerInt + (lv - 1) * 2);
-    const atk   = Math.round(a.STR * (cls.coef.atkPerStr || 1) + (a.DEX || 0) * (cls.coef.atkPerDex || 0));
-    const magAtk= Math.round(a.INT * (cls.coef.magAtkPerInt || 1));
-    const def   = Math.round(a.VIT * (cls.coef.defPerVit || 0.5));
+    let maxHp = Math.round(cls.base.HP + (a.VIT - cls.base.VIT) * cls.coef.hpPerVit + (lv - 1) * 5);
+    let maxSp = Math.round(cls.base.SP + (a.INT - cls.base.INT) * cls.coef.spPerInt + (lv - 1) * 2);
+    let atk   = Math.round(a.STR * (cls.coef.atkPerStr || 1) + (a.DEX || 0) * (cls.coef.atkPerDex || 0));
+    let magAtk= Math.round(a.INT * (cls.coef.magAtkPerInt || 1));
+    let def   = Math.round(a.VIT * (cls.coef.defPerVit || 0.5));
+    let magDef= Math.round(a.INT * 0.3);
+    let spd   = a.SPD;
+    let critRate = Math.min(0.6, a.DEX * 0.01 + a.LUK * 0.005);
+    // 加上裝備
+    Object.values(hero.equipment || {}).forEach(eq => {
+      if (!eq) return;
+      if (eq.stat === 'atk')      atk    += eq.val;
+      if (eq.stat === 'magAtk')   magAtk += eq.val;
+      if (eq.stat === 'def')      def    += eq.val;
+      if (eq.stat === 'magDef')   magDef += eq.val;
+      if (eq.stat === 'spd')      spd    += eq.val;
+      if (eq.stat === 'critRate') critRate = Math.min(0.6, critRate + eq.val);
+    });
     return {
-      maxHp, maxSp, atk, magAtk, def,
-      // crit chance: 1% per DEX + 0.5% per LUK
-      critRate: Math.min(0.6, a.DEX * 0.01 + a.LUK * 0.005),
-      // SPD effective（直接用）
-      spd: a.SPD,
-      // hit / dodge：DEX + SPD 影響（Phase 3 用）
+      maxHp, maxSp, atk, magAtk, def, magDef, spd, critRate,
       hit: a.DEX * 1.2,
       dodge: a.SPD * 0.5,
     };
   }
   function xpForLevel(lv) { return 100 + (lv - 1) * 80; }
+  function awardXp(hero, xp) {
+    hero.exp = (hero.exp || 0) + xp;
+    let leveled = 0;
+    while (hero.exp >= xpForLevel(hero.level) && hero.level < LEVEL_MAX) {
+      hero.exp -= xpForLevel(hero.level);
+      hero.level += 1;
+      hero.abilityPoints = (hero.abilityPoints || 0) + POINTS_PER_LEVEL_TEAM.ability;
+      hero.skillPoints   = (hero.skillPoints   || 0) + POINTS_PER_LEVEL_TEAM.skill;
+      // 自動學會該等級新技能
+      SKILLS.forEach(s => {
+        if (s.class === hero.classId && s.unlockLv === hero.level && !hero.skillsLearned.includes(s.id)) {
+          hero.skillsLearned.push(s.id);
+        }
+      });
+      leveled++;
+    }
+    return leveled;
+  }
 
   // ============================================================
-  // UI 主流程
+  // 戰鬥引擎（ATB）
+  //   party = [hero...]，enemies = [monster instance...]
+  //   每回合：找出 gauge 最高（>= 100）的角色出手
+  //   詠唱中：減少詠唱條，到 0 才實際施放
+  //   施放後：gauge -= 100 + recover
   // ============================================================
+  const ATB_THRESHOLD = 100;
+
+  function runTeamFight(party, enemies, opts) {
+    opts = opts || {};
+    const log = [];
+    // 包裝成戰鬥用 combatant
+    const wrapHero = (h, idx) => {
+      const stats = computeHeroStats(h);
+      return {
+        idx, side: 'player', alive: true,
+        ref: h, name: h.name, icon: CLASS_BY_ID[h.classId].icon,
+        hp: stats.maxHp, maxHp: stats.maxHp,
+        sp: stats.maxSp, maxSp: stats.maxSp,
+        atk: stats.atk, magAtk: stats.magAtk, def: stats.def, magDef: stats.magDef,
+        spd: stats.spd, critRate: stats.critRate,
+        position: h.position,
+        gauge: 0, casting: null, statuses: [],
+        actionCount: 0,
+        atkPctBuff: 0, defPctBuff: 0, // buffs
+      };
+    };
+    const wrapEnemy = (m, idx) => {
+      const dungeonLv = opts.enemyLv || 5;
+      const k = 1 + (dungeonLv - 1) * 0.18;
+      return {
+        idx, side: 'enemy', alive: true,
+        ref: m, name: m.name, icon: m.icon,
+        hp: Math.round(m.hpBase * k), maxHp: Math.round(m.hpBase * k),
+        sp: 999, maxSp: 999,
+        atk: Math.round(m.atkBase * k), magAtk: Math.round(m.atkBase * k * 0.8),
+        def: Math.round(m.defBase * k), magDef: Math.round(m.defBase * k * 0.7),
+        spd: m.spdBase + Math.floor(dungeonLv / 4),
+        critRate: 0.05,
+        position: m.position || 'front',
+        ability: m.ability,
+        verb: m.verb,
+        gauge: 0, casting: null, statuses: [],
+        actionCount: 0,
+        atkPctBuff: 0, defPctBuff: 0,
+      };
+    };
+    const players = party.map(wrapHero);
+    const monsters = enemies.map(wrapEnemy);
+
+    log.push({ type: 'system', text: `═══ 隊伍 ${players.map(p=>p.icon).join('')} vs ${monsters.map(m=>m.icon).join('')} ═══` });
+    log.push({ type: 'system', text: `🌬 速度：` + players.map(p=>`${p.icon}${p.spd}`).join('  ') + '  ｜  ' + monsters.map(m=>`${m.icon}${m.spd}`).join('  ') });
+
+    let round = 0;
+    const MAX_ROUNDS = 200;
+    while (round < MAX_ROUNDS) {
+      const alivePlayers = players.filter(p => p.alive);
+      const aliveEnemies = monsters.filter(m => m.alive);
+      if (alivePlayers.length === 0) {
+        log.push({ type: 'system', text: `💀 隊伍全滅` });
+        return { won: false, log, players, monsters };
+      }
+      if (aliveEnemies.length === 0) {
+        log.push({ type: 'system', text: `🎉 戰鬥勝利` });
+        return { won: true, log, players, monsters };
+      }
+      round++;
+
+      // 找出下一個動作者
+      const all = [...alivePlayers, ...aliveEnemies];
+      // ATB 推進：算出最近哪個動作者最快達到 100
+      let dt = Infinity;
+      for (const c of all) {
+        const need = ATB_THRESHOLD - c.gauge;
+        const t = need / Math.max(1, c.spd);
+        if (t < dt) dt = t;
+      }
+      if (dt === Infinity) break;
+      for (const c of all) c.gauge += dt * c.spd;
+      // 處理「整體 delay」效果（鵝鵝閃光）
+      // 處理詠唱倒數
+      // 取出 gauge 最高的可動作者
+      const ready = all.filter(c => c.gauge >= ATB_THRESHOLD - 0.001).sort((a, b) => b.gauge - a.gauge);
+      if (ready.length === 0) continue;
+      const actor = ready[0];
+
+      // 狀態 tick（只在此角色行動前）
+      tickStatuses(actor, log, round);
+      if (!actor.alive) continue;
+
+      // 麻痺：直接消費 gauge 跳過
+      if (hasStatus(actor, 'paralyze')) {
+        const par = actor.statuses.find(s => s.type === 'paralyze');
+        if (par && par.delay > 0) {
+          par.delay -= ATB_THRESHOLD;
+          actor.gauge -= ATB_THRESHOLD;
+          log.push({ type: 'status', text: `回合 ${round}：${actor.icon}${actor.name} ⚡麻痺中（剩 ${Math.max(0,par.delay)}）`, gauges: snapshotGauges(all) });
+          continue;
+        }
+      }
+
+      // 詠唱中？
+      if (actor.casting) {
+        actor.casting.remaining -= ATB_THRESHOLD;
+        if (actor.casting.remaining <= 0) {
+          // 詠唱完成 → 釋放
+          executeSkill(actor, actor.casting.skill, actor.casting.target, players, monsters, log, round);
+          actor.actionCount++;
+          actor.gauge -= ATB_THRESHOLD;
+          if (actor.casting.skill.recover) actor.gauge -= actor.casting.skill.recover;
+          actor.casting = null;
+        } else {
+          log.push({ type: 'cast', text: `回合 ${round}：${actor.icon}${actor.name} ⏳ 詠唱中（剩 ${actor.casting.remaining}）`, gauges: snapshotGauges(all) });
+          actor.gauge -= ATB_THRESHOLD;
+        }
+        continue;
+      }
+
+      // 從 actionPattern 挑技能
+      const allies = (actor.side === 'player') ? players : monsters;
+      const foes   = (actor.side === 'player') ? monsters : players;
+      const ctx = {
+        selfHpPct: actor.hp / actor.maxHp * 100,
+        selfSpPct: actor.sp / actor.maxSp * 100,
+        allies, enemies: foes,
+        actionCount: actor.actionCount + 1,
+        ruleUsage: actor._ruleUsage = actor._ruleUsage || {},
+        ruleIdx: 0,
+      };
+      let pickedSkill = null;
+      let pickedRuleIdx = -1;
+      const pattern = (actor.side === 'player') ? actor.ref.actionPattern : null;
+      if (pattern && Array.isArray(pattern)) {
+        for (let r = 0; r < pattern.length; r++) {
+          const rule = pattern[r];
+          ctx.ruleIdx = r;
+          if (!evaluateJudge(rule, ctx)) continue;
+          if (rule.skillId === 'basic') { pickedSkill = null; pickedRuleIdx = r; break; }
+          const sk = SKILL_BY_ID[rule.skillId];
+          if (!sk) continue;
+          if (!actor.ref.skillsLearned.includes(sk.id)) continue;
+          if (actor.sp < sk.sp) continue;
+          pickedSkill = sk; pickedRuleIdx = r; break;
+        }
+      } else {
+        // 怪物：50% 機率使用基本攻擊（簡化 — 怪物沒有 actionPattern）
+        // 留待後續擴充
+      }
+      if (pickedRuleIdx >= 0) ctx.ruleUsage[pickedRuleIdx] = (ctx.ruleUsage[pickedRuleIdx] || 0) + 1;
+
+      if (pickedSkill) {
+        // 選目標
+        const target = pickTarget(pickedSkill, actor, players, monsters);
+        if (pickedSkill.cast > 0) {
+          // 進入詠唱
+          actor.casting = { skill: pickedSkill, target, remaining: pickedSkill.cast };
+          log.push({ type: 'cast', text: `回合 ${round}：${actor.icon}${actor.name} ✨ 詠唱「${pickedSkill.name}」（${pickedSkill.cast} 詠唱）`, gauges: snapshotGauges(all) });
+          actor.gauge -= ATB_THRESHOLD;
+        } else {
+          // 立即釋放
+          actor.sp -= pickedSkill.sp;
+          executeSkill(actor, pickedSkill, target, players, monsters, log, round);
+          actor.actionCount++;
+          actor.gauge -= ATB_THRESHOLD;
+          if (pickedSkill.recover) actor.gauge -= pickedSkill.recover;
+        }
+      } else {
+        // 普通攻擊
+        const target = pickBasicTarget(actor, foes);
+        if (target) {
+          executeBasic(actor, target, log, round);
+          actor.actionCount++;
+        }
+        actor.gauge -= ATB_THRESHOLD;
+      }
+    }
+    log.push({ type: 'system', text: `⏱ 回合上限到，戰鬥結束（平手）` });
+    return { won: monsters.every(m => !m.alive), log, players, monsters };
+  }
+
+  function snapshotGauges(combatants) {
+    return combatants.map(c => ({
+      icon: c.icon, side: c.side, value: Math.max(0, Math.min(100, Math.round(c.gauge))),
+    }));
+  }
+
+  function pickTarget(skill, actor, players, monsters) {
+    const tgt = skill.target;
+    const allies = (actor.side === 'player') ? players : monsters;
+    const foes   = (actor.side === 'player') ? monsters : players;
+    const aliveAllies = allies.filter(c => c.alive);
+    const aliveFoes   = foes.filter(c => c.alive);
+    if (tgt === 'self') return [actor];
+    if (tgt === 'enemy_all') return aliveFoes;
+    if (tgt === 'ally_all')  return aliveAllies;
+    if (tgt === 'ally_multi' || tgt === 'ally_single') {
+      let pool = aliveAllies.slice();
+      if (skill.priority === 'lowHp') pool.sort((a,b) => (a.hp/a.maxHp) - (b.hp/b.maxHp));
+      const n = (skill.target === 'ally_multi') ? Math.min(skill.hits || 1, pool.length) : 1;
+      return pool.slice(0, n);
+    }
+    if (tgt === 'enemy_multi' || tgt === 'enemy_single') {
+      // 掩護：除非 ignoreCover，前排還活著時，後排不能被選為目標
+      let pool = aliveFoes.slice();
+      if (!skill.ignoreCover) {
+        const fronts = pool.filter(c => c.position === 'front');
+        if (fronts.length > 0) pool = fronts;
+      }
+      if (skill.priority === 'backRow') {
+        // backRow priority：優先選後排（如果掩護沒擋到）
+        pool.sort((a, b) => (b.position === 'back' ? 1 : 0) - (a.position === 'back' ? 1 : 0));
+      } else if (skill.priority === 'lowHp') {
+        pool.sort((a,b) => (a.hp/a.maxHp) - (b.hp/b.maxHp));
+      }
+      const n = (skill.target === 'enemy_multi') ? Math.min((skill.hits || 1), pool.length) : 1;
+      return pool.slice(0, n);
+    }
+    return [];
+  }
+  function pickBasicTarget(actor, foes) {
+    let pool = foes.filter(c => c.alive);
+    const fronts = pool.filter(c => c.position === 'front');
+    if (fronts.length > 0) pool = fronts;
+    return pool[0] || null;
+  }
+
+  function executeSkill(actor, skill, targets, players, monsters, log, round) {
+    // 治療
+    if (skill.kind === 'heal') {
+      const baseHeal = (skill.pow || 0) + actor.magAtk * 0.5;
+      const healed = [];
+      for (const t of targets) {
+        if (!t.alive) continue;
+        const heal = (skill.healPct ? Math.round(t.maxHp * skill.healPct) : Math.max(1, Math.round(baseHeal)));
+        const before = t.hp;
+        t.hp = Math.min(t.maxHp, t.hp + heal);
+        healed.push(`${t.icon}${t.name}+${t.hp - before}`);
+        if (skill.cleanseStatuses) t.statuses = [];
+      }
+      log.push({ type: 'heal', text: `回合 ${round}：${actor.icon}${actor.name} 💚 ${skill.name} → ${healed.join(' / ') || '（無對象）'}`, gauges: snapshotGauges([...players, ...monsters]) });
+      return;
+    }
+    // buff
+    if (skill.kind === 'buff' && skill.buff) {
+      for (const t of targets) {
+        applyStatus(t, { type: 'buff', stat: skill.buff.stat, amount: skill.buff.amount, turns: skill.buff.turns });
+      }
+      log.push({ type: 'status', text: `回合 ${round}：${actor.icon}${actor.name} ✨ ${skill.name} → ${targets.map(t=>t.icon+t.name).join(' / ')}（${describeBuff(skill.buff)} ${skill.buff.turns}T）`, gauges: snapshotGauges([...players, ...monsters]) });
+      return;
+    }
+    // SP regen / 純效果
+    if (skill.restoreSpPct) {
+      const restored = Math.round(actor.maxSp * skill.restoreSpPct);
+      actor.sp = Math.min(actor.maxSp, actor.sp + restored);
+      log.push({ type: 'heal', text: `回合 ${round}：${actor.icon}${actor.name} 💧 ${skill.name} → SP +${restored}`, gauges: snapshotGauges([...players, ...monsters]) });
+      return;
+    }
+    if (skill.delay) {
+      // 全體 delay（鵝鵝閃光）
+      for (const t of targets) {
+        t.gauge = Math.max(0, t.gauge - skill.delay);
+      }
+      log.push({ type: 'status', text: `回合 ${round}：${actor.icon}${actor.name} ✨ ${skill.name} → 全敵推遲 -${skill.delay} ATB`, gauges: snapshotGauges([...players, ...monsters]) });
+      return;
+    }
+    // 傷害技
+    const isPhys = (skill.kind === 'phys');
+    const hits = skill.hits || 1;
+    const totalDmg = {};
+    const summary = [];
+    for (const t of targets) {
+      if (!t.alive) continue;
+      let totalForT = 0;
+      let critForT = false;
+      for (let h = 0; h < hits; h++) {
+        if (!t.alive) break;
+        const baseAtk = isPhys
+          ? actor.atk * (1 + (actor.atkPctBuff || 0))
+          : actor.magAtk;
+        const baseDef = (skill.ignoreDef ? 0 : (isPhys ? t.def : t.magDef) * (1 + (t.defPctBuff || 0)));
+        let dmg = baseAtk * (skill.pow / 100) - baseDef * 0.5;
+        // 抗性
+        if (!isPhys && t.ability && t.ability.type === 'magicResist') dmg *= (1 - t.ability.resist);
+        if (isPhys && t.ability && t.ability.type === 'physResist') dmg *= (1 - t.ability.resist);
+        const isCrit = Math.random() < (actor.critRate || 0);
+        dmg *= (0.9 + Math.random() * 0.2);
+        if (isCrit) { dmg *= 1.7; critForT = true; }
+        dmg = Math.max(1, Math.round(dmg));
+        t.hp = Math.max(0, t.hp - dmg);
+        totalForT += dmg;
+        if (t.hp <= 0) { t.alive = false; }
+      }
+      totalDmg[t.idx] = totalForT;
+      summary.push(`${t.icon}${t.name}-${totalForT}${critForT ? '【爆】' : ''}${!t.alive ? '💀' : ''}`);
+      // debuff
+      if (skill.debuff && t.alive) {
+        applyStatus(t, { type: 'debuff', stat: skill.debuff.stat, amount: -skill.debuff.amount, turns: skill.debuff.turns });
+      }
+      // 狀態（中毒/麻痺）
+      if (skill.status && t.alive) {
+        applyStatus(t, { ...skill.status });
+      }
+    }
+    log.push({
+      type: 'player' === actor.side ? 'player' : 'enemy',
+      text: `回合 ${round}：${actor.icon}${actor.name} ${isPhys ? '⚔️' : '🪄'} ${skill.name}${hits>1?'×'+hits:''} → ${summary.join(' / ')}`,
+      gauges: snapshotGauges([...players, ...monsters]),
+    });
+  }
+  function executeBasic(actor, target, log, round) {
+    const isPhys = true;
+    const baseAtk = actor.atk * (1 + (actor.atkPctBuff || 0));
+    const baseDef = target.def * (1 + (target.defPctBuff || 0));
+    let dmg = baseAtk - baseDef * 0.5;
+    if (target.ability && target.ability.type === 'physResist') dmg *= (1 - target.ability.resist);
+    const isCrit = Math.random() < (actor.critRate || 0.05);
+    dmg *= (0.9 + Math.random() * 0.2);
+    if (isCrit) dmg *= 1.7;
+    dmg = Math.max(1, Math.round(dmg));
+    // 多段
+    const hits = (actor.ability && actor.ability.type === 'multiHit') ? (actor.ability.hits || 2) : 1;
+    let total = 0;
+    for (let h = 0; h < hits && target.alive; h++) {
+      target.hp = Math.max(0, target.hp - Math.round(dmg * (1.3 / hits)));
+      total += Math.round(dmg * (1.3 / hits));
+      if (target.hp <= 0) target.alive = false;
+    }
+    log.push({
+      type: 'player' === actor.side ? 'player' : 'enemy',
+      text: `回合 ${round}：${actor.icon}${actor.name} ${isCrit ? '【爆】' : ''}${actor.verb || '攻擊'} → ${target.icon}${target.name}-${total}${!target.alive ? '💀' : ''}`,
+      gauges: null,  // basic 不顯示 gauge（避免太多）
+    });
+  }
+
+  function applyStatus(target, status) {
+    target.statuses = target.statuses || [];
+    if (status.type === 'buff' || status.type === 'debuff') {
+      // 立刻套用 atkPctBuff/defPctBuff
+      const key = (status.stat === 'atkPct') ? 'atkPctBuff'
+                : (status.stat === 'defPct') ? 'defPctBuff' : null;
+      if (key) target[key] = (target[key] || 0) + status.amount;
+    }
+    target.statuses.push({ ...status });
+  }
+  function tickStatuses(target, log, round) {
+    target.statuses = target.statuses || [];
+    for (const s of target.statuses) {
+      if (s.type === 'poison' && s.dmg) {
+        target.hp = Math.max(0, target.hp - s.dmg);
+        log.push({ type: 'status', text: `回合 ${round}：${target.icon}${target.name} ☠️ 中毒 -${s.dmg} HP`, gauges: null });
+        if (target.hp <= 0) target.alive = false;
+      }
+      if (s.turns != null) s.turns -= 1;
+    }
+    // 移除過期 + 復原 buff/debuff
+    target.statuses = target.statuses.filter(s => {
+      const expire = (s.turns != null && s.turns <= 0);
+      if (expire && (s.type === 'buff' || s.type === 'debuff')) {
+        const key = (s.stat === 'atkPct') ? 'atkPctBuff' : (s.stat === 'defPct') ? 'defPctBuff' : null;
+        if (key) target[key] = (target[key] || 0) - s.amount;
+      }
+      return !expire;
+    });
+  }
+  function hasStatus(target, type) { return (target.statuses || []).some(s => s.type === type); }
+  function describeBuff(b) {
+    if (b.stat === 'atkPct') return `ATK +${Math.round(b.amount * 100)}%`;
+    if (b.stat === 'defPct') return `DEF +${Math.round(b.amount * 100)}%`;
+    return `${b.stat} +${b.amount}`;
+  }
+
+  // ============================================================
+  // UI
+  // ============================================================
+  let __currentTab = 'heroes';
+  let __selectedHeroId = null;
+  let __pickedClass = null;
+  let __party = [];   // 副本進入時的隊伍 hero ids
+  let __dungeonProgress = null;  // { dungeonId, stage, party, log }
+
   function renderAll() {
     const data = loadData();
     const meId = getMeId();
@@ -310,85 +1046,87 @@
     document.getElementById('loginOverlay').classList.add('hidden');
     if (!me.heroes) me.heroes = [];
     saveData(data);
-    renderHeroes(me, data);
+    // 標籤
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === __currentTab);
+      b.onclick = () => { __currentTab = b.dataset.tab; renderAll(); };
+    });
+    if (__currentTab === 'heroes') renderHeroesTab(me, data);
+    else if (__currentTab === 'dungeons') renderDungeonsTab(me, data);
   }
 
-  function renderHeroes(me, data) {
-    const root = document.getElementById('content');
+  function renderHeroesTab(me, data) {
+    const root = document.getElementById('tabContent');
     if (me.heroes.length === 0) {
-      // 沒任何角色 → 顯示職業選擇
-      root.innerHTML = renderClassPicker();
+      root.innerHTML = `
+        <div class="card">
+          <h2>🎭 創建第一個英雄</h2>
+          ${renderClassPicker()}
+        </div>
+      `;
       return;
     }
-    // 已有角色 → 顯示列表
     root.innerHTML = `
       <div class="card">
-        <h2>👥 我的角色（${me.heroes.length}）</h2>
-        <div style="font-size:11px; color:#92400e; margin-bottom:8px;">
-          每個玩家可建立多個角色，副本最多帶 5 個出戰。
-        </div>
-        ${me.heroes.map((h, i) => renderHeroRow(h, i)).join('')}
-        <button class="btn btn-primary" style="margin-top:8px; width:100%;" onclick="window.__teamUI.beginCreate()">+ 建立新角色</button>
+        <h2>👥 我的英雄（${me.heroes.length}）</h2>
+        ${me.heroes.map(h => renderHeroRow(h)).join('')}
+        <button class="btn btn-primary" style="margin-top:8px; width:100%;" onclick="window.__teamUI.beginCreate()">+ 新增英雄</button>
       </div>
       <div id="heroDetail"></div>
     `;
-    // 預設展開第一個角色
-    showHeroDetail(me.heroes[0].id);
+    if (!__selectedHeroId || !me.heroes.find(h => h.id === __selectedHeroId)) {
+      __selectedHeroId = me.heroes[0].id;
+    }
+    showHeroDetail(__selectedHeroId);
   }
 
-  function renderHeroRow(hero, idx) {
+  function renderHeroRow(hero) {
     const cls = CLASS_BY_ID[hero.classId];
     const stats = computeHeroStats(hero);
+    const sel = __selectedHeroId === hero.id;
     return `
-      <div class="hero-row">
+      <div class="hero-row${sel ? ' selected' : ''}" onclick="window.__teamUI.selectHero('${hero.id}')">
         <div class="hero-icon">${cls?.icon || '❓'}</div>
         <div class="hero-meta">
           <div class="hero-name">${escapeHtml(hero.name)}</div>
-          <div class="hero-sub">${cls?.name || '?'} · Lv ${hero.level} · HP ${stats?.maxHp || '?'} · SP ${stats?.maxSp || '?'}</div>
+          <div class="hero-sub">${cls?.name || '?'} · Lv ${hero.level} · HP ${stats?.maxHp || '?'} / SP ${stats?.maxSp || '?'} · ATK ${stats?.atk || '?'} / DEF ${stats?.def || '?'}</div>
         </div>
         <div class="hero-actions">
-          <button class="btn btn-secondary" style="font-size:11px; padding:4px 8px;" onclick="window.__teamUI.openHero('${hero.id}')">查看</button>
-          <button class="btn btn-secondary" style="font-size:11px; padding:4px 8px; color:#dc2626;" onclick="window.__teamUI.deleteHero('${hero.id}')">刪</button>
+          <button class="btn btn-secondary" style="font-size:11px; padding:4px 8px;" onclick="event.stopPropagation(); window.__teamUI.deleteHero('${hero.id}')">刪</button>
         </div>
       </div>
     `;
   }
 
-  let __pickedClass = null;
   function renderClassPicker() {
     return `
-      <div class="card">
-        <h2>🎭 選擇職業</h2>
-        <div style="font-size:11px; color:#92400e; margin-bottom:10px;">
-          每個職業有獨特的成長係數，影響升級時 HP / SP / ATK / DEF 的變化。
-        </div>
-        <div class="class-grid">
-          ${CLASSES.map(c => `
-            <button class="class-card${__pickedClass === c.id ? ' selected' : ''}" onclick="window.__teamUI.pickClass('${c.id}')">
-              <div class="cc-icon">${c.icon}</div>
-              <div class="cc-name">${c.name}</div>
-              <div class="cc-role">${c.role}</div>
-              <div class="cc-stats">
-                HP ${c.base.HP} / SP ${c.base.SP}<br>
-                STR ${c.base.STR} INT ${c.base.INT} DEX ${c.base.DEX}<br>
-                SPD ${c.base.SPD} VIT ${c.base.VIT} LUK ${c.base.LUK}<br>
-                <span style="color:#c2410c;">HP×${c.coef.hpPerVit} / SP×${c.coef.spPerInt}</span>
-              </div>
-            </button>
-          `).join('')}
-        </div>
-        ${__pickedClass ? `
-          <div style="margin-top:12px; padding:8px; background:#fef9c3; border-radius:8px; font-size:12px; color:#92400e;">
-            <b>${CLASS_BY_ID[__pickedClass].icon} ${CLASS_BY_ID[__pickedClass].name}</b><br>
-            <span style="font-size:11px;">${CLASS_BY_ID[__pickedClass].desc}</span>
-          </div>
-          <div style="display:flex; gap:6px; margin-top:10px;">
-            <input id="newHeroName" type="text" placeholder="角色名字（可空）"
-              style="flex:1; padding:8px; border:2px solid #fcd34d; border-radius:8px; font-family:inherit;">
-            <button class="btn btn-primary" onclick="window.__teamUI.confirmCreate()">創建</button>
-          </div>
-        ` : ''}
+      <div style="font-size:11px; color:#92400e; margin-bottom:10px;">選擇職業（成長係數會決定升級曲線）</div>
+      <div class="class-grid">
+        ${CLASSES.map(c => `
+          <button class="class-card${__pickedClass === c.id ? ' selected' : ''}" onclick="window.__teamUI.pickClass('${c.id}')">
+            <div class="cc-icon">${c.icon}</div>
+            <div class="cc-name">${c.name}</div>
+            <div class="cc-role">${c.role}</div>
+            <div class="cc-stats">
+              HP ${c.base.HP} / SP ${c.base.SP}<br>
+              STR ${c.base.STR} INT ${c.base.INT} DEX ${c.base.DEX}<br>
+              SPD ${c.base.SPD} VIT ${c.base.VIT} LUK ${c.base.LUK}<br>
+              <span style="color:#c2410c;">HP×${c.coef.hpPerVit} / SP×${c.coef.spPerInt}</span>
+            </div>
+          </button>
+        `).join('')}
       </div>
+      ${__pickedClass ? `
+        <div style="margin-top:12px; padding:8px; background:#fef9c3; border-radius:8px; font-size:12px; color:#92400e;">
+          <b>${CLASS_BY_ID[__pickedClass].icon} ${CLASS_BY_ID[__pickedClass].name}</b><br>
+          <span style="font-size:11px;">${CLASS_BY_ID[__pickedClass].desc}</span>
+        </div>
+        <div style="display:flex; gap:6px; margin-top:10px;">
+          <input id="newHeroName" type="text" placeholder="角色名字（可空）"
+            style="flex:1; padding:8px; border:2px solid #fcd34d; border-radius:8px; font-family:inherit;">
+          <button class="btn btn-primary" onclick="window.__teamUI.confirmCreate()">創建</button>
+        </div>
+      ` : ''}
     `;
   }
 
@@ -400,6 +1138,8 @@
     const cls = CLASS_BY_ID[hero.classId];
     const stats = computeHeroStats(hero);
     const xpNeed = xpForLevel(hero.level);
+    const learnedSkills = SKILLS.filter(s => hero.skillsLearned.includes(s.id));
+    const lockedSkills = SKILLS.filter(s => s.class === hero.classId && !hero.skillsLearned.includes(s.id));
     const detail = document.getElementById('heroDetail');
     if (!detail) return;
     detail.innerHTML = `
@@ -429,36 +1169,381 @@
               <div class="stat-cell" title="${STATS[k].full} — ${STATS[k].desc}">
                 <div class="sc-key">${k}</div>
                 <div class="sc-val">${hero.abilities[k]}</div>
-                <div class="sc-grow">↑${getGrowDesc(cls, k)}</div>
               </div>
             `).join('')}
           </div>
-          ${hero.abilityPoints > 0 ? `<div style="margin-top:6px; font-size:11px; color:#c2410c;">⭐ 你有 ${hero.abilityPoints} 點能力點可分配（Phase 2 開放）</div>` : ''}
         </div>
-        <div style="margin-top:8px; padding:8px; background:#ede9fe; border-radius:8px; border:1px dashed #a78bfa; font-size:11px; color:#5b21b6;">
-          🔧 <b>可學技能</b>：${cls.name}預計可學 5-10 個技能（含詠唱 / 硬直 / 多段 / AoE / 治療系），Phase 2 開放。
+        <div style="margin-top:8px; padding:8px; background:#fff8e6; border-radius:8px;">
+          <div style="font-weight:700; color:#7c2d12; font-size:12px;">📜 已學技能（${learnedSkills.length}）</div>
+          <div class="skill-list" style="margin-top:6px;">
+            ${learnedSkills.map(s => renderSkillRow(s, false)).join('')}
+            ${lockedSkills.map(s => renderSkillRow(s, true)).join('')}
+          </div>
+        </div>
+        <div style="margin-top:8px; padding:8px; background:#fff8e6; border-radius:8px;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div style="font-weight:700; color:#7c2d12; font-size:12px;">📋 行動規則表</div>
+            <button class="btn btn-secondary" style="font-size:11px; padding:4px 8px;" onclick="window.__teamUI.editPattern('${hero.id}')">編輯</button>
+          </div>
+          <div style="font-size:10px; color:#92400e; margin-top:4px;">
+            戰鬥時依規則表由上到下評估，第一條成立的規則就執行對應技能
+          </div>
+          <div style="margin-top:6px;">
+            ${(hero.actionPattern || []).slice(0, 4).map((r, i) => {
+              const j = JUDGES.find(x => x.id === r.judgeId);
+              const skill = r.skillId === 'basic' ? '普通攻擊' : SKILL_BY_ID[r.skillId]?.name || '?';
+              return `<div style="font-size:10px; color:#5b3d62; padding:2px 0;">${i+1}. ${j?.label || '?'}${j?.param ? ` (${r.param}${j.param==='pct'?'%':''})` : ''} → <b>${skill}</b></div>`;
+            }).join('')}
+            ${hero.actionPattern.length > 4 ? `<div style="font-size:10px; color:#9ca3af;">…還有 ${hero.actionPattern.length - 4} 條</div>` : ''}
+          </div>
+        </div>
+        <div style="margin-top:8px; padding:8px; background:#fff8e6; border-radius:8px;">
+          <div style="font-weight:700; color:#7c2d12; font-size:12px;">🎒 裝備（5 槽）</div>
+          <div style="font-size:11px; color:#92400e; margin-top:4px;">
+            ${['weapon','offhand','armor','helm','accessory'].map(slot => {
+              const eq = hero.equipment?.[slot];
+              return `${slot}: ${eq ? `${eq.name} (+${eq.val} ${eq.stat})` : '空'}`;
+            }).join(' · ')}
+          </div>
+          ${hero.inventory && hero.inventory.length ? `
+            <div style="margin-top:6px; font-size:11px; color:#5b3d62;">
+              <b>背包（${hero.inventory.length}）</b>
+              <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">
+                ${hero.inventory.map((eq, i) => `
+                  <button class="btn btn-secondary" style="font-size:10px; padding:3px 6px;" onclick="window.__teamUI.equipItem('${hero.id}', ${i})">${eq.name} (+${eq.val} ${eq.stat})</button>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
         </div>
       </div>
     `;
   }
 
-  function getGrowDesc(cls, key) {
-    if (key === 'HP')  return `+${cls.coef.hpPerVit}/VIT`;
-    if (key === 'SP')  return `+${cls.coef.spPerInt}/INT`;
-    if (key === 'STR') return `物攻 ×${cls.coef.atkPerStr || 1}`;
-    if (key === 'INT' && cls.coef.magAtkPerInt) return `魔攻 ×${cls.coef.magAtkPerInt}`;
-    if (key === 'DEX' && cls.coef.atkPerDex)    return `物攻 +${cls.coef.atkPerDex}/DEX`;
-    if (key === 'VIT') return `物防 ×${cls.coef.defPerVit}`;
-    return '';
+  function renderSkillRow(skill, locked) {
+    const tags = [];
+    tags.push(skill.kind === 'phys' ? '物理' : skill.kind === 'mag' ? '魔法' : skill.kind === 'heal' ? '治療' : skill.kind === 'buff' ? '增益' : '其他');
+    if (skill.cast)    tags.push(`詠 ${skill.cast}`);
+    if (skill.recover) tags.push(`硬 ${skill.recover}`);
+    if (skill.hits)    tags.push(`×${skill.hits}`);
+    if (skill.ignoreCover) tags.push('無視掩護');
+    if (skill.ignoreDef) tags.push('無視防');
+    if (skill.priority === 'lowHp') tags.push('優先低血');
+    if (skill.priority === 'backRow') tags.push('優先後排');
+    return `
+      <div class="skill-row${locked ? ' locked' : ''}">
+        <div class="skill-icon">${skill.icon}</div>
+        <div class="skill-meta">
+          <div class="skill-name">${skill.name} <span style="font-weight:400; color:#9ca3af;">${locked ? `🔒 Lv ${skill.unlockLv}` : ''}</span></div>
+          <div class="skill-desc">SP ${skill.sp}${skill.pow ? ` · 威力 ${skill.pow}` : ''}${skill.target ? ` · ${targetLabel(skill.target)}` : ''}</div>
+          <div class="skill-tags">${tags.join(' · ')}</div>
+        </div>
+      </div>
+    `;
+  }
+  function targetLabel(t) {
+    const m = {
+      enemy_single: '敵單體', enemy_multi: '敵多體', enemy_all: '敵全體',
+      ally_single: '友單', ally_multi: '友多', ally_all: '友全體',
+      self: '自身',
+    };
+    return m[t] || t;
   }
 
-  // === 全域 UI 函式（供 onclick 用）===
+  // ===== 規則表編輯器 modal =====
+  function openPatternEditor(heroId) {
+    const data = loadData();
+    const me = data.players?.find(p => p.id === getMeId());
+    const hero = me?.heroes?.find(h => h.id === heroId);
+    if (!hero) return;
+    const cls = CLASS_BY_ID[hero.classId];
+    const learnedSkills = SKILLS.filter(s => hero.skillsLearned.includes(s.id));
+    const skillOptions = `<option value="basic">⚔️ 普通攻擊</option>` + learnedSkills.map(s => `<option value="${s.id}">${s.icon} ${s.name}</option>`).join('');
+    const judgeOptions = JUDGES.map(j => `<option value="${j.id}">${j.label}</option>`).join('');
+    const renderRules = () => (hero.actionPattern || []).map((r, idx) => `
+      <div class="pattern-row">
+        <span class="pr-num">${idx+1}</span>
+        <select onchange="window.__teamUI.updateRule('${heroId}',${idx},'judgeId',this.value)">
+          ${JUDGES.map(j => `<option value="${j.id}" ${j.id===r.judgeId?'selected':''}>${j.label}</option>`).join('')}
+        </select>
+        ${(JUDGES.find(j=>j.id===r.judgeId)?.param) ? `
+          <input type="number" value="${r.param || 0}" onchange="window.__teamUI.updateRule('${heroId}',${idx},'param',this.value)" placeholder="X">
+        ` : `<span></span>`}
+        <select onchange="window.__teamUI.updateRule('${heroId}',${idx},'skillId',this.value)">
+          ${learnedSkills.map(s => `<option value="${s.id}" ${s.id===r.skillId?'selected':''}>${s.icon} ${s.name}</option>`).join('')}
+          <option value="basic" ${r.skillId==='basic'?'selected':''}>⚔️ 普通攻擊</option>
+        </select>
+        <button class="pr-x" onclick="window.__teamUI.removeRule('${heroId}',${idx})">×</button>
+      </div>
+    `).join('');
+    const html = `
+      <div style="font-size:13px; color:#92400e; margin-bottom:8px;">
+        ${cls.icon} ${escapeHtml(hero.name)} 的行動規則表
+      </div>
+      <div style="font-size:11px; color:#5b3d62; margin-bottom:10px; padding:6px 8px; background:#fef3c7; border-radius:8px;">
+        💡 從上到下檢查，第一條成立的規則執行對應技能。<br>
+        條件不成立或技能 SP/條件不足 → 跳到下一條。最後一條建議用「永遠成立 → 普通攻擊」當保底。
+      </div>
+      <div id="patternRules">${renderRules()}</div>
+      <div style="display:flex; gap:6px; margin-top:8px;">
+        <button class="btn btn-secondary" style="flex:1;" onclick="window.__teamUI.addRule('${heroId}')">+ 新增規則</button>
+        <button class="btn btn-secondary" onclick="window.__teamUI.resetPattern('${heroId}')">↺ 重置為預設</button>
+      </div>
+      <button class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="window.__teamUI.closeModal()">完成</button>
+    `;
+    showModal(html);
+  }
+
+  // ===== 副本 tab =====
+  function renderDungeonsTab(me, data) {
+    const root = document.getElementById('tabContent');
+    if (!me.heroes || me.heroes.length === 0) {
+      root.innerHTML = `
+        <div class="card">
+          <h2>🏰 副本</h2>
+          <div style="font-size:13px; color:#92400e;">先去「英雄」分頁建立至少 1 個角色才能挑戰副本</div>
+        </div>
+      `;
+      return;
+    }
+    root.innerHTML = `
+      <div class="card">
+        <h2>👥 隊伍配置（最多 5 人）</h2>
+        <div style="font-size:11px; color:#92400e; margin-bottom:8px;">點擊角色加入/移出隊伍</div>
+        ${me.heroes.map(h => {
+          const cls = CLASS_BY_ID[h.classId];
+          const inParty = __party.includes(h.id);
+          return `
+            <div class="hero-row${inParty ? ' selected' : ''}" onclick="window.__teamUI.toggleParty('${h.id}')">
+              <div class="hero-icon">${cls.icon}</div>
+              <div class="hero-meta">
+                <div class="hero-name">${escapeHtml(h.name)} ${inParty ? `<span style="font-size:10px; color:#16a34a;">✓ 在隊伍中</span>` : ''}</div>
+                <div class="hero-sub">${cls.name} · Lv ${h.level} · ${h.position === 'front' ? '前排' : '後排'}</div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+        <div style="margin-top:8px; padding:8px; background:#fef3c7; border-radius:8px; font-size:11px; color:#92400e;">
+          目前隊伍：${__party.length} / 5　·　前排：${__party.filter(id => CLASS_BY_ID[me.heroes.find(h=>h.id===id)?.classId]?.position === 'front').length}　·　後排：${__party.filter(id => CLASS_BY_ID[me.heroes.find(h=>h.id===id)?.classId]?.position === 'back').length}
+        </div>
+      </div>
+      <div class="card">
+        <h2>🏰 副本入口（${DUNGEONS.length}）</h2>
+        ${DUNGEONS.map(d => `
+          <div style="margin-bottom:10px; padding:10px; background:linear-gradient(135deg,${d.color}1a,${d.color}33); border:2px solid ${d.color}; border-radius:10px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+              <div style="font-size:32px;">${d.icon}</div>
+              <div>
+                <div style="font-weight:700; color:${d.color}; font-size:14px;">${d.name}</div>
+                <div style="font-size:11px; color:#92400e;">${d.desc} · 等級 ${d.enemyLv} · ${d.stages.length} 場</div>
+              </div>
+            </div>
+            <div style="font-size:11px; color:#5b3d62; margin-bottom:6px;">
+              🎁 通關獎勵：🪙 ${d.reward.coins} 鵝鵝幣 + ⭐ ${d.reward.xp} XP + 📦 ${d.reward.eqDrops} 件裝備
+            </div>
+            <button class="btn btn-primary" style="width:100%;" onclick="window.__teamUI.enterDungeon('${d.id}')" ${__party.length === 0 ? 'disabled' : ''}>
+              ${__party.length === 0 ? '請先選隊伍' : '進入副本'}
+            </button>
+          </div>
+        `).join('')}
+      </div>
+      <div id="dungeonZone"></div>
+    `;
+  }
+
+  function startDungeon(dungeonId, me, data) {
+    const dungeon = DUNGEON_BY_ID[dungeonId];
+    if (!dungeon) return;
+    if (__party.length === 0) { showToast('先選隊伍'); return; }
+    __dungeonProgress = {
+      dungeonId,
+      stage: 0,
+      partyHeroIds: __party.slice(),
+      totalCoins: 0,
+      totalXp: 0,
+      drops: [],
+      ended: false,
+    };
+    runNextStage(me, data);
+  }
+  function runNextStage(me, data) {
+    if (!__dungeonProgress) return;
+    const dungeon = DUNGEON_BY_ID[__dungeonProgress.dungeonId];
+    const stage = dungeon.stages[__dungeonProgress.stage];
+    if (!stage) {
+      finishDungeon(me, data);
+      return;
+    }
+    // 組隊
+    const partyHeroes = __dungeonProgress.partyHeroIds
+      .map(id => me.heroes.find(h => h.id === id))
+      .filter(Boolean);
+    if (partyHeroes.length === 0) {
+      showToast('隊伍裡沒有角色'); return;
+    }
+    // 組敵
+    const enemies = stage.enemies.map(mid => MONSTER_BY_ID[mid]).filter(Boolean);
+    // 戰鬥！
+    const result = runTeamFight(partyHeroes, enemies, { enemyLv: dungeon.enemyLv });
+    renderBattleResult(result, dungeon, stage, partyHeroes, me, data);
+  }
+  function renderBattleResult(result, dungeon, stage, partyHeroes, me, data) {
+    const zone = document.getElementById('dungeonZone');
+    if (!zone) return;
+    const stageNum = __dungeonProgress.stage + 1;
+    const isBoss = !!stage.boss;
+    // 狀況面板
+    const finalHpHtml = result.players.map(p => `
+      <div class="combatant-card player ${p.position}">
+        <div class="cc-name">${p.icon} ${p.name}${!p.alive ? ' 💀' : ''}</div>
+        <div class="cc-bar"><div class="cc-bar-fill" style="width:${Math.max(0,p.hp/p.maxHp*100)}%"></div></div>
+        <div class="cc-text">HP ${p.hp}/${p.maxHp}</div>
+        <div class="cc-bar"><div class="cc-bar-fill sp" style="width:${Math.max(0,p.sp/p.maxSp*100)}%"></div></div>
+        <div class="cc-text">SP ${p.sp}/${p.maxSp}</div>
+      </div>
+    `).join('');
+    const enemyHpHtml = result.monsters.map(m => `
+      <div class="combatant-card ${m.alive ? '' : 'dead'} ${m.position}">
+        <div class="cc-name">${m.icon} ${m.name}${!m.alive ? ' 💀' : ''}</div>
+        <div class="cc-bar"><div class="cc-bar-fill" style="width:${Math.max(0,m.hp/m.maxHp*100)}%"></div></div>
+        <div class="cc-text">HP ${m.hp}/${m.maxHp}</div>
+      </div>
+    `).join('');
+    // 戰鬥日誌
+    const logHtml = result.log.map(l => {
+      const cls = l.type ? `log-${l.type}` : '';
+      let gauge = '';
+      if (l.gauges) {
+        gauge = `<span class="log-gauge">⏱ ${l.gauges.map(g => g.icon + (g.value)).join(' ')}</span>`;
+      }
+      return `<div class="log-line ${cls}">${escapeHtml(l.text)}${gauge}</div>`;
+    }).join('');
+
+    // 結算
+    let resultHtml = '';
+    if (result.won) {
+      // 給 XP / 金幣 / 戰利品
+      const xpEach = Math.round(stage.enemies.length * dungeon.enemyLv * 30 * (isBoss ? 2.5 : 1));
+      const coinsEach = Math.round(stage.enemies.length * dungeon.enemyLv * 20 * (isBoss ? 2 : 1));
+      __dungeonProgress.totalXp += xpEach;
+      __dungeonProgress.totalCoins += coinsEach;
+      // 裝備掉落（boss 比較容易掉）
+      if (isBoss && Math.random() < 0.95 || (!isBoss && Math.random() < 0.4)) {
+        const eq = generateEquipForDungeon(dungeon.enemyLv);
+        __dungeonProgress.drops.push(eq);
+      }
+      // 給每個英雄 XP
+      partyHeroes.forEach(h => awardXp(h, xpEach));
+      saveData(data);
+
+      const finished = __dungeonProgress.stage + 1 >= dungeon.stages.length;
+      resultHtml = `
+        <div class="card" style="background:linear-gradient(135deg,#dcfce7,#bbf7d0);">
+          <h2>🎉 第 ${stageNum} 場勝利！${isBoss ? '（王關）' : ''}</h2>
+          <div style="font-size:12px; color:#15803d; margin-bottom:6px;">
+            🏆 戰利品：每位 +${xpEach} XP / 共 +${coinsEach} 鵝鵝幣${__dungeonProgress.drops.length ? ` / 累計 ${__dungeonProgress.drops.length} 件裝備` : ''}
+          </div>
+          ${finished
+            ? `<button class="btn btn-primary" style="width:100%;" onclick="window.__teamUI.finishDungeon()">🎁 領取通關獎勵</button>`
+            : `<button class="btn btn-primary" style="width:100%;" onclick="window.__teamUI.nextStage()">前往第 ${stageNum + 1} 場</button>`}
+        </div>
+      `;
+    } else {
+      __dungeonProgress.ended = true;
+      resultHtml = `
+        <div class="card" style="background:linear-gradient(135deg,#fee2e2,#fca5a5);">
+          <h2>💀 第 ${stageNum} 場戰敗</h2>
+          <div style="font-size:12px; color:#991b1b; margin-bottom:6px;">
+            隊伍全滅，副本中止。已累積：⭐ ${__dungeonProgress.totalXp} XP / 🪙 ${__dungeonProgress.totalCoins} 鵝鵝幣 / 📦 ${__dungeonProgress.drops.length} 件裝備
+          </div>
+          <button class="btn btn-primary" style="width:100%;" onclick="window.__teamUI.exitDungeon()">退出副本</button>
+        </div>
+      `;
+    }
+
+    zone.innerHTML = `
+      <div class="card">
+        <h2>${dungeon.icon} ${dungeon.name} - 第 ${stageNum}/${dungeon.stages.length} 場${isBoss ? '（👑 王關）' : ''}</h2>
+        <div class="battle-zone">
+          <div style="font-size:11px; opacity:0.85; margin-bottom:6px;">隊伍狀態</div>
+          <div class="battle-row">${finalHpHtml}</div>
+          <div style="font-size:11px; opacity:0.85; margin: 8px 0 6px;">敵方狀態</div>
+          <div class="battle-row">${enemyHpHtml}</div>
+        </div>
+        <details style="margin-top:8px;">
+          <summary style="cursor:pointer; font-weight:700; color:#92400e;">📜 戰鬥日誌（${result.log.length} 條）</summary>
+          <div style="max-height:50vh; overflow-y:auto; margin-top:8px;">${logHtml}</div>
+        </details>
+      </div>
+      ${resultHtml}
+    `;
+    // 滾到 zone
+    zone.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function finishDungeon(me, data) {
+    const dungeon = DUNGEON_BY_ID[__dungeonProgress.dungeonId];
+    // 通關獎勵
+    const totalCoins = __dungeonProgress.totalCoins + dungeon.reward.coins;
+    const totalXp = __dungeonProgress.totalXp;
+    const drops = __dungeonProgress.drops.slice();
+    // 通關還會額外掉指定數量的裝備
+    for (let i = 0; i < dungeon.reward.eqDrops; i++) {
+      drops.push(generateEquipForDungeon(dungeon.enemyLv));
+    }
+    // 獎勵：鵝鵝幣 → 用 me.coinsSpent 的負數加（跟 index.html 共用）
+    me.coinsSpent = (me.coinsSpent || 0) - totalCoins;
+    // 裝備分配：每件隨機給隊伍中一個英雄
+    const partyHeroes = __dungeonProgress.partyHeroIds.map(id => me.heroes.find(h => h.id === id)).filter(Boolean);
+    drops.forEach(eq => {
+      const lucky = partyHeroes[Math.floor(Math.random() * partyHeroes.length)];
+      if (lucky) {
+        lucky.inventory = lucky.inventory || [];
+        lucky.inventory.push(eq);
+      }
+    });
+    saveData(data);
+
+    const zone = document.getElementById('dungeonZone');
+    if (!zone) return;
+    zone.innerHTML = `
+      <div class="card" style="background:linear-gradient(135deg,#fef3c7,#fde047);">
+        <h2>🏆 ${dungeon.name} 通關！</h2>
+        <div style="font-size:13px; color:#7c2d12; line-height:1.8;">
+          🪙 共獲得 <b>${totalCoins}</b> 鵝鵝幣（含通關 ${dungeon.reward.coins}）<br>
+          ⭐ 每位英雄 +<b>${totalXp}</b> XP<br>
+          📦 共獲得 <b>${drops.length}</b> 件裝備（隨機分配給隊伍）<br>
+        </div>
+        <div style="margin-top:8px; padding:8px; background:#fff; border-radius:8px; font-size:11px; color:#92400e;">
+          ${drops.map(eq => `<span style="display:inline-block; padding:2px 6px; margin:2px; background:#fef3c7; border-radius:6px;">${eq.name} +${eq.val} ${eq.stat}</span>`).join('')}
+        </div>
+        <button class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="window.__teamUI.exitDungeon()">完成</button>
+      </div>
+    `;
+    __dungeonProgress = null;
+  }
+
+  // ===== Modal =====
+  function showModal(html) {
+    document.getElementById('modalRoot').innerHTML = `
+      <div class="modal" id="theModal">
+        <div class="modal-content" onclick="event.stopPropagation()">
+          ${html}
+        </div>
+      </div>
+    `;
+    document.getElementById('theModal').onclick = (e) => {
+      if (e.target.id === 'theModal') closeModal();
+    };
+  }
+  function closeModal() {
+    document.getElementById('modalRoot').innerHTML = '';
+    renderAll(); // 重整
+  }
+
+  // ===== UI hooks =====
   window.__teamUI = {
-    pickClass(classId) {
-      __pickedClass = classId;
-      const root = document.getElementById('content');
-      root.innerHTML = renderClassPicker();
-    },
+    pickClass(classId) { __pickedClass = classId; renderAll(); },
     confirmCreate() {
       if (!__pickedClass) { showToast('先選一個職業'); return; }
       const name = document.getElementById('newHeroName')?.value.trim();
@@ -470,16 +1555,13 @@
       if (!hero) return;
       me.heroes.push(hero);
       saveData(data);
-      showToast(`✨ 創建 ${CLASS_BY_ID[__pickedClass].icon} ${hero.name}`);
+      __selectedHeroId = hero.id;
       __pickedClass = null;
+      showToast(`✨ 創建 ${CLASS_BY_ID[hero.classId].icon} ${hero.name}`);
       renderAll();
     },
-    beginCreate() {
-      __pickedClass = null;
-      const root = document.getElementById('content');
-      root.innerHTML = renderClassPicker();
-    },
-    openHero(id) { showHeroDetail(id); },
+    beginCreate() { __pickedClass = null; __selectedHeroId = null; renderAll(); },
+    selectHero(id) { __selectedHeroId = id; showHeroDetail(id); },
     deleteHero(id) {
       if (!confirm('刪除這個角色？無法復原')) return;
       const data = loadData();
@@ -487,8 +1569,108 @@
       if (!me) return;
       me.heroes = (me.heroes || []).filter(h => h.id !== id);
       saveData(data);
+      __selectedHeroId = null;
+      __party = __party.filter(pid => pid !== id);
       showToast('🗑 已刪除');
       renderAll();
+    },
+    editPattern(heroId) { openPatternEditor(heroId); },
+    closeModal() { closeModal(); },
+    addRule(heroId) {
+      const data = loadData();
+      const me = data.players?.find(p => p.id === getMeId());
+      const hero = me?.heroes?.find(h => h.id === heroId);
+      if (!hero) return;
+      hero.actionPattern.splice(Math.max(0, hero.actionPattern.length - 1), 0, { judgeId: 0, param: 0, skillId: 'basic' });
+      saveData(data);
+      openPatternEditor(heroId);
+    },
+    removeRule(heroId, idx) {
+      const data = loadData();
+      const me = data.players?.find(p => p.id === getMeId());
+      const hero = me?.heroes?.find(h => h.id === heroId);
+      if (!hero) return;
+      hero.actionPattern.splice(idx, 1);
+      saveData(data);
+      openPatternEditor(heroId);
+    },
+    updateRule(heroId, idx, field, value) {
+      const data = loadData();
+      const me = data.players?.find(p => p.id === getMeId());
+      const hero = me?.heroes?.find(h => h.id === heroId);
+      if (!hero) return;
+      const rule = hero.actionPattern[idx];
+      if (!rule) return;
+      if (field === 'judgeId') rule.judgeId = Number(value);
+      else if (field === 'param') rule.param = Number(value);
+      else if (field === 'skillId') rule.skillId = value;
+      saveData(data);
+    },
+    resetPattern(heroId) {
+      if (!confirm('重置為職業預設？')) return;
+      const data = loadData();
+      const me = data.players?.find(p => p.id === getMeId());
+      const hero = me?.heroes?.find(h => h.id === heroId);
+      if (!hero) return;
+      hero.actionPattern = defaultActionPattern(hero.classId);
+      saveData(data);
+      openPatternEditor(heroId);
+    },
+    toggleParty(heroId) {
+      if (__party.includes(heroId)) {
+        __party = __party.filter(id => id !== heroId);
+      } else {
+        if (__party.length >= 5) { showToast('隊伍最多 5 人'); return; }
+        __party.push(heroId);
+      }
+      renderAll();
+    },
+    enterDungeon(dungeonId) {
+      const data = loadData();
+      const me = data.players?.find(p => p.id === getMeId());
+      if (!me) return;
+      startDungeon(dungeonId, me, data);
+    },
+    nextStage() {
+      const data = loadData();
+      const me = data.players?.find(p => p.id === getMeId());
+      if (!me || !__dungeonProgress) return;
+      __dungeonProgress.stage += 1;
+      runNextStage(me, data);
+    },
+    finishDungeon() {
+      const data = loadData();
+      const me = data.players?.find(p => p.id === getMeId());
+      if (!me) return;
+      finishDungeon(me, data);
+    },
+    exitDungeon() {
+      __dungeonProgress = null;
+      const z = document.getElementById('dungeonZone');
+      if (z) z.innerHTML = '';
+      renderAll();
+    },
+    equipItem(heroId, invIdx) {
+      const data = loadData();
+      const me = data.players?.find(p => p.id === getMeId());
+      const hero = me?.heroes?.find(h => h.id === heroId);
+      if (!hero) return;
+      const eq = hero.inventory[invIdx];
+      if (!eq) return;
+      // 檢查職業可裝
+      const cls = CLASS_BY_ID[hero.classId];
+      if (!cls.equipTypes.includes(eq.type) && !['helm','boots','accessory'].includes(eq.type)) {
+        showToast(`${cls.name}不能裝 ${eq.name}`);
+        return;
+      }
+      // 把舊的丟回背包
+      const old = hero.equipment[eq.slot];
+      if (old) hero.inventory.push(old);
+      hero.equipment[eq.slot] = eq;
+      hero.inventory.splice(invIdx, 1);
+      saveData(data);
+      showToast(`✨ 裝備 ${eq.name}`);
+      showHeroDetail(heroId);
     },
   };
 
