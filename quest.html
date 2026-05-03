@@ -3518,12 +3518,12 @@
     { id: 'a_chain',  name: '鎖鏈甲',   icon: '⛓', slot: 'armor', def: 9,  lv: 8 },
     { id: 'a_plate',  name: '板甲',     icon: '🛡️', slot: 'armor', def: 14, lv: 13 },
     { id: 'a_dragon', name: '龍鱗甲',   icon: '🐉', slot: 'armor', def: 22, lv: 20 },
-    // 飾品
-    { id: 'c_ring',   name: '銅戒',     icon: '💍', slot: 'accessory', atk: 2, lv: 2 },
-    { id: 'c_foot',   name: '兔腳',     icon: '🐰', slot: 'accessory', spd: 4, lv: 5 },
-    { id: 'c_ruby',   name: '紅寶石',   icon: '💎', slot: 'accessory', atk: 4, hp: 10, lv: 8 },
-    { id: 'c_heart',  name: '心形吊墜', icon: '💖', slot: 'accessory', hp: 40, def: 3, lv: 12 },
-    { id: 'c_oracle', name: '神諭',     icon: '🌠', slot: 'accessory', atk: 6, def: 6, spd: 4, hp: 30, lv: 18 },
+    // 飾品 — 每件最多 2 種能力，主題化（物理 / 法系 / 雙資源 / 暴擊路線）
+    { id: 'c_ring',   name: '銅戒',     icon: '💍', slot: 'accessory', atk: 2, critChance: 0.03, lv: 2 },
+    { id: 'c_foot',   name: '兔腳',     icon: '🐰', slot: 'accessory', spd: 4, mp: 10, lv: 5 },
+    { id: 'c_ruby',   name: '紅寶石',   icon: '💎', slot: 'accessory', atk: 5, critDmg: 0.15, lv: 8 },
+    { id: 'c_heart',  name: '心形吊墜', icon: '💖', slot: 'accessory', hp: 40, mp: 25, lv: 12 },
+    { id: 'c_oracle', name: '神諭',     icon: '🌠', slot: 'accessory', critChance: 0.08, critDmg: 0.30, lv: 18 },
     // 頭盔
     { id: 'h_cap',    name: '布帽',     icon: '🎩', slot: 'helmet', def: 2, lv: 2 },
     { id: 'h_iron',   name: '鐵盔',     icon: '🪖', slot: 'helmet', def: 6, lv: 8 },
@@ -3626,12 +3626,30 @@
         lv, atk: Math.round(2 + lv * 0.75), cost, type: 'equipment' });
       items.push({ id: `shop_a_${lv}`, name: aMeta[i][0], icon: aMeta[i][1], slot: 'armor',
         lv, def: Math.round(2 + lv * 0.75), cost, type: 'equipment' });
-      // 飾品（已有混合詞條）
+      // 飾品 — 每件只給 2 種能力，輪流走不同主題（物理 / 法系 / 暴擊 / 雙資源）
       const acc = { id: `shop_c_${lv}`, name: cMeta[i][0], icon: cMeta[i][1], slot: 'accessory', lv, cost: cost + 30, type: 'equipment' };
-      const flavor = i % 3;
-      if (flavor === 0) { acc.atk = Math.round(1 + lv * 0.4); acc.spd = Math.round(1 + lv * 0.3); }
-      else if (flavor === 1) { acc.hp = Math.round(10 + lv * 5); acc.def = Math.round(1 + lv * 0.3); }
-      else { acc.spd = Math.round(2 + lv * 0.4); acc.hp = Math.round(5 + lv * 3); acc.atk = Math.round(lv * 0.2); }
+      const flavor = i % 5;
+      if (flavor === 0) {
+        // 物理戰士: ATK + SPD
+        acc.atk = Math.round(1 + lv * 0.4);
+        acc.spd = Math.round(1 + lv * 0.3);
+      } else if (flavor === 1) {
+        // 法系: MP + ATK（魔攻飾品）
+        acc.mp = Math.round(8 + lv * 1.2);
+        acc.atk = Math.round(1 + lv * 0.3);
+      } else if (flavor === 2) {
+        // 防禦坦: HP + DEF
+        acc.hp = Math.round(10 + lv * 5);
+        acc.def = Math.round(1 + lv * 0.3);
+      } else if (flavor === 3) {
+        // 暴擊弓手 / 法師: ATK + 暴擊率
+        acc.atk = Math.round(1 + lv * 0.3);
+        acc.critChance = Math.min(0.15, 0.02 + lv * 0.005); // 2%-15%
+      } else {
+        // 高階暴擊: SPD + 爆傷
+        acc.spd = Math.round(1 + lv * 0.3);
+        acc.critDmg = Math.min(0.50, 0.05 + lv * 0.015); // 5%-50%
+      }
       items.push(acc);
       // 新槽位（每件較便宜，屬性較輕）
       const subCost = Math.max(60, cost - 30);
@@ -5956,6 +5974,217 @@
   }
   window.showSpiritsModal = showSpiritsModal;
 
+  // ==========================================================================
+  // 🎰 扭蛋系統（多機台 hub + 探險扭蛋）
+  // ==========================================================================
+  // 機台清單：可以一直加新的（預留 status='locked' 的不能按）
+  const GACHA_MACHINES = [
+    {
+      id: 'explore',
+      icon: '🧭',
+      name: '探險扭蛋',
+      desc: '用探險幣抽飾品（5 種主題）',
+      cost: 30,
+      currency: 'exploreCoins',
+      currencyIcon: '🧭',
+      currencyName: '探險幣',
+      status: 'open',
+      pool: ['c_ring', 'c_foot', 'c_ruby', 'c_heart', 'c_oracle'],
+      // 抽中各物品的權重（總和 100）
+      weights: [30, 25, 20, 15, 10],
+    },
+    {
+      id: 'goose_coin', icon: '👑', name: '王硬幣扭蛋', desc: '用世界王硬幣抽稀有獎勵', cost: 0,
+      status: 'locked', // 之後再開
+    },
+    {
+      id: 'egg', icon: '🥚', name: '鵝蛋扭蛋', desc: '用鵝蛋幣抽頭像 / 稱號 / 翅膀寵物',
+      status: 'locked', // 之後做（目前在 index.html）
+    },
+  ];
+
+  function showGachaHub() {
+    const me = getMe(); if (!me) { showToast('先選身份'); return; }
+    const r = getRpg(me);
+    const exploreCoins = r.exploreCoins || 0;
+    const machinesHtml = GACHA_MACHINES.map(g => {
+      const locked = g.status !== 'open';
+      const myCoins = g.currency ? (r[g.currency] || 0) : 0;
+      const canAfford = !locked && myCoins >= g.cost;
+      return `
+        <button class="gacha-machine ${locked ? 'locked' : ''}" ${locked ? 'disabled' : `onclick="openGachaMachine('${g.id}')"`}
+                style="display:flex; gap:10px; width:100%; text-align:left; padding:12px; margin-bottom:8px;
+                border:2px solid ${locked ? '#cbd5e1' : '#a78bfa'}; border-radius:12px;
+                background:${locked ? '#f1f5f9' : 'linear-gradient(135deg,#fff,#f3e8ff)'};
+                ${locked ? 'opacity:0.55; cursor:not-allowed; filter:grayscale(0.4);' : 'cursor:pointer;'}
+                font-family:inherit;">
+          <div style="font-size:36px; line-height:1;">${g.icon}</div>
+          <div style="flex:1; min-width:0;">
+            <div style="font-weight:800; color:${locked ? '#64748b' : '#5b21b6'};">${escapeHtml(g.name)}${locked ? ' 🔒' : ''}</div>
+            <div style="font-size:11px; color:#64748b; margin-top:2px;">${escapeHtml(g.desc)}</div>
+            ${!locked ? `<div style="font-size:11px; color:${canAfford ? '#16a34a' : '#dc2626'}; margin-top:4px; font-weight:700;">每抽 ${g.currencyIcon} ${g.cost}　·　你有 ${myCoins}</div>` : '<div style="font-size:10px; color:#94a3b8; margin-top:4px;">敬請期待…</div>'}
+          </div>
+        </button>
+      `;
+    }).join('');
+    showModal('🎰 扭蛋', `
+      <div style="text-align:left;">
+        <div style="font-size:11px; color:#5b3d62; padding:6px 10px; background:#f3e8ff; border:1px dashed #c4b5fd; border-radius:8px; margin-bottom:10px;">
+          選一台扭蛋機 → 進去抽獎。不同機台用不同貨幣。
+        </div>
+        ${machinesHtml}
+        <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:8px;">關閉</button>
+      </div>
+    `);
+  }
+  window.showGachaHub = showGachaHub;
+
+  function openGachaMachine(machineId) {
+    const m = GACHA_MACHINES.find(g => g.id === machineId);
+    if (!m) return;
+    if (m.status !== 'open') { showToast('機台尚未開放'); return; }
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const myCoins = m.currency ? (r[m.currency] || 0) : 0;
+    // 預覽獎池
+    const poolHtml = m.pool.map((iid, idx) => {
+      const it = findItem(iid);
+      if (!it) return '';
+      const w = m.weights[idx] || 0;
+      const totalW = m.weights.reduce((a, b) => a + b, 0);
+      const pct = ((w / totalW) * 100).toFixed(1);
+      const stats = formatItemStats(it);
+      return `<div style="display:flex; gap:8px; align-items:center; padding:6px 8px; background:#fff; border:1px solid #e9d5ff; border-radius:8px; margin-bottom:4px;">
+        <span style="font-size:22px;">${it.icon}</span>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:12px; font-weight:700; color:#5b21b6;">${escapeHtml(it.name)} <span style="font-size:10px; color:#a855f7;">Lv ${it.lv}</span></div>
+          <div style="font-size:10px; color:#7c3aed;">${stats}</div>
+        </div>
+        <span style="font-size:11px; color:#8b6f9b; font-weight:700;">${pct}%</span>
+      </div>`;
+    }).join('');
+    const html = `
+      <div style="text-align:center; padding:6px 0;">
+        <div style="font-size:48px;">${m.icon}</div>
+        <div style="font-weight:800; font-size:16px; color:#5b21b6; margin-top:4px;">${escapeHtml(m.name)}</div>
+        <div style="font-size:11px; color:#64748b; margin:6px 0 10px;">${escapeHtml(m.desc)}</div>
+        <div style="display:flex; justify-content:center; gap:12px; padding:8px 12px; background:#fef3c7; border:1px dashed #f59e0b; border-radius:8px; margin-bottom:10px;">
+          <span style="font-size:12px;">每抽 ${m.currencyIcon} <b>${m.cost}</b></span>
+          <span style="font-size:12px;">你有 ${m.currencyIcon} <b style="color:${myCoins >= m.cost ? '#16a34a' : '#dc2626'};">${myCoins}</b></span>
+        </div>
+        <div style="text-align:left; padding:8px 10px; background:#faf5ff; border:1px dashed #ddd6fe; border-radius:8px; margin-bottom:10px;">
+          <div style="font-size:11px; color:#5b3d62; font-weight:700; margin-bottom:6px;">獎池（${m.pool.length}）</div>
+          ${poolHtml}
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+          <button class="btn btn-primary" onclick="rollGacha('${m.id}', 1)" ${myCoins >= m.cost ? '' : 'disabled'}
+                  style="background:linear-gradient(135deg,#fde047,#f59e0b); box-shadow:0 4px 0 #d97706; color:#7c2d12;">
+            🎰 單抽（${m.currencyIcon} ${m.cost}）
+          </button>
+          <button class="btn btn-primary" onclick="rollGacha('${m.id}', 10)" ${myCoins >= m.cost * 10 ? '' : 'disabled'}
+                  style="background:linear-gradient(135deg,#a78bfa,#7c3aed); box-shadow:0 4px 0 #6d28d9;">
+            🎰×10（${m.currencyIcon} ${m.cost * 10}）
+          </button>
+        </div>
+        <button class="btn btn-secondary" onclick="showGachaHub()" style="margin-top:8px; width:100%;">← 回扭蛋機列表</button>
+      </div>
+    `;
+    showModal('🎰 ' + m.name, html);
+  }
+  window.openGachaMachine = openGachaMachine;
+
+  function rollGacha(machineId, count) {
+    const m = GACHA_MACHINES.find(g => g.id === machineId);
+    if (!m || m.status !== 'open') return;
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const totalCost = m.cost * count;
+    if ((r[m.currency] || 0) < totalCost) { showToast('幣不夠'); return; }
+    r[m.currency] = (r[m.currency] || 0) - totalCost;
+    // 加權抽取
+    const totalW = m.weights.reduce((a, b) => a + b, 0);
+    const results = [];
+    for (let i = 0; i < count; i++) {
+      let roll = Math.random() * totalW;
+      let pickedIdx = 0;
+      for (let j = 0; j < m.pool.length; j++) {
+        roll -= (m.weights[j] || 0);
+        if (roll <= 0) { pickedIdx = j; break; }
+      }
+      const baseId = m.pool[pickedIdx];
+      const baseItem = findItem(baseId);
+      if (!baseItem) continue;
+      // 用 generateDropItem 系統生個含詞綴的 instance
+      // 但飾品不在 generateDropItem 的池子（被排除），所以手動造一份
+      const drop = createGachaItemInstance(baseItem);
+      r.inventory = r.inventory || [];
+      r.inventory.push(drop);
+      results.push(drop);
+    }
+    saveData();
+    renderCharCard();
+    renderEquipment();
+    renderCharQuickMenu();
+    // 顯示結果
+    const resultHtml = results.map(d => {
+      const rarColor = d.rarity ? RARITY[d.rarity]?.color : '#7c3aed';
+      const rarLabel = d.rarity ? RARITY[d.rarity]?.label : '';
+      return `<div style="display:flex; gap:8px; align-items:center; padding:6px 8px; background:#fff; border:2px solid ${rarColor}; border-radius:8px; margin-bottom:4px;">
+        <span style="font-size:24px;">${d.icon}</span>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:12px; font-weight:700; color:${rarColor};">[${rarLabel}] ${escapeHtml(d.name)}</div>
+          <div style="font-size:10px; color:#7c3aed;">${formatItemStats(d)}</div>
+        </div>
+      </div>`;
+    }).join('');
+    showModal(`🎰 抽到 ${results.length} 件`, `
+      <div style="text-align:left;">
+        <div style="font-size:11px; color:#5b3d62; padding:6px 10px; background:#fef3c7; border:1px dashed #f59e0b; border-radius:8px; margin-bottom:10px; text-align:center;">
+          ${m.currencyIcon} −${totalCost}　·　已加進背包
+        </div>
+        ${resultHtml}
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:10px;">
+          <button class="btn btn-primary" onclick="openGachaMachine('${machineId}')">🎰 再抽</button>
+          <button class="btn btn-secondary" onclick="hideModal()">收下</button>
+        </div>
+      </div>
+    `);
+  }
+  window.rollGacha = rollGacha;
+
+  // 把 ITEMS 的基底飾品造成「drop instance」（隨機稀有度 + 詞綴）
+  function createGachaItemInstance(base) {
+    const rarity = rollRarity(false);
+    const def = RARITY[rarity];
+    const drop = {
+      id: 'gacha_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      baseId: base.id,
+      rarity,
+      name: base.name,
+      icon: base.icon,
+      slot: base.slot,
+      lv: base.lv || 1,
+      atk: base.atk || 0,
+      def: base.def || 0,
+      spd: base.spd || 0,
+      hp:  base.hp  || 0,
+      mp:  base.mp  || 0,
+      critChance: base.critChance || 0,
+      critDmg:    base.critDmg    || 0,
+      affixes: [],
+    };
+    // 詞綴數依稀有度（白 0 / 綠 1 / 藍 2 / 紫 3）
+    const affixCount = def.affixes;
+    for (let i = 0; i < affixCount; i++) {
+      const a = AFFIXES[Math.floor(Math.random() * AFFIXES.length)];
+      const val = Math.max(1, Math.round((1 + drop.lv * a.perLv) * def.mult));
+      drop[a.type] = (drop[a.type] || 0) + val;
+      drop.affixes.push({ type: a.type, name: a.name, val });
+    }
+    if (drop.affixes.length > 0) drop.name = `${drop.affixes[0].name}的 ${base.name}`;
+    return drop;
+  }
+
   // 從背包裝備一個精魂（找第一個空槽，沒空就替換槽 1 然後把舊的丟回背包）
   function equipSpiritFromBag(bagIdx) {
     const me = getMe(); if (!me) return;
@@ -6394,6 +6623,11 @@ ${b.text}
         <span class="cqm-icon">🌟</span>
         <span class="cqm-label">精魂</span>
         <span class="cqm-badge">${spiritEquipped}/5${spiritBag ? ` +${spiritBag}` : ''}</span>
+      </button>
+      <button class="cqm-btn" onclick="showGachaHub()" title="扭蛋">
+        <span class="cqm-icon">🎰</span>
+        <span class="cqm-label">扭蛋</span>
+        <span class="cqm-badge">🧭 ${rpg.exploreCoins || 0}</span>
       </button>
     `;
   }
