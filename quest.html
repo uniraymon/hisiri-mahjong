@@ -1845,7 +1845,29 @@
       dialogue: ['...', '...嗯。', '......（凝視）'],
       deathLine: ['...感謝指教。', '......（沉睡）', '...再會。'] },
 
-    // ⭐ HOF 風格的特化怪物：每隻有獨特性格（紙鵝 / 鏡鵝 / 速鵝 / 鋼鵝 / 法鵝...）
+      // ⭐ 寶箱怪：每區一支、低機率出現、金錢×2、掉裝率×2
+    { id: 'chest_forest',  tier: 1, name: '寶箱鵝・森林', icon: '📦', hpBase: 80, atkBase: 6, defBase: 2, spdBase: 6,
+      goldBase: 0, xpBase: 100, verb: '蓋子彈',
+      isChest: true, chestZone: 'forest',
+      dialogue: ['咕嚕咕嚕～有東西在裡面～', '想開我嗎？來打我！', '別把我捐給慈善機構喔～'],
+      deathLine: ['啪嚓！蓋子壞了…', '裡面的東西…全給你了…', '下次再見～'] },
+    { id: 'chest_ruins',   tier: 2, name: '寶箱鵝・廢墟', icon: '📦', hpBase: 130, atkBase: 11, defBase: 5, spdBase: 7,
+      goldBase: 0, xpBase: 220, verb: '蓋子彈',
+      isChest: true, chestZone: 'ruins',
+      dialogue: ['咕嚕～這次裡面是好東西喔', '你打得開我嗎？', '別期待太多～'],
+      deathLine: ['啪嚓！蓋子壞了…', '裡面的東西…全給你了…', '下次再見～'] },
+    { id: 'chest_volcano', tier: 3, name: '寶箱鵝・火山', icon: '📦', hpBase: 200, atkBase: 16, defBase: 7, spdBase: 9,
+      goldBase: 0, xpBase: 380, verb: '蓋子彈',
+      isChest: true, chestZone: 'volcano',
+      dialogue: ['咕嚕～燙燙的寶物～', '小心被火燒到喔～', '這次值得喔～'],
+      deathLine: ['啪嚓！蓋子壞了…', '裡面的東西…全給你了…', '下次再見～'] },
+    { id: 'chest_ice',     tier: 4, name: '寶箱鵝・冰原', icon: '📦', hpBase: 280, atkBase: 20, defBase: 10, spdBase: 8,
+      goldBase: 0, xpBase: 600, verb: '蓋子彈',
+      isChest: true, chestZone: 'ice',
+      dialogue: ['咕嚕～凍凍的寶物～', '別讓我融化喔～', '這次絕對值喔～'],
+      deathLine: ['啪嚓！蓋子壞了…', '裡面的東西…全給你了…', '下次再見～'] },
+
+  // ⭐ HOF 風格的特化怪物：每隻有獨特性格（紙鵝 / 鏡鵝 / 速鵝 / 鋼鵝 / 法鵝...）
     // 紙鵝 (paper goose)：永遠只扣 1 但血量超低（10），特殊「永遠 1 傷害」機制
     { id: 'paper', tier: 1, name: '紙鵝',  icon: '📄', hpBase: 10, atkBase: 4, defBase: 0, spdBase: 5, goldBase: 8, xpBase: 25,
       verb: '輕飄飄碰一下', ability: { type: 'flatCapDmg', cap: 1 },
@@ -1958,6 +1980,13 @@
     const layerDEF = [1.0, 1.40, 1.65, 2.00];
     const offsetInLayer = (lvSafe - 1) % 5;
     return layerDEF[layer] * (1 + offsetInLayer * 0.015);
+  }
+  // 鵝鵝幣掉落：依層級（不再看怪物 goldBase）
+  // 上層 ~30 / 中層 ~60 / 下層 ~90 / 深層 ~130，± 約 15% 浮動
+  function coinDropByLevel(lv) {
+    const layer = Math.min(3, Math.floor((Math.max(1, lv) - 1) / 5));
+    const base = [30, 60, 90, 130][layer];
+    return Math.round(base * (0.9 + Math.random() * 0.2));
   }
   // 在某層內隨機抽一個怪物等級
   function pickLayerLevel(layerId) {
@@ -2710,7 +2739,7 @@
 
   // === 打工 ===
   const WORK_STAMINA = 15;
-  const WORK_BASE_PAY = 100; // 拉高底薪
+  const WORK_BASE_PAY = 200; // 拉高底薪（範圍 100-250 with mood/variance + clamp）
   const JOB_EVENTS = [
     // good (1.5x), normal (1x), bad (0.6x)
     { mood: 'good',   icon: '🍜', name: '鵝肉店搬運', line: '老闆娘看你可憐多給了一份小費！' },
@@ -3206,7 +3235,7 @@
       { id: 'pot_stam_m', name: '體力藥 (中)', icon: '🍶', desc: '+60 體力',  cost: 180, type: 'consumable', effect: { stamina: 60 } },
       { id: 'pot_stam_l', name: '體力藥 (大)', icon: '🍹', desc: '+100 體力', cost: 280, type: 'consumable', effect: { stamina: 100 } },
       // ⭐ 復活藥水：死掉時用，跳過 5 分休息（沒死時無效果，可帶不能用）
-      { id: 'pot_revive', name: '復活藥水',     icon: '🧚', desc: '死亡時立刻復活、HP 回滿', cost: 400, type: 'consumable', effect: { revive: true } },
+      { id: 'pot_revive', name: '復活藥水',     icon: '🧚', desc: '死亡時立刻復活、HP 回滿', cost: 100, type: 'consumable', effect: { revive: true } },
       // ⭐ 取消 HP / MP / 智慧藥水（HP/MP 變屬性、每場戰鬥自動回滿）
     ];
     // 每 3 等一階，10 階（Lv 1 / 4 / 7 / 10 / 13 / 16 / 19 / 22 / 25 / 28）
@@ -4084,6 +4113,26 @@
         isForageElite: true,
       };
     }
+    // ⭐ 寶箱怪：在指定地區內 5% 機率出現（金錢 ×2 + 掉裝率 ×2）
+    if (opts && opts.zoneId && Math.random() < 0.05) {
+      const chest = MONSTERS.find(m => m.isChest && m.chestZone === opts.zoneId);
+      if (chest) {
+        const lv = Math.max(1, opts.targetLv || layerFloorToLevel(opts.layerId, opts.floor) || 1);
+        const k = monsterK(lv);
+        return {
+          ...chest,
+          level: lv,
+          hp: Math.round(chest.hpBase * monsterHPK(lv)),
+          maxHp: Math.round(chest.hpBase * monsterHPK(lv)),
+          atk: Math.round(chest.atkBase * k * 1.0),
+          def: Math.round(chest.defBase * monsterDEFK(lv) * 0.7),
+          spd: Math.round(chest.spdBase + lv * 0.3),
+          goldDrop: coinDropByLevel(lv) * 2,         // ⭐ 金錢 ×2
+          xpDrop: Math.round((chest.xpBase + lv * 4) * 1.0),
+          isChest: true,
+        };
+      }
+    }
     // 精英怪：在指定地區內 7% 機率出現
     if (opts && opts.zoneId && Math.random() < 0.07) {
       const elite = ELITES.find(e => e.zone === opts.zoneId);
@@ -4100,7 +4149,7 @@
           atk: Math.round(elite.atkBase * k * 1.3),
           def: Math.round(elite.defBase * monsterDEFK(lv) * 0.7),
           spd: Math.round(elite.spdBase + lv * 0.4),
-          goldDrop: Math.round(elite.goldBase + lv * 1.8 + Math.random() * lv * 0.6),
+          goldDrop: coinDropByLevel(lv) * 2,  // 精英 = 同層普通 ×2
           xpDrop: Math.round((elite.xpBase + lv * 6 + Math.random() * lv * 3) * 2),
           isElite: true,
         };
@@ -4132,7 +4181,7 @@
       atk: Math.round(m.atkBase * k * 1.3),
       def: Math.round(m.defBase * monsterDEFK(lv) * 0.7),
       spd: Math.round(m.spdBase + lv * 0.4),
-      goldDrop: Math.round(m.goldBase + lv * 1.8 + Math.random() * lv * 0.6),
+      goldDrop: coinDropByLevel(lv),  // 依層級，不看怪物 goldBase
       xpDrop: Math.round((m.xpBase + lv * 6 + Math.random() * lv * 3) * 2),
     };
   }
@@ -6398,8 +6447,8 @@ ${b.text}
   window.setShopTab = setShopTab;
 
   // 體力藥每小時限購 5 瓶（避免「打工 → 買體力 → 打工」無限 loop）
-  // 封測期間：體力藥無限購買（要關回來把 STAM_POT_UNLIMITED 改成 false 即可）
-  const STAM_POT_UNLIMITED = true;
+  // 體力藥每小時限購 5 瓶（封測期已結束）
+  const STAM_POT_UNLIMITED = false;
   const STAM_POT_HOURLY_LIMIT = 5;
   const STAM_POT_WINDOW_MS = 60 * 60 * 1000;
   function getStamPotState(rpg) {
@@ -7080,7 +7129,7 @@ ${b.text}
         atk: Math.round(m.atkBase * k * 0.9),
         def: Math.round(m.defBase * monsterDEFK(lv) * 0.6),
         spd: Math.round(m.spdBase + lv * 0.4),
-        goldDrop: Math.round(m.goldBase * 0.5 + lv * 1),
+        goldDrop: Math.round(coinDropByLevel(lv) * 0.5),
         xpDrop: Math.round((m.xpBase + lv * 6) * 1.3),
       });
     }
@@ -7931,9 +7980,10 @@ ${b.text}
     r.stamina -= WORK_STAMINA;
     r.workCount = (r.workCount || 0) + 1;
     const ev = JOB_EVENTS[Math.floor(Math.random() * JOB_EVENTS.length)];
-    const mult = ev.mood === 'good' ? 1.5 : ev.mood === 'bad' ? 0.6 : 1.0;
+    const mult = ev.mood === 'good' ? 1.4 : ev.mood === 'bad' ? 0.6 : 1.0;
     const variance = 0.85 + Math.random() * 0.3;
-    const pay = Math.max(5, Math.round(WORK_BASE_PAY * mult * variance));
+    // 限制範圍 100-250
+    const pay = Math.min(250, Math.max(100, Math.round(WORK_BASE_PAY * mult * variance)));
     refundCoins(me.id, pay);
     saveData();
     renderCharCard();
@@ -8347,9 +8397,15 @@ ${b.text}
       // 使用目前地區的掉落偏好；掉落等級 = 怪物等級（樓層）
       const _zone = ZONES.find(z => z.id === (rpg.currentZone || 'forest'));
       const dropLv = monster.level || rpg.level;
+      // 寶箱怪：roll 兩次 → 掉裝率變 ~2 倍
       const drop = rollItemDrop(dropLv, { slotBias: _zone ? _zone.dropBias : null });
-      if (drop) rpg.inventory.push(drop); // drop instance（含詞綴）直接存物件
-      forageTrace('rollItemDrop', { zoneId: _zone?.id, dropBias: _zone?.dropBias, dropLv, gotDrop: !!drop, dropId: drop?.id, dropName: drop?.name, rarity: drop?.rarity, affixCount: drop?.affixes?.length });
+      if (drop) rpg.inventory.push(drop);
+      let chestExtraDrop = null;
+      if (monster.isChest) {
+        chestExtraDrop = rollItemDrop(dropLv, { slotBias: _zone ? _zone.dropBias : null });
+        if (chestExtraDrop) rpg.inventory.push(chestExtraDrop);
+      }
+      forageTrace('rollItemDrop', { zoneId: _zone?.id, dropBias: _zone?.dropBias, dropLv, gotDrop: !!drop, dropId: drop?.id, dropName: drop?.name, rarity: drop?.rarity, affixCount: drop?.affixes?.length, isChest: !!monster.isChest, chestExtra: !!chestExtraDrop });
       // 精英怪：必掉 2 件 3 詞條的裝備（地區偏好部位、隨機等級在玩家層樓附近）
       let elitePiece = null;
       let eliteExtraDrops = [];
@@ -8414,6 +8470,7 @@ ${b.text}
           <div class="rl-item">⭐ +${monster.xpDrop} XP</div>
           <div class="rl-item">🪙 +${monster.goldDrop} 鵝鵝幣</div>
           ${drop ? `<div class="rl-item">${drop.icon} ${drop.name}<span style="font-size:10px; color:#8b6f9b;"> · ${drop.affixes?.length || 0} 詞條</span></div>` : ''}
+          ${chestExtraDrop ? `<div class="rl-item" style="color:#92400e;">📦 寶箱多掉：${chestExtraDrop.icon} ${chestExtraDrop.name} <span style="font-size:10px; opacity:0.85;">· ${chestExtraDrop.affixes?.length || 0} 詞條</span></div>` : ''}
           ${eliteExtraDrops && eliteExtraDrops.length ? eliteExtraDrops.map(d => `<div class="rl-item" style="color:${RARITY[d.rarity]?.color || '#7c3aed'}; font-weight:700;">⭐ ${d.icon} ${escapeHtml(d.name)} <span style="font-size:10px; opacity:0.85;">· 3 詞條 · Lv${d.lv}</span></div>`).join('') : ''}
           ${elitePiece ? `<div class="rl-item" style="color:${SETS[monster.dropSet]?.color || '#7c3aed'}; font-weight:700;">🛡 [套裝] ${elitePiece.icon} ${elitePiece.name}（${SETS[monster.dropSet]?.name}）</div>` : ''}
           ${treasureDropped && !treasureDropped.duplicate ? `
@@ -8463,7 +8520,7 @@ ${b.text}
             <div class="rl-title">😭 失敗了</div>
             <div class="rl-item">💀 進入休息：5 分鐘後恢復到 50% HP</div>
             ${result.coinsStolen > 0 ? `<div class="rl-item" style="color:#dc2626;">💰 被偷走 −${result.coinsStolen} 鵝鵝幣</div>` : ''}
-            <div class="rl-item" style="margin-top:4px;">🧚 想立刻復活可去商店買「復活藥水」（400 鵝幣）</div>
+            <div class="rl-item" style="margin-top:4px;">🧚 想立刻復活可去商店買「復活藥水」（100 鵝幣）</div>
           </div>
         `;
       }
