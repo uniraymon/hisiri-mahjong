@@ -2562,12 +2562,57 @@
   }
 
   // === 禮物 ===
+  // 顯示一個 inventory 物品（不論是字串 id 或 drop 物件）
+  function describeInvItem(entry) {
+    if (!entry) return null;
+    if (typeof entry === 'object') {
+      // drop / 套裝件 / 扭蛋裝備物件
+      const rarColor = entry.rarity ? RARITY_COLOR[entry.rarity] : '#9ca3af';
+      const affixCount = (entry.affixes || []).length;
+      const stats = ['atk','def','spd','hp','critChance','critDmg'].filter(k=>entry[k]).map(k => {
+        if (k === 'critChance' || k === 'critDmg') return `${k==='critDmg'?'爆傷':'暴擊'}+${Math.round(entry[k]*100)}%`;
+        return `${k.toUpperCase()}+${entry[k]}`;
+      }).join(' ');
+      return {
+        icon: entry.icon || '🎁',
+        name: entry.name || '?',
+        color: rarColor,
+        sub: `${entry.lv ? `Lv ${entry.lv} · ` : ''}${stats || ''}${affixCount ? ` · ${affixCount} 詞條` : ''}`,
+        gachaOnly: !!entry.gachaOnly,
+      };
+    }
+    // 字串 id → 不知道細節；只用 id 顯示
+    const id = String(entry);
+    return { icon: '📦', name: id, color: '#9ca3af', sub: '（道具 id）', gachaOnly: id.startsWith('g_') };
+  }
+  // 簡單的稀有度顏色表（跟 quest.html 對齊）
+  const RARITY_COLOR = {
+    common: '#9ca3af',
+    magic: '#22c55e',
+    rare: '#3b82f6',
+    legendary: '#a855f7',
+  };
   function openGiftModal(toPid) {
     if (!ensureMe('送禮')) return;
     const me = getMe();
     if (me.id === toPid) { showToast('不能送自己 ♡'); return; }
     const target = getPlayer(toPid);
     const myCoins = getCoins(me.id);
+    const myInv = (me.rpg && me.rpg.inventory) || [];
+    // 過濾：僅顯示「可以送」的物品（排除扭蛋專屬，也排除字串 id 那種 gachaOnly 起首是 g_ 的）
+    const giftable = myInv.map((entry, idx) => ({ entry, idx, info: describeInvItem(entry) }))
+      .filter(x => x.info && !x.info.gachaOnly);
+    const equipBlock = giftable.length === 0
+      ? '<div style="font-size:11px; color:#9ca3af; text-align:center; padding:8px;">背包沒有可送的裝備（扭蛋限定不能送）</div>'
+      : `<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; max-height:240px; overflow-y:auto; padding:2px;">
+        ${giftable.map(({ entry, idx, info }) => `
+          <button onclick="sendEquipGift('${toPid}', ${idx})" style="text-align:left; padding:6px 8px; border:2px solid ${info.color}; border-radius:8px; background:linear-gradient(135deg,#fff,${info.color}1a); cursor:pointer; font-family:inherit;">
+            <div style="font-size:18px;">${info.icon}</div>
+            <div style="font-size:11px; font-weight:700; color:${info.color}; line-height:1.2; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(info.name)}</div>
+            <div style="font-size:9px; color:#8b6f9b; line-height:1.3; margin-top:2px;">${escapeHtml(info.sub)}</div>
+          </button>
+        `).join('')}
+      </div>`;
     const html = `
       <div style="text-align:center; margin-bottom:10px; font-size:13px;">
         <b>${me.avatar} ${escapeHtml(me.name)}</b> → <b>${target.avatar} ${escapeHtml(target.name)}</b>
@@ -2575,6 +2620,7 @@
       <div style="text-align:center; margin-bottom:12px;">
         <span class="coin-badge small">🪙 你有 ${myCoins} 鵝鵝幣</span>
       </div>
+      <div style="font-size:12px; font-weight:700; color:#5b3d62; margin:8px 0 6px;">🎀 表情禮物（用鵝鵝幣）</div>
       <div class="gift-grid">
         ${Object.entries(GIFT_TYPES).map(([k, g]) => `
           <button class="gift-item" onclick="sendGift('${toPid}', '${k}')" ${myCoins < g.cost ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''}>
@@ -2584,9 +2630,43 @@
           </button>
         `).join('')}
       </div>
+      <div style="font-size:12px; font-weight:700; color:#5b3d62; margin:14px 0 6px;">📦 送裝備（從你背包選一件）</div>
+      ${equipBlock}
     `;
     openGenericModal(`🎁 送禮給 ${target.name}`, html);
   }
+  // 把背包某一件送給對方（直接進對方背包）
+  function sendEquipGift(toPid, idx) {
+    const me = getMe();
+    if (!me) return;
+    if (me.id === toPid) { showToast('不能送自己 ♡'); return; }
+    const target = getPlayer(toPid);
+    if (!target) return;
+    const inv = (me.rpg && me.rpg.inventory) || [];
+    const entry = inv[idx];
+    if (!entry) { showToast('找不到物品'); return; }
+    const info = describeInvItem(entry);
+    if (info?.gachaOnly) { showToast('扭蛋限定裝備不能送'); return; }
+    if (!confirm(`確定送出 ${info?.icon || '📦'} ${info?.name || '物品'} 給 ${target.name}？`)) return;
+    // 從自己背包移除 → 進對方背包
+    me.rpg.inventory.splice(idx, 1);
+    if (!target.rpg) target.rpg = {};
+    if (!Array.isArray(target.rpg.inventory)) target.rpg.inventory = [];
+    target.rpg.inventory.push(entry);
+    // 紀錄 gift log（新類型 'equip'）
+    gifts.push({
+      id: Date.now() + '_' + Math.random().toString(36).slice(2,6),
+      from: me.id, to: toPid, type: 'equip',
+      itemIcon: info?.icon || '📦', itemName: info?.name || '物品',
+      ts: new Date().toISOString(),
+    });
+    saveData();
+    closeGenericModal();
+    showToast(`✨ 送出 ${info?.icon} ${info?.name} 給 ${target.name}`);
+    if (currentTab === toPid) renderPlayerPage(toPid);
+    render();
+  }
+  window.sendEquipGift = sendEquipGift;
   function sendGift(toPid, type) {
     const me = getMe();
     if (!me) return;
@@ -2610,6 +2690,9 @@
       <div class="received-gifts">
         ${recv.slice(0, 30).map(g => {
           const sender = getPlayer(g.from);
+          if (g.type === 'equip') {
+            return `<span class="gift-badge" style="background:linear-gradient(135deg,#ede9fe,#c4b5fd); color:#5b21b6;" title="${new Date(g.ts).toLocaleString('zh-TW')}">${g.itemIcon || '📦'} ${escapeHtml(g.itemName || '裝備')} <span class="gb-from">來自 ${sender?.avatar || '?'}</span></span>`;
+          }
           const gt = GIFT_TYPES[g.type] || { icon: '🎀', name: '?' };
           return `<span class="gift-badge" title="${new Date(g.ts).toLocaleString('zh-TW')}">${gt.icon} <span class="gb-from">來自 ${sender?.avatar || '?'}</span></span>`;
         }).join('')}
