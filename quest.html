@@ -916,6 +916,79 @@
     line-height: 1.4;
   }
 
+  /* ⭐ 世界王戰報歷史 */
+  .boss-history {
+    margin-top: 10px;
+    background: linear-gradient(135deg, #1e1b4b, #312e81);
+    border: 2px solid #6366f1;
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+  .boss-history-title {
+    font-size: 13px;
+    color: #fde68a;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .boss-history-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid #4338ca;
+    border-radius: 10px;
+    cursor: pointer;
+    color: #ddd6fe;
+    font-family: inherit;
+    transition: transform 0.1s, background 0.15s;
+  }
+  .boss-history-row:hover {
+    background: rgba(255,255,255,0.12);
+    transform: translateX(2px);
+  }
+  .boss-history-row.is-kill {
+    border-color: #f59e0b;
+    background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(255,255,255,0.05));
+  }
+  .boss-history-row .bh-icon {
+    font-size: 28px;
+    line-height: 1;
+  }
+  .boss-history-row .bh-meta {
+    flex: 1;
+    min-width: 0;
+  }
+  .boss-history-row .bh-line1 {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 2px;
+  }
+  .boss-history-row .bh-kill {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    background: #f59e0b;
+    color: #7c2d12;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .boss-history-row .bh-line2 {
+    font-size: 11px;
+    color: #c7d2fe;
+    line-height: 1.3;
+  }
+  .boss-history-row .bh-play {
+    font-size: 16px;
+    color: #fde68a;
+    flex-shrink: 0;
+  }
+
   /* 世界王 */
   .boss-card {
     background: linear-gradient(135deg, #1e1b4b, #4c1d95);
@@ -7865,6 +7938,11 @@ ${b.text}
       `;
     }).join('');
     document.getElementById('worldBossBody').innerHTML = html;
+    // 沒有當前戰報時，把過往戰報展給玩家看（進來就能點過往戰鬥）
+    const fr = document.getElementById('fightResult');
+    if (fr && !fr.innerHTML.trim() && typeof renderBossFightResult === 'function') {
+      renderBossFightResult(null);
+    }
   }
 
   // 綠茶指南書里程碑發放：遇綠茶鵝 10/20/30/50/75/100 次自動拿到對應的指南書
@@ -8152,6 +8230,43 @@ ${b.text}
       } catch (e) {}
     }
 
+    // ⭐ 把這場戰鬥記到玩家的「過往戰報」（最多 5 場）
+    const battleSnap = {
+      id: 'br_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      ts: Date.now(),
+      bossId: boss.id,
+      bossName: boss.name,
+      bossIcon: boss.icon,
+      bossLevel: boss.level,
+      dmgDealt,
+      killed,
+      xpGain,
+      coinGain,
+      // 給 replay UI 用的快照
+      playerSnap: {
+        name: me.name,
+        avatar: CLASSES[r.class]?.icon || '🎴',
+        level: r.level,
+        maxHp: stats.maxHp,
+        maxMp: stats.maxMp,
+      },
+      monsterSnap: {
+        name: monster.name,
+        icon: monster.icon,
+        level: monster.level,
+        maxHp: dmgDealt + (newState?.currentHp ?? 0) || boss.hp,
+        ability: monster.ability,
+      },
+      // log 砍到最多 100 條防止 firestore 太肥
+      log: (result.log || []).slice(0, 100),
+      worldSpiritDropped: worldSpiritDropped
+        ? { id: worldSpiritDropped.id, name: worldSpiritDropped.name, icon: worldSpiritDropped.icon, color: worldSpiritDropped.color }
+        : null,
+    };
+    r.bossBattleHistory = Array.isArray(r.bossBattleHistory) ? r.bossBattleHistory : [];
+    r.bossBattleHistory.unshift(battleSnap);
+    if (r.bossBattleHistory.length > 5) r.bossBattleHistory.length = 5;
+
     saveData();
     // 領自己的待領獎勵（pendingRewards）
     claimMyBossRewards();
@@ -8160,30 +8275,180 @@ ${b.text}
     updateStaminaUI();
     renderWorldBoss();
 
-    // 結果顯示在 fightResult
-    document.getElementById('fightResult').innerHTML = `
-      <div class="reward-list" style="background:linear-gradient(135deg,#1e1b4b,#4c1d95); border-color:#f59e0b; color:#fff;">
-        <div class="rl-title" style="color:#fde68a;">🌍 ${boss.name} 戰報</div>
-        <div class="rl-item">⚔️ 你造成 <b style="color:#fca5a5;">${dmgDealt.toLocaleString()}</b> 傷害</div>
-        <div class="rl-item">⭐ +${xpGain} XP　·　🪙 +${coinGain} 鵝鵝幣</div>
-        ${killed
-          ? `<div style="margin-top:8px; padding:8px; background:rgba(245,158,11,0.3); border-radius:8px; color:#fde047; font-weight:700;">🏆 你給了尾刀！精魂 + 鵝鵝幣已入手</div>`
-          : `<div class="rl-item">${boss.icon} ${boss.name} 還剩 ${newState.currentHp.toLocaleString()} HP（${(newState.currentHp/boss.hp*100).toFixed(1)}%）</div>`}
-        ${worldSpiritDropped ? `<div class="rl-item" style="color:${worldSpiritDropped.color}; font-weight:700; padding:6px; background:#fff8; border-radius:6px;">🌟 掉落精魂：${worldSpiritDropped.icon} ${escapeHtml(worldSpiritDropped.name)}<div style="font-size:10px; color:#5b3d62; font-weight:500; margin-top:1px;">${escapeHtml(describeSpirit(worldSpiritDropped))}</div></div>` : ''}
-      </div>
-    `;
-
-    // 戰鬥日誌
-    const logHtml = result.log.map(l => {
-      const cls = l.type === 'crit-player' ? 'log-crit'
-        : l.type === 'player' ? 'log-player'
-        : l.type === 'monster' ? 'log-monster'
-        : 'log-system';
-      return `<div class="log-line ${cls}">${escapeHtml(l.text)}</div>`;
-    }).join('');
-    document.getElementById('fightResult').innerHTML += `<div class="battle-log">${logHtml}</div>`;
+    // 結果顯示在 fightResult — 摘要 + 過往戰報（5 場，可點開動畫重播）
+    renderBossFightResult(battleSnap);
   }
   window.runBossFight = runBossFight;
+
+  // ⭐ 渲染世界王戰報區（摘要 + 過往 5 場列表）
+  function renderBossFightResult(latest) {
+    const fr = document.getElementById('fightResult');
+    if (!fr) return;
+    const me = getMe();
+    const r = me ? getRpg(me) : null;
+    const hist = (r && Array.isArray(r.bossBattleHistory)) ? r.bossBattleHistory : [];
+    let summaryHtml = '';
+    if (latest) {
+      summaryHtml = `
+        <div class="reward-list" style="background:linear-gradient(135deg,#1e1b4b,#4c1d95); border-color:#f59e0b; color:#fff;">
+          <div class="rl-title" style="color:#fde68a;">🌍 ${escapeHtml(latest.bossName)} 戰報</div>
+          <div class="rl-item">⚔️ 你造成 <b style="color:#fca5a5;">${latest.dmgDealt.toLocaleString()}</b> 傷害</div>
+          <div class="rl-item">⭐ +${latest.xpGain} XP　·　🪙 +${latest.coinGain} 鵝鵝幣</div>
+          ${latest.killed
+            ? `<div style="margin-top:8px; padding:8px; background:rgba(245,158,11,0.3); border-radius:8px; color:#fde047; font-weight:700;">🏆 你給了尾刀！精魂 + 鵝鵝幣已入手</div>`
+            : ''}
+          ${latest.worldSpiritDropped ? `<div class="rl-item" style="color:${latest.worldSpiritDropped.color}; font-weight:700; padding:6px; background:#fff8; border-radius:6px;">🌟 掉落精魂：${latest.worldSpiritDropped.icon} ${escapeHtml(latest.worldSpiritDropped.name)}</div>` : ''}
+        </div>
+      `;
+    }
+    const histHtml = hist.length === 0 ? '' : `
+      <div class="boss-history">
+        <div class="boss-history-title">📜 過往戰報（${hist.length}/5）　<span style="font-weight:500; opacity:0.75;">點下一場 → 跑讀條動畫</span></div>
+        ${hist.map((h, i) => `
+          <button class="boss-history-row ${h.killed ? 'is-kill' : ''}" onclick="replayBossFight('${h.id}')">
+            <span class="bh-icon">${h.bossIcon}</span>
+            <div class="bh-meta">
+              <div class="bh-line1">${escapeHtml(h.bossName)} Lv ${h.bossLevel} ${h.killed ? '<span class="bh-kill">🏆 尾刀</span>' : ''}</div>
+              <div class="bh-line2">傷害 <b>${h.dmgDealt.toLocaleString()}</b>　·　+${h.xpGain} XP　·　${formatRelativeTime ? formatRelativeTime(h.ts) : new Date(h.ts).toLocaleTimeString('zh-TW',{hour12:false})}</div>
+            </div>
+            <span class="bh-play">▶</span>
+          </button>
+        `).join('')}
+      </div>
+    `;
+    fr.innerHTML = summaryHtml + histHtml;
+  }
+  window.renderBossFightResult = renderBossFightResult;
+
+  function formatRelativeTime(ts) {
+    if (!ts) return '—';
+    const diff = Date.now() - ts;
+    if (diff < 60000) return '剛剛';
+    if (diff < 3600000) return Math.floor(diff / 60000) + ' 分鐘前';
+    if (diff < 86400000) return Math.floor(diff / 3600000) + ' 小時前';
+    return new Date(ts).toLocaleDateString('zh-TW') + ' ' + new Date(ts).toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit' });
+  }
+
+  // ⭐ 點開過往戰報 → 用 modal 重播（跑讀條 + HP / MP / SPD 條動畫）
+  function replayBossFight(historyId) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const hist = (r && Array.isArray(r.bossBattleHistory)) ? r.bossBattleHistory : [];
+    const snap = hist.find(h => h.id === historyId);
+    if (!snap) { showToast('找不到該戰報'); return; }
+    const ps = snap.playerSnap || {};
+    const ms = snap.monsterSnap || {};
+    const maxHp = ps.maxHp || 1;
+    const maxMp = ps.maxMp || 1;
+    const monsterMaxHp = ms.maxHp || 1;
+    const arenaHtml = `
+      <div class="battle-arena" id="replayArena">
+        <div class="combatant" id="replayPlayer">
+          <div class="combatant-icon">${ps.avatar || '🎴'}</div>
+          <div class="combatant-name">${escapeHtml(ps.name || '?')} Lv${ps.level || '?'}</div>
+          <div class="combatant-hp-track"><div class="combatant-hp-fill" id="replayPHpBar" style="width:100%"></div></div>
+          <div class="combatant-hp-text" id="replayPHpText">${maxHp}/${maxHp}</div>
+          <div class="combatant-hp-track" style="margin-top:2px;"><div class="combatant-hp-fill" id="replayPMpBar" style="width:100%; background:linear-gradient(90deg,#93c5fd,#3b82f6);"></div></div>
+          <div class="combatant-hp-text" id="replayPMpText" style="color:#1e40af;">MP ${maxMp}/${maxMp}</div>
+          <div class="combatant-spd-track"><div class="combatant-spd-fill" id="replayPSpdBar" style="width:0%"></div></div>
+          <div class="combatant-spd-text" id="replayPSpdText">⏱ 行動條 0%</div>
+        </div>
+        <div class="vs-icon">⚔️</div>
+        <div class="combatant" id="replayMonster">
+          <div class="combatant-icon">${ms.icon || '👹'}</div>
+          <div class="combatant-name">${escapeHtml(ms.name || '?')} Lv${ms.level || '?'}</div>
+          <div class="combatant-hp-track"><div class="combatant-hp-fill" id="replayMHpBar" style="width:100%"></div></div>
+          <div class="combatant-hp-text" id="replayMHpText">${monsterMaxHp.toLocaleString()}/${monsterMaxHp.toLocaleString()}</div>
+          <div class="combatant-spd-track" style="margin-top:14px;"><div class="combatant-spd-fill" id="replayMSpdBar" style="width:0%"></div></div>
+          <div class="combatant-spd-text" id="replayMSpdText">⏱ 行動條 0%</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:6px; align-items:center; margin:8px 0; font-size:11px; color:#5b3d62;">
+        <button class="btn btn-secondary" id="replaySpeedBtn" style="padding:4px 10px; font-size:11px;" onclick="cycleReplaySpeed()">⚡ 速度 1×</button>
+        <span id="replayProgress" style="margin-left:auto; font-weight:600;">0 / ${(snap.log || []).length}</span>
+      </div>
+      <div class="battle-log" id="replayLog" style="max-height:240px;"></div>
+      <div style="display:flex; gap:6px; margin-top:8px;">
+        <button class="btn btn-secondary" onclick="hideModal()" style="flex:1;">關閉</button>
+      </div>
+    `;
+    showModal(`📜 ${snap.bossIcon} ${escapeHtml(snap.bossName)} 戰報重播`, arenaHtml);
+
+    // 開始播放（清掉舊 replay 的 timer 防重疊）
+    if (__replayState && __replayState.timer) {
+      try { clearTimeout(__replayState.timer); } catch (e) {}
+    }
+    __replayState = {
+      sessionId: Math.random().toString(36).slice(2),
+      i: 0,
+      log: snap.log || [],
+      maxHp, maxMp, monsterMaxHp,
+      speed: 1,
+      timer: null,
+    };
+    runReplayStep(__replayState.sessionId);
+  }
+  window.replayBossFight = replayBossFight;
+
+  let __replayState = null;
+  // 播放速度循環：1× → 2× → 4× → 1×
+  function cycleReplaySpeed() {
+    if (!__replayState) return;
+    const speeds = [1, 2, 4];
+    const idx = speeds.indexOf(__replayState.speed);
+    __replayState.speed = speeds[(idx + 1) % speeds.length];
+    const btn = document.getElementById('replaySpeedBtn');
+    if (btn) btn.textContent = `⚡ 速度 ${__replayState.speed}×`;
+  }
+  window.cycleReplaySpeed = cycleReplaySpeed;
+
+  function runReplayStep(sessionId) {
+    const st = __replayState;
+    if (!st) return;
+    if (sessionId && st.sessionId !== sessionId) return; // 舊 session 殘留 timer，不要動
+    const logEl = document.getElementById('replayLog');
+    if (!logEl) { __replayState = null; return; } // modal 已關
+    if (st.i >= st.log.length) {
+      const prog = document.getElementById('replayProgress');
+      if (prog) prog.textContent = `${st.log.length} / ${st.log.length}（完）`;
+      return;
+    }
+    const entry = st.log[st.i++];
+    const cls = entry.type === 'crit-player' ? 'log-crit'
+      : entry.type === 'player' ? 'log-player'
+      : entry.type === 'monster' ? 'log-monster'
+      : 'log-system';
+    const div = document.createElement('div');
+    div.className = `log-line ${cls}`;
+    div.textContent = entry.text;
+    logEl.appendChild(div);
+    logEl.scrollTop = logEl.scrollHeight;
+    if (entry.hp) {
+      const pHpBar = document.getElementById('replayPHpBar');
+      const pHpText = document.getElementById('replayPHpText');
+      const mHpBar = document.getElementById('replayMHpBar');
+      const mHpText = document.getElementById('replayMHpText');
+      if (pHpBar) pHpBar.style.width = (entry.hp.player / st.maxHp * 100) + '%';
+      if (pHpText) pHpText.textContent = `${entry.hp.player}/${st.maxHp}`;
+      if (mHpBar) mHpBar.style.width = (entry.hp.monster / st.monsterMaxHp * 100) + '%';
+      if (mHpText) mHpText.textContent = `${entry.hp.monster.toLocaleString()}/${st.monsterMaxHp.toLocaleString()}`;
+      if (entry.hp.mp != null) {
+        const pMpBar = document.getElementById('replayPMpBar');
+        const pMpText = document.getElementById('replayPMpText');
+        if (pMpBar) pMpBar.style.width = (entry.hp.mp / st.maxMp * 100) + '%';
+        if (pMpText) pMpText.textContent = `MP ${entry.hp.mp}/${st.maxMp}`;
+      }
+    }
+    if (entry.gauge && typeof updateSpdBar === 'function') {
+      updateSpdBar('replayPSpdBar', 'replayPSpdText', entry.gauge.p, '我的行動條');
+      updateSpdBar('replayMSpdBar', 'replayMSpdText', entry.gauge.m, '怪行動條');
+    }
+    const prog = document.getElementById('replayProgress');
+    if (prog) prog.textContent = `${st.i} / ${st.log.length}`;
+    const baseDelay = 350;
+    const sid = st.sessionId;
+    st.timer = setTimeout(() => runReplayStep(sid), Math.max(60, baseDelay / st.speed));
+  }
 
   // === 個人 BOSS ===
   let __personalBossTab = 'breakfast_goose';
