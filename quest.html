@@ -1572,7 +1572,7 @@
         // 死戰之怒：50 MP + 20 HP（固定）, 4.5× ATK
         { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 15, cooldown: 8, mpCost: 50, hpCostFlat: 20, type: 'damage', mult: 4.5 },
         // 補給技：兼顧 HP+MP
-        { id: 'w_war_cry',      name: '戰意呼喚', icon: '📢', unlockLv: 7,  cooldown: 5, mpCost: 10, type: 'heal', healPct: 0.15, mpPct: 0.20 },
+        { id: 'w_war_cry',      name: '戰意呼喚', icon: '📢', unlockLv: 7,  cooldown: 5, mpCost: 0, type: 'heal', healPct: 0.15, mpFlat: 5 },
         // ⭐ 自身 buff：嗜血怒嚎（ATK +30% 3 回合）
         { id: 'w_bloodlust',    name: '嗜血怒嚎', icon: '🦁', unlockLv: 6,  cooldown: 6, mpCost: 18, type: 'buff', selfBuff: { stat: 'atkPct', amount: 0.30, turns: 3 } },
       ],
@@ -1604,7 +1604,7 @@
         { id: 'a_god_arrow',   name: '神之矢',   icon: '🌟', unlockLv: 12, cooldown: 7, mpCost: 32, type: 'damage', mult: 2.8, alwaysCrit: true },
         { id: 'a_multishot',   name: '多重射擊', icon: '🏹', unlockLv: 5,  cooldown: 4, mpCost: 16, type: 'damage', mult: 1.8, hits: 3 },
         { id: 'a_precise_shot',name: '精準射擊', icon: '🎯', unlockLv: 1,  cooldown: 3, mpCost: 12, type: 'damage', mult: 1.4, alwaysCrit: true },
-        { id: 'a_concentrate', name: '集中',     icon: '🧘', unlockLv: 4,  cooldown: 4, mpCost: 0,  type: 'heal', mpPct: 0.20 },
+        { id: 'a_concentrate', name: '集中',     icon: '🧘', unlockLv: 4,  cooldown: 4, mpCost: 0,  type: 'heal', mpFlat: 5 },
         { id: 'a_barrage',     name: '連射',     icon: '🌊', unlockLv: 8,  cooldown: 5, mpCost: 28, type: 'damage', mult: 2.4, hits: 4 },
         { id: 'a_lethal_aim',  name: '致命瞄準', icon: '💀', unlockLv: 14, cooldown: 8, mpCost: 40, type: 'damage', mult: 3.5, alwaysCrit: true, ignoreDef: true },
         // ⭐ 多目標：雙箭齊發、毒箭
@@ -1619,7 +1619,7 @@
         // 隱身：自身 buff，下一招必中暴擊（用 critChance buff 100% 1 回合）
         { id: 'a_stealth',         name: '隱身',   icon: '🌫', unlockLv: 9,  cooldown: 7, mpCost: 0,  hpCostFlat: 30, type: 'buff', selfBuff: { stat: 'critChance', amount: 1.0, turns: 1 } },
         // 風之歌：補 MP + SPD buff（兼顧補給）
-        { id: 'a_wind_song',       name: '風之歌', icon: '🎵', unlockLv: 4,  cooldown: 5, mpCost: 0,  type: 'heal', mpPct: 0.15, healPct: 0.05 },
+        { id: 'a_wind_song',       name: '風之歌', icon: '🎵', unlockLv: 4,  cooldown: 5, mpCost: 0,  type: 'heal', mpFlat: 5, healPct: 0.05 },
         // 遠程射手 LUK 系：本招暴擊率特高（已有 alwaysCrit 但這次也可以多目標）
         { id: 'a_arrow_storm',     name: '箭雨',   icon: '🌧', unlockLv: 10, cooldown: 6, mpCost: 30, type: 'damage', mult: 1.0, targetCount: 'all' },
       ],
@@ -1652,7 +1652,7 @@
         { id: 'm_meteor',         name: '隕石術',     icon: '☄️', unlockLv: 12, cooldown: 7, mpCost: 50, type: 'damage', flat: 120, perLv: 5, ignoreDef: true },
         { id: 'm_ice_lance',      name: '冰錐術',     icon: '❄️', unlockLv: 5,  cooldown: 4, mpCost: 20, type: 'damage', mult: 1.6, alwaysCrit: true, applyStatus: { type: 'paralyze', turns: 2, chance: 0.25 } },
         { id: 'm_fireball',       name: '火球術',     icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 25, type: 'damage', flat: 50, perLv: 3, ignoreDef: true },
-        { id: 'm_mana_spring',    name: '法力湧泉',   icon: '💧', unlockLv: 3,  cooldown: 4, mpCost: 0,  type: 'heal', mpPct: 0.30 },
+        { id: 'm_mana_spring',    name: '法力湧泉',   icon: '💧', unlockLv: 3,  cooldown: 4, mpCost: 0,  type: 'heal', mpFlat: 15 },
         { id: 'm_chain_lightning',name: '連環閃電',   icon: '⚡', unlockLv: 8,  cooldown: 5, mpCost: 35, type: 'damage', flat: 85, perLv: 4, ignoreDef: true, hits: 3 },
         { id: 'm_arcane_shield',  name: '魔力護盾',   icon: '🛡️', unlockLv: 9,  cooldown: 6, mpCost: 30, type: 'heal', healPct: 0.20 },
         { id: 'm_destruction',    name: '毀滅之怒',   icon: '💀', unlockLv: 16, cooldown: 9, mpCost: 65, type: 'damage', flat: 220, perLv: 8, ignoreDef: true },
@@ -1703,7 +1703,7 @@
         { id: 'p_judgment',  name: '審判',     icon: '⚖️', unlockLv: 12, cooldown: 7, mpCost: 38, type: 'damage', mult: 2.5, alwaysCrit: true },
         { id: 'p_holy_slash',name: '聖光斬',   icon: '✝️', unlockLv: 5,  cooldown: 4, mpCost: 22, type: 'damage', mult: 1.6, healCaster: 0.05 },
         { id: 'p_holy_heal', name: '神聖治癒', icon: '✨', unlockLv: 1,  cooldown: 5, mpCost: 30, type: 'heal', healPct: 0.3 },
-        { id: 'p_pray',      name: '祈禱',     icon: '🙏', unlockLv: 3,  cooldown: 4, mpCost: 0,  type: 'heal', mpPct: 0.25, healPct: 0.05 },
+        { id: 'p_pray',      name: '祈禱',     icon: '🙏', unlockLv: 3,  cooldown: 4, mpCost: 0,  type: 'heal', mpFlat: 5, healPct: 0.05 },
         { id: 'p_shelter',   name: '庇護術',   icon: '🤲', unlockLv: 7,  cooldown: 6, mpCost: 25, type: 'heal', healPct: 0.40 },
         { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 10, cooldown: 5, mpCost: 35, type: 'damage', mult: 2.0, alwaysCrit: true, healCaster: 0.10 },
         // ⭐ 多目標：神聖光波（兩個敵人）/ 神之拳（兩個敵人 + 麻痺）
@@ -2343,6 +2343,7 @@
     if (skill.flat != null) eff.flat     = Math.round(skill.flat * (1 + dmgBonus));
     if (skill.healPct)      eff.healPct  = +(skill.healPct * (1 + dmgBonus)).toFixed(3);
     if (skill.mpPct)        eff.mpPct    = +(skill.mpPct * (1 + dmgBonus)).toFixed(3);
+    if (skill.mpFlat)       eff.mpFlat   = Math.round(skill.mpFlat * (1 + dmgBonus));
     if (skill.defMult)      eff.defMult  = +(skill.defMult * (1 + dmgBonus)).toFixed(3);
     if (skill.maxHpMult)    eff.maxHpMult= +(skill.maxHpMult * (1 + dmgBonus)).toFixed(3);
     if (level >= 3 && skill.applyStatus) {
@@ -4244,7 +4245,7 @@
               hp: { player: pHp, monster: mHp, mp: pMp }
             });
           } else if (skill.type === 'heal') {
-            // 'heal' 類型：可同時帶 healPct（HP 補）和 mpPct（MP 補），任一或兩者
+            // 'heal' 類型：可同時帶 healPct（HP 補）+ mpFlat 或 mpPct（MP 補）
             const gainedParts = [];
             if (skill.healPct) {
               const before = pHp;
@@ -4252,7 +4253,11 @@
               pHp = Math.min(stats.maxHp, pHp + heal);
               if (pHp - before > 0) gainedParts.push(`💚+${pHp - before} HP`);
             }
-            if (skill.mpPct) {
+            if (skill.mpFlat) {
+              const before = pMp;
+              pMp = Math.min(stats.maxMp, pMp + skill.mpFlat);
+              if (pMp - before > 0) gainedParts.push(`💙+${pMp - before} MP`);
+            } else if (skill.mpPct) {
               const before = pMp;
               const mpHeal = Math.round(stats.maxMp * skill.mpPct);
               pMp = Math.min(stats.maxMp, pMp + mpHeal);
@@ -4706,7 +4711,11 @@
               pHp = Math.min(stats.maxHp, pHp + heal);
               if (pHp - before > 0) gainedParts.push(`💚+${pHp - before} HP`);
             }
-            if (skill.mpPct) {
+            if (skill.mpFlat) {
+              const before = pMp;
+              pMp = Math.min(stats.maxMp, pMp + skill.mpFlat);
+              if (pMp - before > 0) gainedParts.push(`💙+${pMp - before} MP`);
+            } else if (skill.mpPct) {
               const before = pMp;
               const mpHeal = Math.round(stats.maxMp * skill.mpPct);
               pMp = Math.min(stats.maxMp, pMp + mpHeal);
@@ -5952,7 +5961,8 @@ ${b.text}
     if (s.type === 'heal') {
       const parts = [];
       if (s.healPct) parts.push(`回 ${Math.round(s.healPct * 100)}% HP`);
-      if (s.mpPct)  parts.push(`回 ${Math.round(s.mpPct  * 100)}% MP`);
+      if (s.mpFlat)  parts.push(`回 ${s.mpFlat} MP`);
+      else if (s.mpPct) parts.push(`回 ${Math.round(s.mpPct * 100)}% MP`);
       return parts.join(' + ') || '輔助';
     }
     if (s.type === 'buff' && s.selfBuff) {
