@@ -1984,7 +1984,7 @@
       name: '🦢 鵝皇',
       icon: '🦢',
       hp: 90000,        // 50000 → 90000：更耐打
-      atk: 48, def: 38, spd: 12,  // ATK 60→48（比之前低）、DEF 25→38（更扛）
+      atk: 75, def: 38, spd: 12,  // ATK 48 → 75（更具威脅）
       level: 30,
       respawnMs: 0,     // ⭐ 立刻重生
       verb: '皇者懲戒',
@@ -2002,7 +2002,7 @@
       name: '🐉 古龍鵝',
       icon: '🐉',
       hp: 200000,       // 100000 → 200000
-      atk: 65, def: 50, spd: 14,  // ATK 80→65、DEF 30→50
+      atk: 100, def: 50, spd: 14, // ATK 65 → 100（更具威脅）
       level: 40,
       respawnMs: 0,     // ⭐ 立刻重生
       verb: '龍焰之息',
@@ -2027,7 +2027,7 @@
     {
       id: 'breakfast_goose',
       name: '早餐鵝', icon: '🍳',
-      hp: 8000, atk: 50, def: 15, spd: 14, level: 30,
+      hp: 8000, atk: 75, def: 15, spd: 14, level: 30,
       verb: '塗果醬',
       skills: [
         { verb: '太陽蛋砲擊', mult: 1.6, cooldown: 4 },
@@ -2041,7 +2041,7 @@
     {
       id: 'lunch_goose',
       name: '午餐鵝', icon: '🍱',
-      hp: 12000, atk: 70, def: 25, spd: 16, level: 30,
+      hp: 12000, atk: 100, def: 25, spd: 16, level: 30,
       verb: '便當蓋下擊',
       ability: { type: 'multiHit', hits: 2 },
       skills: [
@@ -2056,7 +2056,7 @@
     {
       id: 'dinner_goose',
       name: '晚餐鵝', icon: '🍷',
-      hp: 18000, atk: 90, def: 35, spd: 18, level: 30,
+      hp: 18000, atk: 130, def: 35, spd: 18, level: 30,
       verb: '紅酒甩擊',
       ability: { type: 'magicResist', resist: 0.3 },
       skills: [
@@ -2075,19 +2075,25 @@
   // 每隻王有自己的精魂，固定基礎屬性 + 2 條隨機詞條
   // 玩家最多裝 5 個精魂（rpg.spirits[5]），未裝的放 rpg.spiritBag
   const SPIRIT_AFFIX_COUNT = 2;
+  // 5 隻王 → 5 種精魂特性，讓玩家配塔
+  // 早餐 = 速 / 午餐 = 防 / 晚餐 = 暴 / 鵝皇 = 攻 / 古龍 = 全能爆
   const SPIRIT_DEFS = [
-    // 個人王精魂
     { id: 'sp_breakfast', sourceBossId: 'breakfast_goose', name: '早餐鵝精魂',  icon: '🍳', color: '#fbbf24',
-      base: { hp: 25,  atk: 2 } },
+      theme: '迅捷（速度+暴擊率）',
+      base: { spd: 5, critChance: 0.04, atk: 2 } },
     { id: 'sp_lunch',     sourceBossId: 'lunch_goose',     name: '午餐鵝精魂',  icon: '🍱', color: '#f59e0b',
-      base: { hp: 40,  atk: 3, def: 1 } },
+      theme: '扎實（生存+防禦）',
+      base: { hp: 60, def: 5 } },
     { id: 'sp_dinner',    sourceBossId: 'dinner_goose',    name: '晚餐鵝精魂',  icon: '🍷', color: '#dc2626',
-      base: { hp: 60,  atk: 5, critChance: 0.03 } },
+      theme: '華麗（暴擊+爆傷）',
+      base: { critChance: 0.05, critDmg: 0.12, atk: 3 } },
     // 世界王精魂（傳說級）
     { id: 'sp_goose_king',  sourceBossId: 'goose_king',  name: '鵝皇精魂',   icon: '🦢', color: '#fde047',
-      base: { hp: 80,  atk: 7, def: 3 } },
+      theme: '霸氣（純輸出）',
+      base: { atk: 12, hp: 50 } },
     { id: 'sp_dragon_goose',sourceBossId: 'dragon_goose',name: '古龍鵝精魂', icon: '🐉', color: '#a855f7',
-      base: { hp: 120, atk: 10, def: 5, critDmg: 0.10 } },
+      theme: '龍威（全能+爆傷）',
+      base: { atk: 8, def: 4, hp: 60, critDmg: 0.18 } },
   ];
   const SPIRIT_BY_BOSS = Object.fromEntries(SPIRIT_DEFS.map(s => [s.sourceBossId, s]));
 
@@ -2102,6 +2108,7 @@
       name: def.name,
       icon: def.icon,
       color: def.color,
+      theme: def.theme || '',
       // 從固定基礎屬性開始
       hp: def.base.hp || 0,
       atk: def.base.atk || 0,
@@ -6982,14 +6989,8 @@ ${b.text}
       const onCd = myRpg && (Date.now() - (myRpg.lastBossAttackTime || 0)) < BOSS_COOLDOWN_MS;
       const inQueue = WORLD_BOSSES.some(b => (worldBoss?.[b.id]?.queue || []).find(q => q.pid === me?.id));
       if (anyDead || onCd || inQueue) renderWorldBoss();
-      // 個人 BOSS 冷卻倒數
-      if (myRpg && myRpg.personalBoss) {
-        const anyOnCd = PERSONAL_BOSSES.some(b => {
-          const st = myRpg.personalBoss[b.id];
-          return st && (Date.now() - (st.lastAttackAt || 0)) < PERSONAL_BOSS_COOLDOWN_MS;
-        });
-        if (anyOnCd) renderPersonalBoss();
-      }
+      // 個人 BOSS 共用冷卻倒數
+      if (myRpg && getPersonalBossCdRemain(myRpg) > 0) renderPersonalBoss();
       if (Math.floor(Date.now() / 1000) % 30 === 0) renderCharCard();
     }
   }, 1000);
@@ -7653,11 +7654,15 @@ ${b.text}
       const def = PERSONAL_BOSSES.find(b => b.id === bossId);
       rpg.personalBoss[bossId] = {
         currentHp: def ? def.hp : 1,
-        lastAttackAt: 0,
         killCount: 0,
       };
     }
     return rpg.personalBoss[bossId];
+  }
+  // ⭐ 個人王共用冷卻（任何一隻打完都要等 5 分鐘才能再打）
+  function getPersonalBossCdRemain(rpg) {
+    const last = rpg.personalBossLastAt || 0;
+    return Math.max(0, last + PERSONAL_BOSS_COOLDOWN_MS - Date.now());
   }
   function renderPersonalBoss() {
     const host = document.getElementById('personalBossBody');
@@ -7679,7 +7684,8 @@ ${b.text}
     const cur = PERSONAL_BOSSES.find(b => b.id === __personalBossTab) || PERSONAL_BOSSES[0];
     const st = getPersonalBossState(rpg, cur.id);
     const hpPct = Math.max(0, Math.min(100, st.currentHp / cur.hp * 100));
-    const cdRemain = Math.max(0, st.lastAttackAt + PERSONAL_BOSS_COOLDOWN_MS - Date.now());
+    // ⭐ 共用冷卻（任一隻王打完都會鎖 5 分鐘）
+    const cdRemain = getPersonalBossCdRemain(rpg);
     const onCd = cdRemain > 0;
     const m = Math.floor(cdRemain / 60000);
     const s = Math.ceil((cdRemain % 60000) / 1000);
@@ -7700,13 +7706,13 @@ ${b.text}
         </div>
         <div style="margin-top:10px;">
           ${onCd
-            ? `<button class="btn btn-primary" disabled style="background:#4b5563;">⏳ 冷卻中 ${m}:${String(s).padStart(2,'0')}</button>`
+            ? `<button class="btn btn-primary" disabled style="background:#4b5563;">⏳ 共用冷卻 ${m}:${String(s).padStart(2,'0')}（3 隻王共用）</button>`
             : __personalBossInProgress
               ? `<button class="btn btn-primary" disabled>⚔️ 戰鬥中…</button>`
               : `<button class="btn btn-primary" onclick="attackPersonalBoss('${cur.id}')" style="background:linear-gradient(135deg,#fca5a5,#dc2626); box-shadow:0 4px 0 #991b1b;">⚔️ 挑戰 ${cur.name}</button>`}
         </div>
         <div style="margin-top:6px; font-size:10px; opacity:0.85;">
-          🎁 擊殺獎勵：🪙 ${cur.reward.coins} 鵝鵝幣 + ⭐ ${cur.reward.xp} XP　·　每場王 +5% HP（不影響擊殺）
+          🎁 擊殺獎勵：🪙 ${cur.reward.coins} 鵝鵝幣 + ⭐ ${cur.reward.xp} XP + 🌟 精魂　·　每場王 +5% HP　·　<b>3 隻王共用 5 分鐘冷卻</b>
         </div>
       </div>
     `;
@@ -7724,12 +7730,13 @@ ${b.text}
     const def = PERSONAL_BOSSES.find(b => b.id === bossId);
     if (!def) return;
     const st = getPersonalBossState(rpg, bossId);
-    if (Date.now() - st.lastAttackAt < PERSONAL_BOSS_COOLDOWN_MS) {
-      showToast('⏳ 還在冷卻');
+    // 共用冷卻檢查
+    if (getPersonalBossCdRemain(rpg) > 0) {
+      showToast('⏳ 共用冷卻中');
       return;
     }
     __personalBossInProgress = true;
-    st.lastAttackAt = Date.now();
+    rpg.personalBossLastAt = Date.now();
     // 把王包成怪物 → 用一般 autoFight 引擎
     const monster = {
       id: def.id,
