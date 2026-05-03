@@ -1564,7 +1564,7 @@
         // 怒之炎：50 MP / 3.5× ATK / 算魔攻（無視物理抗性 + 走法傷加成）
         { id: 'w_rage_flame',   name: '怒之炎',   icon: '☄️', unlockLv: 12, cooldown: 7, mpCost: 50, type: 'damage', mult: 3.5, magic: true },
         { id: 'w_heavy_strike', name: '重擊',     icon: '⚡', unlockLv: 5,  cooldown: 4, mpCost: 18, type: 'damage', mult: 1.3, alwaysCrit: true },
-        { id: 'w_rage_slash',   name: '狂怒斬',   icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 14, type: 'damage', mult: 1.8 },
+        { id: 'w_rage_slash',   name: '狂怒斬',   icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 14, type: 'damage', mult: 1.8, hits: 2 },
         // ⭐ HP 代價系列：固定扣 HP（不是 % maxHP）
         { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 3,  cooldown: 3, mpCost: 0, hpCostFlat: 20, type: 'damage', mult: 2.0 },
         // 嗜血爆裂：低傷 + 吸血 20%（吸所造成傷害的百分比）
@@ -1602,10 +1602,10 @@
       attackVerb: '射擊',
       skills: [
         { id: 'a_god_arrow',   name: '神之矢',   icon: '🌟', unlockLv: 12, cooldown: 7, mpCost: 32, type: 'damage', mult: 2.8, alwaysCrit: true },
-        { id: 'a_multishot',   name: '多重射擊', icon: '🏹', unlockLv: 5,  cooldown: 4, mpCost: 16, type: 'damage', mult: 1.8 },
+        { id: 'a_multishot',   name: '多重射擊', icon: '🏹', unlockLv: 5,  cooldown: 4, mpCost: 16, type: 'damage', mult: 1.8, hits: 3 },
         { id: 'a_precise_shot',name: '精準射擊', icon: '🎯', unlockLv: 1,  cooldown: 3, mpCost: 12, type: 'damage', mult: 1.4, alwaysCrit: true },
         { id: 'a_concentrate', name: '集中',     icon: '🧘', unlockLv: 4,  cooldown: 4, mpCost: 0,  type: 'heal', mpPct: 0.20 },
-        { id: 'a_barrage',     name: '連射',     icon: '🌊', unlockLv: 8,  cooldown: 5, mpCost: 28, type: 'damage', mult: 2.4 },
+        { id: 'a_barrage',     name: '連射',     icon: '🌊', unlockLv: 8,  cooldown: 5, mpCost: 28, type: 'damage', mult: 2.4, hits: 4 },
         { id: 'a_lethal_aim',  name: '致命瞄準', icon: '💀', unlockLv: 14, cooldown: 8, mpCost: 40, type: 'damage', mult: 3.5, alwaysCrit: true, ignoreDef: true },
         // ⭐ 多目標：雙箭齊發、毒箭
         { id: 'a_twin_shot',   name: '雙箭齊發', icon: '🏹', unlockLv: 6,  cooldown: 4, mpCost: 24, type: 'damage', mult: 1.5, targetCount: 2 },
@@ -1653,7 +1653,7 @@
         { id: 'm_ice_lance',      name: '冰錐術',     icon: '❄️', unlockLv: 5,  cooldown: 4, mpCost: 20, type: 'damage', mult: 1.6, alwaysCrit: true, applyStatus: { type: 'paralyze', turns: 2, chance: 0.25 } },
         { id: 'm_fireball',       name: '火球術',     icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 25, type: 'damage', flat: 50, perLv: 3, ignoreDef: true },
         { id: 'm_mana_spring',    name: '法力湧泉',   icon: '💧', unlockLv: 3,  cooldown: 4, mpCost: 0,  type: 'heal', mpPct: 0.30 },
-        { id: 'm_chain_lightning',name: '連環閃電',   icon: '⚡', unlockLv: 8,  cooldown: 5, mpCost: 35, type: 'damage', flat: 85, perLv: 4, ignoreDef: true },
+        { id: 'm_chain_lightning',name: '連環閃電',   icon: '⚡', unlockLv: 8,  cooldown: 5, mpCost: 35, type: 'damage', flat: 85, perLv: 4, ignoreDef: true, hits: 3 },
         { id: 'm_arcane_shield',  name: '魔力護盾',   icon: '🛡️', unlockLv: 9,  cooldown: 6, mpCost: 30, type: 'heal', healPct: 0.20 },
         { id: 'm_destruction',    name: '毀滅之怒',   icon: '💀', unlockLv: 16, cooldown: 9, mpCost: 65, type: 'damage', flat: 220, perLv: 8, ignoreDef: true },
         // ⭐ 全體 AOE：火焰風暴 / 毒霧
@@ -1838,31 +1838,100 @@
       ],
       dialogue: ['...', '...嗯。', '......（凝視）'],
       deathLine: ['...感謝指教。', '......（沉睡）', '...再會。'] },
+
+    // ⭐ HOF 風格的特化怪物：每隻有獨特性格（紙鵝 / 鏡鵝 / 速鵝 / 鋼鵝 / 法鵝...）
+    // 紙鵝 (paper goose)：永遠只扣 1 但血量超低（10），特殊「永遠 1 傷害」機制
+    { id: 'paper', tier: 1, name: '紙鵝',  icon: '📄', hpBase: 10, atkBase: 4, defBase: 0, spdBase: 5, goldBase: 8, xpBase: 25,
+      verb: '輕飄飄碰一下', ability: { type: 'flatCapDmg', cap: 1 },
+      dialogue: ['鵝鵝會被一拳就打飛...', '請別太用力...', '我是紙做的喔'],
+      deathLine: ['啊...折成兩半了...', '謝謝你...沒有用力...', '化作蝴蝶飛走...'] },
+    // 鏡鵝 (mirror goose)：100% 反傷，要靠 buff/狀態打才有效
+    { id: 'mirror', tier: 2, name: '鏡鵝', icon: '🪞', hpBase: 80, atkBase: 8, defBase: 4, spdBase: 8, goldBase: 30, xpBase: 70,
+      verb: '反射光芒', ability: { type: 'reflect', resist: 0.5 },
+      skills: [
+        { verb: '鏡像反擊', mult: 0.5, cooldown: 4 },
+      ],
+      dialogue: ['你打我幾下，我就回敬你幾下', '鏡子裡的鵝鵝才是真正的你', '反正受傷的會是你～'],
+      deathLine: ['啪嚓...碎了...', '鏡中倒影...消逝...', '鵝鵝...也有破碎之日...'] },
+    // 速鵝 (swift goose)：高速但脆
+    { id: 'swift', tier: 2, name: '速鵝', icon: '🏃', hpBase: 55, atkBase: 14, defBase: 1, spdBase: 22, goldBase: 22, xpBase: 65,
+      verb: '閃光衝刺',
+      skills: [
+        { verb: '殘影連擊', mult: 1.4, cooldown: 3 },
+      ],
+      dialogue: ['你看到的不是我！', '咻 — 慢！', '蹬！蹬！蹬！'],
+      deathLine: ['太...慢了...一瞬...', '咻...熄滅...', '腳...走不動了...'] },
+    // 鋼鵝 (steel goose)：超高 DEF / 低 ATK / 慢
+    { id: 'steel', tier: 3, name: '鋼鵝', icon: '🔩', hpBase: 200, atkBase: 8, defBase: 30, spdBase: 4, goldBase: 50, xpBase: 110,
+      verb: '鋼鐵敲擊', ability: { type: 'physResist', resist: 0.5 },
+      skills: [
+        { verb: '鐵壁反擊', mult: 0.8, applyStatus: { type: 'paralyze', turns: 2, chance: 0.4 }, cooldown: 5 },
+      ],
+      dialogue: ['鵝鋼之軀...堅不可摧。', '喀喀喀...你的攻擊...無效。', '靜止不動...才是答案。'],
+      deathLine: ['銹蝕...終將...來臨...', '金屬...也有極限...', '咯吱...斷裂...'] },
+    // 法鵝 (mage goose)：純法系、高魔抗、低物抗
+    { id: 'mage_g', tier: 3, name: '法鵝', icon: '🪄', hpBase: 110, atkBase: 28, defBase: 4, spdBase: 11, goldBase: 60, xpBase: 130,
+      verb: '元素湧動', ability: { type: 'magicResist', resist: 0.7 },
+      skills: [
+        { verb: '火焰球', mult: 1.6, cooldown: 3 },
+        { verb: '冰錐刺', mult: 1.4, applyStatus: { type: 'paralyze', turns: 2, chance: 0.4 }, cooldown: 5 },
+        { verb: '燃燒詛咒', mult: 0.8, applyStatus: { type: 'poison', turns: 4, dmg: 14, chance: 0.85 }, cooldown: 5 },
+      ],
+      dialogue: ['元素將為我所用...', '法力之河流向你...', '微不足道的物理...'],
+      deathLine: ['法力...枯竭...', '元素...回歸虛無...', '嗚嗚...咒語斷了...'] },
+    // 妖鵝 (jinx goose)：低血、會偷錢、技能多元
+    { id: 'jinx', tier: 2, name: '妖鵝', icon: '🃏', hpBase: 70, atkBase: 11, defBase: 2, spdBase: 14, goldBase: 50, xpBase: 75,
+      verb: '迷惑',  ability: { type: 'steal', min: 8, max: 20 },
+      skills: [
+        { verb: '幻象一擊', mult: 1.3, cooldown: 3 },
+        { verb: '黑暗之吻', mult: 0.9, applyStatus: { type: 'poison', turns: 3, dmg: 10, chance: 0.8 }, cooldown: 5 },
+      ],
+      dialogue: ['你看到的是真的嗎？', '嘻嘻嘻...錢錢...', '小鵝鵝迷路了嗎～'],
+      deathLine: ['哎呀～被識破了～', '把錢還給你...一半好了...', '下次見囉～'] },
   ];
 
   // === 打怪地區 ===
+  // ⭐ 區域 + 4 個樓層（上/中/下/深）
+  // 每區掉落偏好覆蓋特定槽位；4 區加起來 6 槽全包（武器、防具、頭盔、手套、鞋子、披風）
+  // forest:  weapon + armor + accessory
+  // ruins:   armor  + helmet + cape
+  // volcano: weapon + gloves + boots
+  // ice:     helmet + boots  + cape
+  const ZONE_LAYERS = [
+    { id: 'upper', name: '上層', icon: '🌿', minLv: 1,  maxLv: 5  },
+    { id: 'mid',   name: '中層', icon: '🌳', minLv: 6,  maxLv: 10 },
+    { id: 'lower', name: '下層', icon: '🌲', minLv: 11, maxLv: 15 },
+    { id: 'deep',  name: '深層', icon: '🌑', minLv: 16, maxLv: 20 },
+  ];
+  const ZONE_FLOORS_PER_LAYER = 5; // 每層 5 個小樓層（共 20 樓）
   const ZONES = [
-    { id: 'forest',  name: '鵝森林',   icon: '🌳', desc: '新手村，弱小怪物聚集',
-      minLv: 1,  baseLv: 1,  floors: 6,
-      monsters: ['bat', 'slime', 'thief', 'spider', 'gob'],
-      dropBias: ['weapon', 'armor', 'accessory'],
+    { id: 'forest',  name: '鵝森林',   icon: '🌳', desc: '弱小怪物與惡作劇鵝鵝',
+      minLv: 1,
+      monsters: ['bat', 'slime', 'thief', 'spider', 'gob', 'paper', 'jinx', 'swift'],
+      dropBias: ['weapon', 'armor'],
       color: '#22c55e' },
     { id: 'ruins',   name: '廢墟洞窟', icon: '🏚',  desc: '不死陰森，法抗較高',
-      minLv: 8,  baseLv: 8,  floors: 8,
-      monsters: ['mummy', 'lich', 'troll', 'gob', 'wolf'],
+      minLv: 1,
+      monsters: ['mummy', 'lich', 'troll', 'gob', 'wolf', 'mirror', 'mage_g'],
       dropBias: ['armor', 'helmet', 'cape'],
       color: '#a855f7' },
     { id: 'volcano', name: '火山遺跡', icon: '🌋', desc: '熔岩龍與惡魔的領地',
-      minLv: 15, baseLv: 15, floors: 10,
-      monsters: ['orc', 'wolf', 'dragon', 'demon', 'troll'],
+      minLv: 1,
+      monsters: ['orc', 'wolf', 'dragon', 'demon', 'troll', 'steel', 'mage_g'],
       dropBias: ['weapon', 'gloves', 'boots'],
       color: '#dc2626' },
     { id: 'ice',     name: '冰原荒野', icon: '❄️', desc: '極地巨人與遠古龍',
-      minLv: 22, baseLv: 22, floors: 12,
-      monsters: ['titan', 'dragon', 'demon', 'lich'],
-      dropBias: ['cape', 'helmet', 'boots'],
+      minLv: 1,
+      monsters: ['titan', 'dragon', 'demon', 'lich', 'steel', 'mirror'],
+      dropBias: ['helmet', 'boots', 'cape'],
       color: '#3b82f6' },
   ];
+  // 由 layer + floor 算出怪物等級
+  function layerFloorToLevel(layerId, floor) {
+    const layer = ZONE_LAYERS.find(l => l.id === layerId) || ZONE_LAYERS[0];
+    const f = Math.max(1, Math.min(ZONE_FLOORS_PER_LAYER, floor || 1));
+    return layer.minLv + (f - 1);
+  }
 
   // === 世界王 ===
   // 世界王：原本是排隊制 + 20 分鐘全域冷卻 + 死後 4-8 小時復活
@@ -3322,14 +3391,16 @@
   function generateDropItem(playerLv, opts) {
     const boosted = opts === true || (opts && opts.boosted);
     const slotBias = opts && opts.slotBias;
+    const forceAffixes = opts && opts.forceAffixes; // 給精英怪用：固定詞條數
     // 過濾：上限 playerLv+2；下限取靠近的（避免高等級玩家拿不到任何掉落）
     // 排除綠茶指南書（slot: guide）— 那是綠茶遭遇次數的里程碑獎勵，不能掉落
-    let eligible = ITEMS.filter(i => i.slot !== 'guide' && (i.lv || 1) <= playerLv + 2 && (i.lv || 1) >= Math.max(1, playerLv - 5));
-    if (eligible.length === 0) eligible = ITEMS.filter(i => (i.lv || 1) <= playerLv + 2);
-    if (eligible.length === 0) eligible = ITEMS.slice(); // 終極 fallback：任何物品
+    // 排除飾品（accessory 不在 6 槽掉落清單中，從商店買）
+    let eligible = ITEMS.filter(i => i.slot !== 'guide' && i.slot !== 'accessory' && (i.lv || 1) <= playerLv + 2 && (i.lv || 1) >= Math.max(1, playerLv - 5));
+    if (eligible.length === 0) eligible = ITEMS.filter(i => i.slot !== 'guide' && i.slot !== 'accessory' && (i.lv || 1) <= playerLv + 2);
+    if (eligible.length === 0) eligible = ITEMS.filter(i => i.slot !== 'guide' && i.slot !== 'accessory'); // 終極 fallback
     if (eligible.length === 0) return null;
-    // 地區掉落偏好：70% 機率從偏好部位中選
-    if (slotBias && slotBias.length > 0 && Math.random() < 0.7) {
+    // 地區掉落偏好：80% 機率從偏好部位中選（提高 70→80）
+    if (slotBias && slotBias.length > 0 && Math.random() < 0.80) {
       const biased = eligible.filter(i => slotBias.includes(i.slot));
       if (biased.length > 0) eligible = biased;
     }
@@ -3350,7 +3421,9 @@
       hp:  base.hp  || 0,
       affixes: [],
     };
-    for (let i = 0; i < def.affixes; i++) {
+    // ⭐ 詞條數：精英 = 固定 3 / 普通 = 隨機 1-3（不再依稀有度）
+    const affixCount = forceAffixes != null ? forceAffixes : (1 + Math.floor(Math.random() * 3));
+    for (let i = 0; i < affixCount; i++) {
       const a = AFFIXES[Math.floor(Math.random() * AFFIXES.length)];
       const val = Math.max(1, Math.round((1 + drop.lv * a.perLv) * def.mult));
       drop[a.type] = (drop[a.type] || 0) + val;
@@ -3414,6 +3487,7 @@
     if (!player.rpg.skills) player.rpg.skills = {};
     if (!player.rpg.abilities) player.rpg.abilities = { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0 };
     if (!player.rpg.currentZone) player.rpg.currentZone = 'forest';
+    if (!player.rpg.currentLayer) player.rpg.currentLayer = 'upper';
     if (!player.rpg.currentFloor) player.rpg.currentFloor = 1;
     if (!player.rpg.zoneProgress) player.rpg.zoneProgress = {};
     if (!player.rpg.equipment.guide) player.rpg.equipment.guide = null;
@@ -3797,8 +3871,8 @@
       const elite = ELITES.find(e => e.zone === opts.zoneId);
       const zone = ZONES.find(z => z.id === opts.zoneId);
       if (elite && zone) {
-        const floor = Math.max(1, opts.floor || 1);
-        const lv = zone.baseLv + floor - 1;
+        // 等級 = 樓層直接決定
+        const lv = Math.max(1, opts.targetLv || layerFloorToLevel(opts.layerId, opts.floor) || 1);
         const k = 1 + (lv - 1) * 0.18;
         return {
           ...elite,
@@ -3818,10 +3892,9 @@
     let levelMin = playerLv, levelMax = playerLv;
     if (opts && opts.zoneId) {
       const zone = ZONES.find(z => z.id === opts.zoneId);
-      const floor = Math.max(1, opts.floor || 1);
       candidates = MONSTERS.filter(m => zone.monsters.includes(m.id));
-      // 怪物等級 = 地區起始 + 樓層 - 1
-      const flv = zone.baseLv + floor - 1;
+      // 怪物等級 = 樓層直接決定（不再用 baseLv + floor）
+      const flv = Math.max(1, opts.targetLv || layerFloorToLevel(opts.layerId, opts.floor) || 1);
       levelMin = flv; levelMax = flv;
     } else {
       const tierMax = Math.min(5, Math.ceil(playerLv / 4));
@@ -4056,6 +4129,9 @@
             // 受 buff 影響的攻擊力 / 防禦力 / 最大生命
             const effAtk = stats.atk * (1 + (pBuff.atkPct || 0));
             const effDef = stats.def * (1 + (pBuff.defPct || 0));
+            // ⭐ 多段技能：每段傷害 = 總傷害 / hits × 1.3（同 monster multiHit 公式）
+            const skillHits = Math.max(1, skill.hits || 1);
+            const perHitFactor = skillHits === 1 ? 1.0 : (1.3 / skillHits);
             if (skill.defMult != null) {
               // ⭐ 聖騎風格：以 DEF 結算傷害
               dmg = effDef * skill.defMult - Math.floor(monster.def / 2);
@@ -4068,6 +4144,7 @@
             } else {
               dmg = effAtk * (skill.mult || 1) - Math.floor(monster.def / 2);
             }
+            dmg *= perHitFactor;
             // 技能個別 % 加成（從技能樹點到的對應節點）— 只對前 3 個技能有效
             const perSkillKey = `skill${useSkillIdx}Pct`;
             dmg *= (1 + (bonus[perSkillKey] || 0));
@@ -4083,33 +4160,50 @@
             if (!isMagic && mAbility?.type === 'physResist') dmg *= (1 - mAbility.resist);
             const skillCrit = baseCritChance + (skill.extraCritChance || 0) + (pBuff.critChance || 0);
             const skillCritMult = critMult + (skill.extraCritDmg || 0) + (pBuff.critDmg || 0);
-            const isCrit = skill.alwaysCrit || Math.random() < skillCrit;
-            dmg *= (0.9 + Math.random() * 0.2);
-            if (isCrit) { dmg *= skillCritMult; critCount++; }
-            dmg = Math.max(1, Math.round(dmg));
-            mHp -= dmg;
-            // 吸血機制（嗜血爆裂）：吸所造成傷害的某 %
-            // 同時保留舊的 healCaster（% maxHp 自癒，例：聖光斬）
+            const baseDmg = dmg;
+            // ⭐ 多段：每段獨立 roll 暴擊 + 變異
+            let totalDmg = 0;
+            let lastIsCrit = false;
+            const hitLogs = [];
+            let monsterDied = false;
+            for (let h = 0; h < skillHits && !monsterDied; h++) {
+              let hitDmg = baseDmg * (0.9 + Math.random() * 0.2);
+              const hitCrit = skill.alwaysCrit || Math.random() < skillCrit;
+              if (hitCrit) { hitDmg *= skillCritMult; critCount++; lastIsCrit = true; }
+              hitDmg = Math.max(1, Math.round(hitDmg));
+              if (mAbility?.type === 'flatCapDmg') hitDmg = Math.min(hitDmg, mAbility.cap || 1);
+              mHp -= hitDmg;
+              totalDmg += hitDmg;
+              hitLogs.push(`${hitDmg}${hitCrit ? '【爆】' : ''}`);
+              if (mAbility?.type === 'reflect' && mAbility.resist) {
+                const r = Math.max(1, Math.round(hitDmg * mAbility.resist));
+                pHp = Math.max(0, pHp - r);
+              }
+              if (mHp <= 0) { monsterDied = true; }
+            }
+            const dmgStr = skillHits > 1 ? `(${hitLogs.join(' / ')})` : `-${totalDmg} HP`;
+            // 吸血 / 自癒：用總傷害計
             let extra = '';
             if (skill.lifesteal) {
-              const heal = Math.max(1, Math.round(dmg * skill.lifesteal));
+              const heal = Math.max(1, Math.round(totalDmg * skill.lifesteal));
               const before = pHp;
               pHp = Math.min(stats.maxHp, pHp + heal);
-              const gained = pHp - before;
-              if (gained > 0) extra += ` 🩸+${gained} HP (吸血)`;
+              if (pHp - before > 0) extra += ` 🩸+${pHp - before} HP (吸血)`;
             }
             if (skill.healCaster) {
               const heal = Math.max(1, Math.round(stats.maxHp * skill.healCaster));
               const before = pHp;
               pHp = Math.min(stats.maxHp, pHp + heal);
-              const gained = pHp - before;
-              if (gained > 0) extra += ` 💚+${gained} HP`;
+              if (pHp - before > 0) extra += ` 💚+${pHp - before} HP`;
             }
             log.push({
               type: 'crit-player',
-              text: `回合 ${round}：${skill.icon} ${skill.name}${isCrit ? '【暴擊】' : ''}${isMagic ? '【魔攻】' : ''} → ${monster.name} -${dmg} HP${extra}${costStr}`,
+              text: `回合 ${round}：${skill.icon} ${skill.name}${lastIsCrit ? '【暴擊】' : ''}${isMagic ? '【魔攻】' : ''}${skillHits > 1 ? `×${skillHits}` : ''} → ${monster.name} ${skillHits > 1 ? '共 ' + totalDmg + ' HP ' + dmgStr : dmgStr}${extra}${costStr}`,
               hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp }
             });
+            if (mAbility?.type === 'reflect' && mAbility.resist) {
+              log.push({ type: 'monster', text: `回合 ${round}：🪞 ${monster.name} 反射光芒（多段反彈）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+            }
             // 對怪物上狀態（毒箭、冰錐術…）
             if (skill.applyStatus && Math.random() < (skill.applyStatus.chance || 1)) {
               applyStatus(monster, skill.applyStatus);
@@ -4157,12 +4251,18 @@
           if (isCrit2) { dmg *= critMult2; critCount++; }
           if (mAbility?.type === 'physResist') dmg *= (1 - mAbility.resist);
           dmg = Math.max(1, Math.round(dmg));
+          if (mAbility?.type === 'flatCapDmg') dmg = Math.min(dmg, mAbility.cap || 1);
           mHp -= dmg;
           log.push({
             type: isCrit2 ? 'crit-player' : 'player',
             text: `回合 ${round}：${cls.attackVerb}${isCrit2 ? '【暴擊】' : ''} → ${monster.name} -${dmg} HP`,
             hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp }
           });
+          if (mAbility?.type === 'reflect' && mAbility.resist) {
+            const r = Math.max(1, Math.round(dmg * mAbility.resist));
+            pHp = Math.max(0, pHp - r);
+            log.push({ type: 'monster', text: `回合 ${round}：🪞 ${monster.name} 反射光芒 → ${player.name} -${r} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+          }
           if (mHp <= 0) { pushDeathLine(); break; }
         }
       } else {
@@ -4522,9 +4622,14 @@
               dmg *= (0.9 + Math.random() * 0.2);
               if (isCrit) { dmg *= skillCritMult; critCount++; }
               dmg = Math.max(1, Math.round(dmg));
+              if (tgt.ability?.type === 'flatCapDmg') dmg = Math.min(dmg, tgt.ability.cap || 1);
               tgt.hp = Math.max(0, tgt.hp - dmg);
               if (tgt.hp <= 0) tgt.alive = false;
               hits.push({ tgt, dmg, isCrit });
+              // 鏡鵝反傷
+              if (tgt.ability?.type === 'reflect' && tgt.ability.resist) {
+                pHp = Math.max(0, pHp - Math.max(1, Math.round(dmg * tgt.ability.resist)));
+              }
               // 套用狀態
               if (skill.applyStatus && Math.random() < (skill.applyStatus.chance || 1)) {
                 applyStatus(tgt, skill.applyStatus);
@@ -4599,8 +4704,13 @@
           if (isCrit) { dmg *= critMult2; critCount++; }
           if (tgt.ability?.type === 'physResist') dmg *= (1 - tgt.ability.resist);
           dmg = Math.max(1, Math.round(dmg));
+          if (tgt.ability?.type === 'flatCapDmg') dmg = Math.min(dmg, tgt.ability.cap || 1);
           tgt.hp = Math.max(0, tgt.hp - dmg);
           if (tgt.hp <= 0) tgt.alive = false;
+          if (tgt.ability?.type === 'reflect' && tgt.ability.resist) {
+            const r = Math.max(1, Math.round(dmg * tgt.ability.resist));
+            pHp = Math.max(0, pHp - r);
+          }
           log.push({
             type: isCrit ? 'crit-player' : 'player',
             text: `回合 ${round}：${cls.attackVerb}${isCrit ? '【暴擊】' : ''} → ${tgt.icon}${tgt.name} -${dmg} HP`,
@@ -5822,11 +5932,12 @@ ${b.text}
     if (s.type === 'buff' && s.selfBuff) {
       return `${describeBuff(s.selfBuff)}　持續 ${s.selfBuff.turns} 回合`;
     }
-    if (s.defMult != null)   return `${s.defMult}× DEF 傷害`;
-    if (s.maxHpMult != null) return `${Math.round(s.maxHpMult * 100)}% maxHP 傷害（魔攻）`;
-    if (s.flat != null) return `固定 ${s.flat}+Lv×${s.perLv} 傷害${s.ignoreDef ? '（無視防）' : ''}`;
+    const hitsStr = (s.hits && s.hits > 1) ? ` ×${s.hits} 段` : '';
+    if (s.defMult != null)   return `${s.defMult}× DEF 傷害${hitsStr}`;
+    if (s.maxHpMult != null) return `${Math.round(s.maxHpMult * 100)}% maxHP 傷害（魔攻）${hitsStr}`;
+    if (s.flat != null) return `固定 ${s.flat}+Lv×${s.perLv} 傷害${s.ignoreDef ? '（無視防）' : ''}${hitsStr}`;
     let parts = [];
-    if (s.mult) parts.push(`${s.mult}× ATK${s.magic ? '（魔攻）' : ''}`);
+    if (s.mult) parts.push(`${s.mult}× ATK${s.magic ? '（魔攻）' : ''}${hitsStr}`);
     if (s.alwaysCrit) parts.push('必中暴擊');
     if (s.lifesteal) parts.push(`吸血 ${Math.round(s.lifesteal * 100)}%`);
     if (s.healCaster) parts.push(`回 ${Math.round(s.healCaster * 100)}% maxHP`);
@@ -6432,6 +6543,7 @@ ${b.text}
     const host = document.getElementById('zoneSelector');
     if (!host) return;
     if (!rpg.currentZone) rpg.currentZone = 'forest';
+    if (!rpg.currentLayer) rpg.currentLayer = 'upper';
     if (!rpg.currentFloor) rpg.currentFloor = 1;
     if (!rpg.zoneProgress) rpg.zoneProgress = {};
     const tabsHtml = ZONES.map(z => {
@@ -6448,16 +6560,22 @@ ${b.text}
       </div>`;
     }).join('');
     const cur = ZONES.find(z => z.id === rpg.currentZone) || ZONES[0];
-    const prog = rpg.zoneProgress[cur.id] || { maxFloor: 1 };
+    // 4 個層級的 tabs
+    const layerTabsHtml = ZONE_LAYERS.map(l => {
+      const active = rpg.currentLayer === l.id;
+      return `<button class="floor-btn${active ? ' active' : ''}" onclick="selectLayer('${l.id}')" title="Lv ${l.minLv}-${l.maxLv}" style="font-size:11px; padding:5px 8px;">
+        ${l.icon} ${l.name} <span style="opacity:0.7; font-size:10px;">${l.minLv}-${l.maxLv}</span>
+      </button>`;
+    }).join('');
+    // 5 個小樓層
     const floorButtons = [];
-    for (let f = 1; f <= cur.floors; f++) {
-      const reachable = f <= prog.maxFloor;
+    for (let f = 1; f <= ZONE_FLOORS_PER_LAYER; f++) {
       const active = f === rpg.currentFloor;
-      const flv = cur.baseLv + f - 1;
-      const cls = `floor-btn${active ? ' active' : ''}${reachable ? '' : ' locked'}`;
-      const onclick = reachable ? `onclick="selectFloor(${f})"` : '';
-      floorButtons.push(`<button class="${cls}" ${onclick} title="Lv${flv}">${reachable ? f : '🔒'}</button>`);
+      const flv = layerFloorToLevel(rpg.currentLayer, f);
+      const cls = `floor-btn${active ? ' active' : ''}`;
+      floorButtons.push(`<button class="${cls}" onclick="selectFloor(${f})" title="Lv${flv}">${f}</button>`);
     }
+    const curLv = layerFloorToLevel(rpg.currentLayer, rpg.currentFloor);
     host.innerHTML = `
       <div class="zone-tabs">${tabsHtml}</div>
       <div class="zone-info" style="border-color:${cur.color};">
@@ -6467,14 +6585,24 @@ ${b.text}
         </div>
         <div class="zone-info-meta">
           <span>掉落偏好：${cur.dropBias.map(s=>SLOT_LABEL[s]||s).join('、')}</span>
-          <span>已解鎖 ${prog.maxFloor}/${cur.floors} 層</span>
+          <span style="opacity:0.7;">每件掉落 1-3 詞條</span>
         </div>
+        <div style="display:flex; flex-wrap:wrap; gap:4px; margin:6px 0 4px;">${layerTabsHtml}</div>
         <div class="floor-row">${floorButtons.join('')}</div>
-        <div class="floor-meta">第 <b>${rpg.currentFloor}</b> 層 · 怪物 Lv${cur.baseLv + rpg.currentFloor - 1}</div>
+        <div class="floor-meta">${cur.icon} ${cur.name} · ${ZONE_LAYERS.find(l=>l.id===rpg.currentLayer)?.name || ''} 第 <b>${rpg.currentFloor}</b> 樓 · 怪物 / 掉落 Lv<b>${curLv}</b></div>
       </div>
     `;
   }
   window.renderZoneSelector = renderZoneSelector;
+  function selectLayer(layerId) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    rpg.currentLayer = layerId;
+    rpg.currentFloor = 1; // 切層時回到該層第 1 樓
+    saveData();
+    renderZoneSelector();
+  }
+  window.selectLayer = selectLayer;
 
   function selectZone(zoneId) {
     const me = getMe();
@@ -6484,9 +6612,8 @@ ${b.text}
     if (!z) return;
     if (rpg.level < z.minLv) { showToast(`需 Lv${z.minLv} 才能進入${z.name}`); return; }
     rpg.currentZone = zoneId;
-    if (!rpg.zoneProgress[zoneId]) rpg.zoneProgress[zoneId] = { maxFloor: 1 };
-    rpg.currentFloor = Math.min(rpg.currentFloor || 1, rpg.zoneProgress[zoneId].maxFloor);
-    if (!rpg.currentFloor || rpg.currentFloor < 1) rpg.currentFloor = 1;
+    if (!rpg.currentLayer) rpg.currentLayer = 'upper';
+    if (!rpg.currentFloor || rpg.currentFloor < 1 || rpg.currentFloor > ZONE_FLOORS_PER_LAYER) rpg.currentFloor = 1;
     saveData();
     renderZoneSelector();
   }
@@ -6496,9 +6623,7 @@ ${b.text}
     const me = getMe();
     if (!me) return;
     const rpg = getRpg(me);
-    const z = ZONES.find(zz => zz.id === rpg.currentZone) || ZONES[0];
-    const prog = rpg.zoneProgress[z.id] || { maxFloor: 1 };
-    if (f > prog.maxFloor) { showToast('此層尚未解鎖'); return; }
+    if (f < 1 || f > ZONE_FLOORS_PER_LAYER) return;
     rpg.currentFloor = f;
     saveData();
     renderZoneSelector();
@@ -6611,7 +6736,7 @@ ${b.text}
   }
 
   // ⭐ 試煉戰場：3 隻怪物同時打
-  const TRIAL_STAMINA = 25;
+  const TRIAL_STAMINA = 0; // ⭐ 試煉戰場：免費試強度，但目前不發獎勵（之後再開放）
   let __trialInProgress = false;
   function generateTrialMonsters(playerLv) {
     // 用目前所在地區的怪物池，但等級 = 玩家等級
@@ -6656,15 +6781,16 @@ ${b.text}
       return;
     }
     const state = tickRecovery(me);
-    const canEnter = !__trialInProgress && state.stamina >= TRIAL_STAMINA && state.hp > 0;
+    const canEnter = !__trialInProgress && state.hp > 0;
     intro.innerHTML = `
       <div style="font-size:12px; color:#5b3d62; padding:6px 10px; background:#f3e8ff; border-radius:8px; margin-bottom:8px; border:1px dashed #c4b5fd;">
         💡 一次面對 2-3 隻怪物（用目前地區怪物池）<br>
-        花 ${TRIAL_STAMINA} ⚡，獎勵 = 全部怪物 XP+鵝幣相加。法師 / 弓手 / 聖騎可發揮多目標技能！
+        🆓 不耗體力 · 純練功 / 試強度用<br>
+        ⚠ <b>暫時不發獎勵</b>（XP / 鵝幣 / 套裝件，之後會開放）
       </div>
     `;
     btn.disabled = !canEnter;
-    btn.textContent = __trialInProgress ? '⚔️ 戰鬥中…' : `🌌 進入試煉（${TRIAL_STAMINA} ⚡）`;
+    btn.textContent = __trialInProgress ? '⚔️ 戰鬥中…' : `🌌 進入試煉（免費）`;
   }
   window.renderTrial = renderTrial;
 
@@ -6674,9 +6800,8 @@ ${b.text}
     const rpg = getRpg(me);
     if (!rpg.class) return;
     tickRecovery(me);
-    if (rpg.stamina < TRIAL_STAMINA) { showToast(`⚡ 體力不足（需 ${TRIAL_STAMINA}）`); return; }
     if (rpg.hp <= 0) { showToast('💀 HP 不足'); return; }
-    rpg.stamina -= TRIAL_STAMINA;
+    // ⭐ 不再扣體力（測試強度用）
     __trialInProgress = true;
 
     const monsters = generateTrialMonsters(rpg.level);
@@ -6773,58 +6898,30 @@ ${b.text}
 
   function finalizeTrialFight(player, result, stats, monsters) {
     const rpg = getRpg(player);
-    rpg.hp = result.pHpFinal;
-    rpg.mp = result.pMpFinal;
-    if (result.critCount) rpg.critCount = (rpg.critCount || 0) + result.critCount;
+    // ⭐ 試煉戰場是「試強度」用：HP/MP 也直接回滿，不影響真實戰鬥資源
+    const ns = computeStats(player);
+    rpg.hp = ns.maxHp;
+    rpg.mp = ns.maxMp;
+    rpg.deathAt = null;
+    // 不計戰績、不發獎、不掉裝
     let rewardHtml = '';
     if (result.won) {
-      rpg.fightsWon = (rpg.fightsWon || 0) + 1;
-      // 試煉戰場：不給 XP / 不給金幣，只給試煉專屬套裝其中一件
-      const mpBack = Math.round(stats.maxMp * 0.25);
-      rpg.mp = Math.min(stats.maxMp, rpg.mp + mpBack);
-      const TRIAL_SETS = ['blade_lord', 'iron_wall', 'sniper', 'demolisher', 'wind_rider'];
-      const drops = [];
-      // 每打贏一次掉 1 件（從 5 套隨機）
-      const setId = TRIAL_SETS[Math.floor(Math.random() * TRIAL_SETS.length)];
-      const set = SETS[setId];
-      if (set && set.pieces && set.pieces.length) {
-        const piece = set.pieces[Math.floor(Math.random() * set.pieces.length)];
-        rpg.inventory = rpg.inventory || [];
-        rpg.inventory.push(piece.id);
-        drops.push(piece);
-      }
       rewardHtml = `
         <div class="reward-list" style="background:linear-gradient(135deg,#fde68a,#fbbf24); border-color:#f59e0b;">
           <div class="rl-title" style="color:#7c2d12;">🏆 試煉勝利！</div>
-          <div class="rl-item">💙 MP 回復 +${mpBack}</div>
-          ${drops.map(d => {
-            const s = SETS[d.setId];
-            return `<div class="rl-item" style="color:${s?.color || '#7c2d12'};">${d.icon} <b>${d.name}</b><span style="font-size:10px; opacity:0.85;">　·　${s?.name || ''} 套裝件</span></div>`;
-          }).join('')}
-          <div style="margin-top:6px; font-size:11px; color:#7c2d12; opacity:0.8;">※ 試煉戰場不給 XP / 鵝鵝幣，只掉專屬套裝</div>
+          <div class="rl-item" style="font-size:12px; color:#7c2d12;">⚔️ 暴擊 ${result.critCount || 0} 次　·　剩餘 HP ${result.pHpFinal} / ${ns.maxHp}</div>
+          <div class="rl-item" style="font-size:11px; color:#7c2d12;">💪 強度測試完成 — HP / MP 已自動回滿</div>
+          <div class="rl-item" style="margin-top:6px; font-size:10px; color:#7c2d12; opacity:0.7;">※ 試煉戰場暫不發獎勵，純粹試強度。獎勵之後會開放。</div>
         </div>
       `;
     } else {
-      rpg.fightsLost = (rpg.fightsLost || 0) + 1;
-      if ((rpg.level || 1) <= 4) {
-        const ns = computeStats(player);
-        rpg.hp = ns.maxHp; rpg.deathAt = null;
-        rewardHtml = `
-          <div class="reward-list" style="background:#fef9c3; border-color:#fde047;">
-            <div class="rl-title" style="color:#a16207;">😭 試煉失敗</div>
-            <div class="rl-item">🍀 新手保護啟動：HP 已自動回滿</div>
-          </div>
-        `;
-      } else {
-        rpg.hp = 0;
-        rpg.deathAt = Date.now();
-        rewardHtml = `
-          <div class="reward-list reward-loss">
-            <div class="rl-title">😭 試煉失敗</div>
-            <div class="rl-item">💀 進入休息：10 分鐘後恢復到 50% HP</div>
-          </div>
-        `;
-      }
+      rewardHtml = `
+        <div class="reward-list" style="background:#fef9c3; border-color:#fde047;">
+          <div class="rl-title" style="color:#a16207;">😭 試煉失敗</div>
+          <div class="rl-item" style="font-size:12px; color:#a16207;">💪 強度不足，繼續加油練裝吧～</div>
+          <div class="rl-item" style="font-size:11px; color:#a16207;">🍀 試煉場不會死人 — HP 已回滿</div>
+        </div>
+      `;
     }
     document.getElementById('trialResult').insertAdjacentHTML('beforeend', rewardHtml);
     saveData();
@@ -7523,8 +7620,10 @@ ${b.text}
     // 使用目前選擇的地區/層數
     const zoneId = rpg.currentZone || 'forest';
     const floor = rpg.currentFloor || 1;
+    const layerId = rpg.currentLayer || 'upper';
     const zone = ZONES.find(z => z.id === zoneId) || ZONES[0];
-    const monster = generateMonster(rpg.level, { zoneId, floor, forageElite: !!(opts && opts.forageElite) });
+    const targetLv = layerFloorToLevel(layerId, floor);
+    const monster = generateMonster(rpg.level, { zoneId, layerId, floor, targetLv, forageElite: !!(opts && opts.forageElite) });
     const result = autoFight(me, monster);
 
     // 渲染戰鬥場景，依序播放
@@ -7663,27 +7762,27 @@ ${b.text}
       rpg.mp = Math.min(stats.maxMp, rpg.mp + mpBack);
       // 獎勵鵝鵝幣
       refundCoins(player.id, monster.goldDrop);
-      // 使用目前地區的掉落偏好
+      // 使用目前地區的掉落偏好；掉落等級 = 怪物等級（樓層）
       const _zone = ZONES.find(z => z.id === (rpg.currentZone || 'forest'));
-      const drop = rollItemDrop(rpg.level, { slotBias: _zone ? _zone.dropBias : null });
+      const dropLv = monster.level || rpg.level;
+      const drop = rollItemDrop(dropLv, { slotBias: _zone ? _zone.dropBias : null });
       if (drop) rpg.inventory.push(drop); // drop instance（含詞綴）直接存物件
-      forageTrace('rollItemDrop', { zoneId: _zone?.id, dropBias: _zone?.dropBias, gotDrop: !!drop, dropId: drop?.id, dropName: drop?.name, rarity: drop?.rarity });
-      // 精英怪：必掉一件套裝（其他地區精英還是給套裝；探險精英改給寶物）
+      forageTrace('rollItemDrop', { zoneId: _zone?.id, dropBias: _zone?.dropBias, dropLv, gotDrop: !!drop, dropId: drop?.id, dropName: drop?.name, rarity: drop?.rarity, affixCount: drop?.affixes?.length });
+      // 精英怪：必掉 2 件 3 詞條的裝備（地區偏好部位、隨機等級在玩家層樓附近）
       let elitePiece = null;
+      let eliteExtraDrops = [];
       let treasureDropped = null;     // 拿到的寶物本體（首次取得才會有）
       let treasureDupXp = 0;           // 重複的話換 XP
-      if (monster.isElite && !monster.isForageElite && monster.dropSet) {
-        // 地區精英：給該地區套裝
-        const set = SETS[monster.dropSet];
-        if (set && set.pieces.length > 0) {
-          const piece = set.pieces[Math.floor(Math.random() * set.pieces.length)];
-          const clone = { ...piece, setId: monster.dropSet, isSetPiece: true };
-          rpg.inventory.push(clone);
-          elitePiece = piece;
-          forageTrace('zone-elite drop', { setId: monster.dropSet, pieceId: piece.id, pieceName: piece.name });
-        } else {
-          forageTrace('zone-elite NO-DROP', { dropSet: monster.dropSet, setExists: !!set, piecesLen: set?.pieces?.length });
+      if (monster.isElite && !monster.isForageElite) {
+        // ⭐ 地區精英：必掉 2 件「3 詞條」的裝備
+        for (let i = 0; i < 2; i++) {
+          const eliteDrop = generateDropItem(dropLv, { slotBias: _zone ? _zone.dropBias : null, forceAffixes: 3, boosted: true });
+          if (eliteDrop) {
+            rpg.inventory.push(eliteDrop);
+            eliteExtraDrops.push(eliteDrop);
+          }
         }
+        forageTrace('zone-elite drop (2x 3-affix)', { dropLv, count: eliteExtraDrops.length, ids: eliteExtraDrops.map(d => d.id) });
       } else if (monster.isForageElite) {
         // ⭐ 探險精英：改成給寶物（重複→ +1000 XP）
         rpg.treasures = rpg.treasures || [];
@@ -7705,15 +7804,7 @@ ${b.text}
         // 普通怪 / 沒掉裝（不是精英）— 也記一筆方便除錯
         forageTrace('non-elite or no-drop', { isElite: !!monster.isElite, isForageElite: !!monster.isForageElite, dropSet: monster.dropSet, monsterId: monster.id });
       }
-      // 紀錄地區進度：通關目前層數 → 解鎖下一層
-      if (_zone) {
-        if (!rpg.zoneProgress) rpg.zoneProgress = {};
-        const prog = rpg.zoneProgress[_zone.id] || { maxFloor: 1 };
-        if ((rpg.currentFloor || 1) >= prog.maxFloor && prog.maxFloor < _zone.floors) {
-          prog.maxFloor = Math.min(_zone.floors, prog.maxFloor + 1);
-        }
-        rpg.zoneProgress[_zone.id] = prog;
-      }
+      // ⭐ 新版：層 + 樓自由切換，不再追蹤解鎖進度
       // 升級檢查
       let leveledUp = 0;
       while (rpg.xp >= xpForLevel(rpg.level)) {
@@ -7740,7 +7831,8 @@ ${b.text}
           <div class="rl-title">${monster.isElite ? '⭐ 精英戰利品' : '🎉 戰利品'}</div>
           <div class="rl-item">⭐ +${monster.xpDrop} XP</div>
           <div class="rl-item">🪙 +${monster.goldDrop} 鵝鵝幣</div>
-          ${drop ? `<div class="rl-item">${drop.icon} ${drop.name}</div>` : ''}
+          ${drop ? `<div class="rl-item">${drop.icon} ${drop.name}<span style="font-size:10px; color:#8b6f9b;"> · ${drop.affixes?.length || 0} 詞條</span></div>` : ''}
+          ${eliteExtraDrops && eliteExtraDrops.length ? eliteExtraDrops.map(d => `<div class="rl-item" style="color:${RARITY[d.rarity]?.color || '#7c3aed'}; font-weight:700;">⭐ ${d.icon} ${escapeHtml(d.name)} <span style="font-size:10px; opacity:0.85;">· 3 詞條 · Lv${d.lv}</span></div>`).join('') : ''}
           ${elitePiece ? `<div class="rl-item" style="color:${SETS[monster.dropSet]?.color || '#7c3aed'}; font-weight:700;">🛡 [套裝] ${elitePiece.icon} ${elitePiece.name}（${SETS[monster.dropSet]?.name}）</div>` : ''}
           ${treasureDropped && !treasureDropped.duplicate ? `
             <div class="rl-item" style="color:#7c3aed; font-weight:700; padding:6px 8px; background:#f3e8ff; border-radius:8px; margin-top:4px;">
