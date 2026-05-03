@@ -7266,6 +7266,28 @@ ${b.text}
   // 技能樹現在只在 modal 裡渲染，舊頁面卡片已移除 → 這裡保留空殼以免有舊 call site
   function renderSkillTree() { /* moved to showSkillsModal */ }
 
+  // ⭐ 物品 hover tooltip 文字（用 title 屬性，瀏覽器原生顯示）
+  function buildItemTooltipText(item) {
+    if (!item) return '';
+    const lines = [];
+    const rarLabel = item.rarity ? RARITY[item.rarity]?.label : (item.setId ? '套裝' : '');
+    lines.push(`${item.icon} ${item.name}${rarLabel ? `  [${rarLabel}]` : ''}${item.lv ? `  Lv ${item.lv}` : ''}`);
+    const stats = formatItemStats(item);
+    if (stats) lines.push(stats);
+    if (item.affixes && item.affixes.length) {
+      item.affixes.forEach(a => lines.push(`+${a.val} ${a.type.toUpperCase()}（${a.name}）`));
+    }
+    if (item.setId && SETS[item.setId]) {
+      const set = SETS[item.setId];
+      lines.push('');
+      lines.push(`🛡 套裝：${set.name}`);
+      set.tiers.forEach(t => lines.push(`  ${t.req} 件：${t.desc}`));
+    }
+    if (item.gachaOnly) lines.push('🎰 扭蛋限定');
+    if (item.isBossCoin) lines.push(`🏆 王硬幣 ×${item.qty || 1}`);
+    return lines.join('\n');
+  }
+
   function formatSkillDesc(s) {
     if (s.type === 'heal') {
       const parts = [];
@@ -7693,7 +7715,9 @@ ${b.text}
         return `<div class="equip-slot empty"><div class="es-icon">➕</div><div class="es-name">${slotLabels[s]}</div></div>`;
       }
       const rarColor = item.rarity ? RARITY[item.rarity]?.color : null;
-      return `<button class="equip-slot" onclick="unequip('${s}')" style="${rarColor ? `border-color:${rarColor};` : ''}">
+      // ⭐ hover tooltip：顯示完整資訊（名字、Lv、屬性、詞綴、套裝）
+      const tooltip = buildItemTooltipText(item);
+      return `<button class="equip-slot" onclick="unequip('${s}')" style="${rarColor ? `border-color:${rarColor};` : ''}" title="${escapeHtml(tooltip)}">
         <div class="es-icon">${item.icon}</div>
         <div class="es-name" style="${rarColor ? `color:${rarColor};` : ''}">${item.name}</div>
         <div class="es-stat">${formatItemStats(item)}</div>
@@ -7771,7 +7795,7 @@ ${b.text}
           : '');
       const tooltip = isBossCoin
         ? `${item.name} ×${item.qty || 1}（王硬幣 / 結算用）`
-        : `${item.name}${item.lv ? ' (Lv ' + item.lv + ')' : ''}　${formatItemStats(item)}`;
+        : buildItemTooltipText(item);
       const qtyBadge = (item.qty && item.qty > 1)
         ? `<div class="ic-qty">×${item.qty}</div>`
         : '';
@@ -7899,6 +7923,41 @@ ${b.text}
     const affixHtml = item.affixes && item.affixes.length
       ? `<div style="margin-top:6px; padding:6px 8px; background:${rarColor}20; border-radius:8px; font-size:11px;">${item.affixes.map(a => `<div style="color:${rarColor};">+${a.val} ${a.type.toUpperCase()}（${a.name}）</div>`).join('')}</div>`
       : '';
+    // ⭐ 比較：目前該槽位裝備的物件
+    let compareHtml = '';
+    if (item.slot && r.equipment) {
+      const curEquipped = resolveItem(r.equipment[item.slot]);
+      if (curEquipped) {
+        const curRar = curEquipped.rarity ? RARITY[curEquipped.rarity]?.color : (curEquipped.setId ? (SETS[curEquipped.setId]?.color || '#f59e0b') : '#9ca3af');
+        const curRarLabel = curEquipped.rarity ? RARITY[curEquipped.rarity]?.label : (curEquipped.setId ? '套裝' : '');
+        const curAffixes = (curEquipped.affixes || []).map(a => `<div style="color:${curRar}; font-size:10px;">+${a.val} ${a.type.toUpperCase()}（${a.name}）</div>`).join('');
+        // 對比箭頭：算 ATK / DEF / HP / SPD / MP / 暴擊 差值
+        const diffStats = ['atk','def','spd','hp','mp','critChance','critDmg'].map(k => {
+          const oldV = curEquipped[k] || 0;
+          const newV = item[k] || 0;
+          const d = newV - oldV;
+          if (d === 0) return null;
+          const isPct = (k === 'critChance' || k === 'critDmg');
+          const fmt = isPct ? `${d > 0 ? '+' : ''}${Math.round(d * 100)}%` : `${d > 0 ? '+' : ''}${d}`;
+          const label = isPct ? (k === 'critDmg' ? '爆傷' : '暴擊') : k.toUpperCase();
+          return `<span style="color:${d > 0 ? '#16a34a' : '#dc2626'}; font-weight:700; margin-right:6px;">${label} ${fmt}</span>`;
+        }).filter(Boolean).join('');
+        compareHtml = `
+          <div style="margin-top:10px; padding:8px 10px; background:#f3f4f6; border:1px dashed #9ca3af; border-radius:8px; text-align:left;">
+            <div style="font-size:10px; color:#6b7280; font-weight:700; margin-bottom:4px;">🔄 對比（目前裝備）</div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span style="font-size:24px;">${curEquipped.icon}</span>
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:12px; font-weight:700; color:${curRar};">${curRarLabel ? `[${curRarLabel}] ` : ''}${escapeHtml(curEquipped.name)}${curEquipped.lv ? `  Lv ${curEquipped.lv}` : ''}</div>
+                <div style="font-size:10px; color:#7c3aed;">${formatItemStats(curEquipped)}</div>
+                ${curAffixes}
+              </div>
+            </div>
+            ${diffStats ? `<div style="margin-top:6px; padding-top:6px; border-top:1px dashed #d1d5db; font-size:11px;">換上後：${diffStats}</div>` : ''}
+          </div>
+        `;
+      }
+    }
     // 套裝資訊
     let setHtml = '';
     if (item.setId && SETS[item.setId]) {
@@ -7926,6 +7985,7 @@ ${b.text}
           ${item.lv ? `Lv ${item.lv}　·　` : ''}${formatItemStats(item)}
         </div>
         ${affixHtml}
+        ${compareHtml}
         ${setHtml}
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:14px;">
           <button class="btn btn-primary" onclick="equipFromInvAndClose(${idx})" ${canEquip ? '' : 'disabled'}>裝備</button>
