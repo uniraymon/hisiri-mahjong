@@ -2537,6 +2537,145 @@
   }
   window.wb9LeaveQueue = wb9LeaveQueue;
 
+  // ⭐ commit 3：攻擊世界王（輪到自己時才能呼叫）
+  async function wb9Attack(bossId) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me); if (!r.class) return;
+    const boss = WB9_BOSSES.find(b => b.id === bossId);
+    if (!boss) return;
+    if (!window.__firebaseSync?.wb9AttackTx) { showToast('☁️ 雲端尚未連線'); return; }
+
+    const state = wb9GetState(bossId);
+    const queue = state.queue || [];
+    // 本地快速預檢（TX 還是會二次驗證）
+    if (!queue.length || queue[0].pid !== me.id) {
+      showToast('⏳ 還沒輪到你'); wb9Render({ force: true }); return;
+    }
+
+    // 建立怪物物件給 autoFight 用
+    const cls   = CLASSES[r.class];
+    const stats = computeStats(me);
+    const monster = {
+      id: boss.id, tier: 99,
+      name: boss.name, icon: boss.icon, level: boss.level,
+      hp: state.hp, maxHp: boss.maxHp,
+      atk: boss.atk, def: boss.def, spd: boss.spd,
+      verb: boss.verb,
+      ability: boss.ability,
+      goldDrop: 0, xpDrop: 0,
+    };
+
+    const result  = autoFight(me, monster);
+    const dmgRaw  = Math.max(0, state.hp - result.mHpFinal);
+
+    // 戰鬥快照（給 recentBattles）
+    const snap_ = {
+      id: 'br9_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      ts: Date.now(),
+      bossId:  boss.id, bossName: boss.name, bossIcon: boss.icon, bossLevel: boss.level,
+      attackerId: me.id, attackerName: me.name,
+      attackerAvatar: me.avatar || cls?.icon || '🎴',
+      playerSnap: { name: me.name, avatar: cls?.icon || '🎴', level: r.level, maxHp: stats.maxHp, maxMp: stats.maxMp },
+      monsterSnap: { name: monster.name, icon: monster.icon, level: monster.level, ability: monster.ability },
+      log: (result.log || []).slice(0, 80),
+    };
+
+    // 送 TX
+    let txOut;
+    try {
+      txOut = await window.__firebaseSync.wb9AttackTx(
+        bossId, me.id, dmgRaw,
+        { maxHp: boss.maxHp, staleMs: WB9_QUEUE_STALE_MS },
+        snap_
+      );
+    } catch (e) {
+      const msg = String(e?.message || e);
+      const code = e?.code || '';
+      if (code === 'resource-exhausted' || msg.includes('429')) {
+        showToast('☁️ Firestore 配額用完，明天 UTC 0 點重置');
+      } else if (msg.includes('not-your-turn') || msg.includes('not-in-queue')) {
+        showToast('⏳ 還沒輪到你，已刷新'); wb9Render({ force: true });
+      } else if (msg.includes('boss-not-found')) {
+        showToast('🦢 王資料異常，請重新加入排隊');
+      } else {
+        showToast('☁️ 攻擊失敗：' + (code || msg.slice(0, 40)));
+      }
+      console.warn('wb9Attack TX failed:', e);
+      return;
+    }
+
+    const { actualDmg, killed, newState } = txOut;
+    // 全域 5 分冷卻
+    r.lastBossAttackTime = Date.now();
+    // 同步本地 wb9
+    wb9[bossId] = newState;
+
+    // 獎勵（測試中全關）
+    let xpGain = 0, coinGain = 0;
+    if (!WB9_TESTING_NO_REWARDS) {
+      xpGain   = Math.min(WB9_MAX_XP_PER_FIGHT, Math.round(actualDmg * 0.8));
+      coinGain = Math.round(actualDmg * 0.1);
+      if (xpGain > 0) {
+        r.xp = (r.xp || 0) + xpGain;
+        let leveled = 0;
+        while (r.xp >= xpForLevel(r.level)) {
+          r.xp -= xpForLevel(r.level); r.level += 1;
+          r.skillPoints  = (r.skillPoints  || 0) + POINTS_PER_LEVEL.skill;
+          r.abilityPoints= (r.abilityPoints|| 0) + POINTS_PER_LEVEL.ability;
+          leveled++;
+        }
+        if (leveled) { const s = computeStats(me); r.hp = s.maxHp; r.mp = s.maxMp; }
+      }
+      if (coinGain > 0) refundCoins(me.id, coinGain);
+    }
+
+    // HP / MP 處理（每次打王都是全力出擊，輸掉 HP 歸 0）
+    const _s = computeStats(me);
+    if (result.pHpFinal <= 0 && !killed) {
+      r.hp = 0; if (!r.deathAt) r.deathAt = Date.now();
+    } else {
+      r.hp = _s.maxHp; r.deathAt = null;
+    }
+    r.mp = _s.maxMp;
+
+    saveData();
+    renderCharCard();
+    updateStaminaUI();
+    wb9Render({ force: true });
+
+    // 顯示本場結果
+    wb9ShowFightResult({ boss, dmgDealt: actualDmg, killed, xpGain, coinGain,
+      won: result.pHpFinal > 0, log: result.log });
+  }
+  window.wb9Attack = wb9Attack;
+
+  // 本場戰鬥結果（顯示在 #fightResult）
+  function wb9ShowFightResult({ boss, dmgDealt, killed, xpGain, coinGain, won, log }) {
+    const fr = document.getElementById('fightResult');
+    if (!fr) return;
+    const killLine = killed
+      ? `<div style="font-size:15px; font-weight:700; color:#dc2626; text-align:center; padding:6px 0;">💥 尾刀！${boss.name} 倒下了！</div>`
+      : '';
+    const defeatLine = !won
+      ? `<div style="font-size:13px; color:#dc2626; text-align:center;">💀 你被打倒了（HP 歸 0）</div>`
+      : '';
+    const rewardLine = WB9_TESTING_NO_REWARDS
+      ? `<div style="font-size:11px; color:#92400e; text-align:center;">🛠️ 測試期間，獎勵不發放</div>`
+      : `<div style="font-size:12px; text-align:center;">+${xpGain.toLocaleString()} XP　·　+${coinGain.toLocaleString()} 鵝鵝幣</div>`;
+    fr.innerHTML = `
+      <div class="card" style="border-color:#f59e0b; margin-top:10px;">
+        <h2>⚔️ ${boss.name} — 攻擊結果</h2>
+        ${killLine}${defeatLine}
+        <div style="font-size:14px; text-align:center; padding:4px 0;">
+          💢 造成傷害 <b>${dmgDealt.toLocaleString()}</b>
+        </div>
+        ${rewardLine}
+        <button class="btn btn-secondary" onclick="this.parentElement.remove()" style="margin-top:8px; width:100%;">關閉</button>
+      </div>
+    `;
+    fr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
   // ⭐ 結構性雜湊：HP / 排隊頭 pid / 排隊長度 / killCount / cd 開關
   //    雜湊沒變 → 跳過 innerHTML，只 patch 倒數文字（避免閃爍）
   let __wb9LastHash = '';
@@ -2643,7 +2782,7 @@
         actionHtml = `<button class="btn btn-primary" disabled style="background:#4b5563;"><span data-wb9-cd-text>⏳ 冷卻 ${m}:${String(s).padStart(2,'0')}</span></button>`;
       } else if (isMyTurn) {
         actionHtml = `
-          <button class="btn btn-primary" disabled style="background:#94a3b8;">🔧 commit 2：攻擊功能 commit 3 才開放</button>
+          <button class="btn btn-primary" onclick="wb9Attack('${boss.id}')" style="background:linear-gradient(135deg,#dc2626,#7c3aed); box-shadow:0 4px 0 #7c3aed; font-size:15px;">⚔️ 攻擊！</button>
           <button class="btn btn-secondary" onclick="wb9LeaveQueue('${boss.id}')" style="margin-top:6px;">取消排隊</button>
         `;
       } else if (queuedHere) {
@@ -2680,8 +2819,8 @@
     }).join('');
     el.innerHTML = `
       <div style="font-size:11px; color:#92400e; padding:8px 10px; background:linear-gradient(135deg,#fef3c7,#fde68a); border:2px dashed #f59e0b; border-radius:10px; margin-bottom:10px; text-align:center;">
-        🛠️ <b>世界王 v9 — Commit 2</b>　排隊功能可用　·　攻擊待 commit 3<br>
-        <span style="font-size:10px; color:#a16207;">獎勵全關（測試期間），EXP 上限 ${WB9_MAX_XP_PER_FIGHT}</span>
+        🛠️ <b>世界王 v9 — Commit 3</b>　排隊 + 攻擊可用（${WB9_TESTING_NO_REWARDS ? '測試：獎勵不發放' : '正式模式'}）<br>
+        <span style="font-size:10px; color:#a16207;">EXP 上限 ${WB9_MAX_XP_PER_FIGHT}　·　5 分鐘冷卻</span>
       </div>
       ${cardsHtml}
     `;
@@ -12549,24 +12688,53 @@ ${b.text}
       wb9SaveBoss: async (bossId, state) => {
         await setDoc(doc(wb9Col, bossId), _prune(state));
       },
-      // 攻擊 TX（commit 3 佔位）：讀 boss doc → 扣血 → 寫回
-      wb9AttackTx: async (bossId, attackerId, damage) => {
+      // ⭐ commit 3：攻擊 TX
+      // bossDef = { maxHp, staleMs }（從主腳本傳入）
+      // partialBattleSnap = 戰鬥日誌快照
+      wb9AttackTx: async (bossId, attackerId, dmgRaw, bossDef, partialBattleSnap) => {
         const bossRef = doc(wb9Col, bossId);
         return await runTransaction(db, async (tx) => {
           const snap = await tx.get(bossRef);
           if (!snap.exists()) throw new Error('boss-not-found');
           const state = { ...snap.data() };
-          if (!state.queue?.length || state.queue[0]?.pid !== attackerId) {
+          state.queue = Array.isArray(state.queue) ? [...state.queue] : [];
+          // 踢過期隊頭（> staleMs 沒動作）
+          const staleMs = (bossDef && bossDef.staleMs) || 60000;
+          while (state.queue.length > 0) {
+            const head = state.queue[0];
+            if (head && (Date.now() - (head.joinedAt || 0)) > staleMs) {
+              state.queue = state.queue.slice(1);
+            } else break;
+          }
+          // 驗證輪到攻擊者
+          if (!state.queue.length || state.queue[0].pid !== attackerId) {
             throw new Error('not-your-turn');
           }
-          state.hp = Math.max(0, (state.hp || 0) - damage);
+          // 套用傷害（上限為當前 HP）
+          const actualDmg = Math.min(state.hp || 0, Math.max(0, dmgRaw));
+          state.hp = Math.max(0, (state.hp || 0) - actualDmg);
+          const killed = state.hp <= 0;
+          // 傷害統計
           state.damageLog = state.damageLog || {};
-          state.damageLog[attackerId] = (state.damageLog[attackerId] || 0) + damage;
+          state.damageLog[attackerId] = (state.damageLog[attackerId] || 0) + actualDmg;
           // 移出隊頭
           state.queue = state.queue.slice(1);
           state.lastHitAt = Date.now();
+          // 最近戰報（最多 10 筆）
+          if (partialBattleSnap) {
+            const entry = { ...partialBattleSnap, dmgDealt: actualDmg, killed };
+            state.recentBattles = [entry, ...(state.recentBattles || [])].slice(0, 10);
+          }
+          // 尾刀：重置王、清隊列、記錄
+          if (killed) {
+            state.killCount = (state.killCount || 0) + 1;
+            state.lastKill = { pid: attackerId, ts: Date.now(), damageLog: { ...state.damageLog } };
+            state.damageLog = {};
+            state.queue = [];
+            state.hp = (bossDef && bossDef.maxHp) || (state.hp);  // 重生滿血
+          }
           tx.set(bossRef, _prune(state));
-          return { newHp: state.hp, dead: state.hp <= 0 };
+          return { actualDmg, killed, newState: state };
         });
       },
 
