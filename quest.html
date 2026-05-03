@@ -4248,6 +4248,15 @@
         window.__pendingUpdateV5.add(player.id);
       }
     }
+    // ⭐ 大改版 v6：每職業多魔吸技 / 每回合自動回 MP / 下層起 2 隻怪 / 排隊 1 分自動踢
+    //   不送體力（玩家可繼續打不必額外補償）
+    if (!player.rpg.updateV6 && typeof getMeId === 'function' && player.id === getMeId()) {
+      player.rpg.updateV6 = true;
+      if (typeof window !== 'undefined') {
+        window.__pendingUpdateV6 = window.__pendingUpdateV6 || new Set();
+        window.__pendingUpdateV6.add(player.id);
+      }
+    }
     // skillPoints migration
     if (player.rpg.skillPoints == null) {
       const earned = Math.max(0, (player.rpg.level || 1) - 1) * POINTS_PER_LEVEL.skill;
@@ -5831,7 +5840,54 @@
   function maybeShowBetaCompModal() {
     const me = getMe();
     if (!me) return;
-    // ⭐ v5 優先（最新）
+    // ⭐ v6 優先（最新）
+    if (window.__pendingUpdateV6 && window.__pendingUpdateV6.has(me.id)) {
+      window.__pendingUpdateV6.delete(me.id);
+      const html = `
+        <div style="text-align:left; padding:6px 0;">
+          <div style="text-align:center; font-size:42px; margin-bottom:6px;">⚙️</div>
+          <div style="text-align:center; font-weight:800; font-size:17px; color:#7c3aed; margin-bottom:8px;">v6 — MP 流動 / 雙怪戰鬥</div>
+          <div style="font-size:12px; color:#5b3d62; line-height:1.6; padding:10px 12px; background:#f3e8ff; border-radius:10px; border:2px dashed #c4b5fd;">
+
+            <div style="font-weight:800; color:#0ea5e9; margin-bottom:4px;">💙 MP 流動性大幅提升</div>
+            • 每職業<b>多一招魔吸技</b>（0.8× ATK 傷害 + 回 MP）<br>
+            &nbsp;&nbsp;戰士 / 弓手：+2 MP　·　巫師 / 聖騎：+4 MP<br>
+            • 每回合<b>自動回 MP</b>（戰士 / 弓手 +2、巫師 / 聖騎 +4）<br>
+            • 巫師 / 聖騎的回魔技效果 <b>×2</b>（基底也加倍）<br>
+            • 修 bug：回魔技現在 mpFlat + mpPct 兩部分都會生效<br>
+
+            <div style="font-weight:800; color:#dc2626; margin:10px 0 4px;">⚔️ 下層起 2 隻怪同戰</div>
+            • <b>下層 / 深層</b>每場固定 2 隻普通怪<br>
+            • 用試煉場樣式 UI 顯示，雙血條 + 行動條<br>
+            • 結算依擊殺數計：<b>每隻獨立給 XP / 鵝鵝幣 / 掉裝 roll</b><br>
+            • 上層 / 中層仍維持 1 隻（含寶箱怪 / 精英怪變化）<br>
+
+            <div style="font-weight:800; color:#16a34a; margin:10px 0 4px;">🎒 裝備新增中間階</div>
+            • helmet / gloves / boots / cape 補上 Lv 4 + Lv 13<br>
+            • 武器 / 防具補上 Lv 16 銀劍 / 鎧甲<br>
+            • 中層→下層→深層每層都掉強一級的版本<br>
+
+            <div style="font-weight:800; color:#f59e0b; margin:10px 0 4px;">🌍 世界王排隊</div>
+            • 排隊頭 <b>1 分鐘沒動作 → 自動取消</b>（防卡排隊）<br>
+            • 沒在頭的後排不影響<br>
+
+            <div style="font-weight:800; color:#a855f7; margin:10px 0 4px;">📚 補償</div>
+            • 綠茶指南書 v4 一次性補發（沒拿到的會自動修好）<br>
+            • 中層起怪物 ATK / HP 再次強化（中後期不再被秒）<br>
+
+            <br>
+            <div style="text-align:center; padding:6px 8px; background:#fef3c7; border:1px dashed #f59e0b; border-radius:8px; color:#92400e;">
+              <span style="font-size:11px;">這次不送體力，希望大家把 MP 玩出新花樣 ♡</span>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="hideModal()" style="margin-top:14px; width:100%;">收下 ✨</button>
+        </div>
+      `;
+      showModal('📣 大改版 v6 公告', html);
+      saveData();
+      return;
+    }
+    // ⭐ v5
     if (window.__pendingUpdateV5 && window.__pendingUpdateV5.has(me.id)) {
       window.__pendingUpdateV5.delete(me.id);
       const html = `
@@ -9991,6 +10047,15 @@ ${b.text}
     // ⭐ 每場戰鬥隨機抽該層範圍內的怪物等級
     const targetLv = pickLayerLevel(layerId);
     const monster = generateMonster(rpg.level, { zoneId, layerId, targetLv, forageElite: !!(opts && opts.forageElite) });
+    // ⭐ 下層 / 深層：固定多一隻同伴怪（普通怪、不是精英 / 寶箱 / 綠茶 / 探險精英）
+    const isMultiLayer = (layerId === 'lower' || layerId === 'deep');
+    const isFirstSpecial = !!(monster.isElite || monster.isChest || monster.isForageElite || monster.ability?.type === 'cameo');
+    if (isMultiLayer && !isFirstSpecial) {
+      const second = generateMonster(rpg.level, { zoneId, layerId, targetLv, noSpecial: true });
+      if (second && !second.isElite && !second.isChest && !second.isForageElite && second.ability?.type !== 'cameo') {
+        return runMultiMonsterFight(me, [monster, second], { zoneId, layerId, opts });
+      }
+    }
     const result = autoFight(me, monster);
 
     // 渲染戰鬥場景，依序播放
@@ -10121,6 +10186,199 @@ ${b.text}
     playStep();
   }
   window.onFight = onFight;
+
+  // ⭐ 下層 / 深層：2 隻怪同戰（重用試煉場 multi-monster 引擎 + 樣式）
+  function runMultiMonsterFight(me, monsters, ctx) {
+    const rpg = getRpg(me);
+    const stats = computeStats(me);
+    const result = autoFightMulti(me, monsters);
+    // 試煉場樣式 arena，但放 fightResult 區
+    const arenaHtml = `
+      <div class="trial-arena" id="battleArena">
+        <div class="t-player">
+          <div class="t-icon">${CLASSES[rpg.class].icon}</div>
+          <div class="t-name">${escapeHtml(me.name)} Lv${rpg.level}</div>
+          <div class="t-hp"><div class="t-hp-fill" id="mfPHpFill" style="width:100%"></div></div>
+          <div class="t-hp-text" id="mfPHpText">${stats.maxHp}/${stats.maxHp}</div>
+          <div class="t-mp"><div class="t-mp-fill" id="mfPMpFill" style="width:100%"></div></div>
+          <div class="t-mp-text" id="mfPMpText">MP ${stats.maxMp}/${stats.maxMp}</div>
+          <div class="combatant-spd-track"><div class="combatant-spd-fill" id="mfPSpdBar" style="width:0%"></div></div>
+          <div class="combatant-spd-text" id="mfPSpdText">⏱ 行動條 0%</div>
+        </div>
+        <div class="t-vs">⚔️</div>
+        <div class="t-monsters">
+          ${monsters.map((m, i) => `
+            <div class="t-monster" id="mfTm${i}">
+              <div class="t-icon">${m.icon}</div>
+              <div class="t-name">${escapeHtml(m.name)} Lv${m.level}</div>
+              <div class="t-hp"><div class="t-hp-fill t-mfill" id="mfTmHpFill${i}" style="width:100%"></div></div>
+              <div class="t-hp-text" id="mfTmHpText${i}">${m.hp}/${m.maxHp}</div>
+            </div>
+          `).join('')}
+          <div class="combatant-spd-track" style="margin-top:6px;"><div class="combatant-spd-fill" id="mfMSpdBar" style="width:0%; background:linear-gradient(90deg,#fda4af,#ef4444);"></div></div>
+          <div class="combatant-spd-text" id="mfMSpdText">⏱ 怪物最快行動條 0%</div>
+        </div>
+      </div>
+      <div class="battle-log" id="battleLog"></div>
+    `;
+    document.getElementById('fightResult').innerHTML = arenaHtml;
+    const logEl = document.getElementById('battleLog');
+    let i = 0;
+    const playStep = () => {
+      if (i >= result.log.length) {
+        finalizeFightMulti(me, monsters, result, stats, ctx);
+        try {
+          const fr = document.getElementById('fightResult');
+          if (fr) {
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-secondary';
+            btn.style.cssText = 'margin-top:8px; padding:6px 10px; font-size:12px; background:#fef2f2; color:#991b1b; border:1px dashed #f87171;';
+            btn.textContent = '🐛 這場有 BUG？回報一下';
+            btn.onclick = () => openBugReport(true);
+            fr.appendChild(btn);
+          }
+        } catch (e) {}
+        __fightInProgress = false;
+        return;
+      }
+      const entry = result.log[i++];
+      const cls = entry.type === 'crit-player' ? 'log-crit'
+        : entry.type === 'player' ? 'log-player'
+        : entry.type === 'monster' ? 'log-monster'
+        : 'log-system';
+      const div = document.createElement('div');
+      div.className = `log-line ${cls}`;
+      div.textContent = entry.text;
+      logEl.appendChild(div);
+      logEl.scrollTop = logEl.scrollHeight;
+      if (entry.hp) {
+        const tpFill = document.getElementById('mfPHpFill');
+        const tpText = document.getElementById('mfPHpText');
+        if (tpFill) tpFill.style.width = (entry.hp.player / stats.maxHp * 100) + '%';
+        if (tpText) tpText.textContent = `${entry.hp.player}/${stats.maxHp}`;
+        if (entry.hp.mp != null) {
+          const mpF = document.getElementById('mfPMpFill');
+          const mpT = document.getElementById('mfPMpText');
+          if (mpF) mpF.style.width = (entry.hp.mp / stats.maxMp * 100) + '%';
+          if (mpT) mpT.textContent = `MP ${entry.hp.mp}/${stats.maxMp}`;
+        }
+        if (Array.isArray(entry.hp.monsters)) {
+          entry.hp.monsters.forEach((mh, idx) => {
+            const f = document.getElementById('mfTmHpFill' + idx);
+            const t = document.getElementById('mfTmHpText' + idx);
+            if (f) f.style.width = (mh / monsters[idx].maxHp * 100) + '%';
+            if (t) t.textContent = `${mh}/${monsters[idx].maxHp}`;
+          });
+        }
+      }
+      if (entry.gauge && typeof updateSpdBar === 'function') {
+        updateSpdBar('mfPSpdBar', 'mfPSpdText', entry.gauge.p, '我的行動條');
+        updateSpdBar('mfMSpdBar', 'mfMSpdText', entry.gauge.m, '怪物最快行動條');
+      }
+      setTimeout(playStep, 480);
+    };
+    playStep();
+  }
+  window.runMultiMonsterFight = runMultiMonsterFight;
+
+  // ⭐ 多怪戰鬥結算（每隻死掉的怪都給 XP / 鵝鵝幣 / 掉裝 roll）
+  function finalizeFightMulti(player, monsters, result, stats, ctx) {
+    const rpg = getRpg(player);
+    rpg.hp = stats.maxHp;
+    rpg.mp = stats.maxMp;
+    if (result.critCount) rpg.critCount = (rpg.critCount || 0) + result.critCount;
+    if (result.won) rpg.fightsWon = (rpg.fightsWon || 0) + 1;
+    const _zone = ZONES.find(z => z.id === (rpg.currentZone || 'forest'));
+    let totalXp = 0, totalGold = 0;
+    const drops = [];
+    // 從 result.monsters 找 alive=false 的（已死）
+    const deadCount = (result.monsters || []).filter(m => !m.alive).length;
+    if (deadCount > 0) {
+      monsters.forEach((m, idx) => {
+        const summary = (result.monsters || [])[idx];
+        if (!summary || summary.alive) return; // 沒死不發
+        totalXp += m.xpDrop || 0;
+        totalGold += m.goldDrop || 0;
+        const dropLv = m.level || rpg.level;
+        const drop = rollItemDrop(dropLv, { slotBias: _zone ? _zone.dropBias : null });
+        if (drop) {
+          rpg.inventory.push(drop);
+          drops.push(drop);
+        }
+        rpg.kills = rpg.kills || {};
+        rpg.kills[m.id] = (rpg.kills[m.id] || 0) + 1;
+      });
+    }
+    rpg.xp = (rpg.xp || 0) + totalXp;
+    rpg.totalGold = (rpg.totalGold || 0) + totalGold;
+    if (totalGold > 0) refundCoins(player.id, totalGold);
+    // 升等檢查
+    let leveledUp = 0;
+    while (rpg.xp >= xpForLevel(rpg.level)) {
+      rpg.xp -= xpForLevel(rpg.level);
+      rpg.level += 1;
+      rpg.skillPoints = (rpg.skillPoints || 0) + POINTS_PER_LEVEL.skill;
+      rpg.abilityPoints = (rpg.abilityPoints || 0) + POINTS_PER_LEVEL.ability;
+      leveledUp++;
+    }
+    if (leveledUp) {
+      const ns = computeStats(player);
+      rpg.hp = ns.maxHp; rpg.mp = ns.maxMp; rpg.deathAt = null;
+    }
+    if (!result.won) {
+      if ((rpg.level || 1) > 4) {
+        rpg.hp = 0; rpg.deathAt = Date.now();
+      }
+      rpg.fightsLost = (rpg.fightsLost || 0) + 1;
+    }
+    // 渲染獎勵
+    const dropHtml = drops.length === 0 ? '' : drops.map(d => {
+      const rar = d.rarity ? RARITY[d.rarity]?.color : '#9ca3af';
+      const rarLabel = d.rarity ? RARITY[d.rarity]?.label : '';
+      return `<div class="rl-item" style="color:${rar};">[${rarLabel}] ${d.icon} ${escapeHtml(d.name)} ${formatItemStats(d)}</div>`;
+    }).join('');
+    const rewardHtml = `
+      <div class="reward-list" style="background:linear-gradient(135deg,#fef3c7,#fde68a); border-color:#f59e0b;">
+        <div class="rl-title" style="color:#7c2d12;">${result.won ? '⚔️ 雙怪戰鬥勝利！' : '💀 雙怪戰鬥失敗'}</div>
+        <div class="rl-item">擊殺：${deadCount} / ${monsters.length} 隻</div>
+        ${result.won ? `<div class="rl-item">⭐ +${totalXp} XP　·　🪙 +${totalGold} 鵝鵝幣${leveledUp ? `（升 ${leveledUp} 級）` : ''}</div>` : ''}
+        ${dropHtml}
+        ${!result.won ? `<div class="rl-item" style="color:#dc2626;">休息 5 分鐘後 HP 恢復 50%</div>` : ''}
+      </div>
+    `;
+    document.getElementById('fightResult').insertAdjacentHTML('beforeend', rewardHtml);
+    // 把這場記到「最近 5 場」
+    try {
+      const battleSnap = {
+        id: 'fr_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        ts: Date.now(),
+        bossId: 'multi_' + (ctx?.layerId || 'lower'),
+        bossName: monsters.map(m => m.name).join(' + '),
+        bossIcon: monsters[0].icon,
+        bossLevel: monsters[0].level,
+        dmgDealt: monsters.reduce((s, m, idx) => {
+          const sum = (result.monsters || [])[idx];
+          return s + Math.max(0, (m.maxHp || 0) - (sum?.hp || 0));
+        }, 0),
+        killed: !!result.won,
+        playerSnap: { name: player.name, avatar: CLASSES[rpg.class]?.icon || '🎴', level: rpg.level, maxHp: stats.maxHp, maxMp: stats.maxMp },
+        monsterSnap: { name: monsters.map(m => m.name).join(' + '), icon: monsters[0].icon, level: monsters[0].level, maxHp: monsters.reduce((s, m) => s + (m.maxHp || 0), 0) },
+        log: (result.log || []).slice(0, 100),
+        zoneId: ctx?.zoneId, layerId: ctx?.layerId,
+        isForage: true,
+      };
+      rpg.forageBattleHistory = Array.isArray(rpg.forageBattleHistory) ? rpg.forageBattleHistory : [];
+      rpg.forageBattleHistory.unshift(battleSnap);
+      if (rpg.forageBattleHistory.length > 5) rpg.forageBattleHistory.length = 5;
+    } catch (e) { console.warn('multi snap', e); }
+    saveData();
+    renderCharCard();
+    renderEquipment();
+    renderShop();
+    renderRpgStats();
+    renderForageHistory();
+    updateStaminaUI();
+  }
 
   function finalizeFight(player, monster, result, stats) {
     const rpg = getRpg(player);
