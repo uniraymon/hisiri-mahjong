@@ -1880,7 +1880,7 @@
         { id: 'w_rage_flame',   name: '怒之炎',   icon: '☄️', unlockLv: 8,  cooldown: 0, mpCost: 50, type: 'damage', mult: 3.5, magic: true },
         { id: 'w_heavy_strike', name: '重擊',     icon: '⚡', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'damage', mult: 1.3, alwaysCrit: true },
         { id: 'w_rage_slash',   name: '狂怒斬',   icon: '🔥', unlockLv: 1,  cooldown: 0, mpCost: 14, type: 'damage', mult: 1.8, hits: 2 },
-        { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 1,  cooldown: 0, mpCost: 0, hpCostFlat: 20, type: 'damage', mult: 2.0, cast: 10 },
+        { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 1,  cooldown: 0, mpCost: 0, hpCost: 0.15, type: 'damage', mult: 2.0, cast: 10 },
         { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 6,  cooldown: 0, mpCost: 0, type: 'damage', mult: 1.0, lifesteal: 0.20 },
         { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 50, hpCostFlat: 20, type: 'damage', mult: 4.5, cast: 100 },
         { id: 'w_war_cry',      name: '戰意呼喚', icon: '📢', unlockLv: 3,  cooldown: 0, mpCost: 0, type: 'heal', healPct: 0.15, isMpRegen: true },
@@ -2016,8 +2016,8 @@
         { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.40, turns: 3 } },
         { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 22, type: 'damage', defMult: 4 },
         { id: 'p_divine_storm',  name: '神聖風暴', icon: '🌪', unlockLv: 5,  cooldown: 0, mpCost: 28, type: 'damage', maxHpMult: 0.50, targetCount: 2 },
-        { id: 'p_thorn_armor',   name: '棘甲術',   icon: '🌵', unlockLv: 4,  cooldown: 0, mpCost: 22, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.40, turns: 4 } },
-        { id: 'p_aegis',         name: '反傷護盾', icon: '🪞', unlockLv: 8,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.70, turns: 3 } },
+        { id: 'p_thorn_armor',   name: '棘甲術',   icon: '🌵', unlockLv: 4,  cooldown: 0, mpCost: 22, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.50, turns: 4 } },
+        { id: 'p_aegis',         name: '反傷護盾', icon: '🪞', unlockLv: 8,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.50, turns: 3 } },
         { id: 'p_divine_wrath',  name: '神之裁決', icon: '⚡', unlockLv: 10, cooldown: 0, mpCost: 38, type: 'damage', maxHpMult: 0.65, alwaysCrit: true, cast: 90 },
         // ⭐ 新增：神聖奪魂 — 0.8× ATK 傷害 + 回 4 MP（聖騎回魔多一倍）
         { id: 'p_mana_drain',    name: '神聖奪魂', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 0.8, mpRestore: 4 },
@@ -2323,7 +2323,7 @@
       name: '🦢 鵝皇',
       icon: '🦢',
       hp: 90000,        // 50000 → 90000：更耐打
-      atk: 75, def: 38, spd: 12,  // ATK 48 → 75（更具威脅）
+      atk: 95, def: 38, spd: 12,  // ATK 48 → 75 → 95（更具威脅）
       level: 30,
       respawnMs: 0,     // ⭐ 立刻重生
       verb: '皇者懲戒',
@@ -2344,7 +2344,7 @@
       name: '🐉 古龍鵝',
       icon: '🐉',
       hp: 200000,       // 100000 → 200000
-      atk: 100, def: 50, spd: 14, // ATK 65 → 100（更具威脅）
+      atk: 140, def: 50, spd: 14, // ATK 65 → 100 → 140（更具威脅，需要更多生存能力）
       level: 40,
       respawnMs: 0,     // ⭐ 立刻重生
       verb: '龍焰之息',
@@ -2790,6 +2790,24 @@
   };
   const TREASURE_DUP_XP = 1000;
 
+  // ⭐ 鵝王恩賜（金裝飾品，鵝王扭蛋專屬）
+  //   全部同名「鵝王恩賜」，能力寫在「特殊詞條」（只有這裡會出現）
+  //   基底每件都 +5 ATK，特殊詞條額外加屬性
+  const BOSS_GIFTS = [
+    { id: 'bg_crit',    name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 5, critChance: 0.04,
+      isBossGift: true, rarity: 'gold', affixDesc: '+4% 暴擊率（鵝王恩賜限定）' },
+    { id: 'bg_mp',      name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 5, mp: 10,
+      isBossGift: true, rarity: 'gold', affixDesc: '+10 MP（鵝王恩賜限定）' },
+    { id: 'bg_atk',     name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 10,
+      isBossGift: true, rarity: 'gold', affixDesc: '+5 ATK（疊在基底之上）' },
+    { id: 'bg_hp',      name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 5, hp: 50,
+      isBossGift: true, rarity: 'gold', affixDesc: '+50 HP（鵝王恩賜限定）' },
+    { id: 'bg_critdmg', name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 5, critDmg: 0.10,
+      isBossGift: true, rarity: 'gold', affixDesc: '+10% 爆傷（鵝王恩賜限定）' },
+    { id: 'bg_mpregen', name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 5, mpRegen: 1,
+      isBossGift: true, rarity: 'gold', affixDesc: '每回合 +1 MP（鵝王恩賜限定）' },
+  ];
+
   // 職業 → 該職業專屬套裝（探險精英怪會掉這個）
   const CLASS_SET = {
     warrior: 'warrior_iron',
@@ -2803,7 +2821,7 @@
   //   [{ judgeId, param, skillId }]
   // 戰鬥引擎逐條檢查，第一條成立就執行對應技能
   const JUDGES = {
-    1000: { id: 1000, label: '必ず（一定觸發）',         paramType: 'none' },
+    1000: { id: 1000, label: '必定（一定觸發）',         paramType: 'none' },
     // 自身 HP / MP
     1100: { id: 1100, label: '自身 HP ≥ X%',             paramType: 'percent' },
     1101: { id: 1101, label: '自身 HP ≤ X%',             paramType: 'percent' },
@@ -3984,7 +4002,7 @@
   // 角色資料 helpers
   // ============================================================
   function findItem(id) {
-    return ITEMS.find(i => i.id === id) || SHOP_ITEMS.find(i => i.id === id) || SET_PIECES[id] || null;
+    return ITEMS.find(i => i.id === id) || SHOP_ITEMS.find(i => i.id === id) || SET_PIECES[id] || (typeof BOSS_GIFTS !== 'undefined' ? BOSS_GIFTS.find(i => i.id === id) : null) || null;
   }
 
   // 通用物品解析（背包項目可能是 string ID 或物件 instance）
@@ -4014,6 +4032,8 @@
     magic:     { color: '#22c55e', label: '魔法',  affixes: 1, mult: 1.1 }, // 綠
     rare:      { color: '#3b82f6', label: '稀有',  affixes: 2, mult: 1.4 }, // 藍
     legendary: { color: '#a855f7', label: '傳說',  affixes: 3, mult: 2.0 }, // 紫
+    // ⭐ 金裝（鵝王扭蛋專屬，固定詞條，不 roll）
+    gold:      { color: '#fbbf24', label: '金裝',  affixes: 0, mult: 1.0 },
   };
   function rollRarity(boosted) {
     const r = Math.random();
@@ -4418,7 +4438,10 @@
     const elapsed = Date.now() - rpg.lastTickAt;
     const ticks = Math.floor(elapsed / TICK_MS);
     if (ticks > 0) {
-      rpg.stamina = Math.min(STAMINA_MAX, (rpg.stamina || 0) + ticks * STAMINA_PER_TICK);
+      // ⭐ 體力可超過 STAMINA_MAX（鵝王扭蛋獎勵），但 tick 自然回復只補到 STAMINA_MAX；超過則保持不動
+      if ((rpg.stamina || 0) < STAMINA_MAX) {
+        rpg.stamina = Math.min(STAMINA_MAX, (rpg.stamina || 0) + ticks * STAMINA_PER_TICK);
+      }
       if (rpg.hp > 0 && rpg.hp < stats.maxHp) {
         rpg.hp = Math.min(stats.maxHp, rpg.hp + ticks * HP_PER_TICK);
       }
@@ -4504,9 +4527,10 @@
       def:   Math.round(cls.def + (lv - 1) * cls.defPer) + b.def + ab.def,
       spd:   Math.round(cls.spd + (lv - 1) * cls.spdPer) + b.spd + ab.spd,
     };
-    // 裝備加成（10 個槽）— 同時累積裝備本身的 critChance / critDmg
+    // 裝備加成（10 個槽）— 同時累積裝備本身的 critChance / critDmg / mpRegen
     let itemCritChance = 0;
     let itemCritDmg = 0;
+    let itemMpRegen = 0;
     for (const slot of ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape', 'wings', 'pet', 'guide']) {
       const itemId = rpg.equipment?.[slot];
       if (itemId) {
@@ -4516,8 +4540,10 @@
           if (item.def) stats.def += item.def;
           if (item.spd) stats.spd += item.spd;
           if (item.hp)  stats.maxHp += item.hp;
+          if (item.mp)  stats.maxMp += item.mp;
           if (item.critChance) itemCritChance += item.critChance;
           if (item.critDmg)    itemCritDmg    += item.critDmg;
+          if (item.mpRegen)    itemMpRegen    += item.mpRegen;
         }
       }
     }
@@ -4568,6 +4594,8 @@
       + (cAbil.critDmgBonus || 0)
       + (cPass.critDmg || 0)
       + (mergedBonuses.critDmg || 0);
+    // ⭐ 每回合 MP 自動恢復（鵝王恩賜首飾、之後其他來源都加在這裡）
+    stats.mpRegen = itemMpRegen;
     return stats;
   }
   // ⭐ 怪物 EXP 給予公式（依等級）— 全面 +20%
@@ -4887,10 +4915,10 @@
         pHp = Math.min(stats.maxHp, pHp + heal);
         log.push({ type: 'player', text: `回合 ${round}：自癒 +${heal} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
       }
-      // ⭐ 每回合自動回 MP（法系 4 / 其他 2）— 戰術中持續產生 MP，不必依賴回魔技
+      // ⭐ 每回合自動回 MP（法系 4 / 其他 2）+ 鵝王恩賜飾品 mpRegen — 戰術中持續產生 MP，不必依賴回魔技
       if (pTurn && pMp < stats.maxMp) {
         const isCaster = (player.rpg.class === 'mage' || player.rpg.class === 'paladin');
-        const mpGain = isCaster ? 4 : 2;
+        const mpGain = (isCaster ? 4 : 2) + (stats.mpRegen || 0);
         const before = pMp;
         pMp = Math.min(stats.maxMp, pMp + mpGain);
         const gained = pMp - before;
@@ -5043,7 +5071,8 @@
               totalDmg += hitDmg;
               hitLogs.push(`${hitDmg}${hitCrit ? '【爆】' : ''}`);
               if (mAbility?.type === 'reflect' && mAbility.resist) {
-                const r = Math.max(1, Math.round(hitDmg * mAbility.resist));
+                // 反傷：受到傷害的 50%，最多 300
+                const r = Math.min(300, Math.max(1, Math.round(hitDmg * mAbility.resist)));
                 pHp = Math.max(0, pHp - r);
               }
               if (mHp <= 0) { monsterDied = true; }
@@ -5144,7 +5173,8 @@
             hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp }
           });
           if (mAbility?.type === 'reflect' && mAbility.resist) {
-            const r = Math.max(1, Math.round(dmg * mAbility.resist));
+            // 反傷：受到傷害的 50%，最多 300
+            const r = Math.min(300, Math.max(1, Math.round(dmg * mAbility.resist)));
             pHp = Math.max(0, pHp - r);
             log.push({ type: 'monster', text: `回合 ${round}：🪞 ${monster.name} 反射光芒 → ${player.name} -${r} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
           }
@@ -5183,10 +5213,10 @@
         }
         // 防禦受 buff 影響
         const effDef = stats.def * (1 + (pBuff.defPct || 0));
-        // 反傷：玩家身上有 reflectPct 時，怪打到我會被反彈一部分
+        // 反傷：玩家身上有 reflectPct 時，怪打到我會被反彈一部分（受到傷害的 50%，最多 300）
         const applyReflect = (incomingDmg) => {
           if (!pBuff.reflectPct || incomingDmg <= 0 || mHp <= 0) return;
-          const r = Math.max(1, Math.round(incomingDmg * pBuff.reflectPct));
+          const r = Math.min(300, Math.max(1, Math.round(incomingDmg * pBuff.reflectPct)));
           mHp -= r;
           log.push({ type: 'crit-player', text: `回合 ${round}：🪞 反傷 → ${monster.name} -${r} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
         };
@@ -5332,7 +5362,7 @@
     if (buff.stat === 'spd')        return `💨 SPD +${buff.amount}`;
     if (buff.stat === 'critChance') return `🎯 暴擊率 +${Math.round(buff.amount * 100)}%`;
     if (buff.stat === 'critDmg')    return `💥 爆傷 +${Math.round(buff.amount * 100)}%`;
-    if (buff.stat === 'reflectPct') return `🪞 反傷 ${Math.round(buff.amount * 100)}%`;
+    if (buff.stat === 'reflectPct') return `🪞 反傷 ${Math.round(buff.amount * 100)}%（單次最多 300）`;
     return `✨ ${buff.stat} +${buff.amount}`;
   }
   function statusEmoji(type) {
@@ -5460,10 +5490,10 @@
           pHp = Math.min(stats.maxHp, pHp + heal);
           log.push({ type: 'player', text: `回合 ${round}：自癒 +${heal} HP`, hp: hpsSnapshot() });
         }
-        // ⭐ 每回合自動回 MP（法系 4 / 其他 2）
+        // ⭐ 每回合自動回 MP（法系 4 / 其他 2）+ 鵝王恩賜飾品 mpRegen
         if (pMp < stats.maxMp) {
           const isCaster = (player.rpg.class === 'mage' || player.rpg.class === 'paladin');
-          const mpGain = isCaster ? 4 : 2;
+          const mpGain = (isCaster ? 4 : 2) + (stats.mpRegen || 0);
           const before = pMp;
           pMp = Math.min(stats.maxMp, pMp + mpGain);
           const gained = pMp - before;
@@ -5563,9 +5593,9 @@
               tgt.hp = Math.max(0, tgt.hp - dmg);
               if (tgt.hp <= 0) tgt.alive = false;
               hits.push({ tgt, dmg, isCrit });
-              // 鏡鵝反傷
+              // 鏡鵝反傷（受到傷害的 50%，最多 300）
               if (tgt.ability?.type === 'reflect' && tgt.ability.resist) {
-                pHp = Math.max(0, pHp - Math.max(1, Math.round(dmg * tgt.ability.resist)));
+                pHp = Math.max(0, pHp - Math.min(300, Math.max(1, Math.round(dmg * tgt.ability.resist))));
               }
               // 套用狀態
               if (skill.applyStatus && Math.random() < (skill.applyStatus.chance || 1)) {
@@ -5662,7 +5692,8 @@
           tgt.hp = Math.max(0, tgt.hp - dmg);
           if (tgt.hp <= 0) tgt.alive = false;
           if (tgt.ability?.type === 'reflect' && tgt.ability.resist) {
-            const r = Math.max(1, Math.round(dmg * tgt.ability.resist));
+            // 反傷：受到傷害的 50%，最多 300
+            const r = Math.min(300, Math.max(1, Math.round(dmg * tgt.ability.resist)));
             pHp = Math.max(0, pHp - r);
           }
           log.push({
@@ -5709,10 +5740,10 @@
             cdMap.__lastSkillR = round;
           }
         }
-        // 反傷
+        // 反傷（受到傷害的 50%，最多 300）
         const applyReflect2 = (incomingDmg) => {
           if (!pBuff.reflectPct || incomingDmg <= 0 || !m.alive) return;
-          const r = Math.max(1, Math.round(incomingDmg * pBuff.reflectPct));
+          const r = Math.min(300, Math.max(1, Math.round(incomingDmg * pBuff.reflectPct)));
           m.hp = Math.max(0, m.hp - r);
           if (m.hp <= 0) m.alive = false;
           log.push({ type: 'crit-player', text: `回合 ${round}：🪞 反傷 → ${m.icon}${m.name} -${r} HP`, hp: hpsSnapshot() });
@@ -6378,8 +6409,26 @@
       weights: [30, 25, 20, 15, 10],
     },
     {
-      id: 'goose_coin', icon: '👑', name: '王硬幣扭蛋', desc: '用世界王硬幣抽稀有獎勵', cost: 0,
-      status: 'locked', // 之後再開
+      id: 'boss_king', icon: '👑', name: '鵝王扭蛋',
+      desc: '消耗 3 顆王硬幣（任意組合）抽鵝王恩賜（金裝飾品）/ 體力 / 鵝鵝幣 / EXP',
+      cost: 3,
+      isBossCoin: true,             // 特殊：用 inventory 中的王硬幣抽
+      currencyIcon: '👑',
+      currencyName: '王硬幣',
+      status: 'open',
+      // 複合獎池：每項自帶 weight；總和 100
+      pool: [
+        { type: 'item', id: 'bg_crit',    weight: 4  },
+        { type: 'item', id: 'bg_mp',      weight: 4  },
+        { type: 'item', id: 'bg_atk',     weight: 4  },
+        { type: 'item', id: 'bg_hp',      weight: 4  },
+        { type: 'item', id: 'bg_critdmg', weight: 2  },
+        { type: 'item', id: 'bg_mpregen', weight: 2  },
+        { type: 'stamina', amount: 50,  weight: 30, label: '體力 +50',                 icon: '⚡' },
+        { type: 'stamina', amount: 100, weight: 15, label: '體力 +100（可超過上限）', icon: '⚡' },
+        { type: 'coins',   amount: 1500,weight: 20, label: '鵝鵝幣 +1500',             icon: '🪙' },
+        { type: 'xp',      amount: 500, weight: 15, label: 'EXP +500',                 icon: '✨' },
+      ],
     },
     {
       id: 'egg', icon: '🥚', name: '鵝蛋扭蛋', desc: '用鵝蛋幣抽頭像 / 稱號 / 翅膀寵物',
@@ -6387,13 +6436,39 @@
     },
   ];
 
+  // ⭐ 王硬幣彙總（任意 boss coin 都算）
+  function totalBossCoinsInInventory(rpg) {
+    let total = 0;
+    for (const it of (rpg.inventory || [])) {
+      if (it && typeof it === 'object' && it.isBossCoin) total += (it.qty || 1);
+    }
+    return total;
+  }
+  function consumeBossCoins(rpg, n) {
+    const stacks = (rpg.inventory || [])
+      .filter(it => it && typeof it === 'object' && it.isBossCoin)
+      .sort((a, b) => (b.qty || 1) - (a.qty || 1));
+    let need = n;
+    for (const s of stacks) {
+      if (need <= 0) break;
+      const have = s.qty || 1;
+      const take = Math.min(have, need);
+      s.qty = have - take;
+      need -= take;
+    }
+    rpg.inventory = (rpg.inventory || []).filter(it =>
+      !(it && typeof it === 'object' && it.isBossCoin && (!it.qty || it.qty <= 0))
+    );
+    return need === 0;
+  }
+
   function showGachaHub() {
     const me = getMe(); if (!me) { showToast('先選身份'); return; }
     const r = getRpg(me);
     const exploreCoins = r.exploreCoins || 0;
     const machinesHtml = GACHA_MACHINES.map(g => {
       const locked = g.status !== 'open';
-      const myCoins = g.currency ? (r[g.currency] || 0) : 0;
+      const myCoins = g.isBossCoin ? totalBossCoinsInInventory(r) : (g.currency ? (r[g.currency] || 0) : 0);
       const canAfford = !locked && myCoins >= g.cost;
       return `
         <button class="gacha-machine ${locked ? 'locked' : ''}" ${locked ? 'disabled' : `onclick="openGachaMachine('${g.id}')"`}
@@ -6429,24 +6504,58 @@
     if (m.status !== 'open') { showToast('機台尚未開放'); return; }
     const me = getMe(); if (!me) return;
     const r = getRpg(me);
-    const myCoins = m.currency ? (r[m.currency] || 0) : 0;
-    // 預覽獎池
-    const poolHtml = m.pool.map((iid, idx) => {
-      const it = findItem(iid);
-      if (!it) return '';
-      const w = m.weights[idx] || 0;
-      const totalW = m.weights.reduce((a, b) => a + b, 0);
-      const pct = ((w / totalW) * 100).toFixed(1);
-      const stats = formatItemStats(it);
-      return `<div style="display:flex; gap:8px; align-items:center; padding:6px 8px; background:#fff; border:1px solid #e9d5ff; border-radius:8px; margin-bottom:4px;">
-        <span style="font-size:22px;">${it.icon}</span>
-        <div style="flex:1; min-width:0;">
-          <div style="font-size:12px; font-weight:700; color:#5b21b6;">${escapeHtml(it.name)} <span style="font-size:10px; color:#a855f7;">Lv ${it.lv}</span></div>
-          <div style="font-size:10px; color:#7c3aed;">${stats}</div>
-        </div>
-        <span style="font-size:11px; color:#8b6f9b; font-weight:700;">${pct}%</span>
-      </div>`;
-    }).join('');
+    const myCoins = m.isBossCoin ? totalBossCoinsInInventory(r) : (m.currency ? (r[m.currency] || 0) : 0);
+    // 預覽獎池：支援兩種格式（pool 是 [id...] + weights，或 pool 是 [{type,...}...]）
+    const isComplexPool = Array.isArray(m.pool) && m.pool.length > 0 && typeof m.pool[0] === 'object';
+    let poolHtml = '';
+    if (isComplexPool) {
+      const totalW = m.pool.reduce((a, p) => a + (p.weight || 0), 0);
+      poolHtml = m.pool.map(p => {
+        const w = p.weight || 0;
+        const pct = ((w / totalW) * 100).toFixed(1);
+        if (p.type === 'item') {
+          const it = findItem(p.id);
+          if (!it) return '';
+          const goldBg = it.rarity === 'gold' ? 'linear-gradient(135deg,#fef9c3,#fde68a)' : '#fff';
+          const goldBorder = it.rarity === 'gold' ? '#fbbf24' : '#e9d5ff';
+          const stats = (typeof formatItemStats === 'function') ? formatItemStats(it) : '';
+          return `<div style="display:flex; gap:8px; align-items:center; padding:6px 8px; background:${goldBg}; border:1.5px solid ${goldBorder}; border-radius:8px; margin-bottom:4px;">
+            <span style="font-size:22px;">${it.icon}</span>
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:12px; font-weight:800; color:#92400e;">[金裝] ${escapeHtml(it.name)}</div>
+              <div style="font-size:10px; color:#7c3aed;">${stats}</div>
+              ${it.affixDesc ? `<div style="font-size:10px; color:#b45309; font-weight:700;">✦ ${escapeHtml(it.affixDesc)}</div>` : ''}
+            </div>
+            <span style="font-size:11px; color:#a16207; font-weight:700;">${pct}%</span>
+          </div>`;
+        }
+        // 非物品獎勵
+        return `<div style="display:flex; gap:8px; align-items:center; padding:6px 8px; background:#f0fdf4; border:1px dashed #86efac; border-radius:8px; margin-bottom:4px;">
+          <span style="font-size:22px;">${p.icon || '🎁'}</span>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:12px; font-weight:700; color:#166534;">${escapeHtml(p.label || (p.type + ' +' + p.amount))}</div>
+          </div>
+          <span style="font-size:11px; color:#15803d; font-weight:700;">${pct}%</span>
+        </div>`;
+      }).join('');
+    } else {
+      poolHtml = m.pool.map((iid, idx) => {
+        const it = findItem(iid);
+        if (!it) return '';
+        const w = m.weights[idx] || 0;
+        const totalW = m.weights.reduce((a, b) => a + b, 0);
+        const pct = ((w / totalW) * 100).toFixed(1);
+        const stats = formatItemStats(it);
+        return `<div style="display:flex; gap:8px; align-items:center; padding:6px 8px; background:#fff; border:1px solid #e9d5ff; border-radius:8px; margin-bottom:4px;">
+          <span style="font-size:22px;">${it.icon}</span>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:12px; font-weight:700; color:#5b21b6;">${escapeHtml(it.name)} <span style="font-size:10px; color:#a855f7;">Lv ${it.lv}</span></div>
+            <div style="font-size:10px; color:#7c3aed;">${stats}</div>
+          </div>
+          <span style="font-size:11px; color:#8b6f9b; font-weight:700;">${pct}%</span>
+        </div>`;
+      }).join('');
+    }
     const html = `
       <div style="text-align:center; padding:6px 0;">
         <div style="font-size:48px;">${m.icon}</div>
@@ -6483,48 +6592,110 @@
     const me = getMe(); if (!me) return;
     const r = getRpg(me);
     const totalCost = m.cost * count;
-    if ((r[m.currency] || 0) < totalCost) { showToast('幣不夠'); return; }
-    r[m.currency] = (r[m.currency] || 0) - totalCost;
-    // 加權抽取
-    const totalW = m.weights.reduce((a, b) => a + b, 0);
-    const results = [];
-    for (let i = 0; i < count; i++) {
-      let roll = Math.random() * totalW;
-      let pickedIdx = 0;
-      for (let j = 0; j < m.pool.length; j++) {
-        roll -= (m.weights[j] || 0);
-        if (roll <= 0) { pickedIdx = j; break; }
+    // 扣費（兩種模式）
+    if (m.isBossCoin) {
+      if (totalBossCoinsInInventory(r) < totalCost) { showToast('王硬幣不夠'); return; }
+      consumeBossCoins(r, totalCost);
+    } else {
+      if ((r[m.currency] || 0) < totalCost) { showToast('幣不夠'); return; }
+      r[m.currency] = (r[m.currency] || 0) - totalCost;
+    }
+    // 抽取
+    const isComplexPool = Array.isArray(m.pool) && m.pool.length > 0 && typeof m.pool[0] === 'object';
+    const results = []; // 統一格式：{ kind: 'item'|'reward', item?: drop, reward?: { type, amount, label, icon } }
+    let levelUps = 0;
+    if (isComplexPool) {
+      const totalW = m.pool.reduce((a, p) => a + (p.weight || 0), 0);
+      for (let i = 0; i < count; i++) {
+        let roll = Math.random() * totalW;
+        let picked = m.pool[0];
+        for (const p of m.pool) {
+          roll -= (p.weight || 0);
+          if (roll <= 0) { picked = p; break; }
+        }
+        if (picked.type === 'item') {
+          const baseItem = findItem(picked.id);
+          if (!baseItem) continue;
+          // 鵝王恩賜：金裝、不洗詞綴、保留 affixDesc
+          const drop = createBossGiftInstance(baseItem);
+          r.inventory = r.inventory || [];
+          r.inventory.push(drop);
+          results.push({ kind: 'item', item: drop });
+        } else if (picked.type === 'stamina') {
+          // 體力可超過上限
+          r.stamina = (r.stamina || 0) + picked.amount;
+          results.push({ kind: 'reward', reward: picked });
+        } else if (picked.type === 'coins') {
+          if (typeof refundCoins === 'function') refundCoins(me.id, picked.amount);
+          else me.coinsSpent = (me.coinsSpent || 0) - picked.amount;
+          results.push({ kind: 'reward', reward: picked });
+        } else if (picked.type === 'xp') {
+          r.xp = (r.xp || 0) + picked.amount;
+          while (r.xp >= xpForLevel(r.level)) {
+            r.xp -= xpForLevel(r.level);
+            r.level += 1;
+            r.skillPoints = (r.skillPoints || 0) + POINTS_PER_LEVEL.skill;
+            r.abilityPoints = (r.abilityPoints || 0) + POINTS_PER_LEVEL.ability;
+            levelUps++;
+            if (r.level > 50) break;
+          }
+          results.push({ kind: 'reward', reward: picked });
+        }
       }
-      const baseId = m.pool[pickedIdx];
-      const baseItem = findItem(baseId);
-      if (!baseItem) continue;
-      // 用 generateDropItem 系統生個含詞綴的 instance
-      // 但飾品不在 generateDropItem 的池子（被排除），所以手動造一份
-      const drop = createGachaItemInstance(baseItem);
-      r.inventory = r.inventory || [];
-      r.inventory.push(drop);
-      results.push(drop);
+    } else {
+      // 舊式：pool 是 [id...] + weights
+      const totalW = m.weights.reduce((a, b) => a + b, 0);
+      for (let i = 0; i < count; i++) {
+        let roll = Math.random() * totalW;
+        let pickedIdx = 0;
+        for (let j = 0; j < m.pool.length; j++) {
+          roll -= (m.weights[j] || 0);
+          if (roll <= 0) { pickedIdx = j; break; }
+        }
+        const baseId = m.pool[pickedIdx];
+        const baseItem = findItem(baseId);
+        if (!baseItem) continue;
+        const drop = createGachaItemInstance(baseItem);
+        r.inventory = r.inventory || [];
+        r.inventory.push(drop);
+        results.push({ kind: 'item', item: drop });
+      }
     }
     saveData();
     renderCharCard();
     renderEquipment();
     renderCharQuickMenu();
+    if (levelUps > 0) showToast(`🎉 升 ${levelUps} 級！+${levelUps * POINTS_PER_LEVEL.skill} 技能點 +${levelUps * POINTS_PER_LEVEL.ability} 能力點`);
     // 顯示結果
-    const resultHtml = results.map(d => {
-      const rarColor = d.rarity ? RARITY[d.rarity]?.color : '#7c3aed';
-      const rarLabel = d.rarity ? RARITY[d.rarity]?.label : '';
-      return `<div style="display:flex; gap:8px; align-items:center; padding:6px 8px; background:#fff; border:2px solid ${rarColor}; border-radius:8px; margin-bottom:4px;">
-        <span style="font-size:24px;">${d.icon}</span>
+    const resultHtml = results.map(res => {
+      if (res.kind === 'item') {
+        const d = res.item;
+        const isGold = d.rarity === 'gold';
+        const rarColor = isGold ? '#fbbf24' : (d.rarity ? RARITY[d.rarity]?.color : '#7c3aed');
+        const rarLabel = isGold ? '金裝' : (d.rarity ? RARITY[d.rarity]?.label : '');
+        const bg = isGold ? 'linear-gradient(135deg,#fef9c3,#fde68a)' : '#fff';
+        return `<div style="display:flex; gap:8px; align-items:center; padding:6px 8px; background:${bg}; border:2px solid ${rarColor}; border-radius:8px; margin-bottom:4px;">
+          <span style="font-size:24px;">${d.icon}</span>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:12px; font-weight:800; color:${isGold ? '#92400e' : rarColor};">[${rarLabel}] ${escapeHtml(d.name)}</div>
+            <div style="font-size:10px; color:#7c3aed;">${formatItemStats(d)}</div>
+            ${d.affixDesc ? `<div style="font-size:10px; color:#b45309; font-weight:700;">✦ ${escapeHtml(d.affixDesc)}</div>` : ''}
+          </div>
+        </div>`;
+      }
+      const rw = res.reward;
+      return `<div style="display:flex; gap:8px; align-items:center; padding:6px 8px; background:#f0fdf4; border:2px solid #86efac; border-radius:8px; margin-bottom:4px;">
+        <span style="font-size:24px;">${rw.icon || '🎁'}</span>
         <div style="flex:1; min-width:0;">
-          <div style="font-size:12px; font-weight:700; color:${rarColor};">[${rarLabel}] ${escapeHtml(d.name)}</div>
-          <div style="font-size:10px; color:#7c3aed;">${formatItemStats(d)}</div>
+          <div style="font-size:12px; font-weight:800; color:#166534;">${escapeHtml(rw.label || (rw.type + ' +' + rw.amount))}</div>
         </div>
       </div>`;
     }).join('');
+    const costNote = m.isBossCoin ? `${m.currencyIcon} −${totalCost}（王硬幣）` : `${m.currencyIcon} −${totalCost}`;
     showModal(`🎰 抽到 ${results.length} 件`, `
       <div style="text-align:left;">
         <div style="font-size:11px; color:#5b3d62; padding:6px 10px; background:#fef3c7; border:1px dashed #f59e0b; border-radius:8px; margin-bottom:10px; text-align:center;">
-          ${m.currencyIcon} −${totalCost}　·　已加進背包
+          ${costNote}　·　已加進背包 / 入帳
         </div>
         ${resultHtml}
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:10px;">
@@ -6535,6 +6706,30 @@
     `);
   }
   window.rollGacha = rollGacha;
+
+  // 鵝王恩賜：金裝飾品，固定詞條（affixDesc 顯示），不洗 affixes，不重命名
+  function createBossGiftInstance(base) {
+    return {
+      id: 'bg_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      baseId: base.id,
+      rarity: 'gold',
+      name: base.name,
+      icon: base.icon,
+      slot: base.slot,
+      lv: base.lv || 1,
+      atk: base.atk || 0,
+      def: base.def || 0,
+      spd: base.spd || 0,
+      hp:  base.hp  || 0,
+      mp:  base.mp  || 0,
+      mpRegen: base.mpRegen || 0,
+      critChance: base.critChance || 0,
+      critDmg:    base.critDmg    || 0,
+      isBossGift: true,
+      affixDesc: base.affixDesc,
+      affixes: [], // 不洗
+    };
+  }
 
   // 把 ITEMS 的基底飾品造成「drop instance」（隨機稀有度 + 詞綴）
   function createGachaItemInstance(base) {
@@ -6915,8 +7110,8 @@ ${b.text}
         <div style="background:#f3e8ff; border-radius:8px; padding:8px 10px; margin-bottom:10px; font-family:monospace; font-size:11px; line-height:1.8;">
           #1 自身 HP ≤ 50%   → ✨ 神聖治癒<br>
           #2 敵方 HP ≤ 30%   → ⚖️ 審判<br>
-          #3 必ず             → ✝️ 聖光斬<br>
-          #4 必ず             → 普攻
+          #3 必定             → ✝️ 聖光斬<br>
+          #4 必定             → 普攻
         </div>
         <div style="font-size:11px; color:#8b6f9b; margin-bottom:10px;">
           意思：「血少先補血、敵人快死秒殺、平時放聖光斬、MP 用光打普攻」。
@@ -7590,6 +7785,8 @@ ${b.text}
     if (item.affixes && item.affixes.length) {
       item.affixes.forEach(a => lines.push(`+${a.val} ${a.type.toUpperCase()}（${a.name}）`));
     }
+    // ⭐ 鵝王恩賜固定詞條
+    if (item.affixDesc) lines.push(`✦ ${item.affixDesc}`);
     if (item.setId && SETS[item.setId]) {
       const set = SETS[item.setId];
       lines.push('');
@@ -8352,11 +8549,13 @@ ${b.text}
     if (item.spd) parts.push(`SPD+${item.spd}`);
     if (item.hp)  parts.push(`HP+${item.hp}`);
     if (item.mp)  parts.push(`MP+${item.mp}`);
+    if (item.mpRegen) parts.push(`回MP+${item.mpRegen}/回合`);
     if (item.critChance) parts.push(`暴擊+${Math.round(item.critChance * 100)}%`);
     if (item.critDmg)    parts.push(`爆傷+${Math.round(item.critDmg * 100)}%`);
     let s = parts.join(' · ');
     if (item.affixes && item.affixes.length) s += ` ✨${item.affixes.length}`;
     if (item.setId) s += ' 🛡';
+    if (item.rarity === 'gold') s += ' 👑';
     return s;
   }
 
