@@ -2316,8 +2316,12 @@
   function layerFloorToLevel(layerId) { return pickLayerLevel(layerId); }
 
   // === 世界王 ===
-  // 世界王：原本是排隊制 + 20 分鐘全域冷卻 + 死後 4-8 小時復活
-  //         開放式：冷卻歸 0、死後立刻重生，所有人可以一直打
+  // ⭐ v8.1：暫時關閉，整個系統會重寫（避免累積的修改造成更多 bug）
+  //   - renderWorldBoss 顯示「整修中」訊息
+  //   - joinBossQueue / leaveBossQueue / runBossFight 一律拒絕
+  //   - 1 秒 tick 不再 render world boss
+  //   - claimMyBossRewards 仍可運作（之前還沒領的獎勵不會卡住）
+  const WORLD_BOSS_DISABLED = true;
   const BOSS_COOLDOWN_MS = 5 * 60 * 1000; // ⭐ 5 分鐘冷卻（任何王共用）
   const BOSS_QUEUE_STALE_MS = 60 * 1000;     // ⭐ 排隊頭 1 分鐘沒動作 → 自動取消（防卡排隊）
   const WORLD_BOSSES = [
@@ -8876,15 +8880,19 @@ ${b.text}
     const stage = document.getElementById('stageGame');
     if (stage && !stage.classList.contains('hidden')) {
       updateStaminaUI();
-      // 世界王倒數刷新（復活倒數 + 全域冷卻倒數 + 排隊狀態）
-      const anyDead = WORLD_BOSSES.some(b => worldBoss?.[b.id]?.deadAt);
-      const me = getMe();
-      const myRpg = me ? getRpg(me) : null;
-      const onCd = myRpg && (Date.now() - (myRpg.lastBossAttackTime || 0)) < BOSS_COOLDOWN_MS;
-      const inQueue = WORLD_BOSSES.some(b => (worldBoss?.[b.id]?.queue || []).find(q => q.pid === me?.id));
-      if (anyDead || onCd || inQueue) renderWorldBoss();
+      // ⭐ v8.1：世界王整修中 → 跳過倒數刷新
+      if (!WORLD_BOSS_DISABLED) {
+        const anyDead = WORLD_BOSSES.some(b => worldBoss?.[b.id]?.deadAt);
+        const me = getMe();
+        const myRpg = me ? getRpg(me) : null;
+        const onCd = myRpg && (Date.now() - (myRpg.lastBossAttackTime || 0)) < BOSS_COOLDOWN_MS;
+        const inQueue = WORLD_BOSSES.some(b => (worldBoss?.[b.id]?.queue || []).find(q => q.pid === me?.id));
+        if (anyDead || onCd || inQueue) renderWorldBoss();
+      }
       // 個人 BOSS 共用冷卻倒數
-      if (myRpg && getPersonalBossCdRemain(myRpg) > 0) renderPersonalBoss();
+      const me2 = getMe();
+      const myRpg2 = me2 ? getRpg(me2) : null;
+      if (myRpg2 && getPersonalBossCdRemain(myRpg2) > 0) renderPersonalBoss();
       if (Math.floor(Date.now() / 1000) % 30 === 0) renderCharCard();
     }
   }, 1000);
@@ -9236,6 +9244,24 @@ ${b.text}
   }
 
   function renderWorldBoss(opts) {
+    // ⭐ v8.1：世界王整修中 — 顯示關閉公告，跳過所有 boss 卡片渲染
+    if (WORLD_BOSS_DISABLED) {
+      const el = document.getElementById('worldBossBody');
+      if (el && !el.dataset.disabledShown) {
+        el.innerHTML = `
+          <div style="text-align:center; padding:20px 14px; background:linear-gradient(135deg,#fef3c7,#fde68a); border:2px dashed #f59e0b; border-radius:12px;">
+            <div style="font-size:42px; margin-bottom:6px;">🛠️</div>
+            <div style="font-weight:800; font-size:16px; color:#92400e; margin-bottom:6px;">世界王整修中</div>
+            <div style="font-size:12px; color:#78350f; line-height:1.6;">
+              累積的修改造成不少 bug，<br>系統正在重寫，<br>之前打的傷害排行 / 王硬幣記錄都會保留。<br>
+              <span style="font-size:11px; color:#a16207; display:inline-block; margin-top:6px;">期間個人 BOSS（早 / 午 / 晚餐鵝）正常開放。</span>
+            </div>
+          </div>
+        `;
+        el.dataset.disabledShown = '1';
+      }
+      return;
+    }
     const force = opts && opts.force;
     // 結構性沒變 → 只 patch 倒數文字，避免整段 innerHTML 重畫造成閃爍
     const hash = bossRenderHash();
@@ -9475,6 +9501,7 @@ ${b.text}
 
   // 加入排隊（不扣體力、不打）
   async function joinBossQueue(bossId) {
+    if (WORLD_BOSS_DISABLED) { showToast('🛠️ 世界王整修中'); return; }
     const me = getMe(); if (!me) return;
     const r = getRpg(me); if (!r.class) return;
     const boss = WORLD_BOSSES.find(b => b.id === bossId);
@@ -9520,6 +9547,7 @@ ${b.text}
 
   // 退出排隊
   async function leaveBossQueue(bossId) {
+    if (WORLD_BOSS_DISABLED) { showToast('🛠️ 世界王整修中'); return; }
     const me = getMe(); if (!me) return;
     if (!window.__firebaseSync || !window.__firebaseSync.leaveBossQueue) return;
     try {
@@ -9534,6 +9562,7 @@ ${b.text}
 
   // 真正攻擊（必須是排隊頭）
   async function runBossFight(bossId) {
+    if (WORLD_BOSS_DISABLED) { showToast('🛠️ 世界王整修中'); return; }
     const me = getMe(); if (!me) return;
     const r = getRpg(me); if (!r.class) return;
     tickRecovery(me);
@@ -10183,6 +10212,7 @@ ${b.text}
 
   // 上次擊殺通知（每個 killCount 只跳一次）
   function checkBossKillBanners() {
+    if (WORLD_BOSS_DISABLED) return; // 整修中不跳
     for (const boss of WORLD_BOSSES) {
       const state = worldBoss && worldBoss[boss.id];
       if (!state || !state.lastKill) continue;
