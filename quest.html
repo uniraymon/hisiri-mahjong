@@ -9147,16 +9147,16 @@ ${b.text}
         parts.push(`<span style="color:${rarColor};">[${rarLabel}] ${drop.icon} ${escapeHtml(drop.name)}</span>`);
       }
     }
-    // 觸發綠茶事件
+    // 觸發綠茶事件（探險選錯路觸發 — 不算真正戰鬥，固定 10 幣）
     if (outcome.greentea) {
       r.metGreenTea = (r.metGreenTea || 0) + 1;
-      // 偷錢扣 HP — 偷錢量隨等級成正比（每 1 等 +10 元）
+      // 偷錢扣 HP — 探險選錯只是腳本式懲罰，固定 10 幣不隨等級
       const kickDmg = 5 + Math.floor(Math.random() * 5);
-      const stolen = Math.max(1, (r.level || 1) * 10);
+      const stolen = 10;
       const stats = computeStats(me);
       r.hp = Math.max(1, Math.min(stats.maxHp, (r.hp || stats.maxHp) - kickDmg));
       spendCoins(me.id, stolen);
-      parts.push(`<span style="color:#dc2626;">🍵 綠茶鵝偷襲 −${stolen} 幣（Lv${r.level || 1}×10）/ −${kickDmg} HP</span>`);
+      parts.push(`<span style="color:#dc2626;">🍵 綠茶鵝偷襲 −${stolen} 幣 / −${kickDmg} HP</span>`);
       // 是否觸發指南書
       if (typeof grantGreenTeaGuides === 'function') grantGreenTeaGuides(me);
     }
@@ -9649,6 +9649,7 @@ ${b.text}
 
       <button class="btn btn-danger" onclick="adminResetRpg()" style="margin-top:6px;">⚠️ 重置 RPG 角色（保留幣）</button>
       <button class="btn btn-danger" onclick="adminResetBosses()" style="margin-top:6px; background:linear-gradient(135deg,#fdba74,#c2410c); box-shadow:0 4px 0 #7c2d12;">🗑 重置世界王紀錄（HP / 排隊 / 戰報 / 待領獎）</button>
+      <button class="btn btn-danger" onclick="adminResetLeaderboard()" style="margin-top:6px; background:linear-gradient(135deg,#fde047,#d97706); box-shadow:0 4px 0 #92400e; color:#7c2d12;">🏆 重置排行榜（所有玩家等級 / 鵝鵝幣 / 綠茶遭遇歸零）</button>
       <button class="btn btn-danger" onclick="adminWipeAll()" style="margin-top:6px; background:linear-gradient(135deg,#fca5a5,#7f1d1d); box-shadow:0 4px 0 #450a0a;">💀 全玩家洗白（伺服器 + 本地都重置）</button>
       <button class="btn btn-secondary" onclick="adminLockDebug()" style="margin-top:6px;">🔐 鎖回 Debug</button>
 
@@ -9889,6 +9890,48 @@ ${b.text}
     fr.readAsText(file);
   }
   window.adminApplyRestoreFile = adminApplyRestoreFile;
+
+  // ⭐ 只重置排行榜的三項：等級 / 鵝鵝幣 / 綠茶遭遇
+  //   - 等級 / 技能點 / 能力點：歸 1 / 0 / 0（rpg.level=1, skillPoints=0, abilityPoints=5, skills/skillLevels/abilities 清空）
+  //   - 鵝鵝幣：清掉麻將對局歷史 + coinsSpent=0（calcCoinsEarned 從 history 算 → 0）
+  //   - 綠茶遭遇：rpg.metGreenTea=0、greenTeaGuidesGranted=[]
+  //   - 保留：玩家清單、職業、裝備、背包、鵝蛋幣、稱號、解鎖頭像
+  function adminResetLeaderboard() {
+    const sure = confirm('🏆 重置排行榜？\n\n會清空：\n• 所有玩家等級 → 1（技能點 / 能力點 / 技能樹歸零）\n• 所有玩家鵝鵝幣 → 0（清掉麻將對局歷史 + coinsSpent）\n• 所有玩家綠茶遭遇 → 0（指南書庫存也清掉）\n\n保留：玩家清單、職業、裝備、背包、鵝蛋幣、稱號、世界王\n\n確定？');
+    if (!sure) return;
+    const sure2 = prompt('再次確認：輸入「重置」才執行');
+    if (sure2 !== '重置') { showToast('已取消'); return; }
+    // 清麻將歷史（鵝鵝幣的來源）
+    history = [];
+    players.forEach(p => {
+      p.coinsSpent = 0;
+      if (p.rpg) {
+        p.rpg.level = 1;
+        p.rpg.xp = 0;
+        p.rpg.skillPoints = 0;
+        p.rpg.abilityPoints = 5;
+        p.rpg.skills = {};
+        p.rpg.skillLevels = {};
+        p.rpg.abilities = { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0 };
+        p.rpg.metGreenTea = 0;
+        p.rpg.greenTeaGuidesGranted = [];
+        p.rpg.fightsWon = 0;
+        p.rpg.fightsLost = 0;
+        p.rpg.workCount = 0;
+        p.rpg.forageCount = 0;
+        p.rpg.forageBattles = 0;
+        p.rpg.critCount = 0;
+        // 移掉自己保留的探索戰報（過時）
+        p.rpg.forageBattleHistory = [];
+        // HP / MP 用最新值滿血
+      }
+    });
+    saveData();
+    render();
+    hideModal();
+    showToast('🏆 排行榜已重置（玩家清單 / 裝備 / 鵝蛋幣保留）');
+  }
+  window.adminResetLeaderboard = adminResetLeaderboard;
 
   // ⭐ 重置世界王紀錄（HP / 排隊 / damageLog / lastKill / pendingRewards / recentBattles 全清；不動玩家）
   function adminResetBosses() {
