@@ -2689,23 +2689,29 @@
     const list = (state && Array.isArray(state.recentBattles)) ? state.recentBattles : [];
     if (!list.length) return '';
     const rows = list.slice(0, 5).map(h => {
-      const dmg = h.dmgDealt != null ? h.dmgDealt.toLocaleString() : '?';
-      const att = escapeHtml(h.attackerName || '?');
-      const av  = h.attackerAvatar || '🎴';
+      const dmg  = h.dmgDealt != null ? h.dmgDealt.toLocaleString() : '?';
+      const att  = escapeHtml(h.attackerName || '?');
+      const av   = h.attackerAvatar || '🎴';
       const time = typeof formatRelativeTime === 'function' ? formatRelativeTime(h.ts) : '';
       const killBadge = h.killed ? '<span style="background:#dc2626; color:#fff; font-size:10px; padding:1px 5px; border-radius:8px; margin-left:4px;">🏆尾刀</span>' : '';
+      const hasLog = h.id && Array.isArray(h.log) && h.log.length > 0;
+      const replayBtn = hasLog
+        ? `<button onclick="replayBossFightFromState('${boss.id}','${h.id}')" style="background:none;border:1px solid #c4b5fd;border-radius:8px;color:#7c3aed;font-size:11px;padding:2px 8px;cursor:pointer;white-space:nowrap;">▶ 重播</button>`
+        : '';
       return `
-        <div class="bq-row" style="font-size:12px; padding:4px 8px;">
-          <span style="min-width:22px;">${av}</span>
-          <div style="flex:1; display:flex; flex-direction:column; gap:1px;">
-            <span style="font-weight:600;">${att}${killBadge}</span>
-            <span style="color:#78716c; font-size:11px;">💢 ${dmg}　·　${time}</span>
+        <div class="boss-history-row ${h.killed ? 'is-kill' : ''}" style="cursor:${hasLog ? 'pointer' : 'default'};"
+             ${hasLog ? `onclick="replayBossFightFromState('${boss.id}','${h.id}')"` : ''}>
+          <span class="bh-icon">${av}</span>
+          <div class="bh-meta">
+            <div class="bh-line1">${att}${killBadge}</div>
+            <div class="bh-line2">💢 ${dmg}　·　${time}</div>
           </div>
+          <span class="bh-play">${hasLog ? '▶' : ''}</span>
         </div>`;
     }).join('');
     return `
-      <div style="margin-top:8px; border-top:1px dashed #ddd6fe; padding-top:6px;">
-        <div style="font-size:11px; color:#7c3aed; font-weight:600; padding:0 6px 4px;">📜 最近戰報（${list.length}）</div>
+      <div class="boss-history" style="margin-top:8px;">
+        <div class="boss-history-title">📜 最近戰報（${list.length}）　<span style="font-weight:500; opacity:0.75;">點 → 重播</span></div>
         ${rows}
       </div>`;
   }
