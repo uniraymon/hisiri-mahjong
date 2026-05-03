@@ -1494,6 +1494,12 @@
     </div>
 
     <div class="card">
+      <h2><span>🍳 個人 BOSS</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（每 5 分挑戰 1 次、每場結束王回 5% HP）</span></h2>
+      <div id="personalBossBody"></div>
+      <div id="personalBossResult"></div>
+    </div>
+
+    <div class="card">
       <h2><span>🌌 試煉戰場</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（最多 3 隻怪物同時上場、AOE / 多目標技能）</span></h2>
       <div id="trialIntro"></div>
       <button id="trialEnterBtn" class="btn btn-primary" onclick="onTrialFight()" style="background:linear-gradient(135deg,#c4b5fd,#7c3aed); box-shadow:0 4px 0 #5b21b6;">🌌 進入試煉</button>
@@ -2008,6 +2014,60 @@
       rewardSecond: { coins: 1500 },
       rewardThird:  { coins: 750 },
       rewardParticipant: { coins: 200 },
+    },
+  ];
+
+  // === 個人 BOSS ===
+  // 每位玩家獨立打、5 分鐘冷卻、每場結束無論輸贏王回 5% HP
+  // 殺一隻 → 滿 HP 重生 + 給獎勵
+  // 設計：玩家 Lv 30 大概 3000-5000 dmg/場，扣掉 5% regen 約 4-5 場可殺
+  const PERSONAL_BOSS_COOLDOWN_MS = 5 * 60 * 1000; // 5 分
+  const PERSONAL_BOSS_REGEN_PCT = 0.05;
+  const PERSONAL_BOSSES = [
+    {
+      id: 'breakfast_goose',
+      name: '早餐鵝', icon: '🍳',
+      hp: 8000, atk: 50, def: 15, spd: 14, level: 30,
+      verb: '塗果醬',
+      skills: [
+        { verb: '太陽蛋砲擊', mult: 1.6, cooldown: 4 },
+        { verb: '烤吐司爆裂', mult: 1.3, applyStatus: { type: 'poison', turns: 3, dmg: 30, chance: 0.7 }, cooldown: 5 },
+        { verb: '培根纏繞', mult: 0.8, applyStatus: { type: 'paralyze', turns: 2, chance: 0.5 }, cooldown: 6 },
+      ],
+      dialogue: ['鵝鵝早安～來吃早餐了嗎？', '一日之計在於晨～你來打我？', '咖啡剛煮好，一起喝嗎？'],
+      deathLine: ['鵝...早餐被打翻了...', '果醬撒了一地...', '...好吧，明早再戰...'],
+      reward: { coins: 200, xp: 600 },
+    },
+    {
+      id: 'lunch_goose',
+      name: '午餐鵝', icon: '🍱',
+      hp: 12000, atk: 70, def: 25, spd: 16, level: 30,
+      verb: '便當蓋下擊',
+      ability: { type: 'multiHit', hits: 2 },
+      skills: [
+        { verb: '拉麵纏繞', mult: 1.0, applyStatus: { type: 'paralyze', turns: 2, chance: 0.55 }, cooldown: 5 },
+        { verb: '咖哩潑灑', mult: 1.4, applyStatus: { type: 'poison', turns: 3, dmg: 40, chance: 0.7 }, cooldown: 5 },
+        { verb: '牛排重擊', mult: 2.0, cooldown: 6 },
+      ],
+      dialogue: ['午餐時間到囉～', '吃飽才有力氣打架！', '便當涼了...怪你嗎？'],
+      deathLine: ['午餐...被你搶走了...', '便當盒...碎了...', '下次午休再見...'],
+      reward: { coins: 400, xp: 1200 },
+    },
+    {
+      id: 'dinner_goose',
+      name: '晚餐鵝', icon: '🍷',
+      hp: 18000, atk: 90, def: 35, spd: 18, level: 30,
+      verb: '紅酒甩擊',
+      ability: { type: 'magicResist', resist: 0.3 },
+      skills: [
+        { verb: '料理長之刃', mult: 2.4, alwaysCrit: true, cooldown: 5 },
+        { verb: '燭光催眠', mult: 0.5, applyStatus: { type: 'paralyze', turns: 2, chance: 0.7 }, cooldown: 6 },
+        { verb: '主菜爆裂', mult: 1.6, applyStatus: { type: 'poison', turns: 4, dmg: 50, chance: 0.85 }, cooldown: 5 },
+        { verb: '甜點之吻', mult: 1.8, ignoreDef: true, cooldown: 7 },
+      ],
+      dialogue: ['歡迎來到我的餐桌～', '今晚的主菜是…你？', '紅酒已經醒好，等你來品嚐～'],
+      deathLine: ['宴會...結束了...', '紅酒...灑了...', '燭火...熄滅...'],
+      reward: { coins: 800, xp: 2500 },
     },
   ];
 
@@ -4933,6 +4993,7 @@
     renderSkillTree();
     renderShop();
     renderWorldBoss();
+    renderPersonalBoss();
     renderRpgStats();
     renderLeaderboard();
     renderZoneSelector();
@@ -6728,6 +6789,14 @@ ${b.text}
       const onCd = myRpg && (Date.now() - (myRpg.lastBossAttackTime || 0)) < BOSS_COOLDOWN_MS;
       const inQueue = WORLD_BOSSES.some(b => (worldBoss?.[b.id]?.queue || []).find(q => q.pid === me?.id));
       if (anyDead || onCd || inQueue) renderWorldBoss();
+      // 個人 BOSS 冷卻倒數
+      if (myRpg && myRpg.personalBoss) {
+        const anyOnCd = PERSONAL_BOSSES.some(b => {
+          const st = myRpg.personalBoss[b.id];
+          return st && (Date.now() - (st.lastAttackAt || 0)) < PERSONAL_BOSS_COOLDOWN_MS;
+        });
+        if (anyOnCd) renderPersonalBoss();
+      }
       if (Math.floor(Date.now() / 1000) % 30 === 0) renderCharCard();
     }
   }, 1000);
@@ -7366,6 +7435,229 @@ ${b.text}
     document.getElementById('fightResult').innerHTML += `<div class="battle-log">${logHtml}</div>`;
   }
   window.runBossFight = runBossFight;
+
+  // === 個人 BOSS ===
+  let __personalBossTab = 'breakfast_goose';
+  let __personalBossInProgress = false;
+  function getPersonalBossState(rpg, bossId) {
+    if (!rpg.personalBoss) rpg.personalBoss = {};
+    if (!rpg.personalBoss[bossId]) {
+      const def = PERSONAL_BOSSES.find(b => b.id === bossId);
+      rpg.personalBoss[bossId] = {
+        currentHp: def ? def.hp : 1,
+        lastAttackAt: 0,
+        killCount: 0,
+      };
+    }
+    return rpg.personalBoss[bossId];
+  }
+  function renderPersonalBoss() {
+    const host = document.getElementById('personalBossBody');
+    if (!host) return;
+    const me = getMe();
+    if (!me) { host.innerHTML = ''; return; }
+    const rpg = getRpg(me);
+    if (!rpg.class) { host.innerHTML = '<div style="font-size:12px; color:#9ca3af; padding:8px;">先選職業</div>'; return; }
+    const tabsHtml = PERSONAL_BOSSES.map(b => {
+      const active = __personalBossTab === b.id;
+      const st = getPersonalBossState(rpg, b.id);
+      const hpPct = Math.max(0, st.currentHp / b.hp * 100);
+      return `<button onclick="setPersonalBossTab('${b.id}')" style="flex:1; padding:6px 8px; border:2px solid ${active ? '#7c3aed' : '#e5e7eb'}; background:${active ? '#ede9fe' : '#fff'}; border-radius:8px; cursor:pointer; font-family:inherit;">
+        <div style="font-size:18px;">${b.icon}</div>
+        <div style="font-size:11px; font-weight:700; color:${active ? '#5b21b6' : '#6b7280'};">${b.name}</div>
+        <div style="font-size:9px; color:#9ca3af;">${hpPct.toFixed(0)}% · 殺 ${st.killCount}</div>
+      </button>`;
+    }).join('');
+    const cur = PERSONAL_BOSSES.find(b => b.id === __personalBossTab) || PERSONAL_BOSSES[0];
+    const st = getPersonalBossState(rpg, cur.id);
+    const hpPct = Math.max(0, Math.min(100, st.currentHp / cur.hp * 100));
+    const cdRemain = Math.max(0, st.lastAttackAt + PERSONAL_BOSS_COOLDOWN_MS - Date.now());
+    const onCd = cdRemain > 0;
+    const m = Math.floor(cdRemain / 60000);
+    const s = Math.ceil((cdRemain % 60000) / 1000);
+    host.innerHTML = `
+      <div style="display:flex; gap:6px; margin-bottom:10px;">${tabsHtml}</div>
+      <div style="background:linear-gradient(135deg,#1e1b4b,#4c1d95); color:#fff; padding:14px; border-radius:12px;">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+          <div style="font-size:36px;">${cur.icon}</div>
+          <div style="flex:1;">
+            <div style="font-weight:700;">${cur.name} <span style="font-size:11px; opacity:0.85;">Lv ${cur.level}</span></div>
+            <div style="font-size:10px; opacity:0.85;">ATK ${cur.atk} · DEF ${cur.def} · SPD ${cur.spd}${cur.ability ? ' · ' + describeAbility(cur.ability) : ''}</div>
+          </div>
+          <div style="font-size:10px; opacity:0.8; text-align:right;">擊殺<br><b style="font-size:14px; color:#fde047;">${st.killCount}</b></div>
+        </div>
+        <div style="background:rgba(0,0,0,0.4); border-radius:8px; height:20px; overflow:hidden; position:relative;">
+          <div style="height:100%; width:${hpPct}%; background:linear-gradient(90deg,#fca5a5,#dc2626); transition:width 0.4s;"></div>
+          <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700;">${st.currentHp.toLocaleString()} / ${cur.hp.toLocaleString()} (${hpPct.toFixed(1)}%)</div>
+        </div>
+        <div style="margin-top:10px;">
+          ${onCd
+            ? `<button class="btn btn-primary" disabled style="background:#4b5563;">⏳ 冷卻中 ${m}:${String(s).padStart(2,'0')}</button>`
+            : __personalBossInProgress
+              ? `<button class="btn btn-primary" disabled>⚔️ 戰鬥中…</button>`
+              : `<button class="btn btn-primary" onclick="attackPersonalBoss('${cur.id}')" style="background:linear-gradient(135deg,#fca5a5,#dc2626); box-shadow:0 4px 0 #991b1b;">⚔️ 挑戰 ${cur.name}</button>`}
+        </div>
+        <div style="margin-top:6px; font-size:10px; opacity:0.85;">
+          🎁 擊殺獎勵：🪙 ${cur.reward.coins} 鵝鵝幣 + ⭐ ${cur.reward.xp} XP　·　每場王 +5% HP（不影響擊殺）
+        </div>
+      </div>
+    `;
+  }
+  window.renderPersonalBoss = renderPersonalBoss;
+  function setPersonalBossTab(id) { __personalBossTab = id; renderPersonalBoss(); }
+  window.setPersonalBossTab = setPersonalBossTab;
+
+  function attackPersonalBoss(bossId) {
+    if (__personalBossInProgress) { showToast('⏳ 戰鬥進行中…'); return; }
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (!rpg.class) { showToast('先選職業'); return; }
+    if (rpg.hp <= 0) { showToast('💀 你還在休息中'); return; }
+    const def = PERSONAL_BOSSES.find(b => b.id === bossId);
+    if (!def) return;
+    const st = getPersonalBossState(rpg, bossId);
+    if (Date.now() - st.lastAttackAt < PERSONAL_BOSS_COOLDOWN_MS) {
+      showToast('⏳ 還在冷卻');
+      return;
+    }
+    __personalBossInProgress = true;
+    st.lastAttackAt = Date.now();
+    // 把王包成怪物 → 用一般 autoFight 引擎
+    const monster = {
+      id: def.id,
+      name: def.name, icon: def.icon, level: def.level,
+      hp: st.currentHp, maxHp: def.hp,
+      atk: def.atk, def: def.def, spd: def.spd,
+      verb: def.verb,
+      ability: def.ability,
+      skills: def.skills || [],
+      dialogue: def.dialogue, deathLine: def.deathLine,
+      goldDrop: 0, xpDrop: 0,
+      isElite: false, isPersonalBoss: true,
+    };
+    const result = autoFight(me, monster);
+    const stats = computeStats(me);
+
+    // 渲染戰鬥區（重用世界王 / 普通戰鬥的 arena）
+    const arenaHtml = `
+      <div class="battle-arena" id="battleArena">
+        <div class="combatant" id="combatPlayer">
+          <div class="combatant-icon">${CLASSES[rpg.class].icon}</div>
+          <div class="combatant-name">${escapeHtml(me.name)} Lv${rpg.level}</div>
+          <div class="combatant-hp-track"><div class="combatant-hp-fill" id="pHpBar" style="width:100%"></div></div>
+          <div class="combatant-hp-text" id="pHpText">${stats.maxHp}/${stats.maxHp}</div>
+          <div class="combatant-hp-track" style="margin-top:2px;"><div class="combatant-hp-fill" id="pMpBar" style="width:100%; background:linear-gradient(90deg,#93c5fd,#3b82f6);"></div></div>
+          <div class="combatant-hp-text" id="pMpText" style="color:#1e40af;">MP ${stats.maxMp}/${stats.maxMp}</div>
+        </div>
+        <div class="vs-icon">⚔️</div>
+        <div class="combatant" id="combatMonster">
+          <div class="combatant-icon">${monster.icon}</div>
+          <div class="combatant-name">${monster.name} Lv${monster.level}</div>
+          <div class="combatant-hp-track"><div class="combatant-hp-fill" id="mHpBar" style="width:${(monster.hp/monster.maxHp)*100}%"></div></div>
+          <div class="combatant-hp-text" id="mHpText">${monster.hp}/${monster.maxHp}</div>
+        </div>
+      </div>
+      <div class="battle-log" id="battleLog"></div>
+    `;
+    const resultHost = document.getElementById('personalBossResult');
+    if (resultHost) resultHost.innerHTML = arenaHtml;
+    const logEl = document.getElementById('battleLog');
+    let i = 0;
+    const playStep = () => {
+      if (i >= result.log.length) {
+        // 結算
+        const dmgDealt = monster.hp - result.mHpFinal;
+        st.currentHp = Math.max(0, result.mHpFinal);
+        let killed = false;
+        let rewardHtml = '';
+        if (st.currentHp <= 0) {
+          // 殺死了！給獎勵 + 滿血復活
+          killed = true;
+          st.killCount = (st.killCount || 0) + 1;
+          st.currentHp = def.hp;
+          rpg.xp = (rpg.xp || 0) + def.reward.xp;
+          rpg.totalGold = (rpg.totalGold || 0) + def.reward.coins;
+          refundCoins(me.id, def.reward.coins);
+          let leveled = 0;
+          while (rpg.xp >= xpForLevel(rpg.level)) {
+            rpg.xp -= xpForLevel(rpg.level);
+            rpg.level += 1;
+            rpg.skillPoints = (rpg.skillPoints || 0) + POINTS_PER_LEVEL.skill;
+            rpg.abilityPoints = (rpg.abilityPoints || 0) + POINTS_PER_LEVEL.ability;
+            leveled++;
+          }
+          rewardHtml = `
+            <div class="reward-list" style="background:linear-gradient(135deg,#fef3c7,#fde047); border-color:#f59e0b; margin-top:8px;">
+              <div class="rl-title" style="color:#7c2d12;">🏆 ${def.name} 被擊殺！</div>
+              <div class="rl-item">💢 你打掉了 <b>${dmgDealt.toLocaleString()}</b> HP，給予最後一擊！</div>
+              <div class="rl-item">🪙 +${def.reward.coins} 鵝鵝幣　·　⭐ +${def.reward.xp} XP${leveled ? `（升 ${leveled} 級）` : ''}</div>
+              <div class="rl-item" style="font-size:11px; color:#7c2d12;">王已重生（HP 回滿，5 分鐘後可再戰）</div>
+            </div>`;
+        } else {
+          // 沒殺死 → 王回 5% HP
+          const regen = Math.round(def.hp * PERSONAL_BOSS_REGEN_PCT);
+          st.currentHp = Math.min(def.hp, st.currentHp + regen);
+          const hpPct = (st.currentHp / def.hp * 100).toFixed(1);
+          rewardHtml = `
+            <div class="reward-list" style="background:linear-gradient(135deg,#1e1b4b,#4c1d95); color:#fff; border-color:#7c3aed; margin-top:8px;">
+              <div class="rl-title" style="color:#fde047;">${result.won ? '⏸ 暫時撤退' : '⏸ 戰鬥結束'}</div>
+              <div class="rl-item">💢 你打掉了 <b style="color:#fca5a5;">${dmgDealt.toLocaleString()}</b> HP</div>
+              <div class="rl-item" style="color:#fde047;">🩹 王回復 +${regen} HP（5%）</div>
+              <div class="rl-item">${def.icon} ${def.name} 還剩 ${st.currentHp.toLocaleString()} / ${def.hp.toLocaleString()} HP（${hpPct}%）</div>
+              <div class="rl-item" style="font-size:11px; opacity:0.85;">⏳ 5 分鐘後可再戰</div>
+            </div>`;
+        }
+        // HP/MP 屬性化：戰後 HP/MP 自動回滿（除非真的死了）
+        const ns = computeStats(me);
+        if (result.pHpFinal <= 0 && (rpg.level || 1) > 4) {
+          rpg.hp = 0; rpg.deathAt = Date.now();
+        } else {
+          rpg.hp = ns.maxHp; rpg.mp = ns.maxMp; rpg.deathAt = null;
+        }
+        if (rpg.critCount == null) rpg.critCount = 0;
+        rpg.critCount += (result.critCount || 0);
+
+        document.getElementById('personalBossResult').insertAdjacentHTML('beforeend', rewardHtml);
+        snapshotLastFight(monster, result);
+        saveData();
+        renderCharCard();
+        renderEquipment();
+        renderRpgStats();
+        renderPersonalBoss();
+        __personalBossInProgress = false;
+        return;
+      }
+      const entry = result.log[i++];
+      const cls = entry.type === 'crit-player' ? 'log-crit'
+        : entry.type === 'player' ? 'log-player'
+        : entry.type === 'monster' ? 'log-monster'
+        : 'log-system';
+      const div = document.createElement('div');
+      div.className = `log-line ${cls}`;
+      div.textContent = entry.text;
+      logEl.appendChild(div);
+      logEl.scrollTop = logEl.scrollHeight;
+      if (entry.hp) {
+        const pHpEl = document.getElementById('pHpBar');
+        const mHpEl = document.getElementById('mHpBar');
+        if (pHpEl) pHpEl.style.width = (entry.hp.player / stats.maxHp * 100) + '%';
+        if (mHpEl) mHpEl.style.width = (entry.hp.monster / monster.maxHp * 100) + '%';
+        const pHpText = document.getElementById('pHpText');
+        const mHpText = document.getElementById('mHpText');
+        if (pHpText) pHpText.textContent = `${entry.hp.player}/${stats.maxHp}`;
+        if (mHpText) mHpText.textContent = `${entry.hp.monster}/${monster.maxHp}`;
+        if (entry.hp.mp != null) {
+          const pMpBar = document.getElementById('pMpBar');
+          const pMpText = document.getElementById('pMpText');
+          if (pMpBar) pMpBar.style.width = (entry.hp.mp / stats.maxMp * 100) + '%';
+          if (pMpText) pMpText.textContent = `MP ${entry.hp.mp}/${stats.maxMp}`;
+        }
+      }
+      setTimeout(playStep, 350);
+    };
+    playStep();
+  }
+  window.attackPersonalBoss = attackPersonalBoss;
 
   // 上次擊殺通知（每個 killCount 只跳一次）
   function checkBossKillBanners() {
