@@ -12553,32 +12553,41 @@ ${b.text}
       onSnapshot(metaRef, async (snap) => {
         if (firstMetaSnap) {
           firstMetaSnap = false;
-          if (!snap.exists()) {
-            const local = window.__getCurrentData?.();
-            if (local && (local.history?.length || local.players?.length)) {
-              try {
-                await setDoc(metaRef, {
-                  history: local.history,
-                  gifts: local.gifts,
-                  comments: local.comments,
-                  pendingBets: local.pendingBets,
-                  betPool: local.betPool,
-                  worldBoss: local.worldBoss,
-                  baseMoney: local.baseMoney,
-                  basePoint: local.basePoint,
-                });
-              } catch (e) { console.error(e); }
+          // ⭐ try-finally：保證 metaReady 一定被設為 true，即使內部例外也不卡住 checkReady
+          try {
+            if (!snap.exists()) {
+              const local = window.__getCurrentData?.();
+              if (local && (local.history?.length || local.players?.length)) {
+                try {
+                  await setDoc(metaRef, {
+                    history: local.history,
+                    gifts: local.gifts,
+                    comments: local.comments,
+                    pendingBets: local.pendingBets,
+                    betPool: local.betPool,
+                    worldBoss: local.worldBoss,
+                    baseMoney: local.baseMoney,
+                    basePoint: local.basePoint,
+                  });
+                } catch (e) { console.error('[meta firstSnap] setDoc failed:', e); }
+              }
+            } else {
+              window.__applyRemoteMeta?.(snap.data());
             }
-          } else {
-            window.__applyRemoteMeta?.(snap.data());
+          } catch (e) {
+            console.error('[meta firstSnap] processing error:', e);
+          } finally {
+            metaReady = true;
+            checkReady();
           }
-          metaReady = true;
-          checkReady();
           return;
         }
-        if (snap.exists()) window.__applyRemoteMeta?.(snap.data());
+        if (snap.exists()) {
+          try { window.__applyRemoteMeta?.(snap.data()); } catch (e) { console.error('[meta snap]', e); }
+        }
       }, (err) => {
         console.error('Meta listen failed:', err);
+        metaReady = true; checkReady(); // ⭐ 連線錯誤也要解鎖，避免 ready 永遠 false
         window.__updateSyncStatus?.('☁️ 連線錯誤', 'err');
       });
 
@@ -12586,37 +12595,44 @@ ${b.text}
         snap.docs.forEach(d => seenPlayerIds.add(d.id));
         if (firstPlayersSnap) {
           firstPlayersSnap = false;
-          if (snap.empty) {
-            const local = window.__getCurrentData?.();
-            if (local && Array.isArray(local.players)) {
-              for (const p of local.players) {
-                if (p && p.id) {
-                  try {
-                    await setDoc(doc(playersCol, p.id), p);
-                    seenPlayerIds.add(p.id);
-                  } catch (e) { console.error(e); }
+          // ⭐ try-finally：保證 playersReady 一定被設為 true，即使內部例外也不卡住 checkReady
+          try {
+            if (snap.empty) {
+              const local = window.__getCurrentData?.();
+              if (local && Array.isArray(local.players)) {
+                for (const p of local.players) {
+                  if (p && p.id) {
+                    try {
+                      await setDoc(doc(playersCol, p.id), p);
+                      seenPlayerIds.add(p.id);
+                    } catch (e) { console.error('[players firstSnap] setDoc failed:', p.id, e); }
+                  }
                 }
               }
+            } else {
+              window.__applyRemotePlayers?.(snap.docs.map(d => d.data()));
             }
-          } else {
-            window.__applyRemotePlayers?.(snap.docs.map(d => d.data()));
+          } catch (e) {
+            console.error('[players firstSnap] processing error:', e);
+          } finally {
+            playersReady = true;
+            checkReady();
           }
-          playersReady = true;
-          checkReady();
           return;
         }
         const changes = snap.docChanges();
         for (const c of changes) {
           if (c.type === 'removed') {
             seenPlayerIds.delete(c.doc.id);
-            window.__applyRemotePlayerDelete?.(c.doc.id);
+            try { window.__applyRemotePlayerDelete?.(c.doc.id); } catch (e) {}
           } else {
             seenPlayerIds.add(c.doc.id);
-            window.__applyRemotePlayer?.(c.doc.data());
+            try { window.__applyRemotePlayer?.(c.doc.data()); } catch (e) { console.error('[players snap]', e); }
           }
         }
       }, (err) => {
         console.error('Players listen failed:', err);
+        playersReady = true; checkReady(); // ⭐ 連線錯誤也要解鎖
         window.__updateSyncStatus?.('☁️ 連線錯誤', 'err');
       });
 
