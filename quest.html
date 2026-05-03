@@ -9269,8 +9269,12 @@ ${b.text}
     }
     refundCoins(me.id, coinGain);
     // ⭐ HP/MP 戰後一律回滿（除非真的被打死）
+    //   尾刀者（killed=true）就算 HP 0 也視為勝利 → HP 滿血、不會死
     const _s = computeStats(me);
-    if (result.pHpFinal <= 0) {
+    if (killed) {
+      r.hp = _s.maxHp;
+      r.deathAt = null;
+    } else if (result.pHpFinal <= 0) {
       r.hp = 0;
       if (!r.deathAt) r.deathAt = Date.now();
     } else {
@@ -11408,6 +11412,18 @@ ${b.text}
             state.recentBattles = Array.isArray(state.recentBattles) ? state.recentBattles : [];
             state.recentBattles.unshift(filledSnap);
             if (state.recentBattles.length > 5) state.recentBattles.length = 5;
+          }
+          // ⭐ 王死且 respawnMs=0：tx 內立即重生，HP 直接補滿
+          //   先前 deadAt / nextSpawnAt 設好但 HP 還顯示 0 → 排隊頭下次再打才重生
+          //   這次玩家會看到「打死 → 立刻滿血新一輪」的流暢感
+          if (killed && !bossDef.respawnMs) {
+            state.currentHp = bossDef.hp;
+            state.deadAt = null;
+            state.nextSpawnAt = null;
+            state.spawnedAt = Date.now();
+            state.damageLog = {};
+            state.lastHit = null;
+            // 保留 killCount / lastKill / pendingRewards / recentBattles / queue（接續排隊）
           }
           wb[bossId] = state;
           tx.set(metaRef, { worldBoss: wb }, { merge: true });
