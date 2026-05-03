@@ -3568,22 +3568,34 @@
     { id: 'c_ruby',   name: '紅寶石',   icon: '💎', slot: 'accessory', atk: 5, critDmg: 0.15, lv: 8 },
     { id: 'c_heart',  name: '心形吊墜', icon: '💖', slot: 'accessory', hp: 40, mp: 25, lv: 12 },
     { id: 'c_oracle', name: '神諭',     icon: '🌠', slot: 'accessory', critChance: 0.08, critDmg: 0.30, lv: 18 },
-    // 頭盔
-    { id: 'h_cap',    name: '布帽',     icon: '🎩', slot: 'helmet', def: 2, lv: 2 },
-    { id: 'h_iron',   name: '鐵盔',     icon: '🪖', slot: 'helmet', def: 6, lv: 8 },
-    { id: 'h_spirit', name: '靈光盔',   icon: '⛑', slot: 'helmet', def: 12, atk: 3, lv: 16 },
+    // 頭盔（補上 Lv 4 / Lv 13 中間階，讓每層都有「強一級」的版本）
+    { id: 'h_cap',     name: '布帽',  icon: '🎩', slot: 'helmet', def: 2,  lv: 2 },
+    { id: 'h_leather', name: '皮帽',  icon: '🧢', slot: 'helmet', def: 4,  lv: 4 },
+    { id: 'h_iron',    name: '鐵盔',  icon: '🪖', slot: 'helmet', def: 6,  lv: 8 },
+    { id: 'h_silver',  name: '銀冠',  icon: '👑', slot: 'helmet', def: 9,  lv: 13 },
+    { id: 'h_spirit',  name: '靈光盔', icon: '⛑', slot: 'helmet', def: 12, atk: 3, lv: 16 },
     // 手套
-    { id: 'g_cloth',  name: '布手套',   icon: '🧤', slot: 'gloves', atk: 2, lv: 2 },
-    { id: 'g_iron',   name: '鐵拳套',   icon: '✊', slot: 'gloves', atk: 6, lv: 8 },
-    { id: 'g_thunder',name: '雷霆拳',   icon: '⚡', slot: 'gloves', atk: 12, spd: 4, lv: 16 },
+    { id: 'g_cloth',   name: '布手套', icon: '🧤', slot: 'gloves', atk: 2, lv: 2 },
+    { id: 'g_leather', name: '皮手套', icon: '🤲', slot: 'gloves', atk: 4, lv: 4 },
+    { id: 'g_iron',    name: '鐵拳套', icon: '✊', slot: 'gloves', atk: 6, lv: 8 },
+    { id: 'g_silver',  name: '銀指環', icon: '💍', slot: 'gloves', atk: 9, spd: 2, lv: 13 },
+    { id: 'g_thunder', name: '雷霆拳', icon: '⚡', slot: 'gloves', atk: 12, spd: 4, lv: 16 },
     // 鞋子
     { id: 'b_cloth',  name: '草鞋',     icon: '👣', slot: 'boots', spd: 2, hp: 8, lv: 2 },
+    { id: 'b_leather',name: '皮靴',     icon: '👞', slot: 'boots', spd: 3, hp: 14, lv: 4 },
     { id: 'b_iron',   name: '鐵靴',     icon: '🥾', slot: 'boots', spd: 5, hp: 20, lv: 8 },
+    { id: 'b_silver', name: '銀靴',     icon: '🥿', slot: 'boots', spd: 7, hp: 30, lv: 13 },
     { id: 'b_swift',  name: '疾風靴',   icon: '💨', slot: 'boots', spd: 10, hp: 40, lv: 16 },
     // 披風
-    { id: 'p_cloth',  name: '布披風',   icon: '🧣', slot: 'cape', hp: 15, def: 1, lv: 2 },
-    { id: 'p_leather',name: '皮披風',   icon: '🦺', slot: 'cape', hp: 35, def: 3, lv: 8 },
-    { id: 'p_dragon', name: '龍鱗披',   icon: '🐲', slot: 'cape', hp: 80, def: 8, lv: 16 },
+    { id: 'p_cloth',   name: '布披風', icon: '🧣', slot: 'cape', hp: 15, def: 1, lv: 2 },
+    { id: 'p_skin',    name: '皮披風', icon: '🦺', slot: 'cape', hp: 22, def: 2, lv: 4 },
+    { id: 'p_leather', name: '禮披',   icon: '🎽', slot: 'cape', hp: 35, def: 3, lv: 8 },
+    { id: 'p_silver',  name: '銀披',   icon: '🪡', slot: 'cape', hp: 55, def: 5, lv: 13 },
+    { id: 'p_dragon',  name: '龍鱗披', icon: '🐲', slot: 'cape', hp: 80, def: 8, lv: 16 },
+    // 武器補強：Lv 16 銀劍
+    { id: 'w_silver',  name: '銀劍',   icon: '🔱', slot: 'weapon', atk: 17, lv: 16 },
+    // 防具補強：Lv 16 鎧甲
+    { id: 'a_silver',  name: '鎧甲',   icon: '🛡️', slot: 'armor', def: 17, lv: 16 },
     // 綠茶指南書（slot: guide）— 不掉落、不販售，遇綠茶鵝達到次數時自動發放
     { id: 'gt_10',  name: '綠茶見習指南',   icon: '💚', slot: 'guide', atk: 3,  spd: 2,                   lv: 1, gtReq: 10  },
     { id: 'gt_20',  name: '綠茶實戰手冊',   icon: '📗', slot: 'guide', atk: 6,  spd: 4,  hp: 15,          lv: 1, gtReq: 20  },
