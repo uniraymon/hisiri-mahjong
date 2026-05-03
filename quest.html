@@ -1876,20 +1876,15 @@
       hpPer: 14, atkPer: 2.2, defPer: 1.2, spdPer: 0.4,
       attackVerb: '揮砍',
       skills: [
-        // 怒之炎：50 MP / 3.5× ATK / 算魔攻（無視物理抗性 + 走法傷加成）
-        { id: 'w_rage_flame',   name: '怒之炎',   icon: '☄️', unlockLv: 12, cooldown: 7, mpCost: 50, type: 'damage', mult: 3.5, magic: true },
-        { id: 'w_heavy_strike', name: '重擊',     icon: '⚡', unlockLv: 5,  cooldown: 4, mpCost: 18, type: 'damage', mult: 1.3, alwaysCrit: true },
-        { id: 'w_rage_slash',   name: '狂怒斬',   icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 14, type: 'damage', mult: 1.8, hits: 2 },
-        // ⭐ HP 代價系列：固定扣 HP（不是 % maxHP）
-        { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 3,  cooldown: 3, mpCost: 0, hpCostFlat: 20, type: 'damage', mult: 2.0, cast: 10 },
-        // 嗜血爆裂：低傷 + 吸血 20%（吸所造成傷害的百分比）
-        { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 10, cooldown: 5, mpCost: 0, type: 'damage', mult: 1.0, lifesteal: 0.20 },
-        // 死戰之怒：50 MP + 20 HP（固定）, 4.5× ATK
-        { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 15, cooldown: 8, mpCost: 50, hpCostFlat: 20, type: 'damage', mult: 4.5, cast: 100 },
-        // 補給技：兼顧 HP+MP
-        { id: 'w_war_cry',      name: '戰意呼喚', icon: '📢', unlockLv: 7,  cooldown: 5, mpCost: 0, type: 'heal', healPct: 0.15, isMpRegen: true },
-        // ⭐ 自身 buff：嗜血怒嚎（ATK +30% 3 回合）
-        { id: 'w_bloodlust',    name: '嗜血怒嚎', icon: '🦁', unlockLv: 6,  cooldown: 6, mpCost: 18, type: 'buff', selfBuff: { stat: 'atkPct', amount: 0.30, turns: 3 } },
+        // ⭐ 解鎖 -4，cooldown 全 0；保留高階大招的 cast / hpCost 控制節奏
+        { id: 'w_rage_flame',   name: '怒之炎',   icon: '☄️', unlockLv: 8,  cooldown: 0, mpCost: 50, type: 'damage', mult: 3.5, magic: true },
+        { id: 'w_heavy_strike', name: '重擊',     icon: '⚡', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'damage', mult: 1.3, alwaysCrit: true },
+        { id: 'w_rage_slash',   name: '狂怒斬',   icon: '🔥', unlockLv: 1,  cooldown: 0, mpCost: 14, type: 'damage', mult: 1.8, hits: 2 },
+        { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 1,  cooldown: 0, mpCost: 0, hpCostFlat: 20, type: 'damage', mult: 2.0, cast: 10 },
+        { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 6,  cooldown: 0, mpCost: 0, type: 'damage', mult: 1.0, lifesteal: 0.20 },
+        { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 50, hpCostFlat: 20, type: 'damage', mult: 4.5, cast: 100 },
+        { id: 'w_war_cry',      name: '戰意呼喚', icon: '📢', unlockLv: 3,  cooldown: 0, mpCost: 0, type: 'heal', healPct: 0.15, isMpRegen: true },
+        { id: 'w_bloodlust',    name: '嗜血怒嚎', icon: '🦁', unlockLv: 2,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'atkPct', amount: 0.30, turns: 3 } },
       ],
       skillTree: [
         { id: 'w_hp',   name: '鋼鐵之軀', icon: '🛡',  desc: '+5% 最大 HP',         maxLevel: 5, effect: 'hpPct',     per: 0.05 },
@@ -1916,30 +1911,22 @@
       hpPer: 9, atkPer: 1.5, defPer: 0.6, spdPer: 1.2,
       attackVerb: '射擊',
       skills: [
-        // ⭐ 多重射擊已移除（被連射取代）；所有解鎖等級 -2
-        { id: 'a_god_arrow',   name: '神之矢',   icon: '🌟', unlockLv: 10, cooldown: 7, mpCost: 32, type: 'damage', mult: 2.8 },
-        { id: 'a_precise_shot',name: '精準射擊', icon: '🎯', unlockLv: 1,  cooldown: 3, mpCost: 12, type: 'damage', mult: 1.4, cast: 5 },
-        { id: 'a_concentrate', name: '集中',     icon: '🧘', unlockLv: 2,  cooldown: 4, mpCost: 0,  type: 'heal', isMpRegen: true },
-        // ⭐ 連射重做：每段固定 ATK ×0.5（不吃 multi-hit ×1.3 加成）/ 4 段 / Lv 5 暴擊 +10% / Lv 10 多 1 段
-        { id: 'a_barrage',     name: '連射',     icon: '🌊', unlockLv: 6,  cooldown: 5, mpCost: 28, type: 'damage', mult: 0.5, hits: 4, fixedHitMult: true, customLv: true },
-        { id: 'a_lethal_aim',  name: '致命瞄準', icon: '💀', unlockLv: 12, cooldown: 8, mpCost: 40, type: 'damage', mult: 3.5, alwaysCrit: true, ignoreDef: true, cast: 90 },
-        // ⭐ 多目標：雙箭齊發、毒箭
-        { id: 'a_twin_shot',   name: '雙箭齊發', icon: '🏹', unlockLv: 4,  cooldown: 4, mpCost: 24, type: 'damage', mult: 1.5, targetCount: 2 },
-        { id: 'a_poison_arrow',name: '毒箭',     icon: '🐍', unlockLv: 7,  cooldown: 5, mpCost: 26, type: 'damage', mult: 1.2, applyStatus: { type: 'poison', turns: 3, dmg: 12, chance: 0.7 } },
-        // ⭐ 自身 buff：疾風步（SPD +8 4 回合）/ 鷹眼（暴擊率 +20% 4 回合）
-        { id: 'a_quickstep',   name: '疾風步',   icon: '💨', unlockLv: 4,  cooldown: 6, mpCost: 16, type: 'buff', selfBuff: { stat: 'spd', amount: 8, turns: 4 } },
-        { id: 'a_eagle_eye',   name: '鷹眼',     icon: '🦅', unlockLv: 6,  cooldown: 6, mpCost: 18, type: 'buff', selfBuff: { stat: 'critChance', amount: 0.20, turns: 4 } },
-        // ⭐ 新弓手技能：豐富特色
-        // 吸血箭：低傷害但吸血，補血用
-        { id: 'a_lifesteal_arrow', name: '吸血箭', icon: '🩸', unlockLv: 5,  cooldown: 4, mpCost: 14, type: 'damage', mult: 1.2, lifesteal: 0.40 },
-        // ⭐ 隱身（重做）: 15 MP / 免疫一次傷害 + 下次攻擊必爆
-        //   每升一級 -1 MP 消費（max 5 級 → Lv 5 為 10 MP）
-        //   Lv 5：buff 持續 +1 回合（既有 lv5Kind='buff' 機制）+ 本招 +20% 爆傷
-        { id: 'a_stealth',         name: '隱身',   icon: '🌫', unlockLv: 7,  cooldown: 7, mpCost: 15, type: 'buff', selfBuff: { stat: 'critChance', amount: 1.0, turns: 1 }, applyShield: 1, stealthLv5CritDmg: 0.20 },
-        // 風之歌：補 MP + SPD buff（兼顧補給）
-        { id: 'a_wind_song',       name: '風之歌', icon: '🎵', unlockLv: 2,  cooldown: 5, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true },
-        // 遠程射手 LUK 系：本招暴擊率特高
-        { id: 'a_arrow_storm',     name: '箭雨',   icon: '🌧', unlockLv: 8,  cooldown: 6, mpCost: 30, type: 'damage', mult: 1.0, targetCount: 'all' },
+        // ⭐ 多重射擊已移除（被連射取代）；解鎖等級全 -4（這次再 -2，cooldown 全部歸 0）
+        { id: 'a_god_arrow',   name: '神之矢',   icon: '🌟', unlockLv: 8,  cooldown: 0, mpCost: 32, type: 'damage', mult: 2.8 },
+        { id: 'a_precise_shot',name: '精準射擊', icon: '🎯', unlockLv: 1,  cooldown: 0, mpCost: 12, type: 'damage', mult: 1.4, cast: 5 },
+        { id: 'a_concentrate', name: '集中',     icon: '🧘', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', isMpRegen: true },
+        // ⭐ 連射：每段固定 ATK ×0.5 / 4 段 / Lv 5 暴擊 +10% / Lv 10 多 1 段
+        { id: 'a_barrage',     name: '連射',     icon: '🌊', unlockLv: 4,  cooldown: 0, mpCost: 28, type: 'damage', mult: 0.5, hits: 4, fixedHitMult: true, customLv: true },
+        { id: 'a_lethal_aim',  name: '致命瞄準', icon: '💀', unlockLv: 10, cooldown: 0, mpCost: 40, type: 'damage', mult: 3.5, alwaysCrit: true, ignoreDef: true, cast: 90 },
+        { id: 'a_twin_shot',   name: '雙箭齊發', icon: '🏹', unlockLv: 2,  cooldown: 0, mpCost: 24, type: 'damage', mult: 1.5, targetCount: 2 },
+        { id: 'a_poison_arrow',name: '毒箭',     icon: '🐍', unlockLv: 5,  cooldown: 0, mpCost: 26, type: 'damage', mult: 1.2, maxLv: 5, applyStatus: { type: 'poison', turns: 3, chance: 0.7 } },
+        { id: 'a_quickstep',   name: '疾風步',   icon: '💨', unlockLv: 2,  cooldown: 0, mpCost: 16, type: 'buff', selfBuff: { stat: 'spd', amount: 8, turns: 4 } },
+        { id: 'a_eagle_eye',   name: '鷹眼',     icon: '🦅', unlockLv: 4,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'critChance', amount: 0.20, turns: 4 } },
+        { id: 'a_lifesteal_arrow', name: '吸血箭', icon: '🩸', unlockLv: 3,  cooldown: 0, mpCost: 14, type: 'damage', mult: 1.2, lifesteal: 0.40 },
+        // 隱身重做：15 MP / 免疫一次傷害 + 下次攻擊必爆 / 每級 -1 MP / Lv 5 +1 回合 +20% 爆傷
+        { id: 'a_stealth',         name: '隱身',   icon: '🌫', unlockLv: 5,  cooldown: 0, mpCost: 15, type: 'buff', selfBuff: { stat: 'critChance', amount: 1.0, turns: 1 }, applyShield: 1, stealthLv5CritDmg: 0.20, maxLv: 5 },
+        { id: 'a_wind_song',       name: '風之歌', icon: '🎵', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true },
+        { id: 'a_arrow_storm',     name: '箭雨',   icon: '🌧', unlockLv: 6,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.0, targetCount: 'all' },
       ],
       skillTree: [
         { id: 'a_crit', name: '致命瞄準', icon: '💥', desc: '+2% 暴擊率',         maxLevel: 5, effect: 'critChance', per: 0.02 },
@@ -1967,29 +1954,23 @@
       attackVerb: '魔法',
       critBonus: 0.18,
       skills: [
-        { id: 'm_meteor',         name: '隕石術',     icon: '☄️', unlockLv: 12, cooldown: 7, mpCost: 50, type: 'damage', flat: 120, perLv: 5, ignoreDef: true },
-        { id: 'm_ice_lance',      name: '冰錐術',     icon: '❄️', unlockLv: 5,  cooldown: 4, mpCost: 20, type: 'damage', mult: 1.6, alwaysCrit: true, applyStatus: { type: 'paralyze', turns: 2, chance: 0.25 } },
-        { id: 'm_fireball',       name: '火球術',     icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 25, type: 'damage', flat: 50, perLv: 3, ignoreDef: true, cast: 8 },
-        { id: 'm_mana_spring',    name: '法力湧泉',   icon: '💧', unlockLv: 3,  cooldown: 4, mpCost: 0,  type: 'heal', isMpRegen: true },
-        { id: 'm_chain_lightning',name: '連環閃電',   icon: '⚡', unlockLv: 8,  cooldown: 5, mpCost: 35, type: 'damage', flat: 85, perLv: 4, ignoreDef: true, hits: 3 },
-        { id: 'm_arcane_shield',  name: '魔力護盾',   icon: '🛡️', unlockLv: 9,  cooldown: 6, mpCost: 30, type: 'heal', healPct: 0.20 },
-        { id: 'm_destruction',    name: '毀滅之怒',   icon: '💀', unlockLv: 16, cooldown: 9, mpCost: 65, type: 'damage', flat: 220, perLv: 8, ignoreDef: true, cast: 100 },
-        // ⭐ 全體 AOE：火焰風暴 / 毒霧
-        { id: 'm_firestorm',      name: '火焰風暴',   icon: '🌋', unlockLv: 11, cooldown: 7, mpCost: 55, type: 'damage', flat: 75, perLv: 4, ignoreDef: true, targetCount: 'all' },
-        { id: 'm_poison_cloud',   name: '毒霧',       icon: '☠️', unlockLv: 7,  cooldown: 6, mpCost: 30, type: 'damage', flat: 30, perLv: 2, ignoreDef: true, targetCount: 'all', applyStatus: { type: 'poison', turns: 4, dmg: 10, chance: 0.85 } },
-        // ⭐ 自身 buff：元素灌注（爆傷 +30% 4 回合）
-        { id: 'm_arcane_focus',   name: '元素灌注',   icon: '🌀', unlockLv: 6,  cooldown: 5, mpCost: 18, type: 'buff', selfBuff: { stat: 'critDmg', amount: 0.30, turns: 4 } },
-        // ⭐ 新法師技能：豐富特色
-        // 血魔咒：用 50 HP 換大幅 ATK 加成（HP 代價）
-        { id: 'm_blood_pact',     name: '血魔契約', icon: '🩸', unlockLv: 8,  cooldown: 7, mpCost: 0,  hpCostFlat: 50, type: 'buff', selfBuff: { stat: 'atkPct', amount: 0.50, turns: 4 } },
-        // 冰封術：純狀態，0 傷害，100% 麻痺
-        { id: 'm_freeze',         name: '冰封術',     icon: '🧊', unlockLv: 7,  cooldown: 6, mpCost: 25, type: 'damage', mult: 0.3, applyStatus: { type: 'paralyze', turns: 2, chance: 1 } },
-        // 暗黑契約：花 25% maxHP 換爆傷大幅提升
-        { id: 'm_dark_pact',      name: '暗黑契約', icon: '🦇', unlockLv: 12, cooldown: 8, mpCost: 0,  hpCost: 0.25, type: 'buff', selfBuff: { stat: 'critDmg', amount: 0.80, turns: 5 } },
-        // 法力護甲：自身 DEF 強化（純法師也能撐）
-        { id: 'm_mana_shield',    name: '法力護甲',   icon: '🔷', unlockLv: 5,  cooldown: 5, mpCost: 22, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.50, turns: 3 } },
-        // 魔力虹吸：吸 MP + 傷害
-        { id: 'm_arcane_drain',   name: '魔力虹吸', icon: '🔮', unlockLv: 6,  cooldown: 5, mpCost: 0,  type: 'damage', flat: 40, perLv: 2, ignoreDef: true },
+        // ⭐ 解鎖 -4，cooldown 全 0；alwaysCrit 取消（不再有免費爆擊），多段技 fixedHitMult
+        { id: 'm_meteor',         name: '隕石術',     icon: '☄️', unlockLv: 8,  cooldown: 0, mpCost: 50, type: 'damage', flat: 120, perLv: 5, ignoreDef: true },
+        { id: 'm_ice_lance',      name: '冰錐術',     icon: '❄️', unlockLv: 1,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.6, applyStatus: { type: 'paralyze', turns: 2, chance: 0.25 } },
+        { id: 'm_fireball',       name: '火球術',     icon: '🔥', unlockLv: 1,  cooldown: 0, mpCost: 25, type: 'damage', flat: 50, perLv: 3, ignoreDef: true, cast: 8 },
+        { id: 'm_mana_spring',    name: '法力湧泉',   icon: '💧', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', isMpRegen: true },
+        // 連環閃電：3 段固定傷害（不享 ×1.3 共享）
+        { id: 'm_chain_lightning',name: '連環閃電',   icon: '⚡', unlockLv: 4,  cooldown: 0, mpCost: 35, type: 'damage', flat: 35, perLv: 2, ignoreDef: true, hits: 3, fixedHitMult: true },
+        { id: 'm_arcane_shield',  name: '魔力護盾',   icon: '🛡️', unlockLv: 5,  cooldown: 0, mpCost: 30, type: 'heal', healPct: 0.20 },
+        { id: 'm_destruction',    name: '毀滅之怒',   icon: '💀', unlockLv: 12, cooldown: 0, mpCost: 65, type: 'damage', flat: 220, perLv: 8, ignoreDef: true, cast: 100 },
+        { id: 'm_firestorm',      name: '火焰風暴',   icon: '🌋', unlockLv: 7,  cooldown: 0, mpCost: 55, type: 'damage', flat: 75, perLv: 4, ignoreDef: true, targetCount: 'all' },
+        { id: 'm_poison_cloud',   name: '毒霧',       icon: '☠️', unlockLv: 3,  cooldown: 0, mpCost: 30, type: 'damage', flat: 30, perLv: 2, ignoreDef: true, targetCount: 'all', maxLv: 5, applyStatus: { type: 'poison', turns: 4, chance: 0.85 } },
+        { id: 'm_arcane_focus',   name: '元素灌注',   icon: '🌀', unlockLv: 2,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'critDmg', amount: 0.30, turns: 4 } },
+        { id: 'm_blood_pact',     name: '血魔契約', icon: '🩸', unlockLv: 4,  cooldown: 0, mpCost: 0,  hpCostFlat: 50, type: 'buff', selfBuff: { stat: 'atkPct', amount: 0.50, turns: 4 } },
+        { id: 'm_freeze',         name: '冰封術',     icon: '🧊', unlockLv: 3,  cooldown: 0, mpCost: 25, type: 'damage', mult: 0.3, applyStatus: { type: 'paralyze', turns: 2, chance: 1 } },
+        { id: 'm_dark_pact',      name: '暗黑契約', icon: '🦇', unlockLv: 8,  cooldown: 0, mpCost: 0,  hpCost: 0.25, type: 'buff', selfBuff: { stat: 'critDmg', amount: 0.80, turns: 5 } },
+        { id: 'm_mana_shield',    name: '法力護甲',   icon: '🔷', unlockLv: 1,  cooldown: 0, mpCost: 22, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.50, turns: 3 } },
+        { id: 'm_arcane_drain',   name: '魔力虹吸', icon: '🔮', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', flat: 40, perLv: 2, ignoreDef: true },
       ],
       skillTree: [
         { id: 'm_mp',    name: '法力深淵', icon: '💎', desc: '+5% 最大 MP',         maxLevel: 5, effect: 'mpPct',     per: 0.05 },
@@ -2018,28 +1999,21 @@
       attackVerb: '聖光斬',
       regenPer: 0.05,
       skills: [
-        { id: 'p_judgment',  name: '審判',     icon: '⚖️', unlockLv: 12, cooldown: 7, mpCost: 38, type: 'damage', mult: 2.5, alwaysCrit: true },
-        { id: 'p_holy_slash',name: '聖光斬',   icon: '✝️', unlockLv: 5,  cooldown: 4, mpCost: 22, type: 'damage', mult: 1.6, healCaster: 0.05 },
-        { id: 'p_holy_heal', name: '神聖治癒', icon: '✨', unlockLv: 1,  cooldown: 5, mpCost: 30, type: 'heal', healPct: 0.3 },
-        { id: 'p_pray',      name: '祈禱',     icon: '🙏', unlockLv: 3,  cooldown: 4, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true },
-        { id: 'p_shelter',   name: '庇護術',   icon: '🤲', unlockLv: 7,  cooldown: 6, mpCost: 25, type: 'heal', healPct: 0.40 },
-        { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 10, cooldown: 5, mpCost: 35, type: 'damage', mult: 2.0, alwaysCrit: true, healCaster: 0.10 },
-        // ⭐ 多目標：神聖光波（兩個敵人）/ 神之拳（兩個敵人 + 麻痺）
-        { id: 'p_holy_wave', name: '神聖光波', icon: '🌟', unlockLv: 6,  cooldown: 5, mpCost: 30, type: 'damage', mult: 1.4, healCaster: 0.06, targetCount: 2 },
-        { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 11, cooldown: 6, mpCost: 35, type: 'damage', mult: 1.7, targetCount: 2, applyStatus: { type: 'paralyze', turns: 2, chance: 0.4 } },
-        // ⭐ 自身 buff：神聖祝福（DEF +40% 3 回合）
-        { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 5,  cooldown: 6, mpCost: 18, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.40, turns: 3 } },
-        // ⭐ 新聖騎技能：以 DEF / maxHp 結算傷害 + 反傷
-        // 護盾衝鋒：DEF 結算傷害（DEF 越高傷害越高）
-        { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 6,  cooldown: 5, mpCost: 22, type: 'damage', defMult: 4 },
-        // 神聖風暴：以 maxHp 結算傷害（兩個目標 / 魔攻）
-        { id: 'p_divine_storm',  name: '神聖風暴', icon: '🌪', unlockLv: 9,  cooldown: 6, mpCost: 28, type: 'damage', maxHpMult: 0.40, targetCount: 2 },
-        // 棘甲術：反傷 buff
-        { id: 'p_thorn_armor',   name: '棘甲術',   icon: '🌵', unlockLv: 8,  cooldown: 6, mpCost: 22, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.40, turns: 4 } },
-        // 反傷護盾：高量反傷 + DEF buff
-        { id: 'p_aegis',         name: '反傷護盾', icon: '🪞', unlockLv: 12, cooldown: 8, mpCost: 30, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.70, turns: 3 } },
-        // 信仰之力：以 maxHp 結算大傷害（魔攻、單目標、必爆）
-        { id: 'p_divine_wrath',  name: '神之裁決', icon: '⚡', unlockLv: 14, cooldown: 8, mpCost: 38, type: 'damage', maxHpMult: 0.65, alwaysCrit: true, cast: 90 },
+        // ⭐ 解鎖 -4，cooldown 全 0；alwaysCrit 只保留神之裁決（最高階收頭技）
+        { id: 'p_judgment',  name: '審判',     icon: '⚖️', unlockLv: 8,  cooldown: 0, mpCost: 38, type: 'damage', mult: 2.5 },
+        { id: 'p_holy_slash',name: '聖光斬',   icon: '✝️', unlockLv: 1,  cooldown: 0, mpCost: 22, type: 'damage', mult: 1.6, healCaster: 0.05 },
+        { id: 'p_holy_heal', name: '神聖治癒', icon: '✨', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'heal', healPct: 0.3 },
+        { id: 'p_pray',      name: '祈禱',     icon: '🙏', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true },
+        { id: 'p_shelter',   name: '庇護術',   icon: '🤲', unlockLv: 3,  cooldown: 0, mpCost: 25, type: 'heal', healPct: 0.40 },
+        { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 6,  cooldown: 0, mpCost: 35, type: 'damage', mult: 2.0, healCaster: 0.10 },
+        { id: 'p_holy_wave', name: '神聖光波', icon: '🌟', unlockLv: 2,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.4, healCaster: 0.06, targetCount: 2 },
+        { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 7,  cooldown: 0, mpCost: 35, type: 'damage', mult: 1.7, targetCount: 2, applyStatus: { type: 'paralyze', turns: 2, chance: 0.4 } },
+        { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.40, turns: 3 } },
+        { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 22, type: 'damage', defMult: 4 },
+        { id: 'p_divine_storm',  name: '神聖風暴', icon: '🌪', unlockLv: 5,  cooldown: 0, mpCost: 28, type: 'damage', maxHpMult: 0.40, targetCount: 2 },
+        { id: 'p_thorn_armor',   name: '棘甲術',   icon: '🌵', unlockLv: 4,  cooldown: 0, mpCost: 22, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.40, turns: 4 } },
+        { id: 'p_aegis',         name: '反傷護盾', icon: '🪞', unlockLv: 8,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.70, turns: 3 } },
+        { id: 'p_divine_wrath',  name: '神之裁決', icon: '⚡', unlockLv: 10, cooldown: 0, mpCost: 38, type: 'damage', maxHpMult: 0.65, alwaysCrit: true, cast: 90 },
       ],
       skillTree: [
         { id: 'p_def',   name: '聖光鎧甲', icon: '🛡',  desc: '+2 DEF',              maxLevel: 5, effect: 'def',          per: 2 },
@@ -2911,7 +2885,15 @@
       if (level >= 5)  eff.extraCritChance = (eff.extraCritChance || 0) + 0.10;
       if (level >= 10) eff.hits = (skill.hits || 4) + 1;
     }
-    if (level >= 3 && skill.applyStatus) {
+    // ⭐ 中毒專用公式：每級 +1 turn，Lv 5 額外 +1（不再看 dmg，由 tickStatuses 用 3% maxHp 計）
+    if (skill.applyStatus && skill.applyStatus.type === 'poison' && level >= 1) {
+      const extraTurn = Math.min(level, 5) + (level >= 5 ? 1 : 0);
+      eff.applyStatus = {
+        ...skill.applyStatus,
+        chance: Math.min(1, (skill.applyStatus.chance || 1) * (1 + level * 0.05)),
+        turns: (skill.applyStatus.turns || 1) + extraTurn,
+      };
+    } else if (level >= 3 && skill.applyStatus) {
       eff.applyStatus = {
         ...skill.applyStatus,
         chance: Math.min(1, (skill.applyStatus.chance || 1) * (1 + (level - 2) * 0.12)),
@@ -2978,6 +2960,23 @@
   }
   // 描述某一級會帶來的好處（給 UI 用）
   function describeSkillLevelEffect(skill, level) {
+    // ⭐ 回魔技專用顯示：MP +1 / 級，Lv 5 / 10 各額外 +5% maxMP
+    if (skill.isMpRegen) {
+      const mp = 5 + level;
+      const pct = 5 + (level >= 5 ? 5 : 0) + (level >= 10 ? 5 : 0);
+      const parts = [`回 ${mp} MP + ${pct}% maxMP`];
+      if (level === 5)  parts.push('🌟 額外 +5% maxMP');
+      if (level === 10) parts.push('🌟 再額外 +5% maxMP');
+      return parts.join('、');
+    }
+    // ⭐ 中毒技：每級 +1 持續回合，Lv 5 額外再 +1
+    if (skill.applyStatus && skill.applyStatus.type === 'poison') {
+      const baseTurns = skill.applyStatus.turns || 3;
+      const turns = baseTurns + Math.min(level, 5) + (level >= 5 ? 1 : 0);
+      const parts = [`☠️ 中毒持續 ${turns} 回合（每回合扣 3% maxHP，上限 300）`];
+      if (level === 5) parts.push('🌟 持續再 +1 回合');
+      return parts.join('、');
+    }
     const totalPct = Math.round((Math.min(level, 5) * 10 + Math.max(0, level - 5) * 5));
     const parts = [`效果 +${totalPct}%`];
     if (level === 3 && skill.applyStatus) parts.push(`${statusEmoji(skill.applyStatus.type)} ${statusLabel(skill.applyStatus.type)} 機率/持續 +`);
@@ -4363,7 +4362,11 @@
       restLeftMs,
     };
   }
-  function xpForLevel(lv) { return lv * lv * 100; }
+  // ⭐ Lv 1-5 標準曲線；Lv 6+ 系數 ×0.8（升級需求降 20%，配合怪物 XP +20%，中後期成長變快）
+  function xpForLevel(lv) {
+    if (lv <= 5) return lv * lv * 100;
+    return Math.round(lv * lv * 80);
+  }
   // 計算目前裝備的套裝件數，並回傳 { counts: {setId: n}, bonuses: {...合併} }
   function computeSetBonuses(player) {
     const rpg = player?.rpg;
@@ -4473,21 +4476,25 @@
       + (mergedBonuses.critDmg || 0);
     return stats;
   }
-  // ⭐ 怪物 EXP 給予公式（依等級）
-  //   Lv 1-5  : 20, 25, 30, 35, 40       （tier 1，每等 +5）
-  //   Lv 6-10 : 80, 90, 100, 110, 120    （tier 2 起每階階內 +10、階間 base 跳躍）
-  //   Lv 11-15: 150, 160, 170, 180, 190
-  //   Lv 16-20: 230, 240, 250, 260, 270
-  //   Lv 21+  : 延續 (tier-3) × 80 為新階 base、階內每等 +10（Lv21=310, Lv26=390 ...）
+  // ⭐ 怪物 EXP 給予公式（依等級）— 全面 +20%
+  //   Lv 1-5  : 24, 30, 36, 42, 48
+  //   Lv 6-10 : 96, 108, 120, 132, 144
+  //   Lv 11-15: 180, 192, 204, 216, 228
+  //   Lv 16-20: 276, 288, 300, 312, 324
+  //   Lv 21+  : 同樣 ×1.20 縮放
   function getMonsterBaseXp(level) {
     const lv = Math.max(1, level | 0);
-    if (lv <= 5)  return 20  + (lv - 1)  * 5;
-    if (lv <= 10) return 80  + (lv - 6)  * 10;
-    if (lv <= 15) return 150 + (lv - 11) * 10;
-    if (lv <= 20) return 230 + (lv - 16) * 10;
-    const tier = Math.floor((lv - 1) / 5);              // 4=Lv21-25, 5=Lv26-30, ...
-    const tierBase = 230 + (tier - 3) * 80;             // 310, 390, 470, ...
-    return tierBase + (lv - tier * 5 - 1) * 10;
+    let base;
+    if (lv <= 5)        base = 20  + (lv - 1)  * 5;
+    else if (lv <= 10)  base = 80  + (lv - 6)  * 10;
+    else if (lv <= 15)  base = 150 + (lv - 11) * 10;
+    else if (lv <= 20)  base = 230 + (lv - 16) * 10;
+    else {
+      const tier = Math.floor((lv - 1) / 5);
+      const tierBase = 230 + (tier - 3) * 80;
+      base = tierBase + (lv - tier * 5 - 1) * 10;
+    }
+    return Math.round(base * 1.20);
   }
   // ⭐ 不同品種品種隨機加成 0~20%（戰鬥當下 roll，所以「最多多 20%」）
   function rollMonsterXpVariance(level) {
@@ -4787,7 +4794,7 @@
         pGauge -= ATB_THRESHOLD;
         playerActions++;
         // 玩家身上狀態 tick（中毒、buff 倒數）
-        const pevs = tickStatuses(playerObj);
+        const pevs = tickStatuses(playerObj, stats.maxHp);
         for (const ev of pevs) {
           pHp = Math.max(0, pHp - ev.dmg);
           log.push({ type: 'monster', text: `回合 ${round}：${player.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${ev.dmg} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
@@ -4826,7 +4833,8 @@
           if (!sInfo) continue; // 規則指向不存在的技能（職業改了？）
           const s = sInfo.skill;
           if ((s.unlockLv || 1) > (player.rpg.level || 1)) continue;
-          if (playerActions < (nextActionForSkill[s.id] || 0)) continue;
+          // ⭐ 玩家技能 CD 取消（用 MP 跟硬值控制節奏）
+          // if (playerActions < (nextActionForSkill[s.id] || 0)) continue;
           const effMpCost = Math.round((s.mpCost || 0) * (1 - (passive.mpDiscount || 0)));
           if (pMp < effMpCost) continue;
           // HP 代價技能：必須有「比成本多」的 HP（防自爆）
@@ -5033,7 +5041,7 @@
       } else {
         mGauge -= ATB_THRESHOLD;
         // 怪物身上狀態 tick（中毒、麻痺）
-        const mevs = tickStatuses(monster);
+        const mevs = tickStatuses(monster, monster.maxHp);
         for (const ev of mevs) {
           mHp = Math.max(0, mHp - ev.dmg);
           log.push({ type: 'player', text: `回合 ${round}：${monster.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${ev.dmg} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
@@ -5175,12 +5183,17 @@
       target.statuses.push({ ...status });
     }
   }
-  function tickStatuses(target) {
+  // ⭐ 中毒新公式：每回合扣目標 maxHP 的 3%（單次上限 300）
+  //   不再看 s.dmg（保留欄位但被忽略）；持續回合數仍由施毒技能 / 怪物 skill 設定
+  //   maxHp 由呼叫端傳入（玩家 stats.maxHp / 怪物 monster.maxHp）
+  function tickStatuses(target, maxHp) {
     if (!target.statuses || target.statuses.length === 0) return [];
     const events = []; // [{type, dmg}]
+    const safeMax = Math.max(1, maxHp || target.maxHp || 0);
     for (const s of target.statuses) {
-      if (s.type === 'poison' && s.dmg) {
-        events.push({ type: 'poison', dmg: s.dmg });
+      if (s.type === 'poison') {
+        const dmg = Math.min(300, Math.max(1, Math.round(safeMax * 0.03)));
+        events.push({ type: 'poison', dmg });
       }
       s.turns = (s.turns || 0) - 1;
     }
@@ -5317,7 +5330,7 @@
         playerActions++;
 
         // 自身狀態 tick（中毒等）
-        const evs = tickStatuses(playerObj);
+        const evs = tickStatuses(playerObj, stats.maxHp);
         for (const ev of evs) {
           pHp = Math.max(0, pHp - ev.dmg);
           log.push({ type: 'monster', text: `回合 ${round}：${player.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${ev.dmg} HP`, hp: hpsSnapshot() });
@@ -5355,7 +5368,8 @@
           if (!sInfo) continue;
           const s = sInfo.skill;
           if ((s.unlockLv || 1) > (player.rpg.level || 1)) continue;
-          if (playerActions < (nextActionForSkill[s.id] || 0)) continue;
+          // ⭐ 玩家技能 CD 取消（用 MP 跟硬值控制節奏）
+          // if (playerActions < (nextActionForSkill[s.id] || 0)) continue;
           const effMpCost = Math.round((s.mpCost || 0) * (1 - (passive.mpDiscount || 0)));
           if (pMp < effMpCost) continue;
           if (s.hpCost) {
@@ -5535,7 +5549,7 @@
         const m = actor;
         m.gauge -= ATB_THRESHOLD;
         // 怪物中毒等狀態 tick
-        const evs = tickStatuses(m);
+        const evs = tickStatuses(m, m.maxHp);
         for (const ev of evs) {
           m.hp = Math.max(0, m.hp - ev.dmg);
           if (m.hp <= 0) m.alive = false;
@@ -6786,12 +6800,13 @@ ${b.text}
     const skill = (cls.skills || []).find(s => s.id === skillId);
     if (!skill) { showToast('找不到技能'); return; }
     const lv = (rpg.skillLevels || {})[skillId] || 0;
+    const skillMax = skill.maxLv || SKILL_MAX_LEVEL;
     const eff = getSkillEffectiveStats(skill, lv);
     const isLocked = (skill.unlockLv || 1) > rpg.level;
-    const canUpgrade = !isLocked && lv < SKILL_MAX_LEVEL && (rpg.skillPoints || 0) >= 1;
+    const canUpgrade = !isLocked && lv < skillMax && (rpg.skillPoints || 0) >= 1;
     // 等級 breakdown
     const levelRows = [];
-    for (let i = 1; i <= SKILL_MAX_LEVEL; i++) {
+    for (let i = 1; i <= skillMax; i++) {
       const owned = i <= lv;
       const isNext = i === lv + 1;
       const desc = describeSkillLevelEffect(skill, i);
@@ -6828,8 +6843,8 @@ ${b.text}
         <div style="font-size:48px; line-height:1; margin-bottom:4px;">${skill.icon}</div>
         <div style="font-weight:700; font-size:16px; color:#5b3d62;">${escapeHtml(skill.name)}</div>
         <div style="font-size:11px; color:#8b6f9b; margin-top:2px;">
-          ${isLocked ? `🔒 Lv ${skill.unlockLv} 解鎖` : `等級 <b style="color:#7c3aed;">${lv}/${SKILL_MAX_LEVEL}</b>`}
-          　·　CD ${skill.cooldown}　·　硬值 ${getEffectiveCast(skill)}　·　${formatSkillCost(skill)}
+          ${isLocked ? `🔒 Lv ${skill.unlockLv} 解鎖` : `等級 <b style="color:#7c3aed;">${lv}/${skillMax}</b>`}
+          　·　硬值 ${getEffectiveCast(skill)}　·　${formatSkillCost(skill)}
         </div>
         <div style="font-size:12px; color:#7c3aed; margin-top:6px; padding:6px 8px; background:#f3e8ff; border-radius:8px;">
           ${formatSkillDesc(eff)}
@@ -6848,7 +6863,7 @@ ${b.text}
             ? `<div style="font-size:11px; color:#dc2626;">尚未解鎖（Lv ${skill.unlockLv} 才能升級）</div>`
             : canUpgrade
               ? `<button class="btn btn-primary" onclick="upgradeSkillLevel('${skillId}')" style="background:linear-gradient(135deg,#c4b5fd,#7c3aed); box-shadow:0 4px 0 #5b21b6;">升級到 Lv ${lv + 1}（-1 SP）</button>`
-              : lv >= SKILL_MAX_LEVEL
+              : lv >= skillMax
                 ? `<div style="font-size:12px; color:#16a34a; font-weight:700;">✓ 已滿級</div>`
                 : `<div style="font-size:12px; color:#dc2626;">技能點不足（你有 ${rpg.skillPoints || 0} SP）</div>`
           }
@@ -6874,7 +6889,8 @@ ${b.text}
     if (!skill) return;
     if ((skill.unlockLv || 1) > rpg.level) { showToast('等級不足，未解鎖'); return; }
     const cur = (rpg.skillLevels || {})[skillId] || 0;
-    if (cur >= SKILL_MAX_LEVEL) { showToast('已達最高等級'); return; }
+    const skillMax = skill.maxLv || SKILL_MAX_LEVEL;
+    if (cur >= skillMax) { showToast('已達最高等級'); return; }
     if ((rpg.skillPoints || 0) < 1) { showToast('技能點不足'); return; }
     rpg.skillLevels = rpg.skillLevels || {};
     rpg.skillLevels[skillId] = cur + 1;
@@ -6898,10 +6914,11 @@ ${b.text}
     const activeHtml = (cls.skills || []).map(s => {
       const locked = (s.unlockLv || 1) > rpg.level;
       const sLv = (rpg.skillLevels || {})[s.id] || 0;
-      const canUp = !locked && sLv < SKILL_MAX_LEVEL && points >= 1;
+      const sMax = s.maxLv || SKILL_MAX_LEVEL;
+      const canUp = !locked && sLv < sMax && points >= 1;
       return `<div class="skill-row${locked ? ' locked' : ''}" onclick="hideModal(); showSkillDetailModal('${s.id}')">
-        <span>${locked ? '🔒' : '✓'} <b>${s.icon} ${s.name}</b>${sLv > 0 ? ` <span class="skill-row-lv">Lv ${sLv}/${SKILL_MAX_LEVEL}</span>` : ''}${locked ? ` <span style="font-size:10px;">(${s.unlockLv})</span>` : ''}${canUp ? ` <span style="font-size:9px; color:#7c3aed; font-weight:700;">⬆ 可升級</span>` : ''}</span>
-        <span style="opacity:0.85; font-size:10px; white-space:nowrap;">CD ${s.cooldown} · 硬值 ${getEffectiveCast(s)} · ${formatSkillCost(s)}</span>
+        <span>${locked ? '🔒' : '✓'} <b>${s.icon} ${s.name}</b>${sLv > 0 ? ` <span class="skill-row-lv">Lv ${sLv}/${sMax}</span>` : ''}${locked ? ` <span style="font-size:10px;">(${s.unlockLv})</span>` : ''}${canUp ? ` <span style="font-size:9px; color:#7c3aed; font-weight:700;">⬆ 可升級</span>` : ''}</span>
+        <span style="opacity:0.85; font-size:10px; white-space:nowrap;">硬值 ${getEffectiveCast(s)} · ${formatSkillCost(s)}</span>
       </div>`;
     }).join('');
     // ─ 屬性強化技能樹：直接 inline + 按鈕
@@ -7243,8 +7260,14 @@ ${b.text}
     if (s.type === 'heal') {
       const parts = [];
       if (s.healPct) parts.push(`回 ${Math.round(s.healPct * 100)}% HP`);
-      if (s.mpFlat)  parts.push(`回 ${s.mpFlat} MP`);
-      else if (s.mpPct) parts.push(`回 ${Math.round(s.mpPct * 100)}% MP`);
+      // ⭐ 回魔技：mpFlat 跟 mpPct 一起顯示（基底 5 MP + 5% maxMP，每級 +1 / Lv 5,10 各 +5% maxMP）
+      if (s.isMpRegen) {
+        parts.push(`回 ${s.mpFlat || 5} MP + ${Math.round((s.mpPct || 0.05) * 100)}% maxMP`);
+      } else if (s.mpFlat) {
+        parts.push(`回 ${s.mpFlat} MP`);
+      } else if (s.mpPct) {
+        parts.push(`回 ${Math.round(s.mpPct * 100)}% maxMP`);
+      }
       return parts.join(' + ') || '輔助';
     }
     if (s.type === 'buff' && s.selfBuff) {
