@@ -1742,63 +1742,63 @@
   // 鵝鵝怪物全名單（5 階、特殊能力：multiHit / steal / magicResist / physResist）
   const MONSTERS = [
     // tier 1（玩家 Lv 1-4）
-    { id: 'bat',   tier: 1, name: '蝙蝠鵝',    icon: '🦇', hpBase: 40,  atkBase: 7,  defBase: 1, spdBase: 11, goldBase: 6,  xpBase: 22, verb: '俯衝啄', ability: { type: 'multiHit', hits: 2 },
+    { id: 'bat',   tier: 1, name: '蝙蝠鵝',    icon: '🦇', hpBase: 90,  atkBase: 7,  defBase: 1, spdBase: 11, goldBase: 6,  xpBase: 22, verb: '俯衝啄', ability: { type: 'multiHit', hits: 2 },
       dialogue: ['夜の翼降臨...黑暗契約者已現身...', '翼之鵝・降臨！我的左眼開始疼了...', '凡人，準備迎接夜之審判...'],
       deathLine: ['夜...結束了...', '黑暗...也會迎來黎明...嗎...', '我的左眼...終於不痛了...'] },
-    { id: 'slime', tier: 1, name: '史萊姆鵝',  icon: '🟢', hpBase: 65,  atkBase: 7,  defBase: 1, spdBase: 5,  goldBase: 7,  xpBase: 20, verb: '撞擊',
+    { id: 'slime', tier: 1, name: '史萊姆鵝',  icon: '🟢', hpBase: 110, atkBase: 7,  defBase: 1, spdBase: 5,  goldBase: 7,  xpBase: 20, verb: '撞擊',
       dialogue: ['呱嘰...呱嘰...是新朋友嗎？', '我...我什麼都不會喔...嗚嘰...', '黏黏的我，請對我溫柔一點...'],
       deathLine: ['呱嘰...我融化了...', '嗚嘰...掰掰...', '下次見面...我會更努力的...'] },
-    { id: 'thief', tier: 1, name: '賊鵝',      icon: '🦝', hpBase: 45,  atkBase: 7,  defBase: 2, spdBase: 13, goldBase: 8,  xpBase: 26, verb: '偷襲', ability: { type: 'steal', min: 5, max: 10 },
+    { id: 'thief', tier: 1, name: '賊鵝',      icon: '🦝', hpBase: 90,  atkBase: 7,  defBase: 2, spdBase: 13, goldBase: 8,  xpBase: 26, verb: '偷襲', ability: { type: 'steal', min: 5, max: 10 },
       dialogue: ['嘿嘿~你的鵝鵝幣看起來很好吃喔！', '你不會發現我偷東西的對吧～對吧？', '小爺出馬，分你錢的全跑不掉！'],
       deathLine: ['可惡！這次跑不掉了！', '賊小爺認栽...', '下次絕不再讓你抓到！'] },
     // tier 2（玩家 Lv 4-8）
-    { id: 'spider',tier: 2, name: '蜘蛛鵝',    icon: '🕷', hpBase: 55,  atkBase: 8,  defBase: 2, spdBase: 11, goldBase: 18, xpBase: 50, verb: '毒咬', ability: { type: 'multiHit', hits: 2 },
+    { id: 'spider',tier: 2, name: '蜘蛛鵝',    icon: '🕷', hpBase: 110, atkBase: 8,  defBase: 2, spdBase: 11, goldBase: 18, xpBase: 50, verb: '毒咬', ability: { type: 'multiHit', hits: 2 },
       skills: [
         { verb: '毒網噴吐', mult: 0.8, applyStatus: { type: 'poison', turns: 3, dmg: 6, chance: 1 }, cooldown: 4 },
       ],
       dialogue: ['汝已陷入吾之八腳神羅...', '毒之絲，將融化爾之靈魂...', '蛛網中、唯有絕望...'],
       deathLine: ['蛛網...崩塌了...', '汝...贏得了這一回合...', '吾...將消逝於陰影...'] },
-    { id: 'gob',   tier: 2, name: '哥布鵝',    icon: '👺', hpBase: 60,  atkBase: 9,  defBase: 3, spdBase: 8,  goldBase: 20, xpBase: 55, verb: '亂砍',
+    { id: 'gob',   tier: 2, name: '哥布鵝',    icon: '👺', hpBase: 120, atkBase: 9,  defBase: 3, spdBase: 8,  goldBase: 20, xpBase: 55, verb: '亂砍',
       skills: [
         { verb: '偷襲', mult: 1.5, cooldown: 4 },
       ],
       dialogue: ['我超強的！我超強的！打打打！', '鵝鵝最棒了！你輸定了輸定了！', '嘎嘎！來啊來啊！誰怕誰！'],
       deathLine: ['嗚嗚...我才不是你打贏的！', '鵝媽媽會幫我報仇的！', '我下次會更強！記著！'] },
-    { id: 'wolf',  tier: 2, name: '狼鵝',      icon: '🐺', hpBase: 50,  atkBase: 11, defBase: 2, spdBase: 13, goldBase: 22, xpBase: 58, verb: '猛撲',
+    { id: 'wolf',  tier: 2, name: '狼鵝',      icon: '🐺', hpBase: 95,  atkBase: 11, defBase: 2, spdBase: 13, goldBase: 22, xpBase: 58, verb: '猛撲',
       skills: [
         { verb: '撕咬', mult: 1.6, cooldown: 4 },
       ],
       dialogue: ['哼...又是個來送菜的。', '別讓我浪費時間，速戰速決吧。', '嗷嗚——獵物膽敢闖入吾領地。'],
       deathLine: ['...承認你比我強...', '呼...有趣的對手...', '嗚嗷...再會。'] },
-    { id: 'pirate',tier: 2, name: '海盜鵝',    icon: '🏴',  hpBase: 55,  atkBase: 8,  defBase: 3, spdBase: 10, goldBase: 25, xpBase: 62, verb: '搶劫', ability: { type: 'steal', min: 10, max: 18 },
+    { id: 'pirate',tier: 2, name: '海盜鵝',    icon: '🏴',  hpBase: 110, atkBase: 8,  defBase: 3, spdBase: 10, goldBase: 25, xpBase: 62, verb: '搶劫', ability: { type: 'steal', min: 10, max: 18 },
       skills: [
         { verb: '彎刀斬', mult: 1.7, cooldown: 5 },
       ],
       dialogue: ['Yo-ho-ho！把寶藏鵝鵝幣交出來！', '我是傳說中的海盜鵝・黑鬚！', '不交錢的下場就是踩跳板！'],
       deathLine: ['Yarr! 寶藏...就在...咕嘟...', '我會...回到...深海...', '船長...失敗了...'] },
     // tier 3（玩家 Lv 8-14）
-    { id: 'orc',   tier: 3, name: '獸人鵝',    icon: '👹', hpBase: 75,  atkBase: 11, defBase: 4, spdBase: 7,  goldBase: 38, xpBase: 95, verb: '怒吼',
+    { id: 'orc',   tier: 3, name: '獸人鵝',    icon: '👹', hpBase: 150, atkBase: 11, defBase: 4, spdBase: 7,  goldBase: 38, xpBase: 95, verb: '怒吼',
       skills: [
         { verb: '重斧揮砍', mult: 1.8, applyStatus: { type: 'paralyze', turns: 2, chance: 0.35 }, cooldown: 5 },
         { verb: '狂暴猛擊', mult: 2.0, cooldown: 6 },
       ],
       dialogue: ['鵝啊啊啊啊啊啊！！', '鵝鵝撕碎你！碎屑碎屑！', '鵝來砸碎你！！'],
       deathLine: ['鵝...啊啊啊...', '鵝鵝...倒下...', '鵝鵝會...回來的...！'] },
-    { id: 'mummy', tier: 3, name: '木乃鵝',    icon: '🧟', hpBase: 80,  atkBase: 9,  defBase: 6, spdBase: 4,  goldBase: 42, xpBase: 105, verb: '詛咒', ability: { type: 'magicResist', resist: 0.5 },
+    { id: 'mummy', tier: 3, name: '木乃鵝',    icon: '🧟', hpBase: 145, atkBase: 9,  defBase: 6, spdBase: 4,  goldBase: 42, xpBase: 105, verb: '詛咒', ability: { type: 'magicResist', resist: 0.5 },
       skills: [
         { verb: '痛苦詛咒', mult: 0.8, applyStatus: { type: 'poison', turns: 4, dmg: 14, chance: 1 }, cooldown: 4 },
         { verb: '靈魂凝視', mult: 0.5, applyStatus: { type: 'paralyze', turns: 2, chance: 0.7 }, cooldown: 5 },
       ],
       dialogue: ['我都死這麼久了...你還來吵...真的好過分...', '三千年的怨念...也不是針對你...只是恰好遇到...', '我又沒做什麼...為什麼總是被打...嗚...'],
       deathLine: ['唉...又被打死了...都是我的錯吧...', '三千年的修為...就這樣...沒事的習慣了...', '你開心就好...我繼續沉睡...'] },
-    { id: 'troll', tier: 3, name: '巨魔鵝',    icon: '🧌', hpBase: 90,  atkBase: 12, defBase: 5, spdBase: 5,  goldBase: 50, xpBase: 125, verb: '巨拳', ability: { type: 'multiHit', hits: 2 },
+    { id: 'troll', tier: 3, name: '巨魔鵝',    icon: '🧌', hpBase: 150, atkBase: 12, defBase: 5, spdBase: 5,  goldBase: 50, xpBase: 125, verb: '巨拳', ability: { type: 'multiHit', hits: 2 },
       skills: [
         { verb: '巨棒掃擊', mult: 1.7, cooldown: 4 },
         { verb: '怒吼震地', mult: 1.0, applyStatus: { type: 'paralyze', turns: 2, chance: 0.4 }, cooldown: 6 },
       ],
       dialogue: ['笨笨鵝鵝要打架啦~笨笨鵝鵝要打架~', '哥哥可以打嗎？哥哥可以痛嗎？我可以喔！', '鵝鵝想要你的閃亮亮~給鵝鵝~'],
       deathLine: ['嗚嗚嗚~好痛~~', '鵝鵝不玩了！哭哭~', '媽媽~~~~'] },
-    { id: 'merch', tier: 3, name: '商人鵝',    icon: '💰', hpBase: 50,  atkBase: 8,  defBase: 3, spdBase: 8,  goldBase: 130,xpBase: 75,  verb: '推銷',
+    { id: 'merch', tier: 3, name: '商人鵝',    icon: '💰', hpBase: 100, atkBase: 8,  defBase: 3, spdBase: 8,  goldBase: 130,xpBase: 75,  verb: '推銷',
       skills: [
         { verb: '銅板飛擲', mult: 1.5, cooldown: 4 },
         { verb: '坑人合約', mult: 0.6, applyStatus: { type: 'poison', turns: 3, dmg: 10, chance: 0.8 }, cooldown: 5 },
@@ -1806,7 +1806,7 @@
       dialogue: ['客倌！買賣不成仁義在嘛~買條命吧！', '限時優惠！打折戰鬥！只要打輸 50% HP！', '童叟無欺！戰勝我有大禮包！'],
       deathLine: ['客倌承讓承讓！下次再來惠顧！', '今日生意失敗，明日重新開張！', '拿好你的戰利品，慢走不送！'] },
     // tier 4（玩家 Lv 14-22）
-    { id: 'lich',   tier: 4, name: '巫妖鵝',   icon: '☠️', hpBase: 65,  atkBase: 13, defBase: 4, spdBase: 12, goldBase: 110,xpBase: 280, verb: '死亡之觸', ability: { type: 'magicResist', resist: 0.6 },
+    { id: 'lich',   tier: 4, name: '巫妖鵝',   icon: '☠️', hpBase: 130, atkBase: 13, defBase: 4, spdBase: 12, goldBase: 110,xpBase: 280, verb: '死亡之觸', ability: { type: 'magicResist', resist: 0.6 },
       skills: [
         { verb: '靈魂啃食', mult: 1.6, applyStatus: { type: 'poison', turns: 4, dmg: 18, chance: 0.9 }, cooldown: 4 },
         { verb: '冰封凝視', mult: 1.2, applyStatus: { type: 'paralyze', turns: 2, chance: 0.55 }, cooldown: 5 },
@@ -1814,7 +1814,7 @@
       ],
       dialogue: ['於虛無中我獲得了永恆...名為鵝の死亡...', '千年沉睡...此時・此地，吾將品嘗汝之絕望...', '汝之靈魂、將成為吾之養分...覺悟吧...'],
       deathLine: ['歸於塵土...歸於虛無...', '千年計畫...終究...化為泡影...', '汝之名...吾將銘記於黃泉...'] },
-    { id: 'dragon', tier: 4, name: '龍鵝',     icon: '🐲', hpBase: 85,  atkBase: 14, defBase: 6, spdBase: 11, goldBase: 100,xpBase: 260, verb: '龍息',
+    { id: 'dragon', tier: 4, name: '龍鵝',     icon: '🐲', hpBase: 150, atkBase: 14, defBase: 6, spdBase: 11, goldBase: 100,xpBase: 260, verb: '龍息',
       skills: [
         { verb: '火球', mult: 1.7, applyStatus: { type: 'poison', turns: 2, dmg: 20, chance: 0.7 }, cooldown: 4 },
         { verb: '尾掃', mult: 1.8, cooldown: 5 },
@@ -1823,7 +1823,7 @@
       dialogue: ['凡人...跪下感受真正的龍威吧。', '汝之勇氣，將化為龍焰中的灰燼。', '吾乃天空之主，膽敢挑戰？'],
       deathLine: ['強者...也有殞落之時...', '汝乃...真正的勇者...', '龍焰...將熄滅...'] },
     // tier 5（玩家 Lv 22+）
-    { id: 'demon',  tier: 5, name: '惡魔鵝',   icon: '😈', hpBase: 80,  atkBase: 15, defBase: 5, spdBase: 14, goldBase: 170,xpBase: 420, verb: '地獄火', ability: { type: 'multiHit', hits: 2 },
+    { id: 'demon',  tier: 5, name: '惡魔鵝',   icon: '😈', hpBase: 145, atkBase: 15, defBase: 5, spdBase: 14, goldBase: 170,xpBase: 420, verb: '地獄火', ability: { type: 'multiHit', hits: 2 },
       skills: [
         { verb: '暗影斬', mult: 1.7, cooldown: 4 },
         { verb: '靈魂烈焰', mult: 1.4, applyStatus: { type: 'poison', turns: 3, dmg: 28, chance: 0.85 }, cooldown: 5 },
@@ -1831,7 +1831,7 @@
       ],
       dialogue: ['人家也不想傷害你的呀~規矩就是規矩嘛~', '你看你，那麼可愛...讓我多痛你幾下嘛~♡', '哎呀流血啦~是你體質問題吧~與我無關喔~'],
       deathLine: ['嗚嗚~你怎麼真的下手呀~人家受傷了啦~', '好過分喔~我也只是工作而已...', '下次別這麼用力嘛~人家會記恨的喔...'] },
-    { id: 'titan',  tier: 5, name: '泰坦鵝',   icon: '🗿', hpBase: 110, atkBase: 12, defBase: 10, spdBase: 8,  goldBase: 180,xpBase: 440, verb: '大地碎裂', ability: { type: 'physResist', resist: 0.3 },
+    { id: 'titan',  tier: 5, name: '泰坦鵝',   icon: '🗿', hpBase: 160, atkBase: 12, defBase: 10, spdBase: 8,  goldBase: 180,xpBase: 440, verb: '大地碎裂', ability: { type: 'physResist', resist: 0.3 },
       skills: [
         { verb: '巨石擲', mult: 2.0, cooldown: 5 },
         { verb: '震地波', mult: 1.2, applyStatus: { type: 'paralyze', turns: 2, chance: 0.6 }, cooldown: 6 },
@@ -1846,7 +1846,7 @@
       dialogue: ['鵝鵝會被一拳就打飛...', '請別太用力...', '我是紙做的喔'],
       deathLine: ['啊...折成兩半了...', '謝謝你...沒有用力...', '化作蝴蝶飛走...'] },
     // 鏡鵝 (mirror goose)：100% 反傷，要靠 buff/狀態打才有效
-    { id: 'mirror', tier: 2, name: '鏡鵝', icon: '🪞', hpBase: 55, atkBase: 7, defBase: 4, spdBase: 8, goldBase: 30, xpBase: 70,
+    { id: 'mirror', tier: 2, name: '鏡鵝', icon: '🪞', hpBase: 110, atkBase: 7, defBase: 4, spdBase: 8, goldBase: 30, xpBase: 70,
       verb: '反射光芒', ability: { type: 'reflect', resist: 0.5 },
       skills: [
         { verb: '鏡像反擊', mult: 0.5, cooldown: 4 },
@@ -1854,7 +1854,7 @@
       dialogue: ['你打我幾下，我就回敬你幾下', '鏡子裡的鵝鵝才是真正的你', '反正受傷的會是你～'],
       deathLine: ['啪嚓...碎了...', '鏡中倒影...消逝...', '鵝鵝...也有破碎之日...'] },
     // 速鵝 (swift goose)：高速但脆
-    { id: 'swift', tier: 2, name: '速鵝', icon: '🏃', hpBase: 40, atkBase: 10, defBase: 1, spdBase: 18, goldBase: 22, xpBase: 65,
+    { id: 'swift', tier: 2, name: '速鵝', icon: '🏃', hpBase: 80, atkBase: 10, defBase: 1, spdBase: 18, goldBase: 22, xpBase: 65,
       verb: '閃光衝刺',
       skills: [
         { verb: '殘影連擊', mult: 1.4, cooldown: 3 },
@@ -1862,7 +1862,7 @@
       dialogue: ['你看到的不是我！', '咻 — 慢！', '蹬！蹬！蹬！'],
       deathLine: ['太...慢了...一瞬...', '咻...熄滅...', '腳...走不動了...'] },
     // 鋼鵝 (steel goose)：超高 DEF / 低 ATK / 慢
-    { id: 'steel', tier: 3, name: '鋼鵝', icon: '🔩', hpBase: 80, atkBase: 7, defBase: 12, spdBase: 4, goldBase: 50, xpBase: 110,
+    { id: 'steel', tier: 3, name: '鋼鵝', icon: '🔩', hpBase: 145, atkBase: 7, defBase: 12, spdBase: 4, goldBase: 50, xpBase: 110,
       verb: '鋼鐵敲擊', ability: { type: 'physResist', resist: 0.5 },
       skills: [
         { verb: '鐵壁反擊', mult: 0.8, applyStatus: { type: 'paralyze', turns: 2, chance: 0.4 }, cooldown: 5 },
@@ -1870,7 +1870,7 @@
       dialogue: ['鵝鋼之軀...堅不可摧。', '喀喀喀...你的攻擊...無效。', '靜止不動...才是答案。'],
       deathLine: ['銹蝕...終將...來臨...', '金屬...也有極限...', '咯吱...斷裂...'] },
     // 法鵝 (mage goose)：純法系、高魔抗、低物抗
-    { id: 'mage_g', tier: 3, name: '法鵝', icon: '🪄', hpBase: 55, atkBase: 13, defBase: 4, spdBase: 11, goldBase: 60, xpBase: 130,
+    { id: 'mage_g', tier: 3, name: '法鵝', icon: '🪄', hpBase: 95, atkBase: 13, defBase: 4, spdBase: 11, goldBase: 60, xpBase: 130,
       verb: '元素湧動', ability: { type: 'magicResist', resist: 0.7 },
       skills: [
         { verb: '火焰球', mult: 1.6, cooldown: 3 },
@@ -1880,7 +1880,7 @@
       dialogue: ['元素將為我所用...', '法力之河流向你...', '微不足道的物理...'],
       deathLine: ['法力...枯竭...', '元素...回歸虛無...', '嗚嗚...咒語斷了...'] },
     // 妖鵝 (jinx goose)：低血、會偷錢、技能多元
-    { id: 'jinx', tier: 2, name: '妖鵝', icon: '🃏', hpBase: 50, atkBase: 8, defBase: 2, spdBase: 13, goldBase: 50, xpBase: 75,
+    { id: 'jinx', tier: 2, name: '妖鵝', icon: '🃏', hpBase: 95, atkBase: 8, defBase: 2, spdBase: 13, goldBase: 50, xpBase: 75,
       verb: '迷惑',  ability: { type: 'steal', min: 8, max: 20 },
       skills: [
         { verb: '幻象一擊', mult: 1.3, cooldown: 3 },
@@ -1926,15 +1926,32 @@
       color: '#3b82f6' },
   ];
   // ⭐ 怪物能力 → 等級的縮放係數（HOF 風格層級制）
-  //   每層內 5 等：每等 +2.5%（5 等差總共 +10%）
-  //   跨層斷層：每進一層 ×1.30（30% 強化）
+  // ATK/SPD 用基本曲線：每進一層 ×1.30，每等 +2.5%
   //   Lv 1=1.00 / Lv 5=1.10 / Lv 6=1.30 / Lv 10=1.43 / Lv 11=1.69 / Lv 16=2.20 / Lv 20=2.42
+  // HP 是更陡峭的層級曲線（user spec：上 80-200 / 中 150-350 / 下 300-500 / 深 500-800）
+  //   layerHP = [1.0, 2.0, 3.3, 5.0]，每等 +2.5%
+  // DEF 用較緩的曲線（user spec：6-10 +30-50% / 11-15 +50-80% / 16-20 +80-120%）
+  //   layerDEF = [1.0, 1.40, 1.65, 2.00]，每等 +1.5%
   function monsterK(lv) {
     const lvSafe = Math.max(1, lv);
-    const layer = Math.min(3, Math.floor((lvSafe - 1) / 5)); // 0..3
-    const layerBase = Math.pow(1.30, layer); // 1.0, 1.30, 1.69, 2.197
-    const offsetInLayer = (lvSafe - 1) % 5;   // 0..4
+    const layer = Math.min(3, Math.floor((lvSafe - 1) / 5));
+    const layerBase = Math.pow(1.30, layer);
+    const offsetInLayer = (lvSafe - 1) % 5;
     return layerBase * (1 + offsetInLayer * 0.025);
+  }
+  function monsterHPK(lv) {
+    const lvSafe = Math.max(1, lv);
+    const layer = Math.min(3, Math.floor((lvSafe - 1) / 5));
+    const layerHP = [1.0, 2.0, 3.3, 5.0];
+    const offsetInLayer = (lvSafe - 1) % 5;
+    return layerHP[layer] * (1 + offsetInLayer * 0.025);
+  }
+  function monsterDEFK(lv) {
+    const lvSafe = Math.max(1, lv);
+    const layer = Math.min(3, Math.floor((lvSafe - 1) / 5));
+    const layerDEF = [1.0, 1.40, 1.65, 2.00];
+    const offsetInLayer = (lvSafe - 1) % 5;
+    return layerDEF[layer] * (1 + offsetInLayer * 0.015);
   }
   // 在某層內隨機抽一個怪物等級
   function pickLayerLevel(layerId) {
@@ -2519,7 +2536,7 @@
   const ELITES = [
     {
       id: 'elite_forest', zone: 'forest', name: '★ 森林之主鵝', icon: '🦌',
-      hpBase: 130, atkBase: 14, defBase: 5, spdBase: 9,
+      hpBase: 220, atkBase: 14, defBase: 5, spdBase: 9,
       goldBase: 80, xpBase: 200, verb: '森林之怒',
       ability: { type: 'multiHit', hits: 2 },
       dropSet: 'forest_guardian',
@@ -2528,7 +2545,7 @@
     },
     {
       id: 'elite_ruins', zone: 'ruins', name: '★ 詛咒巫妖鵝', icon: '☠️',
-      hpBase: 150, atkBase: 16, defBase: 7, spdBase: 8,
+      hpBase: 240, atkBase: 16, defBase: 7, spdBase: 8,
       goldBase: 140, xpBase: 320, verb: '亡者詛咒',
       ability: { type: 'magicResist', resist: 0.5 },
       dropSet: 'ruin_undead',
@@ -2537,7 +2554,7 @@
     },
     {
       id: 'elite_volcano', zone: 'volcano', name: '★ 烈焰龍鵝', icon: '🔥',
-      hpBase: 170, atkBase: 18, defBase: 8, spdBase: 12,
+      hpBase: 260, atkBase: 18, defBase: 8, spdBase: 12,
       goldBase: 200, xpBase: 480, verb: '熔岩噴發',
       ability: { type: 'physResist', resist: 0.3 },
       dropSet: 'volcano_warrior',
@@ -2546,7 +2563,7 @@
     },
     {
       id: 'elite_ice', zone: 'ice', name: '★ 冰封巨人鵝', icon: '❄️',
-      hpBase: 200, atkBase: 18, defBase: 12, spdBase: 7,
+      hpBase: 300, atkBase: 18, defBase: 12, spdBase: 7,
       goldBase: 300, xpBase: 700, verb: '極寒風暴',
       ability: { type: 'physResist', resist: 0.4 },
       dropSet: 'ice_heart',
@@ -3927,10 +3944,10 @@
         return {
           ...elite,
           level: lv,
-          hp: Math.round(elite.hpBase * k),
-          maxHp: Math.round(elite.hpBase * k),
+          hp: Math.round(elite.hpBase * monsterHPK(lv)),
+          maxHp: Math.round(elite.hpBase * monsterHPK(lv)),
           atk: Math.round(elite.atkBase * k * 1.3),
-          def: Math.round(elite.defBase * k * 0.7),
+          def: Math.round(elite.defBase * monsterDEFK(lv) * 0.7),
           spd: Math.round(elite.spdBase + lv * 0.4),
           goldDrop: Math.round(elite.goldBase + lv * 1.8 + Math.random() * lv * 0.6),
           xpDrop: Math.round((elite.xpBase + lv * 6 + Math.random() * lv * 3) * 2),
@@ -3958,11 +3975,11 @@
     return {
       ...m,
       level: lv,
-      hp: Math.round(m.hpBase * k),
-      maxHp: Math.round(m.hpBase * k),
+      hp: Math.round(m.hpBase * monsterHPK(lv)),
+      maxHp: Math.round(m.hpBase * monsterHPK(lv)),
       // atk 倍率 1.5 → 1.3：因為 atkBase 已重新調高，總體 atk 仍變強
       atk: Math.round(m.atkBase * k * 1.3),
-      def: Math.round(m.defBase * k * 0.7),
+      def: Math.round(m.defBase * monsterDEFK(lv) * 0.7),
       spd: Math.round(m.spdBase + lv * 0.4),
       goldDrop: Math.round(m.goldBase + lv * 1.8 + Math.random() * lv * 0.6),
       xpDrop: Math.round((m.xpBase + lv * 6 + Math.random() * lv * 3) * 2),
@@ -6795,10 +6812,10 @@ ${b.text}
       out.push({
         ...m,
         level: lv,
-        hp: Math.round(m.hpBase * k * 0.6),
-        maxHp: Math.round(m.hpBase * k * 0.6),
+        hp: Math.round(m.hpBase * monsterHPK(lv) * 0.6),
+        maxHp: Math.round(m.hpBase * monsterHPK(lv) * 0.6),
         atk: Math.round(m.atkBase * k * 0.9),
-        def: Math.round(m.defBase * k * 0.6),
+        def: Math.round(m.defBase * monsterDEFK(lv) * 0.6),
         spd: Math.round(m.spdBase + lv * 0.4),
         goldDrop: Math.round(m.goldBase * 0.5 + lv * 1),
         xpDrop: Math.round((m.xpBase + lv * 6) * 1.3),
