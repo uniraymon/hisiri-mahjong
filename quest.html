@@ -7182,15 +7182,111 @@ ${b.text}
         ${activeHtml || '<div style="font-size:11px; color:#8b6f9b; text-align:center; padding:8px;">尚無主動技能</div>'}
         <div style="font-size:11px; color:#8b6f37; font-weight:700; margin:12px 0 6px; padding:4px 8px; background:#fef3c7; border-radius:8px;">💪 屬性強化（直接 + 加 1 級）</div>
         ${treeHtml || '<div style="font-size:11px; color:#8b6f9b; text-align:center; padding:8px;">尚無屬性強化</div>'}
-        <div style="display:flex; gap:6px; margin-top:12px;">
-          <button class="btn btn-secondary" style="flex:1;" onclick="resetSkills()">🔄 重置技能（🪙 ${RESET_SKILL_COST}）</button>
-          <button class="btn btn-secondary" style="flex:1;" onclick="hideModal()">關閉</button>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:12px;">
+          <button class="btn btn-secondary" onclick="resetSkills()">🔄 重置技能（🪙 ${RESET_SKILL_COST}）</button>
+          <button class="btn btn-secondary" onclick="showAllSkillsCompare()">📊 全職業比較表</button>
         </div>
+        <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:6px; width:100%;">關閉</button>
       </div>
     `;
     showModal('⚡ 技能', html);
   }
   window.showSkillsModal = showSkillsModal;
+
+  // ⭐ 全職業技能傷害比較表
+  //   標準測試環境：Lv 30 玩家、ATK 100、DEF 30、maxHp 500、maxMp 200
+  //   Lv 0 / Lv 5 / Lv 10 三個技能等級對比，方便看升級曲線
+  function showAllSkillsCompare() {
+    const TEST = { atk: 100, def: 30, maxHp: 500, maxMp: 200, lv: 30 };
+    const calcDmg = (skill, level) => {
+      const eff = getSkillEffectiveStats(skill, level);
+      if (eff.type !== 'damage') return null;
+      let baseDmg = 0;
+      if (eff.defMult != null) baseDmg = TEST.def * eff.defMult;
+      else if (eff.maxHpMult != null) baseDmg = TEST.maxHp * eff.maxHpMult;
+      else if (eff.flat != null) baseDmg = eff.flat + (eff.perLv || 0) * TEST.lv;
+      else if (eff.mult != null) baseDmg = TEST.atk * eff.mult;
+      const hits = Math.max(1, eff.hits || 1);
+      const perHitFactor = eff.fixedHitMult ? 1.0 : (hits === 1 ? 1.0 : (1.3 / hits));
+      const perHitDmg = Math.max(1, Math.round(baseDmg * perHitFactor));
+      const totalDmg = perHitDmg * hits;
+      return { perHitDmg, totalDmg, hits };
+    };
+    const formatTags = (skill) => {
+      const tags = [];
+      if (skill.alwaysCrit) tags.push('💥 必爆');
+      if (skill.magic || skill.flat != null || skill.maxHpMult != null) tags.push('🔮 魔');
+      if (skill.ignoreDef) tags.push('🛡 無視防');
+      if (skill.targetCount === 'all') tags.push('🌐 全體');
+      else if (skill.targetCount && skill.targetCount > 1) tags.push(`🎯 ${skill.targetCount} 目標`);
+      if (skill.lifesteal) tags.push(`🩸 ${Math.round(skill.lifesteal * 100)}%`);
+      if (skill.healCaster) tags.push(`💚 ${Math.round(skill.healCaster * 100)}%`);
+      if (skill.mpRestore) tags.push(`💙 +${skill.mpRestore} MP`);
+      if (skill.applyStatus) tags.push(`${statusEmoji(skill.applyStatus.type)} ${statusLabel(skill.applyStatus.type)}`);
+      if (skill.hpCostFlat) tags.push(`❤️ -${skill.hpCostFlat}`);
+      if (skill.hpCost) tags.push(`❤️ -${Math.round(skill.hpCost * 100)}%`);
+      if (skill.fixedHitMult) tags.push('📌 段固定');
+      return tags.join(' ');
+    };
+    const buildClassSection = (classId) => {
+      const cls = CLASSES[classId];
+      if (!cls) return '';
+      const damageSkills = (cls.skills || []).filter(s => s.type === 'damage');
+      const rows = damageSkills.map(s => {
+        const lv0 = calcDmg(s, 0);
+        const lv5 = calcDmg(s, 5);
+        const lv10 = calcDmg(s, 10);
+        const skMax = s.maxLv || 10;
+        const lvMaxDmg = (skMax < 10) ? calcDmg(s, skMax) : null;
+        const fmt = (d) => d ? `${d.totalDmg.toLocaleString()}${d.hits > 1 ? ` (${d.perHitDmg}×${d.hits})` : ''}` : '-';
+        const tags = formatTags(s);
+        const cast = getEffectiveCast(s);
+        return `<tr style="border-bottom:1px dashed #e5e7eb;">
+          <td style="padding:4px 6px; font-weight:600; white-space:nowrap;">${s.icon} ${s.name}</td>
+          <td style="padding:4px 6px; font-size:10px; color:#7c3aed; white-space:nowrap;">Lv ${s.unlockLv}　·　MP ${s.mpCost || 0}　·　硬 ${cast}${skMax < 10 ? `　·　max ${skMax}` : ''}</td>
+          <td style="padding:4px 6px; text-align:right; color:#9ca3af;">${fmt(lv0)}</td>
+          <td style="padding:4px 6px; text-align:right; color:#7c3aed; font-weight:700;">${fmt(lv5)}</td>
+          <td style="padding:4px 6px; text-align:right; color:#16a34a; font-weight:700;">${lvMaxDmg ? fmt(lvMaxDmg) + ' (max)' : fmt(lv10)}</td>
+          <td style="padding:4px 6px; font-size:10px; color:#6b7280;">${tags}</td>
+        </tr>`;
+      }).join('');
+      return `
+        <div style="margin-top:12px;">
+          <div style="font-size:13px; font-weight:800; color:#5b21b6; margin-bottom:4px; padding:4px 8px; background:#f3e8ff; border-radius:6px;">${cls.icon} ${cls.name}（${damageSkills.length} 招傷害技）</div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; font-size:11px;">
+              <thead>
+                <tr style="background:#fef3c7; border-bottom:2px solid #f59e0b;">
+                  <th style="padding:4px 6px; text-align:left;">招式</th>
+                  <th style="padding:4px 6px; text-align:left;">屬性</th>
+                  <th style="padding:4px 6px; text-align:right;">Lv 0</th>
+                  <th style="padding:4px 6px; text-align:right;">Lv 5</th>
+                  <th style="padding:4px 6px; text-align:right;">Lv 10</th>
+                  <th style="padding:4px 6px; text-align:left;">標記</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    };
+    const html = `
+      <div style="text-align:left; font-size:12px;">
+        <div style="font-size:11px; color:#5b3d62; padding:6px 10px; background:#fef3c7; border-radius:8px; margin-bottom:8px; border:1px dashed #f59e0b;">
+          📊 標準測試環境：<b>Lv ${TEST.lv}</b> 玩家、<b>ATK ${TEST.atk}</b>、DEF ${TEST.def}、maxHP ${TEST.maxHp}、maxMP ${TEST.maxMp}<br>
+          <span style="font-size:10px; color:#92400e;">不算暴擊、不算 buff、不算職業被動加成；單純看技能基底</span>
+        </div>
+        ${buildClassSection('warrior')}
+        ${buildClassSection('archer')}
+        ${buildClassSection('mage')}
+        ${buildClassSection('paladin')}
+        <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:14px; width:100%;">關閉</button>
+      </div>
+    `;
+    showModal('📊 全職業技能傷害比較表', html);
+  }
+  window.showAllSkillsCompare = showAllSkillsCompare;
 
   // ⭐ 裝備 modal — 顯示裝備格 + 背包格
   // 背包分頁 + 批量出售狀態
