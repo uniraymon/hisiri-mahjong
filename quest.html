@@ -1577,12 +1577,12 @@
         { id: 'w_bloodlust',    name: '嗜血怒嚎', icon: '🦁', unlockLv: 6,  cooldown: 6, mpCost: 18, type: 'buff', selfBuff: { stat: 'atkPct', amount: 0.30, turns: 3 } },
       ],
       skillTree: [
-        { id: 'w_s0', name: '怒之炎強化', icon: '☄️', desc: '+10% 怒之炎傷害', maxLevel: 5, effect: 'skill0Pct', per: 0.10 },
-        { id: 'w_s1', name: '重擊強化',   icon: '⚡', desc: '+10% 重擊傷害',   maxLevel: 5, effect: 'skill1Pct', per: 0.10 },
-        { id: 'w_s2', name: '狂怒斬強化', icon: '🔥', desc: '+10% 狂怒斬傷害', maxLevel: 5, effect: 'skill2Pct', per: 0.10 },
-        { id: 'w_hp', name: '鋼鐵之軀', icon: '🛡',  desc: '+5% 最大 HP', maxLevel: 5, effect: 'hpPct', per: 0.05 },
-        { id: 'w_atk', name: '力量強化', icon: '💪', desc: '+1 ATK',     maxLevel: 5, effect: 'atk',   per: 1 },
-        { id: 'w_def', name: '防禦強化', icon: '🛡️', desc: '+1 DEF',     maxLevel: 5, effect: 'def',   per: 1 },
+        { id: 'w_hp',   name: '鋼鐵之軀', icon: '🛡',  desc: '+5% 最大 HP',         maxLevel: 5, effect: 'hpPct',     per: 0.05 },
+        { id: 'w_atk',  name: '力量強化', icon: '💪', desc: '+2 ATK',              maxLevel: 5, effect: 'atk',       per: 2 },
+        { id: 'w_def',  name: '防禦強化', icon: '🛡️', desc: '+2 DEF',              maxLevel: 5, effect: 'def',       per: 2 },
+        { id: 'w_crit', name: '怒火暴擊', icon: '💥', desc: '+2% 暴擊率',          maxLevel: 5, effect: 'critChance', per: 0.02 },
+        { id: 'w_regen', name: '戰意自癒', icon: '🌿', desc: '每回合 +1% maxHP',   maxLevel: 5, effect: 'regen',     per: 0.01 },
+        { id: 'w_skill', name: '技能精通', icon: '⚔️', desc: '+5% 所有技能傷害',  maxLevel: 5, effect: 'skillDmgPct', per: 0.05 },
       ],
       passives: [
         { id: 'w_p1', name: '猛擊',   icon: '💥', stat: 'str', threshold: 20, desc: 'STR ≥ 20：物理技能 +20% 傷害',    effect: 'physPct',     per: 0.20 },
@@ -1624,12 +1624,12 @@
         { id: 'a_arrow_storm',     name: '箭雨',   icon: '🌧', unlockLv: 10, cooldown: 6, mpCost: 30, type: 'damage', mult: 1.0, targetCount: 'all' },
       ],
       skillTree: [
-        { id: 'a_s0', name: '神之矢強化',   icon: '🌟', desc: '+10% 神之矢傷害',   maxLevel: 5, effect: 'skill0Pct', per: 0.10 },
-        { id: 'a_s1', name: '多重射擊強化', icon: '🏹', desc: '+10% 多重射擊傷害', maxLevel: 5, effect: 'skill1Pct', per: 0.10 },
-        { id: 'a_s2', name: '精準射擊強化', icon: '🎯', desc: '+10% 精準射擊傷害', maxLevel: 5, effect: 'skill2Pct', per: 0.10 },
-        { id: 'a_crit', name: '致命瞄準', icon: '💥', desc: '+2% 暴擊率', maxLevel: 5, effect: 'critChance', per: 0.02 },
-        { id: 'a_spd',  name: '疾風之足', icon: '💨', desc: '+1 SPD',     maxLevel: 5, effect: 'spd',         per: 1 },
-        { id: 'a_hp',   name: '敏捷之身', icon: '🦋', desc: '+5% 最大 HP', maxLevel: 5, effect: 'hpPct',      per: 0.05 },
+        { id: 'a_crit', name: '致命瞄準', icon: '💥', desc: '+2% 暴擊率',         maxLevel: 5, effect: 'critChance', per: 0.02 },
+        { id: 'a_spd',  name: '疾風之足', icon: '💨', desc: '+1 SPD',              maxLevel: 5, effect: 'spd',       per: 1 },
+        { id: 'a_hp',   name: '敏捷之身', icon: '🦋', desc: '+5% 最大 HP',         maxLevel: 5, effect: 'hpPct',     per: 0.05 },
+        { id: 'a_atk',  name: '銳利之矢', icon: '🏹', desc: '+2 ATK',              maxLevel: 5, effect: 'atk',       per: 2 },
+        { id: 'a_skill',name: '技能精通', icon: '🌟', desc: '+5% 所有技能傷害',  maxLevel: 5, effect: 'skillDmgPct', per: 0.05 },
+        { id: 'a_mp',   name: '專注',     icon: '🧘', desc: '+5% 最大 MP',         maxLevel: 5, effect: 'mpPct',     per: 0.05 },
       ],
       passives: [
         { id: 'a_p1', name: '鷹眼',   icon: '🦅', stat: 'dex', threshold: 20, desc: 'DEX ≥ 20：暴擊率 +10%',          effect: 'critChance', per: 0.10 },
@@ -1674,12 +1674,12 @@
         { id: 'm_arcane_drain',   name: '魔力虹吸', icon: '🔮', unlockLv: 6,  cooldown: 5, mpCost: 0,  type: 'damage', flat: 40, perLv: 2, ignoreDef: true },
       ],
       skillTree: [
-        { id: 'm_s0', name: '隕石術強化', icon: '☄️', desc: '+10% 隕石術傷害', maxLevel: 5, effect: 'skill0Pct', per: 0.10 },
-        { id: 'm_s1', name: '冰錐術強化', icon: '❄️', desc: '+10% 冰錐術傷害', maxLevel: 5, effect: 'skill1Pct', per: 0.10 },
-        { id: 'm_s2', name: '火球術強化', icon: '🔥', desc: '+10% 火球術傷害', maxLevel: 5, effect: 'skill2Pct', per: 0.10 },
-        { id: 'm_mp',   name: '法力深淵', icon: '💎', desc: '+5% 最大 MP',  maxLevel: 5, effect: 'mpPct', per: 0.05 },
-        { id: 'm_atk',  name: '智慧',     icon: '📚', desc: '+1 ATK',       maxLevel: 5, effect: 'atk',   per: 1 },
-        { id: 'm_crit', name: '暴擊精通', icon: '💥', desc: '+2% 暴擊率',   maxLevel: 5, effect: 'critChance', per: 0.02 },
+        { id: 'm_mp',    name: '法力深淵', icon: '💎', desc: '+5% 最大 MP',         maxLevel: 5, effect: 'mpPct',     per: 0.05 },
+        { id: 'm_atk',   name: '智慧',     icon: '📚', desc: '+2 ATK',              maxLevel: 5, effect: 'atk',       per: 2 },
+        { id: 'm_crit',  name: '暴擊精通', icon: '💥', desc: '+2% 暴擊率',         maxLevel: 5, effect: 'critChance', per: 0.02 },
+        { id: 'm_hp',    name: '靈體強化', icon: '🪄', desc: '+5% 最大 HP',         maxLevel: 5, effect: 'hpPct',     per: 0.05 },
+        { id: 'm_def',   name: '法力護甲', icon: '🛡', desc: '+1 DEF',              maxLevel: 5, effect: 'def',       per: 1 },
+        { id: 'm_skill', name: '元素精通', icon: '🌀', desc: '+5% 所有技能傷害',  maxLevel: 5, effect: 'skillDmgPct', per: 0.05 },
       ],
       passives: [
         { id: 'm_p1', name: '法力凝聚', icon: '💧', stat: 'int', threshold: 25, desc: 'INT ≥ 25：技能 MP 消耗 −20%',    effect: 'mpDiscount', per: 0.20 },
@@ -1724,12 +1724,12 @@
         { id: 'p_divine_wrath',  name: '神之裁決', icon: '⚡', unlockLv: 14, cooldown: 8, mpCost: 38, type: 'damage', maxHpMult: 0.65, alwaysCrit: true },
       ],
       skillTree: [
-        { id: 'p_s0', name: '審判強化',   icon: '⚖️', desc: '+10% 審判傷害',   maxLevel: 5, effect: 'skill0Pct', per: 0.10 },
-        { id: 'p_s1', name: '聖光斬強化', icon: '✝️', desc: '+10% 聖光斬傷害', maxLevel: 5, effect: 'skill1Pct', per: 0.10 },
-        { id: 'p_s2', name: '神聖治癒強化', icon: '✨', desc: '+5% 治癒量',     maxLevel: 5, effect: 'skillHealPct', per: 0.05 },
-        { id: 'p_def',   name: '聖光鎧甲', icon: '🛡',  desc: '+2 DEF',           maxLevel: 5, effect: 'def',   per: 2 },
-        { id: 'p_regen', name: '自癒強化', icon: '🌿', desc: '每回合 +1% maxHP', maxLevel: 5, effect: 'regen', per: 0.01 },
-        { id: 'p_hp',    name: '信仰之力', icon: '🙏', desc: '+5% 最大 HP',      maxLevel: 5, effect: 'hpPct', per: 0.05 },
+        { id: 'p_def',   name: '聖光鎧甲', icon: '🛡',  desc: '+2 DEF',              maxLevel: 5, effect: 'def',          per: 2 },
+        { id: 'p_regen', name: '自癒強化', icon: '🌿', desc: '每回合 +1% maxHP',   maxLevel: 5, effect: 'regen',        per: 0.01 },
+        { id: 'p_hp',    name: '信仰之力', icon: '🙏', desc: '+5% 最大 HP',         maxLevel: 5, effect: 'hpPct',        per: 0.05 },
+        { id: 'p_heal',  name: '治癒精通', icon: '✨', desc: '+5% 治癒量',          maxLevel: 5, effect: 'skillHealPct', per: 0.05 },
+        { id: 'p_atk',   name: '聖光武裝', icon: '✝️', desc: '+2 ATK',              maxLevel: 5, effect: 'atk',          per: 2 },
+        { id: 'p_skill', name: '聖光精通', icon: '🌟', desc: '+5% 所有技能傷害',   maxLevel: 5, effect: 'skillDmgPct',   per: 0.05 },
       ],
       passives: [
         { id: 'p_p1', name: '神聖庇護', icon: '🛡️', stat: 'vit', threshold: 25, desc: 'VIT ≥ 25：受到傷害 −15%',         effect: 'dmgReduction', per: 0.15 },
@@ -3604,6 +3604,23 @@
     const r = player.rpg;
     if (!r.class) return false;
     let corrected = false;
+
+    // ⭐ 清掉被移除的技能樹節點（例：w_s0/w_s1/w_s2 等）→ 退回 SP
+    const cls = CLASSES[r.class];
+    if (cls && cls.skillTree && r.skills) {
+      const validIds = new Set(cls.skillTree.map(n => n.id));
+      let refund = 0;
+      for (const key of Object.keys(r.skills)) {
+        if (!validIds.has(key)) {
+          refund += r.skills[key] || 0;
+          delete r.skills[key];
+        }
+      }
+      if (refund > 0) {
+        r.skillPoints = (r.skillPoints || 0) + refund;
+        corrected = true;
+      }
+    }
 
     const expectedSk = Math.max(0, (r.level || 1) - 1) * POINTS_PER_LEVEL.skill;
     const usedSk = Object.values(r.skills || {}).reduce((a, b) => a + (b || 0), 0);
