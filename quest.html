@@ -2269,12 +2269,18 @@
   //   layerHP = [1.0, 2.0, 3.3, 5.0]，每等 +2.5%
   // DEF 用較緩的曲線（user spec：6-10 +30-50% / 11-15 +50-80% / 16-20 +80-120%）
   //   layerDEF = [1.0, 1.40, 1.65, 2.00]，每等 +1.5%
+  // ⭐ ATK 倍率（比舊版 [1.0, 1.30, 1.69, 2.20] 在 6-10 / 11-15 / 16-20 各加一截）
+  //   layerATK = [1.0, 1.45, 1.95, 2.55]，階內每等 +3%
+  //   Lv 5  → 1.10        （tier 1 末，跟舊版一樣）
+  //   Lv 10 → 1.45 × 1.12 = 1.62  （舊 1.43，+13%）
+  //   Lv 15 → 1.95 × 1.12 = 2.18  （舊 1.86，+17%）
+  //   Lv 20 → 2.55 × 1.12 = 2.86  （舊 2.42，+18%）
   function monsterK(lv) {
     const lvSafe = Math.max(1, lv);
     const layer = Math.min(3, Math.floor((lvSafe - 1) / 5));
-    const layerBase = Math.pow(1.30, layer);
+    const layerATK = [1.0, 1.45, 1.95, 2.55];
     const offsetInLayer = (lvSafe - 1) % 5;
-    return layerBase * (1 + offsetInLayer * 0.025);
+    return layerATK[layer] * (1 + offsetInLayer * 0.03);
   }
   function monsterHPK(lv) {
     const lvSafe = Math.max(1, lv);
