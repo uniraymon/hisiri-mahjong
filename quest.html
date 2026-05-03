@@ -4099,6 +4099,15 @@
         window.__pendingBetaCompV2.add(player.id);
       }
     }
+    // ⭐ 大改版 v3：洗白後的全新平衡 + 多項系統調整公告
+    if (!player.rpg.updateV3 && typeof getMeId === 'function' && player.id === getMeId()) {
+      player.rpg.stamina = STAMINA_MAX;
+      player.rpg.updateV3 = true;
+      if (typeof window !== 'undefined') {
+        window.__pendingUpdateV3 = window.__pendingUpdateV3 || new Set();
+        window.__pendingUpdateV3.add(player.id);
+      }
+    }
     // skillPoints migration
     if (player.rpg.skillPoints == null) {
       const earned = Math.max(0, (player.rpg.level || 1) - 1) * POINTS_PER_LEVEL.skill;
@@ -5581,6 +5590,65 @@
   function maybeShowBetaCompModal() {
     const me = getMe();
     if (!me) return;
+    // ⭐ v3 優先（最新）
+    if (window.__pendingUpdateV3 && window.__pendingUpdateV3.has(me.id)) {
+      window.__pendingUpdateV3.delete(me.id);
+      const html = `
+        <div style="text-align:left; padding:6px 0;">
+          <div style="text-align:center; font-size:42px; margin-bottom:6px;">✨</div>
+          <div style="text-align:center; font-weight:800; font-size:17px; color:#7c3aed; margin-bottom:8px;">大改版 v3 — 洗白後全新平衡</div>
+          <div style="font-size:12px; color:#5b3d62; line-height:1.6; padding:10px 12px; background:#f3e8ff; border-radius:10px; border:2px dashed #c4b5fd;">
+
+            <div style="font-weight:800; color:#dc2626; margin-bottom:4px;">⚔️ 戰鬥 / 怪物</div>
+            • 怪物 EXP 改用<b>等級分階表</b>（Lv 1=20→Lv 20=270→Lv 50=670）<br>
+            • 不同品種隨機 +0~20% EXP 變異<br>
+            • 怪物 ATK 系數 6-20 等拉強 12-18%（不能再速通）<br>
+            • 戰鬥畫面新增 <b>SPD 行動條</b>（看技能硬值對節奏的影響）<br>
+            • 一方出招時，另一方條會視覺化飆滿再清零<br>
+
+            <div style="font-weight:800; color:#0ea5e9; margin:10px 0 4px;">🎣 探索 / 打工</div>
+            • 探索一次 <b>40 體力</b>（之前 20）<br>
+            • 探索<b>不再掉裝備</b>，改發 <b>🧭 探險幣</b>（未來兌換用）<br>
+            • 探索 EXP 大幅縮減：lv × tier × 0.3，永遠 < 怪物 EXP 10%<br>
+            • 打工幣 3-50 × (1 + 10% × 等級-1)，事件表情 ±15%<br>
+
+            <div style="font-weight:800; color:#f59e0b; margin:10px 0 4px;">🌍 世界王</div>
+            • 一場戰鬥 <b>EXP 上限 1000</b><br>
+            • 結算改發 <b>👑/🐲/🪨 王硬幣</b>（可堆疊道具）<br>
+            &nbsp;&nbsp;尾刀 +6 / 1名 +6 / 2名 +4 / 3名+ +2<br>
+            • <b>過往 5 場戰報</b>放在每隻王卡片底下，全員可見<br>
+            • 點任一場 → 跑讀條 + HP/MP/SPD 動畫重播<br>
+            • 尾刀通告恢復：橫幅顯示傷害排行 + 王硬幣分配<br>
+            • 5 分鐘共用冷卻（任何王共用）<br>
+
+            <div style="font-weight:800; color:#16a34a; margin:10px 0 4px;">🎒 背包 / 商店</div>
+            • 背包改成<b>分頁 + 批量出售</b>（仿 RPG 格子畫面）<br>
+            • 商店重新販售 Lv 1-2 <b>基本裝備</b>（消耗品 + 7 槽位）<br>
+            • 高等裝備改從打怪 / 王 / 套裝取得<br>
+
+            <div style="font-weight:800; color:#a855f7; margin:10px 0 4px;">🎯 角色 / 技能</div>
+            • <b>重置能力</b> 🪙 3000　·　<b>重置技能</b> 🪙 6000<br>
+            • MP 升等大幅縮減：戰士/弓手 +1 / 法師/聖騎 +2<br>
+            • 探險戰報（自己最近 5 場）跟王戰報一樣可重播<br>
+
+            <div style="font-weight:800; color:#dc2626; margin:10px 0 4px;">🍵 綠茶鵝 / 麻將</div>
+            • 戰鬥遭遇綠茶 → 偷走 <b>等級 × 10</b> 鵝鵝幣<br>
+            • 麻將新增<b>個人上傳</b>（截圖 OCR + 自選哪行是你）<br>
+            • 送禮 modal 物品名顯示修正<br>
+
+            <br>
+            <div style="text-align:center; padding:6px 8px; background:#fef3c7; border:1px dashed #f59e0b; border-radius:8px; color:#92400e;">
+              📦 體力已自動補滿至 ${STAMINA_MAX}<br>
+              <span style="font-size:11px;">已洗白，所有人從 Lv 1 重新開始 ♡</span>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="hideModal()" style="margin-top:14px; width:100%;">收下 ✨ 開始冒險！</button>
+        </div>
+      `;
+      showModal('📣 大改版 v3 公告', html);
+      saveData();
+      return;
+    }
     // v2 優先（最新）
     if (window.__pendingBetaCompV2 && window.__pendingBetaCompV2.has(me.id)) {
       window.__pendingBetaCompV2.delete(me.id);
