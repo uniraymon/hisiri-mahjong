@@ -3597,6 +3597,7 @@
   let gifts = [];
   let comments = [];
   let pendingBets = [];
+  let betPool = 0;
   let worldBoss = {};
   let bugs = []; // [{ id, reporter, reporterName, text, ts, snapshot }]
   // 暫存最近一場戰鬥的 log，回報 bug 時帶過去
@@ -3738,7 +3739,7 @@
       const meRec = players.find(p => p && p.id === meId);
       if (meRec) meRec.lastTouchedAt = Date.now();
     }
-    const payload = { players, history, gifts, comments, pendingBets, worldBoss, baseMoney, basePoint };
+    const payload = { players, history, gifts, comments, pendingBets, betPool, worldBoss, baseMoney, basePoint };
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch (e) {}
     if (!__isApplyingRemote && window.__firebaseSync && window.__firebaseSync.ready) {
       window.__firebaseSync.save(payload);
@@ -3747,7 +3748,7 @@
 
   // ⭐ 拆檔架構同步介面
   function __persistLocalSnapshot() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ players, history, gifts, comments, pendingBets, worldBoss, bugs, baseMoney, basePoint })); } catch (e) {}
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ players, history, gifts, comments, pendingBets, betPool, worldBoss, bugs, baseMoney, basePoint })); } catch (e) {}
   }
 
   window.__getMeId = function() { return getMeId(); };
@@ -3760,6 +3761,7 @@
       if (Array.isArray(data.gifts)) gifts = data.gifts;
       if (Array.isArray(data.comments)) comments = data.comments;
       if (Array.isArray(data.pendingBets)) pendingBets = data.pendingBets;
+      if (typeof data.betPool === 'number') betPool = data.betPool;
       if (data.worldBoss && typeof data.worldBoss === 'object') worldBoss = data.worldBoss;
       if (Array.isArray(data.bugs)) bugs = data.bugs;
       if (typeof data.baseMoney === 'number') baseMoney = data.baseMoney;
@@ -9442,7 +9444,16 @@ ${b.text}
         <button class="btn btn-secondary" onclick="adminPickSet()" style="grid-column:1/-1; background:linear-gradient(135deg,#fef3c7,#f59e0b); color:#7c2d12;">🛡 直接拿整套套裝（選一套）</button>
       </div>
       <button class="btn btn-secondary" onclick="adminResetPoints()" style="background:linear-gradient(135deg,#a7f3d0,#10b981); color:#fff;">🔄 退回所有技能點 + 能力點</button>
+
+      <div class="shop-section-title">💾 備份 / 還原（洗白前先按一次！）</div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:8px;">
+        <button class="btn btn-primary" style="background:linear-gradient(135deg,#34d399,#059669); box-shadow:0 4px 0 #047857;" onclick="adminDownloadBackup()">📦 下載備份 JSON</button>
+        <button class="btn btn-secondary" onclick="adminUploadBackup()">📥 還原備份 JSON</button>
+      </div>
+      <input type="file" id="adminRestoreInput" accept="application/json" style="display:none" onchange="adminApplyRestoreFile(event)">
+
       <button class="btn btn-danger" onclick="adminResetRpg()" style="margin-top:6px;">⚠️ 重置 RPG 角色（保留幣）</button>
+      <button class="btn btn-danger" onclick="adminWipeAll()" style="margin-top:6px; background:linear-gradient(135deg,#fca5a5,#7f1d1d); box-shadow:0 4px 0 #450a0a;">💀 全玩家洗白（伺服器 + 本地都重置）</button>
       <button class="btn btn-secondary" onclick="adminLockDebug()" style="margin-top:6px;">🔐 鎖回 Debug</button>
 
       <div style="margin-top:10px; font-size:11px; color:#8b6f9b; text-align:center;">
@@ -9612,6 +9623,108 @@ ${b.text}
     showToast('🔐 Debug 已鎖回');
   }
   window.adminLockDebug = adminLockDebug;
+
+  // === 備份 / 還原 ===
+  function adminDownloadBackup() {
+    const me = getMe();
+    const payload = {
+      version: 'mahjong-v2',
+      exportedAt: new Date().toISOString(),
+      exportedBy: me ? `${me.avatar} ${me.name}` : '?',
+      // ⭐ 完整資料：玩家（含每個人的 RPG / inventory）+ 對局 + 互動 + 押注 + 世界王 + 比例
+      data: {
+        players, history, gifts, comments, pendingBets, betPool, worldBoss,
+        baseMoney, basePoint,
+      },
+    };
+    const json = JSON.stringify(payload, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const dt = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const fname = `mahjong-backup-${dt.getFullYear()}${pad(dt.getMonth()+1)}${pad(dt.getDate())}-${pad(dt.getHours())}${pad(dt.getMinutes())}${pad(dt.getSeconds())}.json`;
+    const a = document.createElement('a');
+    a.href = url; a.download = fname;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { try { document.body.removeChild(a); URL.revokeObjectURL(url); } catch (e) {} }, 200);
+    const sizeKb = Math.round(json.length / 1024);
+    showToast(`📦 已下載 ${fname}（${sizeKb} KB · ${players.length} 玩家 · ${history.length} 局）`);
+  }
+  window.adminDownloadBackup = adminDownloadBackup;
+
+  function adminUploadBackup() {
+    const inp = document.getElementById('adminRestoreInput');
+    if (inp) inp.click();
+  }
+  window.adminUploadBackup = adminUploadBackup;
+
+  function adminApplyRestoreFile(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    const fr = new FileReader();
+    fr.onload = () => {
+      try {
+        const obj = JSON.parse(String(fr.result));
+        if (!obj || !obj.data) throw new Error('檔案格式錯誤（缺 data）');
+        if (obj.version && obj.version !== 'mahjong-v2') {
+          if (!confirm(`版本不一致（檔案: ${obj.version}）— 強制套用？`)) return;
+        }
+        if (!confirm(`還原備份「${obj.exportedBy || '?'}」（${obj.exportedAt || '?'}）會覆蓋目前資料 + 推到 Firebase（朋友也會被覆蓋）。繼續？`)) return;
+        const d = obj.data;
+        if (Array.isArray(d.players))   players   = d.players;
+        if (Array.isArray(d.history))   history   = d.history;
+        if (Array.isArray(d.gifts))     gifts     = d.gifts;
+        if (Array.isArray(d.comments))  comments  = d.comments;
+        if (Array.isArray(d.pendingBets)) pendingBets = d.pendingBets;
+        if (typeof d.betPool === 'number') betPool = d.betPool;
+        if (d.worldBoss && typeof d.worldBoss === 'object') worldBoss = d.worldBoss;
+        if (typeof d.baseMoney === 'number') baseMoney = d.baseMoney;
+        if (typeof d.basePoint === 'number') basePoint = d.basePoint;
+        saveData();
+        render();
+        hideModal();
+        showToast(`📥 已還原備份（${players.length} 玩家 · ${history.length} 局）`);
+      } catch (err) {
+        alert('還原失敗：' + (err.message || err));
+      }
+    };
+    fr.onerror = () => alert('讀檔失敗');
+    fr.readAsText(file);
+  }
+  window.adminApplyRestoreFile = adminApplyRestoreFile;
+
+  // ⭐ 全玩家洗白（清空 history / pendingBets / worldBoss / 每位玩家 rpg / 鵝鵝幣 / 鵝蛋幣 / 稱號）
+  // 仍保留玩家清單（id / 名字 / 頭像）
+  function adminWipeAll() {
+    const sure1 = confirm('💀 全玩家洗白：清空所有對局、戰鬥資料、鵝鵝幣、鵝蛋幣、RPG 角色、世界王紀錄。\n\n玩家清單（id / 名字 / 頭像）會保留。\n\n確定？');
+    if (!sure1) return;
+    const sure2 = prompt('再次確認：輸入「洗白」兩個字才執行');
+    if (sure2 !== '洗白') { showToast('已取消'); return; }
+    // 清 meta
+    history = [];
+    gifts = [];
+    comments = [];
+    pendingBets = [];
+    betPool = 0;
+    worldBoss = {};
+    // 清每位玩家的 RPG / 鵝鵝幣 / 鵝蛋幣 / 稱號
+    players.forEach(p => {
+      delete p.rpg;
+      p.coinsSpent = 0;
+      p.eggCoins = 0;
+      p.unlockedAvatars = [];
+      p.unlockedTitles = [];
+      p.chosenTitle = null;
+      p.bonusXp = 0;
+      p.bonusCoins = 0;
+    });
+    saveData();
+    render();
+    hideModal();
+    showToast('💀 全玩家已洗白（玩家清單保留）');
+  }
+  window.adminWipeAll = adminWipeAll;
 
   // ============================================================
   // 啟動
