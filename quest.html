@@ -5780,10 +5780,9 @@
             const effAtk  = stats.atk  * (1 + (pBuff.atkPct || 0));
             const effMark = stats.mark * (1 + (pBuff.atkPct || 0)); // atkPct buff 也加成魔攻
             const effDef = (stats.def + (pBuff.def || 0)) * (1 + (pBuff.defPct || 0));
-            // ⭐ 多段技能：每段傷害 = 總傷害 / hits × 1.3（同 monster multiHit 公式）
+            // ⭐ 多段技能：mult = 每段獨立乘率，直接套用（不再 ÷ hits 均分）
             const skillHits = Math.max(1, skill.hits || 1);
-            // 一般多段：1.3 / hits 平均；fixedHitMult 標記 → 不享 ×1.3 共享傷，每段直接照 mult 算
-            const perHitFactor = skill.fixedHitMult ? 1.0 : (skillHits === 1 ? 1.0 : (1.3 / skillHits));
+            const perHitFactor = 1.0; // 每段都用完整 mult
             if (skill.defMult != null) {
               // ⭐ 聖騎風格：以 DEF 結算傷害
               dmg = effDef * skill.defMult - Math.floor(monster.def / 2);
@@ -8356,7 +8355,7 @@ ${b.text}
       else if (eff.flat != null) baseDmg = eff.flat + (eff.perLv || 0) * TEST.lv;
       else if (eff.mult != null) baseDmg = TEST.atk * eff.mult;
       const hits = Math.max(1, eff.hits || 1);
-      const perHitFactor = eff.fixedHitMult ? 1.0 : (hits === 1 ? 1.0 : (1.3 / hits));
+      const perHitFactor = 1.0; // mult = 每段獨立乘率
       const perHitDmg = Math.max(1, Math.round(baseDmg * perHitFactor));
       const totalDmg = perHitDmg * hits;
       return { perHitDmg, totalDmg, hits };
