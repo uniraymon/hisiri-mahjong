@@ -4046,9 +4046,23 @@
     };
     // ⭐ 詞條數依稀有度：白 0 / 綠 1 / 藍 2 / 紫 3（精英用 forceAffixes 蓋過）
     const affixCount = forceAffixes != null ? forceAffixes : def.affixes;
+    // ⭐ 階層詞條強化：中層起每階詞條值放大，鼓勵玩家替換深層裝備
+    //   Lv 1-5（上層）  ×1.00
+    //   Lv 6-10（中層） ×1.15
+    //   Lv 11-15（下層）×1.35
+    //   Lv 16-20（深層）×1.60
+    //   Lv 21+          ×1.85
+    const layerAffixMult = (() => {
+      const lv = drop.lv || 1;
+      if (lv <= 5)  return 1.00;
+      if (lv <= 10) return 1.15;
+      if (lv <= 15) return 1.35;
+      if (lv <= 20) return 1.60;
+      return 1.85;
+    })();
     for (let i = 0; i < affixCount; i++) {
       const a = AFFIXES[Math.floor(Math.random() * AFFIXES.length)];
-      const val = Math.max(1, Math.round((1 + drop.lv * a.perLv) * def.mult));
+      const val = Math.max(1, Math.round((1 + drop.lv * a.perLv) * def.mult * layerAffixMult));
       drop[a.type] = (drop[a.type] || 0) + val;
       drop.affixes.push({ type: a.type, name: a.name, val });
     }
