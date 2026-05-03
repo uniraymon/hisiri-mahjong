@@ -4095,6 +4095,12 @@
         const remoteTs = Number(remote.lastTouchedAt) || 0;
         const localTs  = Number(local.lastTouchedAt)  || 0;
         if (localTs > remoteTs) { needRepush = true; return local; }
+        // ⭐ 防呆：remote 太舊會弄丟剛拿到的裝備 → 保留 local
+        if (__remoteWouldDataLossInventory(local, remote)) {
+          needRepush = true;
+          forageTrace?.('sync: bulk keep local (would lose inventory)', { pid: remote.id, localTs, remoteTs, localInv: local.rpg?.inventory?.length, remoteInv: remote.rpg?.inventory?.length });
+          return local;
+        }
         return remote;
       });
       for (const local of (players || [])) {
@@ -4111,6 +4117,18 @@
     }
   };
 
+  // ⭐ 智慧合併：判斷 remote 是否「太舊」會吞掉 local 剛拿到的物品
+  //    如果 remote 的 inventory 比 local 短 ≥2 件 AND local 在 60 秒內有動過 → keep local（防 stale snapshot 吃掉裝備）
+  function __remoteWouldDataLossInventory(local, remote) {
+    if (!local || !remote) return false;
+    const lInv = local.rpg?.inventory;
+    const rInv = remote.rpg?.inventory;
+    if (!Array.isArray(lInv) || !Array.isArray(rInv)) return false;
+    if (lInv.length - rInv.length < 2) return false; // 沒短很多就放行
+    const localTs = Number(local.lastTouchedAt) || 0;
+    return (Date.now() - localTs) < 60_000;          // local 60 秒內有動 → 不接受 remote
+  }
+
   window.__applyRemotePlayer = function(remote) {
     if (!remote || !remote.id) return;
     __isApplyingRemote = true;
@@ -4123,8 +4141,20 @@
         const local = players[idx];
         const remoteTs = Number(remote.lastTouchedAt) || 0;
         const localTs  = Number(local.lastTouchedAt)  || 0;
-        if (localTs > remoteTs) needRepush = true;
-        else                    players[idx] = remote;
+        // 防呆：local 較新 → 保留
+        if (localTs > remoteTs) {
+          needRepush = true;
+          forageTrace?.('sync: keep local (newer ts)', { pid: remote.id, localTs, remoteTs, localInv: local.rpg?.inventory?.length, remoteInv: remote.rpg?.inventory?.length });
+        }
+        // 防呆：remote 太舊會弄丟剛拿到的裝備 → 保留 local
+        else if (__remoteWouldDataLossInventory(local, remote)) {
+          needRepush = true;
+          forageTrace?.('sync: keep local (would lose inventory)', { pid: remote.id, localTs, remoteTs, localInv: local.rpg?.inventory?.length, remoteInv: remote.rpg?.inventory?.length, gap: local.rpg.inventory.length - remote.rpg.inventory.length });
+        }
+        else {
+          forageTrace?.('sync: apply remote', { pid: remote.id, localTs, remoteTs, localInv: local.rpg?.inventory?.length, remoteInv: remote.rpg?.inventory?.length });
+          players[idx] = remote;
+        }
       }
       __persistLocalSnapshot();
       render();
@@ -12371,6 +12401,7 @@ ${b.text}
         const meta = pruneUndef(rawMeta);
 
         clearTimeout(metaSaveTimer);
+        // ⭐ 1500ms debounce（比 250 慢 6 倍，緩解 Firestore write stream exhausted）
         metaSaveTimer = setTimeout(async () => {
           try {
             await setDoc(metaRef, meta, { merge: true });
@@ -12379,7 +12410,7 @@ ${b.text}
             console.error('Meta save failed:', e);
             window.__updateSyncStatus?.('☁️ 同步失敗', 'err');
           }
-        }, 250);
+        }, 1500);
 
         const playersToWrite = [];
         if (meId && Array.isArray(payload.players)) {
@@ -12394,12 +12425,13 @@ ${b.text}
         for (const p of playersToWrite) {
           const cleanP = pruneUndef(p);
           clearTimeout(playerSaveTimers[p.id]);
+          // ⭐ 1500ms debounce（緩解 Firestore write stream exhausted）
           playerSaveTimers[p.id] = setTimeout(async () => {
             try {
               await setDoc(doc(playersCol, p.id), cleanP);
               seenPlayerIds.add(p.id);
             } catch (e) { console.error('Player ' + p.id + ' save failed:', e); }
-          }, 250);
+          }, 1500);
         }
       },
     };
