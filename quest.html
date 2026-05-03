@@ -3409,16 +3409,17 @@
   function rollRarity(boosted) {
     const r = Math.random();
     if (boosted) {
-      // 探索專用：稀有度加倍
-      if (r < 0.25) return 'common';     // 25% (原 55%)
-      if (r < 0.60) return 'magic';      // 35% (原 30%)
-      if (r < 0.88) return 'rare';       // 28% (原 12%)
-      return 'legendary';                 // 12% (原 3%)
+      // 精英怪用：紫率拉到 40%
+      if (r < 0.10) return 'common';     // 10%
+      if (r < 0.35) return 'magic';      // 25%
+      if (r < 0.60) return 'rare';       // 25%
+      return 'legendary';                 // 40%
     }
-    if (r < 0.55) return 'common';
-    if (r < 0.85) return 'magic';
-    if (r < 0.97) return 'rare';
-    return 'legendary';
+    // ⭐ 一般掉落：紫率 3% → 20%
+    if (r < 0.30) return 'common';        // 30%（白）
+    if (r < 0.60) return 'magic';         // 30%（綠）
+    if (r < 0.80) return 'rare';          // 20%（藍）
+    return 'legendary';                   // 20%（紫）
   }
   function generateDropItem(playerLv, opts) {
     const boosted = opts === true || (opts && opts.boosted);
@@ -6055,16 +6056,11 @@ ${b.text}
     if (!me) return;
     const myCoins = getCoins(me.id);
     const myLv = getRpg(me).level;
+    // ⭐ 商店只賣消耗品；裝備全部從打怪取得
     const TABS = [
-      { id: 'consumable', label: '🧪 消耗', filter: i => i.type === 'consumable' },
-      { id: 'weapon',     label: '⚔️ 武器', filter: i => i.type === 'equipment' && i.slot === 'weapon' },
-      { id: 'armor',      label: '🛡 防具', filter: i => i.type === 'equipment' && i.slot === 'armor' },
-      { id: 'accessory',  label: '💎 飾品', filter: i => i.type === 'equipment' && i.slot === 'accessory' },
-      { id: 'helmet',     label: '🪖 頭盔', filter: i => i.type === 'equipment' && i.slot === 'helmet' },
-      { id: 'gloves',     label: '🧤 手套', filter: i => i.type === 'equipment' && i.slot === 'gloves' },
-      { id: 'boots',      label: '🥾 鞋子', filter: i => i.type === 'equipment' && i.slot === 'boots' },
-      { id: 'cape',       label: '🎽 披風', filter: i => i.type === 'equipment' && i.slot === 'cape' },
+      { id: 'consumable', label: '🧪 消耗品', filter: i => i.type === 'consumable' },
     ];
+    if (!TABS.find(t => t.id === __shopTab)) __shopTab = 'consumable';
     const active = TABS.find(t => t.id === __shopTab) || TABS[0];
     const list = SHOP_ITEMS.filter(active.filter);
     if (active.id !== 'consumable') list.sort((a, b) => a.lv - b.lv);
@@ -6449,7 +6445,7 @@ ${b.text}
     const item = resolveItem(entry);
     if (!item) return;
     const sellValue = getSellValue(item);
-    const canEquip = !item.lv || r.level >= item.lv;
+    const canEquip = true; // ⭐ 裝備不再有等級限制
     const rarColor = item.rarity ? RARITY[item.rarity]?.color : (item.setId ? (SETS[item.setId]?.color || '#f59e0b') : '#7c3aed');
     const rarLabel = item.rarity ? RARITY[item.rarity]?.label : (item.setId ? '套裝' : '');
     const affixHtml = item.affixes && item.affixes.length
@@ -6479,11 +6475,10 @@ ${b.text}
         ${rarLabel ? `<div style="font-size:10px; color:${rarColor}; font-weight:700; letter-spacing:1px;">[${rarLabel}]</div>` : ''}
         <div style="font-weight:700; font-size:16px; color:${rarColor};">${escapeHtml(item.name)}</div>
         <div style="font-size:12px; color:#8b6f9b; margin-top:4px;">
-          ${item.lv ? `Lv ${item.lv} 需求　·　` : ''}${formatItemStats(item)}
+          ${item.lv ? `Lv ${item.lv}　·　` : ''}${formatItemStats(item)}
         </div>
         ${affixHtml}
         ${setHtml}
-        ${!canEquip ? `<div style="font-size:11px; color:#dc2626; margin-top:6px;">🔒 等級不足無法裝備</div>` : ''}
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:14px;">
           <button class="btn btn-primary" onclick="equipFromInvAndClose(${idx})" ${canEquip ? '' : 'disabled'}>裝備</button>
           <button class="btn btn-warning" onclick="sellInvItem(${idx})">賣掉（🪙 ${sellValue}）</button>
@@ -7962,10 +7957,7 @@ ${b.text}
     const entry = rpg.inventory[idx];
     const item = resolveItem(entry);
     if (!item) return;
-    if (item.lv && rpg.level < item.lv) {
-      showToast(`等級不足（需 Lv ${item.lv}）`);
-      return;
-    }
+    // ⭐ 裝備不再有等級限制（拿到就能用）
     // 把現有同 slot 裝備丟回背包
     const cur = rpg.equipment[item.slot];
     if (cur) rpg.inventory.push(cur);
