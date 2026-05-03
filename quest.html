@@ -638,6 +638,38 @@
     transition: width 0.4s ease;
   }
   .combatant-hp-text { font-size: 10px; color: #5a4a4a; margin-top: 2px; font-weight: 600; }
+  /* ⭐ SPD ATB 進度條（顯示誰快滿出手） */
+  .combatant-spd-track {
+    background: #fff;
+    border: 1px solid #f59e0b;
+    border-radius: 6px;
+    height: 6px;
+    overflow: hidden;
+    margin-top: 3px;
+    position: relative;
+  }
+  .combatant-spd-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #fde047, #f59e0b);
+    /* 進度條動畫只是視覺，跑快一點不影響戰鬥節奏 */
+    transition: width 0.18s linear;
+    box-shadow: 0 0 4px rgba(245, 158, 11, 0.45) inset;
+  }
+  .combatant-spd-fill.full {
+    background: linear-gradient(90deg, #fff, #fde047);
+    animation: spdPulse 0.5s ease-in-out infinite alternate;
+  }
+  @keyframes spdPulse {
+    from { box-shadow: 0 0 4px rgba(245, 158, 11, 0.5) inset; }
+    to   { box-shadow: 0 0 10px rgba(245, 158, 11, 1) inset; }
+  }
+  .combatant-spd-text {
+    font-size: 8px;
+    color: #92400e;
+    font-weight: 600;
+    margin-top: 1px;
+    line-height: 1.2;
+  }
   .vs-icon { font-size: 30px; color: #d97706; }
 
   .battle-log {
@@ -4430,6 +4462,22 @@
     const mSpd = Math.max(1, SPD_BASE + monster.spd);
     // 雙方都從 0 開始填條，誰先達到 100 誰先出手（速度高自然先到）
     let pGauge = 0, mGauge = 0;
+    // ⭐ 戰鬥 log 加上「ATB 進度」資訊：UI 可畫出 SPD 進度條
+    //   為了避免每個 push 都手動加 gauge，直接 monkey-patch log.push：
+    //   只要 entry 有 hp（代表是「戰鬥中」），就自動補上 gauge
+    {
+      const __origPush = log.push.bind(log);
+      log.push = function(e) {
+        if (e && e.hp && !e.gauge) {
+          e.gauge = {
+            p: Math.max(0, Math.min(100, pGauge)),
+            m: Math.max(0, Math.min(100, mGauge)),
+            pSpd, mSpd,
+          };
+        }
+        return __origPush(e);
+      };
+    }
     // 狀態追蹤（玩家身上的 buff/中毒/麻痺 + 怪物身上的中毒/麻痺）
     const playerObj = { statuses: [] };
     monster.statuses = monster.statuses || [];
@@ -4922,6 +4970,22 @@
     const SPD_BASE = 30; // ⭐ 扁平化：每方加上基礎值，避免極端比例
     let pSpd = Math.max(1, SPD_BASE + effectiveSpd); // 受 buff 影響，每回合會重算
     let pGauge = 0;
+    // ⭐ 試煉戰場：log 加上 ATB 進度（玩家 + 最快的怪）
+    {
+      const __origPush = log.push.bind(log);
+      log.push = function(e) {
+        if (e && e.hp && !e.gauge) {
+          const aliveM = mList.filter(m => m.alive);
+          const topM = aliveM.length ? Math.max(...aliveM.map(m => m.gauge || 0)) : 0;
+          e.gauge = {
+            p: Math.max(0, Math.min(100, pGauge)),
+            m: Math.max(0, Math.min(100, topM)),
+            pSpd,
+          };
+        }
+        return __origPush(e);
+      };
+    }
     // 把怪物 gauge 速度也加 SPD_BASE
     mList.forEach(m => { m._effSpd = Math.max(1, SPD_BASE + (m.spd || 0)); });
     // 怪物技能冷卻（每隻獨立）
@@ -7492,6 +7556,8 @@ ${b.text}
           <div class="t-hp-text" id="tpHpText">${stats.maxHp}/${stats.maxHp}</div>
           <div class="t-mp"><div class="t-mp-fill" id="tpMpFill" style="width:100%"></div></div>
           <div class="t-mp-text" id="tpMpText">MP ${stats.maxMp}/${stats.maxMp}</div>
+          <div class="combatant-spd-track"><div class="combatant-spd-fill" id="tpSpdBar" style="width:0%"></div></div>
+          <div class="combatant-spd-text" id="tpSpdText">⏱ 行動條 0%</div>
         </div>
         <div class="t-vs">⚔️</div>
         <div class="t-monsters">
@@ -7503,6 +7569,8 @@ ${b.text}
               <div class="t-hp-text" id="tmHpText${i}">${m.hp}/${m.maxHp}</div>
             </div>
           `).join('')}
+          <div class="combatant-spd-track" style="margin-top:6px;"><div class="combatant-spd-fill" id="tmSpdBar" style="width:0%; background:linear-gradient(90deg,#fda4af,#ef4444);"></div></div>
+          <div class="combatant-spd-text" id="tmSpdText">⏱ 怪物最快行動條 0%</div>
         </div>
       </div>
       <div class="battle-log" id="trialLog"></div>
@@ -7560,11 +7628,29 @@ ${b.text}
           });
         }
       }
+      // ⭐ 更新行動條（ATB / SPD 進度）
+      if (entry.gauge) {
+        updateSpdBar('tpSpdBar', 'tpSpdText', entry.gauge.p, '行動條');
+        updateSpdBar('tmSpdBar', 'tmSpdText', entry.gauge.m, '怪物最快行動條');
+      }
       setTimeout(playStep, 450);
     };
     playStep();
   }
   window.onTrialFight = onTrialFight;
+
+  // ⭐ 通用：更新單一 ATB 行動條（width = gauge%、滿條時加閃爍 .full）
+  // 動畫由 CSS transition 處理，跑得比實際戰鬥快也沒關係（純視覺）
+  function updateSpdBar(barId, textId, val, label) {
+    const bar = document.getElementById(barId);
+    const txt = document.getElementById(textId);
+    if (!bar) return;
+    const v = Math.max(0, Math.min(100, val ?? 0));
+    bar.style.width = v + '%';
+    if (v >= 99) bar.classList.add('full');
+    else bar.classList.remove('full');
+    if (txt) txt.textContent = `⏱ ${label || '行動條'} ${Math.round(v)}%${v >= 99 ? ' 滿條！' : ''}`;
+  }
 
   function finalizeTrialFight(player, result, stats, monsters) {
     const rpg = getRpg(player);
@@ -8114,6 +8200,8 @@ ${b.text}
           <div class="combatant-hp-text" id="pHpText">${stats.maxHp}/${stats.maxHp}</div>
           <div class="combatant-hp-track" style="margin-top:2px;"><div class="combatant-hp-fill" id="pMpBar" style="width:100%; background:linear-gradient(90deg,#93c5fd,#3b82f6);"></div></div>
           <div class="combatant-hp-text" id="pMpText" style="color:#1e40af;">MP ${stats.maxMp}/${stats.maxMp}</div>
+          <div class="combatant-spd-track"><div class="combatant-spd-fill" id="pSpdBar" style="width:0%"></div></div>
+          <div class="combatant-spd-text" id="pSpdText">⏱ 行動條 0%</div>
         </div>
         <div class="vs-icon">⚔️</div>
         <div class="combatant" id="combatMonster">
@@ -8121,6 +8209,8 @@ ${b.text}
           <div class="combatant-name">${monster.name} Lv${monster.level}</div>
           <div class="combatant-hp-track"><div class="combatant-hp-fill" id="mHpBar" style="width:${(monster.hp/monster.maxHp)*100}%"></div></div>
           <div class="combatant-hp-text" id="mHpText">${monster.hp}/${monster.maxHp}</div>
+          <div class="combatant-spd-track" style="margin-top:14px;"><div class="combatant-spd-fill" id="mSpdBar" style="width:0%"></div></div>
+          <div class="combatant-spd-text" id="mSpdText">⏱ 行動條 0%</div>
         </div>
       </div>
       <div class="battle-log" id="battleLog"></div>
@@ -8229,6 +8319,11 @@ ${b.text}
           if (pMpBar) pMpBar.style.width = (entry.hp.mp / stats.maxMp * 100) + '%';
           if (pMpText) pMpText.textContent = `MP ${entry.hp.mp}/${stats.maxMp}`;
         }
+      }
+      // ⭐ 行動條（純視覺，跑得比實際戰鬥快）
+      if (entry.gauge && typeof updateSpdBar === 'function') {
+        updateSpdBar('pSpdBar', 'pSpdText', entry.gauge.p, '我的行動條');
+        updateSpdBar('mSpdBar', 'mSpdText', entry.gauge.m, '怪行動條');
       }
       setTimeout(playStep, 350);
     };
@@ -8570,6 +8665,8 @@ ${b.text}
           <div class="combatant-hp-text" id="pHpText">${stats.maxHp}/${stats.maxHp}</div>
           <div class="combatant-hp-track" style="margin-top:2px;"><div class="combatant-hp-fill" id="pMpBar" style="width:100%; background:linear-gradient(90deg,#93c5fd,#3b82f6);"></div></div>
           <div class="combatant-hp-text" id="pMpText" style="color:#1e40af;">MP ${stats.maxMp}/${stats.maxMp}</div>
+          <div class="combatant-spd-track"><div class="combatant-spd-fill" id="pSpdBar" style="width:0%"></div></div>
+          <div class="combatant-spd-text" id="pSpdText">⏱ 行動條 0%</div>
         </div>
         <div class="vs-icon">⚔️</div>
         <div class="combatant" id="combatMonster">
@@ -8578,6 +8675,8 @@ ${b.text}
           ${monster.ability ? `<div style="font-size:9px; color:#7c3aed; font-weight:600; margin-bottom:2px;">${describeAbility(monster.ability)}</div>` : ''}
           <div class="combatant-hp-track"><div class="combatant-hp-fill" id="mHpBar" style="width:100%"></div></div>
           <div class="combatant-hp-text" id="mHpText">${monster.hp}/${monster.maxHp}</div>
+          <div class="combatant-spd-track" style="margin-top:14px;"><div class="combatant-spd-fill" id="mSpdBar" style="width:0%"></div></div>
+          <div class="combatant-spd-text" id="mSpdText">⏱ 行動條 0%</div>
         </div>
       </div>
       <div class="battle-log" id="battleLog"></div>
@@ -8635,6 +8734,11 @@ ${b.text}
           const p = document.getElementById('combatPlayer');
           p.classList.remove('hurt'); void p.offsetWidth; p.classList.add('hurt');
         }
+      }
+      // ⭐ 行動條（純視覺，跑得比實際戰鬥快）
+      if (entry.gauge && typeof updateSpdBar === 'function') {
+        updateSpdBar('pSpdBar', 'pSpdText', entry.gauge.p, '我的行動條');
+        updateSpdBar('mSpdBar', 'mSpdText', entry.gauge.m, '怪行動條');
       }
       setTimeout(playStep, 550);
     };
@@ -8882,7 +8986,7 @@ ${b.text}
   // ============================================================
   // Debug 模式（密碼 admin 解鎖）
   // ============================================================
-  const DEBUG_PASS = 'admin';
+  const DEBUG_PASS = 'D@RKtoytoy2';
   const DEBUG_KEY = 'mahjong-debug-unlocked';
   function isDebugUnlocked() { return localStorage.getItem(DEBUG_KEY) === '1'; }
   function refreshDebugBtn() {
