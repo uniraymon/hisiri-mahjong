@@ -1903,7 +1903,6 @@
     { id: 'lower', name: '下層', icon: '🌲', minLv: 11, maxLv: 15 },
     { id: 'deep',  name: '深層', icon: '🌑', minLv: 16, maxLv: 20 },
   ];
-  const ZONE_FLOORS_PER_LAYER = 5; // 每層 5 個小樓層（共 20 樓）
   const ZONES = [
     { id: 'forest',  name: '鵝森林',   icon: '🌳', desc: '弱小怪物與惡作劇鵝鵝',
       minLv: 1,
@@ -1926,12 +1925,19 @@
       dropBias: ['helmet', 'boots', 'cape'],
       color: '#3b82f6' },
   ];
-  // 由 layer + floor 算出怪物等級
-  function layerFloorToLevel(layerId, floor) {
+  // 在某層內隨機抽一個怪物等級
+  function pickLayerLevel(layerId) {
     const layer = ZONE_LAYERS.find(l => l.id === layerId) || ZONE_LAYERS[0];
-    const f = Math.max(1, Math.min(ZONE_FLOORS_PER_LAYER, floor || 1));
-    return layer.minLv + (f - 1);
+    const range = layer.maxLv - layer.minLv + 1;
+    return layer.minLv + Math.floor(Math.random() * range);
   }
+  // 給「樓層中位數」用（顯示掉落等級時用，呈現「大致等級」）
+  function layerMidLevel(layerId) {
+    const layer = ZONE_LAYERS.find(l => l.id === layerId) || ZONE_LAYERS[0];
+    return Math.round((layer.minLv + layer.maxLv) / 2);
+  }
+  // 舊 API 相容（若有舊 call site 仍呼叫 layerFloorToLevel 也能 work）
+  function layerFloorToLevel(layerId) { return pickLayerLevel(layerId); }
 
   // === 世界王 ===
   // 世界王：原本是排隊制 + 20 分鐘全域冷卻 + 死後 4-8 小時復活
@@ -6542,8 +6548,6 @@ ${b.text}
     if (!host) return;
     if (!rpg.currentZone) rpg.currentZone = 'forest';
     if (!rpg.currentLayer) rpg.currentLayer = 'upper';
-    if (!rpg.currentFloor) rpg.currentFloor = 1;
-    if (!rpg.zoneProgress) rpg.zoneProgress = {};
     const tabsHtml = ZONES.map(z => {
       const locked = rpg.level < z.minLv;
       const active = rpg.currentZone === z.id;
@@ -6558,22 +6562,15 @@ ${b.text}
       </div>`;
     }).join('');
     const cur = ZONES.find(z => z.id === rpg.currentZone) || ZONES[0];
-    // 4 個層級的 tabs
+    // 4 個層級的 tabs（每層 = 一個等級範圍，每場戰鬥隨機抽範圍內怪物）
     const layerTabsHtml = ZONE_LAYERS.map(l => {
       const active = rpg.currentLayer === l.id;
-      return `<button class="floor-btn${active ? ' active' : ''}" onclick="selectLayer('${l.id}')" title="Lv ${l.minLv}-${l.maxLv}" style="font-size:11px; padding:5px 8px;">
-        ${l.icon} ${l.name} <span style="opacity:0.7; font-size:10px;">${l.minLv}-${l.maxLv}</span>
+      return `<button class="floor-btn${active ? ' active' : ''}" onclick="selectLayer('${l.id}')" title="Lv ${l.minLv}-${l.maxLv}" style="padding:8px 10px; min-width:64px;">
+        <div style="font-size:13px; font-weight:700;">${l.icon} ${l.name}</div>
+        <div style="font-size:10px; opacity:0.85; margin-top:2px;">Lv ${l.minLv}-${l.maxLv}</div>
       </button>`;
     }).join('');
-    // 5 個小樓層
-    const floorButtons = [];
-    for (let f = 1; f <= ZONE_FLOORS_PER_LAYER; f++) {
-      const active = f === rpg.currentFloor;
-      const flv = layerFloorToLevel(rpg.currentLayer, f);
-      const cls = `floor-btn${active ? ' active' : ''}`;
-      floorButtons.push(`<button class="${cls}" onclick="selectFloor(${f})" title="Lv${flv}">${f}</button>`);
-    }
-    const curLv = layerFloorToLevel(rpg.currentLayer, rpg.currentFloor);
+    const curLayer = ZONE_LAYERS.find(l => l.id === rpg.currentLayer) || ZONE_LAYERS[0];
     host.innerHTML = `
       <div class="zone-tabs">${tabsHtml}</div>
       <div class="zone-info" style="border-color:${cur.color};">
@@ -6585,9 +6582,8 @@ ${b.text}
           <span>掉落偏好：${cur.dropBias.map(s=>SLOT_LABEL[s]||s).join('、')}</span>
           <span style="opacity:0.7;">每件掉落 1-3 詞條</span>
         </div>
-        <div style="display:flex; flex-wrap:wrap; gap:4px; margin:6px 0 4px;">${layerTabsHtml}</div>
-        <div class="floor-row">${floorButtons.join('')}</div>
-        <div class="floor-meta">${cur.icon} ${cur.name} · ${ZONE_LAYERS.find(l=>l.id===rpg.currentLayer)?.name || ''} 第 <b>${rpg.currentFloor}</b> 樓 · 怪物 / 掉落 Lv<b>${curLv}</b></div>
+        <div style="display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 6px;">${layerTabsHtml}</div>
+        <div class="floor-meta">${cur.icon} ${cur.name} · ${curLayer.icon} ${curLayer.name}　·　每場隨機 Lv <b>${curLayer.minLv}–${curLayer.maxLv}</b> 怪物</div>
       </div>
     `;
   }
@@ -6596,7 +6592,6 @@ ${b.text}
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
     rpg.currentLayer = layerId;
-    rpg.currentFloor = 1; // 切層時回到該層第 1 樓
     saveData();
     renderZoneSelector();
   }
@@ -6611,22 +6606,10 @@ ${b.text}
     if (rpg.level < z.minLv) { showToast(`需 Lv${z.minLv} 才能進入${z.name}`); return; }
     rpg.currentZone = zoneId;
     if (!rpg.currentLayer) rpg.currentLayer = 'upper';
-    if (!rpg.currentFloor || rpg.currentFloor < 1 || rpg.currentFloor > ZONE_FLOORS_PER_LAYER) rpg.currentFloor = 1;
     saveData();
     renderZoneSelector();
   }
   window.selectZone = selectZone;
-
-  function selectFloor(f) {
-    const me = getMe();
-    if (!me) return;
-    const rpg = getRpg(me);
-    if (f < 1 || f > ZONE_FLOORS_PER_LAYER) return;
-    rpg.currentFloor = f;
-    saveData();
-    renderZoneSelector();
-  }
-  window.selectFloor = selectFloor;
 
   const SLOT_LABEL = {
     weapon: '武器', armor: '盔甲', accessory: '飾品',
@@ -7617,11 +7600,11 @@ ${b.text}
 
     // 使用目前選擇的地區/層數
     const zoneId = rpg.currentZone || 'forest';
-    const floor = rpg.currentFloor || 1;
     const layerId = rpg.currentLayer || 'upper';
     const zone = ZONES.find(z => z.id === zoneId) || ZONES[0];
-    const targetLv = layerFloorToLevel(layerId, floor);
-    const monster = generateMonster(rpg.level, { zoneId, layerId, floor, targetLv, forageElite: !!(opts && opts.forageElite) });
+    // ⭐ 每場戰鬥隨機抽該層範圍內的怪物等級
+    const targetLv = pickLayerLevel(layerId);
+    const monster = generateMonster(rpg.level, { zoneId, layerId, targetLv, forageElite: !!(opts && opts.forageElite) });
     const result = autoFight(me, monster);
 
     // 渲染戰鬥場景，依序播放
