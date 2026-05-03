@@ -10087,8 +10087,8 @@ ${b.text}
     const rankRows = settlement.map(s => {
       const p = getPlayer(s.pid);
       const isKiller = !!s.isKiller;
-      const totalCoinQty = s.bossCoinQty + (isKiller ? 6 : 0); // 尾刀額外 +6
-      const coinNote = `${coinIcon}×${totalCoinQty}${isKiller ? '（含尾刀+6）' : ''}`;
+      const totalCoinQty = s.bossCoinQty + (isKiller ? 5 : 0); // 尾刀額外 +5
+      const coinNote = `${coinIcon}×${totalCoinQty}${isKiller ? '（含尾刀+5）' : ''}`;
       return `
         <div class="bk-rank-row ${isKiller ? 'killer' : ''}">
           <span class="bk-rank-num">${s.rank}</span>
@@ -11051,6 +11051,8 @@ ${b.text}
 
       <button class="btn btn-danger" onclick="adminResetRpg()" style="margin-top:6px;">⚠️ 重置 RPG 角色（保留幣）</button>
       <button class="btn btn-secondary" onclick="adminRefillBosses()" style="margin-top:6px; background:linear-gradient(135deg,#86efac,#16a34a); box-shadow:0 4px 0 #15803d; color:#fff;">💚 補滿世界王 HP（保留排隊 / 戰報）</button>
+      <button class="btn btn-secondary" onclick="adminGrantAllBossCoins(4)" style="margin-top:6px; background:linear-gradient(135deg,#fde047,#f59e0b); box-shadow:0 4px 0 #d97706; color:#7c2d12;">👑 全員 +4 鵝皇硬幣（鵝王扭蛋用）</button>
+      <button class="btn btn-secondary" onclick="adminShowHpBreakdown()" style="margin-top:6px; background:linear-gradient(135deg,#fca5a5,#dc2626); box-shadow:0 4px 0 #991b1b; color:#fff;">🩸 全員血量明細（看誰 HP 偏高）</button>
       <button class="btn btn-danger" onclick="adminResetBosses()" style="margin-top:6px; background:linear-gradient(135deg,#fdba74,#c2410c); box-shadow:0 4px 0 #7c2d12;">🗑 重置世界王紀錄（HP / 排隊 / 戰報 / 待領獎）</button>
       <button class="btn btn-danger" onclick="adminResetLeaderboard()" style="margin-top:6px; background:linear-gradient(135deg,#fde047,#d97706); box-shadow:0 4px 0 #92400e; color:#7c2d12;">🏆 重置排行榜（所有玩家等級 / 鵝鵝幣 / 綠茶遭遇歸零）</button>
       <button class="btn btn-danger" onclick="adminWipeAll()" style="margin-top:6px; background:linear-gradient(135deg,#fca5a5,#7f1d1d); box-shadow:0 4px 0 #450a0a;">💀 全玩家洗白（伺服器 + 本地都重置）</button>
@@ -11366,6 +11368,145 @@ ${b.text}
   window.adminResetBosses = adminResetBosses;
 
   // ⭐ 補滿所有世界王 HP（保留排隊 / 戰報 / 已殺次數）
+  // ⭐ 全員送 N 顆鵝皇硬幣（鵝王扭蛋用，免費抽獎卷）
+  async function adminGrantAllBossCoins(qty) {
+    const n = Math.max(1, qty | 0);
+    if (!confirm(`👑 送給全員 ${n} 顆鵝皇硬幣（任何王扭蛋都可用）？\n會推送到雲端，所有人下次同步就會收到。`)) return;
+    const now = Date.now();
+    let granted = 0;
+    for (const p of players) {
+      if (!p || !p.id) continue;
+      p.rpg = p.rpg || {};
+      p.rpg.inventory = p.rpg.inventory || [];
+      const existing = p.rpg.inventory.find(it => it && typeof it === 'object' && it.id === 'bc_goose_king' && it.isBossCoin);
+      if (existing) {
+        existing.qty = (existing.qty || 1) + n;
+      } else {
+        p.rpg.inventory.push({
+          id: 'bc_goose_king',
+          name: '鵝皇硬幣',
+          icon: '👑',
+          isBossCoin: true,
+          stackable: true,
+          qty: n,
+        });
+      }
+      p.lastTouchedAt = now; // 讓我這份覆蓋遠端
+      granted++;
+    }
+    saveData();
+    if (window.__firebaseSync && window.__firebaseSync.forceWriteAllPlayers) {
+      try { await window.__firebaseSync.forceWriteAllPlayers(players); }
+      catch (e) { console.error(e); showToast('☁️ 雲端寫入失敗，本地已加'); return; }
+    }
+    render();
+    hideModal();
+    showToast(`👑 已發給 ${granted} 位玩家 各 ${n} 顆鵝皇硬幣`);
+  }
+  window.adminGrantAllBossCoins = adminGrantAllBossCoins;
+
+  // ⭐ 顯示全員 HP 明細：基底 / 等級成長 / 技能 / 能力 / 裝備 / 套裝 / 寶物 / 精魂
+  function adminShowHpBreakdown() {
+    const rows = [];
+    for (const p of players) {
+      if (!p || !p.rpg || !p.rpg.class) continue;
+      const cls = CLASSES[p.rpg.class];
+      if (!cls) continue;
+      const lv = p.rpg.level || 1;
+      const baseHp = cls.hp;
+      const lvHp = (lv - 1) * cls.hpPer;
+      const b = (typeof computeSkillBonuses === 'function') ? computeSkillBonuses(p) : { hp: 0, hpPct: 0 };
+      const ab = (typeof computeAbilityBonuses === 'function') ? computeAbilityBonuses(p) : { hp: 0 };
+      const skillHpPct = b.hpPct || 0;
+      const skillHpFlat = b.hp || 0;
+      const abilityHp = ab.hp || 0;
+      // 裝備 HP（10 槽）
+      let equipHp = 0;
+      for (const slot of ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape', 'wings', 'pet', 'guide']) {
+        const id = p.rpg.equipment?.[slot];
+        if (!id) continue;
+        const it = (typeof resolveItem === 'function') ? resolveItem(id) : null;
+        if (it && it.hp) equipHp += it.hp;
+      }
+      // 套裝 HP
+      let setHp = 0;
+      try {
+        const setInfo = (typeof computeSetBonuses === 'function') ? computeSetBonuses(p) : { bonuses: {} };
+        setHp = setInfo.bonuses?.hp || 0;
+      } catch (e) {}
+      // 寶物 HP
+      let treasureHp = 0;
+      try {
+        const t = (typeof computeTreasureBonuses === 'function') ? computeTreasureBonuses(p.rpg) : {};
+        treasureHp = t.hp || 0;
+      } catch (e) {}
+      // 精魂 HP
+      let spiritHp = 0;
+      try {
+        const slots = (typeof getSpiritSlots === 'function') ? getSpiritSlots(p.rpg) : [];
+        for (const sp of (slots || [])) if (sp && sp.hp) spiritHp += sp.hp;
+      } catch (e) {}
+      const beforePct = baseHp + lvHp + skillHpFlat + abilityHp;
+      const afterPct = Math.round(beforePct * (1 + skillHpPct));
+      const total = afterPct + equipHp + setHp + treasureHp + spiritHp;
+      rows.push({
+        name: `${p.avatar || '🎴'} ${p.name}`,
+        cls: cls.name,
+        lv,
+        baseHp, lvHp, skillHpFlat, abilityHp, skillHpPct,
+        equipHp, setHp, treasureHp, spiritHp,
+        total,
+      });
+    }
+    rows.sort((a, b) => b.total - a.total);
+    const html = `
+      <div style="font-size:11px; color:#5b3d62; margin-bottom:8px;">
+        職業基底 = 職業初始 HP；等級成長 = (Lv-1) × hpPer；技能/能力/裝備/套裝/寶物/精魂 各為加成。<br>
+        最後依 (基底+等級+技能flat+能力) × (1+技能%) + 裝備 + 套裝 + 寶物 + 精魂 = 總 HP。
+      </div>
+      <div style="overflow-x:auto;">
+      <table style="width:100%; font-size:11px; border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f3e8ff; color:#5b21b6;">
+            <th style="padding:4px 6px; text-align:left;">玩家</th>
+            <th style="padding:4px 4px;">職業</th>
+            <th style="padding:4px 4px;">Lv</th>
+            <th style="padding:4px 4px;">基底</th>
+            <th style="padding:4px 4px;">等級</th>
+            <th style="padding:4px 4px;">技能</th>
+            <th style="padding:4px 4px;">能力</th>
+            <th style="padding:4px 4px;">裝備</th>
+            <th style="padding:4px 4px;">套裝</th>
+            <th style="padding:4px 4px;">寶物</th>
+            <th style="padding:4px 4px;">精魂</th>
+            <th style="padding:4px 6px; text-align:right; color:#dc2626;">總 HP</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(r => `
+            <tr style="border-bottom:1px solid #e9d5ff;">
+              <td style="padding:4px 6px;">${escapeHtml(r.name)}</td>
+              <td style="padding:4px 4px;">${escapeHtml(r.cls)}</td>
+              <td style="padding:4px 4px; text-align:center;">${r.lv}</td>
+              <td style="padding:4px 4px; text-align:right;">${r.baseHp}</td>
+              <td style="padding:4px 4px; text-align:right;">${r.lvHp}</td>
+              <td style="padding:4px 4px; text-align:right;">${r.skillHpFlat}${r.skillHpPct ? ` <span style="color:#16a34a;">+${Math.round(r.skillHpPct*100)}%</span>` : ''}</td>
+              <td style="padding:4px 4px; text-align:right;">${r.abilityHp}</td>
+              <td style="padding:4px 4px; text-align:right; color:#7c3aed;">${r.equipHp}</td>
+              <td style="padding:4px 4px; text-align:right;">${r.setHp}</td>
+              <td style="padding:4px 4px; text-align:right;">${r.treasureHp}</td>
+              <td style="padding:4px 4px; text-align:right;">${r.spiritHp}</td>
+              <td style="padding:4px 6px; text-align:right; color:#dc2626; font-weight:800;">${r.total}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      </div>
+    `;
+    showModal('🩸 全員 HP 明細', html);
+  }
+  window.adminShowHpBreakdown = adminShowHpBreakdown;
+
   function adminRefillBosses() {
     if (!confirm('💚 把所有世界王 HP 補滿（保留排隊 / 過往戰報 / 已擊殺紀錄）？')) return;
     worldBoss = worldBoss || {};
@@ -11644,14 +11785,14 @@ ${b.text}
               bossCoinName: bossDef.bossCoin?.name || '王硬幣',
               settlement, // 全員結算（依傷害排序）
             };
-            // 尾刀獎（鵝鵝幣 + 王硬幣 ×6 + 精魂的旗標）
+            // 尾刀獎（鵝鵝幣 + 王硬幣 ×5 + 精魂的旗標）
             newPending.push({
               pid: attackerId,
               coins: bossDef.rewardKiller.coins,
               item: bossDef.rewardKiller.item || null,
-              bossCoinQty: 6,
+              bossCoinQty: 5,
               rewardId: `${bossId}_${state.killCount}_killer`,
-              kind: '尾刀 +6',
+              kind: '尾刀 +5',
             });
             // 排行 1-3：分別 6 / 4 / 2 顆王硬幣
             const RANK_COIN_QTY = [6, 4, 2];
