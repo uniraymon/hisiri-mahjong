@@ -3037,8 +3037,19 @@
     const totalPct = Math.round((Math.min(level, 5) * 10 + Math.max(0, level - 5) * 5));
     const parts = [`效果 +${totalPct}%`];
     if (level === 3 && skill.applyStatus) parts.push(`${statusEmoji(skill.applyStatus.type)} ${statusLabel(skill.applyStatus.type)} 機率/持續 +`);
-    if (level === 5)  parts.push(describeLv5Bonus(skill));
-    if (level === 10) parts.push('🌟 ' + describeLv5Bonus(skill) + '（再強化）');
+    // ⭐ customLv 技能：用各自的 Lv 5 / 10 描述（不走預設 lv5BonusKind）
+    if (skill.customLv) {
+      if (skill.id === 'p_holy_slash') {
+        if (level === 5)  parts.push('🎯 暴擊率 +10%（本招）');
+        if (level === 10) parts.push('🌟 暴擊率 再 +10%（本招，共 +20%）');
+      } else if (skill.id === 'p_holy_smite') {
+        if (level === 5)  parts.push('🩸 maxHp 加傷 +5%（本招，共 15%）');
+        if (level === 10) parts.push('🌟 maxHp 加傷 再 +5%（本招，共 20%）');
+      }
+    } else {
+      if (level === 5)  parts.push(describeLv5Bonus(skill));
+      if (level === 10) parts.push('🌟 ' + describeLv5Bonus(skill) + '（再強化）');
+    }
     return parts.join('、');
   }
 
@@ -7387,6 +7398,8 @@ ${b.text}
     if (eff.alwaysCrit) buffPairs.push('💥 必中暴擊');
     if (eff.extraCritChance) buffPairs.push(`🎯 暴擊率 +${Math.round(eff.extraCritChance * 100)}%（本招）`);
     if (eff.extraCritDmg)    buffPairs.push(`💥 爆傷 +${Math.round(eff.extraCritDmg * 100)}%（本招）`);
+    if (eff.bonusMaxHpPct)   buffPairs.push(`🩸 maxHp 加傷 +${Math.round(eff.bonusMaxHpPct * 100)}%（純加值，無視怪 DEF）`);
+    if (eff.postSelfBuff)    buffPairs.push(`✨ 攻擊完後：${describeBuff(eff.postSelfBuff)}（${eff.postSelfBuff.turns} 回合）`);
     if (eff.mpCostMult && eff.mpCostMult < 1) buffPairs.push(`💙 MP 消耗 -${Math.round((1 - eff.mpCostMult) * 100)}%`);
     if (eff.magic) buffPairs.push('🔮 魔攻（吃法抗）');
     if (eff.ignoreDef) buffPairs.push('🗡 無視防禦');
