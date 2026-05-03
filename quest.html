@@ -1997,7 +1997,7 @@
       weaponImage: 'assets/equipment/holy-sword.svg',
       accImage:    'assets/equipment/crown.svg',
       hasShield: true,
-      desc: '高防禦 / 自癒 / 信仰之力（HP 越滿傷害越高，最多 +20%）',
+      desc: '高防禦 / 自癒 / 部份技能附加最大 HP 傷害',
       hp: 115, atk: 11, def: 11, spd: 7,
       mp: 35, mpPer: 2,
       hpPer: 12, atkPer: 1.4, defPer: 1.6, spdPer: 0.4,
@@ -2005,20 +2005,23 @@
       regenPer: 0.05,
       skills: [
         // ⭐ 解鎖 -4，cooldown 全 0；alwaysCrit 只保留神之裁決（最高階收頭技）
-        { id: 'p_judgment',  name: '審判',     icon: '⚖️', unlockLv: 8,  cooldown: 0, mpCost: 38, type: 'damage', mult: 2.5 },
-        { id: 'p_holy_slash',name: '聖光斬',   icon: '✝️', unlockLv: 1,  cooldown: 0, mpCost: 22, type: 'damage', mult: 1.6, healCaster: 0.05 },
+        // ⭐ 審判：法術 2× ATK，打全體
+        { id: 'p_judgment',  name: '審判',     icon: '⚖️', unlockLv: 8,  cooldown: 0, mpCost: 38, type: 'damage', mult: 2.0, magic: true, targetCount: 'all' },
+        // ⭐ 聖光斬：1.2 ATK + 5% maxHp（不回血）；Lv 5 / Lv 10 各 +10% 暴擊率
+        { id: 'p_holy_slash',name: '聖光斬',   icon: '✝️', unlockLv: 1,  cooldown: 0, mpCost: 22, type: 'damage', mult: 1.2, bonusMaxHpPct: 0.05, customLv: true },
         { id: 'p_holy_heal', name: '神聖治癒', icon: '✨', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'heal', healPct: 0.3 },
         { id: 'p_pray',      name: '祈禱',     icon: '🙏', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true, isMpRegenStrong: true },
         { id: 'p_shelter',   name: '庇護術',   icon: '🤲', unlockLv: 3,  cooldown: 0, mpCost: 25, type: 'heal', healPct: 0.40 },
-        { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 6,  cooldown: 0, mpCost: 35, type: 'damage', mult: 2.0, healCaster: 0.10 },
-        { id: 'p_holy_wave', name: '神聖光波', icon: '🌟', unlockLv: 2,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.5, healCaster: 0.06, targetCount: 2 },
+        // ⭐ 神聖懲戒：2.5× ATK + 10% maxHp；Lv 5 / Lv 10 各 +5% maxHp
+        { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 6,  cooldown: 0, mpCost: 35, type: 'damage', mult: 2.5, bonusMaxHpPct: 0.10, customLv: true },
+        // ⭐ 神聖光波：1× ATK，打 2 段（不再多目標、不回血）
+        { id: 'p_holy_wave', name: '神聖光波', icon: '🌟', unlockLv: 2,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.0, hits: 2 },
         { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 7,  cooldown: 0, mpCost: 35, type: 'damage', mult: 1.7, targetCount: 2, applyStatus: { type: 'paralyze', turns: 2, chance: 0.4 } },
         { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.40, turns: 3 }, bonusHealPct: 0.20 },
-        { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 22, type: 'damage', defMult: 4 },
-        { id: 'p_divine_storm',  name: '神聖風暴', icon: '🌪', unlockLv: 5,  cooldown: 0, mpCost: 28, type: 'damage', maxHpMult: 0.50, targetCount: 2 },
+        // ⭐ 護盾衝鋒：6× DEF；攻擊完後 +10 DEF（持續整場）
+        { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 22, type: 'damage', defMult: 6, postSelfBuff: { stat: 'def', amount: 10, turns: 99 } },
         { id: 'p_thorn_armor',   name: '棘甲術',   icon: '🌵', unlockLv: 4,  cooldown: 0, mpCost: 22, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.50, turns: 4 } },
         { id: 'p_aegis',         name: '反傷護盾', icon: '🪞', unlockLv: 8,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.50, turns: 3 } },
-        { id: 'p_divine_wrath',  name: '神之裁決', icon: '⚡', unlockLv: 10, cooldown: 0, mpCost: 38, type: 'damage', maxHpMult: 0.65, alwaysCrit: true, cast: 90 },
         // ⭐ 新增：神聖奪魂 — 0.8× ATK 傷害 + 回 4 MP（聖騎回魔多一倍）
         { id: 'p_mana_drain',    name: '神聖奪魂', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 0.8, mpRestore: 4 },
       ],
@@ -2323,7 +2326,7 @@
       name: '🦢 鵝皇',
       icon: '🦢',
       hp: 90000,        // 50000 → 90000：更耐打
-      atk: 95, def: 38, spd: 12,  // ATK 48 → 75 → 95（更具威脅）
+      atk: 143, def: 38, spd: 12,  // ATK 95 → 143（v8 +50%）
       level: 30,
       respawnMs: 0,     // ⭐ 立刻重生
       verb: '皇者懲戒',
@@ -2344,7 +2347,7 @@
       name: '🐉 古龍鵝',
       icon: '🐉',
       hp: 200000,       // 100000 → 200000
-      atk: 140, def: 50, spd: 14, // ATK 65 → 100 → 140（更具威脅，需要更多生存能力）
+      atk: 210, def: 50, spd: 14, // ATK 140 → 210（v8 +50%）
       level: 40,
       respawnMs: 0,     // ⭐ 立刻重生
       verb: '龍焰之息',
@@ -2363,7 +2366,7 @@
       name: '🪨 鵝卵石',
       icon: '🪨',
       hp: 5000000,
-      atk: 135, def: 65, spd: 8,
+      atk: 203, def: 65, spd: 8,  // ATK 135 → 203（v8 +50%）
       level: 55,
       respawnMs: 0,
       verb: '崩落巨石',
@@ -2394,7 +2397,7 @@
     {
       id: 'breakfast_goose',
       name: '早餐鵝', icon: '🍳',
-      hp: 25000, atk: 75, def: 70, spd: 14, level: 30,  // DEF 35 → 70（×2）
+      hp: 25000, atk: 113, def: 70, spd: 14, level: 30,  // ATK 75 → 113（v8 +50%）/ DEF 35 → 70（×2）
       verb: '塗果醬',
       skills: [
         { verb: '太陽蛋砲擊', mult: 1.6, cooldown: 4 },
@@ -2408,7 +2411,7 @@
     {
       id: 'lunch_goose',
       name: '午餐鵝', icon: '🍱',
-      hp: 40000, atk: 100, def: 100, spd: 16, level: 30,  // DEF 50 → 100（×2）
+      hp: 40000, atk: 150, def: 100, spd: 16, level: 30,  // ATK 100 → 150（v8 +50%）/ DEF 50 → 100（×2）
       verb: '便當蓋下擊',
       ability: { type: 'multiHit', hits: 2 },
       skills: [
@@ -2423,7 +2426,7 @@
     {
       id: 'dinner_goose',
       name: '晚餐鵝', icon: '🍷',
-      hp: 60000, atk: 130, def: 140, spd: 18, level: 30,  // DEF 70 → 140（×2）
+      hp: 60000, atk: 195, def: 140, spd: 18, level: 30,  // ATK 130 → 195（v8 +50%）/ DEF 70 → 140（×2）
       verb: '紅酒甩擊',
       ability: { type: 'magicResist', resist: 0.3 },
       skills: [
@@ -2915,6 +2918,7 @@
     }
     if (skill.defMult)      eff.defMult  = +(skill.defMult * (1 + dmgBonus)).toFixed(3);
     if (skill.maxHpMult)    eff.maxHpMult= +(skill.maxHpMult * (1 + dmgBonus)).toFixed(3);
+    if (skill.bonusMaxHpPct) eff.bonusMaxHpPct = +(skill.bonusMaxHpPct * (1 + dmgBonus)).toFixed(4);
     // ⭐ 隱身專屬：每升一級 −1 MP（max 5 級 → Lv 5 為 10 MP）
     if (skill.id === 'a_stealth') {
       eff.mpCost = Math.max(0, (skill.mpCost || 0) - Math.min(5, level));
@@ -2961,6 +2965,16 @@
       };
       if (level >= 5)  applyKindBonus(1);
       if (level >= 10) applyKindBonus(1); // 第 10 級再給一波
+    }
+    // ⭐ 聖光斬：customLv → Lv 5 / Lv 10 各 +10% 暴擊率
+    if (skill.id === 'p_holy_slash') {
+      if (level >= 5)  eff.extraCritChance = (eff.extraCritChance || 0) + 0.10;
+      if (level >= 10) eff.extraCritChance = (eff.extraCritChance || 0) + 0.10;
+    }
+    // ⭐ 神聖懲戒：customLv → Lv 5 / Lv 10 各 +5% maxHp 傷害
+    if (skill.id === 'p_holy_smite') {
+      if (level >= 5)  eff.bonusMaxHpPct = (eff.bonusMaxHpPct || 0) + 0.05;
+      if (level >= 10) eff.bonusMaxHpPct = (eff.bonusMaxHpPct || 0) + 0.05;
     }
     return eff;
   }
@@ -3078,18 +3092,16 @@
         return [
           { judgeId: 1101, param: 35, skillId: 'p_shelter' },
           { judgeId: 1101, param: 60, skillId: 'p_holy_heal' },
-          { judgeId: 1000, param: 0,  skillId: 'p_thorn_armor' },     // 棘甲術（反傷 40% buff）
-          { judgeId: 1000, param: 0,  skillId: 'p_blessing' },        // 神聖祝福（DEF +40% buff）
+          { judgeId: 1000, param: 0,  skillId: 'p_thorn_armor' },     // 棘甲術（反傷 50% buff）
+          { judgeId: 1000, param: 0,  skillId: 'p_blessing' },        // 神聖祝福（DEF +40% + HP +20% buff）
           { judgeId: 1201, param: 25, skillId: 'p_pray' },
-          { judgeId: 1300, param: 25, skillId: 'p_divine_wrath' },    // 神之裁決（maxHP × 0.65 必爆）
-          { judgeId: 1300, param: 30, skillId: 'p_judgment' },
-          { judgeId: 1000, param: 0,  skillId: 'p_aegis' },           // 反傷護盾（70% reflect）
-          { judgeId: 1000, param: 0,  skillId: 'p_divine_storm' },    // 神聖風暴（maxHP 結算 / 多目標）
-          { judgeId: 1000, param: 0,  skillId: 'p_shield_charge' },   // 護盾衝鋒（DEF 結算）
+          { judgeId: 1450, param: 2,  skillId: 'p_judgment' },        // 多隻怪 → 審判（魔傷 2× ATK 全體）
+          { judgeId: 1000, param: 0,  skillId: 'p_aegis' },           // 反傷護盾（50% reflect）
+          { judgeId: 1000, param: 0,  skillId: 'p_shield_charge' },   // 護盾衝鋒（6× DEF + DEF +10 buff）
           { judgeId: 1000, param: 0,  skillId: 'p_godfist' },         // 神之拳（2 目標 + 麻痺）
-          { judgeId: 1000, param: 0,  skillId: 'p_holy_wave' },       // 神聖光波（2 目標 + 自癒）
-          { judgeId: 1000, param: 0,  skillId: 'p_holy_smite' },
-          { judgeId: 1000, param: 0,  skillId: 'p_holy_slash' },
+          { judgeId: 1000, param: 0,  skillId: 'p_holy_wave' },       // 神聖光波（1× ATK ×2 段）
+          { judgeId: 1000, param: 0,  skillId: 'p_holy_smite' },      // 神聖懲戒（2.5× ATK + 10% maxHp）
+          { judgeId: 1000, param: 0,  skillId: 'p_holy_slash' },      // 聖光斬（1.2× ATK + 5% maxHp）
           { judgeId: 1000, param: 0,  skillId: 'basic' },
         ];
       default:
@@ -4286,6 +4298,14 @@
         window.__pendingUpdateV6.add(player.id);
       }
     }
+    // ⭐ 大改版 v8：HP 平衡 / 鵝王扭蛋 / 反傷 50%/300 / 聖騎重鑄 / 個人 BOSS DEF×2 / 全王 ATK +50%
+    if (!player.rpg.updateV8 && typeof getMeId === 'function' && player.id === getMeId()) {
+      player.rpg.updateV8 = true;
+      if (typeof window !== 'undefined') {
+        window.__pendingUpdateV8 = window.__pendingUpdateV8 || new Set();
+        window.__pendingUpdateV8.add(player.id);
+      }
+    }
     // skillPoints migration
     if (player.rpg.skillPoints == null) {
       const earned = Math.max(0, (player.rpg.level || 1) - 1) * POINTS_PER_LEVEL.skill;
@@ -5031,7 +5051,7 @@
             const isFlat = skill.flat != null;
             // 受 buff 影響的攻擊力 / 防禦力 / 最大生命
             const effAtk = stats.atk * (1 + (pBuff.atkPct || 0));
-            const effDef = stats.def * (1 + (pBuff.defPct || 0));
+            const effDef = (stats.def + (pBuff.def || 0)) * (1 + (pBuff.defPct || 0));
             // ⭐ 多段技能：每段傷害 = 總傷害 / hits × 1.3（同 monster multiHit 公式）
             const skillHits = Math.max(1, skill.hits || 1);
             // 一般多段：1.3 / hits 平均；fixedHitMult 標記 → 不享 ×1.3 共享傷，每段直接照 mult 算
@@ -5059,10 +5079,9 @@
             // 職業被動：物理或法術加成
             if (isMagic) dmg *= (1 + (passive.flatPct || 0));
             else         dmg *= (1 + (passive.physPct || 0));
-            // ⭐ 聖騎「信仰之力」：依目前 HP 比例提供最多 +20% 傷害（HP 滿 = +20%、HP 0 = +0%）
-            if (player.rpg.class === 'paladin') {
-              const hpPct = stats.maxHp > 0 ? Math.max(0, Math.min(1, pHp / stats.maxHp)) : 0;
-              dmg *= (1 + 0.20 * hpPct);
+            // ⭐ 聖騎技能可帶 bonusMaxHpPct：固定加上 maxHp × X 傷害（聖光斬 / 神聖懲戒）
+            if (skill.bonusMaxHpPct) {
+              dmg += stats.maxHp * skill.bonusMaxHpPct;
             }
             // 怪物抗性（魔攻吃法抗，物攻吃物抗）
             if (isMagic && mAbility?.type === 'magicResist') dmg *= (1 - mAbility.resist);
@@ -5111,6 +5130,11 @@
               const before = pMp;
               pMp = Math.min(stats.maxMp, pMp + skill.mpRestore);
               if (pMp - before > 0) extra += ` 💙+${pMp - before} MP`;
+            }
+            // ⭐ postSelfBuff：傷害技攻擊完後額外給自己 buff（護盾衝鋒：DEF +10）
+            if (skill.postSelfBuff) {
+              applyStatus(playerObj, { type: 'buff', stat: skill.postSelfBuff.stat, amount: skill.postSelfBuff.amount, turns: skill.postSelfBuff.turns });
+              extra += ` ✨${describeBuff(skill.postSelfBuff)}`;
             }
             log.push({
               type: 'crit-player',
@@ -5232,7 +5256,7 @@
           }
         }
         // 防禦受 buff 影響
-        const effDef = stats.def * (1 + (pBuff.defPct || 0));
+        const effDef = (stats.def + (pBuff.def || 0)) * (1 + (pBuff.defPct || 0));
         // 反傷：玩家身上有 reflectPct 時，怪打到我會被反彈一部分（受到傷害的 50%，最多 300）
         const applyReflect = (incomingDmg) => {
           if (!pBuff.reflectPct || incomingDmg <= 0 || mHp <= 0) return;
@@ -5367,7 +5391,7 @@
   }
   // 把目前生效的 buff 加總（atkPct/defPct/spd/critChance/critDmg/reflectPct）
   function getBuffBonus(target) {
-    const out = { atkPct: 0, defPct: 0, spd: 0, critChance: 0, critDmg: 0, reflectPct: 0 };
+    const out = { atkPct: 0, defPct: 0, def: 0, spd: 0, critChance: 0, critDmg: 0, reflectPct: 0 };
     if (!target || !target.statuses) return out;
     for (const s of target.statuses) {
       if (s.type !== 'buff' || !s.stat) continue;
@@ -5379,6 +5403,7 @@
     if (!buff) return '';
     if (buff.stat === 'atkPct')     return `🦁 ATK +${Math.round(buff.amount * 100)}%`;
     if (buff.stat === 'defPct')     return `🛡 DEF +${Math.round(buff.amount * 100)}%`;
+    if (buff.stat === 'def')        return `🛡 DEF +${buff.amount}`;
     if (buff.stat === 'spd')        return `💨 SPD +${buff.amount}`;
     if (buff.stat === 'critChance') return `🎯 暴擊率 +${Math.round(buff.amount * 100)}%`;
     if (buff.stat === 'critDmg')    return `💥 爆傷 +${Math.round(buff.amount * 100)}%`;
@@ -5581,7 +5606,7 @@
             const isFlat = skill.flat != null;
             const isMagic = isFlat || skill.maxHpMult != null || skill.magic;
             const effAtk = stats.atk * (1 + (pBuff.atkPct || 0));
-            const effDef = stats.def * (1 + (pBuff.defPct || 0));
+            const effDef = (stats.def + (pBuff.def || 0)) * (1 + (pBuff.defPct || 0));
             // 對每個目標各打一發（不分散傷害）
             const hits = [];
             for (const tgt of targets) {
@@ -5601,10 +5626,9 @@
               dmg *= (1 + (bonus.skillDmgPct || 0));
               if (isMagic) dmg *= (1 + (passive.flatPct || 0));
               else         dmg *= (1 + (passive.physPct || 0));
-              // ⭐ 聖騎「信仰之力」：依目前 HP 比例提供最多 +20% 傷害（HP 滿 = +20%、HP 0 = +0%）
-              if (player.rpg.class === 'paladin') {
-                const hpPct = stats.maxHp > 0 ? Math.max(0, Math.min(1, pHp / stats.maxHp)) : 0;
-                dmg *= (1 + 0.20 * hpPct);
+              // ⭐ 聖騎技能可帶 bonusMaxHpPct：固定加上 maxHp × X 傷害（聖光斬 / 神聖懲戒）
+              if (skill.bonusMaxHpPct) {
+                dmg += stats.maxHp * skill.bonusMaxHpPct;
               }
               if (isMagic && tgt.ability?.type === 'magicResist') dmg *= (1 - tgt.ability.resist);
               if (!isMagic && tgt.ability?.type === 'physResist') dmg *= (1 - tgt.ability.resist);
@@ -5649,6 +5673,11 @@
               const before = pMp;
               pMp = Math.min(stats.maxMp, pMp + skill.mpRestore);
               if (pMp - before > 0) extra += ` 💙+${pMp - before} MP`;
+            }
+            // ⭐ postSelfBuff：護盾衝鋒打完 +10 DEF buff
+            if (skill.postSelfBuff) {
+              applyStatus(playerObj, { type: 'buff', stat: skill.postSelfBuff.stat, amount: skill.postSelfBuff.amount, turns: skill.postSelfBuff.turns });
+              extra += ` ✨${describeBuff(skill.postSelfBuff)}`;
             }
             const targetSummary = hits.map(h => `${h.tgt.icon}${h.tgt.name} -${h.dmg}${h.isCrit ? '【爆】' : ''}`).join(' / ');
             log.push({
@@ -5751,7 +5780,7 @@
           continue;
         }
         // 防禦受 buff 影響
-        const effDef = stats.def * (1 + (pBuff.defPct || 0));
+        const effDef = (stats.def + (pBuff.def || 0)) * (1 + (pBuff.defPct || 0));
         // 怪物技能挑選：每次 40% 機率，且距離自己上次技能 ≥ 2 回合（中間至少 1 次普攻）
         let mSkill = null;
         const cdMap = mSkillLastByIdx[m.idx] = mSkillLastByIdx[m.idx] || {};
@@ -5902,7 +5931,66 @@
   function maybeShowBetaCompModal() {
     const me = getMe();
     if (!me) return;
-    // ⭐ v6 優先（最新）
+    // ⭐ v8 優先（最新）
+    if (window.__pendingUpdateV8 && window.__pendingUpdateV8.has(me.id)) {
+      window.__pendingUpdateV8.delete(me.id);
+      const html = `
+        <div style="text-align:left; padding:6px 0;">
+          <div style="text-align:center; font-size:42px; margin-bottom:6px;">⚖️</div>
+          <div style="text-align:center; font-weight:800; font-size:17px; color:#7c3aed; margin-bottom:8px;">v8 — HP 平衡 / 鵝王扭蛋 / 聖騎重鑄 / BOSS 加強</div>
+          <div style="font-size:12px; color:#5b3d62; line-height:1.6; padding:10px 12px; background:#f3e8ff; border-radius:10px; border:2px dashed #c4b5fd;">
+
+            <div style="font-weight:800; color:#dc2626; margin-bottom:4px;">🩸 HP 大平衡（裝備 / 精魂全砍）</div>
+            • 詞綴 健壯 perLv 4 → 2、巨魂 5 → 2.5（HP 詞綴值砍半）<br>
+            • 稀有度 mult：稀有 1.4→1.2、傳說 2.0→1.5<br>
+            • 階層 mult：1.00 / 1.10 / 1.20 / 1.35 / 1.50（原 1.00 / 1.15 / 1.35 / 1.60 / 1.85）<br>
+            • 精魂：base HP × 0.7、HP 詞綴 × 0.7<br>
+            • <b>既有裝備 / 精魂自動套新公式</b>（不會弄丟道具，stat 重算）<br>
+
+            <div style="font-weight:800; color:#fbbf24; margin:10px 0 4px;">👑 鵝王扭蛋開放</div>
+            • 用 <b>3 顆王硬幣</b>抽（任何王硬幣都通用）<br>
+            • 6 種金裝飾品「鵝王恩賜」+ 體力 / 鵝鵝幣 / EXP 獎勵<br>
+            • 全員一次性贈送 <b>4 顆鵝皇硬幣</b>讓大家試抽<br>
+            • 尾刀王硬幣獎勵 6 → 5 顆<br>
+
+            <div style="font-weight:800; color:#a855f7; margin:10px 0 4px;">⚔️ 聖騎大改</div>
+            • 取消所有技能吸血、取消 HP 被動傷害縮放<br>
+            • <b>聖光斬</b>：1.2× ATK + <b>5% maxHp</b> 傷害（Lv 5 / 10 各 +10% 暴擊率）<br>
+            • <b>神聖懲戒</b>：2.5× ATK + <b>10% maxHp</b>（Lv 5 / 10 各 +5% maxHp）<br>
+            • <b>神聖光波</b>：1× ATK <b>×2 段</b>（不再多目標）<br>
+            • <b>護盾衝鋒</b>：6× DEF（提高），打完 <b>+10 DEF buff</b><br>
+            • <b>審判</b>：2× ATK <b>魔傷打全體</b><br>
+            • <b>神聖祝福</b>：DEF +40% + <b>即時補 20% maxHp</b>（可超出上限）<br>
+            • 刪除：<b>神聖風暴 / 神之裁決</b><br>
+
+            <div style="font-weight:800; color:#0ea5e9; margin:10px 0 4px;">🪞 反傷統一</div>
+            • 反射護盾系列 / 怪反傷光芒 → 統一「<b>受到傷害的 50%、單次最多 300</b>」<br>
+            • 棘甲術 / 反傷護盾 反傷 % 統一為 50%<br>
+
+            <div style="font-weight:800; color:#16a34a; margin:10px 0 4px;">🦢 BOSS 強化</div>
+            • 所有世界王 / 個人王 <b>ATK +50%</b>（鵝皇 95→143、古龍 140→210、卵石 135→203、早 75→113、午 100→150、晚 130→195）<br>
+            • 個人王 DEF <b>×2</b>（早 35→70、午 50→100、晚 70→140）<br>
+
+            <div style="font-weight:800; color:#7c3aed; margin:10px 0 4px;">🛠 其他</div>
+            • 修：上傳多人賽局後立刻消失（同步覆蓋 bug）<br>
+            • 修：世界王打完一直閃爍（每秒 innerHTML 重畫 → 改 patch 倒數文字）<br>
+            • 血祭斬：固定 −20 HP → 扣 <b>15% maxHP</b><br>
+            • 飾品 mpRegen 屬性整合：每回合自動回 MP +1（鵝王恩賜限定）<br>
+            • 規則「必ず」→「必定」（日文清光）<br>
+
+            <br>
+            <div style="text-align:center; padding:6px 8px; background:#fef3c7; border:1px dashed #f59e0b; border-radius:8px; color:#92400e;">
+              <span style="font-size:11px;">職業變了 / BOSS 變了 / 裝備數字也變了，去 Debug → 「全員血量明細」確認新數字 ♡</span>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="hideModal()" style="margin-top:14px; width:100%;">收下 ✨</button>
+        </div>
+      `;
+      showModal('📣 大改版 v8 公告', html);
+      saveData();
+      return;
+    }
+    // ⭐ v6
     if (window.__pendingUpdateV6 && window.__pendingUpdateV6.has(me.id)) {
       window.__pendingUpdateV6.delete(me.id);
       const html = `
