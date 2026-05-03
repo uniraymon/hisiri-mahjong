@@ -1997,7 +1997,7 @@
       weaponImage: 'assets/equipment/holy-sword.svg',
       accImage:    'assets/equipment/crown.svg',
       hasShield: true,
-      desc: '高防禦 / 自癒',
+      desc: '高防禦 / 自癒 / 信仰之力（HP 越滿傷害越高，最多 +20%）',
       hp: 115, atk: 11, def: 11, spd: 7,
       mp: 35, mpPer: 2,
       hpPer: 12, atkPer: 1.4, defPer: 1.6, spdPer: 0.4,
@@ -5059,6 +5059,11 @@
             // 職業被動：物理或法術加成
             if (isMagic) dmg *= (1 + (passive.flatPct || 0));
             else         dmg *= (1 + (passive.physPct || 0));
+            // ⭐ 聖騎「信仰之力」：依目前 HP 比例提供最多 +20% 傷害（HP 滿 = +20%、HP 0 = +0%）
+            if (player.rpg.class === 'paladin') {
+              const hpPct = stats.maxHp > 0 ? Math.max(0, Math.min(1, pHp / stats.maxHp)) : 0;
+              dmg *= (1 + 0.20 * hpPct);
+            }
             // 怪物抗性（魔攻吃法抗，物攻吃物抗）
             if (isMagic && mAbility?.type === 'magicResist') dmg *= (1 - mAbility.resist);
             if (!isMagic && mAbility?.type === 'physResist') dmg *= (1 - mAbility.resist);
@@ -5590,6 +5595,11 @@
               dmg *= (1 + (bonus.skillDmgPct || 0));
               if (isMagic) dmg *= (1 + (passive.flatPct || 0));
               else         dmg *= (1 + (passive.physPct || 0));
+              // ⭐ 聖騎「信仰之力」：依目前 HP 比例提供最多 +20% 傷害（HP 滿 = +20%、HP 0 = +0%）
+              if (player.rpg.class === 'paladin') {
+                const hpPct = stats.maxHp > 0 ? Math.max(0, Math.min(1, pHp / stats.maxHp)) : 0;
+                dmg *= (1 + 0.20 * hpPct);
+              }
               if (isMagic && tgt.ability?.type === 'magicResist') dmg *= (1 - tgt.ability.resist);
               if (!isMagic && tgt.ability?.type === 'physResist') dmg *= (1 - tgt.ability.resist);
               const skillCrit = baseCritChance + (skill.extraCritChance || 0) + (pBuff.critChance || 0);
