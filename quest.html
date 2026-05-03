@@ -3578,8 +3578,9 @@
       { id: 'pot_revive', name: '復活藥水',     icon: '🧚', desc: '死亡時立刻復活、HP 回滿', cost: 100, type: 'consumable', effect: { revive: true } },
       // ⭐ 取消 HP / MP / 智慧藥水（HP/MP 變屬性、每場戰鬥自動回滿）
     ];
-    // 每 3 等一階，10 階（Lv 1 / 4 / 7 / 10 / 13 / 16 / 19 / 22 / 25 / 28）
-    const levels = [1, 4, 7, 10, 13, 16, 19, 22, 25, 28];
+    // ⭐ 商店只賣基本裝（Lv 1 + Lv 2）— 高等級裝備改從掉落 / 王 / 套裝取得
+    //   保留 wMeta / aMeta 等完整 10 階對照表，方便將來想加回時直接調 levels 陣列
+    const levels = [1, 2];
     const wMeta = [
       ['木劍','🪵'],['鐵劍','⚔️'],['鋼劍','🗡️'],['銀劍','🔱'],['魔法劍','✨'],
       ['聖劍','🌟'],['邪劍','🩸'],['雷霆劍','⚡'],['龍牙劍','🐉'],['神話劍','🌌']
@@ -5625,7 +5626,7 @@
     document.getElementById('abilityBody').innerHTML = `
       ${html}
       <div style="display:flex; gap:6px; margin-top:6px;">
-        <button class="btn btn-secondary" style="flex:1; margin-top:0;" onclick="resetAbilities()">🔄 重置能力（退回所有點）</button>
+        <button class="btn btn-secondary" style="flex:1; margin-top:0;" onclick="resetAbilities()">🔄 重置能力（🪙 ${RESET_ABILITY_COST}）</button>
       </div>
       <div style="font-size:11px; color:#8b6f9b; text-align:center; margin-top:6px;">每升 1 等獲得 +${POINTS_PER_LEVEL.ability} 能力點　·　起手 +5 點</div>
       ${passivesHtml ? `
@@ -5652,11 +5653,18 @@
   }
   window.learnAbility = learnAbility;
 
+  const RESET_ABILITY_COST = 3000;
+  const RESET_SKILL_COST   = 6000;
+
   function resetAbilities() {
     const me = getMe(); if (!me) return;
-    if (!confirm('退回所有能力點？')) return;
     const r = getRpg(me);
     const total = Object.values(r.abilities || {}).reduce((a, b) => a + (b || 0), 0);
+    if (total === 0) { showToast('沒有點數可退'); return; }
+    const myCoins = getCoins(me.id);
+    if (myCoins < RESET_ABILITY_COST) { showToast(`需要 🪙 ${RESET_ABILITY_COST}（你有 ${myCoins}）`); return; }
+    if (!confirm(`花 🪙 ${RESET_ABILITY_COST} 退回所有能力點 (${total} 點)？`)) return;
+    if (!spendCoins(me.id, RESET_ABILITY_COST)) { showToast('鵝鵝幣不足'); return; }
     r.abilityPoints = (r.abilityPoints || 0) + total;
     r.abilities = { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0 };
     const s = computeStats(me);
@@ -5665,9 +5673,34 @@
     saveData();
     renderCharCard();
     renderAbilityTree();
-    showToast(`🔄 退回 ${total} 點能力`);
+    showToast(`🔄 退回 ${total} 點能力 (-🪙 ${RESET_ABILITY_COST})`);
   }
   window.resetAbilities = resetAbilities;
+
+  function resetSkills() {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const usedSkTree = Object.values(r.skills || {}).reduce((a, b) => a + (b || 0), 0);
+    const usedSkLv   = Object.values(r.skillLevels || {}).reduce((a, b) => a + (b || 0), 0);
+    const total = usedSkTree + usedSkLv;
+    if (total === 0) { showToast('沒有點數可退'); return; }
+    const myCoins = getCoins(me.id);
+    if (myCoins < RESET_SKILL_COST) { showToast(`需要 🪙 ${RESET_SKILL_COST}（你有 ${myCoins}）`); return; }
+    if (!confirm(`花 🪙 ${RESET_SKILL_COST} 退回所有技能點 (${total} 點)？\n\n包含主動技能升級 + 屬性強化樹`)) return;
+    if (!spendCoins(me.id, RESET_SKILL_COST)) { showToast('鵝鵝幣不足'); return; }
+    r.skillPoints = (r.skillPoints || 0) + total;
+    r.skills = {};
+    r.skillLevels = {};
+    const s = computeStats(me);
+    if (r.hp > s.maxHp) r.hp = s.maxHp;
+    if (r.mp > s.maxMp) r.mp = s.maxMp;
+    saveData();
+    renderCharCard();
+    hideModal();
+    showSkillsModal(); // 重開讓玩家看到清空狀態
+    showToast(`🔄 退回 ${total} 技能點 (-🪙 ${RESET_SKILL_COST})`);
+  }
+  window.resetSkills = resetSkills;
 
   // ⭐ HOF 行動規則小教學
   const HELP_SEEN_KEY = 'hof-action-pattern-help-seen';
@@ -6404,7 +6437,10 @@ ${b.text}
         ${activeHtml || '<div style="font-size:11px; color:#8b6f9b; text-align:center; padding:8px;">尚無主動技能</div>'}
         <div style="font-size:11px; color:#8b6f37; font-weight:700; margin:12px 0 6px; padding:4px 8px; background:#fef3c7; border-radius:8px;">💪 屬性強化（直接 + 加 1 級）</div>
         ${treeHtml || '<div style="font-size:11px; color:#8b6f9b; text-align:center; padding:8px;">尚無屬性強化</div>'}
-        <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:12px;">關閉</button>
+        <div style="display:flex; gap:6px; margin-top:12px;">
+          <button class="btn btn-secondary" style="flex:1;" onclick="resetSkills()">🔄 重置技能（🪙 ${RESET_SKILL_COST}）</button>
+          <button class="btn btn-secondary" style="flex:1;" onclick="hideModal()">關閉</button>
+        </div>
       </div>
     `;
     showModal('⚡ 技能', html);
@@ -6769,9 +6805,16 @@ ${b.text}
     if (!me) return;
     const myCoins = getCoins(me.id);
     const myLv = getRpg(me).level;
-    // ⭐ 商店只賣消耗品；裝備全部從打怪取得
+    // ⭐ 商店：消耗品 + Lv 1-2 基本裝（高等裝備從掉落 / 王 / 套裝取得）
     const TABS = [
       { id: 'consumable', label: '🧪 消耗品', filter: i => i.type === 'consumable' },
+      { id: 'weapon',     label: '⚔️ 武器',   filter: i => i.type === 'equipment' && i.slot === 'weapon' },
+      { id: 'armor',      label: '🛡 防具',    filter: i => i.type === 'equipment' && i.slot === 'armor' },
+      { id: 'accessory',  label: '💎 飾品',   filter: i => i.type === 'equipment' && i.slot === 'accessory' },
+      { id: 'helmet',     label: '🪖 頭盔',   filter: i => i.type === 'equipment' && i.slot === 'helmet' },
+      { id: 'gloves',     label: '🧤 手套',   filter: i => i.type === 'equipment' && i.slot === 'gloves' },
+      { id: 'boots',      label: '🥾 鞋子',   filter: i => i.type === 'equipment' && i.slot === 'boots' },
+      { id: 'cape',       label: '🎽 披風',   filter: i => i.type === 'equipment' && i.slot === 'cape' },
     ];
     if (!TABS.find(t => t.id === __shopTab)) __shopTab = 'consumable';
     const active = TABS.find(t => t.id === __shopTab) || TABS[0];
