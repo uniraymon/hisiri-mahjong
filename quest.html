@@ -2235,10 +2235,11 @@
   // volcano: weapon + gloves + boots
   // ice:     helmet + boots  + cape
   const ZONE_LAYERS = [
-    { id: 'upper', name: '上層', icon: '🌿', minLv: 1,  maxLv: 5  },
-    { id: 'mid',   name: '中層', icon: '🌳', minLv: 6,  maxLv: 10 },
-    { id: 'lower', name: '下層', icon: '🌲', minLv: 11, maxLv: 15 },
-    { id: 'deep',  name: '深層', icon: '🌑', minLv: 16, maxLv: 20 },
+    // unlockLv = 玩家進入該層的最低等級（保護新手不會跑去打高層怪）
+    { id: 'upper', name: '上層', icon: '🌿', minLv: 1,  maxLv: 5,  unlockLv: 1  },
+    { id: 'mid',   name: '中層', icon: '🌳', minLv: 6,  maxLv: 10, unlockLv: 5  },
+    { id: 'lower', name: '下層', icon: '🌲', minLv: 11, maxLv: 15, unlockLv: 10 },
+    { id: 'deep',  name: '深層', icon: '🌑', minLv: 16, maxLv: 20, unlockLv: 15 },
   ];
   const ZONES = [
     { id: 'forest',  name: '鵝森林',   icon: '🌳', desc: '弱小怪物與惡作劇鵝鵝',
@@ -7657,14 +7658,25 @@ ${b.text}
       </div>`;
     }).join('');
     const cur = ZONES.find(z => z.id === rpg.currentZone) || ZONES[0];
-    // 4 個層級的 tabs（每層 = 一個等級範圍，每場戰鬥隨機抽範圍內怪物）
+    // 4 個層級的 tabs（每層有最低等級限制，新手只能玩上層）
     const layerTabsHtml = ZONE_LAYERS.map(l => {
       const active = rpg.currentLayer === l.id;
-      return `<button class="floor-btn${active ? ' active' : ''}" onclick="selectLayer('${l.id}')" title="Lv ${l.minLv}-${l.maxLv}" style="padding:8px 10px; min-width:64px;">
+      const locked = rpg.level < (l.unlockLv || 1);
+      const lockMark = locked ? `<div style="font-size:9px; opacity:0.95;">🔒 需 Lv ${l.unlockLv}</div>` : '';
+      const onclick = locked ? '' : `onclick="selectLayer('${l.id}')"`;
+      const dim = locked ? 'opacity:0.45; cursor:not-allowed; filter:grayscale(0.5);' : '';
+      return `<button class="floor-btn${active ? ' active' : ''}" ${onclick} title="${locked ? `🔒 需要 Lv ${l.unlockLv}` : `Lv ${l.minLv}-${l.maxLv}`}" style="padding:8px 10px; min-width:64px; ${dim}">
         <div style="font-size:13px; font-weight:700;">${l.icon} ${l.name}</div>
-        <div style="font-size:10px; opacity:0.85; margin-top:2px;">Lv ${l.minLv}-${l.maxLv}</div>
+        <div style="font-size:10px; opacity:0.85; margin-top:2px;">${locked ? '🔒' : ''}Lv ${l.minLv}-${l.maxLv}</div>
+        ${lockMark}
       </button>`;
     }).join('');
+    // 自動把鎖定的層切回最高解鎖層（防舊存檔卡在 deep 但等級不足）
+    const curLayerCheck = ZONE_LAYERS.find(l => l.id === rpg.currentLayer);
+    if (curLayerCheck && rpg.level < (curLayerCheck.unlockLv || 1)) {
+      const fallback = [...ZONE_LAYERS].reverse().find(l => rpg.level >= (l.unlockLv || 1)) || ZONE_LAYERS[0];
+      rpg.currentLayer = fallback.id;
+    }
     const curLayer = ZONE_LAYERS.find(l => l.id === rpg.currentLayer) || ZONE_LAYERS[0];
     host.innerHTML = `
       <div class="zone-tabs">${tabsHtml}</div>
@@ -7686,6 +7698,12 @@ ${b.text}
   function selectLayer(layerId) {
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
+    const layer = ZONE_LAYERS.find(l => l.id === layerId);
+    if (!layer) return;
+    if (rpg.level < (layer.unlockLv || 1)) {
+      showToast(`需 Lv ${layer.unlockLv} 才能進入${layer.name}`);
+      return;
+    }
     rpg.currentLayer = layerId;
     saveData();
     renderZoneSelector();
