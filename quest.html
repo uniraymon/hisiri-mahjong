@@ -2456,7 +2456,8 @@
     },
   ];
 
-  // 雲端 state：rooms/{ROOM_ID}.wb9 = { bossId: { hp, queue, damageLog, killCount, recentBattles, lastKill } }
+  // ⭐ Phase B：雲端 state 改用 rooms/{ROOM_ID}/wb9/{bossId}（每王一份獨立 doc）
+  window.__wb9BossIds = WB9_BOSSES.map(b => b.id);
   let wb9 = {};
 
   // 取得 / 初始化單一 boss 的 state
@@ -4332,8 +4333,7 @@
       if (Array.isArray(data.pendingBets)) pendingBets = data.pendingBets;
       if (typeof data.betPool === 'number') betPool = data.betPool;
       if (data.worldBoss && typeof data.worldBoss === 'object') worldBoss = data.worldBoss;
-      // ⭐ v9 世界王 state（獨立欄位）
-      if (data.wb9 && typeof data.wb9 === 'object') wb9 = data.wb9;
+      // ⭐ Phase B：wb9 已移至 wb9 subcollection，不從 meta 讀取
       if (Array.isArray(data.bugs)) bugs = data.bugs;
       if (typeof data.baseMoney === 'number') baseMoney = data.baseMoney;
       if (typeof data.basePoint === 'number') basePoint = data.basePoint;
@@ -4344,6 +4344,21 @@
     if (typeof claimMyBossRewards === 'function') {
       try { claimMyBossRewards(); } catch (e) { console.warn('claim rewards:', e); }
     }
+  };
+
+  // ⭐ Phase B：wb9 subcollection onSnapshot 橋接
+  window.__applyRemoteWb9 = function(type, payload) {
+    if (!payload || typeof payload !== 'object') return;
+    if (type === 'init') {
+      // 整批覆蓋（首次 snap）
+      wb9 = payload;
+    } else if (type === 'set') {
+      Object.assign(wb9, payload);
+    } else if (type === 'remove') {
+      for (const id of Object.keys(payload)) delete wb9[id];
+    }
+    __persistLocalSnapshot();
+    if (typeof wb9Render === 'function') wb9Render({ force: true });
   };
 
   window.__applyRemotePlayers = function(remotePlayers) {
@@ -12373,8 +12388,10 @@ ${b.text}
     localStorage.setItem('mahjong-room-id', ROOM_ID);
 
     // ⭐ 拆檔結構：rooms/{ROOM_ID}（meta）+ rooms/{ROOM_ID}/players/{pid}
+    //              + rooms/{ROOM_ID}/wb9/{bossId}（每王獨立 doc，Phase B）
     const metaRef = doc(db, 'rooms', ROOM_ID);
     const playersCol = collection(db, 'rooms', ROOM_ID, 'players');
+    const wb9Col    = collection(db, 'rooms', ROOM_ID, 'wb9');
 
     let firstMetaSnap = true;
     let firstPlayersSnap = true;
@@ -12486,46 +12503,70 @@ ${b.text}
       // bossDef 是 WORLD_BOSSES 裡的設定（要拿 hp / respawnMs / 各檔次獎勵）
       // 回傳 { actualDmg, newState, killed, pendingRewards }
       // ============================================================
-      // ⭐ v9 世界王 transactions（獨立 wb9 欄位）
+      // ⭐ Phase B：v9 世界王 transactions（每王一份獨立 doc）
       // ============================================================
-      // 加入排隊：若已在任何王排隊中 → reject。原子寫入 meta.wb9
+      // 加入排隊：TX 讀取所有王的 doc → 確認沒重複排隊 → 寫入目標王 doc
       // bossDef = WB9_BOSSES 裡的設定（拿 maxHp 初始化）
       wb9JoinQueue: async (bossId, attackerId, bossDef) => {
+        const allIds = (window.__wb9BossIds || [bossId]);
         return await runTransaction(db, async (tx) => {
-          const snap = await tx.get(metaRef);
-          const data = snap.exists() ? snap.data() : {};
-          const wb = data.wb9 ? { ...data.wb9 } : {};
-          // 確認沒在任何王的排隊裡
-          for (const [bid, st] of Object.entries(wb)) {
-            const q = (st && st.queue) || [];
+          // 讀取所有王的 doc（確認是否已排隊）
+          const refs  = allIds.map(id => doc(wb9Col, id));
+          const snaps = await Promise.all(refs.map(r => tx.get(r)));
+          for (const s of snaps) {
+            if (!s.exists()) continue;
+            const q = (s.data().queue) || [];
             if (q.find(x => x && x.pid === attackerId)) {
-              throw new Error('already-queued:' + bid);
+              throw new Error('already-queued:' + s.id);
             }
           }
-          // 初始化 / 取得 state
-          let state = wb[bossId];
-          if (!state) {
-            state = { hp: bossDef.maxHp, queue: [], damageLog: {}, killCount: 0, recentBattles: [], lastKill: null };
-          }
+          // 取得 / 初始化目標王 state
+          const bossRef = doc(wb9Col, bossId);
+          const bossSnap = snaps[allIds.indexOf(bossId)];
+          const state = bossSnap?.exists()
+            ? { ...bossSnap.data() }
+            : { hp: bossDef.maxHp, queue: [], damageLog: {}, killCount: 0, recentBattles: [], lastKill: null };
           state.queue = Array.isArray(state.queue) ? [...state.queue] : [];
           state.queue.push({ pid: attackerId, joinedAt: Date.now() });
-          wb[bossId] = state;
-          tx.set(metaRef, { wb9: wb }, { merge: true });
+          tx.set(bossRef, _prune(state));
           return { state, position: state.queue.length };
         });
       },
-      // 退出排隊
+      // 退出排隊：TX 讀取目標王 doc → 移除該玩家 → 寫回
       wb9LeaveQueue: async (bossId, attackerId) => {
+        const bossRef = doc(wb9Col, bossId);
         return await runTransaction(db, async (tx) => {
-          const snap = await tx.get(metaRef);
-          const data = snap.exists() ? snap.data() : {};
-          const wb = data.wb9 ? { ...data.wb9 } : {};
-          const state = wb[bossId];
-          if (!state || !Array.isArray(state.queue)) return { ok: false };
+          const snap = await tx.get(bossRef);
+          if (!snap.exists()) return { ok: false };
+          const state = { ...snap.data() };
+          if (!Array.isArray(state.queue)) return { ok: false };
           state.queue = state.queue.filter(x => x && x.pid !== attackerId);
-          wb[bossId] = state;
-          tx.set(metaRef, { wb9: wb }, { merge: true });
+          tx.set(bossRef, _prune(state));
           return { ok: true, queueLen: state.queue.length };
+        });
+      },
+      // 直接更新王 doc（commit 3 攻擊 TX 用）
+      wb9SaveBoss: async (bossId, state) => {
+        await setDoc(doc(wb9Col, bossId), _prune(state));
+      },
+      // 攻擊 TX（commit 3 佔位）：讀 boss doc → 扣血 → 寫回
+      wb9AttackTx: async (bossId, attackerId, damage) => {
+        const bossRef = doc(wb9Col, bossId);
+        return await runTransaction(db, async (tx) => {
+          const snap = await tx.get(bossRef);
+          if (!snap.exists()) throw new Error('boss-not-found');
+          const state = { ...snap.data() };
+          if (!state.queue?.length || state.queue[0]?.pid !== attackerId) {
+            throw new Error('not-your-turn');
+          }
+          state.hp = Math.max(0, (state.hp || 0) - damage);
+          state.damageLog = state.damageLog || {};
+          state.damageLog[attackerId] = (state.damageLog[attackerId] || 0) + damage;
+          // 移出隊頭
+          state.queue = state.queue.slice(1);
+          state.lastHitAt = Date.now();
+          tx.set(bossRef, _prune(state));
+          return { newHp: state.hp, dead: state.hp <= 0 };
         });
       },
 
@@ -12810,7 +12851,7 @@ ${b.text}
           pendingBets: payload.pendingBets,
           betPool: payload.betPool,
           worldBoss: payload.worldBoss,
-          wb9: payload.wb9,                  // ⭐ v9 世界王
+          // ⭐ Phase B：wb9 已移至 rooms/{ROOM_ID}/wb9/{bossId}，不再寫入 meta
           bugs: payload.bugs,
           baseMoney: payload.baseMoney,
           basePoint: payload.basePoint,
@@ -12940,6 +12981,27 @@ ${b.text}
       }, (err) => {
         console.error('Players listen failed:', err);
         window.__updateSyncStatus?.('☁️ 連線錯誤', 'err');
+      });
+
+      // ⭐ Phase B：監聽 wb9 subcollection（每王一份 doc）
+      //   透過 window.__applyRemoteWb9 橋接到主腳本（不能直接存取 let wb9）
+      let firstWb9Snap = true;
+      onSnapshot(wb9Col, (snap) => {
+        if (firstWb9Snap) {
+          firstWb9Snap = false;
+          // 首次：整批同步
+          const all = {};
+          snap.docs.forEach(d => { all[d.id] = d.data(); });
+          window.__applyRemoteWb9?.('init', all);
+        } else {
+          // 之後：只傳差異
+          snap.docChanges().forEach(c => {
+            const type = c.type === 'removed' ? 'remove' : 'set';
+            window.__applyRemoteWb9?.(type, { [c.doc.id]: c.doc.data() });
+          });
+        }
+      }, (err) => {
+        console.error('wb9 listen failed:', err);
       });
     })();
   } catch (e) {
