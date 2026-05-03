@@ -9065,7 +9065,64 @@ ${b.text}
     updateStaminaUI();
   }
 
-  function renderWorldBoss() {
+  // 「結構性」狀態雜湊：王 HP / 排隊頭 / 死活 / killCount / cd 開關。
+  // 不含每秒會變的倒數文字 — 倒數文字由 updateBossLiveTimers 直接 patch DOM，避免每秒整段 innerHTML 重畫造成閃爍
+  let __lastBossRenderHash = '';
+  function bossRenderHash() {
+    const me = getMe();
+    const r = me ? getRpg(me) : null;
+    const onCd = r ? ((Date.now() - (r.lastBossAttackTime || 0)) < BOSS_COOLDOWN_MS) : false;
+    const parts = [`me:${me?.id||''}`, `cd:${onCd?'1':'0'}`];
+    for (const b of WORLD_BOSSES) {
+      const s = (worldBoss && worldBoss[b.id]) || {};
+      const head = (s.queue || [])[0];
+      parts.push([
+        b.id,
+        s.currentHp || 0,
+        !!s.deadAt ? '1' : '0',
+        (s.queue || []).length,
+        head?.pid || '',
+        head?.headSinceAt || 0,
+        s.killCount || 0,
+        (s.recentBattles || []).length,
+        s.lastKill?.killer || '',
+        s.spawnedAt || 0,
+      ].join('|'));
+    }
+    return parts.join(';');
+  }
+
+  function updateBossLiveTimers() {
+    const now = Date.now();
+    const me = getMe();
+    const r = me ? getRpg(me) : null;
+    const cdRemain = r ? Math.max(0, (r.lastBossAttackTime || 0) + BOSS_COOLDOWN_MS - now) : 0;
+    document.querySelectorAll('[data-cd-text]').forEach(el => {
+      if (cdRemain > 0) {
+        const m = Math.floor(cdRemain / 60000);
+        const s = Math.ceil((cdRemain % 60000) / 1000);
+        el.textContent = `⏳ 冷卻 ${m}:${String(s).padStart(2,'0')}（任何王共用）`;
+      }
+    });
+    document.querySelectorAll('[data-respawn-text]').forEach(el => {
+      const at = Number(el.getAttribute('data-respawn-at')) || 0;
+      const remain = Math.max(0, at - now);
+      const hr = Math.floor(remain / 3600000);
+      const mi = Math.floor((remain % 3600000) / 60000);
+      const sc = Math.floor((remain % 60000) / 1000);
+      el.textContent = `${hr}:${String(mi).padStart(2,'0')}:${String(sc).padStart(2,'0')} 後復活`;
+    });
+  }
+
+  function renderWorldBoss(opts) {
+    const force = opts && opts.force;
+    // 結構性沒變 → 只 patch 倒數文字，避免整段 innerHTML 重畫造成閃爍
+    const hash = bossRenderHash();
+    if (!force && hash === __lastBossRenderHash) {
+      updateBossLiveTimers();
+      return;
+    }
+    __lastBossRenderHash = hash;
     const me = getMe();
     const myRpg = me ? getRpg(me) : null;
     // 全域 20 分冷卻（任何王共用）
@@ -9114,7 +9171,7 @@ ${b.text}
       } else if (onGlobalCd) {
         const m = Math.floor(myGlobalCdMs / 60000);
         const s = Math.ceil((myGlobalCdMs % 60000) / 1000);
-        actionHtml = `<button class="btn btn-primary" disabled style="background:#4b5563;">⏳ 冷卻 ${m}:${String(s).padStart(2,'0')}（任何王共用）</button>`;
+        actionHtml = `<button class="btn btn-primary" disabled style="background:#4b5563;"><span data-cd-text>⏳ 冷卻 ${m}:${String(s).padStart(2,'0')}（任何王共用）</span></button>`;
       } else if (isMyTurn) {
         actionHtml = `
           <button class="btn btn-primary" onclick="runBossFight('${boss.id}')" style="background:linear-gradient(135deg,#fde047,#f59e0b); box-shadow:0 4px 0 #d97706; color:#7c2d12;">🔥 你的回合！攻擊</button>
@@ -9138,7 +9195,7 @@ ${b.text}
             <span class="boss-icon">${boss.icon}</span>
             <div>
               <div class="boss-name">${boss.name} Lv ${boss.level}</div>
-              <div class="boss-status">${isDead ? `💀 倒下　·　${hr}:${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')} 後復活` : `⚔️ 存活　·　ATK ${boss.atk} / DEF ${boss.def}　·　${describeAbility(boss.ability) || '無特殊能力'}`}</div>
+              <div class="boss-status">${isDead ? `💀 倒下　·　<span data-respawn-text data-respawn-at="${state.nextSpawnAt || 0}">${hr}:${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')} 後復活</span>` : `⚔️ 存活　·　ATK ${boss.atk} / DEF ${boss.def}　·　${describeAbility(boss.ability) || '無特殊能力'}`}</div>
             </div>
           </div>
           <div class="boss-hp-bar">
