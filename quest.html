@@ -2349,7 +2349,7 @@
       id: 'goose_king',
       name: '🦢 鵝皇', icon: '🦢',
       maxHp: 90000,
-      atk: 143, def: 38, spd: 12,
+      atk: 180, def: 80, spd: 30,
       level: 30,
       verb: '皇者懲戒',
       ability: { type: 'multiHit', hits: 2 },
@@ -2364,7 +2364,7 @@
       id: 'dragon_goose',
       name: '🐉 古龍鵝', icon: '🐉',
       maxHp: 200000,
-      atk: 210, def: 50, spd: 14,
+      atk: 300, def: 120, spd: 35,
       level: 40,
       verb: '龍焰之息',
       ability: { type: 'physResist', resist: 0.25 },
@@ -2379,7 +2379,7 @@
       id: 'pebble_goose',
       name: '🪨 鵝卵石', icon: '🪨',
       maxHp: 5000000,
-      atk: 203, def: 65, spd: 8,
+      atk: 500, def: 500, spd: 25,
       level: 55,
       verb: '崩落巨石',
       ability: { type: 'physResist', resist: 0.30 },
@@ -2860,7 +2860,7 @@
     {
       id: 'breakfast_goose',
       name: '早餐鵝', icon: '🍳',
-      hp: 25000, atk: 170, def: 105, spd: 14, level: 30,  // ATK 113 → 170（v9 +50%）/ DEF 70 → 105（+50%）
+      hp: 25000, atk: 300, def: 200, spd: 30, level: 30,
       verb: '塗果醬',
       skills: [
         { verb: '太陽蛋砲擊', mult: 1.6, cooldown: 4 },
@@ -2874,7 +2874,7 @@
     {
       id: 'lunch_goose',
       name: '午餐鵝', icon: '🍱',
-      hp: 40000, atk: 225, def: 150, spd: 16, level: 30,  // ATK 150 → 225（v9 +50%）/ DEF 100 → 150（+50%）
+      hp: 40000, atk: 400, def: 250, spd: 35, level: 30,
       verb: '便當蓋下擊',
       ability: { type: 'multiHit', hits: 2 },
       skills: [
@@ -2889,7 +2889,7 @@
     {
       id: 'dinner_goose',
       name: '晚餐鵝', icon: '🍷',
-      hp: 60000, atk: 290, def: 210, spd: 18, level: 30,  // ATK 195 → 290（v9 +49%）/ DEF 140 → 210（+50%）
+      hp: 60000, atk: 500, def: 300, spd: 40, level: 30,
       verb: '紅酒甩擊',
       ability: { type: 'magicResist', resist: 0.3 },
       skills: [
@@ -11399,6 +11399,7 @@ ${b.text}
 
       <button class="btn btn-danger" onclick="adminResetRpg()" style="margin-top:6px;">⚠️ 重置 RPG 角色（保留幣）</button>
       <button class="btn btn-secondary" onclick="adminRefillAllStamina()" style="margin-top:6px; background:linear-gradient(135deg,#bfdbfe,#3b82f6); box-shadow:0 4px 0 #1d4ed8; color:#fff;">⚡ 全體補滿體力（所有玩家）</button>
+      <button class="btn btn-secondary" onclick="adminEditBossStats()" style="margin-top:6px; background:linear-gradient(135deg,#fde68a,#f59e0b); box-shadow:0 4px 0 #b45309; color:#7c2d12;">🐉 編輯 Boss 能力（世界王 + 個人王）</button>
       <button class="btn btn-secondary" onclick="adminRefillBosses()" style="margin-top:6px; background:linear-gradient(135deg,#86efac,#16a34a); box-shadow:0 4px 0 #15803d; color:#fff;">💚 補滿世界王 HP（保留排隊 / 戰報）</button>
       <button class="btn btn-secondary" onclick="adminGrantAllBossCoins(4)" style="margin-top:6px; background:linear-gradient(135deg,#fde047,#f59e0b); box-shadow:0 4px 0 #d97706; color:#7c2d12;">👑 全員 +4 鵝皇硬幣（鵝王扭蛋用）</button>
       <button class="btn btn-secondary" onclick="adminShowHpBreakdown()" style="margin-top:6px; background:linear-gradient(135deg,#fca5a5,#dc2626); box-shadow:0 4px 0 #991b1b; color:#fff;">🩸 全員血量明細（看誰 HP 偏高）</button>
@@ -11998,6 +11999,147 @@ ${b.text}
     showDebugModal();
   }
   window.adminRefillAllStamina = adminRefillAllStamina;
+
+  // ⭐ DEBUG：編輯 Boss 能力（世界王 + 個人王）
+  function adminEditBossStats() {
+    // Build rows for world bosses
+    const wbRows = WB9_BOSSES.map(b => `
+      <tr data-boss-type="wb" data-boss-id="${b.id}">
+        <td style="padding:6px 10px;font-weight:bold;white-space:nowrap;">${b.icon} ${b.name}</td>
+        <td style="padding:4px 6px;"><input type="number" class="boss-edit-input" data-field="maxHp" value="${b.maxHp}"
+          style="width:90px;padding:4px 6px;border-radius:6px;border:1px solid #d1d5db;text-align:right;font-size:13px;"></td>
+        <td style="padding:4px 6px;"><input type="number" class="boss-edit-input" data-field="atk" value="${b.atk}"
+          style="width:70px;padding:4px 6px;border-radius:6px;border:1px solid #d1d5db;text-align:right;font-size:13px;"></td>
+        <td style="padding:4px 6px;"><input type="number" class="boss-edit-input" data-field="def" value="${b.def}"
+          style="width:70px;padding:4px 6px;border-radius:6px;border:1px solid #d1d5db;text-align:right;font-size:13px;"></td>
+        <td style="padding:4px 6px;"><input type="number" class="boss-edit-input" data-field="spd" value="${b.spd}"
+          style="width:60px;padding:4px 6px;border-radius:6px;border:1px solid #d1d5db;text-align:right;font-size:13px;"></td>
+      </tr>`).join('');
+
+    // Build rows for personal bosses
+    const pbRows = PERSONAL_BOSSES.map(b => `
+      <tr data-boss-type="pb" data-boss-id="${b.id}">
+        <td style="padding:6px 10px;font-weight:bold;white-space:nowrap;">${b.icon} ${b.name}</td>
+        <td style="padding:4px 6px;"><input type="number" class="boss-edit-input" data-field="hp" value="${b.hp}"
+          style="width:90px;padding:4px 6px;border-radius:6px;border:1px solid #d1d5db;text-align:right;font-size:13px;"></td>
+        <td style="padding:4px 6px;"><input type="number" class="boss-edit-input" data-field="atk" value="${b.atk}"
+          style="width:70px;padding:4px 6px;border-radius:6px;border:1px solid #d1d5db;text-align:right;font-size:13px;"></td>
+        <td style="padding:4px 6px;"><input type="number" class="boss-edit-input" data-field="def" value="${b.def}"
+          style="width:70px;padding:4px 6px;border-radius:6px;border:1px solid #d1d5db;text-align:right;font-size:13px;"></td>
+        <td style="padding:4px 6px;"><input type="number" class="boss-edit-input" data-field="spd" value="${b.spd}"
+          style="width:60px;padding:4px 6px;border-radius:6px;border:1px solid #d1d5db;text-align:right;font-size:13px;"></td>
+      </tr>`).join('');
+
+    const html = `
+      <div id="bossEditModal" style="
+        position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.6);
+        display:flex;align-items:center;justify-content:center;padding:16px;">
+        <div style="
+          background:#fff;border-radius:16px;width:min(98vw,540px);
+          box-shadow:0 8px 40px rgba(0,0,0,.4);overflow:hidden;">
+          <!-- header -->
+          <div style="background:linear-gradient(135deg,#fde68a,#f59e0b);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-weight:bold;font-size:16px;color:#7c2d12;">🐉 編輯 Boss 能力</span>
+            <button onclick="document.getElementById('bossEditModal').remove()"
+              style="background:none;border:none;font-size:20px;cursor:pointer;color:#7c2d12;line-height:1;">✕</button>
+          </div>
+          <!-- body -->
+          <div style="padding:16px 18px;overflow-y:auto;max-height:70vh;">
+
+            <p style="margin:0 0 8px;font-weight:bold;color:#1e3a5f;">🌍 世界王（World Boss）</p>
+            <table style="width:100%;border-collapse:collapse;margin-bottom:16px;font-size:13px;">
+              <thead>
+                <tr style="background:#f0f9ff;">
+                  <th style="padding:5px 10px;text-align:left;border-bottom:2px solid #bae6fd;">Boss</th>
+                  <th style="padding:5px 6px;border-bottom:2px solid #bae6fd;">最大HP</th>
+                  <th style="padding:5px 6px;border-bottom:2px solid #bae6fd;">ATK</th>
+                  <th style="padding:5px 6px;border-bottom:2px solid #bae6fd;">DEF</th>
+                  <th style="padding:5px 6px;border-bottom:2px solid #bae6fd;">SPD</th>
+                </tr>
+              </thead>
+              <tbody id="bossEditWbBody">${wbRows}</tbody>
+            </table>
+
+            <p style="margin:0 0 8px;font-weight:bold;color:#1e3a5f;">🧍 個人王（Personal Boss）</p>
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+              <thead>
+                <tr style="background:#f0fdf4;">
+                  <th style="padding:5px 10px;text-align:left;border-bottom:2px solid #bbf7d0;">Boss</th>
+                  <th style="padding:5px 6px;border-bottom:2px solid #bbf7d0;">最大HP</th>
+                  <th style="padding:5px 6px;border-bottom:2px solid #bbf7d0;">ATK</th>
+                  <th style="padding:5px 6px;border-bottom:2px solid #bbf7d0;">DEF</th>
+                  <th style="padding:5px 6px;border-bottom:2px solid #bbf7d0;">SPD</th>
+                </tr>
+              </thead>
+              <tbody id="bossEditPbBody">${pbRows}</tbody>
+            </table>
+
+            <p style="margin:10px 0 0;font-size:11px;color:#9ca3af;">⚠️ 修改後立即生效（記憶體）。世界王 HP 變更需刷新 boss state 才反映。</p>
+          </div>
+          <!-- footer -->
+          <div style="padding:12px 18px;border-top:1px solid #e5e7eb;display:flex;gap:10px;justify-content:flex-end;">
+            <button onclick="document.getElementById('bossEditModal').remove()"
+              style="padding:8px 18px;border-radius:8px;border:1px solid #d1d5db;background:#f9fafb;cursor:pointer;font-size:14px;">取消</button>
+            <button onclick="adminSaveBossStats()"
+              style="padding:8px 22px;border-radius:8px;border:none;background:linear-gradient(135deg,#f59e0b,#d97706);
+                     box-shadow:0 3px 0 #b45309;color:#fff;font-weight:bold;cursor:pointer;font-size:14px;">💾 儲存</button>
+          </div>
+        </div>
+      </div>`;
+
+    // Remove any existing modal then inject
+    const old = document.getElementById('bossEditModal');
+    if (old) old.remove();
+    document.body.insertAdjacentHTML('beforeend', html);
+  }
+  window.adminEditBossStats = adminEditBossStats;
+
+  function adminSaveBossStats() {
+    const modal = document.getElementById('bossEditModal');
+    if (!modal) return;
+    let changed = 0;
+
+    // World bosses
+    modal.querySelectorAll('#bossEditWbBody tr[data-boss-id]').forEach(row => {
+      const id   = row.dataset.bossId;
+      const boss = WB9_BOSSES.find(b => b.id === id);
+      if (!boss) return;
+      row.querySelectorAll('input.boss-edit-input').forEach(inp => {
+        const field = inp.dataset.field;
+        const val   = parseInt(inp.value, 10);
+        if (!isNaN(val) && val > 0 && boss[field] !== val) {
+          boss[field] = val;
+          changed++;
+        }
+      });
+    });
+
+    // Personal bosses
+    modal.querySelectorAll('#bossEditPbBody tr[data-boss-id]').forEach(row => {
+      const id   = row.dataset.bossId;
+      const boss = PERSONAL_BOSSES.find(b => b.id === id);
+      if (!boss) return;
+      row.querySelectorAll('input.boss-edit-input').forEach(inp => {
+        const field = inp.dataset.field;
+        const val   = parseInt(inp.value, 10);
+        if (!isNaN(val) && val > 0 && boss[field] !== val) {
+          boss[field] = val;
+          changed++;
+        }
+      });
+    });
+
+    modal.remove();
+    if (changed > 0) {
+      saveData();
+      render();
+      showToast(`🐉 已更新 ${changed} 項 Boss 能力`);
+    } else {
+      showToast('沒有變更');
+    }
+    showDebugModal();
+  }
+  window.adminSaveBossStats = adminSaveBossStats;
 
   // ⭐ 全玩家洗白（清空 history / pendingBets / worldBoss / 每位玩家 rpg / 鵝鵝幣 / 鵝蛋幣 / 稱號）
   // 仍保留玩家清單（id / 名字 / 頭像）
