@@ -1661,13 +1661,25 @@
 
   window.__getMeId = function() { return getMeId(); };
 
+  // 用 id 合併兩個陣列（append-only 集合用）— 修「剛 push 的條目被陳舊 onSnapshot 覆蓋掉」的問題
+  function __mergeById(localArr, remoteArr) {
+    const local = Array.isArray(localArr) ? localArr : [];
+    const remote = Array.isArray(remoteArr) ? remoteArr : [];
+    const map = new Map();
+    // 遠端優先進，再補上本地獨有的
+    for (const e of remote) { if (e && e.id != null) map.set(String(e.id), e); }
+    for (const e of local)  { if (e && e.id != null && !map.has(String(e.id))) map.set(String(e.id), e); }
+    return Array.from(map.values()).sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
+  }
+
   // 共用 meta 變更
   window.__applyRemoteMeta = function(data) {
     if (!data) return;
     __isApplyingRemote = true;
     try {
-      if (Array.isArray(data.history)) history = data.history;
-      if (Array.isArray(data.gifts)) gifts = data.gifts;
+      // history / gifts 是 append-only：用 id 合併，避免本地剛 push 的條目被陳舊遠端快照覆蓋掉
+      if (Array.isArray(data.history)) history = __mergeById(history, data.history);
+      if (Array.isArray(data.gifts))   gifts   = __mergeById(gifts, data.gifts);
       if (Array.isArray(data.comments)) comments = data.comments;
       if (Array.isArray(data.pendingBets)) pendingBets = data.pendingBets;
       // 彩池：遠端有就吃遠端、遠端無或非法數值就用「兩邊取大」保護
