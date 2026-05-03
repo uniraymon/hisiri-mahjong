@@ -2727,6 +2727,16 @@
   function describeInvItem(entry) {
     if (!entry) return null;
     if (typeof entry === 'object') {
+      // ⭐ 王硬幣（quest.html 的世界王結算獎勵，可堆疊）
+      if (entry.isBossCoin) {
+        return {
+          icon: entry.icon || '🪙',
+          name: `${entry.name || '王硬幣'}${entry.qty > 1 ? ` ×${entry.qty}` : ''}`,
+          color: '#f59e0b',
+          sub: '🏆 王硬幣（結算獎勵，不能送 / 不能賣）',
+          gachaOnly: true,  // 借用 gachaOnly 旗標讓送禮 modal 自動過濾掉
+        };
+      }
       // drop / 套裝件 / 扭蛋裝備物件
       const rarColor = entry.rarity ? RARITY_COLOR[entry.rarity] : '#9ca3af';
       const affixCount = (entry.affixes || []).length;

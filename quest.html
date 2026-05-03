@@ -902,6 +902,19 @@
     color: #fff;
     border-color: #4c1d95;
   }
+  .inv-cell .ic-qty {
+    position: absolute;
+    bottom: 1px;
+    right: 2px;
+    font-size: 10px;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 0 3px #000, 0 0 3px #000;
+    background: rgba(0,0,0,0.55);
+    padding: 0 4px;
+    border-radius: 4px;
+    line-height: 1.4;
+  }
 
   /* 世界王 */
   .boss-card {
@@ -2197,6 +2210,8 @@
       dialogue: ['吾乃鵝中之王！跪下臣服！', '弱者，退散吧！', '凡夫俗子也敢挑戰皇威？'],
       deathLine: ['啊...吾的皇位...就此...', '不...不可能...凡人怎能...', '記住...吾鵝皇...終將復生...'],
       // ⭐ 世界王不再掉裝備 — 改用精魂（殺尾刀的人會拿到精魂）
+      // 結算用「王硬幣」道具（可堆疊）：1名 6 / 2名 4 / 其他 2；尾刀額外 +6
+      bossCoin: { id: 'bc_goose_king', name: '鵝皇硬幣', icon: '👑' },
       rewardKiller: { coins: 2000 },
       rewardTop:    { coins: 1000 },
       rewardSecond: { coins: 500 },
@@ -2215,6 +2230,7 @@
       ability: { type: 'physResist', resist: 0.25 },
       dialogue: ['古老的龍威甦醒...', '吾將焚盡一切！', '微不足道的鵝鵝...'],
       deathLine: ['千年龍威...化為塵土...', '吾將...沉睡...再起...', '汝...名留龍譜...'],
+      bossCoin: { id: 'bc_dragon_goose', name: '古龍鵝硬幣', icon: '🐲' },
       rewardKiller: { coins: 5000 },
       rewardTop:    { coins: 2500 },
       rewardSecond: { coins: 1500 },
@@ -2233,6 +2249,7 @@
       ability: { type: 'physResist', resist: 0.30 },
       dialogue: ['億萬年的鵝魂沉睡於此…', '汝之物理…撼不動鵝石…', '化為塵埃吧…'],
       deathLine: ['億萬年…崩裂了…', '吾乃永恆…竟有盡頭…', '吾魂…化為流沙…'],
+      bossCoin: { id: 'bc_pebble_goose', name: '鵝卵石硬幣', icon: '🪨' },
       skills: [
         { verb: '落石擊', mult: 2.0, cooldown: 5 },
         { verb: '大地震', mult: 1.4, applyStatus: { type: 'paralyze', turns: 2, chance: 0.45 }, cooldown: 6 },
@@ -7040,14 +7057,24 @@ ${b.text}
         </button>`);
         continue;
       }
-      const rarColor = item.rarity ? RARITY[item.rarity]?.color
+      const isBossCoin = !!item.isBossCoin;
+      const rarColor = isBossCoin
+        ? '#fbbf24'
+        : item.rarity ? RARITY[item.rarity]?.color
         : item.setId ? (SETS[item.setId]?.color || '#f59e0b')
         : null;
       const selected = __invSelected.has(globalIdx);
-      const bgStyle = rarColor
-        ? `border-color:${rarColor}; background:linear-gradient(135deg,#2d1b69,${rarColor}40);`
+      const bgStyle = isBossCoin
+        ? `border-color:#fbbf24; background:linear-gradient(135deg,#7c2d12,#b45309);`
+        : (rarColor
+          ? `border-color:${rarColor}; background:linear-gradient(135deg,#2d1b69,${rarColor}40);`
+          : '');
+      const tooltip = isBossCoin
+        ? `${item.name} ×${item.qty || 1}（王硬幣 / 結算用）`
+        : `${item.name}${item.lv ? ' (Lv ' + item.lv + ')' : ''}　${formatItemStats(item)}`;
+      const qtyBadge = (item.qty && item.qty > 1)
+        ? `<div class="ic-qty">×${item.qty}</div>`
         : '';
-      const tooltip = `${item.name}${item.lv ? ' (Lv ' + item.lv + ')' : ''}　${formatItemStats(item)}`;
       cells.push(`<button
           class="inv-cell has-item ${__invBulkMode ? 'bulk-on' : ''} ${selected ? 'selected' : ''}"
           style="${bgStyle}"
@@ -7055,6 +7082,7 @@ ${b.text}
           onclick="onInvCellClick(${globalIdx})">
         <div class="ic-icon">${item.icon}</div>
         <div class="ic-name" style="${rarColor && !selected ? `color:${rarColor};` : ''}">${escapeHtml(item.name)}</div>
+        ${qtyBadge}
         ${__invBulkMode ? `<div class="ic-check">${selected ? '✓' : ''}</div>` : ''}
       </button>`);
     }
@@ -7107,18 +7135,28 @@ ${b.text}
     const me = getMe(); if (!me) return;
     const r = getRpg(me);
     if (__invSelected.size === 0) { showToast('還沒選任何物品 ♡'); return; }
-    // 先預覽：算總價、過濾無法解析的
+    // 先預覽：算總價、過濾無法解析的 / 王硬幣等不可賣
     const idxs = [...__invSelected].sort((a, b) => b - a); // 由大到小，splice 不會錯位
     const valid = [];
     let total = 0;
+    let skippedCoin = 0;
     for (const idx of idxs) {
       const item = resolveItem(r.inventory[idx]);
       if (!item) continue;
+      if (item.isBossCoin) { skippedCoin++; continue; } // 王硬幣不能賣
       valid.push({ idx, value: getSellValue(item) });
       total += getSellValue(item);
     }
-    if (valid.length === 0) { __invSelected.clear(); renderEquipment(); return; }
-    if (!confirm(`確定賣掉這 ${valid.length} 件，共 ${total} 鵝鵝幣？`)) return;
+    if (valid.length === 0) {
+      if (skippedCoin > 0) showToast('王硬幣不能賣 ♡');
+      __invSelected.clear();
+      renderEquipment();
+      return;
+    }
+    const confirmMsg = skippedCoin > 0
+      ? `確定賣掉這 ${valid.length} 件（${skippedCoin} 個王硬幣會跳過），共 ${total} 鵝鵝幣？`
+      : `確定賣掉這 ${valid.length} 件，共 ${total} 鵝鵝幣？`;
+    if (!confirm(confirmMsg)) return;
     // 真的賣
     for (const v of valid) r.inventory.splice(v.idx, 1);
     refundCoins(me.id, total);
@@ -7137,6 +7175,23 @@ ${b.text}
     const entry = r.inventory[idx];
     const item = resolveItem(entry);
     if (!item) return;
+    // ⭐ 王硬幣：另開介紹彈窗（不賣不裝）
+    if (item.isBossCoin) {
+      const html = `
+        <div style="text-align:center; padding:12px 4px;">
+          <div style="font-size:64px;">${item.icon}</div>
+          <div style="font-weight:800; font-size:18px; color:#fbbf24; margin-top:4px;">${escapeHtml(item.name)} ×${item.qty || 1}</div>
+          <div style="font-size:12px; color:#8b6f9b; margin-top:8px; padding:8px 12px; background:#fef3c7; border:1px dashed #f59e0b; border-radius:8px;">
+            🏆 世界王結算獎勵<br>
+            擊殺後依傷害排名 / 尾刀分配的硬幣<br>
+            <span style="color:#92400e; font-weight:700;">無法賣出，未來會用來兌換王限定獎勵</span>
+          </div>
+          <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:14px;">關閉</button>
+        </div>
+      `;
+      showModal('🪙 ' + item.name, html);
+      return;
+    }
     const sellValue = getSellValue(item);
     const canEquip = true; // ⭐ 裝備不再有等級限制
     const rarColor = item.rarity ? RARITY[item.rarity]?.color : (item.setId ? (SETS[item.setId]?.color || '#f59e0b') : '#7c3aed');
@@ -7640,16 +7695,35 @@ ${b.text}
   window.onTrialFight = onTrialFight;
 
   // ⭐ 通用：更新單一 ATB 行動條（width = gauge%、滿條時加閃爍 .full）
-  // 動畫由 CSS transition 處理，跑得比實際戰鬥快也沒關係（純視覺）
+  // 偵測「條突然下降」→ 那一方剛出手 → 快閃 100% 再掉到新值
+  // 這樣對手出招時，你會先看到他的條飆到 100% 再清零，視覺上才合理
+  // 動畫純由 CSS 處理，不影響戰鬥節奏
   function updateSpdBar(barId, textId, val, label) {
     const bar = document.getElementById(barId);
     const txt = document.getElementById(textId);
     if (!bar) return;
     const v = Math.max(0, Math.min(100, val ?? 0));
-    bar.style.width = v + '%';
-    if (v >= 99) bar.classList.add('full');
-    else bar.classList.remove('full');
-    if (txt) txt.textContent = `⏱ ${label || '行動條'} ${Math.round(v)}%${v >= 99 ? ' 滿條！' : ''}`;
+    const old = parseFloat(bar.style.width) || 0;
+    const dropped = (old - v) >= 25; // 條變短 ≥25% → 該方剛出手
+    if (dropped) {
+      // 先快閃滿（80ms 衝 100），再掉到新值
+      bar.style.transition = 'width 0.08s ease-out';
+      bar.style.width = '100%';
+      bar.classList.add('full');
+      if (txt) txt.textContent = `⏱ ${label || '行動條'} 100% 出手！`;
+      setTimeout(() => {
+        bar.style.transition = 'width 0.22s linear';
+        bar.style.width = v + '%';
+        bar.classList.remove('full');
+        if (txt) txt.textContent = `⏱ ${label || '行動條'} ${Math.round(v)}%`;
+      }, 90);
+    } else {
+      // 正常爬升：平滑過渡到新值
+      bar.style.transition = 'width 0.22s linear';
+      bar.style.width = v + '%';
+      if (v >= 99) bar.classList.add('full'); else bar.classList.remove('full');
+      if (txt) txt.textContent = `⏱ ${label || '行動條'} ${Math.round(v)}%${v >= 99 ? ' 滿條！' : ''}`;
+    }
   }
 
   function finalizeTrialFight(player, result, stats, monsters) {
@@ -7828,6 +7902,7 @@ ${b.text}
     let claimedAny = false;
     let inventoryAdded = [];
     let coinsAdded = 0;
+    let bossCoinsAdded = []; // [{ icon, name, qty }]
     for (const boss of WORLD_BOSSES) {
       const state = worldBoss && worldBoss[boss.id];
       if (!state || !Array.isArray(state.pendingRewards)) continue;
@@ -7841,6 +7916,27 @@ ${b.text}
           r.inventory.push(reward.item);
           inventoryAdded.push(reward.item);
         }
+        // ⭐ 王硬幣：堆疊到 inventory（同 id 的合併 qty）
+        if (reward.bossCoinQty && boss.bossCoin) {
+          r.inventory = r.inventory || [];
+          const def = boss.bossCoin;
+          const existing = r.inventory.find(it =>
+            it && typeof it === 'object' && it.id === def.id && it.isBossCoin
+          );
+          if (existing) {
+            existing.qty = (existing.qty || 1) + reward.bossCoinQty;
+          } else {
+            r.inventory.push({
+              id: def.id,
+              name: def.name,
+              icon: def.icon,
+              isBossCoin: true,
+              stackable: true,
+              qty: reward.bossCoinQty,
+            });
+          }
+          bossCoinsAdded.push({ icon: def.icon, name: def.name, qty: reward.bossCoinQty });
+        }
         r.claimedBossRewards.push(reward.rewardId);
         coinsAdded += reward.coins || 0;
         claimedAny = true;
@@ -7849,7 +7945,14 @@ ${b.text}
     if (claimedAny) {
       saveData();
       const itemNote = inventoryAdded.length > 0 ? ` + ${inventoryAdded.length} 件神話裝備` : '';
-      showToast(`🏆 世界王獎勵入帳：+${coinsAdded} 鵝鵝幣${itemNote}`);
+      // 合併同名硬幣顯示
+      const coinSummary = {};
+      bossCoinsAdded.forEach(c => {
+        coinSummary[c.name] = coinSummary[c.name] || { icon: c.icon, qty: 0 };
+        coinSummary[c.name].qty += c.qty;
+      });
+      const coinNote = Object.entries(coinSummary).map(([n, v]) => `${v.icon}×${v.qty}`).join(' ');
+      showToast(`🏆 世界王獎勵入帳：+${coinsAdded} 鵝鵝幣${coinNote ? ' / ' + coinNote : ''}${itemNote}`);
     }
     return claimedAny;
   }
@@ -8009,8 +8112,8 @@ ${b.text}
     // 把雲端結果同步回本地
     worldBoss[bossId] = newState;
 
-    // 玩家獲得：傷害 × 0.8 XP / 傷害 × 0.1 鵝鵝幣
-    const xpGain = Math.round(dmgDealt * 0.8);
+    // 玩家獲得：傷害 × 0.8 XP（一場最多 1000 EXP）/ 傷害 × 0.1 鵝鵝幣
+    const xpGain = Math.min(1000, Math.round(dmgDealt * 0.8));
     const coinGain = Math.round(dmgDealt * 0.1);
     r.xp = (r.xp || 0) + xpGain;
     let leveled = 0;
@@ -9391,41 +9494,42 @@ ${b.text}
             state.lastKill = { killer: attackerId, when: state.deadAt, killCount: state.killCount };
             killed = true;
             // 把獎勵記在 pendingRewards 裡，由各玩家自己領
+            // ⭐ 結算階段：王硬幣（可堆疊道具）— 1名 6 / 2名 4 / 其他 2；尾刀額外 +6
+            //    舊的 rewardTop / rewardSecond ... coins 仍照舊發鵝鵝幣
             const sortedDmg = Object.entries(state.damageLog).sort((a, b) => b[1] - a[1]);
             const rankRewards = [bossDef.rewardTop, bossDef.rewardSecond, bossDef.rewardThird];
-            const seen = new Set();
-            // 尾刀
+            // 尾刀獎（鵝鵝幣 + 王硬幣 ×6 + 精魂的旗標）
             newPending.push({
               pid: attackerId,
               coins: bossDef.rewardKiller.coins,
               item: bossDef.rewardKiller.item || null,
+              bossCoinQty: 6,
               rewardId: `${bossId}_${state.killCount}_killer`,
-              kind: '尾刀',
+              kind: '尾刀 +6',
             });
-            seen.add(attackerId + '_killer');
-            // 排行 1-3 額外
+            // 排行 1-3：分別 6 / 4 / 2 顆王硬幣
+            const RANK_COIN_QTY = [6, 4, 2];
             sortedDmg.slice(0, 3).forEach(([pid], idx) => {
-              if (rankRewards[idx]) {
-                newPending.push({
-                  pid,
-                  coins: rankRewards[idx].coins,
-                  item: null,
-                  rewardId: `${bossId}_${state.killCount}_rank${idx+1}_${pid}`,
-                  kind: `第 ${idx+1} 名`,
-                });
-              }
+              const rr = rankRewards[idx];
+              newPending.push({
+                pid,
+                coins: rr ? rr.coins : 0,
+                item: null,
+                bossCoinQty: RANK_COIN_QTY[idx],
+                rewardId: `${bossId}_${state.killCount}_rank${idx+1}_${pid}`,
+                kind: `第 ${idx+1} 名 +${RANK_COIN_QTY[idx]}`,
+              });
             });
-            // 其餘參與者
+            // 其餘參與者：+2 顆王硬幣
             sortedDmg.slice(3).forEach(([pid]) => {
-              if (bossDef.rewardParticipant) {
-                newPending.push({
-                  pid,
-                  coins: bossDef.rewardParticipant.coins,
-                  item: null,
-                  rewardId: `${bossId}_${state.killCount}_part_${pid}`,
-                  kind: '參與',
-                });
-              }
+              newPending.push({
+                pid,
+                coins: bossDef.rewardParticipant ? bossDef.rewardParticipant.coins : 0,
+                item: null,
+                bossCoinQty: 2,
+                rewardId: `${bossId}_${state.killCount}_part_${pid}`,
+                kind: '參與 +2',
+              });
             });
             state.pendingRewards = (state.pendingRewards || []).concat(newPending);
           }
