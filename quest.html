@@ -2775,10 +2775,11 @@
     t_hp_1: { id: 't_hp_1', name: '生命水晶',     icon: '❤️', stat: 'hp', value: 15, desc: '紅色透明礦石，握著會微微發熱' },
     t_hp_2: { id: 't_hp_2', name: '鵝命之水',     icon: '🩸', stat: 'hp', value: 30, desc: '能延長鵝命的紅色液體' },
     t_hp_3: { id: 't_hp_3', name: '永生鵝心',     icon: '💖', stat: 'hp', value: 60, desc: '據說來自不死鵝的心臟，仍在跳' },
-    // ⭐ 配合 mpPer 大幅縮減（戰/弓 +1、法/聖 +2 / 等），MP 寶物拉高補足稀缺
-    t_mp_1: { id: 't_mp_1', name: '法力水晶',     icon: '💙', stat: 'mp', value: 15, desc: '藍色冰涼的小石頭' },
-    t_mp_2: { id: 't_mp_2', name: '法師眼淚',     icon: '💧', stat: 'mp', value: 30, desc: '某個鵝法師哭出來的眼淚，很值錢' },
-    t_mp_3: { id: 't_mp_3', name: '無盡法力珠',   icon: '🔵', stat: 'mp', value: 60, desc: '永遠不會用完的奇妙能量球' },
+    // ⭐ MP 故意做得稀缺：戰術要圍繞「MP 怎麼用」設計
+    //   3 顆全收僅 +16 maxMP，玩家不能靠寶物快速堆 MP，必須挑技能 + 用回魔技
+    t_mp_1: { id: 't_mp_1', name: '法力水晶',     icon: '💙', stat: 'mp', value: 3, desc: '藍色冰涼的小石頭' },
+    t_mp_2: { id: 't_mp_2', name: '法師眼淚',     icon: '💧', stat: 'mp', value: 5, desc: '某個鵝法師哭出來的眼淚，很值錢' },
+    t_mp_3: { id: 't_mp_3', name: '無盡法力珠',   icon: '🔵', stat: 'mp', value: 8, desc: '永遠不會用完的奇妙能量球' },
     // ⭐ 直接屬性類：ATK / DEF
     t_atk_1: { id: 't_atk_1', name: '銳利之牙',   icon: '🦷', stat: 'atk', value: 1, desc: '從鵝皇嘴邊掉下來的尖牙' },
     t_atk_2: { id: 't_atk_2', name: '殺氣徽章',   icon: '🗡', stat: 'atk', value: 2, desc: '戴上後攻擊變得更狠了' },
