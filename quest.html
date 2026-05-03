@@ -2922,7 +2922,7 @@
     }
     if (skill.defMult)      eff.defMult  = +(skill.defMult * (1 + dmgBonus)).toFixed(3);
     if (skill.maxHpMult)    eff.maxHpMult= +(skill.maxHpMult * (1 + dmgBonus)).toFixed(3);
-    if (skill.bonusMaxHpPct) eff.bonusMaxHpPct = +(skill.bonusMaxHpPct * (1 + dmgBonus)).toFixed(4);
+    // ⭐ bonusMaxHpPct 不跟 dmgBonus 自動縮放（用 customLv 的 Lv5 / Lv10 顯式 +%）
     // ⭐ 隱身專屬：每升一級 −1 MP（max 5 級 → Lv 5 為 10 MP）
     if (skill.id === 'a_stealth') {
       eff.mpCost = Math.max(0, (skill.mpCost || 0) - Math.min(5, level));
@@ -5083,9 +5083,13 @@
             // 職業被動：物理或法術加成
             if (isMagic) dmg *= (1 + (passive.flatPct || 0));
             else         dmg *= (1 + (passive.physPct || 0));
-            // ⭐ 聖騎技能可帶 bonusMaxHpPct：固定加上 maxHp × X 傷害（聖光斬 / 神聖懲戒）
+            // ⭐ 聖騎 bonusMaxHpPct：純加值（maxHp × X），不吃怪 DEF
+            //    例：聖光斬 1.2× ATK + 5% maxHp → 200 maxHp 玩家額外 +10 傷害
+            //    ATK 部分被高 DEF 壓到負值時，先 clamp 0 再加 maxHp，避免被 Math.max(1) 蓋掉
+            let __bonusMaxHpDmg = 0;
             if (skill.bonusMaxHpPct) {
-              dmg += stats.maxHp * skill.bonusMaxHpPct;
+              __bonusMaxHpDmg = stats.maxHp * skill.bonusMaxHpPct;
+              dmg = Math.max(0, dmg) + __bonusMaxHpDmg;
             }
             // 怪物抗性（魔攻吃法抗，物攻吃物抗）
             if (isMagic && mAbility?.type === 'magicResist') dmg *= (1 - mAbility.resist);
@@ -5139,6 +5143,10 @@
             if (skill.postSelfBuff) {
               applyStatus(playerObj, { type: 'buff', stat: skill.postSelfBuff.stat, amount: skill.postSelfBuff.amount, turns: skill.postSelfBuff.turns });
               extra += ` ✨${describeBuff(skill.postSelfBuff)}`;
+            }
+            // ⭐ bonusMaxHpPct 顯示：讓玩家看到「+X HP 傷害」明確來自最大血量
+            if (skill.bonusMaxHpPct && __bonusMaxHpDmg > 0) {
+              extra += ` 🩸+${Math.round(__bonusMaxHpDmg)}（${Math.round(skill.bonusMaxHpPct * 100)}% maxHp）`;
             }
             log.push({
               type: 'crit-player',
@@ -5630,9 +5638,9 @@
               dmg *= (1 + (bonus.skillDmgPct || 0));
               if (isMagic) dmg *= (1 + (passive.flatPct || 0));
               else         dmg *= (1 + (passive.physPct || 0));
-              // ⭐ 聖騎技能可帶 bonusMaxHpPct：固定加上 maxHp × X 傷害（聖光斬 / 神聖懲戒）
+              // ⭐ 聖騎 bonusMaxHpPct：純加值，不吃怪 DEF（同單體 path）
               if (skill.bonusMaxHpPct) {
-                dmg += stats.maxHp * skill.bonusMaxHpPct;
+                dmg = Math.max(0, dmg) + stats.maxHp * skill.bonusMaxHpPct;
               }
               if (isMagic && tgt.ability?.type === 'magicResist') dmg *= (1 - tgt.ability.resist);
               if (!isMagic && tgt.ability?.type === 'physResist') dmg *= (1 - tgt.ability.resist);
@@ -7946,9 +7954,12 @@ ${b.text}
     if (s.flat != null) return `固定 ${s.flat}+Lv×${s.perLv} 傷害${s.ignoreDef ? '（無視防）' : ''}${hitsStr}`;
     let parts = [];
     if (s.mult) parts.push(`${s.mult}× ATK${s.magic ? '（魔攻）' : ''}${hitsStr}`);
+    if (s.bonusMaxHpPct) parts.push(`+ ${Math.round(s.bonusMaxHpPct * 100)}% maxHp 傷害`);
     if (s.alwaysCrit) parts.push('必中暴擊');
     if (s.lifesteal) parts.push(`吸血 ${Math.round(s.lifesteal * 100)}%`);
     if (s.healCaster) parts.push(`回 ${Math.round(s.healCaster * 100)}% maxHP`);
+    if (s.targetCount === 'all') parts.push('打全體');
+    else if (s.targetCount && s.targetCount > 1) parts.push(`${s.targetCount} 目標`);
     return parts.join(' + ');
   }
   function formatSkillCost(s) {
