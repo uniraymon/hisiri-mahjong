@@ -4430,21 +4430,22 @@
     return Math.round(base * (1 + Math.random() * 0.20));
   }
 
-  // ⭐ 探險 EXP（依玩家等級放大、上限不能超過當層怪物 EXP 一半）
-  //   原本探險 outcome.xp 寫死 30-200 之間 → 同一個量在 Lv 30 顯得太多
-  //   公式：raw = outcome.xp × 0.25 × (1 + 10% × (level-1))
-  //         cap = getMonsterBaseXp(level) × 0.50（永遠比怪小一半）
-  //         final = clamp(raw, 1, cap)
+  // ⭐ 探險 EXP — 大幅縮減，永遠遠小於怪物 EXP
+  //   舊公式 Lv 30 outcome 200 會給 ~78 XP，玩家覺得太多
+  //   新公式：tier = clamp(outcome.xp / 30, 1, 5)
+  //          xp = round(level × tier × 0.3)
   //   範例：
-  //     Lv 1  outcome.xp 30 → 7.5 → 8（cap = 20×0.5 = 10）
-  //     Lv 10 outcome.xp 80 → 38（cap = 120×0.5 = 60）
-  //     Lv 30 outcome.xp 80 → 78（cap = 430×0.5 = 215）
+  //     Lv 1  outcome 30  → 1
+  //     Lv 1  outcome 200 → 2
+  //     Lv 10 outcome 80  → 11
+  //     Lv 30 outcome 80  → 32
+  //     Lv 30 outcome 200 → 45
+  //     Lv 50 outcome 200 → 75
+  //   對比同等級怪物（Lv 30 約 430、Lv 50 約 670）→ 探險 EXP < 10%，不會搶風頭
   function getForageXp(outcomeXp, level) {
     const lv = Math.max(1, level | 0);
-    const cap = Math.max(2, Math.round(getMonsterBaseXp(lv) * 0.50));
-    const levelMult = 1 + 0.10 * (lv - 1);
-    const raw = Math.round((Number(outcomeXp) || 5) * 0.25 * levelMult);
-    return Math.max(1, Math.min(cap, raw));
+    const tier = Math.max(1, Math.min(5, (Number(outcomeXp) || 30) / 30));
+    return Math.max(1, Math.round(lv * tier * 0.3));
   }
 
   function generateMonster(playerLv, opts) {
