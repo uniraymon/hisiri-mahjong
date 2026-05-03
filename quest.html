@@ -4552,14 +4552,16 @@
         const line = monster.dialogue[Math.floor(Math.random() * monster.dialogue.length)];
         log.push({ type: 'monster', text: `🍵 綠茶鵝：「${line}」` });
       }
+      // ⭐ 偷錢量隨等級成正比：每 1 等 +10 元（Lv 1=10 / Lv 30=300 / Lv 50=500）
+      const stolen = Math.max(1, (player.rpg.level || 1) * 10);
       log.push({ type: 'monster', text: `回合 1：綠茶鵝踢了你一腳 → -${kickDmg} HP`, hp: { player: newHp, monster: 1, mp: startMp } });
-      log.push({ type: 'monster', text: `回合 2：綠茶鵝順手摸走 💰 10 鵝鵝幣`, hp: { player: newHp, monster: 1, mp: startMp } });
+      log.push({ type: 'monster', text: `回合 2：綠茶鵝順手摸走 💰 ${stolen} 鵝鵝幣（Lv${player.rpg.level || 1}×10）`, hp: { player: newHp, monster: 1, mp: startMp } });
       log.push({ type: 'system', text: `綠茶鵝丟下一句「鵝鵝沒有錯」就跑掉了 ☕💨` });
       return {
         won: false, fled: true,
         pHpFinal: newHp, pMpFinal: startMp, mHpFinal: 1,
         maxHp: stats.maxHp, maxMp: stats.maxMp,
-        coinsStolen: 10, kickDmg, log,
+        coinsStolen: stolen, kickDmg, log,
         metGreenTea: 1,
       };
     }
@@ -9148,13 +9150,13 @@ ${b.text}
     // 觸發綠茶事件
     if (outcome.greentea) {
       r.metGreenTea = (r.metGreenTea || 0) + 1;
-      // 偷錢扣 HP
+      // 偷錢扣 HP — 偷錢量隨等級成正比（每 1 等 +10 元）
       const kickDmg = 5 + Math.floor(Math.random() * 5);
-      const stolen = 10;
+      const stolen = Math.max(1, (r.level || 1) * 10);
       const stats = computeStats(me);
       r.hp = Math.max(1, Math.min(stats.maxHp, (r.hp || stats.maxHp) - kickDmg));
       spendCoins(me.id, stolen);
-      parts.push(`<span style="color:#dc2626;">🍵 綠茶鵝偷襲 −${stolen} 幣 / −${kickDmg} HP</span>`);
+      parts.push(`<span style="color:#dc2626;">🍵 綠茶鵝偷襲 −${stolen} 幣（Lv${r.level || 1}×10）/ −${kickDmg} HP</span>`);
       // 是否觸發指南書
       if (typeof grantGreenTeaGuides === 'function') grantGreenTeaGuides(me);
     }
