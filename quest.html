@@ -716,6 +716,7 @@
     text-align: center;
     cursor: pointer;
     font-family: inherit;
+    position: relative;
   }
   .inv-item:hover { background: #f3e8ff; }
   .inv-item .ii-icon { font-size: 20px; }
@@ -726,6 +727,149 @@
     border-color: #7c3aed;
   }
   .inv-item.equipped .ii-name, .inv-item.equipped .ii-stat { color: #fff; }
+
+  /* ⭐ 背包分頁 + 批量出售 */
+  .inv-page-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+  .inv-page-tab {
+    flex: 0 0 auto;
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #fde68a, #fbbf24);
+    border: 2px solid #d97706;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    color: #7c2d12;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .inv-page-tab:hover { transform: translateY(-1px); }
+  .inv-page-tab.active {
+    background: linear-gradient(135deg, #ef4444, #b91c1c);
+    border-color: #7f1d1d;
+    color: #fff;
+    box-shadow: 0 0 0 2px #fff inset, 0 0 0 4px #b91c1c;
+  }
+  .inv-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 6px;
+    padding: 6px 8px;
+    background: #f5f3ff;
+    border: 1px dashed #c4b5fd;
+    border-radius: 8px;
+  }
+  .inv-toolbar .it-btn {
+    padding: 5px 9px;
+    border: 2px solid #c4b5fd;
+    background: #fff;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    color: #5b21b6;
+    cursor: pointer;
+  }
+  .inv-toolbar .it-btn:hover { background: #f3e8ff; }
+  .inv-toolbar .it-btn.active {
+    background: linear-gradient(135deg, #a78bfa, #7c3aed);
+    color: #fff;
+    border-color: #6d28d9;
+  }
+  .inv-toolbar .it-btn.danger {
+    background: linear-gradient(135deg, #fca5a5, #ef4444);
+    color: #fff;
+    border-color: #b91c1c;
+  }
+  .inv-toolbar .it-btn.danger:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(0.4);
+  }
+  .inv-toolbar .it-info {
+    font-size: 11px;
+    color: #5b21b6;
+    font-weight: 700;
+    margin-left: auto;
+  }
+  .inv-page-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    padding: 6px;
+    background: #1f1147;
+    border: 2px solid #5b21b6;
+    border-radius: 10px;
+  }
+  @media (min-width: 480px) {
+    .inv-page-grid { grid-template-columns: repeat(9, 1fr); }
+  }
+  .inv-cell {
+    aspect-ratio: 1;
+    background: #2d1b69;
+    border: 1px solid #4c1d95;
+    border-radius: 6px;
+    padding: 2px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+    font-family: inherit;
+  }
+  .inv-cell.empty { opacity: 0.4; }
+  .inv-cell.has-item { cursor: pointer; transition: transform 0.1s; }
+  .inv-cell.has-item:hover { transform: scale(1.04); }
+  .inv-cell .ic-icon { font-size: 20px; line-height: 1; }
+  .inv-cell .ic-name {
+    font-size: 8px;
+    color: #f5f3ff;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-top: 1px;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0 2px;
+  }
+  .inv-cell.bulk-on { box-shadow: 0 0 0 1px #a78bfa inset; }
+  .inv-cell.selected {
+    background: linear-gradient(135deg, #fde047, #f59e0b);
+    border-color: #d97706;
+    box-shadow: 0 0 0 2px #fff inset;
+  }
+  .inv-cell.selected .ic-name { color: #7c2d12; }
+  .inv-cell .ic-check {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border: 1.5px solid #6d28d9;
+    border-radius: 3px;
+    font-size: 11px;
+    line-height: 11px;
+    text-align: center;
+    color: #7c3aed;
+    font-weight: 900;
+  }
+  .inv-cell.selected .ic-check {
+    background: #7c3aed;
+    color: #fff;
+    border-color: #4c1d95;
+  }
 
   /* 世界王 */
   .boss-card {
@@ -6064,18 +6208,29 @@ ${b.text}
   window.showSkillsModal = showSkillsModal;
 
   // ⭐ 裝備 modal — 顯示裝備格 + 背包格
+  // 背包分頁 + 批量出售狀態
+  const INV_PAGE_SIZE = 45;        // 每頁 9×5
+  let __invPage = 0;
+  let __invBulkMode = false;
+  let __invSelected = new Set();   // 內容是 inventory 的「全域 idx」
+
   function showEquipmentModal() {
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
     if (!rpg.class) { showToast('先選職業'); return; }
+    // 每次打開重置批量選取（避免上次的選取殘留）
+    __invSelected = new Set();
+    __invBulkMode = false;
     const html = `
       <div>
         <div style="font-size:11px; color:#5b3d62; padding:6px 10px; background:#fef3c7; border-radius:8px; margin-bottom:8px; border:1px dashed #f59e0b;">
-          🎒 點裝備格 = 卸下；點背包物品 = 裝備 / 賣掉
+          🎒 點裝備格 = 卸下；點背包物品 = 裝備 / 賣掉。批量模式下點物品 = 勾選。
         </div>
         <div class="equip-row" id="equipRow"></div>
         <div style="font-size:12px; color:#8b6f9b; margin:10px 0 6px; font-weight:600;">背包</div>
-        <div class="inv-grid" id="invGrid"></div>
+        <div id="invPageTabs" class="inv-page-tabs"></div>
+        <div id="invToolbar" class="inv-toolbar"></div>
+        <div id="invGrid" class="inv-page-grid"></div>
         <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:10px;">關閉</button>
       </div>
     `;
@@ -6764,33 +6919,153 @@ ${b.text}
       </button>`;
     }).join('');
 
-    // 背包
-    const inv = (rpg.inventory || []).slice();
-    if (inv.length === 0) {
-      invGridEl.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#8b6f9b; font-size:11px; padding:8px;">背包空空 ♡</div>';
+    // 背包：分頁 + 可批量選取
+    const inv = (rpg.inventory || []);
+    const pageCount = Math.max(1, Math.ceil(inv.length / INV_PAGE_SIZE));
+    if (__invPage >= pageCount) __invPage = pageCount - 1;
+    if (__invPage < 0) __invPage = 0;
+
+    // 分頁 tabs（至少顯示 1 個）
+    const tabsEl = document.getElementById('invPageTabs');
+    if (tabsEl) {
+      tabsEl.innerHTML = Array.from({ length: pageCount }, (_, p) => `
+        <button class="inv-page-tab ${p === __invPage ? 'active' : ''}" onclick="setInvPage(${p})">${p + 1}</button>
+      `).join('');
+    }
+
+    // 工具列：批量模式 + 全選 + 取消選取 + 賣出
+    const tbEl = document.getElementById('invToolbar');
+    if (tbEl) {
+      // 計算已選的賣價總和
+      let selValue = 0;
+      __invSelected.forEach(i => {
+        const it = resolveItem(inv[i]);
+        if (it) selValue += getSellValue(it);
+      });
+      tbEl.innerHTML = `
+        <button class="it-btn ${__invBulkMode ? 'active' : ''}" onclick="toggleInvBulk()">
+          ${__invBulkMode ? '✓ 批量模式' : '☐ 批量出售'}
+        </button>
+        ${__invBulkMode ? `
+          <button class="it-btn" onclick="selectAllInvOnPage()">全選本頁</button>
+          <button class="it-btn" onclick="clearInvSelection()">取消選取</button>
+          <button class="it-btn danger" onclick="bulkSellInv()" ${__invSelected.size === 0 ? 'disabled' : ''}>
+            賣掉選取（${__invSelected.size}件 +${selValue}🪙）
+          </button>
+        ` : ''}
+        <span class="it-info">背包 ${inv.length} 件 · 第 ${__invPage + 1}/${pageCount} 頁</span>
+      `;
+    }
+
+    // 該頁的格子（固定 INV_PAGE_SIZE 個 cell，沒物品就空格）
+    const start = __invPage * INV_PAGE_SIZE;
+    const cells = [];
+    for (let i = 0; i < INV_PAGE_SIZE; i++) {
+      const globalIdx = start + i;
+      const entry = inv[globalIdx];
+      if (entry === undefined) {
+        cells.push(`<div class="inv-cell empty"></div>`);
+        continue;
+      }
+      const item = resolveItem(entry);
+      if (!item) {
+        cells.push(`<button class="inv-cell has-item" onclick="onInvCellClick(${globalIdx})" style="border-color:#dc2626; background:#7f1d1d;" title="未知物品">
+          <div class="ic-icon">❓</div>
+          <div class="ic-name">未知</div>
+          ${__invBulkMode ? `<div class="ic-check">${__invSelected.has(globalIdx) ? '✓' : ''}</div>` : ''}
+        </button>`);
+        continue;
+      }
+      const rarColor = item.rarity ? RARITY[item.rarity]?.color
+        : item.setId ? (SETS[item.setId]?.color || '#f59e0b')
+        : null;
+      const selected = __invSelected.has(globalIdx);
+      const bgStyle = rarColor
+        ? `border-color:${rarColor}; background:linear-gradient(135deg,#2d1b69,${rarColor}40);`
+        : '';
+      const tooltip = `${item.name}${item.lv ? ' (Lv ' + item.lv + ')' : ''}　${formatItemStats(item)}`;
+      cells.push(`<button
+          class="inv-cell has-item ${__invBulkMode ? 'bulk-on' : ''} ${selected ? 'selected' : ''}"
+          style="${bgStyle}"
+          title="${escapeHtml(tooltip)}"
+          onclick="onInvCellClick(${globalIdx})">
+        <div class="ic-icon">${item.icon}</div>
+        <div class="ic-name" style="${rarColor && !selected ? `color:${rarColor};` : ''}">${escapeHtml(item.name)}</div>
+        ${__invBulkMode ? `<div class="ic-check">${selected ? '✓' : ''}</div>` : ''}
+      </button>`);
+    }
+    invGridEl.innerHTML = cells.join('');
+  }
+
+  // === 背包：分頁、批量出售操作 ===
+  function setInvPage(p) {
+    __invPage = Math.max(0, p | 0);
+    renderEquipment();
+  }
+  window.setInvPage = setInvPage;
+
+  function toggleInvBulk() {
+    __invBulkMode = !__invBulkMode;
+    if (!__invBulkMode) __invSelected.clear();
+    renderEquipment();
+  }
+  window.toggleInvBulk = toggleInvBulk;
+
+  function onInvCellClick(globalIdx) {
+    if (__invBulkMode) {
+      if (__invSelected.has(globalIdx)) __invSelected.delete(globalIdx);
+      else __invSelected.add(globalIdx);
+      renderEquipment();
     } else {
-      invGridEl.innerHTML = inv.map((entry, idx) => {
-        const item = resolveItem(entry);
-        if (!item) {
-          // 防呆：找不到對應 item 也要顯示，免得 push 進去結果看不到
-          return `<button class="inv-item" onclick="openInvItemActions(${idx})" style="border-color:#dc2626; background:#fee2e2;">
-            <div class="ii-icon">❓</div>
-            <div class="ii-name" style="color:#991b1b;">未知物品</div>
-            <div class="ii-stat" style="font-size:9px;">${escapeHtml(typeof entry === 'string' ? entry : (entry?.id || JSON.stringify(entry).slice(0,40)))}</div>
-          </button>`;
-        }
-        // 顏色：稀有度 > 套裝色 > 預設無色
-        const rarColor = item.rarity ? RARITY[item.rarity]?.color
-          : item.setId ? (SETS[item.setId]?.color || '#f59e0b')
-          : null;
-        return `<button class="inv-item" onclick="openInvItemActions(${idx})" style="${rarColor ? `border-color:${rarColor}; background:linear-gradient(135deg,#fff,${rarColor}1a);` : ''}">
-          <div class="ii-icon">${item.icon}</div>
-          <div class="ii-name" style="${rarColor ? `color:${rarColor};` : ''}">${item.name}</div>
-          <div class="ii-stat">${formatItemStats(item)}</div>
-        </button>`;
-      }).join('');
+      openInvItemActions(globalIdx);
     }
   }
+  window.onInvCellClick = onInvCellClick;
+
+  function selectAllInvOnPage() {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const inv = r.inventory || [];
+    const start = __invPage * INV_PAGE_SIZE;
+    const end = Math.min(start + INV_PAGE_SIZE, inv.length);
+    for (let i = start; i < end; i++) __invSelected.add(i);
+    renderEquipment();
+  }
+  window.selectAllInvOnPage = selectAllInvOnPage;
+
+  function clearInvSelection() {
+    __invSelected.clear();
+    renderEquipment();
+  }
+  window.clearInvSelection = clearInvSelection;
+
+  function bulkSellInv() {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    if (__invSelected.size === 0) { showToast('還沒選任何物品 ♡'); return; }
+    // 先預覽：算總價、過濾無法解析的
+    const idxs = [...__invSelected].sort((a, b) => b - a); // 由大到小，splice 不會錯位
+    const valid = [];
+    let total = 0;
+    for (const idx of idxs) {
+      const item = resolveItem(r.inventory[idx]);
+      if (!item) continue;
+      valid.push({ idx, value: getSellValue(item) });
+      total += getSellValue(item);
+    }
+    if (valid.length === 0) { __invSelected.clear(); renderEquipment(); return; }
+    if (!confirm(`確定賣掉這 ${valid.length} 件，共 ${total} 鵝鵝幣？`)) return;
+    // 真的賣
+    for (const v of valid) r.inventory.splice(v.idx, 1);
+    refundCoins(me.id, total);
+    __invSelected.clear();
+    saveData();
+    if (typeof renderCharCard === 'function') renderCharCard();
+    if (typeof renderShop === 'function') renderShop();
+    renderEquipment();
+    showToast(`💰 一次賣出 ${valid.length} 件 +${total} 鵝鵝幣`);
+  }
+  window.bulkSellInv = bulkSellInv;
 
   function openInvItemActions(idx) {
     const me = getMe(); if (!me) return;
