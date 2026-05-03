@@ -1345,25 +1345,71 @@
 
   .boss-killed-banner {
     position: fixed;
-    top: 24px;
+    top: 16px;
     left: 50%;
-    transform: translateX(-50%) translateY(-200px);
+    transform: translateX(-50%) translateY(-300px);
     background: linear-gradient(135deg, #f59e0b, #dc2626);
     color: #fff;
-    padding: 16px 28px;
+    padding: 14px 18px;
     border-radius: 16px;
     border: 3px solid #fde047;
-    font-weight: 800;
+    font-weight: 700;
     z-index: 1100;
     box-shadow: 0 8px 32px rgba(245, 158, 11, 0.5);
     transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-    font-size: 14px;
+    font-size: 13px;
     text-align: center;
-    max-width: 90vw;
+    max-width: 92vw;
+    width: 360px;
+    cursor: pointer;
   }
   .boss-killed-banner.show { transform: translateX(-50%) translateY(0); }
-  .boss-killed-banner .bk-icon { font-size: 32px; }
-  .boss-killed-banner .bk-title { font-size: 18px; margin: 4px 0; }
+  .boss-killed-banner .bk-icon { font-size: 32px; line-height: 1; }
+  .boss-killed-banner .bk-title { font-size: 16px; margin: 4px 0; font-weight: 800; }
+  .boss-killed-banner .bk-killer {
+    font-size: 13px;
+    padding: 6px 8px;
+    background: rgba(0,0,0,0.25);
+    border-radius: 8px;
+    margin: 6px 0;
+  }
+  .boss-killed-banner .bk-rank-list {
+    text-align: left;
+    background: rgba(0,0,0,0.2);
+    border-radius: 8px;
+    padding: 6px 8px;
+    margin: 6px 0;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .boss-killed-banner .bk-rank-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 0;
+    border-bottom: 1px dashed rgba(255,255,255,0.18);
+  }
+  .boss-killed-banner .bk-rank-row:last-child { border-bottom: none; }
+  .boss-killed-banner .bk-rank-num {
+    width: 22px;
+    text-align: center;
+    background: rgba(255,255,255,0.18);
+    border-radius: 6px;
+    padding: 1px 0;
+    font-weight: 800;
+  }
+  .boss-killed-banner .bk-rank-row.killer .bk-rank-num {
+    background: #fde047;
+    color: #7c2d12;
+  }
+  .boss-killed-banner .bk-rank-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .boss-killed-banner .bk-rank-dmg { font-weight: 700; color: #fde047; }
+  .boss-killed-banner .bk-rank-coins { font-size: 11px; opacity: 0.95; }
+  .boss-killed-banner .bk-foot {
+    font-size: 11px;
+    opacity: 0.85;
+    margin-top: 4px;
+  }
 
   /* 商店 */
   .shop-tabs {
@@ -5469,7 +5515,7 @@
     maybeFlashHelp();
     refreshBugBadge();
     updateStaminaUI();
-    // checkBossKillBanners();  // ⭐ 尾刀通知關掉（單人版）
+    checkBossKillBanners(); // ⭐ 尾刀通告（含傷害排行 + 王硬幣分配）
     maybeShowBetaCompModal();
   }
 
@@ -8747,20 +8793,42 @@ ${b.text}
   }
   function showBossKillBanner(boss, lastKill) {
     const killer = getPlayer(lastKill.killer);
+    const settlement = Array.isArray(lastKill.settlement) ? lastKill.settlement.slice(0, 5) : [];
+    const coinIcon = lastKill.bossCoinIcon || boss.bossCoin?.icon || '🪙';
+    const coinName = lastKill.bossCoinName || boss.bossCoin?.name || '王硬幣';
+    const killerName = killer ? `${killer.avatar} ${escapeHtml(killer.name)}` : '?';
+    const killerDmg = lastKill.killerDmg ? lastKill.killerDmg.toLocaleString() : '?';
+
+    const rankRows = settlement.map(s => {
+      const p = getPlayer(s.pid);
+      const isKiller = !!s.isKiller;
+      const totalCoinQty = s.bossCoinQty + (isKiller ? 6 : 0); // 尾刀額外 +6
+      const coinNote = `${coinIcon}×${totalCoinQty}${isKiller ? '（含尾刀+6）' : ''}`;
+      return `
+        <div class="bk-rank-row ${isKiller ? 'killer' : ''}">
+          <span class="bk-rank-num">${s.rank}</span>
+          <span class="bk-rank-name">${p ? p.avatar + ' ' + escapeHtml(p.name) : '?'}</span>
+          <span class="bk-rank-dmg">${s.dmg.toLocaleString()}</span>
+          <span class="bk-rank-coins">${coinNote}</span>
+        </div>
+      `;
+    }).join('');
+
     const el = document.createElement('div');
     el.className = 'boss-killed-banner';
     el.innerHTML = `
       <div class="bk-icon">${boss.icon}</div>
-      <div class="bk-title">${boss.name} 被擊殺！</div>
-      <div>尾刀英雄：<b>${killer ? killer.avatar + ' ' + escapeHtml(killer.name) : '?'}</b></div>
-      <div style="font-size:11px; opacity:0.85; margin-top:4px;">第 ${lastKill.killCount} 次擊殺　·　${boss.respawnMs ? `${boss.respawnMs/3600000} 小時後復活` : '立刻重生 ♻'}</div>
+      <div class="bk-title">${escapeHtml(boss.name)} 被擊殺！</div>
+      <div class="bk-killer">🏆 尾刀：${killerName}　·　最後一擊 <b>${killerDmg}</b> 傷害</div>
+      ${rankRows ? `<div class="bk-rank-list">${rankRows}</div>` : ''}
+      <div class="bk-foot">第 ${lastKill.killCount} 次擊殺　·　${boss.respawnMs ? `${boss.respawnMs/3600000} 小時後復活` : '立刻重生 ♻'}　·　點此關閉</div>
     `;
     document.body.appendChild(el);
     setTimeout(() => el.classList.add('show'), 80);
     setTimeout(() => {
       el.classList.remove('show');
       setTimeout(() => el.remove(), 500);
-    }, 6000);
+    }, 9000);
     el.addEventListener('click', () => {
       el.classList.remove('show');
       setTimeout(() => el.remove(), 500);
@@ -9898,13 +9966,31 @@ ${b.text}
             state.deadAt = Date.now();
             state.nextSpawnAt = state.deadAt + bossDef.respawnMs;
             state.killCount = (state.killCount || 0) + 1;
-            state.lastKill = { killer: attackerId, when: state.deadAt, killCount: state.killCount };
             killed = true;
             // 把獎勵記在 pendingRewards 裡，由各玩家自己領
             // ⭐ 結算階段：王硬幣（可堆疊道具）— 1名 6 / 2名 4 / 其他 2；尾刀額外 +6
             //    舊的 rewardTop / rewardSecond ... coins 仍照舊發鵝鵝幣
             const sortedDmg = Object.entries(state.damageLog).sort((a, b) => b[1] - a[1]);
             const rankRewards = [bossDef.rewardTop, bossDef.rewardSecond, bossDef.rewardThird];
+            // ⭐ 把結算詳情塞進 lastKill，給 kill banner 用
+            const RANK_QTY = [6, 4, 2];
+            const settlement = sortedDmg.map(([pid, dmg], idx) => ({
+              pid,
+              dmg,
+              rank: idx + 1,
+              bossCoinQty: RANK_QTY[idx] != null ? RANK_QTY[idx] : 2,
+              isKiller: pid === attackerId,
+            }));
+            state.lastKill = {
+              killer: attackerId,
+              killerDmg: state.damageLog[attackerId] || 0,
+              when: state.deadAt,
+              killCount: state.killCount,
+              bossCoinId: bossDef.bossCoin?.id || null,
+              bossCoinIcon: bossDef.bossCoin?.icon || '🪙',
+              bossCoinName: bossDef.bossCoin?.name || '王硬幣',
+              settlement, // 全員結算（依傷害排序）
+            };
             // 尾刀獎（鵝鵝幣 + 王硬幣 ×6 + 精魂的旗標）
             newPending.push({
               pid: attackerId,
