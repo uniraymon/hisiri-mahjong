@@ -3372,11 +3372,16 @@
     { type: 'def', name: '鋼鐵', perLv: 0.3 },
     { type: 'hp',  name: '巨魂', perLv: 5 },
   ];
+  // ⭐ 稀有度：詞條數綁定顏色
+  //   白 (common)    0 詞條
+  //   綠 (magic)     1 詞條
+  //   藍 (rare)      2 詞條
+  //   紫 (legendary) 3 詞條
   const RARITY = {
     common:    { color: '#9ca3af', label: '普通',  affixes: 0, mult: 1.0 },
-    magic:     { color: '#3b82f6', label: '魔法',  affixes: 1, mult: 1.0 },
-    rare:      { color: '#a855f7', label: '稀有',  affixes: 2, mult: 1.4 },
-    legendary: { color: '#f59e0b', label: '傳說',  affixes: 3, mult: 2.0 },
+    magic:     { color: '#22c55e', label: '魔法',  affixes: 1, mult: 1.1 }, // 綠
+    rare:      { color: '#3b82f6', label: '稀有',  affixes: 2, mult: 1.4 }, // 藍
+    legendary: { color: '#a855f7', label: '傳說',  affixes: 3, mult: 2.0 }, // 紫
   };
   function rollRarity(boosted) {
     const r = Math.random();
@@ -3425,8 +3430,8 @@
       hp:  base.hp  || 0,
       affixes: [],
     };
-    // ⭐ 詞條數：精英 = 固定 3 / 普通 = 隨機 1-3（不再依稀有度）
-    const affixCount = forceAffixes != null ? forceAffixes : (1 + Math.floor(Math.random() * 3));
+    // ⭐ 詞條數依稀有度：白 0 / 綠 1 / 藍 2 / 紫 3（精英用 forceAffixes 蓋過）
+    const affixCount = forceAffixes != null ? forceAffixes : def.affixes;
     for (let i = 0; i < affixCount; i++) {
       const a = AFFIXES[Math.floor(Math.random() * AFFIXES.length)];
       const val = Math.max(1, Math.round((1 + drop.lv * a.perLv) * def.mult));
@@ -6580,7 +6585,7 @@ ${b.text}
         </div>
         <div class="zone-info-meta">
           <span>掉落偏好：${cur.dropBias.map(s=>SLOT_LABEL[s]||s).join('、')}</span>
-          <span style="opacity:0.7;">每件掉落 1-3 詞條</span>
+          <span style="opacity:0.7;">詞條：白 0 · 綠 1 · 藍 2 · 紫 3</span>
         </div>
         <div style="display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 6px;">${layerTabsHtml}</div>
         <div class="floor-meta">${cur.icon} ${cur.name} · ${curLayer.icon} ${curLayer.name}　·　每場隨機 Lv <b>${curLayer.minLv}–${curLayer.maxLv}</b> 怪物</div>
