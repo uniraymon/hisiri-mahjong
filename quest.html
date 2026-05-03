@@ -2394,7 +2394,7 @@
     {
       id: 'breakfast_goose',
       name: '早餐鵝', icon: '🍳',
-      hp: 8000, atk: 75, def: 15, spd: 14, level: 30,
+      hp: 25000, atk: 75, def: 35, spd: 14, level: 30,
       verb: '塗果醬',
       skills: [
         { verb: '太陽蛋砲擊', mult: 1.6, cooldown: 4 },
@@ -2408,7 +2408,7 @@
     {
       id: 'lunch_goose',
       name: '午餐鵝', icon: '🍱',
-      hp: 12000, atk: 100, def: 25, spd: 16, level: 30,
+      hp: 40000, atk: 100, def: 50, spd: 16, level: 30,
       verb: '便當蓋下擊',
       ability: { type: 'multiHit', hits: 2 },
       skills: [
@@ -2423,7 +2423,7 @@
     {
       id: 'dinner_goose',
       name: '晚餐鵝', icon: '🍷',
-      hp: 18000, atk: 130, def: 35, spd: 18, level: 30,
+      hp: 60000, atk: 130, def: 70, spd: 18, level: 30,
       verb: '紅酒甩擊',
       ability: { type: 'magicResist', resist: 0.3 },
       skills: [
@@ -10794,6 +10794,7 @@ ${b.text}
       <input type="file" id="adminRestoreInput" accept="application/json" style="display:none" onchange="adminApplyRestoreFile(event)">
 
       <button class="btn btn-danger" onclick="adminResetRpg()" style="margin-top:6px;">⚠️ 重置 RPG 角色（保留幣）</button>
+      <button class="btn btn-secondary" onclick="adminRefillBosses()" style="margin-top:6px; background:linear-gradient(135deg,#86efac,#16a34a); box-shadow:0 4px 0 #15803d; color:#fff;">💚 補滿世界王 HP（保留排隊 / 戰報）</button>
       <button class="btn btn-danger" onclick="adminResetBosses()" style="margin-top:6px; background:linear-gradient(135deg,#fdba74,#c2410c); box-shadow:0 4px 0 #7c2d12;">🗑 重置世界王紀錄（HP / 排隊 / 戰報 / 待領獎）</button>
       <button class="btn btn-danger" onclick="adminResetLeaderboard()" style="margin-top:6px; background:linear-gradient(135deg,#fde047,#d97706); box-shadow:0 4px 0 #92400e; color:#7c2d12;">🏆 重置排行榜（所有玩家等級 / 鵝鵝幣 / 綠茶遭遇歸零）</button>
       <button class="btn btn-danger" onclick="adminWipeAll()" style="margin-top:6px; background:linear-gradient(135deg,#fca5a5,#7f1d1d); box-shadow:0 4px 0 #450a0a;">💀 全玩家洗白（伺服器 + 本地都重置）</button>
@@ -11107,6 +11108,35 @@ ${b.text}
     showToast('🗑 世界王紀錄已重置');
   }
   window.adminResetBosses = adminResetBosses;
+
+  // ⭐ 補滿所有世界王 HP（保留排隊 / 戰報 / 已殺次數）
+  function adminRefillBosses() {
+    if (!confirm('💚 把所有世界王 HP 補滿（保留排隊 / 過往戰報 / 已擊殺紀錄）？')) return;
+    worldBoss = worldBoss || {};
+    let refilled = 0;
+    for (const boss of WORLD_BOSSES) {
+      const cur = worldBoss[boss.id] || {};
+      worldBoss[boss.id] = {
+        currentHp: boss.hp,
+        spawnedAt: Date.now(),
+        deadAt: null,
+        nextSpawnAt: null,
+        damageLog: {},   // 新一輪傷害排行
+        lastHit: null,
+        killCount: cur.killCount || 0,
+        lastKill: cur.lastKill || null,
+        pendingRewards: cur.pendingRewards || [],
+        queue: cur.queue || [],
+        recentBattles: cur.recentBattles || [],
+      };
+      refilled++;
+    }
+    saveData();
+    render();
+    hideModal();
+    showToast(`💚 已補滿 ${refilled} 隻世界王`);
+  }
+  window.adminRefillBosses = adminRefillBosses;
 
   // ⭐ 全玩家洗白（清空 history / pendingBets / worldBoss / 每位玩家 rpg / 鵝鵝幣 / 鵝蛋幣 / 稱號）
   // 仍保留玩家清單（id / 名字 / 頭像）
