@@ -1065,6 +1065,11 @@
     50%  { transform: scale(1.01); box-shadow: 0 0 0 6px #fde68a; }
     100% { transform: scale(1);    box-shadow: none; }
   }
+  @keyframes wb9AttackPulse {
+    0%,100% { transform: scale(1);    box-shadow: 0 4px 0 #7c3aed; }
+    50%     { transform: scale(1.04); box-shadow: 0 6px 18px rgba(220,38,38,0.7); }
+  }
+  .wb9-attack-btn { animation: wb9AttackPulse 1.2s ease-in-out infinite; }
 
   /* 行動規則編輯器 */
   .ap-list {
@@ -2701,6 +2706,7 @@
         s ? s.killCount : 0,
         s?.lastKill?.ts || 0,
         s ? (s.recentBattles || []).length : 0,
+        s ? Object.keys(s.damageLog || {}).length : 0,
       ].join('|'));
     }
     return parts.join(';');
@@ -2793,6 +2799,33 @@
       </div>`;
   }
 
+  // ⭐ commit 5：傷害排行（本輪 damageLog）
+  function wb9DamageLeaderboardHtml(state) {
+    const log = state && state.damageLog;
+    if (!log || !Object.keys(log).length) return '';
+    const sorted = Object.entries(log)
+      .map(([pid, dmg]) => ({ pid, dmg: Number(dmg) || 0 }))
+      .sort((a, b) => b.dmg - a.dmg)
+      .slice(0, 4);
+    const total = sorted.reduce((s, x) => s + x.dmg, 0);
+    const rows = sorted.map((x, i) => {
+      const p = getPlayer(x.pid);
+      const name = p ? (p.avatar || '🎴') + ' ' + escapeHtml(p.name) : '?';
+      const pct  = total > 0 ? Math.round(x.dmg / total * 100) : 0;
+      return `
+        <div class="bl-row">
+          <span class="bl-rank">${i + 1}</span>
+          <span class="bl-name">${name}</span>
+          <span class="bl-dmg">${x.dmg.toLocaleString()} (${pct}%)</span>
+        </div>`;
+    }).join('');
+    return `
+      <div class="boss-leaderboard" style="margin-top:8px;">
+        <div class="bl-title">💢 本輪傷害</div>
+        ${rows}
+      </div>`;
+  }
+
   function wb9RenderImpl(me, r, cdRemain, onCd, myQueuedBossId) {
     const el = document.getElementById('worldBossBody');
     if (!el) return;
@@ -2830,7 +2863,7 @@
         actionHtml = `<button class="btn btn-primary" disabled style="background:#4b5563;"><span data-wb9-cd-text>⏳ 冷卻 ${m}:${String(s).padStart(2,'0')}</span></button>`;
       } else if (isMyTurn) {
         actionHtml = `
-          <button class="btn btn-primary" onclick="wb9Attack('${boss.id}')" style="background:linear-gradient(135deg,#dc2626,#7c3aed); box-shadow:0 4px 0 #7c3aed; font-size:15px;">⚔️ 攻擊！</button>
+          <button class="btn btn-primary wb9-attack-btn" onclick="wb9Attack('${boss.id}')" style="background:linear-gradient(135deg,#dc2626,#7c3aed); font-size:15px;">⚔️ 攻擊！</button>
           <button class="btn btn-secondary" onclick="wb9LeaveQueue('${boss.id}')" style="margin-top:6px;">取消排隊</button>
         `;
       } else if (queuedHere) {
@@ -2844,26 +2877,32 @@
       } else {
         actionHtml = `<button class="btn btn-primary" onclick="wb9JoinQueue('${boss.id}')" style="background:linear-gradient(135deg,#f59e0b,#dc2626); box-shadow:0 4px 0 #991b1b;">📋 加入排隊${queueCount > 0 ? `（前面 ${queueCount} 人）` : ''}</button>`;
       }
-      const killBanner       = wb9KillBannerHtml(state);
-      const recentBattlesHtml= wb9RecentBattlesHtml(state, boss);
+      const killBanner        = wb9KillBannerHtml(state);
+      const recentBattlesHtml = wb9RecentBattlesHtml(state, boss);
+      const leaderboardHtml   = wb9DamageLeaderboardHtml(state);
+      // HP bar 顏色：高 HP 綠 → 中間橙 → 低 HP 紅
+      const hpBarColor = hpPct > 60
+        ? 'linear-gradient(90deg,#22c55e,#16a34a)'
+        : hpPct > 30
+        ? 'linear-gradient(90deg,#f59e0b,#d97706)'
+        : 'linear-gradient(90deg,#ef4444,#dc2626,#991b1b)';
       return `
         <div class="boss-card" data-bossid="${boss.id}">
           ${killBanner}
           <div class="boss-header">
-            <span class="boss-icon">${boss.icon}</span>
-            <div>
+            <span class="boss-icon" style="font-size:42px;">${boss.icon}</span>
+            <div style="flex:1;">
               <div class="boss-name">${boss.name} <span style="font-size:11px; color:#a16207; font-weight:600;">Lv ${boss.level}</span></div>
-              <div class="boss-status">⚔️ ATK ${boss.atk} / DEF ${boss.def}　·　${boss.verb}</div>
+              <div class="boss-status">⚔️ ATK ${boss.atk} / 🛡️ DEF ${boss.def} / 💨 SPD ${boss.spd}</div>
+              <div style="font-size:10px; color:#c4b5fd; margin-top:2px;">🏆 已擊殺 ${state.killCount} 次</div>
             </div>
           </div>
           <div class="boss-hp-bar">
-            <div class="boss-hp-fill" style="width:${hpPct.toFixed(1)}%"></div>
+            <div class="boss-hp-fill" style="width:${hpPct.toFixed(1)}%; background:${hpBarColor};"></div>
             <div class="boss-hp-text">${state.hp.toLocaleString()} / ${boss.maxHp.toLocaleString()}　(${hpPct.toFixed(1)}%)</div>
           </div>
+          ${leaderboardHtml}
           ${queueListHtml}
-          <div style="font-size:11px; color:#5b3d62; padding:4px 8px; background:#f3e8ff; border-radius:6px; text-align:center; margin-top:4px;">
-            📋 排隊：${queueCount}　·　🏆 擊殺：${state.killCount}
-          </div>
           ${actionHtml}
           ${recentBattlesHtml}
         </div>
@@ -2871,7 +2910,7 @@
     }).join('');
     el.innerHTML = `
       <div style="font-size:11px; color:#92400e; padding:8px 10px; background:linear-gradient(135deg,#fef3c7,#fde68a); border:2px dashed #f59e0b; border-radius:10px; margin-bottom:10px; text-align:center;">
-        🛠️ <b>世界王 v9 — Commit 4</b>　排隊 + 攻擊 + 戰報（${WB9_TESTING_NO_REWARDS ? '測試：獎勵不發放' : '正式模式'}）<br>
+        🛠️ <b>世界王 v9 — Commit 5</b>　排隊 + 攻擊 + 戰報 + UI（${WB9_TESTING_NO_REWARDS ? '測試：獎勵不發放' : '正式模式'}）<br>
         <span style="font-size:10px; color:#a16207;">EXP 上限 ${WB9_MAX_XP_PER_FIGHT}　·　5 分鐘冷卻</span>
       </div>
       ${cardsHtml}
