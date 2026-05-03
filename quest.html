@@ -6804,10 +6804,10 @@ ${b.text}
         <div class="t-player">
           <div class="t-icon">${CLASSES[rpg.class].icon}</div>
           <div class="t-name">${escapeHtml(me.name)} Lv${rpg.level}</div>
-          <div class="t-hp"><div class="t-hp-fill" id="tpHpFill" style="width:${(rpg.hp/stats.maxHp)*100}%"></div></div>
-          <div class="t-hp-text" id="tpHpText">${rpg.hp}/${stats.maxHp}</div>
-          <div class="t-mp"><div class="t-mp-fill" id="tpMpFill" style="width:${(rpg.mp/stats.maxMp)*100}%"></div></div>
-          <div class="t-mp-text" id="tpMpText">MP ${rpg.mp}/${stats.maxMp}</div>
+          <div class="t-hp"><div class="t-hp-fill" id="tpHpFill" style="width:100%"></div></div>
+          <div class="t-hp-text" id="tpHpText">${stats.maxHp}/${stats.maxHp}</div>
+          <div class="t-mp"><div class="t-mp-fill" id="tpMpFill" style="width:100%"></div></div>
+          <div class="t-mp-text" id="tpMpText">MP ${stats.maxMp}/${stats.maxMp}</div>
         </div>
         <div class="t-vs">⚔️</div>
         <div class="t-monsters">
@@ -7252,11 +7252,18 @@ ${b.text}
       leveled++;
     }
     refundCoins(me.id, coinGain);
-    r.hp = result.pHpFinal;
-    r.mp = result.pMpFinal;
+    // ⭐ HP/MP 戰後一律回滿（除非真的被打死）
+    const _s = computeStats(me);
+    if (result.pHpFinal <= 0) {
+      r.hp = 0;
+      if (!r.deathAt) r.deathAt = Date.now();
+    } else {
+      r.hp = _s.maxHp;
+    }
+    r.mp = _s.maxMp;
     if (result.critCount) r.critCount = (r.critCount || 0) + result.critCount;
     if (leveled) {
-      const s = computeStats(me); r.hp = s.maxHp; r.mp = s.maxMp;
+      const s = computeStats(me); r.hp = r.deathAt ? 0 : s.maxHp; r.mp = s.maxMp;
     }
 
     saveData();
@@ -7619,10 +7626,10 @@ ${b.text}
         <div class="combatant" id="combatPlayer">
           <div class="combatant-icon">${CLASSES[rpg.class].icon}</div>
           <div class="combatant-name">${escapeHtml(me.name)} Lv${rpg.level}</div>
-          <div class="combatant-hp-track"><div class="combatant-hp-fill" id="pHpBar" style="width:${(rpg.hp/stats.maxHp)*100}%"></div></div>
-          <div class="combatant-hp-text" id="pHpText">${rpg.hp}/${stats.maxHp}</div>
-          <div class="combatant-hp-track" style="margin-top:2px;"><div class="combatant-hp-fill" id="pMpBar" style="width:${(rpg.mp/stats.maxMp)*100}%; background:linear-gradient(90deg,#93c5fd,#3b82f6);"></div></div>
-          <div class="combatant-hp-text" id="pMpText" style="color:#1e40af;">MP ${rpg.mp}/${stats.maxMp}</div>
+          <div class="combatant-hp-track"><div class="combatant-hp-fill" id="pHpBar" style="width:100%"></div></div>
+          <div class="combatant-hp-text" id="pHpText">${stats.maxHp}/${stats.maxHp}</div>
+          <div class="combatant-hp-track" style="margin-top:2px;"><div class="combatant-hp-fill" id="pMpBar" style="width:100%; background:linear-gradient(90deg,#93c5fd,#3b82f6);"></div></div>
+          <div class="combatant-hp-text" id="pMpText" style="color:#1e40af;">MP ${stats.maxMp}/${stats.maxMp}</div>
         </div>
         <div class="vs-icon">⚔️</div>
         <div class="combatant" id="combatMonster">
@@ -7697,8 +7704,9 @@ ${b.text}
 
   function finalizeFight(player, monster, result, stats) {
     const rpg = getRpg(player);
-    rpg.hp = result.pHpFinal;
-    rpg.mp = result.pMpFinal;
+    // ⭐ HP/MP 是屬性：戰後一律回滿（敗北分支會自己把 hp 設 0 觸發死亡）
+    rpg.hp = stats.maxHp;
+    rpg.mp = stats.maxMp;
     if (result.coinsStolen > 0) {
       player.coinsSpent = (player.coinsSpent || 0) + result.coinsStolen;
     }
