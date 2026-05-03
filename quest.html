@@ -2013,7 +2013,7 @@
         { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 6,  cooldown: 0, mpCost: 35, type: 'damage', mult: 2.0, healCaster: 0.10 },
         { id: 'p_holy_wave', name: '神聖光波', icon: '🌟', unlockLv: 2,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.5, healCaster: 0.06, targetCount: 2 },
         { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 7,  cooldown: 0, mpCost: 35, type: 'damage', mult: 1.7, targetCount: 2, applyStatus: { type: 'paralyze', turns: 2, chance: 0.4 } },
-        { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.40, turns: 3 } },
+        { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.40, turns: 3 }, bonusHealPct: 0.20 },
         { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 22, type: 'damage', defMult: 4 },
         { id: 'p_divine_storm',  name: '神聖風暴', icon: '🌪', unlockLv: 5,  cooldown: 0, mpCost: 28, type: 'damage', maxHpMult: 0.50, targetCount: 2 },
         { id: 'p_thorn_armor',   name: '棘甲術',   icon: '🌵', unlockLv: 4,  cooldown: 0, mpCost: 22, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.50, turns: 4 } },
@@ -4921,7 +4921,7 @@
       // 被動自癒（聖騎天生 + 自癒強化技能）
       if (pTurn && regenPer > 0 && pHp < stats.maxHp) {
         const heal = Math.max(1, Math.round(stats.maxHp * regenPer));
-        pHp = Math.min(stats.maxHp, pHp + heal);
+        pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + heal));  // 不下調（神聖祝福可讓 HP 超過 maxHp，後續補血不應拉低）
         log.push({ type: 'player', text: `回合 ${round}：自癒 +${heal} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
       }
       // ⭐ 每回合自動回 MP（法系 4 / 其他 2）+ 鵝王恩賜飾品 mpRegen — 戰術中持續產生 MP，不必依賴回魔技
@@ -5097,13 +5097,13 @@
             if (skill.lifesteal) {
               const heal = Math.max(1, Math.round(totalDmg * skill.lifesteal));
               const before = pHp;
-              pHp = Math.min(stats.maxHp, pHp + heal);
+              pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + heal));  // 不下調（神聖祝福可讓 HP 超過 maxHp，後續補血不應拉低）
               if (pHp - before > 0) extra += ` 🩸+${pHp - before} HP (吸血)`;
             }
             if (skill.healCaster) {
               const heal = Math.max(1, Math.round(stats.maxHp * skill.healCaster));
               const before = pHp;
-              pHp = Math.min(stats.maxHp, pHp + heal);
+              pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + heal));  // 不下調（神聖祝福可讓 HP 超過 maxHp，後續補血不應拉低）
               if (pHp - before > 0) extra += ` 💚+${pHp - before} HP`;
             }
             // ⭐ mpRestore：傷害技回 N MP（魔吸斬 / 奪魂箭 / 魔力虹吸 / 神聖奪魂）
@@ -5138,6 +5138,12 @@
               applyStatus(playerObj, { type: 'buff', stat: 'critDmg', amount: 0.20, turns: skill.selfBuff.turns });
               extraNote.push('💥 爆傷 +20%');
             }
+            // ⭐ 神聖祝福：額外 +20% maxHp（即時補血、可超過上限）
+            if (skill.bonusHealPct) {
+              const heal = Math.round(stats.maxHp * skill.bonusHealPct);
+              pHp = pHp + heal; // 不 cap，允許超過 maxHp
+              extraNote.push(`💚 +${heal} HP（${Math.round(skill.bonusHealPct * 100)}% maxHp，可超出上限）`);
+            }
             log.push({
               type: 'player',
               text: `回合 ${round}：${skill.icon} ${skill.name} → ${describeBuff(skill.selfBuff)}（${skill.selfBuff.turns} 回合）${extraNote.length ? ' / ' + extraNote.join(' / ') : ''}${costStr}`,
@@ -5149,7 +5155,7 @@
             if (skill.healPct) {
               const before = pHp;
               const heal = Math.round(stats.maxHp * skill.healPct * (1 + (bonus.skillHealPct || 0)) * (1 + (passive.healPct || 0)));
-              pHp = Math.min(stats.maxHp, pHp + heal);
+              pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + heal));  // 不下調（神聖祝福可讓 HP 超過 maxHp，後續補血不應拉低）
               if (pHp - before > 0) gainedParts.push(`💚+${pHp - before} HP`);
             }
             // ⭐ mpFlat / mpPct 都套用（不再 else if）— 回魔技要兩部分都吃到
@@ -5501,7 +5507,7 @@
         // 自癒
         if (regenPer > 0 && pHp < stats.maxHp) {
           const heal = Math.max(1, Math.round(stats.maxHp * regenPer));
-          pHp = Math.min(stats.maxHp, pHp + heal);
+          pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + heal));  // 不下調（神聖祝福可讓 HP 超過 maxHp，後續補血不應拉低）
           log.push({ type: 'player', text: `回合 ${round}：自癒 +${heal} HP`, hp: hpsSnapshot() });
         }
         // ⭐ 每回合自動回 MP（法系 4 / 其他 2）+ 鵝王恩賜飾品 mpRegen
@@ -5627,14 +5633,14 @@
               const totalDmg = hits.reduce((s, h) => s + h.dmg, 0);
               const heal = Math.max(1, Math.round(totalDmg * skill.lifesteal));
               const before = pHp;
-              pHp = Math.min(stats.maxHp, pHp + heal);
+              pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + heal));  // 不下調（神聖祝福可讓 HP 超過 maxHp，後續補血不應拉低）
               const gained = pHp - before;
               if (gained > 0) extra += ` 🩸+${gained} HP`;
             }
             if (skill.healCaster) {
               const heal = Math.max(1, Math.round(stats.maxHp * skill.healCaster));
               const before = pHp;
-              pHp = Math.min(stats.maxHp, pHp + heal);
+              pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + heal));  // 不下調（神聖祝福可讓 HP 超過 maxHp，後續補血不應拉低）
               const gained = pHp - before;
               if (gained > 0) extra += ` 💚+${gained} HP`;
             }
@@ -5668,6 +5674,12 @@
               applyStatus(playerObj, { type: 'buff', stat: 'critDmg', amount: 0.20, turns: skill.selfBuff.turns });
               extraNote.push('💥 爆傷 +20%');
             }
+            // ⭐ 神聖祝福：額外 +20% maxHp（即時補血、可超過上限）
+            if (skill.bonusHealPct) {
+              const heal = Math.round(stats.maxHp * skill.bonusHealPct);
+              pHp = pHp + heal;
+              extraNote.push(`💚 +${heal} HP（${Math.round(skill.bonusHealPct * 100)}% maxHp，可超出上限）`);
+            }
             log.push({
               type: 'player',
               text: `回合 ${round}：${skill.icon} ${skill.name} → ${describeBuff(skill.selfBuff)}（${skill.selfBuff.turns} 回合）${extraNote.length ? ' / ' + extraNote.join(' / ') : ''}${costStr}`,
@@ -5678,7 +5690,7 @@
             if (skill.healPct) {
               const before = pHp;
               const heal = Math.round(stats.maxHp * skill.healPct * (1 + (bonus.skillHealPct || 0)) * (1 + (passive.healPct || 0)));
-              pHp = Math.min(stats.maxHp, pHp + heal);
+              pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + heal));  // 不下調（神聖祝福可讓 HP 超過 maxHp，後續補血不應拉低）
               if (pHp - before > 0) gainedParts.push(`💚+${pHp - before} HP`);
             }
             // ⭐ mpFlat / mpPct 都套用（不再 else if）
@@ -7832,7 +7844,9 @@ ${b.text}
       return parts.join(' + ') || '輔助';
     }
     if (s.type === 'buff' && s.selfBuff) {
-      return `${describeBuff(s.selfBuff)}　持續 ${s.selfBuff.turns} 回合`;
+      const buffStr = `${describeBuff(s.selfBuff)}　持續 ${s.selfBuff.turns} 回合`;
+      const bonusHealStr = s.bonusHealPct ? `　+　即時補 ${Math.round(s.bonusHealPct * 100)}% maxHp（可超出上限）` : '';
+      return buffStr + bonusHealStr;
     }
     const hitsStr = (s.hits && s.hits > 1) ? ` ×${s.hits} 段` : '';
     if (s.defMult != null)   return `${s.defMult}× DEF 傷害${hitsStr}`;
