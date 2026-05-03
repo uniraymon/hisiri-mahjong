@@ -2263,14 +2263,24 @@
   function monsterHPK(lv) {
     const lvSafe = Math.max(1, lv);
     const layer = Math.min(3, Math.floor((lvSafe - 1) / 5));
-    const layerHP = [1.0, 2.0, 3.3, 5.0];
+    // ⭐ 中層起 HP 系數小幅上調（玩家反映中層怪太脆，容易秒掉）
+    //   layer 0 (Lv 1-5)   不動 → 1.0
+    //   layer 1 (Lv 6-10)  2.0 → 2.3 (+15%)
+    //   layer 2 (Lv 11-15) 3.3 → 3.8 (+15%)
+    //   layer 3 (Lv 16-20) 5.0 → 5.8 (+16%)
+    const layerHP = [1.0, 2.3, 3.8, 5.8];
     const offsetInLayer = (lvSafe - 1) % 5;
     return layerHP[layer] * (1 + offsetInLayer * 0.025);
   }
   function monsterDEFK(lv) {
     const lvSafe = Math.max(1, lv);
     const layer = Math.min(3, Math.floor((lvSafe - 1) / 5));
-    const layerDEF = [1.0, 1.40, 1.65, 2.00];
+    // ⭐ 中層起 DEF 系數小幅上調（配合 HP 增厚，整體耐打度提升）
+    //   layer 0 (Lv 1-5)   不動 → 1.0
+    //   layer 1 (Lv 6-10)  1.40 → 1.55 (+11%)
+    //   layer 2 (Lv 11-15) 1.65 → 1.85 (+12%)
+    //   layer 3 (Lv 16-20) 2.00 → 2.25 (+12%)
+    const layerDEF = [1.0, 1.55, 1.85, 2.25];
     const offsetInLayer = (lvSafe - 1) % 5;
     return layerDEF[layer] * (1 + offsetInLayer * 0.015);
   }
