@@ -7924,7 +7924,7 @@ ${b.text}
             擊殺後依傷害排名 / 尾刀分配的硬幣<br>
             <span style="color:#92400e; font-weight:700;">無法賣出，未來會用來兌換王限定獎勵</span>
           </div>
-          <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:14px;">關閉</button>
+          <button class="btn btn-secondary" onclick="backToBackpack()" style="margin-top:14px;">← 回背包</button>
         </div>
       `;
       showModal('🪙 ' + item.name, html);
@@ -8005,12 +8005,19 @@ ${b.text}
           <button class="btn btn-primary" onclick="equipFromInvAndClose(${idx})" ${canEquip ? '' : 'disabled'}>裝備</button>
           <button class="btn btn-warning" onclick="sellInvItem(${idx})">賣掉（🪙 ${sellValue}）</button>
         </div>
-        <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:6px;">取消</button>
+        <button class="btn btn-secondary" onclick="backToBackpack()" style="margin-top:6px;">← 回背包</button>
       </div>
     `;
     showModal('🎒 ' + item.name, html);
   }
   window.openInvItemActions = openInvItemActions;
+
+  // ⭐ 從詳情 modal 回背包（不要整個關掉）
+  function backToBackpack() {
+    hideModal();
+    if (typeof showEquipmentModal === 'function') showEquipmentModal();
+  }
+  window.backToBackpack = backToBackpack;
 
   function equipFromInvAndClose(idx) {
     hideModal();
