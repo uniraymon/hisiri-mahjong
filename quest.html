@@ -2247,28 +2247,28 @@
   //   layerHP = [1.0, 2.0, 3.3, 5.0]，每等 +2.5%
   // DEF 用較緩的曲線（user spec：6-10 +30-50% / 11-15 +50-80% / 16-20 +80-120%）
   //   layerDEF = [1.0, 1.40, 1.65, 2.00]，每等 +1.5%
-  // ⭐ ATK 倍率（比舊版 [1.0, 1.30, 1.69, 2.20] 在 6-10 / 11-15 / 16-20 各加一截）
-  //   layerATK = [1.0, 1.45, 1.95, 2.55]，階內每等 +3%
-  //   Lv 5  → 1.10        （tier 1 末，跟舊版一樣）
-  //   Lv 10 → 1.45 × 1.12 = 1.62  （舊 1.43，+13%）
-  //   Lv 15 → 1.95 × 1.12 = 2.18  （舊 1.86，+17%）
-  //   Lv 20 → 2.55 × 1.12 = 2.86  （舊 2.42，+18%）
+  // ⭐ ATK 倍率（再次上調：玩家反映中層怪攻擊偏弱）
+  //   layerATK = [1.0, 1.70, 2.25, 2.95]，階內每等 +3%
+  //   Lv 5  → 1.12（tier 1 末略升）
+  //   Lv 10 → 1.70 × 1.12 = 1.90（舊 1.62，+17%）
+  //   Lv 15 → 2.25 × 1.12 = 2.52（舊 2.18，+16%）
+  //   Lv 20 → 2.95 × 1.12 = 3.30（舊 2.86，+15%）
   function monsterK(lv) {
     const lvSafe = Math.max(1, lv);
     const layer = Math.min(3, Math.floor((lvSafe - 1) / 5));
-    const layerATK = [1.0, 1.45, 1.95, 2.55];
+    const layerATK = [1.0, 1.70, 2.25, 2.95];
     const offsetInLayer = (lvSafe - 1) % 5;
     return layerATK[layer] * (1 + offsetInLayer * 0.03);
   }
   function monsterHPK(lv) {
     const lvSafe = Math.max(1, lv);
     const layer = Math.min(3, Math.floor((lvSafe - 1) / 5));
-    // ⭐ 中層起 HP 系數小幅上調（玩家反映中層怪太脆，容易秒掉）
+    // ⭐ HP 系數再次上調（中層仍偏脆，這次再 +12-15%）
     //   layer 0 (Lv 1-5)   不動 → 1.0
-    //   layer 1 (Lv 6-10)  2.0 → 2.3 (+15%)
-    //   layer 2 (Lv 11-15) 3.3 → 3.8 (+15%)
-    //   layer 3 (Lv 16-20) 5.0 → 5.8 (+16%)
-    const layerHP = [1.0, 2.3, 3.8, 5.8];
+    //   layer 1 (Lv 6-10)  2.3 → 2.65 (+15%)
+    //   layer 2 (Lv 11-15) 3.8 → 4.4  (+16%)
+    //   layer 3 (Lv 16-20) 5.8 → 6.6  (+14%)
+    const layerHP = [1.0, 2.65, 4.4, 6.6];
     const offsetInLayer = (lvSafe - 1) % 5;
     return layerHP[layer] * (1 + offsetInLayer * 0.025);
   }
@@ -4150,6 +4150,29 @@
         }
       }
       // 補發過就不在這裡跳 toast，避免每次 getRpg 都跳
+    }
+    // ⭐ 補發 v2（一次性）：之前 granted 旗標被誤標但物品從未入背包的情況
+    //   檢查 inventory 是否真的有那本書；沒有就再塞一次（資料同步異常的補丁）
+    if ((player.rpg.metGreenTea || 0) > 0 && !player.rpg.greenTeaCompV2) {
+      const invIds = new Set();
+      (player.rpg.inventory || []).forEach(it => {
+        const id = typeof it === 'string' ? it : (it && it.id) || null;
+        if (id) invIds.add(id);
+      });
+      let backfilled = 0;
+      for (const g of (typeof GREENTEA_GUIDES !== 'undefined' ? GREENTEA_GUIDES : [])) {
+        if ((player.rpg.metGreenTea || 0) >= g.count && !invIds.has(g.itemId)) {
+          player.rpg.inventory.push(g.itemId);
+          if (!player.rpg.greenTeaGuidesGranted.includes(g.itemId)) {
+            player.rpg.greenTeaGuidesGranted.push(g.itemId);
+          }
+          backfilled++;
+        }
+      }
+      player.rpg.greenTeaCompV2 = true;
+      if (backfilled > 0 && typeof getMeId === 'function' && player.id === getMeId() && typeof showToast === 'function') {
+        setTimeout(() => showToast(`📚 補發 ${backfilled} 本綠茶指南書到背包`), 500);
+      }
     }
     // 封測補償 v1：每位玩家補滿一次體力 + 跳公告（只對「我自己」觸發，不污染別人的 in-memory 狀態）
     if (!player.rpg.betaCompV1 && typeof getMeId === 'function' && player.id === getMeId()) {
