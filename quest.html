@@ -3892,6 +3892,100 @@
     };
   }
 
+  // ============================================================
+  // ⭐ Phase A：玩家 inventory / bossCoins atomic API
+  // ============================================================
+  // 設計：先樂觀更新本地（玩家立刻看到效果）→ 再丟雲端 atomic tx
+  //   - 雲端 tx 會「讀遠端最新版 → 加 / 減 → 寫回」，保證不被別人蓋掉
+  //   - 本地若跟雲端不一致，下個 onSnapshot 會把 cloud 同步回來（lastTouchedAt 比較）
+
+  // 加道具到玩家背包（atomic）— 取代 rpg.inventory.push + saveData
+  async function addInventoryItem(pid, item) {
+    const player = getPlayer(pid);
+    if (player && player.rpg) {
+      player.rpg.inventory = Array.isArray(player.rpg.inventory) ? player.rpg.inventory : [];
+      player.rpg.inventory.push(item);
+      player.lastTouchedAt = Date.now();
+      __persistLocalSnapshot();
+    }
+    if (window.__firebaseSync && window.__firebaseSync.addInventoryItemTx) {
+      try {
+        await window.__firebaseSync.addInventoryItemTx(pid, item);
+        forageTrace?.('inventory tx add', { pid, itemId: item?.id, baseId: item?.baseId });
+      } catch (e) {
+        console.warn('addInventoryItemTx failed:', e);
+      }
+    }
+  }
+
+  // 從背包移除道具（atomic）
+  async function removeInventoryItem(pid, predicate) {
+    const player = getPlayer(pid);
+    if (player && player.rpg && Array.isArray(player.rpg.inventory)) {
+      if (predicate.id != null) {
+        player.rpg.inventory = player.rpg.inventory.filter(it => {
+          if (typeof it === 'string') return it !== predicate.id;
+          return it && it.id !== predicate.id;
+        });
+      } else if (predicate.idx != null) {
+        player.rpg.inventory.splice(predicate.idx, 1);
+      }
+      player.lastTouchedAt = Date.now();
+      __persistLocalSnapshot();
+    }
+    if (window.__firebaseSync && window.__firebaseSync.removeInventoryItemTx) {
+      try {
+        await window.__firebaseSync.removeInventoryItemTx(pid, predicate);
+        forageTrace?.('inventory tx remove', { pid, predicate });
+      } catch (e) {
+        console.warn('removeInventoryItemTx failed:', e);
+      }
+    }
+  }
+
+  // 王硬幣加數量（用 Firestore increment，純 atomic，不重寫整份玩家檔）
+  async function addBossCoin(pid, coinId, qty) {
+    const player = getPlayer(pid);
+    if (player) {
+      player.rpg = player.rpg || {};
+      player.rpg.bossCoins = player.rpg.bossCoins || {};
+      player.rpg.bossCoins[coinId] = (player.rpg.bossCoins[coinId] || 0) + qty;
+      player.lastTouchedAt = Date.now();
+      __persistLocalSnapshot();
+    }
+    if (window.__firebaseSync && window.__firebaseSync.addBossCoinTx) {
+      try {
+        await window.__firebaseSync.addBossCoinTx(pid, coinId, qty);
+        forageTrace?.('bossCoin tx add', { pid, coinId, qty });
+      } catch (e) {
+        console.warn('addBossCoinTx failed:', e);
+      }
+    }
+  }
+
+  // 消耗 N 顆王硬幣（任意組合，按 qty 大優先扣）
+  async function consumeBossCoinsAtomic(pid, totalQty) {
+    if (!window.__firebaseSync || !window.__firebaseSync.consumeBossCoinsTx) {
+      throw new Error('cloud-not-ready');
+    }
+    // 雲端先扣（如果不夠會 throw）
+    await window.__firebaseSync.consumeBossCoinsTx(pid, totalQty);
+    // 雲端扣完後，樂觀更新本地（讓 UI 立刻反應；下個 snapshot 會校正）
+    const player = getPlayer(pid);
+    if (player && player.rpg && player.rpg.bossCoins) {
+      const entries = Object.entries(player.rpg.bossCoins).sort((a, b) => (b[1] || 0) - (a[1] || 0));
+      let need = totalQty;
+      for (const [coinId, have] of entries) {
+        if (need <= 0) break;
+        const take = Math.min(have, need);
+        player.rpg.bossCoins[coinId] = have - take;
+        need -= take;
+      }
+      player.lastTouchedAt = Date.now();
+      __persistLocalSnapshot();
+    }
+  }
+
   const ITEMS = [
     // 武器
     { id: 'w_wood',   name: '木劍',     icon: '🪵', slot: 'weapon', atk: 2,  lv: 1 },
@@ -4543,6 +4637,26 @@
         applyHpRebalanceToPlayer(player);
         player.rpg._hpRebalV1 = true;
       } catch (e) { console.warn('hpRebalV1 migration failed:', e); }
+    }
+    // ⭐ Phase A 一次性遷移：王硬幣從 inventory 拆出來成 rpg.bossCoins map
+    //    便於用 Firestore increment 做 atomic 加減，避免並發 race
+    if (!player.rpg._bossCoinV1) {
+      try {
+        player.rpg.bossCoins = player.rpg.bossCoins || {};
+        const inv = player.rpg.inventory || [];
+        const remaining = [];
+        for (const it of inv) {
+          if (it && typeof it === 'object' && it.isBossCoin) {
+            const id = it.id;
+            const qty = it.qty || 1;
+            player.rpg.bossCoins[id] = (player.rpg.bossCoins[id] || 0) + qty;
+          } else {
+            remaining.push(it);
+          }
+        }
+        player.rpg.inventory = remaining;
+        player.rpg._bossCoinV1 = true;
+      } catch (e) { console.warn('bossCoinV1 migration failed:', e); }
     }
     // 補發：以前遇過綠茶但還沒拿到對應指南書的，現在補回去
     if ((player.rpg.metGreenTea || 0) > 0) {
@@ -6951,30 +7065,28 @@
     },
   ];
 
-  // ⭐ 王硬幣彙總（任意 boss coin 都算）
+  // ⭐ 王硬幣彙總（從 rpg.bossCoins map 讀；Phase A 後不再翻 inventory）
   function totalBossCoinsInInventory(rpg) {
-    let total = 0;
-    for (const it of (rpg.inventory || [])) {
-      if (it && typeof it === 'object' && it.isBossCoin) total += (it.qty || 1);
-    }
-    return total;
+    if (!rpg || !rpg.bossCoins) return 0;
+    return Object.values(rpg.bossCoins).reduce((a, b) => a + (Number(b) || 0), 0);
   }
+  // ⭐ 取代舊的本地版 consumeBossCoins — 改用 atomic tx
+  //    舊呼叫 sites 改成 await consumeBossCoinsAtomic(pid, n)
   function consumeBossCoins(rpg, n) {
-    const stacks = (rpg.inventory || [])
-      .filter(it => it && typeof it === 'object' && it.isBossCoin)
-      .sort((a, b) => (b.qty || 1) - (a.qty || 1));
+    // 此函式保留為 fallback（樂觀本地扣，雲端 tx 由 caller 負責）
+    if (!rpg) return false;
+    rpg.bossCoins = rpg.bossCoins || {};
+    const total = Object.values(rpg.bossCoins).reduce((a, b) => a + (b || 0), 0);
+    if (total < n) return false;
+    const entries = Object.entries(rpg.bossCoins).sort((a, b) => (b[1] || 0) - (a[1] || 0));
     let need = n;
-    for (const s of stacks) {
+    for (const [id, have] of entries) {
       if (need <= 0) break;
-      const have = s.qty || 1;
       const take = Math.min(have, need);
-      s.qty = have - take;
+      rpg.bossCoins[id] = have - take;
       need -= take;
     }
-    rpg.inventory = (rpg.inventory || []).filter(it =>
-      !(it && typeof it === 'object' && it.isBossCoin && (!it.qty || it.qty <= 0))
-    );
-    return need === 0;
+    return true;
   }
 
   function showGachaHub() {
@@ -7001,8 +7113,27 @@
         </button>
       `;
     }).join('');
+    // ⭐ Phase A：王硬幣總覽（從 rpg.bossCoins map 讀，不在 inventory 裡）
+    const bossCoins = r.bossCoins || {};
+    const bcEntries = Object.entries(bossCoins).filter(([_, q]) => (q || 0) > 0);
+    const bcTotal = bcEntries.reduce((a, [, q]) => a + (q || 0), 0);
+    const bcHtml = bcEntries.length > 0 ? `
+      <div style="font-size:12px; color:#92400e; padding:8px 10px; background:linear-gradient(135deg,#fef3c7,#fde68a); border:1px dashed #f59e0b; border-radius:8px; margin-bottom:10px;">
+        <b>👑 王硬幣總數：${bcTotal}</b>
+        <div style="font-size:11px; margin-top:4px; color:#78350f;">
+          ${bcEntries.map(([id, qty]) => {
+            const def = WORLD_BOSSES.find(b => b.bossCoin?.id === id)?.bossCoin;
+            const icon = def?.icon || '👑';
+            const name = def?.name || id;
+            return `${icon} ${escapeHtml(name)} ×${qty}`;
+          }).join('　·　')}
+        </div>
+        <div style="font-size:10px; color:#a16207; margin-top:4px;">鵝王扭蛋用任何王硬幣都可以抽</div>
+      </div>
+    ` : '';
     showModal('🎰 扭蛋', `
       <div style="text-align:left;">
+        ${bcHtml}
         <div style="font-size:11px; color:#5b3d62; padding:6px 10px; background:#f3e8ff; border:1px dashed #c4b5fd; border-radius:8px; margin-bottom:10px;">
           選一台扭蛋機 → 進去抽獎。不同機台用不同貨幣。
         </div>
@@ -7101,7 +7232,7 @@
   }
   window.openGachaMachine = openGachaMachine;
 
-  function rollGacha(machineId, count) {
+  async function rollGacha(machineId, count) {
     const m = GACHA_MACHINES.find(g => g.id === machineId);
     if (!m || m.status !== 'open') return;
     const me = getMe(); if (!me) return;
@@ -7110,7 +7241,15 @@
     // 扣費（兩種模式）
     if (m.isBossCoin) {
       if (totalBossCoinsInInventory(r) < totalCost) { showToast('王硬幣不夠'); return; }
-      consumeBossCoins(r, totalCost);
+      // ⭐ Phase A：用 atomic tx 扣（雲端先確認夠才扣，避免並發問題）
+      try {
+        await consumeBossCoinsAtomic(me.id, totalCost);
+      } catch (e) {
+        const msg = String(e?.message || e);
+        if (msg.startsWith('insufficient-coins')) showToast('☁️ 雲端王硬幣不足');
+        else { console.warn('consumeBossCoinsAtomic failed:', e); showToast('☁️ 扣費失敗'); }
+        return;
+      }
     } else {
       if ((r[m.currency] || 0) < totalCost) { showToast('幣不夠'); return; }
       r[m.currency] = (r[m.currency] || 0) - totalCost;
@@ -9812,29 +9951,14 @@ ${b.text}
         // 領取
         if (reward.coins) refundCoins(me.id, reward.coins);
         if (reward.item) {
-          r.inventory = r.inventory || [];
-          r.inventory.push(reward.item);
+          // ⭐ Phase A: atomic tx
+          addInventoryItem(me.id, reward.item);
           inventoryAdded.push(reward.item);
         }
-        // ⭐ 王硬幣：堆疊到 inventory（同 id 的合併 qty）
+        // ⭐ 王硬幣：用 increment atomic（不沾 inventory，不會被並發吃掉）
         if (reward.bossCoinQty && boss.bossCoin) {
-          r.inventory = r.inventory || [];
           const def = boss.bossCoin;
-          const existing = r.inventory.find(it =>
-            it && typeof it === 'object' && it.id === def.id && it.isBossCoin
-          );
-          if (existing) {
-            existing.qty = (existing.qty || 1) + reward.bossCoinQty;
-          } else {
-            r.inventory.push({
-              id: def.id,
-              name: def.name,
-              icon: def.icon,
-              isBossCoin: true,
-              stackable: true,
-              qty: reward.bossCoinQty,
-            });
-          }
+          addBossCoin(me.id, def.id, reward.bossCoinQty);
           bossCoinsAdded.push({ icon: def.icon, name: def.name, qty: reward.bossCoinQty });
         }
         r.claimedBossRewards.push(reward.rewardId);
@@ -11204,9 +11328,10 @@ ${b.text}
         const dropLv = m.level || rpg.level;
         const drop = rollItemDrop(dropLv, { slotBias: _zone ? _zone.dropBias : null });
         if (drop) {
-          rpg.inventory.push(drop);
+          // ⭐ Phase A：走 atomic tx，避免並發 race 把剛拿的裝備吃掉
+          addInventoryItem(player.id, drop);  // fire-and-forget；本地已樂觀更新
           drops.push(drop);
-          forageTrace('multi-drop pushed', { dropLv, dropId: drop.id, baseId: drop.baseId, rarity: drop.rarity, affixes: drop.affixes?.length, invCount: rpg.inventory.length });
+          forageTrace('multi-drop pushed (atomic)', { dropLv, dropId: drop.id, baseId: drop.baseId, rarity: drop.rarity, affixes: drop.affixes?.length, invCount: rpg.inventory.length });
         }
         rpg.kills = rpg.kills || {};
         rpg.kills[m.id] = (rpg.kills[m.id] || 0) + 1;
@@ -11345,13 +11470,14 @@ ${b.text}
       // 寶箱怪：roll 兩次 → 掉裝率變 ~2 倍
       const drop = rollItemDrop(dropLv, { slotBias: _zone ? _zone.dropBias : null });
       if (drop) {
-        rpg.inventory.push(drop);
-        forageTrace('single-drop pushed', { dropLv, dropId: drop.id, baseId: drop.baseId, rarity: drop.rarity, affixes: drop.affixes?.length, invCount: rpg.inventory.length });
+        // ⭐ Phase A：atomic tx，避免並發 race
+        addInventoryItem(player.id, drop);  // fire-and-forget
+        forageTrace('single-drop pushed (atomic)', { dropLv, dropId: drop.id, baseId: drop.baseId, rarity: drop.rarity, affixes: drop.affixes?.length, invCount: rpg.inventory.length });
       }
       let chestExtraDrop = null;
       if (monster.isChest) {
         chestExtraDrop = rollItemDrop(dropLv, { slotBias: _zone ? _zone.dropBias : null });
-        if (chestExtraDrop) rpg.inventory.push(chestExtraDrop);
+        if (chestExtraDrop) addInventoryItem(player.id, chestExtraDrop);
       }
       forageTrace('rollItemDrop', { zoneId: _zone?.id, dropBias: _zone?.dropBias, dropLv, gotDrop: !!drop, dropId: drop?.id, dropName: drop?.name, rarity: drop?.rarity, affixCount: drop?.affixes?.length, isChest: !!monster.isChest, chestExtra: !!chestExtraDrop });
       // 精英怪：必掉 2 件 3 詞條的裝備（地區偏好部位、隨機等級在玩家層樓附近）
@@ -11363,7 +11489,7 @@ ${b.text}
         // ⭐ 地區精英：必掉 1 件「紫裝」（legendary，3 詞條）100%
         const eliteDrop = generateDropItem(dropLv, { slotBias: _zone ? _zone.dropBias : null, forceAffixes: 3, boosted: true, forceRarity: 'legendary' });
         if (eliteDrop) {
-          rpg.inventory.push(eliteDrop);
+          addInventoryItem(player.id, eliteDrop);  // ⭐ Phase A: atomic tx
           eliteExtraDrops.push(eliteDrop);
         }
         forageTrace('zone-elite drop (1x legendary)', { dropLv, count: eliteExtraDrops.length, ids: eliteExtraDrops.map(d => d.id) });
@@ -12014,40 +12140,26 @@ ${b.text}
   }
   window.adminApplyHpRebalanceAll = adminApplyHpRebalanceAll;
 
-  // ⭐ 全員送 N 顆鵝皇硬幣（鵝王扭蛋用，免費抽獎卷）
+  // ⭐ 全員送 N 顆鵝皇硬幣（用 atomic increment，per-player tx）
+  //    Phase A 後不再 forceWriteAllPlayers 全量覆蓋（會吃掉玩家剛拿到的裝備）
   async function adminGrantAllBossCoins(qty) {
     const n = Math.max(1, qty | 0);
-    if (!confirm(`👑 送給全員 ${n} 顆鵝皇硬幣（任何王扭蛋都可用）？\n會推送到雲端，所有人下次同步就會收到。`)) return;
-    const now = Date.now();
+    if (!confirm(`👑 送給全員 ${n} 顆鵝皇硬幣（任何王扭蛋都可用）？\n用 atomic increment 寫入，不會覆蓋玩家剛拿到的裝備。`)) return;
     let granted = 0;
+    let failed = 0;
     for (const p of players) {
       if (!p || !p.id) continue;
-      p.rpg = p.rpg || {};
-      p.rpg.inventory = p.rpg.inventory || [];
-      const existing = p.rpg.inventory.find(it => it && typeof it === 'object' && it.id === 'bc_goose_king' && it.isBossCoin);
-      if (existing) {
-        existing.qty = (existing.qty || 1) + n;
-      } else {
-        p.rpg.inventory.push({
-          id: 'bc_goose_king',
-          name: '鵝皇硬幣',
-          icon: '👑',
-          isBossCoin: true,
-          stackable: true,
-          qty: n,
-        });
+      try {
+        await addBossCoin(p.id, 'bc_goose_king', n);
+        granted++;
+      } catch (e) {
+        console.warn('grant boss coin failed for', p.id, e);
+        failed++;
       }
-      p.lastTouchedAt = now; // 讓我這份覆蓋遠端
-      granted++;
-    }
-    saveData();
-    if (window.__firebaseSync && window.__firebaseSync.forceWriteAllPlayers) {
-      try { await window.__firebaseSync.forceWriteAllPlayers(players); }
-      catch (e) { console.error(e); showToast('☁️ 雲端寫入失敗，本地已加'); return; }
     }
     render();
     hideModal();
-    showToast(`👑 已發給 ${granted} 位玩家 各 ${n} 顆鵝皇硬幣`);
+    showToast(`👑 已發給 ${granted} 位玩家 各 ${n} 顆鵝皇硬幣${failed ? `（${failed} 位失敗）` : ''}`);
   }
   window.adminGrantAllBossCoins = adminGrantAllBossCoins;
 
@@ -12243,7 +12355,7 @@ ${b.text}
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-  import { getFirestore, doc, collection, onSnapshot, setDoc, getDoc, deleteField, runTransaction } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+  import { getFirestore, doc, collection, onSnapshot, setDoc, getDoc, deleteField, runTransaction, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyA1dzTX6COdDAab7gojdXaycx7Vr9EydN8",
@@ -12279,9 +12391,97 @@ ${b.text}
       }
     }
 
+    // ⭐ Phase A 共用：深度去除 undefined（Firestore 不接受）
+    const _prune = (v) => {
+      if (Array.isArray(v)) return v.map(_prune).filter(x => x !== undefined);
+      if (v !== null && typeof v === 'object') {
+        const out = {};
+        for (const k of Object.keys(v)) {
+          const x = _prune(v[k]);
+          if (x !== undefined) out[k] = x;
+        }
+        return out;
+      }
+      return v;
+    };
+
     window.__firebaseSync = {
       ready: false,
       roomId: ROOM_ID,
+      // ============================================================
+      // ⭐ Phase A：玩家 inventory / bossCoins atomic 操作
+      // ============================================================
+      //  目的：取代「全量 setDoc 整份 player」的舊路徑，避免 race / rate-limit
+      //  - addInventoryItemTx：tx 讀玩家 → push item → 寫回（atomic）
+      //  - removeInventoryItemTx：tx 讀玩家 → filter → 寫回
+      //  - addBossCoinTx：updateDoc + FieldValue.increment（純 atomic 計數，不重寫整份）
+      //  - consumeBossCoinTx：tx 讀 → 各種王硬幣扣到夠 → 寫回（無法用負 increment 防止扣到負數）
+      addInventoryItemTx: async (pid, item) => {
+        return await runTransaction(db, async (tx) => {
+          const ref = doc(playersCol, pid);
+          const snap = await tx.get(ref);
+          const data = snap.exists() ? snap.data() : { id: pid };
+          data.rpg = data.rpg || {};
+          data.rpg.inventory = Array.isArray(data.rpg.inventory) ? data.rpg.inventory : [];
+          data.rpg.inventory.push(_prune(item));
+          data.lastTouchedAt = Date.now();
+          tx.set(ref, _prune(data));
+        });
+      },
+      removeInventoryItemTx: async (pid, predicate) => {
+        // predicate = { id: 'xxx' } 或 { idx: N }，不能傳 function 進 tx
+        return await runTransaction(db, async (tx) => {
+          const ref = doc(playersCol, pid);
+          const snap = await tx.get(ref);
+          if (!snap.exists()) return;
+          const data = snap.data();
+          if (!data.rpg || !Array.isArray(data.rpg.inventory)) return;
+          if (predicate.id != null) {
+            data.rpg.inventory = data.rpg.inventory.filter(it => {
+              if (typeof it === 'string') return it !== predicate.id;
+              return it && it.id !== predicate.id;
+            });
+          } else if (predicate.idx != null) {
+            data.rpg.inventory.splice(predicate.idx, 1);
+          }
+          data.lastTouchedAt = Date.now();
+          tx.set(ref, _prune(data));
+        });
+      },
+      addBossCoinTx: async (pid, coinId, qty) => {
+        // 用 updateDoc + increment：純 atomic 計數，不沾整份玩家文件
+        const ref = doc(playersCol, pid);
+        await updateDoc(ref, {
+          [`rpg.bossCoins.${coinId}`]: increment(qty),
+          lastTouchedAt: Date.now(),
+        });
+      },
+      consumeBossCoinsTx: async (pid, totalQty) => {
+        // 跨王硬幣消耗 N 顆（鵝王扭蛋用任何王硬幣抽）
+        // 因為要按 qty 大的優先扣，無法用單一 increment，必須 tx
+        return await runTransaction(db, async (tx) => {
+          const ref = doc(playersCol, pid);
+          const snap = await tx.get(ref);
+          if (!snap.exists()) throw new Error('player-not-found');
+          const data = snap.data();
+          data.rpg = data.rpg || {};
+          data.rpg.bossCoins = data.rpg.bossCoins || {};
+          const total = Object.values(data.rpg.bossCoins).reduce((a, b) => a + (b || 0), 0);
+          if (total < totalQty) throw new Error('insufficient-coins:' + total);
+          // 按 qty 由大到小扣
+          const entries = Object.entries(data.rpg.bossCoins).sort((a, b) => (b[1] || 0) - (a[1] || 0));
+          let need = totalQty;
+          for (const [coinId, have] of entries) {
+            if (need <= 0) break;
+            const take = Math.min(have, need);
+            data.rpg.bossCoins[coinId] = have - take;
+            need -= take;
+          }
+          data.lastTouchedAt = Date.now();
+          tx.set(ref, _prune(data));
+          return { remaining: total - totalQty };
+        });
+      },
       // 世界王打擊：用 transaction 原子地讀 + 扣 HP + 寫回，避免兩個玩家互相蓋掉
       // bossDef 是 WORLD_BOSSES 裡的設定（要拿 hp / respawnMs / 各檔次獎勵）
       // 回傳 { actualDmg, newState, killed, pendingRewards }
