@@ -1891,7 +1891,7 @@
         { id: 'w_heavy_strike', name: '重擊',     icon: '⚡', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'damage', mult: 1.3, alwaysCrit: true },
         { id: 'w_rage_slash',   name: '狂怒斬',   icon: '🔥', unlockLv: 1,  cooldown: 0, mpCost: 14, type: 'damage', mult: 1.8, hits: 2 },
         { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 1,  cooldown: 0, mpCost: 0, hpCost: 0.15, type: 'damage', mult: 2.0, cast: 10 },
-        { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 6,  cooldown: 0, mpCost: 0, type: 'damage', mult: 1.0, lifesteal: 0.20 },
+        { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 6,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.0, lifesteal: 0.20 },
         { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 50, hpCostFlat: 20, type: 'damage', mult: 4.5, cast: 100 },
         { id: 'w_war_cry',      name: '戰意呼喚', icon: '📢', unlockLv: 3,  cooldown: 0, mpCost: 0, type: 'heal', healPct: 0.15, isMpRegen: true },
         { id: 'w_bloodlust',    name: '嗜血怒嚎', icon: '🦁', unlockLv: 2,  cooldown: 0, mpCost: 25, type: 'buff', selfBuff: { stat: 'atkPct', amount: 0.30, turns: 3 } },
@@ -2502,7 +2502,7 @@
     };
 
     const result  = autoFight(me, monster);
-    const dmgRaw  = Math.max(0, state.hp - result.mHpFinal);
+    const dmgRaw  = Math.round(Math.max(0, state.hp - result.mHpFinal) * 1.3); // ⭐ 世界王傷害 × 1.3
 
     // 戰鬥快照（給 recentBattles）
     const snap_ = {
@@ -8020,8 +8020,9 @@ ${b.text}
         <div style="font-size:13px; font-weight:700; color:#7c3aed; margin:8px 0 4px;">⚙️ 新版技能機制</div>
         <ul style="margin:4px 0 8px 18px; padding:0; font-size:12px;">
           <li><b>戰鬥中 MP 不會自動回</b>，要靠回魔技能（如法師「💧法力湧泉」、聖騎「🙏祈禱」、弓手「🧘集中」、戰士「📢戰意呼喚」）</li>
-          <li>戰士有 <b>HP 代價</b>系列技能（🩸血祭斬 / 💥嗜血爆裂 / ☠️死戰之怒）：不耗 MP、改扣自身 HP</li>
+          <li>戰士有 <b>HP 代價</b>系列技能（🩸血祭斬 / ☠️死戰之怒）：不耗 MP、改扣自身 HP</li>
           <li>HP 代價技不會直接讓你死（最少留 1 HP），但接著被打就慘</li>
+          <li>💥嗜血爆裂 現在消耗 <b>20 MP</b>，施放後回吸傷害 20% 為 HP</li>
           <li>建議在規則中加「自身 HP ≤ 30% → 補血技」來保命</li>
         </ul>
 
