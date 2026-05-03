@@ -4427,6 +4427,23 @@
     return Math.round(base * (1 + Math.random() * 0.20));
   }
 
+  // ⭐ 探險 EXP（依玩家等級放大、上限不能超過當層怪物 EXP 一半）
+  //   原本探險 outcome.xp 寫死 30-200 之間 → 同一個量在 Lv 30 顯得太多
+  //   公式：raw = outcome.xp × 0.25 × (1 + 10% × (level-1))
+  //         cap = getMonsterBaseXp(level) × 0.50（永遠比怪小一半）
+  //         final = clamp(raw, 1, cap)
+  //   範例：
+  //     Lv 1  outcome.xp 30 → 7.5 → 8（cap = 20×0.5 = 10）
+  //     Lv 10 outcome.xp 80 → 38（cap = 120×0.5 = 60）
+  //     Lv 30 outcome.xp 80 → 78（cap = 430×0.5 = 215）
+  function getForageXp(outcomeXp, level) {
+    const lv = Math.max(1, level | 0);
+    const cap = Math.max(2, Math.round(getMonsterBaseXp(lv) * 0.50));
+    const levelMult = 1 + 0.10 * (lv - 1);
+    const raw = Math.round((Number(outcomeXp) || 5) * 0.25 * levelMult);
+    return Math.max(1, Math.min(cap, raw));
+  }
+
   function generateMonster(playerLv, opts) {
     const me = (typeof getMe === 'function') ? getMe() : null;
     const rpg = me && me.rpg ? me.rpg : null;
@@ -9067,9 +9084,13 @@ ${b.text}
       let dupXpGained = 0;
       let leveledFromDup = 0;
       if (isDup) {
-        r.xp = (r.xp || 0) + TREASURE_DUP_XP;
-        dupXpGained = TREASURE_DUP_XP;
-        forageTrace('forage-treasure DUP', { tid, name: treasure?.name, dupXp: TREASURE_DUP_XP, ownedCount: r.treasures.length });
+        // ⭐ 重複寶物 EXP：依等級縮放，上限為「當層怪物 EXP × 1.5」
+        //   保留「重複比較有獎」的感覺，但不再固定給 1000 XP（Lv 1 直接升 5 級的 bug）
+        const lvCap = Math.round(getMonsterBaseXp(r.level || 1) * 1.5);
+        const dupXp = Math.max(20, Math.min(TREASURE_DUP_XP, lvCap));
+        r.xp = (r.xp || 0) + dupXp;
+        dupXpGained = dupXp;
+        forageTrace('forage-treasure DUP', { tid, name: treasure?.name, dupXp, ownedCount: r.treasures.length });
         while (r.xp >= xpForLevel(r.level)) {
           r.xp -= xpForLevel(r.level);
           r.level += 1;
@@ -9143,9 +9164,10 @@ ${b.text}
         ? `<span style="color:#16a34a;">+${amt} HP</span>`
         : `<span style="color:#dc2626;">${amt} HP</span>`);
     }
-    // xp
+    // xp — ⭐ 探險 EXP 過 getForageXp() 縮放：依等級成正比、上限是怪物 EXP 一半
     if (outcome.xp) {
-      const amt = applyAmount(outcome.xp);
+      const rolled = applyAmount(outcome.xp);
+      const amt = getForageXp(rolled, r.level || 1);
       r.xp = Math.max(0, (r.xp || 0) + amt);
       let leveled = 0;
       while (r.xp >= xpForLevel(r.level)) {
