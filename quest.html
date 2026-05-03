@@ -10778,6 +10778,8 @@ ${b.text}
     // 從 result.monsters 找 alive=false 的（已死）
     const deadCount = (result.monsters || []).filter(m => !m.alive).length;
     if (deadCount > 0) {
+      // 防護：確保 inventory 是陣列（防止 sync race 造成 undefined）
+      if (!Array.isArray(rpg.inventory)) rpg.inventory = [];
       monsters.forEach((m, idx) => {
         const summary = (result.monsters || [])[idx];
         if (!summary || summary.alive) return; // 沒死不發
@@ -10788,6 +10790,7 @@ ${b.text}
         if (drop) {
           rpg.inventory.push(drop);
           drops.push(drop);
+          forageTrace('multi-drop pushed', { dropLv, dropId: drop.id, baseId: drop.baseId, rarity: drop.rarity, affixes: drop.affixes?.length, invCount: rpg.inventory.length });
         }
         rpg.kills = rpg.kills || {};
         rpg.kills[m.id] = (rpg.kills[m.id] || 0) + 1;
@@ -10921,9 +10924,14 @@ ${b.text}
       // 使用目前地區的掉落偏好；掉落等級 = 怪物等級（樓層）
       const _zone = ZONES.find(z => z.id === (rpg.currentZone || 'forest'));
       const dropLv = monster.level || rpg.level;
+      // 防護：確保 inventory 是陣列（防止 sync race 造成 undefined）
+      if (!Array.isArray(rpg.inventory)) rpg.inventory = [];
       // 寶箱怪：roll 兩次 → 掉裝率變 ~2 倍
       const drop = rollItemDrop(dropLv, { slotBias: _zone ? _zone.dropBias : null });
-      if (drop) rpg.inventory.push(drop);
+      if (drop) {
+        rpg.inventory.push(drop);
+        forageTrace('single-drop pushed', { dropLv, dropId: drop.id, baseId: drop.baseId, rarity: drop.rarity, affixes: drop.affixes?.length, invCount: rpg.inventory.length });
+      }
       let chestExtraDrop = null;
       if (monster.isChest) {
         chestExtraDrop = rollItemDrop(dropLv, { slotBias: _zone ? _zone.dropBias : null });
