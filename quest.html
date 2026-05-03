@@ -1794,6 +1794,7 @@
       <button id="fightBtn" class="btn btn-primary" onclick="onFight()">⚔️ 出發打怪</button>
       <div class="cooldown-info" id="cooldownInfo"></div>
       <div id="fightResult"></div>
+      <div id="forageHistoryArea"></div>
     </div>
 
     <div class="card">
@@ -5512,6 +5513,7 @@
     renderZoneSelector();
     renderCharQuickMenu();
     renderTrial();
+    renderForageHistory(); // ⭐ 自己最近 5 場打怪戰報
     maybeFlashHelp();
     refreshBugBadge();
     updateStaminaUI();
@@ -8398,6 +8400,47 @@ ${b.text}
   }
   window.replayBossFightFromState = replayBossFightFromState;
 
+  // ⭐ 探索 / 打怪：自己的最近 5 場
+  function renderForageHistory() {
+    const area = document.getElementById('forageHistoryArea');
+    if (!area) return;
+    const me = getMe(); if (!me) { area.innerHTML = ''; return; }
+    const r = getRpg(me);
+    const list = Array.isArray(r.forageBattleHistory) ? r.forageBattleHistory : [];
+    if (list.length === 0) { area.innerHTML = ''; return; }
+    area.innerHTML = `
+      <div class="boss-history" style="margin-top:12px;">
+        <div class="boss-history-title">📜 我的探索戰報（${list.length}/5）　<span style="font-weight:500; opacity:0.75;">點下一場 → 跑讀條動畫</span></div>
+        ${list.map(h => {
+          const time = formatRelativeTime ? formatRelativeTime(h.ts) : '';
+          const result = h.fled ? '🏃 逃跑' : (h.killed ? '🏆 勝' : '💀 敗');
+          const resultColor = h.fled ? '#fbbf24' : (h.killed ? '#86efac' : '#fca5a5');
+          return `
+            <button class="boss-history-row ${h.killed ? 'is-kill' : ''}" onclick="replayForageFight('${h.id}')">
+              <span class="bh-icon">${h.bossIcon || '👹'}</span>
+              <div class="bh-meta">
+                <div class="bh-line1">${escapeHtml(h.bossName)} Lv ${h.bossLevel} <span style="color:${resultColor}; font-weight:700; margin-left:6px;">${result}</span></div>
+                <div class="bh-line2">傷害 <b>${(h.dmgDealt || 0).toLocaleString()}</b>　·　${time}</div>
+              </div>
+              <span class="bh-play">▶</span>
+            </button>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+  window.renderForageHistory = renderForageHistory;
+
+  function replayForageFight(historyId) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const list = Array.isArray(r.forageBattleHistory) ? r.forageBattleHistory : [];
+    const snap = list.find(h => h.id === historyId);
+    if (!snap) { showToast('找不到該戰報'); return; }
+    return _doReplay(snap);
+  }
+  window.replayForageFight = replayForageFight;
+
   // ⭐ 舊介面：從自己的戰報歷史播 — 保留 fallback（已棄用）
   function replayBossFight(historyId) {
     // 試 worldBoss 全體歷史所有 boss
@@ -8843,10 +8886,12 @@ ${b.text}
     r.stamina -= WORK_STAMINA;
     r.workCount = (r.workCount || 0) + 1;
     const ev = JOB_EVENTS[Math.floor(Math.random() * JOB_EVENTS.length)];
-    const mult = ev.mood === 'good' ? 1.4 : ev.mood === 'bad' ? 0.6 : 1.0;
-    const variance = 0.85 + Math.random() * 0.3;
-    // 限制範圍 100-250
-    const pay = Math.min(250, Math.max(100, Math.round(WORK_BASE_PAY * mult * variance)));
+    // ⭐ 新公式：基底 3-50 鵝鵝幣 × (1 + 10% × 等級-1)
+    //   mood good/bad 仍輕微加減（±15%），以保留事件文案的意義
+    const baseRoll = 3 + Math.floor(Math.random() * 48); // 3..50
+    const levelBonus = 1 + 0.10 * Math.max(0, (r.level || 1) - 1);
+    const moodMult = ev.mood === 'good' ? 1.15 : ev.mood === 'bad' ? 0.85 : 1.0;
+    const pay = Math.max(1, Math.round(baseRoll * levelBonus * moodMult));
     refundCoins(me.id, pay);
     saveData();
     renderCharCard();
@@ -9157,6 +9202,43 @@ ${b.text}
         // 結算
         finalizeFight(me, monster, result, stats);
         snapshotLastFight(monster, result);
+        // ⭐ 把這場探索 / 打怪戰鬥存到「最近 5 場」（只給自己看）
+        try {
+          const dmgDealt = Math.max(0, (monster.maxHp || monster.hp) - (result.mHpFinal || 0));
+          const battleSnap = {
+            id: 'fr_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+            ts: Date.now(),
+            bossId: monster.id || 'forage_' + zoneId,
+            bossName: monster.name,
+            bossIcon: monster.icon,
+            bossLevel: monster.level,
+            dmgDealt,
+            killed: !!result.won,
+            fled: !!result.fled,
+            playerSnap: {
+              name: me.name,
+              avatar: CLASSES[rpg.class]?.icon || '🎴',
+              level: rpg.level,
+              maxHp: stats.maxHp,
+              maxMp: stats.maxMp,
+            },
+            monsterSnap: {
+              name: monster.name,
+              icon: monster.icon,
+              level: monster.level,
+              maxHp: monster.maxHp || monster.hp,
+              ability: monster.ability,
+            },
+            log: (result.log || []).slice(0, 100),
+            zoneId, layerId,
+            isForage: true,
+          };
+          rpg.forageBattleHistory = Array.isArray(rpg.forageBattleHistory) ? rpg.forageBattleHistory : [];
+          rpg.forageBattleHistory.unshift(battleSnap);
+          if (rpg.forageBattleHistory.length > 5) rpg.forageBattleHistory.length = 5;
+          saveData();
+          renderForageHistory();
+        } catch (e) { console.warn('snapshot forage fight:', e); }
         // 在戰鬥結果下方加一個小回報按鈕
         try {
           const fr = document.getElementById('fightResult');
@@ -9521,6 +9603,7 @@ ${b.text}
       <input type="file" id="adminRestoreInput" accept="application/json" style="display:none" onchange="adminApplyRestoreFile(event)">
 
       <button class="btn btn-danger" onclick="adminResetRpg()" style="margin-top:6px;">⚠️ 重置 RPG 角色（保留幣）</button>
+      <button class="btn btn-danger" onclick="adminResetBosses()" style="margin-top:6px; background:linear-gradient(135deg,#fdba74,#c2410c); box-shadow:0 4px 0 #7c2d12;">🗑 重置世界王紀錄（HP / 排隊 / 戰報 / 待領獎）</button>
       <button class="btn btn-danger" onclick="adminWipeAll()" style="margin-top:6px; background:linear-gradient(135deg,#fca5a5,#7f1d1d); box-shadow:0 4px 0 #450a0a;">💀 全玩家洗白（伺服器 + 本地都重置）</button>
       <button class="btn btn-secondary" onclick="adminLockDebug()" style="margin-top:6px;">🔐 鎖回 Debug</button>
 
@@ -9761,6 +9844,27 @@ ${b.text}
     fr.readAsText(file);
   }
   window.adminApplyRestoreFile = adminApplyRestoreFile;
+
+  // ⭐ 重置世界王紀錄（HP / 排隊 / damageLog / lastKill / pendingRewards / recentBattles 全清；不動玩家）
+  function adminResetBosses() {
+    const sure = confirm('🗑 重置世界王紀錄？\n\n會清空：\n• 每隻王當前 HP（下次打會重新滿血）\n• 傷害記錄 / 排隊 / 待領獎勵 / 過往戰報\n• 上次擊殺通告\n\n保留：玩家角色、鵝鵝幣、裝備、背包、鵝蛋幣\n\n確定？');
+    if (!sure) return;
+    worldBoss = {};
+    // 清掉本地所有的「已看過尾刀通告」標記，這樣新一輪擊殺都會跳新 banner
+    try {
+      const keysToDel = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('boss-killed-')) keysToDel.push(k);
+      }
+      keysToDel.forEach(k => localStorage.removeItem(k));
+    } catch (e) {}
+    saveData();
+    render();
+    hideModal();
+    showToast('🗑 世界王紀錄已重置');
+  }
+  window.adminResetBosses = adminResetBosses;
 
   // ⭐ 全玩家洗白（清空 history / pendingBets / worldBoss / 每位玩家 rpg / 鵝鵝幣 / 鵝蛋幣 / 稱號）
   // 仍保留玩家清單（id / 名字 / 頭像）
