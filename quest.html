@@ -2124,9 +2124,11 @@
     },
   };
 
-  // ⭐ 寶物庫（探險打怪掉落）
-  // 每個寶物對應一個能力 (str/vit/agi/dex/int/luk) 與點數 (1-3)
-  // 拿到 = 永久 +N 該能力。重複 = +1000 XP。
+  // ⭐ 寶物庫（探險取得，不會掉裝備）
+  // 兩類：
+  //   1. ability 系：永久 +N str/vit/agi/dex/int/luk
+  //   2. stat 系：永久 +N 直接屬性（hp/mp/atk/def/spd/critChance/critDmg）
+  // 重複 = +1000 XP
   const TREASURES = {
     // 力量 STR
     t_str_1: { id: 't_str_1', name: '鵝拳手套',   icon: '🥊', ability: 'str', value: 1, desc: '一只破舊但有點分量的拳套' },
@@ -2152,6 +2154,28 @@
     t_luk_1: { id: 't_luk_1', name: '四葉草',     icon: '🍀', ability: 'luk', value: 1, desc: '童叟無欺的好運草' },
     t_luk_2: { id: 't_luk_2', name: '招財金鵝蛋', icon: '🥚', ability: 'luk', value: 2, desc: '亮晶晶的看了就想笑' },
     t_luk_3: { id: 't_luk_3', name: '命運抽蛋券', icon: '🎰', ability: 'luk', value: 3, desc: '永遠有用、永遠不過期' },
+    // ⭐ 直接屬性類：HP / MP
+    t_hp_1: { id: 't_hp_1', name: '生命水晶',     icon: '❤️', stat: 'hp', value: 15, desc: '紅色透明礦石，握著會微微發熱' },
+    t_hp_2: { id: 't_hp_2', name: '鵝命之水',     icon: '🩸', stat: 'hp', value: 30, desc: '能延長鵝命的紅色液體' },
+    t_hp_3: { id: 't_hp_3', name: '永生鵝心',     icon: '💖', stat: 'hp', value: 60, desc: '據說來自不死鵝的心臟，仍在跳' },
+    t_mp_1: { id: 't_mp_1', name: '法力水晶',     icon: '💙', stat: 'mp', value: 8,  desc: '藍色冰涼的小石頭' },
+    t_mp_2: { id: 't_mp_2', name: '法師眼淚',     icon: '💧', stat: 'mp', value: 18, desc: '某個鵝法師哭出來的眼淚，很值錢' },
+    t_mp_3: { id: 't_mp_3', name: '無盡法力珠',   icon: '🔵', stat: 'mp', value: 35, desc: '永遠不會用完的奇妙能量球' },
+    // ⭐ 直接屬性類：ATK / DEF
+    t_atk_1: { id: 't_atk_1', name: '銳利之牙',   icon: '🦷', stat: 'atk', value: 1, desc: '從鵝皇嘴邊掉下來的尖牙' },
+    t_atk_2: { id: 't_atk_2', name: '殺氣徽章',   icon: '🗡', stat: 'atk', value: 2, desc: '戴上後攻擊變得更狠了' },
+    t_atk_3: { id: 't_atk_3', name: '武神戒指',   icon: '💍', stat: 'atk', value: 4, desc: '武神之鵝親自加持過的戒指' },
+    t_def_1: { id: 't_def_1', name: '鵝鵝盾牌片', icon: '🛡', stat: 'def', value: 1, desc: '某面盾上的小碎片' },
+    t_def_2: { id: 't_def_2', name: '鋼鐵之心',   icon: '⚙️', stat: 'def', value: 2, desc: '硬得不像鵝鵝該有的東西' },
+    t_def_3: { id: 't_def_3', name: '不破之鎧',   icon: '🪖', stat: 'def', value: 4, desc: '吸收了千年戰意的鎧片' },
+    // ⭐ 直接屬性類：SPD
+    t_spd_1: { id: 't_spd_1', name: '輕盈之羽',   icon: '🍃', stat: 'spd', value: 1, desc: '輕盈到幾乎不存在的羽毛' },
+    t_spd_2: { id: 't_spd_2', name: '飛馳之風',   icon: '💨', stat: 'spd', value: 2, desc: '永遠在身邊吹的順風' },
+    // ⭐ 暴擊系
+    t_crit_1: { id: 't_crit_1', name: '幸運之眼', icon: '👁‍🗨', stat: 'critChance', value: 0.02, desc: '看穿弱點的小護身符' },
+    t_crit_2: { id: 't_crit_2', name: '完美節奏', icon: '🎼', stat: 'critChance', value: 0.04, desc: '掌握攻擊時機的小工具' },
+    t_critdmg_1: { id: 't_critdmg_1', name: '碎心鵝牙', icon: '💎', stat: 'critDmg', value: 0.08, desc: '一咬下去就刻骨銘心' },
+    t_critdmg_2: { id: 't_critdmg_2', name: '滅世印記', icon: '🌑', stat: 'critDmg', value: 0.15, desc: '黑暗低語：「再用力一點」' },
   };
   const TREASURE_DUP_XP = 1000;
 
@@ -3451,12 +3475,14 @@
   // 把已點的能力換算成屬性加成
   // 寶物庫帶來的永久能力加成（彙總成 { str, vit, agi, dex, int, luk }）
   function computeTreasureBonuses(rpg) {
-    const out = { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0 };
+    const out = { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0,
+                  hp: 0, mp: 0, atk: 0, def: 0, spd: 0, critChance: 0, critDmg: 0 };
     const owned = (rpg && rpg.treasures) || [];
     for (const tid of owned) {
       const t = TREASURES[tid];
       if (!t) continue;
-      out[t.ability] = (out[t.ability] || 0) + (t.value || 0);
+      if (t.ability) out[t.ability] = (out[t.ability] || 0) + (t.value || 0);
+      else if (t.stat) out[t.stat] = (out[t.stat] || 0) + (t.value || 0);
     }
     return out;
   }
@@ -3680,10 +3706,17 @@
     if (setInfo.bonuses.spd) stats.spd += setInfo.bonuses.spd;
     if (setInfo.bonuses.hp)  stats.maxHp += setInfo.bonuses.hp;
     if (setInfo.bonuses.mp)  stats.maxMp += setInfo.bonuses.mp;
-    // critChance / critDmg：把裝備本身加成併到 setBonuses，autoFight 直接讀
+    // ⭐ 寶物的直接屬性類加成（hp/mp/atk/def/spd/critChance/critDmg）
+    const treasure = computeTreasureBonuses(rpg);
+    stats.maxHp += treasure.hp || 0;
+    stats.maxMp += treasure.mp || 0;
+    stats.atk   += treasure.atk || 0;
+    stats.def   += treasure.def || 0;
+    stats.spd   += treasure.spd || 0;
+    // critChance / critDmg：把裝備 + 寶物加成併到 setBonuses，autoFight 直接讀
     const mergedBonuses = { ...setInfo.bonuses };
-    mergedBonuses.critChance = (mergedBonuses.critChance || 0) + itemCritChance;
-    mergedBonuses.critDmg    = (mergedBonuses.critDmg    || 0) + itemCritDmg;
+    mergedBonuses.critChance = (mergedBonuses.critChance || 0) + itemCritChance + (treasure.critChance || 0);
+    mergedBonuses.critDmg    = (mergedBonuses.critDmg    || 0) + itemCritDmg    + (treasure.critDmg || 0);
     stats.setBonuses = mergedBonuses;
     stats.setCounts = setInfo.counts;
     // 給 UI 顯示用：總暴擊率 / 總爆傷倍率（包含職業底、技能、能力、被動、裝備、套裝）
@@ -4877,45 +4910,72 @@
     const rpg = getRpg(me);
     const owned = new Set(rpg.treasures || []);
     const tBonus = computeTreasureBonuses(rpg);
-    // 依能力分組顯示
-    const groups = { str: [], vit: [], agi: [], dex: [], int: [], luk: [] };
-    for (const t of Object.values(TREASURES)) groups[t.ability].push(t);
-    for (const k of Object.keys(groups)) groups[k].sort((a, b) => a.value - b.value);
-    const labels = { str: '💪 力量', vit: '🛡 體力', agi: '🦅 敏捷', dex: '🎯 技巧', int: '🧠 智慧', luk: '🍀 幸運' };
-    const sectionsHtml = Object.keys(groups).map(ab => {
-      const cards = groups[ab].map(t => {
+    const abilityKeys = ['str','vit','agi','dex','int','luk'];
+    const statKeys    = ['hp','mp','atk','def','spd','critChance','critDmg'];
+    const labels = {
+      str: '💪 力量', vit: '🛡 體力', agi: '🦅 敏捷', dex: '🎯 技巧', int: '🧠 智慧', luk: '🍀 幸運',
+      hp: '❤️ HP', mp: '💙 MP', atk: '⚔️ ATK', def: '🛡 DEF', spd: '💨 SPD',
+      critChance: '🎯 暴擊率', critDmg: '💥 爆傷',
+    };
+    const fmtBonus = (key, val) => {
+      if (key === 'critChance' || key === 'critDmg') return `+${Math.round(val * 100)}%`;
+      return `+${val}`;
+    };
+    const fmtTreasureEffect = (t) => {
+      if (t.ability) return `+${t.value} ${(t.ability || '').toUpperCase()}`;
+      if (t.stat)    return `${fmtBonus(t.stat, t.value)} ${labels[t.stat]?.split(' ')[1] || t.stat}`;
+      return '';
+    };
+    // 依類別分組
+    const abilityGroups = {};
+    abilityKeys.forEach(k => abilityGroups[k] = []);
+    const statGroups = {};
+    statKeys.forEach(k => statGroups[k] = []);
+    for (const t of Object.values(TREASURES)) {
+      if (t.ability && abilityGroups[t.ability]) abilityGroups[t.ability].push(t);
+      else if (t.stat && statGroups[t.stat]) statGroups[t.stat].push(t);
+    }
+    Object.keys(abilityGroups).forEach(k => abilityGroups[k].sort((a,b) => a.value - b.value));
+    Object.keys(statGroups).forEach(k => statGroups[k].sort((a,b) => a.value - b.value));
+    const renderGroup = (key, list, isStat) => {
+      if (!list.length) return '';
+      const cards = list.map(t => {
         const isOwned = owned.has(t.id);
         return `
           <div class="tv-card ${isOwned ? 'owned' : 'locked'}" title="${escapeHtml(t.desc || '')}">
             <div class="tv-icon">${t.icon}</div>
             <div class="tv-name">${isOwned ? escapeHtml(t.name) : '???'}</div>
-            <div class="tv-bonus">+${t.value} ${ab.toUpperCase()}</div>
-          </div>
-        `;
+            <div class="tv-bonus">${fmtTreasureEffect(t)}</div>
+          </div>`;
       }).join('');
+      const total = tBonus[key] || 0;
       return `
         <div style="margin-bottom:10px;">
-          <div style="font-size:12px; font-weight:700; color:#5b3d62; margin-bottom:4px;">${labels[ab]}　<span style="color:#a78bfa;">+${tBonus[ab] || 0}</span></div>
+          <div style="font-size:12px; font-weight:700; color:#5b3d62; margin-bottom:4px;">${labels[key]}　<span style="color:#a78bfa;">${total > 0 ? fmtBonus(key, total) : '+0'}</span></div>
           <div class="tv-grid">${cards}</div>
-        </div>
-      `;
-    }).join('');
+        </div>`;
+    };
+    const abilityHtml = abilityKeys.map(k => renderGroup(k, abilityGroups[k], false)).join('');
+    const statHtml    = statKeys.map(k => renderGroup(k, statGroups[k], true)).join('');
     const totalOwned = (rpg.treasures || []).length;
     const totalAll = Object.keys(TREASURES).length;
+    const summaryRows = [...abilityKeys, ...statKeys]
+      .filter(k => tBonus[k] > 0)
+      .map(k => `<div class="tv-summary-row"><span>${labels[k]}</span><b>${fmtBonus(k, tBonus[k])}</b></div>`)
+      .join('');
     const html = `
       <div style="font-size:12px; color:#5b3d62; padding:4px 0;">
         <div class="tv-summary">
           <div style="font-weight:700; margin-bottom:6px; color:#5b21b6;">📦 已收集 ${totalOwned} / ${totalAll}</div>
-          ${Object.keys(tBonus).filter(k => tBonus[k] > 0).map(k => `
-            <div class="tv-summary-row">
-              <span>${labels[k]}</span><b>+${tBonus[k]}</b>
-            </div>
-          `).join('') || '<div style="color:#8b6f9b; font-size:11px;">還沒拿到任何寶物。打贏探險精英試煉鵝就會掉。</div>'}
+          ${summaryRows || '<div style="color:#8b6f9b; font-size:11px;">還沒拿到任何寶物。探險選到「危險選項」就會掉一個。</div>'}
         </div>
         <div style="font-size:11px; color:#8b6f9b; margin-bottom:6px; padding:6px 8px; background:#fef9ff; border-radius:8px; border:1px dashed #c4b5fd;">
-          💡 探險選錯路會進入精英戰，打贏掉一個寶物。重複會變 +${TREASURE_DUP_XP} XP。
+          💡 探險時選到「危險選項」會直接掉一個寶物。重複拿到 → +${TREASURE_DUP_XP} XP。
         </div>
-        ${sectionsHtml}
+        <div style="font-size:11px; font-weight:700; color:#7c3aed; margin:6px 0 4px;">⚡ 能力類（影響 STR/VIT/AGI/DEX/INT/LUK）</div>
+        ${abilityHtml}
+        <div style="font-size:11px; font-weight:700; color:#7c3aed; margin:10px 0 4px;">🌟 直接屬性類（HP/MP/ATK/DEF/SPD/暴擊）</div>
+        ${statHtml}
         <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:8px;">關閉</button>
       </div>
     `;
@@ -7274,26 +7334,70 @@ ${b.text}
       acc += (o.p || 0);
       if (roll < acc) { outcome = o; break; }
     }
-    // 戰鬥 outcome：扣費已扣（如有），跳出 modal 直接進戰鬥
+    // ⭐ 改版：原本「戰鬥 outcome」改成「直接掉一個寶物」（不再進戰鬥）
     if (outcome.battle) {
-      r.forageBattles = (r.forageBattles || 0) + 1;
-      forageTrace('resolveForageChoice→battle', { questId, choiceIdx, outcomeP: outcome.p, battleLine: outcome.battleLine, forageBattles: r.forageBattles });
-      // 處理 outcome 的 coins 扣費（例如賭博花了錢還被打）
+      r.forageBattles = (r.forageBattles || 0) + 1; // 還是當成「冒險戰鬥」累計
+      forageTrace('resolveForageChoice→treasure(was battle)', { questId, choiceIdx, outcomeP: outcome.p, battleLine: outcome.battleLine, forageBattles: r.forageBattles });
+      // 處理 outcome 的 coins 扣費（例如賭博花了錢還被搶）
       if (outcome.coins) {
         const amt = Array.isArray(outcome.coins) ? outcome.coins[0] + Math.floor(Math.random() * (outcome.coins[1] - outcome.coins[0] + 1)) : Number(outcome.coins) || 0;
         if (amt > 0) refundCoins(me.id, amt);
         else if (amt < 0) spendCoins(me.id, -amt);
       }
+      // 直接掉一個寶物（重複 → +1000 XP）
+      r.treasures = r.treasures || [];
+      const allIds = Object.keys(TREASURES);
+      const tid = allIds[Math.floor(Math.random() * allIds.length)];
+      const treasure = TREASURES[tid];
+      let isDup = r.treasures.includes(tid);
+      let dupXpGained = 0;
+      let leveledFromDup = 0;
+      if (isDup) {
+        r.xp = (r.xp || 0) + TREASURE_DUP_XP;
+        dupXpGained = TREASURE_DUP_XP;
+        forageTrace('forage-treasure DUP', { tid, name: treasure?.name, dupXp: TREASURE_DUP_XP, ownedCount: r.treasures.length });
+        while (r.xp >= xpForLevel(r.level)) {
+          r.xp -= xpForLevel(r.level);
+          r.level += 1;
+          r.skillPoints = (r.skillPoints || 0) + POINTS_PER_LEVEL.skill;
+          r.abilityPoints = (r.abilityPoints || 0) + POINTS_PER_LEVEL.ability;
+          leveledFromDup++;
+        }
+        if (leveledFromDup) {
+          const ns = computeStats(me);
+          r.hp = ns.maxHp; r.mp = ns.maxMp; r.deathAt = null;
+        }
+      } else {
+        r.treasures.push(tid);
+        forageTrace('forage-treasure NEW', { tid, name: treasure?.name, ownedCount: r.treasures.length });
+      }
       saveData();
       hideModal();
+      // 描述寶物效果
+      let effectStr = '';
+      if (treasure?.ability) effectStr = `+${treasure.value} ${(treasure.ability || '').toUpperCase()}`;
+      else if (treasure?.stat) {
+        const map = { hp: 'HP', mp: 'MP', atk: 'ATK', def: 'DEF', spd: 'SPD', critChance: '暴擊率', critDmg: '爆傷' };
+        const fmtVal = (treasure.stat === 'critChance' || treasure.stat === 'critDmg')
+          ? `+${Math.round(treasure.value * 100)}%`
+          : `+${treasure.value}`;
+        effectStr = `${fmtVal} ${map[treasure.stat] || treasure.stat}`;
+      }
       document.getElementById('dailyResult').innerHTML = `
         <div class="reward-list" style="background:linear-gradient(135deg,#fef3c7,#fde047); border-color:#f59e0b;">
-          <div class="rl-title" style="color:#92400e;">⭐ 精英試煉登場！</div>
-          <div class="rl-item" style="color:#5a4a4a;">${escapeHtml(outcome.battleLine || '一隻精英怪從草叢跳出來！')}</div>
-          <div class="rl-item" style="margin-top:4px; font-size:11px; color:#7c2d12;">↓ 戰鬥開始（必掉職業套裝！）↓</div>
+          <div class="rl-title" style="color:#92400e;">${isDup ? '✨ 找到寶物（已收藏）' : '🎁 找到寶物！'}</div>
+          <div class="rl-item" style="color:#5a4a4a; font-size:11px;">經過一番周折，你撿到了…</div>
+          <div class="rl-item" style="margin-top:6px; font-size:14px; color:#92400e;">
+            ${treasure?.icon || '🎁'} <b>${escapeHtml(treasure?.name || '寶物')}</b>　·　<span style="color:#16a34a;">${effectStr}</span>
+          </div>
+          ${isDup
+            ? `<div class="rl-item" style="font-size:11px; color:#7c3aed;">已擁有 → +${dupXpGained} XP${leveledFromDup ? `（升 ${leveledFromDup} 級！）` : ''}</div>`
+            : '<div class="rl-item" style="font-size:11px; color:#16a34a;">永久加入寶物庫！</div>'}
         </div>
       `;
-      onFight({ skipStamina: true, forageElite: true });
+      renderCharCard();
+      renderRpgStats();
+      updateStaminaUI();
       return;
     }
     // 處理 outcome
