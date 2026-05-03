@@ -8475,9 +8475,16 @@ ${b.text}
           <span style="color:${cur.color}; font-weight:700;">${cur.icon} ${cur.name}</span>
           <span style="font-size:11px; color:#8b6f9b;">${cur.desc}</span>
         </div>
-        <div class="zone-info-meta">
-          <span>掉落偏好：${cur.dropBias.map(s=>SLOT_LABEL[s]||s).join('、')}</span>
-          <span style="opacity:0.7;">詞條：白 0 · 綠 1 · 藍 2 · 紫 3</span>
+        <div class="zone-info-meta" style="flex-direction:column; align-items:stretch; gap:4px;">
+          <div style="display:flex; flex-wrap:wrap; gap:4px;">
+            <span style="font-weight:700; color:${cur.color};">📦 易掉落：</span>
+            ${cur.dropBias.map(s => {
+              const label = SLOT_LABEL[s] || s;
+              const icon = ({weapon:'⚔️', armor:'🛡', accessory:'💎', helmet:'🪖', gloves:'🧤', boots:'🥾', cape:'🎽'})[s] || '📦';
+              return `<span style="background:${cur.color}20; color:${cur.color}; padding:2px 8px; border-radius:8px; font-weight:600;">${icon} ${label}</span>`;
+            }).join('')}
+          </div>
+          <span style="opacity:0.7;">詞條：白 0 · 綠 1 · 藍 2 · 紫 3　·　階層 ×1.0/1.15/1.35/1.6</span>
         </div>
         <div style="display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 6px;">${layerTabsHtml}</div>
         <div class="floor-meta">${cur.icon} ${cur.name} · ${curLayer.icon} ${curLayer.name}　·　每場隨機 Lv <b>${curLayer.minLv}–${curLayer.maxLv}</b> 怪物</div>
