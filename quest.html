@@ -4558,32 +4558,56 @@
     }
   };
 
-  // ⭐ 智慧合併：判斷 remote 是否「太舊」會吞掉 local 剛拿到的物品
-  //    Check 1：remote inventory 比 local 短 ≥2 件 AND local 在 60 秒內有動過 → keep local
-  //    Check 2：local 裝備欄有 item，但 remote 的同 slot 為空且該 item 仍在 remote inventory
-  //             → 代表 remote 是「裝備前」的 snapshot（另一個 tab/device 的舊存檔）→ keep local（2 分鐘視窗）
+  // ⭐ 智慧合併：判斷 remote 是否「太舊」會吞掉 local 剛拿到的資料
+  //    根本原因：同帳號多 tab/裝置 — 某 tab saveData() 用更新的 lastTouchedAt 戳了舊快照到 Firestore
+  //    → 另一 tab 收到該快照，時間戳比對失敗（remote 較新）→ 吞掉正確的本地進度
+  //    解法：比對「不應倒退的欄位」，只要 local 明顯更進步且 2 分鐘內有動過 → keep local
+  //
+  //    Check 1：remote inventory 比 local 短 ≥2 件 AND local ≤60s 內有動過 → keep local
+  //    Check 2：local 裝備欄有 item，但 remote 同 slot 為空且 item 仍在 remote inventory（pre-equip 快照）
+  //    Check 3：XP/等級回朔 — local 等級更高，或同等級但 XP 明顯更多 → keep local（2 分鐘視窗）
+  //    Check 4：totalGold 回朔 — local 金幣明顯更多 → keep local（2 分鐘視窗）
   function __remoteWouldDataLossInventory(local, remote) {
     if (!local || !remote) return false;
-    const lInv = local.rpg?.inventory;
-    const rInv = remote.rpg?.inventory;
+    const lInv   = local.rpg?.inventory;
+    const rInv   = remote.rpg?.inventory;
     const localTs = Number(local.lastTouchedAt) || 0;
+    const win2m   = (Date.now() - localTs) < 120_000; // 2 分鐘視窗
 
-    // Check 1：inventory 數量懸殊
+    // Check 1：inventory 數量懸殊（60s）
     if (Array.isArray(lInv) && Array.isArray(rInv)) {
       if (lInv.length - rInv.length >= 2 && (Date.now() - localTs) < 60_000) return true;
     }
 
     // Check 2：裝備回朔偵測 — item 在 local equipment 但出現在 remote inventory（pre-equip 快照）
-    const lEq = local.rpg?.equipment;
-    const rEq = remote.rpg?.equipment;
-    if (lEq && typeof lEq === 'object' && (Date.now() - localTs) < 120_000) {
-      const rInvArr = Array.isArray(rInv) ? rInv : [];
-      const rEqSafe = (rEq && typeof rEq === 'object') ? rEq : {};
-      for (const slot of Object.keys(lEq)) {
-        const localItem = lEq[slot];
-        // local 有裝備這個 slot，remote 的同 slot 是空的，但 item 仍在 remote inventory
-        if (localItem && !rEqSafe[slot] && rInvArr.includes(localItem)) return true;
+    if (win2m) {
+      const lEq = local.rpg?.equipment;
+      const rEq = remote.rpg?.equipment;
+      if (lEq && typeof lEq === 'object') {
+        const rInvArr = Array.isArray(rInv) ? rInv : [];
+        const rEqSafe = (rEq && typeof rEq === 'object') ? rEq : {};
+        for (const slot of Object.keys(lEq)) {
+          const localItem = lEq[slot];
+          if (localItem && !rEqSafe[slot] && rInvArr.includes(localItem)) return true;
+        }
       }
+    }
+
+    // Check 3：XP / 等級回朔（2 分鐘視窗）
+    if (win2m) {
+      const lLv = local.rpg?.level || 1;
+      const rLv = remote.rpg?.level || 1;
+      const lXp = local.rpg?.xp    || 0;
+      const rXp = remote.rpg?.xp   || 0;
+      // 等級倒退，或同等級但 XP 差距超過 50（容許浮動誤差）
+      if (lLv > rLv || (lLv === rLv && lXp > rXp + 50)) return true;
+    }
+
+    // Check 4：totalGold 回朔（2 分鐘視窗）
+    if (win2m) {
+      const lGold = local.rpg?.totalGold || 0;
+      const rGold = remote.rpg?.totalGold || 0;
+      if (lGold > rGold + 100) return true; // 超過 100G 差距才保護（容許小誤差）
     }
 
     return false;
