@@ -5016,6 +5016,14 @@
         window.__pendingUpdateV81.add(player.id);
       }
     }
+    // ⭐ v9：世界王重寫完成公告
+    if (!player.rpg.updateV9 && typeof getMeId === 'function' && player.id === getMeId()) {
+      player.rpg.updateV9 = true;
+      if (typeof window !== 'undefined') {
+        window.__pendingUpdateV9 = window.__pendingUpdateV9 || new Set();
+        window.__pendingUpdateV9.add(player.id);
+      }
+    }
     // skillPoints migration
     if (player.rpg.skillPoints == null) {
       const earned = Math.max(0, (player.rpg.level || 1) - 1) * POINTS_PER_LEVEL.skill;
@@ -6649,7 +6657,39 @@
   function maybeShowBetaCompModal() {
     const me = getMe();
     if (!me) return;
-    // ⭐ v8.1 優先（最新）：世界王整修公告
+    // ⭐ v9 優先（最新）：世界王重寫完成公告
+    if (window.__pendingUpdateV9 && window.__pendingUpdateV9.has(me.id)) {
+      window.__pendingUpdateV9.delete(me.id);
+      const html = `
+        <div style="text-align:left; padding:6px 0;">
+          <div style="text-align:center; font-size:48px; margin-bottom:6px;">🦢⚔️</div>
+          <div style="text-align:center; font-weight:800; font-size:17px; color:#7c3aed; margin-bottom:8px;">世界王 v9 正式開放！</div>
+          <div style="font-size:12px; color:#5b3d62; line-height:1.7; padding:10px 12px; background:#f3e8ff; border-radius:10px; border:2px dashed #c4b5fd;">
+
+            <div style="font-weight:800; color:#16a34a; margin-bottom:4px;">✅ 重寫完成的改動</div>
+            • <b>全新排隊制度</b>：排到了就攻擊，過期自動踢，沒有卡頭 bug<br>
+            • <b>即時重生</b>：打死 → 王立刻滿血復活，無倒數等待<br>
+            • <b>傷害戰報</b>：每場戰鬥即時顯示（含攻擊者 / 傷害 / 尾刀標記）<br>
+            • <b>傷害排行榜</b>：本輪前 4 名即時顯示<br>
+
+            <div style="font-weight:800; color:#7c3aed; margin:10px 0 4px;">🛡️ 底層架構改善（對玩家透明）</div>
+            • <b>裝備掉落不再消失</b>：改用 atomic transaction 寫入，競速問題根治<br>
+            • <b>王硬幣不再遺失</b>：移到獨立欄位＋ FieldValue.increment，不會被覆蓋<br>
+            • <b>每人獨立文件</b>：你的裝備 / 進度只會寫到自己的 Firestore 文件，不再與他人搶寫<br>
+            • <b>世界王獨立文件</b>：每隻王有自己的雲端 doc，不擠在 meta 裡<br>
+
+            <div style="font-weight:800; color:#dc2626; margin:10px 0 4px;">⚠️ 測試期間</div>
+            獎勵暫時全關（不發 XP / 鵝鵝幣 / 王硬幣），確認無 bug 後再開放 ✨
+
+          </div>
+          <button class="btn btn-primary" onclick="hideModal()" style="margin-top:14px; width:100%; background:linear-gradient(135deg,#7c3aed,#dc2626);">🦢 去挑戰世界王！</button>
+        </div>
+      `;
+      showModal('🎉 v9 更新公告', html);
+      saveData();
+      return;
+    }
+    // ⭐ v8.1：世界王整修公告（已被 v9 公告取代，保留供舊存檔補顯示）
     if (window.__pendingUpdateV81 && window.__pendingUpdateV81.has(me.id)) {
       window.__pendingUpdateV81.delete(me.id);
       const html = `
@@ -9662,16 +9702,7 @@ ${b.text}
     if (stage && !stage.classList.contains('hidden')) {
       updateStaminaUI();
       // ⭐ v9：每秒呼叫 wb9Render（內部 hash 比對；沒變化只 patch 倒數文字，不重畫）
-      if (WORLD_BOSS_DISABLED && typeof wb9Render === 'function') {
-        wb9Render();
-      } else if (!WORLD_BOSS_DISABLED) {
-        const anyDead = WORLD_BOSSES.some(b => worldBoss?.[b.id]?.deadAt);
-        const me = getMe();
-        const myRpg = me ? getRpg(me) : null;
-        const onCd = myRpg && (Date.now() - (myRpg.lastBossAttackTime || 0)) < BOSS_COOLDOWN_MS;
-        const inQueue = WORLD_BOSSES.some(b => (worldBoss?.[b.id]?.queue || []).find(q => q.pid === me?.id));
-        if (anyDead || onCd || inQueue) renderWorldBoss();
-      }
+      if (typeof wb9Render === 'function') wb9Render();
       // 個人 BOSS 共用冷卻倒數
       const me2 = getMe();
       const myRpg2 = me2 ? getRpg(me2) : null;
