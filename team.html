@@ -1031,6 +1031,7 @@
   let __currentTab = 'heroes';
   let __selectedHeroId = null;
   let __pickedClass = null;
+  let __creatingNew = false;  // ⭐ 強制顯示職業選擇（即使已有英雄）
   let __party = [];   // 副本進入時的隊伍 hero ids
   let __dungeonProgress = null;  // { dungeonId, stage, party, log }
 
@@ -1057,11 +1058,14 @@
 
   function renderHeroesTab(me, data) {
     const root = document.getElementById('tabContent');
-    if (me.heroes.length === 0) {
+    // ⭐ 沒英雄時 OR 玩家按了「+ 新增英雄」時都要顯示職業選擇
+    if (me.heroes.length === 0 || __creatingNew) {
+      const hasHeroes = me.heroes.length > 0;
       root.innerHTML = `
         <div class="card">
-          <h2>🎭 創建第一個英雄</h2>
+          <h2>🎭 ${hasHeroes ? '新增英雄' : '創建第一個英雄'}</h2>
           ${renderClassPicker()}
+          ${hasHeroes ? `<button class="btn btn-secondary" style="width:100%; margin-top:10px;" onclick="window.__teamUI.cancelCreate()">取消</button>` : ''}
         </div>
       `;
       return;
@@ -1557,10 +1561,20 @@
       saveData(data);
       __selectedHeroId = hero.id;
       __pickedClass = null;
+      __creatingNew = false;  // ⭐ 結束創建模式
       showToast(`✨ 創建 ${CLASS_BY_ID[hero.classId].icon} ${hero.name}`);
       renderAll();
     },
-    beginCreate() { __pickedClass = null; __selectedHeroId = null; renderAll(); },
+    beginCreate() {
+      __pickedClass = null;
+      __creatingNew = true;  // ⭐ 進入創建模式（顯示職業選擇）
+      renderAll();
+    },
+    cancelCreate() {
+      __pickedClass = null;
+      __creatingNew = false;
+      renderAll();
+    },
     selectHero(id) { __selectedHeroId = id; showHeroDetail(id); },
     deleteHero(id) {
       if (!confirm('刪除這個角色？無法復原')) return;
