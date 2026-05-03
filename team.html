@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🛡️ 隊伍冒險島</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 12px;
+    font-family: 'Comic Sans MS', 'Trebuchet MS', sans-serif;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #5b3d62;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; background: linear-gradient(135deg,#fde047,#f59e0b);
+    border-radius: 14px; color: #7c2d12; box-shadow: 0 3px 0 #d97706;
+    margin-bottom: 14px;
+  }
+  header h1 { margin: 0; font-size: 18px; }
+  .back-btn {
+    background: rgba(255,255,255,0.6); border: none; border-radius: 10px;
+    padding: 6px 12px; cursor: pointer; font-family: inherit;
+    color: #7c2d12; font-weight: 700; font-size: 12px;
+  }
+  .card {
+    background: #fff; border-radius: 14px; padding: 12px; margin-bottom: 12px;
+    border: 2px solid #fde68a; box-shadow: 0 3px 0 #fde68a;
+  }
+  .card h2 {
+    margin: 0 0 10px; font-size: 15px; color: #92400e;
+    border-bottom: 2px dashed #fbbf24; padding-bottom: 6px;
+  }
+  .btn {
+    border: none; border-radius: 10px; padding: 9px 14px; font-family: inherit;
+    font-weight: 700; cursor: pointer; transition: transform 0.1s;
+  }
+  .btn:active { transform: translateY(2px); }
+  .btn-primary { background: linear-gradient(135deg,#fde047,#f59e0b); color: #7c2d12; box-shadow: 0 3px 0 #b45309; }
+  .btn-secondary { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+  .btn-danger { background: linear-gradient(135deg,#fca5a5,#dc2626); color: #fff; box-shadow: 0 3px 0 #991b1b; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* Login overlay */
+  .login-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .login-overlay.hidden { display: none; }
+  .login-box {
+    background: #fff; border-radius: 14px; padding: 22px;
+    width: min(360px, 92%);
+  }
+  .login-box h2 { margin: 0 0 12px; }
+
+  /* Class selection */
+  .class-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  }
+  .class-card {
+    background: linear-gradient(135deg,#fffbeb,#fef3c7);
+    border: 2px solid #fcd34d; border-radius: 12px; padding: 12px;
+    cursor: pointer; transition: all 0.15s; font-family: inherit;
+    text-align: left;
+  }
+  .class-card:hover { transform: translateY(-2px); box-shadow: 0 4px 0 #f59e0b; }
+  .class-card.selected { background: linear-gradient(135deg,#fef3c7,#fde047); border-color: #f59e0b; }
+  .class-card .cc-icon { font-size: 32px; }
+  .class-card .cc-name { font-weight: 700; color: #7c2d12; font-size: 14px; }
+  .class-card .cc-role { font-size: 10px; color: #92400e; margin-top: 2px; }
+  .class-card .cc-stats {
+    font-size: 10px; background: #fff; border-radius: 6px; padding: 4px 6px;
+    margin-top: 6px; line-height: 1.4; color: #6b3a1a;
+  }
+
+  /* Hero list */
+  .hero-row {
+    display: flex; align-items: center; gap: 10px; padding: 10px;
+    background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;
+    margin-bottom: 6px;
+  }
+  .hero-icon { font-size: 30px; }
+  .hero-meta { flex: 1; }
+  .hero-name { font-weight: 700; color: #7c2d12; font-size: 13px; }
+  .hero-sub { font-size: 10px; color: #92400e; }
+  .hero-row .hero-actions { display: flex; gap: 4px; }
+
+  /* Stat panel */
+  .stat-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+    margin-top: 8px;
+  }
+  .stat-cell {
+    background: #fff8e6; border: 1px solid #fcd34d; border-radius: 8px;
+    text-align: center; padding: 6px;
+  }
+  .stat-cell .sc-key { font-size: 10px; color: #92400e; font-weight: 700; }
+  .stat-cell .sc-val { font-size: 14px; color: #7c2d12; font-weight: 700; margin-top: 2px; }
+  .stat-cell .sc-grow { font-size: 9px; color: #c2410c; }
+
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: #7c2d12; color: #fff; padding: 8px 14px; border-radius: 18px;
+    font-size: 13px; opacity: 0; transition: opacity 0.2s; z-index: 200;
+  }
+  .toast.show { opacity: 1; }
+
+  .stub-banner {
+    background: linear-gradient(135deg,#ede9fe,#ddd6fe); color: #5b21b6;
+    padding: 10px 12px; border-radius: 10px; border: 1px dashed #a78bfa;
+    font-size: 12px; line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<!-- Login overlay (reuses PASS_KEY from index.html localStorage) -->
+<div id="loginOverlay" class="login-overlay hidden">
+  <div class="login-box">
+    <h2>🔐 隊伍冒險島</h2>
+    <div style="font-size:13px; color:#92400e; margin-bottom:10px;">
+      請先到主頁完成密碼驗證，再回來這邊。
+    </div>
+    <button class="btn btn-primary" onclick="location.href='index.html'" style="width:100%;">回主頁</button>
+  </div>
+</div>
+
+<div class="wrap" id="mainWrap">
+
+  <header>
+    <button class="back-btn" onclick="location.href='index.html'">← 返回主頁</button>
+    <h1>🛡️ 隊伍冒險島</h1>
+    <div id="meTag" style="font-size:13px;"></div>
+  </header>
+
+  <div id="content"></div>
+
+  <div class="card">
+    <h2>📋 系統路線圖</h2>
+    <div class="stub-banner">
+      <b>Phase 1（本次）</b>：八能力屬性系統 / 4 職業 / 角色建立 / 屬性面板 ✅<br>
+      <b>Phase 2</b>：技能樹 / 技能取得 / 規則表編輯<br>
+      <b>Phase 3</b>：戰鬥引擎（詠唱 / 硬直 / 前後排 / 掩護）<br>
+      <b>Phase 4</b>：5 人組隊副本 + 3-5 個關卡<br>
+      <b>Phase 5</b>：裝備掉落 / 多王副本 / 戰利品分配<br>
+      <br>
+      <span style="color:#7c2d12;">使用我們自己原創的鵝鵝風命名 + 平衡過的數值，不複製外部遊戲的具體內容。</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  // === 共用 keys（跟 index.html 對齊）===
+  const STORAGE_KEY = 'mahjong-tracker-v2';
+  const ME_KEY = 'mahjong-me-id';
+  const PASS_KEY = 'mahjong-pass-ok';
+
+  // ============================================================
+  // 八能力屬性系統
+  // ============================================================
+  const STATS = {
+    HP:  { full: 'Hit Points',     desc: '生命值，歸零陣亡' },
+    SP:  { full: 'Skill Points',   desc: '技能消耗（非 MP）' },
+    STR: { full: 'Strength',       desc: '物理攻擊力' },
+    INT: { full: 'Intelligence',   desc: '魔法攻擊力' },
+    DEX: { full: 'Dexterity',      desc: '命中、暴擊、弓系傷害' },
+    SPD: { full: 'Speed',          desc: '行動順序、迴避率' },
+    VIT: { full: 'Vitality',       desc: 'HP 成長、物理防禦' },
+    LUK: { full: 'Luck',           desc: '暴擊機率、運氣判定' },
+  };
+  const STAT_KEYS = ['HP','SP','STR','INT','DEX','SPD','VIT','LUK'];
+
+  // 等級系統
+  const POINTS_PER_LEVEL_TEAM = { ability: 5, skill: 2 };
+  const LEVEL_MAX = 50;
+  const ABILITY_CAP = 250;
+
+  // ============================================================
+  // 4 個一轉職業（原創命名 + 平衡係數）
+  // 成長係數矩陣決定職業曲線：升級時 maxHP += VIT × hpCoef, 等等
+  // 也包含 ATK / DEF 成長係數（用 STR / VIT 對應）
+  // ============================================================
+  const CLASSES = [
+    {
+      id: 'warrior', name: '鵝戰士', icon: '⚔️', role: '前排・物理坦', position: 'front',
+      desc: '近戰肉搏，可裝盾。HP 高、SP 偏低，靠 STR + VIT 推進。',
+      // Lv 1 起手能力
+      base: { HP: 300, SP: 50, STR: 10, INT: 2, DEX: 4, SPD: 4, VIT: 8, LUK: 1 },
+      // 成長係數（每點 VIT/INT/STR 對應的轉換）
+      coef: { hpPerVit: 3.0, spPerInt: 0.5, atkPerStr: 1.0, defPerVit: 0.6 },
+      // 可裝備類型（後面 Phase 5 用）
+      equipTypes: ['sword1h', 'sword2h', 'shield', 'heavyArmor', 'clothArmor', 'robe', 'misc'],
+    },
+    {
+      id: 'sorcerer', name: '鵝法師', icon: '🪄', role: '後排・魔法輸出', position: 'back',
+      desc: '遠程魔法輸出，HP 低、SP 充足，主屬性 INT。',
+      base: { HP: 150, SP: 100, STR: 2, INT: 10, DEX: 5, SPD: 3, VIT: 3, LUK: 1 },
+      coef: { hpPerVit: 1.5, spPerInt: 1.2, atkPerStr: 1.0, defPerVit: 0.4, magAtkPerInt: 1.4 },
+      equipTypes: ['shortStaff', 'longStaff', 'tome', 'clothArmor', 'robe', 'misc'],
+    },
+    {
+      id: 'priest', name: '鵝牧師', icon: '✨', role: '後排・治療輔助', position: 'back',
+      desc: '治療為主、輕度輸出。HP / SP 均衡偏低。',
+      base: { HP: 200, SP: 80, STR: 3, INT: 8, DEX: 5, SPD: 4, VIT: 4, LUK: 1 },
+      coef: { hpPerVit: 2.0, spPerInt: 1.0, atkPerStr: 0.8, defPerVit: 0.5, magAtkPerInt: 1.0 },
+      equipTypes: ['shortStaff', 'tome', 'clothArmor', 'robe', 'misc'],
+    },
+    {
+      id: 'hunter', name: '鵝獵人', icon: '🏹', role: '後排・遠程物理', position: 'back',
+      desc: '遠程物理輸出，DEX/SPD 並重，迴避型。',
+      base: { HP: 250, SP: 60, STR: 2, INT: 2, DEX: 10, SPD: 6, VIT: 4, LUK: 1 },
+      coef: { hpPerVit: 2.2, spPerInt: 0.8, atkPerStr: 1.0, atkPerDex: 0.8, defPerVit: 0.4 },
+      equipTypes: ['bow', 'clothArmor', 'robe', 'misc'],
+    },
+  ];
+  const CLASS_BY_ID = Object.fromEntries(CLASSES.map(c => [c.id, c]));
+
+  // ============================================================
+  // 載入 / 儲存
+  // ============================================================
+  function loadData() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return { players: [] };
+      return JSON.parse(raw);
+    } catch (e) { return { players: [] }; }
+  }
+  function saveData(data) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
+  }
+  function getMeId() { return localStorage.getItem(ME_KEY); }
+  function isPassVerified() { return localStorage.getItem(PASS_KEY) === '1'; }
+
+  // ============================================================
+  // 角色（hero）資料結構
+  //   存在 player.heroes[] 下
+  //   一個玩家可有多個角色（5 人組隊用，未來副本選 1-5 個出戰）
+  // ============================================================
+  function newHero(name, classId) {
+    const cls = CLASS_BY_ID[classId];
+    if (!cls) return null;
+    return {
+      id: 'h_' + Date.now().toString(36) + Math.random().toString(36).slice(2,5),
+      name: name || cls.name + '乙',
+      classId,
+      level: 1,
+      exp: 0,
+      // 八能力（從職業 base 起，玩家可以後續加點）
+      abilities: { ...cls.base },
+      // 已點技能（Phase 2 用）
+      skills: {},
+      // 行動規則表（Phase 2 用）
+      actionPattern: [],
+      // 裝備（Phase 5 用）
+      equipment: {},
+      // 預設前後排
+      position: cls.position,
+      // 升級點數結餘
+      abilityPoints: 0,
+      skillPoints: 0,
+      createdAt: Date.now(),
+    };
+  }
+  // 計算 derived stats（HP/SP 上限、ATK、DEF 等）
+  function computeHeroStats(hero) {
+    const cls = CLASS_BY_ID[hero.classId];
+    if (!cls) return null;
+    const a = hero.abilities;
+    const lv = hero.level || 1;
+    const maxHp = Math.round(cls.base.HP + (a.VIT - cls.base.VIT) * cls.coef.hpPerVit + (lv - 1) * 5);
+    const maxSp = Math.round(cls.base.SP + (a.INT - cls.base.INT) * cls.coef.spPerInt + (lv - 1) * 2);
+    const atk   = Math.round(a.STR * (cls.coef.atkPerStr || 1) + (a.DEX || 0) * (cls.coef.atkPerDex || 0));
+    const magAtk= Math.round(a.INT * (cls.coef.magAtkPerInt || 1));
+    const def   = Math.round(a.VIT * (cls.coef.defPerVit || 0.5));
+    return {
+      maxHp, maxSp, atk, magAtk, def,
+      // crit chance: 1% per DEX + 0.5% per LUK
+      critRate: Math.min(0.6, a.DEX * 0.01 + a.LUK * 0.005),
+      // SPD effective（直接用）
+      spd: a.SPD,
+      // hit / dodge：DEX + SPD 影響（Phase 3 用）
+      hit: a.DEX * 1.2,
+      dodge: a.SPD * 0.5,
+    };
+  }
+  function xpForLevel(lv) { return 100 + (lv - 1) * 80; }
+
+  // ============================================================
+  // UI 主流程
+  // ============================================================
+  function renderAll() {
+    const data = loadData();
+    const meId = getMeId();
+    const me = data.players?.find(p => p.id === meId);
+    document.getElementById('meTag').textContent = me ? `${me.avatar || '🪞'} ${me.name}` : '未登入';
+    if (!isPassVerified() || !me) {
+      document.getElementById('loginOverlay').classList.remove('hidden');
+      return;
+    }
+    document.getElementById('loginOverlay').classList.add('hidden');
+    if (!me.heroes) me.heroes = [];
+    saveData(data);
+    renderHeroes(me, data);
+  }
+
+  function renderHeroes(me, data) {
+    const root = document.getElementById('content');
+    if (me.heroes.length === 0) {
+      // 沒任何角色 → 顯示職業選擇
+      root.innerHTML = renderClassPicker();
+      return;
+    }
+    // 已有角色 → 顯示列表
+    root.innerHTML = `
+      <div class="card">
+        <h2>👥 我的角色（${me.heroes.length}）</h2>
+        <div style="font-size:11px; color:#92400e; margin-bottom:8px;">
+          每個玩家可建立多個角色，副本最多帶 5 個出戰。
+        </div>
+        ${me.heroes.map((h, i) => renderHeroRow(h, i)).join('')}
+        <button class="btn btn-primary" style="margin-top:8px; width:100%;" onclick="window.__teamUI.beginCreate()">+ 建立新角色</button>
+      </div>
+      <div id="heroDetail"></div>
+    `;
+    // 預設展開第一個角色
+    showHeroDetail(me.heroes[0].id);
+  }
+
+  function renderHeroRow(hero, idx) {
+    const cls = CLASS_BY_ID[hero.classId];
+    const stats = computeHeroStats(hero);
+    return `
+      <div class="hero-row">
+        <div class="hero-icon">${cls?.icon || '❓'}</div>
+        <div class="hero-meta">
+          <div class="hero-name">${escapeHtml(hero.name)}</div>
+          <div class="hero-sub">${cls?.name || '?'} · Lv ${hero.level} · HP ${stats?.maxHp || '?'} · SP ${stats?.maxSp || '?'}</div>
+        </div>
+        <div class="hero-actions">
+          <button class="btn btn-secondary" style="font-size:11px; padding:4px 8px;" onclick="window.__teamUI.openHero('${hero.id}')">查看</button>
+          <button class="btn btn-secondary" style="font-size:11px; padding:4px 8px; color:#dc2626;" onclick="window.__teamUI.deleteHero('${hero.id}')">刪</button>
+        </div>
+      </div>
+    `;
+  }
+
+  let __pickedClass = null;
+  function renderClassPicker() {
+    return `
+      <div class="card">
+        <h2>🎭 選擇職業</h2>
+        <div style="font-size:11px; color:#92400e; margin-bottom:10px;">
+          每個職業有獨特的成長係數，影響升級時 HP / SP / ATK / DEF 的變化。
+        </div>
+        <div class="class-grid">
+          ${CLASSES.map(c => `
+            <button class="class-card${__pickedClass === c.id ? ' selected' : ''}" onclick="window.__teamUI.pickClass('${c.id}')">
+              <div class="cc-icon">${c.icon}</div>
+              <div class="cc-name">${c.name}</div>
+              <div class="cc-role">${c.role}</div>
+              <div class="cc-stats">
+                HP ${c.base.HP} / SP ${c.base.SP}<br>
+                STR ${c.base.STR} INT ${c.base.INT} DEX ${c.base.DEX}<br>
+                SPD ${c.base.SPD} VIT ${c.base.VIT} LUK ${c.base.LUK}<br>
+                <span style="color:#c2410c;">HP×${c.coef.hpPerVit} / SP×${c.coef.spPerInt}</span>
+              </div>
+            </button>
+          `).join('')}
+        </div>
+        ${__pickedClass ? `
+          <div style="margin-top:12px; padding:8px; background:#fef9c3; border-radius:8px; font-size:12px; color:#92400e;">
+            <b>${CLASS_BY_ID[__pickedClass].icon} ${CLASS_BY_ID[__pickedClass].name}</b><br>
+            <span style="font-size:11px;">${CLASS_BY_ID[__pickedClass].desc}</span>
+          </div>
+          <div style="display:flex; gap:6px; margin-top:10px;">
+            <input id="newHeroName" type="text" placeholder="角色名字（可空）"
+              style="flex:1; padding:8px; border:2px solid #fcd34d; border-radius:8px; font-family:inherit;">
+            <button class="btn btn-primary" onclick="window.__teamUI.confirmCreate()">創建</button>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  function showHeroDetail(heroId) {
+    const data = loadData();
+    const me = data.players?.find(p => p.id === getMeId());
+    const hero = me?.heroes?.find(h => h.id === heroId);
+    if (!hero) return;
+    const cls = CLASS_BY_ID[hero.classId];
+    const stats = computeHeroStats(hero);
+    const xpNeed = xpForLevel(hero.level);
+    const detail = document.getElementById('heroDetail');
+    if (!detail) return;
+    detail.innerHTML = `
+      <div class="card">
+        <h2>${cls.icon} ${escapeHtml(hero.name)}</h2>
+        <div style="font-size:12px; color:#92400e;">
+          ${cls.name} · Lv ${hero.level} · ${cls.role}
+          <span style="margin-left:6px; opacity:0.7;">XP ${hero.exp}/${xpNeed}</span>
+        </div>
+        <div style="margin-top:8px; padding:8px; background:#fff8e6; border-radius:8px;">
+          <div style="font-weight:700; color:#7c2d12; font-size:12px;">📊 戰鬥屬性</div>
+          <div class="stat-grid" style="margin-top:6px;">
+            <div class="stat-cell"><div class="sc-key">HP</div><div class="sc-val">${stats.maxHp}</div></div>
+            <div class="stat-cell"><div class="sc-key">SP</div><div class="sc-val">${stats.maxSp}</div></div>
+            <div class="stat-cell"><div class="sc-key">物攻</div><div class="sc-val">${stats.atk}</div></div>
+            <div class="stat-cell"><div class="sc-key">魔攻</div><div class="sc-val">${stats.magAtk}</div></div>
+            <div class="stat-cell"><div class="sc-key">物防</div><div class="sc-val">${stats.def}</div></div>
+            <div class="stat-cell"><div class="sc-key">速度</div><div class="sc-val">${stats.spd}</div></div>
+            <div class="stat-cell"><div class="sc-key">暴擊</div><div class="sc-val">${Math.round(stats.critRate*100)}%</div></div>
+            <div class="stat-cell"><div class="sc-key">迴避</div><div class="sc-val">${stats.dodge.toFixed(1)}</div></div>
+          </div>
+        </div>
+        <div style="margin-top:8px; padding:8px; background:#fff8e6; border-radius:8px;">
+          <div style="font-weight:700; color:#7c2d12; font-size:12px;">🎯 八能力</div>
+          <div class="stat-grid" style="margin-top:6px;">
+            ${STAT_KEYS.map(k => `
+              <div class="stat-cell" title="${STATS[k].full} — ${STATS[k].desc}">
+                <div class="sc-key">${k}</div>
+                <div class="sc-val">${hero.abilities[k]}</div>
+                <div class="sc-grow">↑${getGrowDesc(cls, k)}</div>
+              </div>
+            `).join('')}
+          </div>
+          ${hero.abilityPoints > 0 ? `<div style="margin-top:6px; font-size:11px; color:#c2410c;">⭐ 你有 ${hero.abilityPoints} 點能力點可分配（Phase 2 開放）</div>` : ''}
+        </div>
+        <div style="margin-top:8px; padding:8px; background:#ede9fe; border-radius:8px; border:1px dashed #a78bfa; font-size:11px; color:#5b21b6;">
+          🔧 <b>可學技能</b>：${cls.name}預計可學 5-10 個技能（含詠唱 / 硬直 / 多段 / AoE / 治療系），Phase 2 開放。
+        </div>
+      </div>
+    `;
+  }
+
+  function getGrowDesc(cls, key) {
+    if (key === 'HP')  return `+${cls.coef.hpPerVit}/VIT`;
+    if (key === 'SP')  return `+${cls.coef.spPerInt}/INT`;
+    if (key === 'STR') return `物攻 ×${cls.coef.atkPerStr || 1}`;
+    if (key === 'INT' && cls.coef.magAtkPerInt) return `魔攻 ×${cls.coef.magAtkPerInt}`;
+    if (key === 'DEX' && cls.coef.atkPerDex)    return `物攻 +${cls.coef.atkPerDex}/DEX`;
+    if (key === 'VIT') return `物防 ×${cls.coef.defPerVit}`;
+    return '';
+  }
+
+  // === 全域 UI 函式（供 onclick 用）===
+  window.__teamUI = {
+    pickClass(classId) {
+      __pickedClass = classId;
+      const root = document.getElementById('content');
+      root.innerHTML = renderClassPicker();
+    },
+    confirmCreate() {
+      if (!__pickedClass) { showToast('先選一個職業'); return; }
+      const name = document.getElementById('newHeroName')?.value.trim();
+      const data = loadData();
+      const me = data.players?.find(p => p.id === getMeId());
+      if (!me) return;
+      if (!me.heroes) me.heroes = [];
+      const hero = newHero(name, __pickedClass);
+      if (!hero) return;
+      me.heroes.push(hero);
+      saveData(data);
+      showToast(`✨ 創建 ${CLASS_BY_ID[__pickedClass].icon} ${hero.name}`);
+      __pickedClass = null;
+      renderAll();
+    },
+    beginCreate() {
+      __pickedClass = null;
+      const root = document.getElementById('content');
+      root.innerHTML = renderClassPicker();
+    },
+    openHero(id) { showHeroDetail(id); },
+    deleteHero(id) {
+      if (!confirm('刪除這個角色？無法復原')) return;
+      const data = loadData();
+      const me = data.players?.find(p => p.id === getMeId());
+      if (!me) return;
+      me.heroes = (me.heroes || []).filter(h => h.id !== id);
+      saveData(data);
+      showToast('🗑 已刪除');
+      renderAll();
+    },
+  };
+
+  function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    })[c]);
+  }
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // 啟動
+  renderAll();
+})();
+</script>
+
+</body>
+</html>
