@@ -2477,17 +2477,187 @@
     return wb9[bossId];
   }
 
-  // commit 1：基本顯示（沒交互、無按鈕、無獎勵）
-  // 後續 commit 會加 queue / attack / rewards / hash diff
-  function wb9Render() {
+  // ⭐ commit 2：加入 / 退出排隊（雲端 TX）
+  async function wb9JoinQueue(bossId) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me); if (!r.class) return;
+    const boss = WB9_BOSSES.find(b => b.id === bossId);
+    if (!boss) return;
+    if (r.hp <= 0) { showToast('💀 HP 太低，先回滿再來'); return; }
+    // 全域 5 分冷卻
+    const cdRemain = (r.lastBossAttackTime || 0) + WB9_COOLDOWN_MS - Date.now();
+    if (cdRemain > 0) {
+      const m = Math.floor(cdRemain / 60000);
+      const s = Math.ceil((cdRemain % 60000) / 1000);
+      showToast(`⏳ 冷卻中，${m}:${String(s).padStart(2,'0')} 後可加入`);
+      return;
+    }
+    if (!window.__firebaseSync || !window.__firebaseSync.wb9JoinQueue) {
+      showToast('☁️ 雲端尚未連線，稍後再試'); return;
+    }
+    try {
+      const out = await window.__firebaseSync.wb9JoinQueue(bossId, me.id, boss);
+      // 更新本地 wb9 並重畫
+      wb9[bossId] = out.state;
+      forageTrace?.('wb9 join', { bossId, position: out.position });
+      showToast(`📋 已加入 ${boss.name} 排隊（第 ${out.position} 位）`);
+      wb9Render({ force: true });
+    } catch (e) {
+      const msg = String(e?.message || e);
+      if (msg.startsWith('already-queued:')) {
+        const otherBossId = msg.slice('already-queued:'.length);
+        const otherBoss = WB9_BOSSES.find(b => b.id === otherBossId);
+        showToast(`已在 ${otherBoss?.name || '其他王'} 排隊中，先取消才能加入`);
+      } else {
+        console.warn('wb9JoinQueue failed:', e);
+        showToast('☁️ 加入排隊失敗');
+      }
+    }
+  }
+  window.wb9JoinQueue = wb9JoinQueue;
+
+  async function wb9LeaveQueue(bossId) {
+    const me = getMe(); if (!me) return;
+    if (!window.__firebaseSync || !window.__firebaseSync.wb9LeaveQueue) return;
+    try {
+      const out = await window.__firebaseSync.wb9LeaveQueue(bossId, me.id);
+      // 樂觀更新本地（雲端 snapshot 也會回送）
+      const state = wb9[bossId];
+      if (state && Array.isArray(state.queue)) {
+        state.queue = state.queue.filter(x => x && x.pid !== me.id);
+      }
+      forageTrace?.('wb9 leave', { bossId, queueLen: out?.queueLen });
+      showToast('已退出排隊');
+      wb9Render({ force: true });
+    } catch (e) {
+      console.warn('wb9LeaveQueue failed:', e);
+      showToast('☁️ 退出失敗');
+    }
+  }
+  window.wb9LeaveQueue = wb9LeaveQueue;
+
+  // ⭐ 結構性雜湊：HP / 排隊頭 pid / 排隊長度 / killCount / cd 開關
+  //    雜湊沒變 → 跳過 innerHTML，只 patch 倒數文字（避免閃爍）
+  let __wb9LastHash = '';
+  function __wb9Hash() {
+    const me = getMe();
+    const r = me ? getRpg(me) : null;
+    const onCd = r ? ((Date.now() - (r.lastBossAttackTime || 0)) < WB9_COOLDOWN_MS) : false;
+    const parts = [`me:${me?.id || ''}`, `cd:${onCd ? '1' : '0'}`];
+    for (const boss of WB9_BOSSES) {
+      const s = wb9 && wb9[boss.id];
+      const head = s && s.queue && s.queue[0];
+      parts.push([
+        boss.id,
+        s ? s.hp : boss.maxHp,
+        s ? (s.queue || []).length : 0,
+        head ? head.pid : '',
+        head ? head.joinedAt : 0,
+        s ? s.killCount : 0,
+      ].join('|'));
+    }
+    return parts.join(';');
+  }
+
+  function __wb9UpdateLiveTimers() {
+    const now = Date.now();
+    const me = getMe();
+    const r = me ? getRpg(me) : null;
+    const cdRemain = r ? Math.max(0, (r.lastBossAttackTime || 0) + WB9_COOLDOWN_MS - now) : 0;
+    document.querySelectorAll('[data-wb9-cd-text]').forEach(el => {
+      if (cdRemain > 0) {
+        const m = Math.floor(cdRemain / 60000);
+        const s = Math.ceil((cdRemain % 60000) / 1000);
+        el.textContent = `⏳ 冷卻 ${m}:${String(s).padStart(2,'0')}`;
+      }
+    });
+    // 排隊頭過期顯示
+    document.querySelectorAll('[data-wb9-head-stale]').forEach(el => {
+      const at = Number(el.getAttribute('data-head-joined-at')) || 0;
+      const remain = Math.max(0, WB9_QUEUE_STALE_MS - (now - at));
+      const sec = Math.ceil(remain / 1000);
+      el.textContent = remain > 0 ? `🔥 還有 ${sec}s 動作` : '⚠️ 過期，下個攻擊會自動踢';
+    });
+  }
+
+  // commit 2：基本顯示 + 加入 / 退出排隊 + 差異渲染
+  function wb9Render(opts) {
+    const force = opts && opts.force;
+    const hash = __wb9Hash();
+    if (!force && hash === __wb9LastHash) {
+      __wb9UpdateLiveTimers();
+      return;
+    }
+    __wb9LastHash = hash;
+    const me = getMe();
+    const r = me ? getRpg(me) : null;
+    const cdRemain = r ? Math.max(0, (r.lastBossAttackTime || 0) + WB9_COOLDOWN_MS - Date.now()) : 0;
+    const onCd = cdRemain > 0;
+    // 我目前在哪個王排隊
+    let myQueuedBossId = null;
+    if (me) {
+      for (const boss of WB9_BOSSES) {
+        const q = (wb9?.[boss.id]?.queue) || [];
+        if (q.find(x => x && x.pid === me.id)) { myQueuedBossId = boss.id; break; }
+      }
+    }
+    return wb9RenderImpl(me, r, cdRemain, onCd, myQueuedBossId);
+  }
+
+  // 把 render 主體切出來（force 時用）
+  function wb9RenderImpl(me, r, cdRemain, onCd, myQueuedBossId) {
     const el = document.getElementById('worldBossBody');
     if (!el) return;
     const cardsHtml = WB9_BOSSES.map(boss => {
       const state = wb9GetState(boss.id);
       const hpPct = Math.max(0, Math.min(100, (state.hp / boss.maxHp) * 100));
-      const queueCount = (state.queue || []).length;
+      const queue = (state.queue || []);
+      const queueCount = queue.length;
+      const head = queue[0];
+      const myPos = me ? queue.findIndex(x => x && x.pid === me.id) : -1;
+      const isMyTurn = myPos === 0;
+      const queuedHere = myPos >= 0;
+      const queuedElsewhere = myQueuedBossId && myQueuedBossId !== boss.id;
+      const headStale = head && (Date.now() - (head.joinedAt || 0)) >= WB9_QUEUE_STALE_MS;
+      // 排隊清單顯示（前 6 人）
+      const queueListHtml = queueCount > 0 ? `
+        <div class="boss-queue">
+          <div class="bq-title">📋 排隊（${queueCount}）</div>
+          ${queue.slice(0, 6).map((q, i) => {
+            const p = getPlayer(q.pid);
+            const stale = (Date.now() - (q.joinedAt || 0)) >= WB9_QUEUE_STALE_MS;
+            const isMe = me && q.pid === me.id;
+            return `<div class="bq-row ${i === 0 ? 'bq-head' : ''} ${isMe ? 'bq-me' : ''}">
+              <span class="bq-pos">${i === 0 ? '🔥' : i + 1}</span>
+              <span class="bq-name">${p ? (p.avatar || '🎴') + ' ' + escapeHtml(p.name) : '?'}${stale ? ' <span style="color:#dc2626;">(過期)</span>' : ''}${i === 0 && !stale ? ` <span style="font-size:10px; color:#a16207;" data-wb9-head-stale data-head-joined-at="${q.joinedAt || 0}">🔥</span>` : ''}</span>
+            </div>`;
+          }).join('')}
+        </div>
+      ` : '';
+      // 動作按鈕邏輯
+      let actionHtml = '';
+      if (onCd) {
+        const m = Math.floor(cdRemain / 60000);
+        const s = Math.ceil((cdRemain % 60000) / 1000);
+        actionHtml = `<button class="btn btn-primary" disabled style="background:#4b5563;"><span data-wb9-cd-text>⏳ 冷卻 ${m}:${String(s).padStart(2,'0')}</span></button>`;
+      } else if (isMyTurn) {
+        actionHtml = `
+          <button class="btn btn-primary" disabled style="background:#94a3b8;">🔧 commit 2：攻擊功能 commit 3 才開放</button>
+          <button class="btn btn-secondary" onclick="wb9LeaveQueue('${boss.id}')" style="margin-top:6px;">取消排隊</button>
+        `;
+      } else if (queuedHere) {
+        actionHtml = `
+          <button class="btn btn-primary" disabled style="background:#6b7280;">🕒 排隊中：第 ${myPos + 1} 位</button>
+          <button class="btn btn-secondary" onclick="wb9LeaveQueue('${boss.id}')" style="margin-top:6px;">取消排隊</button>
+        `;
+      } else if (queuedElsewhere) {
+        const otherBoss = WB9_BOSSES.find(b => b.id === myQueuedBossId);
+        actionHtml = `<button class="btn btn-primary" disabled style="background:#4b5563;">已排隊在 ${otherBoss?.name || ''}</button>`;
+      } else {
+        actionHtml = `<button class="btn btn-primary" onclick="wb9JoinQueue('${boss.id}')" style="background:linear-gradient(135deg,#f59e0b,#dc2626); box-shadow:0 4px 0 #991b1b;">📋 加入排隊${queueCount > 0 ? `（前面 ${queueCount} 人）` : ''}</button>`;
+      }
       return `
-        <div class="boss-card" data-bossid="${boss.id}" style="opacity:0.92;">
+        <div class="boss-card" data-bossid="${boss.id}">
           <div class="boss-header">
             <span class="boss-icon">${boss.icon}</span>
             <div>
@@ -2499,23 +2669,21 @@
             <div class="boss-hp-fill" style="width:${hpPct.toFixed(1)}%"></div>
             <div class="boss-hp-text">${state.hp.toLocaleString()} / ${boss.maxHp.toLocaleString()}　(${hpPct.toFixed(1)}%)</div>
           </div>
+          ${queueListHtml}
           <div style="font-size:11px; color:#5b3d62; padding:4px 8px; background:#f3e8ff; border-radius:6px; text-align:center; margin-top:4px;">
-            📋 排隊：${queueCount} 人　·　🏆 擊殺次數：${state.killCount}
+            📋 排隊：${queueCount}　·　🏆 擊殺：${state.killCount}
           </div>
-          <button class="btn btn-primary" disabled style="background:#94a3b8; box-shadow:0 4px 0 #64748b; margin-top:6px;">
-            🔧 commit 1：基本顯示，按鈕未啟用
-          </button>
+          ${actionHtml}
         </div>
       `;
     }).join('');
     el.innerHTML = `
       <div style="font-size:11px; color:#92400e; padding:8px 10px; background:linear-gradient(135deg,#fef3c7,#fde68a); border:2px dashed #f59e0b; border-radius:10px; margin-bottom:10px; text-align:center;">
-        🛠️ <b>世界王 v9 — Commit 1</b>　基本顯示　·　獎勵未啟用　·　按鈕未啟用<br>
-        <span style="font-size:10px; color:#a16207;">後續 commit 會逐步加入排隊 → 攻擊 → 獎勵分配</span>
+        🛠️ <b>世界王 v9 — Commit 2</b>　排隊功能可用　·　攻擊待 commit 3<br>
+        <span style="font-size:10px; color:#a16207;">獎勵全關（測試期間），EXP 上限 ${WB9_MAX_XP_PER_FIGHT}</span>
       </div>
       ${cardsHtml}
     `;
-    // 移除 disabled flag，讓下次切回真正的「整修中」公告時可以重新填
     el.dataset.disabledShown = '';
   }
 
@@ -4046,7 +4214,7 @@
       const meRec = players.find(p => p && p.id === meId);
       if (meRec) meRec.lastTouchedAt = Date.now();
     }
-    const payload = { players, history, gifts, comments, pendingBets, betPool, worldBoss, baseMoney, basePoint };
+    const payload = { players, history, gifts, comments, pendingBets, betPool, worldBoss, wb9, baseMoney, basePoint };
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch (e) {}
     if (!__isApplyingRemote && window.__firebaseSync && window.__firebaseSync.ready) {
       window.__firebaseSync.save(payload);
@@ -4055,7 +4223,7 @@
 
   // ⭐ 拆檔架構同步介面
   function __persistLocalSnapshot() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ players, history, gifts, comments, pendingBets, betPool, worldBoss, bugs, baseMoney, basePoint })); } catch (e) {}
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ players, history, gifts, comments, pendingBets, betPool, worldBoss, wb9, bugs, baseMoney, basePoint })); } catch (e) {}
   }
 
   window.__getMeId = function() { return getMeId(); };
@@ -4070,6 +4238,8 @@
       if (Array.isArray(data.pendingBets)) pendingBets = data.pendingBets;
       if (typeof data.betPool === 'number') betPool = data.betPool;
       if (data.worldBoss && typeof data.worldBoss === 'object') worldBoss = data.worldBoss;
+      // ⭐ v9 世界王 state（獨立欄位）
+      if (data.wb9 && typeof data.wb9 === 'object') wb9 = data.wb9;
       if (Array.isArray(data.bugs)) bugs = data.bugs;
       if (typeof data.baseMoney === 'number') baseMoney = data.baseMoney;
       if (typeof data.basePoint === 'number') basePoint = data.basePoint;
@@ -9107,8 +9277,10 @@ ${b.text}
     const stage = document.getElementById('stageGame');
     if (stage && !stage.classList.contains('hidden')) {
       updateStaminaUI();
-      // ⭐ v8.1：世界王整修中 → 跳過倒數刷新
-      if (!WORLD_BOSS_DISABLED) {
+      // ⭐ v9：每秒呼叫 wb9Render（內部 hash 比對；沒變化只 patch 倒數文字，不重畫）
+      if (WORLD_BOSS_DISABLED && typeof wb9Render === 'function') {
+        wb9Render();
+      } else if (!WORLD_BOSS_DISABLED) {
         const anyDead = WORLD_BOSSES.some(b => worldBoss?.[b.id]?.deadAt);
         const me = getMe();
         const myRpg = me ? getRpg(me) : null;
@@ -12113,6 +12285,50 @@ ${b.text}
       // 世界王打擊：用 transaction 原子地讀 + 扣 HP + 寫回，避免兩個玩家互相蓋掉
       // bossDef 是 WORLD_BOSSES 裡的設定（要拿 hp / respawnMs / 各檔次獎勵）
       // 回傳 { actualDmg, newState, killed, pendingRewards }
+      // ============================================================
+      // ⭐ v9 世界王 transactions（獨立 wb9 欄位）
+      // ============================================================
+      // 加入排隊：若已在任何王排隊中 → reject。原子寫入 meta.wb9
+      // bossDef = WB9_BOSSES 裡的設定（拿 maxHp 初始化）
+      wb9JoinQueue: async (bossId, attackerId, bossDef) => {
+        return await runTransaction(db, async (tx) => {
+          const snap = await tx.get(metaRef);
+          const data = snap.exists() ? snap.data() : {};
+          const wb = data.wb9 ? { ...data.wb9 } : {};
+          // 確認沒在任何王的排隊裡
+          for (const [bid, st] of Object.entries(wb)) {
+            const q = (st && st.queue) || [];
+            if (q.find(x => x && x.pid === attackerId)) {
+              throw new Error('already-queued:' + bid);
+            }
+          }
+          // 初始化 / 取得 state
+          let state = wb[bossId];
+          if (!state) {
+            state = { hp: bossDef.maxHp, queue: [], damageLog: {}, killCount: 0, recentBattles: [], lastKill: null };
+          }
+          state.queue = Array.isArray(state.queue) ? [...state.queue] : [];
+          state.queue.push({ pid: attackerId, joinedAt: Date.now() });
+          wb[bossId] = state;
+          tx.set(metaRef, { wb9: wb }, { merge: true });
+          return { state, position: state.queue.length };
+        });
+      },
+      // 退出排隊
+      wb9LeaveQueue: async (bossId, attackerId) => {
+        return await runTransaction(db, async (tx) => {
+          const snap = await tx.get(metaRef);
+          const data = snap.exists() ? snap.data() : {};
+          const wb = data.wb9 ? { ...data.wb9 } : {};
+          const state = wb[bossId];
+          if (!state || !Array.isArray(state.queue)) return { ok: false };
+          state.queue = state.queue.filter(x => x && x.pid !== attackerId);
+          wb[bossId] = state;
+          tx.set(metaRef, { wb9: wb }, { merge: true });
+          return { ok: true, queueLen: state.queue.length };
+        });
+      },
+
       // 加入排隊。若目前不在任何王的排隊裡才能加。回傳 { queue, position }
       // bossDef 用來在第一次參戰時初始化王
       joinBossQueue: async (bossId, attackerId, bossDef, staleMs) => {
@@ -12394,6 +12610,7 @@ ${b.text}
           pendingBets: payload.pendingBets,
           betPool: payload.betPool,
           worldBoss: payload.worldBoss,
+          wb9: payload.wb9,                  // ⭐ v9 世界王
           bugs: payload.bugs,
           baseMoney: payload.baseMoney,
           basePoint: payload.basePoint,
