@@ -2479,8 +2479,8 @@
       icon: def.icon,
       color: def.color,
       theme: def.theme || '',
-      // 從固定基礎屬性開始
-      hp: def.base.hp || 0,
+      // 從固定基礎屬性開始（⭐ HP 平衡：base HP × 0.7）
+      hp: Math.round((def.base.hp || 0) * 0.7),
       atk: def.base.atk || 0,
       def: def.base.def || 0,
       spd: def.base.spd || 0,
@@ -2492,7 +2492,9 @@
     const refLv = 30;
     for (let i = 0; i < SPIRIT_AFFIX_COUNT; i++) {
       const a = AFFIXES[Math.floor(Math.random() * AFFIXES.length)];
-      const val = Math.max(1, Math.round((1 + refLv * a.perLv) * 1.0));
+      let val = Math.max(1, Math.round((1 + refLv * a.perLv) * 1.0));
+      // ⭐ HP 平衡：精魂 HP 詞綴值再砍 30%
+      if (a.type === 'hp') val = Math.max(1, Math.round(val * 0.7));
       inst[a.type] = (inst[a.type] || 0) + val;
       inst.affixes.push({ type: a.type, name: a.name, val });
     }
@@ -4017,10 +4019,10 @@
     { type: 'atk', name: '鋒利', perLv: 0.35 },
     { type: 'def', name: '堅固', perLv: 0.35 },
     { type: 'spd', name: '迅速', perLv: 0.25 },
-    { type: 'hp',  name: '健壯', perLv: 4 },
+    { type: 'hp',  name: '健壯', perLv: 2 },     // ⭐ HP 平衡：4 → 2
     { type: 'atk', name: '暴怒', perLv: 0.3 },
     { type: 'def', name: '鋼鐵', perLv: 0.3 },
-    { type: 'hp',  name: '巨魂', perLv: 5 },
+    { type: 'hp',  name: '巨魂', perLv: 2.5 },   // ⭐ HP 平衡：5 → 2.5
   ];
   // ⭐ 稀有度：詞條數綁定顏色
   //   白 (common)    0 詞條
@@ -4029,9 +4031,9 @@
   //   紫 (legendary) 3 詞條
   const RARITY = {
     common:    { color: '#9ca3af', label: '普通',  affixes: 0, mult: 1.0 },
-    magic:     { color: '#22c55e', label: '魔法',  affixes: 1, mult: 1.1 }, // 綠
-    rare:      { color: '#3b82f6', label: '稀有',  affixes: 2, mult: 1.4 }, // 藍
-    legendary: { color: '#a855f7', label: '傳說',  affixes: 3, mult: 2.0 }, // 紫
+    magic:     { color: '#22c55e', label: '魔法',  affixes: 1, mult: 1.05 },// 綠（HP 平衡：1.1 → 1.05）
+    rare:      { color: '#3b82f6', label: '稀有',  affixes: 2, mult: 1.2 }, // 藍（HP 平衡：1.4 → 1.2）
+    legendary: { color: '#a855f7', label: '傳說',  affixes: 3, mult: 1.5 }, // 紫（HP 平衡：2.0 → 1.5）
     // ⭐ 金裝（鵝王扭蛋專屬，固定詞條，不 roll）
     gold:      { color: '#fbbf24', label: '金裝',  affixes: 0, mult: 1.0 },
   };
@@ -4087,19 +4089,19 @@
     };
     // ⭐ 詞條數依稀有度：白 0 / 綠 1 / 藍 2 / 紫 3（精英用 forceAffixes 蓋過）
     const affixCount = forceAffixes != null ? forceAffixes : def.affixes;
-    // ⭐ 階層詞條強化：中層起每階詞條值放大，鼓勵玩家替換深層裝備
+    // ⭐ 階層詞條強化：HP 平衡後放緩
     //   Lv 1-5（上層）  ×1.00
-    //   Lv 6-10（中層） ×1.15
-    //   Lv 11-15（下層）×1.35
-    //   Lv 16-20（深層）×1.60
-    //   Lv 21+          ×1.85
+    //   Lv 6-10（中層） ×1.10
+    //   Lv 11-15（下層）×1.20
+    //   Lv 16-20（深層）×1.35
+    //   Lv 21+          ×1.50
     const layerAffixMult = (() => {
       const lv = drop.lv || 1;
       if (lv <= 5)  return 1.00;
-      if (lv <= 10) return 1.15;
-      if (lv <= 15) return 1.35;
-      if (lv <= 20) return 1.60;
-      return 1.85;
+      if (lv <= 10) return 1.10;
+      if (lv <= 15) return 1.20;
+      if (lv <= 20) return 1.35;
+      return 1.50;
     })();
     for (let i = 0; i < affixCount; i++) {
       const a = AFFIXES[Math.floor(Math.random() * AFFIXES.length)];
@@ -4179,6 +4181,13 @@
     //     新技能用 UI 的「+ 加一條規則」自己加，或按「↺ 重置為預設」
     if (!Array.isArray(player.rpg.actionPattern) || player.rpg.actionPattern.length === 0) {
       player.rpg.actionPattern = player.rpg.class ? getDefaultActionPattern(player.rpg.class) : [];
+    }
+    // ⭐ HP 平衡 v1 一次性遷移：套新詞綴 perLv / 稀有度 mult / 階層 mult；精魂 base HP × 0.7 + HP 詞綴 × 0.7
+    if (!player.rpg._hpRebalV1 && typeof applyHpRebalanceToPlayer === 'function') {
+      try {
+        applyHpRebalanceToPlayer(player);
+        player.rpg._hpRebalV1 = true;
+      } catch (e) { console.warn('hpRebalV1 migration failed:', e); }
     }
     // 補發：以前遇過綠茶但還沒拿到對應指南書的，現在補回去
     if ((player.rpg.metGreenTea || 0) > 0) {
@@ -11053,6 +11062,7 @@ ${b.text}
       <button class="btn btn-secondary" onclick="adminRefillBosses()" style="margin-top:6px; background:linear-gradient(135deg,#86efac,#16a34a); box-shadow:0 4px 0 #15803d; color:#fff;">💚 補滿世界王 HP（保留排隊 / 戰報）</button>
       <button class="btn btn-secondary" onclick="adminGrantAllBossCoins(4)" style="margin-top:6px; background:linear-gradient(135deg,#fde047,#f59e0b); box-shadow:0 4px 0 #d97706; color:#7c2d12;">👑 全員 +4 鵝皇硬幣（鵝王扭蛋用）</button>
       <button class="btn btn-secondary" onclick="adminShowHpBreakdown()" style="margin-top:6px; background:linear-gradient(135deg,#fca5a5,#dc2626); box-shadow:0 4px 0 #991b1b; color:#fff;">🩸 全員血量明細（看誰 HP 偏高）</button>
+      <button class="btn btn-secondary" onclick="adminApplyHpRebalanceAll()" style="margin-top:6px; background:linear-gradient(135deg,#a78bfa,#7c3aed); box-shadow:0 4px 0 #6d28d9; color:#fff;">🩸 全員 HP 平衡遷移（裝備 / 精魂套新公式）</button>
       <button class="btn btn-danger" onclick="adminResetBosses()" style="margin-top:6px; background:linear-gradient(135deg,#fdba74,#c2410c); box-shadow:0 4px 0 #7c2d12;">🗑 重置世界王紀錄（HP / 排隊 / 戰報 / 待領獎）</button>
       <button class="btn btn-danger" onclick="adminResetLeaderboard()" style="margin-top:6px; background:linear-gradient(135deg,#fde047,#d97706); box-shadow:0 4px 0 #92400e; color:#7c2d12;">🏆 重置排行榜（所有玩家等級 / 鵝鵝幣 / 綠茶遭遇歸零）</button>
       <button class="btn btn-danger" onclick="adminWipeAll()" style="margin-top:6px; background:linear-gradient(135deg,#fca5a5,#7f1d1d); box-shadow:0 4px 0 #450a0a;">💀 全玩家洗白（伺服器 + 本地都重置）</button>
@@ -11368,6 +11378,105 @@ ${b.text}
   window.adminResetBosses = adminResetBosses;
 
   // ⭐ 補滿所有世界王 HP（保留排隊 / 戰報 / 已殺次數）
+  // ⭐ HP 平衡遷移：依 baseId 重建裝備（套新詞綴/稀有度/階層 mult）
+  function rebuildItemForRebalance(item) {
+    if (!item || !item.baseId || !Array.isArray(item.affixes) || item.affixes.length === 0) return false;
+    const base = (typeof findItem === 'function') ? findItem(item.baseId) : null;
+    if (!base) return false;
+    const lv = item.lv || base.lv || 1;
+    const def = (item.rarity && RARITY[item.rarity]) || { mult: 1.0 };
+    const layerMult = lv <= 5 ? 1.00 : lv <= 10 ? 1.10 : lv <= 15 ? 1.20 : lv <= 20 ? 1.35 : 1.50;
+    // 重設為 base
+    item.atk = base.atk || 0;
+    item.def = base.def || 0;
+    item.spd = base.spd || 0;
+    item.hp  = base.hp  || 0;
+    item.mp  = base.mp  || 0;
+    item.critChance = base.critChance || 0;
+    item.critDmg    = base.critDmg    || 0;
+    // 重新套詞綴
+    for (const a of item.affixes) {
+      const ad = AFFIXES.find(x => x.name === a.name && x.type === a.type);
+      if (!ad) continue;
+      const newVal = Math.max(1, Math.round((1 + lv * ad.perLv) * (def.mult || 1) * layerMult));
+      a.val = newVal;
+      item[a.type] = (item[a.type] || 0) + newVal;
+    }
+    return true;
+  }
+
+  // ⭐ HP 平衡遷移：依 defId / sourceBossId 重建精魂（HP base × 0.7、HP 詞綴 × 0.7）
+  function rebuildSpiritForRebalance(sp) {
+    if (!sp) return false;
+    const def = (sp.defId && SPIRIT_DEFS.find(d => d.id === sp.defId)) ||
+                (sp.sourceBossId && SPIRIT_DEFS.find(d => d.sourceBossId === sp.sourceBossId));
+    if (!def) return false;
+    sp.hp  = Math.round((def.base.hp || 0) * 0.7);
+    sp.atk = def.base.atk || 0;
+    sp.def = def.base.def || 0;
+    sp.spd = def.base.spd || 0;
+    sp.critChance = def.base.critChance || 0;
+    sp.critDmg    = def.base.critDmg    || 0;
+    for (const a of (sp.affixes || [])) {
+      const ad = AFFIXES.find(x => x.name === a.name && x.type === a.type);
+      if (!ad) continue;
+      let newVal = Math.max(1, Math.round((1 + 30 * ad.perLv) * 1.0));
+      if (a.type === 'hp') newVal = Math.max(1, Math.round(newVal * 0.7));
+      a.val = newVal;
+      sp[a.type] = (sp[a.type] || 0) + newVal;
+    }
+    return true;
+  }
+
+  // ⭐ 對單一玩家施加 HP 平衡遷移：背包 / 裝備 / 精魂槽 / 精魂背包
+  function applyHpRebalanceToPlayer(p) {
+    if (!p || !p.rpg) return 0;
+    let count = 0;
+    // 背包
+    for (const it of (p.rpg.inventory || [])) {
+      if (it && typeof it === 'object' && rebuildItemForRebalance(it)) count++;
+    }
+    // 裝備（10 槽）
+    for (const slot of ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape', 'wings', 'pet', 'guide']) {
+      const e = p.rpg.equipment?.[slot];
+      if (e && typeof e === 'object' && rebuildItemForRebalance(e)) count++;
+    }
+    // 精魂槽（5）+ 背包
+    for (const sp of (p.rpg.spirits || [])) {
+      if (sp && rebuildSpiritForRebalance(sp)) count++;
+    }
+    for (const sp of (p.rpg.spiritBag || [])) {
+      if (sp && rebuildSpiritForRebalance(sp)) count++;
+    }
+    return count;
+  }
+
+  // ⭐ Admin：對全玩家施加 HP 平衡遷移並推到雲端
+  async function adminApplyHpRebalanceAll() {
+    if (!confirm('🩸 對全員施加 HP 平衡遷移：背包 / 裝備 / 精魂的 HP 詞綴值會依新公式重算。\n\n（不會弄丟道具，只會更新 stat 數字）\n\n確定？')) return;
+    const now = Date.now();
+    let totalItems = 0;
+    let touched = 0;
+    for (const p of players) {
+      if (!p || !p.rpg) continue;
+      const n = applyHpRebalanceToPlayer(p);
+      if (n > 0) {
+        totalItems += n;
+        touched++;
+        p.lastTouchedAt = now;
+      }
+    }
+    saveData();
+    if (window.__firebaseSync && window.__firebaseSync.forceWriteAllPlayers) {
+      try { await window.__firebaseSync.forceWriteAllPlayers(players); }
+      catch (e) { console.error(e); showToast('☁️ 雲端寫入失敗，本地已遷移'); return; }
+    }
+    render();
+    hideModal();
+    showToast(`🩸 已遷移 ${touched} 位玩家共 ${totalItems} 件物品`);
+  }
+  window.adminApplyHpRebalanceAll = adminApplyHpRebalanceAll;
+
   // ⭐ 全員送 N 顆鵝皇硬幣（鵝王扭蛋用，免費抽獎卷）
   async function adminGrantAllBossCoins(qty) {
     const n = Math.max(1, qty | 0);
