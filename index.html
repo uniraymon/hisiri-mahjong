@@ -1413,8 +1413,7 @@
 
       <div id="soloEntry" class="hidden">
         <div class="solo-tip">
-          🙋 <b>個人上傳：</b>只記你自己的分數，其他三家不會進任何玩家的累計戰績。<br>
-          適合你跟外面朋友打了一場、或網路對戰時，要記下自己的成績。
+          🙋 <b>個人上傳：</b>請貼上戰績截圖（OCR 辨識後再選哪行是你）。其他三家分數只用來算你的名次，不會進任何玩家的戰績。
         </div>
         <div id="soloEntryArea"></div>
       </div>
@@ -2743,8 +2742,32 @@
         gachaOnly: !!entry.gachaOnly,
       };
     }
-    // 字串 id → 不知道細節；只用 id 顯示
+    // 字串 id：先查扭蛋裝備清單、再查 quest.html 物品表
     const id = String(entry);
+    // 扭蛋限定裝備（有屬性）
+    const gachaIt = GACHA_EQUIPMENTS.find(it => it.id === id);
+    if (gachaIt) {
+      const stats = ['atk','def','spd','hp'].filter(k => gachaIt[k]).map(k => `${k.toUpperCase()}+${gachaIt[k]}`).join(' ');
+      return {
+        icon: gachaIt.icon || '🎁',
+        name: gachaIt.name || id,
+        color: '#a78bfa',
+        sub: `🎰 扭蛋限定 · ${stats}`,
+        gachaOnly: true,
+      };
+    }
+    // quest.html 物品表（商店裝備 / 探險掉落底 / 套裝件 / 消耗品）
+    const ci = lookupQuestItem(id);
+    if (ci) {
+      return {
+        icon: ci.icon || '📦',
+        name: ci.name || id,
+        color: ci.setName ? '#f59e0b' : '#7c3aed',
+        sub: ci.setName ? `🛡 ${ci.setName}套裝${ci.lv ? ` · Lv ${ci.lv}` : ''}` : (ci.lv ? `Lv ${ci.lv}` : '裝備'),
+        gachaOnly: false,
+      };
+    }
+    // 完全不認得的 id
     return { icon: '📦', name: id, color: '#9ca3af', sub: '（道具 id）', gachaOnly: id.startsWith('g_') };
   }
   // 簡單的稀有度顏色表（跟 quest.html 對齊）
@@ -2754,6 +2777,81 @@
     rare: '#3b82f6',
     legendary: '#a855f7',
   };
+
+  // ⭐ 從 quest.html 鏡射過來的物品名 / icon 表（只用於送禮 / 物品顯示）
+  // quest.html 的 inventory 有時候存 string id（shop_a_28 / as_helmet 等），
+  // 這邊查表把 id 轉成可讀的名稱 + icon
+  const QUEST_ITEM_CATALOG = (() => {
+    const cat = {};
+    const add = (id, name, icon, extra) => { cat[id] = Object.assign({ id, name, icon }, extra || {}); };
+
+    // ITEMS（探險掉落基底）
+    [
+      ['w_wood','木劍','🪵'],['w_iron','鐵劍','⚔️'],['w_steel','精鋼劍','🗡️'],['w_magic','魔劍','✨'],['w_holy','神劍','🌟'],
+      ['a_cloth','布衣','👕'],['a_leather','皮甲','🦺'],['a_chain','鎖鏈甲','⛓'],['a_plate','板甲','🛡️'],['a_dragon','龍鱗甲','🐉'],
+      ['c_ring','銅戒','💍'],['c_foot','兔腳','🐰'],['c_ruby','紅寶石','💎'],['c_heart','心形吊墜','💖'],['c_oracle','神諭','🌠'],
+      ['h_cap','布帽','🎩'],['h_iron','鐵盔','🪖'],['h_spirit','靈光盔','⛑'],
+      ['g_cloth','布手套','🧤'],['g_iron','鐵拳套','✊'],['g_thunder','雷霆拳','⚡'],
+      ['b_cloth','草鞋','👣'],['b_iron','鐵靴','🥾'],['b_swift','疾風靴','💨'],
+      ['p_cloth','布披風','🧣'],['p_leather','皮披風','🦺'],['p_dragon','龍鱗披','🐲'],
+      ['gt_10','綠茶見習指南','💚'],['gt_20','綠茶實戰手冊','📗'],['gt_30','綠茶心法錄','🍃'],
+      ['gt_50','綠茶天命書','📖'],['gt_75','綠茶禁術全集','🌿'],['gt_100','綠茶終極奧義書','💀'],
+    ].forEach(([id, name, icon]) => add(id, name, icon));
+
+    // 消耗品
+    [
+      ['pot_stam_s','體力藥 (小)','🧪'],['pot_stam_m','體力藥 (中)','🍶'],
+      ['pot_stam_l','體力藥 (大)','🍹'],['pot_revive','復活藥水','🧚'],
+    ].forEach(([id, name, icon]) => add(id, name, icon));
+
+    // 商店裝備（同 quest.html 的 SHOP_ITEMS 建立規則）
+    const wMeta=[['木劍','🪵'],['鐵劍','⚔️'],['鋼劍','🗡️'],['銀劍','🔱'],['魔法劍','✨'],['聖劍','🌟'],['邪劍','🩸'],['雷霆劍','⚡'],['龍牙劍','🐉'],['神話劍','🌌']];
+    const aMeta=[['布甲','👕'],['皮甲','🦺'],['鎖鏈甲','⛓'],['鎧甲','🛡️'],['魔法袍','✨'],['聖光鎧','✝️'],['黑暗鎧','🖤'],['雷鳴甲','⚡'],['龍鱗甲','🐉'],['神話甲','🌌']];
+    const cMeta=[['銅戒','💍'],['幸運符','🎴'],['銀戒','💎'],['紅寶石','🔴'],['兔腳','🐰'],['心形墜','💖'],['神諭','🌠'],['雷符','⚡'],['龍珠','🐲'],['創世神器','🌌']];
+    const hMeta=[['布帽','🎩'],['皮帽','🧢'],['鐵盔','🪖'],['鋼盔','⛑'],['銀冠','👑'],['聖光盔','😇'],['邪冠','😈'],['雷神盔','⚡'],['龍頭盔','🐲'],['創世冠','🌌']];
+    const gMeta=[['布手套','🧤'],['皮手套','🤲'],['鐵拳套','✊'],['鋼拳套','🤜'],['銀指環','💍'],['聖光手套','✋'],['邪術指甲','💀'],['雷霆拳','⚡'],['龍爪','🐉'],['神拳','👊']];
+    const bMeta=[['草鞋','👣'],['皮靴','👞'],['鐵靴','🥾'],['銀靴','🥿'],['疾風靴','💨'],['聖光靴','✨'],['幽影靴','👤'],['雷靴','⚡'],['龍靴','🐲'],['神步','🚀']];
+    const pMeta=[['布披風','🧣'],['皮披風','🦺'],['禮披','🎽'],['銀披','🪡'],['魔法袍','✨'],['聖光披風','👼'],['黑斗篷','🦇'],['雷神披','⚡'],['龍鱗披','🐲'],['傳說披','🌌']];
+    const levels=[1,4,7,10,13,16,19,22,25,28];
+    levels.forEach((lv,i) => {
+      add(`shop_w_${lv}`, wMeta[i][0], wMeta[i][1], { lv });
+      add(`shop_a_${lv}`, aMeta[i][0], aMeta[i][1], { lv });
+      add(`shop_c_${lv}`, cMeta[i][0], cMeta[i][1], { lv });
+      add(`shop_h_${lv}`, hMeta[i][0], hMeta[i][1], { lv });
+      add(`shop_g_${lv}`, gMeta[i][0], gMeta[i][1], { lv });
+      add(`shop_b_${lv}`, bMeta[i][0], bMeta[i][1], { lv });
+      add(`shop_p_${lv}`, pMeta[i][0], pMeta[i][1], { lv });
+    });
+
+    // 套裝（5 件 × 13 套）
+    const SETS_DATA = [
+      ['sg', '森林守衛者', [['helmet','森林之冠','🍃'],['armor','森林之鎧','🌲'],['gloves','森林之爪','🌿'],['boots','森林之履','🌳'],['cape','森林之披','🍂']]],
+      ['ru', '亡者詛咒',   [['helmet','亡者頭骨','💀'],['armor','亡者法袍','🥼'],['gloves','亡者枯骨','✋'],['boots','亡者鞋','👢'],['cape','亡者披風','🦇']]],
+      ['vw', '火山戰神',   [['helmet','熔岩盔','🔥'],['armor','熔岩鎧','🌋'],['gloves','熔岩拳','👊'],['boots','熔岩靴','🥾'],['cape','熔岩披','🧥']]],
+      ['ih', '冰原之心',   [['helmet','冰晶冠','❄️'],['armor','冰晶鎧','🧊'],['gloves','冰晶爪','🥶'],['boots','冰晶靴','⛸'],['cape','冰晶披','🪽']]],
+      ['wi', '鐵血戰魂',   [['helmet','鐵血盔','🪖'],['armor','鐵血鎧','🛡'],['gloves','鐵血拳','👊'],['boots','鐵血靴','🥾'],['cape','鐵血披','🟥']]],
+      ['as', '疾風神射',   [['helmet','疾風冠','🎯'],['armor','疾風衣','🟢'],['gloves','疾風指','🏹'],['boots','疾風靴','👟'],['cape','疾風披','🍃']]],
+      ['ma', '元素奧義',   [['helmet','奧義冠','🔮'],['armor','奧義袍','🟣'],['gloves','奧義指','✨'],['boots','奧義靴','👞'],['cape','奧義披','🌌']]],
+      ['ph', '神聖守護',   [['helmet','神聖冠','👑'],['armor','神聖鎧','🟡'],['gloves','神聖手','🤲'],['boots','神聖靴','🥿'],['cape','神聖披','😇']]],
+      ['bl', '劍主',       [['helmet','劍主之冠','🗡'],['armor','劍主之鎧','⚔️'],['gloves','劍主之握','🤜'],['boots','劍主之履','👟'],['cape','劍主之披','🟥']]],
+      ['iw', '鐵壁',       [['helmet','鐵壁盔','🛡'],['armor','鐵壁鎧','🟦'],['gloves','鐵壁手','🤛'],['boots','鐵壁靴','🥾'],['cape','鐵壁披','⬛']]],
+      ['sn', '狙擊',       [['helmet','狙擊鏡','🔭'],['armor','狙擊衣','🟩'],['gloves','狙擊手','🎯'],['boots','狙擊靴','🦶'],['cape','狙擊披','🌳']]],
+      ['dm', '爆裂',       [['helmet','爆裂帽','💥'],['armor','爆裂鎧','🟧'],['gloves','爆裂拳','👊'],['boots','爆裂靴','🥿'],['cape','爆裂披','🟠']]],
+      ['wr', '疾風',       [['helmet','疾風冠','🌬'],['armor','疾風衣','🟦'],['gloves','疾風手','🪶'],['boots','疾風靴','👟'],['cape','疾風披','💨']]],
+    ];
+    SETS_DATA.forEach(([prefix, setName, pieces]) => {
+      pieces.forEach(([slot, name, icon]) => {
+        add(`${prefix}_${slot}`, name, icon, { setName });
+      });
+    });
+
+    return cat;
+  })();
+
+  function lookupQuestItem(id) {
+    if (!id) return null;
+    return QUEST_ITEM_CATALOG[id] || null;
+  }
   function openGiftModal(toPid) {
     if (!ensureMe('送禮')) return;
     const me = getMe();
@@ -3420,7 +3518,7 @@
     if (entryMode === 'solo') renderSoloEntry();
   }
 
-  // === 個人上傳：渲染 ===
+  // === 個人上傳：渲染（截圖辨識為主） ===
   function renderSoloEntry() {
     const area = document.getElementById('soloEntryArea');
     if (!area) return;
@@ -3432,31 +3530,17 @@
       `;
       return;
     }
-    if (soloMySeat < 0 || soloMySeat > 3) soloMySeat = 0;
-    const seatLabels = ['東', '南', '西', '北'];
-    const expectedTotal = basePoint * 4;
-
-    let html = `
-      <div style="font-size:12px; color:#b88a8a; margin-bottom:6px;">① 我是哪一家？</div>
-      <div class="solo-pick-row">
-        ${seatLabels.map((lab, i) => `
-          <button class="solo-pick-btn ${soloMySeat === i ? 'active' : ''}" onclick="setSoloSeat(${i})">${lab}（${i+1}家）</button>
-        `).join('')}
+    area.innerHTML = `
+      <div style="text-align:center; margin-bottom:8px; font-size:12px; color:#92400e; background:#fef3c7; border:1px dashed #f59e0b; border-radius:8px; padding:8px;">
+        將以 <b>${me.avatar} ${escapeHtml(me.name)}</b> 的身份記錄這場成績
       </div>
-      <div style="font-size:12px; color:#b88a8a; margin-bottom:6px;">② 填入 4 家分數（你的位置會記錄到 <b>${me.avatar} ${escapeHtml(me.name)}</b>）</div>
-      <div class="solo-seat-grid">
-        ${seatLabels.map((lab, i) => `
-          <div class="solo-seat ${soloMySeat === i ? 'is-me' : ''}">
-            <div class="solo-seat-label">${lab}（${i+1}家）</div>
-            <div class="solo-seat-marker">${soloMySeat === i ? '✓ 我' : '其他家'}</div>
-            <input type="number" id="soloScore-${i}" placeholder="0" inputmode="numeric" oninput="checkSoloSum()">
-          </div>
-        `).join('')}
+      <button class="btn-screenshot" onclick="document.getElementById('soloScreenshotInput').click()">📸 貼上戰績截圖（或直接 Ctrl+V）</button>
+      <input type="file" id="soloScreenshotInput" accept="image/*" style="display:none" onchange="handleSoloScreenshot(event)">
+      <div style="font-size:11px; color:#b88a8a; text-align:center; margin-top:6px;">
+        辨識完成後從 4 行裡選「我是這行」就好<br>
+        其他三家的名字會被忽略，只用分數算你的名次
       </div>
-      <div class="sum-display" id="soloSumCheck">輸入 4 家分數（總和應為 ${expectedTotal.toLocaleString()}）</div>
-      <button class="btn btn-primary" id="soloAddBtn" onclick="addSoloRound()" disabled>📝 記錄個人成績</button>
     `;
-    area.innerHTML = html;
   }
 
   function setSoloSeat(idx) {
@@ -3623,12 +3707,20 @@
   // === OCR 截圖匯入 ===
   let ocrWorker = null;
   let ocrParsed = null; // [{rank, nameRaw, score, matchedId}]
+  let ocrMode = 'multi'; // 'multi' = 4 玩家對戰；'solo' = 個人上傳（只挑自己）
+  let ocrSoloSeat = null; // 'solo' 模式下使用者選了第幾行（0..3）= 自己
 
   async function handleScreenshot(e) {
     const file = e.target.files[0];
     e.target.value = '';
     if (!file) return;
-    processScreenshotFile(file);
+    processScreenshotFile(file, 'multi');
+  }
+  async function handleSoloScreenshot(e) {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    processScreenshotFile(file, 'solo');
   }
 
   function handlePaste(e) {
@@ -3645,7 +3737,9 @@
         const file = item.getAsFile();
         if (file) {
           e.preventDefault();
-          processScreenshotFile(file);
+          // 依當前模式自動判斷：在「個人上傳」分頁時用 solo
+          const mode = (typeof entryMode !== 'undefined' && entryMode === 'solo') ? 'solo' : 'multi';
+          processScreenshotFile(file, mode);
           return;
         }
       }
@@ -3690,11 +3784,13 @@
     });
   }
 
-  async function processScreenshotFile(file) {
+  async function processScreenshotFile(file, mode) {
     if (typeof Tesseract === 'undefined') {
       showToast('⚠️ 辨識引擎未載入（檢查網路）');
       return;
     }
+    ocrMode = (mode === 'solo') ? 'solo' : 'multi';
+    ocrSoloSeat = null;
     openOcrModal();
     const url = URL.createObjectURL(file);
     document.getElementById('ocrPreview').innerHTML = `<img src="${url}">`;
@@ -3972,16 +4068,44 @@
   function renderOcrRows() {
     if (!ocrParsed) return;
     const STAT_LABELS = ['立直', '榮和', '自摸', '放銃'];
+    const isSolo = ocrMode === 'solo';
+    const me = isSolo ? getMe() : null;
     const html = ocrParsed.slice(0, 4).map((r, i) => {
-      const playerOpts = players.map(p =>
-        `<option value="${p.id}" ${p.id === r.matchedId ? 'selected' : ''}>${p.avatar} ${escapeHtml(p.name)}</option>`
-      ).join('');
+      // 名字 / 對應 cell
+      let nameCell;
+      if (isSolo) {
+        // 個人上傳：用 radio 選「這行是我」
+        const checked = ocrSoloSeat === i;
+        nameCell = `
+          <div>
+            <div class="ocr-detected-name">辨識：${escapeHtml(r.nameRaw || '(未抓到)')}</div>
+            <label style="display:flex; align-items:center; gap:6px; padding:6px 10px; border:2px solid ${checked ? '#f59e0b' : '#ffd6e0'}; border-radius:8px; background:${checked ? 'linear-gradient(135deg,#fde047,#f59e0b)' : '#fff'}; cursor:pointer; font-size:12px; font-weight:700; color:${checked ? '#7c2d12' : '#b88a8a'};">
+              <input type="radio" name="ocrSoloSeatRadio" value="${i}" ${checked ? 'checked' : ''} onchange="setOcrSoloSeat(${i})" style="cursor:pointer;">
+              ${checked && me ? `${me.avatar} 我（${escapeHtml(me.name)}）` : '我是這行'}
+            </label>
+          </div>
+        `;
+      } else {
+        const playerOpts = players.map(p =>
+          `<option value="${p.id}" ${p.id === r.matchedId ? 'selected' : ''}>${p.avatar} ${escapeHtml(p.name)}</option>`
+        ).join('');
+        nameCell = `
+          <div>
+            <div class="ocr-detected-name">辨識：${escapeHtml(r.nameRaw || '(未抓到)')}</div>
+            <select class="ocr-select" onchange="updateOcrRow(${i}, 'matchedId', this.value)">
+              <option value="">— 選玩家 —</option>
+              ${playerOpts}
+              <option value="__new__">+ 新增為玩家</option>
+            </select>
+          </div>
+        `;
+      }
       const stats = r.stats || [null, null, null, null];
       const statInputs = STAT_LABELS.map((lbl, j) => `
         <div class="ocr-stat">
           <span class="ocr-stat-label">${lbl}</span>
           <input type="number" min="0" value="${stats[j] ?? ''}" placeholder="0"
-                 inputmode="numeric"
+                 inputmode="numeric" ${isSolo ? 'disabled style="opacity:0.5;"' : ''}
                  oninput="updateOcrRow(${i}, 'stat${j}', this.value)">
         </div>
       `).join('');
@@ -3989,26 +4113,25 @@
         <div class="ocr-block">
           <div class="ocr-row">
             <div class="ocr-rank">${r.rank}位</div>
-            <div>
-              <div class="ocr-detected-name">辨識：${escapeHtml(r.nameRaw || '(未抓到)')}</div>
-              <select class="ocr-select" onchange="updateOcrRow(${i}, 'matchedId', this.value)">
-                <option value="">— 選玩家 —</option>
-                ${playerOpts}
-                <option value="__new__">+ 新增為玩家</option>
-              </select>
-            </div>
+            ${nameCell}
             <input type="number" class="ocr-score-input" value="${r.score ?? ''}"
                    placeholder="分數" inputmode="numeric"
                    onchange="updateOcrRow(${i}, 'score', this.value)"
                    oninput="updateOcrRow(${i}, 'score', this.value, true)">
           </div>
-          <div class="ocr-stats-row">${statInputs}</div>
+          ${isSolo ? '' : `<div class="ocr-stats-row">${statInputs}</div>`}
         </div>
       `;
     }).join('');
     document.getElementById('ocrRows').innerHTML = html;
     checkOcrSum();
   }
+
+  function setOcrSoloSeat(i) {
+    ocrSoloSeat = (i == null ? null : (i | 0));
+    renderOcrRows();
+  }
+  window.setOcrSoloSeat = setOcrSoloSeat;
 
   function updateOcrRow(i, field, value, skipRender) {
     if (!ocrParsed || !ocrParsed[i]) return;
@@ -4050,9 +4173,6 @@
     const sum = filled.reduce((a, b) => a + b, 0);
     const allFilled = filled.length === 4;
     const sumOk = sum === expectedTotal;
-    const matchedIds = slice.map(r => r.matchedId).filter(Boolean);
-    const allMatched = matchedIds.length === 4;
-    const noDup = new Set(matchedIds).size === matchedIds.length;
 
     let msg, cls = '';
     if (!allFilled) {
@@ -4066,30 +4186,79 @@
       cls = 'sum-bad';
     }
     let warn = '';
-    if (!allMatched) warn += '<div style="color:#ef6b8a; font-size:11px; text-align:center; margin-top:4px;">⚠️ 還有玩家沒對應</div>';
-    if (allMatched && !noDup) warn += '<div style="color:#ef6b8a; font-size:11px; text-align:center; margin-top:4px;">⚠️ 玩家重複</div>';
-    // 榮和總和應 = 放銃總和（4 家共識）
-    const ronArr = slice.map(r => r.stats?.[1]).filter(n => n != null && !isNaN(n));
-    const houjuArr = slice.map(r => r.stats?.[3]).filter(n => n != null && !isNaN(n));
-    if (ronArr.length === 4 && houjuArr.length === 4) {
-      const ronSum = ronArr.reduce((a,b)=>a+b,0);
-      const houjuSum = houjuArr.reduce((a,b)=>a+b,0);
-      if (ronSum !== houjuSum) {
-        warn += `<div style="color:#d4806b; font-size:11px; text-align:center; margin-top:4px;">⚠️ 榮和總和 (${ronSum}) ≠ 放銃總和 (${houjuSum})，可能有讀錯，請確認 ♡</div>`;
+    let canConfirm = false;
+    if (ocrMode === 'solo') {
+      // 個人上傳：只要 4 家分數齊 + 選了「我是哪行」就可以
+      const me = getMe();
+      if (!me) warn += '<div style="color:#ef6b8a; font-size:11px; text-align:center; margin-top:4px;">⚠️ 先選身份才能上傳</div>';
+      if (ocrSoloSeat == null) warn += '<div style="color:#ef6b8a; font-size:11px; text-align:center; margin-top:4px;">⚠️ 請點選「我是這行」</div>';
+      canConfirm = !!me && ocrSoloSeat != null && allFilled;
+    } else {
+      const matchedIds = slice.map(r => r.matchedId).filter(Boolean);
+      const allMatched = matchedIds.length === 4;
+      const noDup = new Set(matchedIds).size === matchedIds.length;
+      if (!allMatched) warn += '<div style="color:#ef6b8a; font-size:11px; text-align:center; margin-top:4px;">⚠️ 還有玩家沒對應</div>';
+      if (allMatched && !noDup) warn += '<div style="color:#ef6b8a; font-size:11px; text-align:center; margin-top:4px;">⚠️ 玩家重複</div>';
+      // 榮和總和應 = 放銃總和（4 家共識）
+      const ronArr = slice.map(r => r.stats?.[1]).filter(n => n != null && !isNaN(n));
+      const houjuArr = slice.map(r => r.stats?.[3]).filter(n => n != null && !isNaN(n));
+      if (ronArr.length === 4 && houjuArr.length === 4) {
+        const ronSum = ronArr.reduce((a,b)=>a+b,0);
+        const houjuSum = houjuArr.reduce((a,b)=>a+b,0);
+        if (ronSum !== houjuSum) {
+          warn += `<div style="color:#d4806b; font-size:11px; text-align:center; margin-top:4px;">⚠️ 榮和總和 (${ronSum}) ≠ 放銃總和 (${houjuSum})，可能有讀錯，請確認 ♡</div>`;
+        }
       }
+      canConfirm = allFilled && allMatched && noDup;
     }
     document.getElementById('ocrSumCheck').innerHTML = `<div class="sum-display ${cls}">${msg}</div>${warn}`;
-    document.getElementById('ocrConfirmBtn').disabled = !(allFilled && allMatched && noDup);
+    document.getElementById('ocrConfirmBtn').disabled = !canConfirm;
+    // 按鈕文案隨模式變化
+    const btn = document.getElementById('ocrConfirmBtn');
+    if (btn) btn.textContent = ocrMode === 'solo' ? '🙋 確認個人成績' : '📝 確認記錄本局';
   }
 
   function confirmOcrImport() {
     if (!ocrParsed) return;
     const slice = ocrParsed.slice(0, 4);
-    const participants = slice.map(r => r.matchedId);
     const scores = slice.map(r => Number(r.score));
-    if (participants.some(p => !p) || scores.some(s => isNaN(s))) return;
-    if (new Set(participants).size !== 4) return;
+    if (scores.some(s => isNaN(s))) return;
     const money = scores.map(s => Math.round(pointToMoney(s)));
+
+    if (ocrMode === 'solo') {
+      // 個人上傳：把選中的那行記為自己，其他三家為 null
+      const me = getMe();
+      if (!me) { showToast('先選身份才能上傳'); return; }
+      if (ocrSoloSeat == null) { showToast('請點選「我是這行」'); return; }
+      const seat = Math.max(0, Math.min(3, ocrSoloSeat | 0));
+      const participants = [null, null, null, null];
+      participants[seat] = me.id;
+      history.push({
+        id: Date.now(),
+        ts: new Date().toISOString(),
+        participants,
+        scores,
+        money,
+        solo: true,
+        soloOwner: me.id,
+      });
+      // 個人上傳不結算押注（其他三家不是真的玩家），只發我自己的鵝蛋幣
+      const myMoney = money[seat];
+      const sortedDesc = [...money].sort((a, b) => b - a);
+      const myRank = sortedDesc.indexOf(myMoney) + 1;
+      const reward = MATCH_EGG_COIN_REWARDS[myRank - 1] || 0;
+      if (reward > 0) addEggCoins(me.id, reward);
+      saveData();
+      closeOcrModal();
+      render();
+      showToast(`🙋 個人成績已記錄（${myRank} 位）　🥚 +${reward}`);
+      return;
+    }
+
+    // multi 模式（原本流程）
+    const participants = slice.map(r => r.matchedId);
+    if (participants.some(p => !p)) return;
+    if (new Set(participants).size !== 4) return;
     const riichi = slice.map(r => Number(r.stats?.[0]) || 0);
     const ron    = slice.map(r => Number(r.stats?.[1]) || 0);
     const tsumo  = slice.map(r => Number(r.stats?.[2]) || 0);
@@ -4103,6 +4272,13 @@
       riichi, ron, tsumo, houju
     });
     settleBetsForRound(participants, scores, money);
+    // 多人模式也要發鵝蛋幣（保持原本邏輯：依本局名次 10 / 7 / 5 / 3）
+    const sortedByScore = scores.map((s, i) => ({ s, pid: participants[i] }))
+      .sort((a, b) => b.s - a.s);
+    sortedByScore.forEach((row, rank) => {
+      const reward = MATCH_EGG_COIN_REWARDS[rank] || 0;
+      if (reward > 0) addEggCoins(row.pid, reward);
+    });
     saveData();
     closeOcrModal();
     render();
@@ -4118,6 +4294,8 @@
     if (e && e.target.id !== 'ocrModal') return;
     document.getElementById('ocrModal').classList.add('hidden');
     ocrParsed = null;
+    ocrMode = 'multi';
+    ocrSoloSeat = null;
   }
 
   // === 稱號選擇 modal ===
