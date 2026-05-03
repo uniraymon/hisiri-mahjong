@@ -3025,9 +3025,7 @@
       { id: 'pot_stam_l', name: '體力藥 (大)', icon: '🍹', desc: '+100 體力', cost: 280, type: 'consumable', effect: { stamina: 100 } },
       { id: 'pot_hp_s',   name: '治療藥 (小)', icon: '🍵', desc: 'HP +50%',   cost: 30,  type: 'consumable', effect: { hpRatio: 0.5 } },
       { id: 'pot_hp_l',   name: '治療藥 (大)', icon: '❤️', desc: 'HP 回滿',   cost: 60,  type: 'consumable', effect: { hp: 'full' } },
-      { id: 'pot_mp_s',   name: '藍藥 (小)',  icon: '🧙', desc: 'MP +50%',   cost: 50,  type: 'consumable', effect: { mpRatio: 0.5 } },
-      { id: 'pot_mp_l',   name: '藍藥 (大)',  icon: '💎', desc: 'MP 回滿',   cost: 120, type: 'consumable', effect: { mp: 'full' } },
-      { id: 'pot_xp',     name: '智慧藥水',   icon: '📚', desc: '+300 XP',   cost: 120, type: 'consumable', effect: { xp: 300 } },
+      // ⭐ 取消 MP 藥水 + 智慧藥水（每場戰鬥開始 MP 自動回滿）
     ];
     // 每 3 等一階，10 階（Lv 1 / 4 / 7 / 10 / 13 / 16 / 19 / 22 / 25 / 28）
     const levels = [1, 4, 7, 10, 13, 16, 19, 22, 25, 28];
@@ -3964,7 +3962,7 @@
     const critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
     const regenPer = (cls.regenPer || 0) + (bonus.regen || 0);
     let pHp = Math.min(player.rpg.hp ?? stats.maxHp, stats.maxHp);
-    let pMp = Math.min(player.rpg.mp ?? stats.maxMp, stats.maxMp);
+    let pMp = stats.maxMp; // ⭐ 每場戰鬥 MP 自動回滿
     let mHp = monster.hp;
     let round = 0;
     let playerActions = 0;
@@ -4448,7 +4446,7 @@
     const regenPer = (cls.regenPer || 0) + (bonus.regen || 0);
 
     let pHp = Math.min(player.rpg.hp ?? stats.maxHp, stats.maxHp);
-    let pMp = Math.min(player.rpg.mp ?? stats.maxMp, stats.maxMp);
+    let pMp = stats.maxMp; // ⭐ 每場戰鬥 MP 自動回滿
     const playerObj = { statuses: [] };
 
     // 怪物列表，每隻獨立 ATB gauge
