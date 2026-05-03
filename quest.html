@@ -1566,11 +1566,11 @@
         { id: 'w_heavy_strike', name: '重擊',     icon: '⚡', unlockLv: 5,  cooldown: 4, mpCost: 18, type: 'damage', mult: 1.3, alwaysCrit: true },
         { id: 'w_rage_slash',   name: '狂怒斬',   icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 14, type: 'damage', mult: 1.8, hits: 2 },
         // ⭐ HP 代價系列：固定扣 HP（不是 % maxHP）
-        { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 3,  cooldown: 3, mpCost: 0, hpCostFlat: 20, type: 'damage', mult: 2.0 },
+        { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 3,  cooldown: 3, mpCost: 0, hpCostFlat: 20, type: 'damage', mult: 2.0, cast: 10 },
         // 嗜血爆裂：低傷 + 吸血 20%（吸所造成傷害的百分比）
         { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 10, cooldown: 5, mpCost: 0, type: 'damage', mult: 1.0, lifesteal: 0.20 },
         // 死戰之怒：50 MP + 20 HP（固定）, 4.5× ATK
-        { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 15, cooldown: 8, mpCost: 50, hpCostFlat: 20, type: 'damage', mult: 4.5 },
+        { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 15, cooldown: 8, mpCost: 50, hpCostFlat: 20, type: 'damage', mult: 4.5, cast: 100 },
         // 補給技：兼顧 HP+MP
         { id: 'w_war_cry',      name: '戰意呼喚', icon: '📢', unlockLv: 7,  cooldown: 5, mpCost: 0, type: 'heal', healPct: 0.15, mpFlat: 5 },
         // ⭐ 自身 buff：嗜血怒嚎（ATK +30% 3 回合）
@@ -1603,10 +1603,10 @@
       skills: [
         { id: 'a_god_arrow',   name: '神之矢',   icon: '🌟', unlockLv: 12, cooldown: 7, mpCost: 32, type: 'damage', mult: 2.8, alwaysCrit: true },
         { id: 'a_multishot',   name: '多重射擊', icon: '🏹', unlockLv: 5,  cooldown: 4, mpCost: 16, type: 'damage', mult: 1.8, hits: 3 },
-        { id: 'a_precise_shot',name: '精準射擊', icon: '🎯', unlockLv: 1,  cooldown: 3, mpCost: 12, type: 'damage', mult: 1.4, alwaysCrit: true },
+        { id: 'a_precise_shot',name: '精準射擊', icon: '🎯', unlockLv: 1,  cooldown: 3, mpCost: 12, type: 'damage', mult: 1.4, alwaysCrit: true, cast: 5 },
         { id: 'a_concentrate', name: '集中',     icon: '🧘', unlockLv: 4,  cooldown: 4, mpCost: 0,  type: 'heal', mpFlat: 5 },
         { id: 'a_barrage',     name: '連射',     icon: '🌊', unlockLv: 8,  cooldown: 5, mpCost: 28, type: 'damage', mult: 2.4, hits: 4 },
-        { id: 'a_lethal_aim',  name: '致命瞄準', icon: '💀', unlockLv: 14, cooldown: 8, mpCost: 40, type: 'damage', mult: 3.5, alwaysCrit: true, ignoreDef: true },
+        { id: 'a_lethal_aim',  name: '致命瞄準', icon: '💀', unlockLv: 14, cooldown: 8, mpCost: 40, type: 'damage', mult: 3.5, alwaysCrit: true, ignoreDef: true, cast: 90 },
         // ⭐ 多目標：雙箭齊發、毒箭
         { id: 'a_twin_shot',   name: '雙箭齊發', icon: '🏹', unlockLv: 6,  cooldown: 4, mpCost: 24, type: 'damage', mult: 1.5, targetCount: 2 },
         { id: 'a_poison_arrow',name: '毒箭',     icon: '🐍', unlockLv: 9,  cooldown: 5, mpCost: 26, type: 'damage', mult: 1.2, applyStatus: { type: 'poison', turns: 3, dmg: 12, chance: 0.7 } },
@@ -1651,11 +1651,11 @@
       skills: [
         { id: 'm_meteor',         name: '隕石術',     icon: '☄️', unlockLv: 12, cooldown: 7, mpCost: 50, type: 'damage', flat: 120, perLv: 5, ignoreDef: true },
         { id: 'm_ice_lance',      name: '冰錐術',     icon: '❄️', unlockLv: 5,  cooldown: 4, mpCost: 20, type: 'damage', mult: 1.6, alwaysCrit: true, applyStatus: { type: 'paralyze', turns: 2, chance: 0.25 } },
-        { id: 'm_fireball',       name: '火球術',     icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 25, type: 'damage', flat: 50, perLv: 3, ignoreDef: true },
+        { id: 'm_fireball',       name: '火球術',     icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 25, type: 'damage', flat: 50, perLv: 3, ignoreDef: true, cast: 8 },
         { id: 'm_mana_spring',    name: '法力湧泉',   icon: '💧', unlockLv: 3,  cooldown: 4, mpCost: 0,  type: 'heal', mpFlat: 15 },
         { id: 'm_chain_lightning',name: '連環閃電',   icon: '⚡', unlockLv: 8,  cooldown: 5, mpCost: 35, type: 'damage', flat: 85, perLv: 4, ignoreDef: true, hits: 3 },
         { id: 'm_arcane_shield',  name: '魔力護盾',   icon: '🛡️', unlockLv: 9,  cooldown: 6, mpCost: 30, type: 'heal', healPct: 0.20 },
-        { id: 'm_destruction',    name: '毀滅之怒',   icon: '💀', unlockLv: 16, cooldown: 9, mpCost: 65, type: 'damage', flat: 220, perLv: 8, ignoreDef: true },
+        { id: 'm_destruction',    name: '毀滅之怒',   icon: '💀', unlockLv: 16, cooldown: 9, mpCost: 65, type: 'damage', flat: 220, perLv: 8, ignoreDef: true, cast: 100 },
         // ⭐ 全體 AOE：火焰風暴 / 毒霧
         { id: 'm_firestorm',      name: '火焰風暴',   icon: '🌋', unlockLv: 11, cooldown: 7, mpCost: 55, type: 'damage', flat: 75, perLv: 4, ignoreDef: true, targetCount: 'all' },
         { id: 'm_poison_cloud',   name: '毒霧',       icon: '☠️', unlockLv: 7,  cooldown: 6, mpCost: 30, type: 'damage', flat: 30, perLv: 2, ignoreDef: true, targetCount: 'all', applyStatus: { type: 'poison', turns: 4, dmg: 10, chance: 0.85 } },
@@ -1721,7 +1721,7 @@
         // 反傷護盾：高量反傷 + DEF buff
         { id: 'p_aegis',         name: '反傷護盾', icon: '🪞', unlockLv: 12, cooldown: 8, mpCost: 30, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.70, turns: 3 } },
         // 信仰之力：以 maxHp 結算大傷害（魔攻、單目標、必爆）
-        { id: 'p_divine_wrath',  name: '神之裁決', icon: '⚡', unlockLv: 14, cooldown: 8, mpCost: 38, type: 'damage', maxHpMult: 0.65, alwaysCrit: true },
+        { id: 'p_divine_wrath',  name: '神之裁決', icon: '⚡', unlockLv: 14, cooldown: 8, mpCost: 38, type: 'damage', maxHpMult: 0.65, alwaysCrit: true, cast: 90 },
       ],
       skillTree: [
         { id: 'p_def',   name: '聖光鎧甲', icon: '🛡',  desc: '+2 DEF',              maxLevel: 5, effect: 'def',          per: 2 },
@@ -2397,6 +2397,17 @@
       case 'crit':      return '🎯 暴擊率 +20%（本招）';
       default:          return '✨ 額外加成';
     }
+  }
+  // ⭐ 詠唱硬值（HOF 風格）：施放後 pGauge 多扣 cast 值，重技能下次動作會更慢
+  // 預設：buff / heal 5、傷害技按冷卻計（cd 3→12 / 5→36 / 7→60 / 8→72）
+  // skill.cast 可顯式設定蓋過預設
+  function getEffectiveCast(skill) {
+    if (!skill) return 0; // 普攻沒有額外硬值
+    if (skill.cast != null) return Math.max(0, skill.cast);
+    if (skill.type === 'buff') return 5;
+    if (skill.type === 'heal') return 10;
+    const cd = skill.cooldown || 3;
+    return Math.min(80, Math.max(10, (cd - 2) * 12));
   }
   // 描述某一級會帶來的好處（給 UI 用）
   function describeSkillLevelEffect(skill, level) {
@@ -4145,6 +4156,8 @@
             pHp = Math.max(1, pHp - skill.hpCostFlat);
           }
           nextActionForSkill[skill.id] = playerActions + skill.cooldown;
+          // ⭐ 硬值：施放完 pGauge 額外扣 cast（重技能下次行動更慢）
+          pGauge -= getEffectiveCast(skill);
           // 成本說明字串（多種代價可能組合：MP / HP）
           const costParts = [];
           if (effMpCost > 0) costParts.push(`-${effMpCost} MP`);
@@ -5561,7 +5574,7 @@ ${b.text}
         <div style="font-weight:700; font-size:16px; color:#5b3d62;">${escapeHtml(skill.name)}</div>
         <div style="font-size:11px; color:#8b6f9b; margin-top:2px;">
           ${isLocked ? `🔒 Lv ${skill.unlockLv} 解鎖` : `等級 <b style="color:#7c3aed;">${lv}/${SKILL_MAX_LEVEL}</b>`}
-          　·　CD ${skill.cooldown}　·　${formatSkillCost(skill)}
+          　·　CD ${skill.cooldown}　·　硬值 ${getEffectiveCast(skill)}　·　${formatSkillCost(skill)}
         </div>
         <div style="font-size:12px; color:#7c3aed; margin-top:6px; padding:6px 8px; background:#f3e8ff; border-radius:8px;">
           ${formatSkillDesc(eff)}
@@ -5633,7 +5646,7 @@ ${b.text}
       const canUp = !locked && sLv < SKILL_MAX_LEVEL && points >= 1;
       return `<div class="skill-row${locked ? ' locked' : ''}" onclick="hideModal(); showSkillDetailModal('${s.id}')">
         <span>${locked ? '🔒' : '✓'} <b>${s.icon} ${s.name}</b>${sLv > 0 ? ` <span class="skill-row-lv">Lv ${sLv}/${SKILL_MAX_LEVEL}</span>` : ''}${locked ? ` <span style="font-size:10px;">(${s.unlockLv})</span>` : ''}${canUp ? ` <span style="font-size:9px; color:#7c3aed; font-weight:700;">⬆ 可升級</span>` : ''}</span>
-        <span style="opacity:0.85; font-size:10px; white-space:nowrap;">CD ${s.cooldown} · ${formatSkillCost(s)}</span>
+        <span style="opacity:0.85; font-size:10px; white-space:nowrap;">CD ${s.cooldown} · 硬值 ${getEffectiveCast(s)} · ${formatSkillCost(s)}</span>
       </div>`;
     }).join('');
     // ─ 屬性強化技能樹：直接 inline + 按鈕
