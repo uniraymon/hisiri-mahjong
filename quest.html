@@ -1060,6 +1060,11 @@
   .boss-leaderboard .bl-dmg { color: #fca5a5; font-weight: 700; }
   .boss-card .btn { margin-top: 0; }
   .boss-card .btn:disabled { background: #4b5563; box-shadow: none; }
+  @keyframes wb9KillFlash {
+    0%   { transform: scale(1.02); box-shadow: 0 0 0 3px #f59e0b; }
+    50%  { transform: scale(1.01); box-shadow: 0 0 0 6px #fde68a; }
+    100% { transform: scale(1);    box-shadow: none; }
+  }
 
   /* 行動規則編輯器 */
   .ap-list {
@@ -2694,6 +2699,8 @@
         head ? head.pid : '',
         head ? head.joinedAt : 0,
         s ? s.killCount : 0,
+        s?.lastKill?.ts || 0,
+        s ? (s.recentBattles || []).length : 0,
       ].join('|'));
     }
     return parts.join(';');
@@ -2745,6 +2752,47 @@
   }
 
   // 把 render 主體切出來（force 時用）
+  // ⭐ commit 4：最近戰報（每王卡片底部）
+  function wb9RecentBattlesHtml(state, boss) {
+    const list = (state && Array.isArray(state.recentBattles)) ? state.recentBattles : [];
+    if (!list.length) return '';
+    const rows = list.slice(0, 5).map(h => {
+      const dmg = h.dmgDealt != null ? h.dmgDealt.toLocaleString() : '?';
+      const att = escapeHtml(h.attackerName || '?');
+      const av  = h.attackerAvatar || '🎴';
+      const time = typeof formatRelativeTime === 'function' ? formatRelativeTime(h.ts) : '';
+      const killBadge = h.killed ? '<span style="background:#dc2626; color:#fff; font-size:10px; padding:1px 5px; border-radius:8px; margin-left:4px;">🏆尾刀</span>' : '';
+      return `
+        <div class="bq-row" style="font-size:12px; padding:4px 8px;">
+          <span style="min-width:22px;">${av}</span>
+          <div style="flex:1; display:flex; flex-direction:column; gap:1px;">
+            <span style="font-weight:600;">${att}${killBadge}</span>
+            <span style="color:#78716c; font-size:11px;">💢 ${dmg}　·　${time}</span>
+          </div>
+        </div>`;
+    }).join('');
+    return `
+      <div style="margin-top:8px; border-top:1px dashed #ddd6fe; padding-top:6px;">
+        <div style="font-size:11px; color:#7c3aed; font-weight:600; padding:0 6px 4px;">📜 最近戰報（${list.length}）</div>
+        ${rows}
+      </div>`;
+  }
+
+  // ⭐ commit 4：尾刀橫幅（王被殺時顯示 10 秒）
+  function wb9KillBannerHtml(state) {
+    const lk = state && state.lastKill;
+    if (!lk || !lk.ts) return '';
+    const elapsed = Date.now() - (lk.ts || 0);
+    if (elapsed > 10 * 60 * 1000) return ''; // 超過 10 分鐘不顯示
+    const killerPlayer = getPlayer(lk.pid);
+    const killerName = killerPlayer ? (killerPlayer.avatar || '🎴') + ' ' + escapeHtml(killerPlayer.name) : '?';
+    const ago = typeof formatRelativeTime === 'function' ? formatRelativeTime(lk.ts) : '';
+    return `
+      <div style="background:linear-gradient(135deg,#fef3c7,#fde68a); border:2px solid #f59e0b; border-radius:10px; padding:6px 10px; margin-bottom:6px; text-align:center; font-size:12px; animation:wb9KillFlash 1s ease;">
+        🏆 <b>${killerName}</b> 剛剛擊殺！${ago}
+      </div>`;
+  }
+
   function wb9RenderImpl(me, r, cdRemain, onCd, myQueuedBossId) {
     const el = document.getElementById('worldBossBody');
     if (!el) return;
@@ -2796,8 +2844,11 @@
       } else {
         actionHtml = `<button class="btn btn-primary" onclick="wb9JoinQueue('${boss.id}')" style="background:linear-gradient(135deg,#f59e0b,#dc2626); box-shadow:0 4px 0 #991b1b;">📋 加入排隊${queueCount > 0 ? `（前面 ${queueCount} 人）` : ''}</button>`;
       }
+      const killBanner       = wb9KillBannerHtml(state);
+      const recentBattlesHtml= wb9RecentBattlesHtml(state, boss);
       return `
         <div class="boss-card" data-bossid="${boss.id}">
+          ${killBanner}
           <div class="boss-header">
             <span class="boss-icon">${boss.icon}</span>
             <div>
@@ -2814,12 +2865,13 @@
             📋 排隊：${queueCount}　·　🏆 擊殺：${state.killCount}
           </div>
           ${actionHtml}
+          ${recentBattlesHtml}
         </div>
       `;
     }).join('');
     el.innerHTML = `
       <div style="font-size:11px; color:#92400e; padding:8px 10px; background:linear-gradient(135deg,#fef3c7,#fde68a); border:2px dashed #f59e0b; border-radius:10px; margin-bottom:10px; text-align:center;">
-        🛠️ <b>世界王 v9 — Commit 3</b>　排隊 + 攻擊可用（${WB9_TESTING_NO_REWARDS ? '測試：獎勵不發放' : '正式模式'}）<br>
+        🛠️ <b>世界王 v9 — Commit 4</b>　排隊 + 攻擊 + 戰報（${WB9_TESTING_NO_REWARDS ? '測試：獎勵不發放' : '正式模式'}）<br>
         <span style="font-size:10px; color:#a16207;">EXP 上限 ${WB9_MAX_XP_PER_FIGHT}　·　5 分鐘冷卻</span>
       </div>
       ${cardsHtml}
