@@ -1613,6 +1613,15 @@
         // ⭐ 自身 buff：疾風步（SPD +8 4 回合）/ 鷹眼（暴擊率 +20% 4 回合）
         { id: 'a_quickstep',   name: '疾風步',   icon: '💨', unlockLv: 6,  cooldown: 6, mpCost: 16, type: 'buff', selfBuff: { stat: 'spd', amount: 8, turns: 4 } },
         { id: 'a_eagle_eye',   name: '鷹眼',     icon: '🦅', unlockLv: 8,  cooldown: 6, mpCost: 18, type: 'buff', selfBuff: { stat: 'critChance', amount: 0.20, turns: 4 } },
+        // ⭐ 新弓手技能：豐富特色
+        // 吸血箭：低傷害但吸血，補血用
+        { id: 'a_lifesteal_arrow', name: '吸血箭', icon: '🩸', unlockLv: 7,  cooldown: 4, mpCost: 14, type: 'damage', mult: 1.2, lifesteal: 0.40 },
+        // 隱身：自身 buff，下一招必中暴擊（用 critChance buff 100% 1 回合）
+        { id: 'a_stealth',         name: '隱身',   icon: '🌫', unlockLv: 9,  cooldown: 7, mpCost: 0,  hpCostFlat: 30, type: 'buff', selfBuff: { stat: 'critChance', amount: 1.0, turns: 1 } },
+        // 風之歌：補 MP + SPD buff（兼顧補給）
+        { id: 'a_wind_song',       name: '風之歌', icon: '🎵', unlockLv: 4,  cooldown: 5, mpCost: 0,  type: 'heal', mpPct: 0.15, healPct: 0.05 },
+        // 遠程射手 LUK 系：本招暴擊率特高（已有 alwaysCrit 但這次也可以多目標）
+        { id: 'a_arrow_storm',     name: '箭雨',   icon: '🌧', unlockLv: 10, cooldown: 6, mpCost: 30, type: 'damage', mult: 1.0, targetCount: 'all' },
       ],
       skillTree: [
         { id: 'a_s0', name: '神之矢強化',   icon: '🌟', desc: '+10% 神之矢傷害',   maxLevel: 5, effect: 'skill0Pct', per: 0.10 },
@@ -1652,6 +1661,17 @@
         { id: 'm_poison_cloud',   name: '毒霧',       icon: '☠️', unlockLv: 7,  cooldown: 6, mpCost: 30, type: 'damage', flat: 30, perLv: 2, ignoreDef: true, targetCount: 'all', applyStatus: { type: 'poison', turns: 4, dmg: 10, chance: 0.85 } },
         // ⭐ 自身 buff：元素灌注（爆傷 +30% 4 回合）
         { id: 'm_arcane_focus',   name: '元素灌注',   icon: '🌀', unlockLv: 6,  cooldown: 5, mpCost: 18, type: 'buff', selfBuff: { stat: 'critDmg', amount: 0.30, turns: 4 } },
+        // ⭐ 新法師技能：豐富特色
+        // 血魔咒：用 50 HP 換大幅 ATK 加成（HP 代價）
+        { id: 'm_blood_pact',     name: '血魔契約', icon: '🩸', unlockLv: 8,  cooldown: 7, mpCost: 0,  hpCostFlat: 50, type: 'buff', selfBuff: { stat: 'atkPct', amount: 0.50, turns: 4 } },
+        // 冰封術：純狀態，0 傷害，100% 麻痺
+        { id: 'm_freeze',         name: '冰封術',     icon: '🧊', unlockLv: 7,  cooldown: 6, mpCost: 25, type: 'damage', mult: 0.3, applyStatus: { type: 'paralyze', turns: 2, chance: 1 } },
+        // 暗黑契約：花 25% maxHP 換爆傷大幅提升
+        { id: 'm_dark_pact',      name: '暗黑契約', icon: '🦇', unlockLv: 12, cooldown: 8, mpCost: 0,  hpCost: 0.25, type: 'buff', selfBuff: { stat: 'critDmg', amount: 0.80, turns: 5 } },
+        // 法力護甲：自身 DEF 強化（純法師也能撐）
+        { id: 'm_mana_shield',    name: '法力護甲',   icon: '🔷', unlockLv: 5,  cooldown: 5, mpCost: 22, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.50, turns: 3 } },
+        // 魔力虹吸：吸 MP + 傷害
+        { id: 'm_arcane_drain',   name: '魔力虹吸', icon: '🔮', unlockLv: 6,  cooldown: 5, mpCost: 0,  type: 'damage', flat: 40, perLv: 2, ignoreDef: true },
       ],
       skillTree: [
         { id: 'm_s0', name: '隕石術強化', icon: '☄️', desc: '+10% 隕石術傷害', maxLevel: 5, effect: 'skill0Pct', per: 0.10 },
@@ -1691,6 +1711,17 @@
         { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 11, cooldown: 6, mpCost: 35, type: 'damage', mult: 1.7, targetCount: 2, applyStatus: { type: 'paralyze', turns: 2, chance: 0.4 } },
         // ⭐ 自身 buff：神聖祝福（DEF +40% 3 回合）
         { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 5,  cooldown: 6, mpCost: 18, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.40, turns: 3 } },
+        // ⭐ 新聖騎技能：以 DEF / maxHp 結算傷害 + 反傷
+        // 護盾衝鋒：DEF 結算傷害（DEF 越高傷害越高）
+        { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 6,  cooldown: 5, mpCost: 22, type: 'damage', defMult: 4 },
+        // 神聖風暴：以 maxHp 結算傷害（兩個目標 / 魔攻）
+        { id: 'p_divine_storm',  name: '神聖風暴', icon: '🌪', unlockLv: 9,  cooldown: 6, mpCost: 28, type: 'damage', maxHpMult: 0.40, targetCount: 2 },
+        // 棘甲術：反傷 buff
+        { id: 'p_thorn_armor',   name: '棘甲術',   icon: '🌵', unlockLv: 8,  cooldown: 6, mpCost: 22, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.40, turns: 4 } },
+        // 反傷護盾：高量反傷 + DEF buff
+        { id: 'p_aegis',         name: '反傷護盾', icon: '🪞', unlockLv: 12, cooldown: 8, mpCost: 30, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.70, turns: 3 } },
+        // 信仰之力：以 maxHp 結算大傷害（魔攻、單目標、必爆）
+        { id: 'p_divine_wrath',  name: '神之裁決', icon: '⚡', unlockLv: 14, cooldown: 8, mpCost: 38, type: 'damage', maxHpMult: 0.65, alwaysCrit: true },
       ],
       skillTree: [
         { id: 'p_s0', name: '審判強化',   icon: '⚖️', desc: '+10% 審判傷害',   maxLevel: 5, effect: 'skill0Pct', per: 0.10 },
@@ -2197,52 +2228,52 @@
     }
   }
 
-  // ⭐ 技能等級系統：用技能點升級，最多 5 級
-  // 每級 +10% 效果（傷害 / 治療量 / MP 回復）
+  // ⭐ 技能等級系統：用技能點升級，最多 10 級
+  // Lv 1-5：每級 +10% 效果（前段加成快）
+  // Lv 6-10：每級 +5% 效果（後段加成放緩）
   // Lv 3 強化 applyStatus（機率 / 持續 / 傷害）
-  // Lv 5 額外加成：依技能特性給「不一樣」的好處（不再一律必中暴擊）
-  //   - 有 applyStatus（毒/麻痺）：持續 +2 回合 + 觸發機率封頂
-  //   - 有 lifesteal：吸血 +10%
-  //   - 有 healCaster：自癒 +5% maxHP
-  //   - 是 heal 技能：MP 消耗 -25%
-  //   - 本來就是 alwaysCrit 的：爆傷 +25%（這次施放專屬）
-  //   - 其他傷害技能：暴擊率 +20%（不是必中）
-  const SKILL_MAX_LEVEL = 5;
+  // Lv 5 額外加成：依技能特性（必爆 / 暴擊率 / 吸血 / 自癒 / MP 折扣 / buff 持續 ...）
+  // Lv 10 二段加成：再給一波 lv5Kind 對應的強化
+  const SKILL_MAX_LEVEL = 10;
   function getSkillEffectiveStats(skill, level) {
     const eff = { ...skill };
     if (!level || level <= 0) return eff;
-    const dmgBonus = level * 0.10;
+    // 累進加成：Lv 1-5 每級 +10%，Lv 6-10 每級 +5%
+    const dmgBonus = Math.min(level, 5) * 0.10 + Math.max(0, level - 5) * 0.05;
     if (skill.mult)         eff.mult     = +(skill.mult * (1 + dmgBonus)).toFixed(3);
     if (skill.flat != null) eff.flat     = Math.round(skill.flat * (1 + dmgBonus));
     if (skill.healPct)      eff.healPct  = +(skill.healPct * (1 + dmgBonus)).toFixed(3);
     if (skill.mpPct)        eff.mpPct    = +(skill.mpPct * (1 + dmgBonus)).toFixed(3);
+    if (skill.defMult)      eff.defMult  = +(skill.defMult * (1 + dmgBonus)).toFixed(3);
+    if (skill.maxHpMult)    eff.maxHpMult= +(skill.maxHpMult * (1 + dmgBonus)).toFixed(3);
     if (level >= 3 && skill.applyStatus) {
       eff.applyStatus = {
         ...skill.applyStatus,
-        chance: Math.min(1, (skill.applyStatus.chance || 1) * (1 + (level - 2) * 0.15)),
-        turns: (skill.applyStatus.turns || 1) + (level >= 5 ? 2 : 1),
+        chance: Math.min(1, (skill.applyStatus.chance || 1) * (1 + (level - 2) * 0.12)),
+        turns: (skill.applyStatus.turns || 1) + (level >= 10 ? 3 : level >= 5 ? 2 : 1),
         dmg: Math.round((skill.applyStatus.dmg || 0) * (1 + dmgBonus)),
       };
     }
-    // 自身 buff（嗜血怒嚎、神聖祝福...）：每級 +10% 量
+    // 自身 buff（嗜血怒嚎、神聖祝福、反傷護盾...）：每級 +量
     if (skill.selfBuff) {
       eff.selfBuff = {
         ...skill.selfBuff,
         amount: +(skill.selfBuff.amount * (1 + dmgBonus)).toFixed(3),
       };
     }
-    // ⭐ Lv 5 多元化加成（不再一律必中暴擊）
-    if (level >= 5) {
+    // ⭐ Lv 5 + Lv 10 雙段加成
+    const applyKindBonus = (mult) => {
       const k = lv5BonusKind(skill);
-      if (k === 'lifesteal')    eff.lifesteal  = +((eff.lifesteal  || 0) + 0.10).toFixed(3);
-      else if (k === 'heal')    eff.healCaster = +((eff.healCaster || 0) + 0.05).toFixed(3);
-      else if (k === 'restore') eff.mpCostMult = (eff.mpCostMult || 1) * 0.75;
-      else if (k === 'critDmg') eff.extraCritDmg = (eff.extraCritDmg || 0) + 0.25;
-      else if (k === 'crit')    eff.extraCritChance = (eff.extraCritChance || 0) + 0.20;
-      else if (k === 'buff' && eff.selfBuff) eff.selfBuff = { ...eff.selfBuff, turns: (eff.selfBuff.turns || 1) + 1 };
-      // 'status' 已被前面的 applyStatus 加成涵蓋
+      if (k === 'lifesteal')    eff.lifesteal  = +((eff.lifesteal  || 0) + 0.10 * mult).toFixed(3);
+      else if (k === 'heal')    eff.healCaster = +((eff.healCaster || 0) + 0.05 * mult).toFixed(3);
+      else if (k === 'restore') eff.mpCostMult = (eff.mpCostMult || 1) * (1 - 0.25 * mult);
+      else if (k === 'critDmg') eff.extraCritDmg = (eff.extraCritDmg || 0) + 0.25 * mult;
+      else if (k === 'crit')    eff.extraCritChance = (eff.extraCritChance || 0) + 0.20 * mult;
+      else if (k === 'buff' && eff.selfBuff) eff.selfBuff = { ...eff.selfBuff, turns: (eff.selfBuff.turns || 1) + Math.round(mult) };
       eff.lv5Kind = k;
-    }
+    };
+    if (level >= 5)  applyKindBonus(1);
+    if (level >= 10) applyKindBonus(1); // 第 10 級再給一波
     return eff;
   }
   // 判斷某技能 Lv 5 應該拿什麼樣的加成
@@ -2269,9 +2300,11 @@
   }
   // 描述某一級會帶來的好處（給 UI 用）
   function describeSkillLevelEffect(skill, level) {
-    const parts = [`+${level * 10}% 效果`];
+    const totalPct = Math.round((Math.min(level, 5) * 10 + Math.max(0, level - 5) * 5));
+    const parts = [`效果 +${totalPct}%`];
     if (level === 3 && skill.applyStatus) parts.push(`${statusEmoji(skill.applyStatus.type)} ${statusLabel(skill.applyStatus.type)} 機率/持續 +`);
-    if (level === 5) parts.push(describeLv5Bonus(skill));
+    if (level === 5)  parts.push(describeLv5Bonus(skill));
+    if (level === 10) parts.push('🌟 ' + describeLv5Bonus(skill) + '（再強化）');
     return parts.join('、');
   }
 
@@ -2292,13 +2325,17 @@
         ];
       case 'archer':
         return [
-          { judgeId: 1000, param: 0,  skillId: 'a_eagle_eye' },      // 鷹眼（暴擊率 +20% buff）
-          { judgeId: 1000, param: 0,  skillId: 'a_quickstep' },      // 疾風步（SPD +8 buff）
+          { judgeId: 1101, param: 50, skillId: 'a_lifesteal_arrow' }, // HP 不足時用吸血箭補血
+          { judgeId: 1201, param: 30, skillId: 'a_wind_song' },       // MP 不足回 MP
+          { judgeId: 1000, param: 0,  skillId: 'a_eagle_eye' },       // 鷹眼（暴擊率 +20% buff）
+          { judgeId: 1000, param: 0,  skillId: 'a_quickstep' },       // 疾風步（SPD +8 buff）
           { judgeId: 1300, param: 25, skillId: 'a_lethal_aim' },
           { judgeId: 1300, param: 40, skillId: 'a_god_arrow' },
           { judgeId: 1201, param: 25, skillId: 'a_concentrate' },
-          { judgeId: 1000, param: 0,  skillId: 'a_twin_shot' },      // 雙箭齊發（2 目標）
-          { judgeId: 1000, param: 0,  skillId: 'a_poison_arrow' },   // 毒箭（中毒）
+          { judgeId: 1450, param: 2,  skillId: 'a_arrow_storm' },     // 多怪用箭雨
+          { judgeId: 1000, param: 0,  skillId: 'a_twin_shot' },       // 雙箭齊發（2 目標）
+          { judgeId: 1000, param: 0,  skillId: 'a_poison_arrow' },    // 毒箭（中毒）
+          { judgeId: 1000, param: 0,  skillId: 'a_stealth' },         // 隱身（必中暴擊 buff，HP 代價）
           { judgeId: 1000, param: 0,  skillId: 'a_barrage' },
           { judgeId: 1000, param: 0,  skillId: 'a_multishot' },
           { judgeId: 1000, param: 0,  skillId: 'a_precise_shot' },
@@ -2308,13 +2345,17 @@
         return [
           { judgeId: 1201, param: 25, skillId: 'm_mana_spring' },
           { judgeId: 1101, param: 40, skillId: 'm_arcane_shield' },
-          { judgeId: 1000, param: 0,  skillId: 'm_arcane_focus' },   // 元素灌注（爆傷 +30% buff）
+          { judgeId: 1000, param: 0,  skillId: 'm_mana_shield' },     // 法力護甲（DEF 50% buff）
+          { judgeId: 1000, param: 0,  skillId: 'm_arcane_focus' },    // 元素灌注（爆傷 +30% buff）
+          { judgeId: 1101, param: 50, skillId: 'm_blood_pact' },      // HP 還足時用血魔契約換 ATK
           { judgeId: 1300, param: 20, skillId: 'm_destruction' },
-          { judgeId: 1000, param: 0,  skillId: 'm_firestorm' },      // 火焰風暴（AOE）
-          { judgeId: 1000, param: 0,  skillId: 'm_poison_cloud' },   // 毒霧（AOE + 中毒）
+          { judgeId: 1000, param: 0,  skillId: 'm_firestorm' },       // 火焰風暴（AOE）
+          { judgeId: 1000, param: 0,  skillId: 'm_poison_cloud' },    // 毒霧（AOE + 中毒）
           { judgeId: 1300, param: 50, skillId: 'm_meteor' },
+          { judgeId: 1000, param: 0,  skillId: 'm_freeze' },          // 冰封術（純麻痺）
           { judgeId: 1000, param: 0,  skillId: 'm_chain_lightning' },
           { judgeId: 1000, param: 0,  skillId: 'm_ice_lance' },
+          { judgeId: 1000, param: 0,  skillId: 'm_arcane_drain' },    // 魔力虹吸（不耗 MP）
           { judgeId: 1000, param: 0,  skillId: 'm_fireball' },
           { judgeId: 1000, param: 0,  skillId: 'basic' },
         ];
@@ -2322,11 +2363,16 @@
         return [
           { judgeId: 1101, param: 35, skillId: 'p_shelter' },
           { judgeId: 1101, param: 60, skillId: 'p_holy_heal' },
-          { judgeId: 1000, param: 0,  skillId: 'p_blessing' },       // 神聖祝福（DEF +40% buff）
+          { judgeId: 1000, param: 0,  skillId: 'p_thorn_armor' },     // 棘甲術（反傷 40% buff）
+          { judgeId: 1000, param: 0,  skillId: 'p_blessing' },        // 神聖祝福（DEF +40% buff）
           { judgeId: 1201, param: 25, skillId: 'p_pray' },
+          { judgeId: 1300, param: 25, skillId: 'p_divine_wrath' },    // 神之裁決（maxHP × 0.65 必爆）
           { judgeId: 1300, param: 30, skillId: 'p_judgment' },
-          { judgeId: 1000, param: 0,  skillId: 'p_godfist' },        // 神之拳（2 目標 + 麻痺）
-          { judgeId: 1000, param: 0,  skillId: 'p_holy_wave' },      // 神聖光波（2 目標 + 自癒）
+          { judgeId: 1000, param: 0,  skillId: 'p_aegis' },           // 反傷護盾（70% reflect）
+          { judgeId: 1000, param: 0,  skillId: 'p_divine_storm' },    // 神聖風暴（maxHP 結算 / 多目標）
+          { judgeId: 1000, param: 0,  skillId: 'p_shield_charge' },   // 護盾衝鋒（DEF 結算）
+          { judgeId: 1000, param: 0,  skillId: 'p_godfist' },         // 神之拳（2 目標 + 麻痺）
+          { judgeId: 1000, param: 0,  skillId: 'p_holy_wave' },       // 神聖光波（2 目標 + 自癒）
           { judgeId: 1000, param: 0,  skillId: 'p_holy_smite' },
           { judgeId: 1000, param: 0,  skillId: 'p_holy_slash' },
           { judgeId: 1000, param: 0,  skillId: 'basic' },
@@ -3832,9 +3878,12 @@
 
     // ATB（Active Time Battle）：每個單位的「行動條」依速度填滿
     // 條滿（達到 ATB_THRESHOLD）即出手；速度越快、填滿越快、出手越頻繁
+    // ⭐ SPD_BASE 扁平化：把雙方 SPD 加上一個基礎值，避免「玩家 SPD 比怪高 2 倍 → 出手 2 倍」這種極端比例
+    //    e.g. 你 30 vs 怪 10 → 原本 3:1，加 30 之後變 (60:40) = 1.5:1
     const ATB_THRESHOLD = 100;
-    let pSpd = Math.max(1, effectiveSpd);   // 受 buff 影響，每回合會重算
-    const mSpd = Math.max(1, monster.spd);
+    const SPD_BASE = 30;
+    let pSpd = Math.max(1, SPD_BASE + effectiveSpd);   // 受 buff 影響，每回合會重算
+    const mSpd = Math.max(1, SPD_BASE + monster.spd);
     // 雙方都從 0 開始填條，誰先達到 100 誰先出手（速度高自然先到）
     let pGauge = 0, mGauge = 0;
     // 狀態追蹤（玩家身上的 buff/中毒/麻痺 + 怪物身上的中毒/麻痺）
@@ -3844,7 +3893,7 @@
     const mSkillLast = {};
 
     log.push({ type: 'system', text: `═══ ⚔️ ${player.name} VS ${monster.icon} ${monster.name} Lv ${monster.level} ═══` });
-    log.push({ type: 'system', text: `🌬 速度：你 ${pSpd} vs ${monster.name} ${mSpd}（行動頻率比 ${(pSpd/mSpd).toFixed(2)} : 1）` });
+    log.push({ type: 'system', text: `🌬 速度：你 ${effectiveSpd} vs ${monster.name} ${monster.spd}（行動頻率比 ${(pSpd/mSpd).toFixed(2)} : 1）` });
     if (monster.dialogue && monster.dialogue.length) {
       const line = monster.dialogue[Math.floor(Math.random() * monster.dialogue.length)];
       log.push({ type: 'monster', text: `${monster.icon} ${monster.name}：「${line}」` });
@@ -3859,7 +3908,7 @@
     while (pHp > 0 && mHp > 0 && round < 80) {
       // 重算 pSpd（含 buff）
       const pBuff = getBuffBonus(playerObj);
-      pSpd = Math.max(1, effectiveSpd + (pBuff.spd || 0));
+      pSpd = Math.max(1, SPD_BASE + effectiveSpd + (pBuff.spd || 0));
       // 推進時間：跳到下一個「條滿」的瞬間
       const pNeed = Math.max(0, ATB_THRESHOLD - pGauge);
       const mNeed = Math.max(0, ATB_THRESHOLD - mGauge);
@@ -3971,9 +4020,16 @@
           if (skill.type === 'damage') {
             let dmg;
             const isFlat = skill.flat != null;
-            // 受 buff 影響的攻擊力
+            // 受 buff 影響的攻擊力 / 防禦力 / 最大生命
             const effAtk = stats.atk * (1 + (pBuff.atkPct || 0));
-            if (isFlat) {
+            const effDef = stats.def * (1 + (pBuff.defPct || 0));
+            if (skill.defMult != null) {
+              // ⭐ 聖騎風格：以 DEF 結算傷害
+              dmg = effDef * skill.defMult - Math.floor(monster.def / 2);
+            } else if (skill.maxHpMult != null) {
+              // ⭐ 聖騎風格：以 maxHp 結算傷害（魔攻）
+              dmg = stats.maxHp * skill.maxHpMult - Math.floor(monster.def / 2);
+            } else if (isFlat) {
               dmg = (skill.flat + (bonus.skillFlat || 0) + (abil.skillFlat || 0)) + (skill.perLv || 0) * (player.rpg.level || 1);
               if (!skill.ignoreDef) dmg -= Math.floor(monster.def / 2);
             } else {
@@ -3984,8 +4040,8 @@
             dmg *= (1 + (bonus[perSkillKey] || 0));
             // 通用 skillDmgPct（保留舊邏輯）
             dmg *= (1 + (bonus.skillDmgPct || 0));
-            // 是否走「魔攻」邏輯：flat 公式 OR 顯式 magic flag
-            const isMagic = isFlat || skill.magic;
+            // 是否走「魔攻」邏輯：flat / maxHpMult / 顯式 magic flag
+            const isMagic = isFlat || skill.maxHpMult != null || skill.magic;
             // 職業被動：物理或法術加成
             if (isMagic) dmg *= (1 + (passive.flatPct || 0));
             else         dmg *= (1 + (passive.physPct || 0));
@@ -4107,6 +4163,13 @@
         }
         // 防禦受 buff 影響
         const effDef = stats.def * (1 + (pBuff.defPct || 0));
+        // 反傷：玩家身上有 reflectPct 時，怪打到我會被反彈一部分
+        const applyReflect = (incomingDmg) => {
+          if (!pBuff.reflectPct || incomingDmg <= 0 || mHp <= 0) return;
+          const r = Math.max(1, Math.round(incomingDmg * pBuff.reflectPct));
+          mHp -= r;
+          log.push({ type: 'crit-player', text: `回合 ${round}：🪞 反傷 → ${monster.name} -${r} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+        };
         let dead = false;
         if (mSkill) {
           let dmg = Math.max(1, monster.atk * (mSkill.mult || 1) - (mSkill.ignoreDef ? 0 : Math.floor(effDef / 2)));
@@ -4119,7 +4182,9 @@
             text: `回合 ${round}：${monster.icon}${monster.name} ✨${mSkill.verb || '技能'} → ${player.name} -${dmg} HP`,
             hp: { player: pHp, monster: mHp, mp: pMp }
           });
+          applyReflect(dmg);
           if (pHp <= 0) { dead = true; }
+          if (mHp <= 0) { pushDeathLine(); break; }
           // 對玩家上狀態
           if (!dead && mSkill.applyStatus && Math.random() < (mSkill.applyStatus.chance || 1)) {
             applyStatus(playerObj, mSkill.applyStatus);
@@ -4141,6 +4206,8 @@
               text: `回合 ${round}：${monster.name} ${monster.verb}${hits > 1 ? `（${h+1}/${hits}）` : ''} → ${player.name} -${dmg} HP`,
               hp: { player: Math.max(0, pHp), monster: mHp, mp: pMp }
             });
+            applyReflect(dmg);
+            if (mHp <= 0) { pushDeathLine(); dead = true; break; }
             if (pHp <= 0) { dead = true; break; }
           }
         }
@@ -4206,9 +4273,9 @@
   function hasStatus(target, type) {
     return (target.statuses || []).some(s => s.type === type);
   }
-  // 把目前生效的 buff 加總（atkPct/defPct/spd/critChance/critDmg）
+  // 把目前生效的 buff 加總（atkPct/defPct/spd/critChance/critDmg/reflectPct）
   function getBuffBonus(target) {
-    const out = { atkPct: 0, defPct: 0, spd: 0, critChance: 0, critDmg: 0 };
+    const out = { atkPct: 0, defPct: 0, spd: 0, critChance: 0, critDmg: 0, reflectPct: 0 };
     if (!target || !target.statuses) return out;
     for (const s of target.statuses) {
       if (s.type !== 'buff' || !s.stat) continue;
@@ -4223,6 +4290,7 @@
     if (buff.stat === 'spd')        return `💨 SPD +${buff.amount}`;
     if (buff.stat === 'critChance') return `🎯 暴擊率 +${Math.round(buff.amount * 100)}%`;
     if (buff.stat === 'critDmg')    return `💥 爆傷 +${Math.round(buff.amount * 100)}%`;
+    if (buff.stat === 'reflectPct') return `🪞 反傷 ${Math.round(buff.amount * 100)}%`;
     return `✨ ${buff.stat} +${buff.amount}`;
   }
   function statusEmoji(type) {
@@ -4270,14 +4338,17 @@
       : getDefaultActionPattern(player.rpg.class);
 
     const ATB_THRESHOLD = 100;
-    let pSpd = Math.max(1, effectiveSpd); // 受 buff 影響，每回合會重算
+    const SPD_BASE = 30; // ⭐ 扁平化：每方加上基礎值，避免極端比例
+    let pSpd = Math.max(1, SPD_BASE + effectiveSpd); // 受 buff 影響，每回合會重算
     let pGauge = 0;
+    // 把怪物 gauge 速度也加 SPD_BASE
+    mList.forEach(m => { m._effSpd = Math.max(1, SPD_BASE + (m.spd || 0)); });
     // 怪物技能冷卻（每隻獨立）
     const mSkillLastByIdx = {}; // mSkillLastByIdx[mIdx][skillIdx] = round
 
     log.push({ type: 'system', text: `═══ ⚔️ 試煉戰場 ═══` });
     log.push({ type: 'system', text: `${player.name} VS ${monsters.map(m => m.icon + m.name).join(' / ')}` });
-    log.push({ type: 'system', text: `🌬 你 SPD ${pSpd}　·　${monsters.map(m => m.name + ' ' + m.spd).join(' / ')}` });
+    log.push({ type: 'system', text: `🌬 你 SPD ${effectiveSpd}　·　${monsters.map(m => m.name + ' ' + m.spd).join(' / ')}` });
 
     let round = 0, playerActions = 0, critCount = 0;
     const hpsSnapshot = () => ({ player: pHp, mp: pMp, monsters: mList.map(m => Math.max(0, m.hp)) });
@@ -4285,15 +4356,15 @@
     while (pHp > 0 && mList.some(m => m.alive) && round < 120) {
       // 重算 pSpd（含 buff）
       const pBuff = getBuffBonus(playerObj);
-      pSpd = Math.max(1, effectiveSpd + (pBuff.spd || 0));
-      // ATB 推進
+      pSpd = Math.max(1, SPD_BASE + effectiveSpd + (pBuff.spd || 0));
+      // ATB 推進（用 _effSpd 已加 SPD_BASE）
       const aliveM = mList.filter(m => m.alive);
       const pNeed = Math.max(0, ATB_THRESHOLD - pGauge);
       const pTime = pNeed / pSpd;
-      const mTimes = aliveM.map(m => Math.max(0, ATB_THRESHOLD - m.gauge) / Math.max(1, m.spd));
+      const mTimes = aliveM.map(m => Math.max(0, ATB_THRESHOLD - m.gauge) / Math.max(1, m._effSpd));
       const dt = Math.min(pTime, ...(mTimes.length ? mTimes : [Infinity]));
       pGauge += dt * pSpd;
-      aliveM.forEach(m => m.gauge += dt * m.spd);
+      aliveM.forEach(m => m.gauge += dt * m._effSpd);
 
       // 決定動作者：所有 gauge ≥ 100 的中，最大者；同分玩家先
       let actor = null; // 'player' or monster ref
@@ -4388,13 +4459,18 @@
 
           if (skill.type === 'damage') {
             const isFlat = skill.flat != null;
-            const isMagic = isFlat || skill.magic;
+            const isMagic = isFlat || skill.maxHpMult != null || skill.magic;
             const effAtk = stats.atk * (1 + (pBuff.atkPct || 0));
+            const effDef = stats.def * (1 + (pBuff.defPct || 0));
             // 對每個目標各打一發（不分散傷害）
             const hits = [];
             for (const tgt of targets) {
               let dmg;
-              if (isFlat) {
+              if (skill.defMult != null) {
+                dmg = effDef * skill.defMult - Math.floor(tgt.def / 2);
+              } else if (skill.maxHpMult != null) {
+                dmg = stats.maxHp * skill.maxHpMult - Math.floor(tgt.def / 2);
+              } else if (isFlat) {
                 dmg = (skill.flat + (bonus.skillFlat || 0) + (abil.skillFlat || 0)) + (skill.perLv || 0) * (player.rpg.level || 1);
                 if (!skill.ignoreDef) dmg -= Math.floor(tgt.def / 2);
               } else {
@@ -4533,6 +4609,14 @@
             cdMap[pick.si] = round;
           }
         }
+        // 反傷
+        const applyReflect2 = (incomingDmg) => {
+          if (!pBuff.reflectPct || incomingDmg <= 0 || !m.alive) return;
+          const r = Math.max(1, Math.round(incomingDmg * pBuff.reflectPct));
+          m.hp = Math.max(0, m.hp - r);
+          if (m.hp <= 0) m.alive = false;
+          log.push({ type: 'crit-player', text: `回合 ${round}：🪞 反傷 → ${m.icon}${m.name} -${r} HP`, hp: hpsSnapshot() });
+        };
         if (mSkill) {
           let dmg = Math.max(1, m.atk * (mSkill.mult || 1) - (mSkill.ignoreDef ? 0 : Math.floor(effDef / 2)));
           dmg *= (0.85 + Math.random() * 0.3);
@@ -4544,6 +4628,7 @@
             text: `回合 ${round}：${m.icon}${m.name} ✨${mSkill.verb || '技能'} → ${player.name} -${dmg} HP`,
             hp: hpsSnapshot(),
           });
+          applyReflect2(dmg);
           if (pHp > 0 && mSkill.applyStatus && Math.random() < (mSkill.applyStatus.chance || 1)) {
             applyStatus(playerObj, mSkill.applyStatus);
             log.push({ type: 'system', text: `回合 ${round}：${player.name} 進入 ${statusEmoji(mSkill.applyStatus.type)}${statusLabel(mSkill.applyStatus.type)} 狀態`, hp: hpsSnapshot() });
@@ -4564,6 +4649,8 @@
               text: `回合 ${round}：${m.icon}${m.name} ${m.verb || '攻擊'}${hits > 1 ? ` (${h+1}/${hits})` : ''} → ${player.name} -${dmg} HP`,
               hp: hpsSnapshot(),
             });
+            applyReflect2(dmg);
+            if (!m.alive) break;
             if (pHp <= 0) break;
           }
         }
@@ -5675,6 +5762,8 @@ ${b.text}
     if (s.type === 'buff' && s.selfBuff) {
       return `${describeBuff(s.selfBuff)}　持續 ${s.selfBuff.turns} 回合`;
     }
+    if (s.defMult != null)   return `${s.defMult}× DEF 傷害`;
+    if (s.maxHpMult != null) return `${Math.round(s.maxHpMult * 100)}% maxHP 傷害（魔攻）`;
     if (s.flat != null) return `固定 ${s.flat}+Lv×${s.perLv} 傷害${s.ignoreDef ? '（無視防）' : ''}`;
     let parts = [];
     if (s.mult) parts.push(`${s.mult}× ATK${s.magic ? '（魔攻）' : ''}`);
