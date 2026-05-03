@@ -5052,14 +5052,12 @@
               pHp = Math.min(stats.maxHp, pHp + heal);
               if (pHp - before > 0) gainedParts.push(`💚+${pHp - before} HP`);
             }
-            if (skill.mpFlat) {
+            // ⭐ mpFlat / mpPct 都套用（不再 else if）— 回魔技要兩部分都吃到
+            if (skill.mpFlat || skill.mpPct) {
               const before = pMp;
-              pMp = Math.min(stats.maxMp, pMp + skill.mpFlat);
-              if (pMp - before > 0) gainedParts.push(`💙+${pMp - before} MP`);
-            } else if (skill.mpPct) {
-              const before = pMp;
-              const mpHeal = Math.round(stats.maxMp * skill.mpPct);
-              pMp = Math.min(stats.maxMp, pMp + mpHeal);
+              const flat = skill.mpFlat || 0;
+              const pct  = skill.mpPct ? Math.round(stats.maxMp * skill.mpPct) : 0;
+              pMp = Math.min(stats.maxMp, pMp + flat + pct);
               if (pMp - before > 0) gainedParts.push(`💙+${pMp - before} MP`);
             }
             const gainedStr = gainedParts.length ? gainedParts.join(' ') : '無效果';
@@ -5560,14 +5558,12 @@
               pHp = Math.min(stats.maxHp, pHp + heal);
               if (pHp - before > 0) gainedParts.push(`💚+${pHp - before} HP`);
             }
-            if (skill.mpFlat) {
+            // ⭐ mpFlat / mpPct 都套用（不再 else if）
+            if (skill.mpFlat || skill.mpPct) {
               const before = pMp;
-              pMp = Math.min(stats.maxMp, pMp + skill.mpFlat);
-              if (pMp - before > 0) gainedParts.push(`💙+${pMp - before} MP`);
-            } else if (skill.mpPct) {
-              const before = pMp;
-              const mpHeal = Math.round(stats.maxMp * skill.mpPct);
-              pMp = Math.min(stats.maxMp, pMp + mpHeal);
+              const flat = skill.mpFlat || 0;
+              const pct  = skill.mpPct ? Math.round(stats.maxMp * skill.mpPct) : 0;
+              pMp = Math.min(stats.maxMp, pMp + flat + pct);
               if (pMp - before > 0) gainedParts.push(`💙+${pMp - before} MP`);
             }
             log.push({
