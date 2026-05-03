@@ -2391,6 +2391,134 @@
     },
   ];
 
+  // ============================================================
+  // 🐉 世界王 v9（重寫版，獨立命名空間 — 不沾舊 worldBoss state）
+  // ============================================================
+  // 設計原則：
+  //   1. 資料模型精簡：只留 hp / queue / damageLog / killCount / recentBattles / lastKill
+  //   2. 獎勵直接發（在 attack tx 內寫進 player）— 不再有 pendingRewards / claimMyBossRewards
+  //   3. 死亡 = 立刻 maxHp 重生（不留 deadAt / nextSpawnAt）
+  //   4. 排隊單一規則：queue[0].joinedAt 過期 60s → tx 內自動 shift
+  //   5. Render 差異更新：data-* 屬性 + 1 秒 tick 只 patch 文字
+  // ----------------
+  // 開發階段旗標：
+  //   WB9_TESTING_NO_REWARDS = true → 獎勵都不發（避免測試弄壞玩家進度）
+  //   設為 false 後恢復正常結算
+  const WB9_TESTING_NO_REWARDS = true;     // ⭐ 測試期間：不發鵝鵝幣 / 王硬幣 / 精魂 / EXP
+  const WB9_MAX_XP_PER_FIGHT   = 500;      // ⭐ v9 單場最多 500 EXP（舊版 1000）
+  const WB9_QUEUE_STALE_MS     = 60 * 1000;
+  const WB9_COOLDOWN_MS        = 5 * 60 * 1000;
+  const WB9_BOSSES = [
+    {
+      id: 'goose_king',
+      name: '🦢 鵝皇', icon: '🦢',
+      maxHp: 90000,
+      atk: 143, def: 38, spd: 12,
+      level: 30,
+      verb: '皇者懲戒',
+      ability: { type: 'multiHit', hits: 2 },
+      bossCoin: { id: 'bc_goose_king', name: '鵝皇硬幣', icon: '👑' },
+      rewardKiller: { coins: 2000 },
+      rewardTop:    { coins: 1000 },
+      rewardSecond: { coins: 500 },
+      rewardThird:  { coins: 250 },
+      rewardParticipant: { coins: 100 },
+    },
+    {
+      id: 'dragon_goose',
+      name: '🐉 古龍鵝', icon: '🐉',
+      maxHp: 200000,
+      atk: 210, def: 50, spd: 14,
+      level: 40,
+      verb: '龍焰之息',
+      ability: { type: 'physResist', resist: 0.25 },
+      bossCoin: { id: 'bc_dragon_goose', name: '古龍鵝硬幣', icon: '🐲' },
+      rewardKiller: { coins: 5000 },
+      rewardTop:    { coins: 2500 },
+      rewardSecond: { coins: 1500 },
+      rewardThird:  { coins: 750 },
+      rewardParticipant: { coins: 200 },
+    },
+    {
+      id: 'pebble_goose',
+      name: '🪨 鵝卵石', icon: '🪨',
+      maxHp: 5000000,
+      atk: 203, def: 65, spd: 8,
+      level: 55,
+      verb: '崩落巨石',
+      ability: { type: 'physResist', resist: 0.30 },
+      bossCoin: { id: 'bc_pebble_goose', name: '鵝卵石硬幣', icon: '🪨' },
+      rewardKiller: { coins: 12000 },
+      rewardTop:    { coins: 6000 },
+      rewardSecond: { coins: 3500 },
+      rewardThird:  { coins: 2000 },
+      rewardParticipant: { coins: 500 },
+    },
+  ];
+
+  // 雲端 state：rooms/{ROOM_ID}.wb9 = { bossId: { hp, queue, damageLog, killCount, recentBattles, lastKill } }
+  let wb9 = {};
+
+  // 取得 / 初始化單一 boss 的 state
+  function wb9GetState(bossId) {
+    if (!wb9 || typeof wb9 !== 'object') wb9 = {};
+    const def = WB9_BOSSES.find(b => b.id === bossId);
+    if (!def) return null;
+    if (!wb9[bossId]) {
+      wb9[bossId] = {
+        hp: def.maxHp,
+        queue: [],
+        damageLog: {},
+        killCount: 0,
+        recentBattles: [],
+        lastKill: null,
+      };
+    }
+    return wb9[bossId];
+  }
+
+  // commit 1：基本顯示（沒交互、無按鈕、無獎勵）
+  // 後續 commit 會加 queue / attack / rewards / hash diff
+  function wb9Render() {
+    const el = document.getElementById('worldBossBody');
+    if (!el) return;
+    const cardsHtml = WB9_BOSSES.map(boss => {
+      const state = wb9GetState(boss.id);
+      const hpPct = Math.max(0, Math.min(100, (state.hp / boss.maxHp) * 100));
+      const queueCount = (state.queue || []).length;
+      return `
+        <div class="boss-card" data-bossid="${boss.id}" style="opacity:0.92;">
+          <div class="boss-header">
+            <span class="boss-icon">${boss.icon}</span>
+            <div>
+              <div class="boss-name">${boss.name} <span style="font-size:11px; color:#a16207; font-weight:600;">Lv ${boss.level}</span></div>
+              <div class="boss-status">⚔️ ATK ${boss.atk} / DEF ${boss.def}　·　${boss.verb}</div>
+            </div>
+          </div>
+          <div class="boss-hp-bar">
+            <div class="boss-hp-fill" style="width:${hpPct.toFixed(1)}%"></div>
+            <div class="boss-hp-text">${state.hp.toLocaleString()} / ${boss.maxHp.toLocaleString()}　(${hpPct.toFixed(1)}%)</div>
+          </div>
+          <div style="font-size:11px; color:#5b3d62; padding:4px 8px; background:#f3e8ff; border-radius:6px; text-align:center; margin-top:4px;">
+            📋 排隊：${queueCount} 人　·　🏆 擊殺次數：${state.killCount}
+          </div>
+          <button class="btn btn-primary" disabled style="background:#94a3b8; box-shadow:0 4px 0 #64748b; margin-top:6px;">
+            🔧 commit 1：基本顯示，按鈕未啟用
+          </button>
+        </div>
+      `;
+    }).join('');
+    el.innerHTML = `
+      <div style="font-size:11px; color:#92400e; padding:8px 10px; background:linear-gradient(135deg,#fef3c7,#fde68a); border:2px dashed #f59e0b; border-radius:10px; margin-bottom:10px; text-align:center;">
+        🛠️ <b>世界王 v9 — Commit 1</b>　基本顯示　·　獎勵未啟用　·　按鈕未啟用<br>
+        <span style="font-size:10px; color:#a16207;">後續 commit 會逐步加入排隊 → 攻擊 → 獎勵分配</span>
+      </div>
+      ${cardsHtml}
+    `;
+    // 移除 disabled flag，讓下次切回真正的「整修中」公告時可以重新填
+    el.dataset.disabledShown = '';
+  }
+
   // === 個人 BOSS ===
   // 每位玩家獨立打、5 分鐘冷卻、每場結束無論輸贏王回 5% HP
   // 殺一隻 → 滿 HP 重生 + 給獎勵
@@ -9313,22 +9441,9 @@ ${b.text}
   }
 
   function renderWorldBoss(opts) {
-    // ⭐ v8.1：世界王整修中 — 顯示關閉公告，跳過所有 boss 卡片渲染
+    // ⭐ v8.1：世界王重寫中 — 改交給 v9 系統渲染（commit 1：basic display）
     if (WORLD_BOSS_DISABLED) {
-      const el = document.getElementById('worldBossBody');
-      if (el && !el.dataset.disabledShown) {
-        el.innerHTML = `
-          <div style="text-align:center; padding:20px 14px; background:linear-gradient(135deg,#fef3c7,#fde68a); border:2px dashed #f59e0b; border-radius:12px;">
-            <div style="font-size:42px; margin-bottom:6px;">🛠️</div>
-            <div style="font-weight:800; font-size:16px; color:#92400e; margin-bottom:6px;">世界王整修中</div>
-            <div style="font-size:12px; color:#78350f; line-height:1.6;">
-              累積的修改造成不少 bug，<br>系統正在重寫，<br>之前打的傷害排行 / 王硬幣記錄都會保留。<br>
-              <span style="font-size:11px; color:#a16207; display:inline-block; margin-top:6px;">期間個人 BOSS（早 / 午 / 晚餐鵝）正常開放。</span>
-            </div>
-          </div>
-        `;
-        el.dataset.disabledShown = '1';
-      }
+      if (typeof wb9Render === 'function') wb9Render();
       return;
     }
     const force = opts && opts.force;
