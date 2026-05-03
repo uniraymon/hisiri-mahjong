@@ -9998,19 +9998,22 @@ ${b.text}
     if (list.length === 0) { area.innerHTML = ''; return; }
     area.innerHTML = `
       <div class="boss-history" style="margin-top:12px;">
-        <div class="boss-history-title">📜 我的探索戰報（${list.length}/5）　<span style="font-weight:500; opacity:0.75;">點下一場 → 跑讀條動畫</span></div>
+        <div class="boss-history-title">📜 我的探索戰報（${list.length}/5）　<span style="font-weight:500; opacity:0.75;">點 → 重播動畫</span></div>
         ${list.map(h => {
           const time = formatRelativeTime ? formatRelativeTime(h.ts) : '';
           const result = h.fled ? '🏃 逃跑' : (h.killed ? '🏆 勝' : '💀 敗');
           const resultColor = h.fled ? '#fbbf24' : (h.killed ? '#86efac' : '#fca5a5');
+          const hasLog = h.id && Array.isArray(h.log) && h.log.length > 0;
           return `
-            <button class="boss-history-row ${h.killed ? 'is-kill' : ''}" onclick="replayForageFight('${h.id}')">
+            <button class="boss-history-row ${h.killed ? 'is-kill' : ''}"
+                    style="cursor:${hasLog ? 'pointer' : 'default'};"
+                    ${hasLog ? `onclick="replayForageFight('${h.id}')"` : ''}>
               <span class="bh-icon">${h.bossIcon || '👹'}</span>
               <div class="bh-meta">
-                <div class="bh-line1">${escapeHtml(h.bossName)} Lv ${h.bossLevel} <span style="color:${resultColor}; font-weight:700; margin-left:6px;">${result}</span></div>
+                <div class="bh-line1">${escapeHtml(h.bossName || '???')} Lv ${h.bossLevel || '?'} <span style="color:${resultColor}; font-weight:700; margin-left:6px;">${result}</span></div>
                 <div class="bh-line2">傷害 <b>${(h.dmgDealt || 0).toLocaleString()}</b>　·　${time}</div>
               </div>
-              <span class="bh-play">▶</span>
+              <span class="bh-play">${hasLog ? '▶' : ''}</span>
             </button>
           `;
         }).join('')}
@@ -10840,6 +10843,7 @@ ${b.text}
           }
         } catch (e) {}
         __fightInProgress = false;
+        if (typeof updateStaminaUI === 'function') updateStaminaUI(); // ⭐ 立刻解鎖按鈕（不等 setInterval 1s 才更新）
         return;
       }
       const entry = result.log[i++];
@@ -10934,6 +10938,7 @@ ${b.text}
           }
         } catch (e) {}
         __fightInProgress = false;
+        if (typeof updateStaminaUI === 'function') updateStaminaUI(); // ⭐ 立刻解鎖按鈕
         return;
       }
       const entry = result.log[i++];
@@ -11392,6 +11397,7 @@ ${b.text}
       <input type="file" id="adminRestoreInput" accept="application/json" style="display:none" onchange="adminApplyRestoreFile(event)">
 
       <button class="btn btn-danger" onclick="adminResetRpg()" style="margin-top:6px;">⚠️ 重置 RPG 角色（保留幣）</button>
+      <button class="btn btn-secondary" onclick="adminRefillAllStamina()" style="margin-top:6px; background:linear-gradient(135deg,#bfdbfe,#3b82f6); box-shadow:0 4px 0 #1d4ed8; color:#fff;">⚡ 全體補滿體力（所有玩家）</button>
       <button class="btn btn-secondary" onclick="adminRefillBosses()" style="margin-top:6px; background:linear-gradient(135deg,#86efac,#16a34a); box-shadow:0 4px 0 #15803d; color:#fff;">💚 補滿世界王 HP（保留排隊 / 戰報）</button>
       <button class="btn btn-secondary" onclick="adminGrantAllBossCoins(4)" style="margin-top:6px; background:linear-gradient(135deg,#fde047,#f59e0b); box-shadow:0 4px 0 #d97706; color:#7c2d12;">👑 全員 +4 鵝皇硬幣（鵝王扭蛋用）</button>
       <button class="btn btn-secondary" onclick="adminShowHpBreakdown()" style="margin-top:6px; background:linear-gradient(135deg,#fca5a5,#dc2626); box-shadow:0 4px 0 #991b1b; color:#fff;">🩸 全員血量明細（看誰 HP 偏高）</button>
@@ -11974,6 +11980,23 @@ ${b.text}
     showToast(`💚 已補滿 ${refilled} 隻世界王（v9）`);
   }
   window.adminRefillBosses = adminRefillBosses;
+
+  // ⭐ 全體補滿體力（所有玩家 stamina → STAMINA_MAX）
+  function adminRefillAllStamina() {
+    if (!confirm(`⚡ 把所有玩家體力補滿至 ${STAMINA_MAX}？`)) return;
+    let count = 0;
+    for (const p of (players || [])) {
+      const r = p && getRpg(p);
+      if (!r) continue;
+      r.stamina = STAMINA_MAX;
+      count++;
+    }
+    saveData();
+    render();
+    showToast(`⚡ 已補滿 ${count} 位玩家的體力`);
+    showDebugModal();
+  }
+  window.adminRefillAllStamina = adminRefillAllStamina;
 
   // ⭐ 全玩家洗白（清空 history / pendingBets / worldBoss / 每位玩家 rpg / 鵝鵝幣 / 鵝蛋幣 / 稱號）
   // 仍保留玩家清單（id / 名字 / 頭像）
