@@ -3010,7 +3010,7 @@
   const HP_PER_TICK = 1;
   const MP_PER_TICK = 2;
   const TICK_MS = 60 * 1000;
-  const REST_MS = 10 * 60 * 1000; // HP=0 → 10 分後恢復到 50%
+  const REST_MS = 5 * 60 * 1000; // HP=0 → 5 分後恢復到 50%（之前 10 分）
   const REST_HP_RATIO = 0.5;
 
   const ABILITIES = [
@@ -3029,9 +3029,9 @@
       { id: 'pot_stam_s', name: '體力藥 (小)', icon: '🧪', desc: '+30 體力',  cost: 100, type: 'consumable', effect: { stamina: 30 } },
       { id: 'pot_stam_m', name: '體力藥 (中)', icon: '🍶', desc: '+60 體力',  cost: 180, type: 'consumable', effect: { stamina: 60 } },
       { id: 'pot_stam_l', name: '體力藥 (大)', icon: '🍹', desc: '+100 體力', cost: 280, type: 'consumable', effect: { stamina: 100 } },
-      { id: 'pot_hp_s',   name: '治療藥 (小)', icon: '🍵', desc: 'HP +50%',   cost: 30,  type: 'consumable', effect: { hpRatio: 0.5 } },
-      { id: 'pot_hp_l',   name: '治療藥 (大)', icon: '❤️', desc: 'HP 回滿',   cost: 60,  type: 'consumable', effect: { hp: 'full' } },
-      // ⭐ 取消 MP 藥水 + 智慧藥水（每場戰鬥開始 MP 自動回滿）
+      // ⭐ 復活藥水：死掉時用，跳過 5 分休息（沒死時無效果，可帶不能用）
+      { id: 'pot_revive', name: '復活藥水',     icon: '🧚', desc: '死亡時立刻復活、HP 回滿', cost: 400, type: 'consumable', effect: { revive: true } },
+      // ⭐ 取消 HP / MP / 智慧藥水（HP/MP 變屬性、每場戰鬥自動回滿）
     ];
     // 每 3 等一階，10 階（Lv 1 / 4 / 7 / 10 / 13 / 16 / 19 / 22 / 25 / 28）
     const levels = [1, 4, 7, 10, 13, 16, 19, 22, 25, 28];
@@ -3666,7 +3666,7 @@
   }
 
   // 體力 / HP 自動回復（不存資料庫，每次讀取時算）
-  // HP=0 進入休息：10 分鐘後恢復 50% HP，期間 HP 不會自然回；體力照常每分鐘 +1
+  // HP=0 進入休息：5 分鐘後恢復 50% HP，期間 HP 不會自然回；體力照常每分鐘 +1
   function tickRecovery(player) {
     const rpg = getRpg(player);
     const stats = computeStats(player);
@@ -3967,7 +3967,7 @@
     const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0) + (setB.critChance || 0);
     const critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
     const regenPer = (cls.regenPer || 0) + (bonus.regen || 0);
-    let pHp = Math.min(player.rpg.hp ?? stats.maxHp, stats.maxHp);
+    let pHp = stats.maxHp; // ⭐ 每場戰鬥 HP 自動回滿（HP 變成屬性，不是耗材）
     let pMp = stats.maxMp; // ⭐ 每場戰鬥 MP 自動回滿
     let mHp = monster.hp;
     let round = 0;
@@ -4451,7 +4451,7 @@
     const critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
     const regenPer = (cls.regenPer || 0) + (bonus.regen || 0);
 
-    let pHp = Math.min(player.rpg.hp ?? stats.maxHp, stats.maxHp);
+    let pHp = stats.maxHp; // ⭐ 每場戰鬥 HP 自動回滿（HP 變成屬性，不是耗材）
     let pMp = stats.maxMp; // ⭐ 每場戰鬥 MP 自動回滿
     const playerObj = { statuses: [] };
 
@@ -6155,23 +6155,23 @@ ${b.text}
         rpg.stamina = Math.min(STAMINA_MAX, (rpg.stamina || 0) + it.effect.stamina);
         msg = `⚡ +${it.effect.stamina} 體力`;
       }
-      if (it.effect.hp === 'full') {
-        rpg.hp = stats.maxHp;
-        rpg.deathAt = null;
-        msg = `❤️ HP 回滿`;
-      } else if (it.effect.hpRatio) {
-        const recover = Math.round(stats.maxHp * it.effect.hpRatio);
-        rpg.hp = Math.min(stats.maxHp, (rpg.hp || 0) + recover);
-        if (rpg.hp > 0) rpg.deathAt = null;
-        msg = `❤️ +${recover} HP`;
-      }
-      if (it.effect.mp === 'full') {
-        rpg.mp = stats.maxMp;
-        msg = `💙 MP 回滿`;
-      } else if (it.effect.mpRatio) {
-        const recover = Math.round(stats.maxMp * it.effect.mpRatio);
-        rpg.mp = Math.min(stats.maxMp, (rpg.mp || 0) + recover);
-        msg = `💙 +${recover} MP`;
+      // ⭐ 復活藥水：必須是死亡狀態才有用
+      if (it.effect.revive) {
+        if (rpg.deathAt && rpg.hp <= 0) {
+          rpg.hp = stats.maxHp;
+          rpg.mp = stats.maxMp;
+          rpg.deathAt = null;
+          msg = `🧚 復活！HP / MP 回滿`;
+        } else {
+          // 還沒死就買沒效果 → 退錢
+          refundCoins(me.id, it.cost);
+          showToast('🧚 你還活著呢～復活藥水沒效果，已退款');
+          hideModal();
+          renderCharCard();
+          renderEquipment();
+          renderShop();
+          return;
+        }
       }
       if (it.effect.xp) {
         rpg.xp = (rpg.xp || 0) + it.effect.xp;
@@ -7591,7 +7591,7 @@ ${b.text}
         return;
       }
     }
-    if (rpg.hp <= 0) { showToast('💀 HP 不足，等回血或喝藥'); return; }
+    if (rpg.hp <= 0) { showToast('💀 你還在休息中，等復活或喝復活藥'); return; }
 
     // 鎖按鈕，扣體力
     document.getElementById('fightBtn').disabled = true;
@@ -7840,13 +7840,13 @@ ${b.text}
         rpg.deathAt = null;
         const div = document.createElement('div');
         div.className = 'log-line log-system';
-        div.textContent = `🍀 新手保護：HP 自動回滿（Lv 5 起死亡需休息 10 分鐘）`;
+        div.textContent = `🍀 新手保護：HP 自動回滿（Lv 5 起死亡需休息 5 分鐘）`;
         logEl.appendChild(div);
         rewardHtml = `
           <div class="reward-list" style="background:#fef9c3; border-color:#fde047;">
             <div class="rl-title" style="color:#a16207;">😭 失敗了…但</div>
             <div class="rl-item">🍀 <b>新手保護啟動</b>：HP 已自動回滿</div>
-            <div class="rl-item" style="font-size:11px; color:#92400e;">Lv 5 起，敗北後需休息 10 分鐘</div>
+            <div class="rl-item" style="font-size:11px; color:#92400e;">Lv 5 起，敗北後需休息 5 分鐘</div>
             ${result.coinsStolen > 0 ? `<div class="rl-item" style="color:#dc2626;">💰 被偷走 −${result.coinsStolen} 鵝鵝幣</div>` : ''}
           </div>
         `;
@@ -7855,14 +7855,14 @@ ${b.text}
         rpg.deathAt = Date.now();
         const div = document.createElement('div');
         div.className = 'log-line log-defeat';
-        div.textContent = `💀 你被打倒了… 必須休息 10 分鐘恢復 50% HP（或喝藥）`;
+        div.textContent = `💀 你被打倒了… 5 分鐘後恢復 50% HP，或用 🧚 復活藥水`;
         logEl.appendChild(div);
         rewardHtml = `
           <div class="reward-list reward-loss">
             <div class="rl-title">😭 失敗了</div>
-            <div class="rl-item">💀 進入休息：10 分鐘後恢復到 50% HP</div>
+            <div class="rl-item">💀 進入休息：5 分鐘後恢復到 50% HP</div>
             ${result.coinsStolen > 0 ? `<div class="rl-item" style="color:#dc2626;">💰 被偷走 −${result.coinsStolen} 鵝鵝幣</div>` : ''}
-            <div class="rl-item" style="margin-top:4px;">想立刻回血可用治療藥</div>
+            <div class="rl-item" style="margin-top:4px;">🧚 想立刻復活可去商店買「復活藥水」（400 鵝幣）</div>
           </div>
         `;
       }
