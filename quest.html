@@ -10363,7 +10363,10 @@ ${b.text}
         if (rpg.critCount == null) rpg.critCount = 0;
         rpg.critCount += (result.critCount || 0);
 
-        document.getElementById('personalBossResult').insertAdjacentHTML('beforeend', rewardHtml);
+        // ⭐ 用 innerHTML 取代（非 insertAdjacentHTML），把舊的 arena 元素（pHpBar / mHpBar / battleLog 等共用 ID）
+        // 一併清掉，避免與下一場「行動」小怪戰的 #fightResult 產生重複 ID 卡住按鈕
+        const _pbRes = document.getElementById('personalBossResult');
+        if (_pbRes) _pbRes.innerHTML = rewardHtml;
         snapshotLastFight(monster, result);
         saveData();
         renderCharCard();
@@ -10371,6 +10374,7 @@ ${b.text}
         renderRpgStats();
         renderPersonalBoss();
         __personalBossInProgress = false;
+        if (typeof updateStaminaUI === 'function') updateStaminaUI(); // ⭐ 立刻更新小怪戰按鈕狀態
         return;
       }
       const entry = result.log[i++];
@@ -10791,60 +10795,66 @@ ${b.text}
     let i = 0;
     const playStep = () => {
       if (i >= result.log.length) {
-        // 結算
-        finalizeFight(me, monster, result, stats);
-        snapshotLastFight(monster, result);
-        // ⭐ 把這場探索 / 打怪戰鬥存到「最近 5 場」（只給自己看）
+        // ⭐ try-finally 保證 __fightInProgress 一定被解鎖，不讓任何例外永久卡住按鈕
         try {
-          const dmgDealt = Math.max(0, (monster.maxHp || monster.hp) - (result.mHpFinal || 0));
-          const battleSnap = {
-            id: 'fr_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-            ts: Date.now(),
-            bossId: monster.id || 'forage_' + zoneId,
-            bossName: monster.name,
-            bossIcon: monster.icon,
-            bossLevel: monster.level,
-            dmgDealt,
-            killed: !!result.won,
-            fled: !!result.fled,
-            playerSnap: {
-              name: me.name,
-              avatar: CLASSES[rpg.class]?.icon || '🎴',
-              level: rpg.level,
-              maxHp: stats.maxHp,
-              maxMp: stats.maxMp,
-            },
-            monsterSnap: {
-              name: monster.name,
-              icon: monster.icon,
-              level: monster.level,
-              maxHp: monster.maxHp || monster.hp,
-              ability: monster.ability,
-            },
-            log: (result.log || []).slice(0, 100),
-            zoneId, layerId,
-            isForage: true,
-          };
-          rpg.forageBattleHistory = Array.isArray(rpg.forageBattleHistory) ? rpg.forageBattleHistory : [];
-          rpg.forageBattleHistory.unshift(battleSnap);
-          if (rpg.forageBattleHistory.length > 5) rpg.forageBattleHistory.length = 5;
-          saveData();
-          renderForageHistory();
-        } catch (e) { console.warn('snapshot forage fight:', e); }
-        // 在戰鬥結果下方加一個小回報按鈕
-        try {
-          const fr = document.getElementById('fightResult');
-          if (fr) {
-            const btn = document.createElement('button');
-            btn.className = 'btn btn-secondary';
-            btn.style.cssText = 'margin-top:8px; padding:6px 10px; font-size:12px; background:#fef2f2; color:#991b1b; border:1px dashed #f87171;';
-            btn.textContent = '🐛 這場有 BUG？回報一下';
-            btn.onclick = () => openBugReport(true);
-            fr.appendChild(btn);
-          }
-        } catch (e) {}
-        __fightInProgress = false;
-        if (typeof updateStaminaUI === 'function') updateStaminaUI(); // ⭐ 立刻解鎖按鈕（不等 setInterval 1s 才更新）
+          // 結算
+          finalizeFight(me, monster, result, stats);
+          snapshotLastFight(monster, result);
+          // ⭐ 把這場探索 / 打怪戰鬥存到「最近 5 場」（只給自己看）
+          try {
+            const dmgDealt = Math.max(0, (monster.maxHp || monster.hp) - (result.mHpFinal || 0));
+            const battleSnap = {
+              id: 'fr_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+              ts: Date.now(),
+              bossId: monster.id || 'forage_' + zoneId,
+              bossName: monster.name,
+              bossIcon: monster.icon,
+              bossLevel: monster.level,
+              dmgDealt,
+              killed: !!result.won,
+              fled: !!result.fled,
+              playerSnap: {
+                name: me.name,
+                avatar: CLASSES[rpg.class]?.icon || '🎴',
+                level: rpg.level,
+                maxHp: stats.maxHp,
+                maxMp: stats.maxMp,
+              },
+              monsterSnap: {
+                name: monster.name,
+                icon: monster.icon,
+                level: monster.level,
+                maxHp: monster.maxHp || monster.hp,
+                ability: monster.ability,
+              },
+              log: (result.log || []).slice(0, 100),
+              zoneId, layerId,
+              isForage: true,
+            };
+            rpg.forageBattleHistory = Array.isArray(rpg.forageBattleHistory) ? rpg.forageBattleHistory : [];
+            rpg.forageBattleHistory.unshift(battleSnap);
+            if (rpg.forageBattleHistory.length > 5) rpg.forageBattleHistory.length = 5;
+            saveData();
+            renderForageHistory();
+          } catch (e) { console.warn('snapshot forage fight:', e); }
+          // 在戰鬥結果下方加一個小回報按鈕
+          try {
+            const fr = document.getElementById('fightResult');
+            if (fr) {
+              const btn = document.createElement('button');
+              btn.className = 'btn btn-secondary';
+              btn.style.cssText = 'margin-top:8px; padding:6px 10px; font-size:12px; background:#fef2f2; color:#991b1b; border:1px dashed #f87171;';
+              btn.textContent = '🐛 這場有 BUG？回報一下';
+              btn.onclick = () => openBugReport(true);
+              fr.appendChild(btn);
+            }
+          } catch (e) {}
+        } catch (e) {
+          console.error('[onFight] playStep 結算出錯，強制解鎖按鈕:', e);
+        } finally {
+          __fightInProgress = false;
+          if (typeof updateStaminaUI === 'function') updateStaminaUI(); // ⭐ 立刻解鎖按鈕（不等 setInterval 1s 才更新）
+        }
         return;
       }
       const entry = result.log[i++];
@@ -10926,20 +10936,26 @@ ${b.text}
     let i = 0;
     const playStep = () => {
       if (i >= result.log.length) {
-        finalizeFightMulti(me, monsters, result, stats, ctx);
+        // ⭐ try-finally 保證 __fightInProgress 一定被解鎖
         try {
-          const fr = document.getElementById('fightResult');
-          if (fr) {
-            const btn = document.createElement('button');
-            btn.className = 'btn btn-secondary';
-            btn.style.cssText = 'margin-top:8px; padding:6px 10px; font-size:12px; background:#fef2f2; color:#991b1b; border:1px dashed #f87171;';
-            btn.textContent = '🐛 這場有 BUG？回報一下';
-            btn.onclick = () => openBugReport(true);
-            fr.appendChild(btn);
-          }
-        } catch (e) {}
-        __fightInProgress = false;
-        if (typeof updateStaminaUI === 'function') updateStaminaUI(); // ⭐ 立刻解鎖按鈕
+          finalizeFightMulti(me, monsters, result, stats, ctx);
+          try {
+            const fr = document.getElementById('fightResult');
+            if (fr) {
+              const btn = document.createElement('button');
+              btn.className = 'btn btn-secondary';
+              btn.style.cssText = 'margin-top:8px; padding:6px 10px; font-size:12px; background:#fef2f2; color:#991b1b; border:1px dashed #f87171;';
+              btn.textContent = '🐛 這場有 BUG？回報一下';
+              btn.onclick = () => openBugReport(true);
+              fr.appendChild(btn);
+            }
+          } catch (e) {}
+        } catch (e) {
+          console.error('[runMultiMonsterFight] playStep 結算出錯，強制解鎖按鈕:', e);
+        } finally {
+          __fightInProgress = false;
+          if (typeof updateStaminaUI === 'function') updateStaminaUI(); // ⭐ 立刻解鎖按鈕
+        }
         return;
       }
       const entry = result.log[i++];
