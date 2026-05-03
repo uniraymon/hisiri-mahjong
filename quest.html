@@ -4863,6 +4863,17 @@
         pHp = Math.min(stats.maxHp, pHp + heal);
         log.push({ type: 'player', text: `回合 ${round}：自癒 +${heal} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
       }
+      // ⭐ 每回合自動回 MP（法系 4 / 其他 2）— 戰術中持續產生 MP，不必依賴回魔技
+      if (pTurn && pMp < stats.maxMp) {
+        const isCaster = (player.rpg.class === 'mage' || player.rpg.class === 'paladin');
+        const mpGain = isCaster ? 4 : 2;
+        const before = pMp;
+        pMp = Math.min(stats.maxMp, pMp + mpGain);
+        const gained = pMp - before;
+        if (gained > 0) {
+          log.push({ type: 'player', text: `回合 ${round}：💙 自然回 +${gained} MP`, hp: { player: pHp, monster: mHp, mp: pMp } });
+        }
+      }
       if (pTurn) {
         pGauge -= ATB_THRESHOLD;
         playerActions++;
@@ -5424,6 +5435,17 @@
           const heal = Math.max(1, Math.round(stats.maxHp * regenPer));
           pHp = Math.min(stats.maxHp, pHp + heal);
           log.push({ type: 'player', text: `回合 ${round}：自癒 +${heal} HP`, hp: hpsSnapshot() });
+        }
+        // ⭐ 每回合自動回 MP（法系 4 / 其他 2）
+        if (pMp < stats.maxMp) {
+          const isCaster = (player.rpg.class === 'mage' || player.rpg.class === 'paladin');
+          const mpGain = isCaster ? 4 : 2;
+          const before = pMp;
+          pMp = Math.min(stats.maxMp, pMp + mpGain);
+          const gained = pMp - before;
+          if (gained > 0) {
+            log.push({ type: 'player', text: `回合 ${round}：💙 自然回 +${gained} MP`, hp: hpsSnapshot() });
+          }
         }
 
         // 評估規則表（用最低血敵人當「敵 HP」context）
