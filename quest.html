@@ -1928,7 +1928,7 @@
         // 隱身重做：15 MP / 免疫一次傷害 + 下次攻擊必爆 / 每級 -1 MP / Lv 5 +1 回合 +20% 爆傷
         { id: 'a_stealth',         name: '隱身',   icon: '🌫', unlockLv: 5,  cooldown: 0, mpCost: 15, type: 'buff', selfBuff: { stat: 'critChance', amount: 1.0, turns: 1 }, applyShield: 1, stealthLv5CritDmg: 0.20, maxLv: 5 },
         { id: 'a_wind_song',       name: '風之歌', icon: '🎵', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true },
-        { id: 'a_arrow_storm',     name: '箭雨',   icon: '🌧', unlockLv: 6,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.0, targetCount: 'all' },
+        { id: 'a_arrow_storm',     name: '箭雨',   icon: '🌧', unlockLv: 6,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.5, targetCount: 'all' },
         // ⭐ 新增：奪魂箭 — 0.8× ATK 傷害 + 回 2 MP
         { id: 'a_mana_arrow',      name: '奪魂箭', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0, type: 'damage', mult: 0.8, mpRestore: 2 },
       ],
@@ -2011,7 +2011,7 @@
         { id: 'p_pray',      name: '祈禱',     icon: '🙏', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true, isMpRegenStrong: true },
         { id: 'p_shelter',   name: '庇護術',   icon: '🤲', unlockLv: 3,  cooldown: 0, mpCost: 25, type: 'heal', healPct: 0.40 },
         { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 6,  cooldown: 0, mpCost: 35, type: 'damage', mult: 2.0, healCaster: 0.10 },
-        { id: 'p_holy_wave', name: '神聖光波', icon: '🌟', unlockLv: 2,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.4, healCaster: 0.06, targetCount: 2 },
+        { id: 'p_holy_wave', name: '神聖光波', icon: '🌟', unlockLv: 2,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.5, healCaster: 0.06, targetCount: 2 },
         { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 7,  cooldown: 0, mpCost: 35, type: 'damage', mult: 1.7, targetCount: 2, applyStatus: { type: 'paralyze', turns: 2, chance: 0.4 } },
         { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.40, turns: 3 } },
         { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 22, type: 'damage', defMult: 4 },
