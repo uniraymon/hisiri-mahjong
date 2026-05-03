@@ -1885,6 +1885,8 @@
         { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 50, hpCostFlat: 20, type: 'damage', mult: 4.5, cast: 100 },
         { id: 'w_war_cry',      name: '戰意呼喚', icon: '📢', unlockLv: 3,  cooldown: 0, mpCost: 0, type: 'heal', healPct: 0.15, isMpRegen: true },
         { id: 'w_bloodlust',    name: '嗜血怒嚎', icon: '🦁', unlockLv: 2,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'atkPct', amount: 0.30, turns: 3 } },
+        // ⭐ 新增：魔吸斬 — 0.8× ATK 傷害 + 回 2 MP（戰術用，低 MP 時穩定恢復）
+        { id: 'w_mana_strike',  name: '魔吸斬',   icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0, type: 'damage', mult: 0.8, mpRestore: 2 },
       ],
       skillTree: [
         { id: 'w_hp',   name: '鋼鐵之軀', icon: '🛡',  desc: '+5% 最大 HP',         maxLevel: 5, effect: 'hpPct',     per: 0.05 },
@@ -1927,6 +1929,8 @@
         { id: 'a_stealth',         name: '隱身',   icon: '🌫', unlockLv: 5,  cooldown: 0, mpCost: 15, type: 'buff', selfBuff: { stat: 'critChance', amount: 1.0, turns: 1 }, applyShield: 1, stealthLv5CritDmg: 0.20, maxLv: 5 },
         { id: 'a_wind_song',       name: '風之歌', icon: '🎵', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true },
         { id: 'a_arrow_storm',     name: '箭雨',   icon: '🌧', unlockLv: 6,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.0, targetCount: 'all' },
+        // ⭐ 新增：奪魂箭 — 0.8× ATK 傷害 + 回 2 MP
+        { id: 'a_mana_arrow',      name: '奪魂箭', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0, type: 'damage', mult: 0.8, mpRestore: 2 },
       ],
       skillTree: [
         { id: 'a_crit', name: '致命瞄準', icon: '💥', desc: '+2% 暴擊率',         maxLevel: 5, effect: 'critChance', per: 0.02 },
@@ -1958,7 +1962,7 @@
         { id: 'm_meteor',         name: '隕石術',     icon: '☄️', unlockLv: 8,  cooldown: 0, mpCost: 50, type: 'damage', flat: 120, perLv: 5, ignoreDef: true },
         { id: 'm_ice_lance',      name: '冰錐術',     icon: '❄️', unlockLv: 1,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.6, applyStatus: { type: 'paralyze', turns: 2, chance: 0.25 } },
         { id: 'm_fireball',       name: '火球術',     icon: '🔥', unlockLv: 1,  cooldown: 0, mpCost: 25, type: 'damage', flat: 50, perLv: 3, ignoreDef: true, cast: 8 },
-        { id: 'm_mana_spring',    name: '法力湧泉',   icon: '💧', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', isMpRegen: true },
+        { id: 'm_mana_spring',    name: '法力湧泉',   icon: '💧', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', isMpRegen: true, isMpRegenStrong: true },
         // 連環閃電：3 段固定傷害（不享 ×1.3 共享）
         { id: 'm_chain_lightning',name: '連環閃電',   icon: '⚡', unlockLv: 4,  cooldown: 0, mpCost: 35, type: 'damage', flat: 35, perLv: 2, ignoreDef: true, hits: 3, fixedHitMult: true },
         { id: 'm_arcane_shield',  name: '魔力護盾',   icon: '🛡️', unlockLv: 5,  cooldown: 0, mpCost: 30, type: 'heal', healPct: 0.20 },
@@ -1970,7 +1974,8 @@
         { id: 'm_freeze',         name: '冰封術',     icon: '🧊', unlockLv: 3,  cooldown: 0, mpCost: 25, type: 'damage', mult: 0.3, applyStatus: { type: 'paralyze', turns: 2, chance: 1 } },
         { id: 'm_dark_pact',      name: '暗黑契約', icon: '🦇', unlockLv: 8,  cooldown: 0, mpCost: 0,  hpCost: 0.25, type: 'buff', selfBuff: { stat: 'critDmg', amount: 0.80, turns: 5 } },
         { id: 'm_mana_shield',    name: '法力護甲',   icon: '🔷', unlockLv: 1,  cooldown: 0, mpCost: 22, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.50, turns: 3 } },
-        { id: 'm_arcane_drain',   name: '魔力虹吸', icon: '🔮', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', flat: 40, perLv: 2, ignoreDef: true },
+        // ⭐ 魔力虹吸改寫：0.8× ATK 傷害 + 回 4 MP（巫師回魔多一倍）
+        { id: 'm_arcane_drain',   name: '魔力虹吸', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 0.8, magic: true, mpRestore: 4 },
       ],
       skillTree: [
         { id: 'm_mp',    name: '法力深淵', icon: '💎', desc: '+5% 最大 MP',         maxLevel: 5, effect: 'mpPct',     per: 0.05 },
@@ -2003,7 +2008,7 @@
         { id: 'p_judgment',  name: '審判',     icon: '⚖️', unlockLv: 8,  cooldown: 0, mpCost: 38, type: 'damage', mult: 2.5 },
         { id: 'p_holy_slash',name: '聖光斬',   icon: '✝️', unlockLv: 1,  cooldown: 0, mpCost: 22, type: 'damage', mult: 1.6, healCaster: 0.05 },
         { id: 'p_holy_heal', name: '神聖治癒', icon: '✨', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'heal', healPct: 0.3 },
-        { id: 'p_pray',      name: '祈禱',     icon: '🙏', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true },
+        { id: 'p_pray',      name: '祈禱',     icon: '🙏', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true, isMpRegenStrong: true },
         { id: 'p_shelter',   name: '庇護術',   icon: '🤲', unlockLv: 3,  cooldown: 0, mpCost: 25, type: 'heal', healPct: 0.40 },
         { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 6,  cooldown: 0, mpCost: 35, type: 'damage', mult: 2.0, healCaster: 0.10 },
         { id: 'p_holy_wave', name: '神聖光波', icon: '🌟', unlockLv: 2,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.4, healCaster: 0.06, targetCount: 2 },
@@ -2014,6 +2019,8 @@
         { id: 'p_thorn_armor',   name: '棘甲術',   icon: '🌵', unlockLv: 4,  cooldown: 0, mpCost: 22, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.40, turns: 4 } },
         { id: 'p_aegis',         name: '反傷護盾', icon: '🪞', unlockLv: 8,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.70, turns: 3 } },
         { id: 'p_divine_wrath',  name: '神之裁決', icon: '⚡', unlockLv: 10, cooldown: 0, mpCost: 38, type: 'damage', maxHpMult: 0.65, alwaysCrit: true, cast: 90 },
+        // ⭐ 新增：神聖奪魂 — 0.8× ATK 傷害 + 回 4 MP（聖騎回魔多一倍）
+        { id: 'p_mana_drain',    name: '神聖奪魂', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 0.8, mpRestore: 4 },
       ],
       skillTree: [
         { id: 'p_def',   name: '聖光鎧甲', icon: '🛡',  desc: '+2 DEF',              maxLevel: 5, effect: 'def',          per: 2 },
@@ -2309,7 +2316,7 @@
   // 世界王：原本是排隊制 + 20 分鐘全域冷卻 + 死後 4-8 小時復活
   //         開放式：冷卻歸 0、死後立刻重生，所有人可以一直打
   const BOSS_COOLDOWN_MS = 5 * 60 * 1000; // ⭐ 5 分鐘冷卻（任何王共用）
-  const BOSS_QUEUE_STALE_MS = 5 * 60 * 1000; // 排隊頭 5 分鐘沒動作 → 視為過期、可被略過
+  const BOSS_QUEUE_STALE_MS = 60 * 1000;     // ⭐ 排隊頭 1 分鐘沒動作 → 自動取消（防卡排隊）
   const WORLD_BOSSES = [
     {
       id: 'goose_king',
@@ -2868,10 +2875,12 @@
     // ⭐ 回魔技能統一公式（不論職業）：
     //   基底 5 MP + 5% maxMP；每級 +1 MP 固定；Lv 5 / Lv 10 各 +5% maxMP
     //   未升級 (level=0)：5 MP + 5% maxMP
+    //   isMpRegenStrong（巫師 / 聖騎）：上述全 ×2 倍
     if (skill.isMpRegen) {
       const lvSafe = Math.max(0, level || 0);
-      eff.mpFlat = 5 + lvSafe;
-      eff.mpPct = 0.05 + (lvSafe >= 5 ? 0.05 : 0) + (lvSafe >= 10 ? 0.05 : 0);
+      const strong = skill.isMpRegenStrong ? 2 : 1;
+      eff.mpFlat = (5 + lvSafe) * strong;
+      eff.mpPct = (0.05 + (lvSafe >= 5 ? 0.05 : 0) + (lvSafe >= 10 ? 0.05 : 0)) * strong;
     }
     if (!level || level <= 0) return eff;
     // 累進加成：Lv 1-5 每級 +10%，Lv 6-10 每級 +5%
@@ -5019,6 +5028,12 @@
               pHp = Math.min(stats.maxHp, pHp + heal);
               if (pHp - before > 0) extra += ` 💚+${pHp - before} HP`;
             }
+            // ⭐ mpRestore：傷害技回 N MP（魔吸斬 / 奪魂箭 / 魔力虹吸 / 神聖奪魂）
+            if (skill.mpRestore) {
+              const before = pMp;
+              pMp = Math.min(stats.maxMp, pMp + skill.mpRestore);
+              if (pMp - before > 0) extra += ` 💙+${pMp - before} MP`;
+            }
             log.push({
               type: 'crit-player',
               text: `回合 ${round}：${skill.icon} ${skill.name}${lastIsCrit ? '【暴擊】' : ''}${isMagic ? '【魔攻】' : ''}${skillHits > 1 ? `×${skillHits}` : ''} → ${monster.name} ${skillHits > 1 ? '共 ' + totalDmg + ' HP ' + dmgStr : dmgStr}${extra}${costStr}`,
@@ -5527,6 +5542,12 @@
               pHp = Math.min(stats.maxHp, pHp + heal);
               const gained = pHp - before;
               if (gained > 0) extra += ` 💚+${gained} HP`;
+            }
+            // ⭐ mpRestore：傷害技回 N MP
+            if (skill.mpRestore) {
+              const before = pMp;
+              pMp = Math.min(stats.maxMp, pMp + skill.mpRestore);
+              if (pMp - before > 0) extra += ` 💙+${pMp - before} MP`;
             }
             const targetSummary = hits.map(h => `${h.tgt.icon}${h.tgt.name} -${h.dmg}${h.isCrit ? '【爆】' : ''}`).join(' / ');
             log.push({
@@ -10800,12 +10821,17 @@ ${b.text}
           }
           if (state.deadAt) throw new Error('boss-already-dead');
           state.queue = Array.isArray(state.queue) ? state.queue : [];
-          // 清理過期 head（避免 AFK 玩家卡住排隊）
-          while (state.queue.length > 0) {
-            const head = state.queue[0];
-            if (head && head.joinedAt && Date.now() - head.joinedAt > staleMs) {
-              state.queue.shift();
-            } else break;
+          // ⭐ 清理過期 head：若 head 已 headSinceAt 1 分鐘以上沒動作 → 自動踢
+          //   headSinceAt 在每次 tx 都會給「現在的 head」設一次（沒設就設）
+          if (state.queue.length > 0 && state.queue[0]) {
+            if (!state.queue[0].headSinceAt) state.queue[0].headSinceAt = Date.now();
+            while (state.queue.length > 0) {
+              const head = state.queue[0];
+              if (head && head.headSinceAt && Date.now() - head.headSinceAt > staleMs) {
+                state.queue.shift();
+                if (state.queue[0]) state.queue[0].headSinceAt = Date.now();
+              } else break;
+            }
           }
           // 不能同時排兩個 boss
           for (const bid of Object.keys(wb)) {
@@ -10869,13 +10895,22 @@ ${b.text}
             // 王已倒下、還沒到復活時間
             throw new Error('boss-already-dead');
           }
-          // 排隊驗證：必須是排隊頭（過期的可被略過）
+          // 排隊驗證：必須是排隊頭（headSinceAt 過期的會被自動踢）
           state.queue = Array.isArray(state.queue) ? state.queue : [];
+          // 給當前 head 設 headSinceAt（首次當頭的瞬間）
+          if (state.queue.length > 0 && state.queue[0] && !state.queue[0].headSinceAt) {
+            state.queue[0].headSinceAt = Date.now();
+          }
           while (state.queue.length > 0) {
             const head = state.queue[0];
             if (head && head.pid === attackerId) break;
-            if (head && head.joinedAt && Date.now() - head.joinedAt > staleMs) {
+            // head 是別人 → 檢查他是否 headSinceAt 過期（1 分鐘沒動）
+            if (head && head.headSinceAt && Date.now() - head.headSinceAt > staleMs) {
               state.queue.shift();
+              // 新的 head 也設 headSinceAt
+              if (state.queue[0] && !state.queue[0].headSinceAt) {
+                state.queue[0].headSinceAt = Date.now();
+              }
               continue;
             }
             // head 是別人 + 還沒過期
