@@ -1825,7 +1825,7 @@
       accImage:    'assets/equipment/helmet.svg',
       desc: '高 HP / 高 ATK / 慢',
       hp: 130, atk: 14, def: 8, spd: 7,
-      mp: 25, mpPer: 4,
+      mp: 25, mpPer: 1,
       hpPer: 14, atkPer: 2.2, defPer: 1.2, spdPer: 0.4,
       attackVerb: '揮砍',
       skills: [
@@ -1865,7 +1865,7 @@
       accImage:    'assets/equipment/wing-amulet.svg',
       desc: '速度先攻 / 平衡',
       hp: 95, atk: 12, def: 5, spd: 14,
-      mp: 30, mpPer: 4,
+      mp: 30, mpPer: 1,
       hpPer: 9, atkPer: 1.5, defPer: 0.6, spdPer: 1.2,
       attackVerb: '射擊',
       skills: [
@@ -1912,7 +1912,7 @@
       accImage:    'assets/equipment/crown.svg',
       desc: '高暴擊 / 紙片',
       hp: 80, atk: 17, def: 4, spd: 10,
-      mp: 50, mpPer: 6,
+      mp: 50, mpPer: 2,
       hpPer: 7, atkPer: 2.6, defPer: 0.5, spdPer: 0.7,
       attackVerb: '魔法',
       critBonus: 0.18,
@@ -1963,7 +1963,7 @@
       hasShield: true,
       desc: '高防禦 / 自癒',
       hp: 115, atk: 11, def: 11, spd: 7,
-      mp: 35, mpPer: 5,
+      mp: 35, mpPer: 2,
       hpPer: 12, atkPer: 1.4, defPer: 1.6, spdPer: 0.4,
       attackVerb: '聖光斬',
       regenPer: 0.05,
@@ -2267,7 +2267,7 @@
   // === 世界王 ===
   // 世界王：原本是排隊制 + 20 分鐘全域冷卻 + 死後 4-8 小時復活
   //         開放式：冷卻歸 0、死後立刻重生，所有人可以一直打
-  const BOSS_COOLDOWN_MS = 0;        // ⭐ 玩家冷卻關閉
+  const BOSS_COOLDOWN_MS = 5 * 60 * 1000; // ⭐ 5 分鐘冷卻（任何王共用）
   const BOSS_QUEUE_STALE_MS = 5 * 60 * 1000; // 排隊頭 5 分鐘沒動作 → 視為過期、可被略過
   const WORLD_BOSSES = [
     {
@@ -7915,6 +7915,7 @@ ${b.text}
             <div class="boss-hp-text">${Math.max(0, state.currentHp).toLocaleString()} / ${boss.hp.toLocaleString()}　(${hpPct.toFixed(1)}%)</div>
           </div>
           ${queueHtml}
+          ${renderBossRecentBattles(state, boss)}
           ${top5.length > 0 ? `
             <div class="boss-leaderboard">
               <div class="bl-title">⚔️ 傷害排行榜</div>
@@ -8159,11 +8160,43 @@ ${b.text}
     };
     const result = autoFight(me, monster);
     const dmgRaw = Math.max(0, state.currentHp - result.mHpFinal);
+    const stats = computeStats(me);
+
+    // ⭐ 預先準備戰鬥快照（dmgDealt / killed 由 transaction 填上實際值）
+    // 整個快照會被推到 worldBoss[bossId].recentBattles，所有人都看得到
+    const partialBattleSnap = {
+      id: 'br_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      ts: Date.now(),
+      bossId: boss.id,
+      bossName: boss.name,
+      bossIcon: boss.icon,
+      bossLevel: boss.level,
+      attackerId: me.id,
+      attackerName: me.name,
+      attackerAvatar: me.avatar || (CLASSES[r.class]?.icon) || '🎴',
+      // 給 replay UI 用的快照
+      playerSnap: {
+        name: me.name,
+        avatar: CLASSES[r.class]?.icon || '🎴',
+        level: r.level,
+        maxHp: stats.maxHp,
+        maxMp: stats.maxMp,
+      },
+      monsterSnap: {
+        name: monster.name,
+        icon: monster.icon,
+        level: monster.level,
+        // maxHp 在 tx 取得 actualDmg 後再算（fight-start hp = newState.currentHp + actualDmg）
+        ability: monster.ability,
+      },
+      // log 砍到最多 80 條防 firestore 太肥（每場 5 隻 × 3 王 = 1.2 MB 上限要小心）
+      log: (result.log || []).slice(0, 80),
+    };
 
     // 把傷害透過 transaction 原子地寫上雲端
     let txOut;
     try {
-      txOut = await window.__firebaseSync.applyBossAttack(bossId, dmgRaw, me.id, boss, BOSS_QUEUE_STALE_MS);
+      txOut = await window.__firebaseSync.applyBossAttack(bossId, dmgRaw, me.id, boss, BOSS_QUEUE_STALE_MS, partialBattleSnap);
     } catch (e) {
       const msg = e?.message || String(e);
       const code = e?.code || '';
@@ -8230,43 +8263,6 @@ ${b.text}
       } catch (e) {}
     }
 
-    // ⭐ 把這場戰鬥記到玩家的「過往戰報」（最多 5 場）
-    const battleSnap = {
-      id: 'br_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-      ts: Date.now(),
-      bossId: boss.id,
-      bossName: boss.name,
-      bossIcon: boss.icon,
-      bossLevel: boss.level,
-      dmgDealt,
-      killed,
-      xpGain,
-      coinGain,
-      // 給 replay UI 用的快照
-      playerSnap: {
-        name: me.name,
-        avatar: CLASSES[r.class]?.icon || '🎴',
-        level: r.level,
-        maxHp: stats.maxHp,
-        maxMp: stats.maxMp,
-      },
-      monsterSnap: {
-        name: monster.name,
-        icon: monster.icon,
-        level: monster.level,
-        maxHp: dmgDealt + (newState?.currentHp ?? 0) || boss.hp,
-        ability: monster.ability,
-      },
-      // log 砍到最多 100 條防止 firestore 太肥
-      log: (result.log || []).slice(0, 100),
-      worldSpiritDropped: worldSpiritDropped
-        ? { id: worldSpiritDropped.id, name: worldSpiritDropped.name, icon: worldSpiritDropped.icon, color: worldSpiritDropped.color }
-        : null,
-    };
-    r.bossBattleHistory = Array.isArray(r.bossBattleHistory) ? r.bossBattleHistory : [];
-    r.bossBattleHistory.unshift(battleSnap);
-    if (r.bossBattleHistory.length > 5) r.bossBattleHistory.length = 5;
-
     saveData();
     // 領自己的待領獎勵（pendingRewards）
     claimMyBossRewards();
@@ -8275,48 +8271,63 @@ ${b.text}
     updateStaminaUI();
     renderWorldBoss();
 
-    // 結果顯示在 fightResult — 摘要 + 過往戰報（5 場，可點開動畫重播）
-    renderBossFightResult(battleSnap);
+    // 結果顯示在 fightResult — 純摘要（過往戰報已在每隻王卡片底下）
+    renderBossFightResult({
+      bossId: boss.id, bossName: boss.name, bossIcon: boss.icon,
+      dmgDealt, xpGain, coinGain, killed,
+      worldSpiritDropped: worldSpiritDropped
+        ? { id: worldSpiritDropped.id, name: worldSpiritDropped.name, icon: worldSpiritDropped.icon, color: worldSpiritDropped.color }
+        : null,
+    });
   }
   window.runBossFight = runBossFight;
 
-  // ⭐ 渲染世界王戰報區（摘要 + 過往 5 場列表）
+  // ⭐ 每隻王卡片底下：全體可見的最近 5 場戰報
+  function renderBossRecentBattles(state, boss) {
+    const list = (state && Array.isArray(state.recentBattles)) ? state.recentBattles : [];
+    if (list.length === 0) return '';
+    const rows = list.slice(0, 5).map(h => {
+      const dmg = (h.dmgDealt != null) ? h.dmgDealt.toLocaleString() : '?';
+      const att = h.attackerName || '?';
+      const av = h.attackerAvatar || '🎴';
+      const time = formatRelativeTime ? formatRelativeTime(h.ts) : '';
+      const killBadge = h.killed ? '<span class="bh-kill">🏆 尾刀</span>' : '';
+      return `
+        <button class="boss-history-row ${h.killed ? 'is-kill' : ''}" onclick="replayBossFightFromState('${boss.id}','${h.id}')">
+          <span class="bh-icon">${av}</span>
+          <div class="bh-meta">
+            <div class="bh-line1">${escapeHtml(att)} ${killBadge}</div>
+            <div class="bh-line2">傷害 <b>${dmg}</b>　·　${time}</div>
+          </div>
+          <span class="bh-play">▶</span>
+        </button>
+      `;
+    }).join('');
+    return `
+      <div class="boss-history" style="margin:10px 0;">
+        <div class="boss-history-title">📜 最近 ${list.length} 場（點 → 跑讀條動畫）</div>
+        ${rows}
+      </div>
+    `;
+  }
+
+  // ⭐ 渲染世界王戰報區（單純：自己這場的摘要）
+  // 過往戰報 5 場改放在 renderWorldBoss 的每隻王卡片底下（全體共用）
   function renderBossFightResult(latest) {
     const fr = document.getElementById('fightResult');
     if (!fr) return;
-    const me = getMe();
-    const r = me ? getRpg(me) : null;
-    const hist = (r && Array.isArray(r.bossBattleHistory)) ? r.bossBattleHistory : [];
-    let summaryHtml = '';
-    if (latest) {
-      summaryHtml = `
-        <div class="reward-list" style="background:linear-gradient(135deg,#1e1b4b,#4c1d95); border-color:#f59e0b; color:#fff;">
-          <div class="rl-title" style="color:#fde68a;">🌍 ${escapeHtml(latest.bossName)} 戰報</div>
-          <div class="rl-item">⚔️ 你造成 <b style="color:#fca5a5;">${latest.dmgDealt.toLocaleString()}</b> 傷害</div>
-          <div class="rl-item">⭐ +${latest.xpGain} XP　·　🪙 +${latest.coinGain} 鵝鵝幣</div>
-          ${latest.killed
-            ? `<div style="margin-top:8px; padding:8px; background:rgba(245,158,11,0.3); border-radius:8px; color:#fde047; font-weight:700;">🏆 你給了尾刀！精魂 + 鵝鵝幣已入手</div>`
-            : ''}
-          ${latest.worldSpiritDropped ? `<div class="rl-item" style="color:${latest.worldSpiritDropped.color}; font-weight:700; padding:6px; background:#fff8; border-radius:6px;">🌟 掉落精魂：${latest.worldSpiritDropped.icon} ${escapeHtml(latest.worldSpiritDropped.name)}</div>` : ''}
-        </div>
-      `;
-    }
-    const histHtml = hist.length === 0 ? '' : `
-      <div class="boss-history">
-        <div class="boss-history-title">📜 過往戰報（${hist.length}/5）　<span style="font-weight:500; opacity:0.75;">點下一場 → 跑讀條動畫</span></div>
-        ${hist.map((h, i) => `
-          <button class="boss-history-row ${h.killed ? 'is-kill' : ''}" onclick="replayBossFight('${h.id}')">
-            <span class="bh-icon">${h.bossIcon}</span>
-            <div class="bh-meta">
-              <div class="bh-line1">${escapeHtml(h.bossName)} Lv ${h.bossLevel} ${h.killed ? '<span class="bh-kill">🏆 尾刀</span>' : ''}</div>
-              <div class="bh-line2">傷害 <b>${h.dmgDealt.toLocaleString()}</b>　·　+${h.xpGain} XP　·　${formatRelativeTime ? formatRelativeTime(h.ts) : new Date(h.ts).toLocaleTimeString('zh-TW',{hour12:false})}</div>
-            </div>
-            <span class="bh-play">▶</span>
-          </button>
-        `).join('')}
+    if (!latest) { fr.innerHTML = ''; return; }
+    fr.innerHTML = `
+      <div class="reward-list" style="background:linear-gradient(135deg,#1e1b4b,#4c1d95); border-color:#f59e0b; color:#fff;">
+        <div class="rl-title" style="color:#fde68a;">🌍 ${escapeHtml(latest.bossName)} 戰報</div>
+        <div class="rl-item">⚔️ 你造成 <b style="color:#fca5a5;">${latest.dmgDealt.toLocaleString()}</b> 傷害</div>
+        <div class="rl-item">⭐ +${latest.xpGain} XP　·　🪙 +${latest.coinGain} 鵝鵝幣</div>
+        ${latest.killed
+          ? `<div style="margin-top:8px; padding:8px; background:rgba(245,158,11,0.3); border-radius:8px; color:#fde047; font-weight:700;">🏆 你給了尾刀！精魂 + 鵝鵝幣已入手</div>`
+          : ''}
+        ${latest.worldSpiritDropped ? `<div class="rl-item" style="color:${latest.worldSpiritDropped.color}; font-weight:700; padding:6px; background:#fff8; border-radius:6px;">🌟 掉落精魂：${latest.worldSpiritDropped.icon} ${escapeHtml(latest.worldSpiritDropped.name)}</div>` : ''}
       </div>
     `;
-    fr.innerHTML = summaryHtml + histHtml;
   }
   window.renderBossFightResult = renderBossFightResult;
 
@@ -8329,13 +8340,30 @@ ${b.text}
     return new Date(ts).toLocaleDateString('zh-TW') + ' ' + new Date(ts).toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit' });
   }
 
-  // ⭐ 點開過往戰報 → 用 modal 重播（跑讀條 + HP / MP / SPD 條動畫）
-  function replayBossFight(historyId) {
-    const me = getMe(); if (!me) return;
-    const r = getRpg(me);
-    const hist = (r && Array.isArray(r.bossBattleHistory)) ? r.bossBattleHistory : [];
-    const snap = hist.find(h => h.id === historyId);
+  // ⭐ 從世界王 state 中找出某場戰報並重播（每隻王獨立的最近 5 場 — 全體可見）
+  function replayBossFightFromState(bossId, historyId) {
+    const state = worldBoss && worldBoss[bossId];
+    const list = (state && Array.isArray(state.recentBattles)) ? state.recentBattles : [];
+    const snap = list.find(h => h.id === historyId);
     if (!snap) { showToast('找不到該戰報'); return; }
+    return _doReplay(snap);
+  }
+  window.replayBossFightFromState = replayBossFightFromState;
+
+  // ⭐ 舊介面：從自己的戰報歷史播 — 保留 fallback（已棄用）
+  function replayBossFight(historyId) {
+    // 試 worldBoss 全體歷史所有 boss
+    if (worldBoss) {
+      for (const bid of Object.keys(worldBoss)) {
+        const list = (worldBoss[bid] && worldBoss[bid].recentBattles) || [];
+        const snap = list.find(h => h.id === historyId);
+        if (snap) return _doReplay(snap);
+      }
+    }
+    showToast('找不到該戰報');
+  }
+
+  function _doReplay(snap) {
     const ps = snap.playerSnap || {};
     const ms = snap.monsterSnap || {};
     const maxHp = ps.maxHp || 1;
@@ -9702,7 +9730,7 @@ ${b.text}
           return { queue: state.queue };
         });
       },
-      applyBossAttack: async (bossId, requestedDmg, attackerId, bossDef, staleMs) => {
+      applyBossAttack: async (bossId, requestedDmg, attackerId, bossDef, staleMs, battleSnap) => {
         return await runTransaction(db, async (tx) => {
           const snap = await tx.get(metaRef);
           const data = snap.exists() ? snap.data() : {};
@@ -9723,6 +9751,7 @@ ${b.text}
               lastKill: state ? state.lastKill : null,
               pendingRewards: state ? (state.pendingRewards || []) : [],
               queue: [],
+              recentBattles: state ? (state.recentBattles || []) : [],
             };
           }
           if (state.deadAt) {
@@ -9801,6 +9830,22 @@ ${b.text}
           // 攻擊完成 → 從排隊頭移除自己（讓下一位上場）
           if (state.queue[0] && state.queue[0].pid === attackerId) {
             state.queue.shift();
+          }
+          // ⭐ 把這場戰鬥推到「全體可見的最近 5 場」（每隻王獨立）
+          //    dmgDealt / killed / monsterSnap.maxHp 由 tx 填上實際值
+          if (battleSnap) {
+            const filledSnap = {
+              ...battleSnap,
+              dmgDealt: actualDmg,
+              killed,
+              monsterSnap: {
+                ...(battleSnap.monsterSnap || {}),
+                maxHp: actualDmg + state.currentHp || bossDef.hp,
+              },
+            };
+            state.recentBattles = Array.isArray(state.recentBattles) ? state.recentBattles : [];
+            state.recentBattles.unshift(filledSnap);
+            if (state.recentBattles.length > 5) state.recentBattles.length = 5;
           }
           wb[bossId] = state;
           tx.set(metaRef, { worldBoss: wb }, { merge: true });
