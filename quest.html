@@ -2325,81 +2325,7 @@
   // 舊 API 相容（若有舊 call site 仍呼叫 layerFloorToLevel 也能 work）
   function layerFloorToLevel(layerId) { return pickLayerLevel(layerId); }
 
-  // === 世界王 ===
-  // ⭐ v8.1：暫時關閉，整個系統會重寫（避免累積的修改造成更多 bug）
-  //   - renderWorldBoss 顯示「整修中」訊息
-  //   - joinBossQueue / leaveBossQueue / runBossFight 一律拒絕
-  //   - 1 秒 tick 不再 render world boss
-  //   - claimMyBossRewards 仍可運作（之前還沒領的獎勵不會卡住）
-  const WORLD_BOSS_DISABLED = true;
-  const BOSS_COOLDOWN_MS = 5 * 60 * 1000; // ⭐ 5 分鐘冷卻（任何王共用）
-  const BOSS_QUEUE_STALE_MS = 60 * 1000;     // ⭐ 排隊頭 1 分鐘沒動作 → 自動取消（防卡排隊）
-  const WORLD_BOSSES = [
-    {
-      id: 'goose_king',
-      name: '🦢 鵝皇',
-      icon: '🦢',
-      hp: 90000,        // 50000 → 90000：更耐打
-      atk: 143, def: 38, spd: 12,  // ATK 95 → 143（v8 +50%）
-      level: 30,
-      respawnMs: 0,     // ⭐ 立刻重生
-      verb: '皇者懲戒',
-      ability: { type: 'multiHit', hits: 2 },
-      dialogue: ['吾乃鵝中之王！跪下臣服！', '弱者，退散吧！', '凡夫俗子也敢挑戰皇威？'],
-      deathLine: ['啊...吾的皇位...就此...', '不...不可能...凡人怎能...', '記住...吾鵝皇...終將復生...'],
-      // ⭐ 世界王不再掉裝備 — 改用精魂（殺尾刀的人會拿到精魂）
-      // 結算用「王硬幣」道具（可堆疊）：1名 6 / 2名 4 / 其他 2；尾刀額外 +6
-      bossCoin: { id: 'bc_goose_king', name: '鵝皇硬幣', icon: '👑' },
-      rewardKiller: { coins: 2000 },
-      rewardTop:    { coins: 1000 },
-      rewardSecond: { coins: 500 },
-      rewardThird:  { coins: 250 },
-      rewardParticipant: { coins: 100 },
-    },
-    {
-      id: 'dragon_goose',
-      name: '🐉 古龍鵝',
-      icon: '🐉',
-      hp: 200000,       // 100000 → 200000
-      atk: 210, def: 50, spd: 14, // ATK 140 → 210（v8 +50%）
-      level: 40,
-      respawnMs: 0,     // ⭐ 立刻重生
-      verb: '龍焰之息',
-      ability: { type: 'physResist', resist: 0.25 },
-      dialogue: ['古老的龍威甦醒...', '吾將焚盡一切！', '微不足道的鵝鵝...'],
-      deathLine: ['千年龍威...化為塵土...', '吾將...沉睡...再起...', '汝...名留龍譜...'],
-      bossCoin: { id: 'bc_dragon_goose', name: '古龍鵝硬幣', icon: '🐲' },
-      rewardKiller: { coins: 5000 },
-      rewardTop:    { coins: 2500 },
-      rewardSecond: { coins: 1500 },
-      rewardThird:  { coins: 750 },
-      rewardParticipant: { coins: 200 },
-    },
-    {
-      id: 'pebble_goose',
-      name: '🪨 鵝卵石',
-      icon: '🪨',
-      hp: 5000000,
-      atk: 203, def: 65, spd: 8,  // ATK 135 → 203（v8 +50%）
-      level: 55,
-      respawnMs: 0,
-      verb: '崩落巨石',
-      ability: { type: 'physResist', resist: 0.30 },
-      dialogue: ['億萬年的鵝魂沉睡於此…', '汝之物理…撼不動鵝石…', '化為塵埃吧…'],
-      deathLine: ['億萬年…崩裂了…', '吾乃永恆…竟有盡頭…', '吾魂…化為流沙…'],
-      bossCoin: { id: 'bc_pebble_goose', name: '鵝卵石硬幣', icon: '🪨' },
-      skills: [
-        { verb: '落石擊', mult: 2.0, cooldown: 5 },
-        { verb: '大地震', mult: 1.4, applyStatus: { type: 'paralyze', turns: 2, chance: 0.45 }, cooldown: 6 },
-        { verb: '石化凝視', mult: 0.8, applyStatus: { type: 'paralyze', turns: 2, chance: 0.65 }, cooldown: 7 },
-      ],
-      rewardKiller: { coins: 12000 },
-      rewardTop:    { coins: 6000 },
-      rewardSecond: { coins: 3500 },
-      rewardThird:  { coins: 2000 },
-      rewardParticipant: { coins: 500 },
-    },
-  ];
+  // === 世界王 v9 （舊 v8 WORLD_BOSSES / WORLD_BOSS_DISABLED 已於 commit 7 移除） ===
 
   // ============================================================
   // 🐉 世界王 v9（重寫版，獨立命名空間 — 不沾舊 worldBoss state）
@@ -7407,7 +7333,7 @@
         <b>👑 王硬幣總數：${bcTotal}</b>
         <div style="font-size:11px; margin-top:4px; color:#78350f;">
           ${bcEntries.map(([id, qty]) => {
-            const def = WORLD_BOSSES.find(b => b.bossCoin?.id === id)?.bossCoin;
+            const def = WB9_BOSSES.find(b => b.bossCoin?.id === id)?.bossCoin;
             const icon = def?.icon || '👑';
             const name = def?.name || id;
             return `${icon} ${escapeHtml(name)} ×${qty}`;
@@ -9739,36 +9665,6 @@ ${b.text}
   }
   window.pickClass = pickClass;
 
-  // === 世界王 ===
-  function getBossState(bossId) {
-    if (!worldBoss) worldBoss = {};
-    const boss = WORLD_BOSSES.find(b => b.id === bossId);
-    if (!boss) return null;
-    if (!worldBoss[bossId]) {
-      worldBoss[bossId] = {
-        currentHp: boss.hp,
-        spawnedAt: Date.now(),
-        deadAt: null,
-        nextSpawnAt: null,
-        damageLog: {},
-        lastHit: null,
-        killCount: 0,
-        lastKill: null,
-      };
-    }
-    const state = worldBoss[bossId];
-    // 自動復活：respawnMs=0 → 死了就立刻重生；否則等到 nextSpawnAt
-    const instant = !boss.respawnMs;
-    if (state.deadAt && (instant || (state.nextSpawnAt && Date.now() >= state.nextSpawnAt))) {
-      state.currentHp = boss.hp;
-      state.deadAt = null;
-      state.nextSpawnAt = null;
-      state.spawnedAt = Date.now();
-      state.damageLog = {};
-      state.lastHit = null;
-    }
-    return state;
-  }
 
   // ⭐ 試煉戰場：3 隻怪物同時打
   const TRIAL_STAMINA = 0; // ⭐ 試煉戰場：免費試強度，但目前不發獎勵（之後再開放）
@@ -10008,569 +9904,33 @@ ${b.text}
     updateStaminaUI();
   }
 
-  // 「結構性」狀態雜湊：王 HP / 排隊頭 / 死活 / killCount / cd 開關。
-  // 不含每秒會變的倒數文字 — 倒數文字由 updateBossLiveTimers 直接 patch DOM，避免每秒整段 innerHTML 重畫造成閃爍
-  let __lastBossRenderHash = '';
-  function bossRenderHash() {
-    const me = getMe();
-    const r = me ? getRpg(me) : null;
-    const onCd = r ? ((Date.now() - (r.lastBossAttackTime || 0)) < BOSS_COOLDOWN_MS) : false;
-    const parts = [`me:${me?.id||''}`, `cd:${onCd?'1':'0'}`];
-    for (const b of WORLD_BOSSES) {
-      const s = (worldBoss && worldBoss[b.id]) || {};
-      const head = (s.queue || [])[0];
-      parts.push([
-        b.id,
-        s.currentHp || 0,
-        !!s.deadAt ? '1' : '0',
-        (s.queue || []).length,
-        head?.pid || '',
-        head?.headSinceAt || 0,
-        s.killCount || 0,
-        (s.recentBattles || []).length,
-        s.lastKill?.killer || '',
-        s.spawnedAt || 0,
-      ].join('|'));
-    }
-    return parts.join(';');
-  }
+  // === 以下為舊 v8 world boss 函式（已在 commit 7 移除） ===
+  // bossRenderHash / updateBossLiveTimers / renderWorldBoss / claimMyBossRewards
+  // distributeBossRewards / joinBossQueue / leaveBossQueue / runBossFight
+  // renderBossRecentBattles / renderBossFightResult  — 全數刪除
+  // ======================================================
 
-  function updateBossLiveTimers() {
-    const now = Date.now();
-    const me = getMe();
-    const r = me ? getRpg(me) : null;
-    const cdRemain = r ? Math.max(0, (r.lastBossAttackTime || 0) + BOSS_COOLDOWN_MS - now) : 0;
-    document.querySelectorAll('[data-cd-text]').forEach(el => {
-      if (cdRemain > 0) {
-        const m = Math.floor(cdRemain / 60000);
-        const s = Math.ceil((cdRemain % 60000) / 1000);
-        el.textContent = `⏳ 冷卻 ${m}:${String(s).padStart(2,'0')}（任何王共用）`;
-      }
-    });
-    document.querySelectorAll('[data-respawn-text]').forEach(el => {
-      const at = Number(el.getAttribute('data-respawn-at')) || 0;
-      const remain = Math.max(0, at - now);
-      const hr = Math.floor(remain / 3600000);
-      const mi = Math.floor((remain % 3600000) / 60000);
-      const sc = Math.floor((remain % 60000) / 1000);
-      el.textContent = `${hr}:${String(mi).padStart(2,'0')}:${String(sc).padStart(2,'0')} 後復活`;
-    });
-  }
-
-  function renderWorldBoss(opts) {
-    // ⭐ v8.1：世界王重寫中 — 改交給 v9 系統渲染（commit 1：basic display）
-    if (WORLD_BOSS_DISABLED) {
-      if (typeof wb9Render === 'function') wb9Render();
-      return;
-    }
-    const force = opts && opts.force;
-    // 結構性沒變 → 只 patch 倒數文字，避免整段 innerHTML 重畫造成閃爍
-    const hash = bossRenderHash();
-    if (!force && hash === __lastBossRenderHash) {
-      updateBossLiveTimers();
-      return;
-    }
-    __lastBossRenderHash = hash;
-    const me = getMe();
-    const myRpg = me ? getRpg(me) : null;
-    // 全域 20 分冷卻（任何王共用）
-    const myGlobalCdMs = myRpg ? Math.max(0, (myRpg.lastBossAttackTime || 0) + BOSS_COOLDOWN_MS - Date.now()) : 0;
-    const onGlobalCd = myGlobalCdMs > 0;
-    // 我目前在哪個王的排隊
-    let myQueuedBossId = null;
-    if (me) {
-      for (const b of WORLD_BOSSES) {
-        const q = (worldBoss?.[b.id]?.queue) || [];
-        if (q.find(qi => qi.pid === me.id)) { myQueuedBossId = b.id; break; }
-      }
-    }
-    const html = WORLD_BOSSES.map(boss => {
-      const state = getBossState(boss.id);
-      const isDead = !!state.deadAt;
-      const hpPct = isDead ? 0 : Math.max(0, (state.currentHp / boss.hp) * 100);
-      const remainingMs = isDead ? Math.max(0, state.nextSpawnAt - Date.now()) : 0;
-      const hr = Math.floor(remainingMs / 3600000);
-      const min = Math.floor((remainingMs % 3600000) / 60000);
-      const sec = Math.floor((remainingMs % 60000) / 1000);
-      const sortedDmg = Object.entries(state.damageLog || {}).sort((a, b) => b[1] - a[1]);
-      const top5 = sortedDmg.slice(0, 5);
-      // 排隊狀態
-      const queue = (state.queue || []).filter(q => q && q.pid);
-      const myPos = me ? queue.findIndex(q => q.pid === me.id) : -1;
-      const isMyTurn = myPos === 0;
-      const queuedHere = myPos >= 0;
-      const queuedElsewhere = myQueuedBossId && myQueuedBossId !== boss.id;
-      const queueHtml = queue.length > 0 ? `
-        <div class="boss-queue">
-          <div class="bq-title">📋 排隊（${queue.length}）</div>
-          ${queue.slice(0, 6).map((q, i) => {
-            const p = getPlayer(q.pid);
-            const stale = (Date.now() - (q.joinedAt || 0)) > BOSS_QUEUE_STALE_MS;
-            return `<div class="bq-row ${i === 0 ? 'bq-head' : ''} ${q.pid === me?.id ? 'bq-me' : ''}">
-              <span class="bq-pos">${i === 0 ? '🔥' : i + 1}</span>
-              <span class="bq-name">${p ? (p.avatar || '🎴') + ' ' + escapeHtml(p.name) : '?'}${stale ? ' <span style="color:#dc2626;">(過期)</span>' : ''}</span>
-            </div>`;
-          }).join('')}
-        </div>` : '';
-      // 動作按鈕邏輯
-      let actionHtml = '';
-      if (isDead) {
-        actionHtml = `<button class="btn btn-primary" disabled style="background:#4b5563;">⏳ 等待復活</button>`;
-      } else if (onGlobalCd) {
-        const m = Math.floor(myGlobalCdMs / 60000);
-        const s = Math.ceil((myGlobalCdMs % 60000) / 1000);
-        actionHtml = `<button class="btn btn-primary" disabled style="background:#4b5563;"><span data-cd-text>⏳ 冷卻 ${m}:${String(s).padStart(2,'0')}（任何王共用）</span></button>`;
-      } else if (isMyTurn) {
-        actionHtml = `
-          <button class="btn btn-primary" onclick="runBossFight('${boss.id}')" style="background:linear-gradient(135deg,#fde047,#f59e0b); box-shadow:0 4px 0 #d97706; color:#7c2d12;">🔥 你的回合！攻擊</button>
-          <button class="btn btn-secondary" onclick="leaveBossQueue('${boss.id}')" style="margin-top:6px;">取消排隊</button>
-        `;
-      } else if (queuedHere) {
-        actionHtml = `
-          <button class="btn btn-primary" disabled style="background:#6b7280;">🕒 排隊中：第 ${myPos + 1} 位</button>
-          <button class="btn btn-secondary" onclick="leaveBossQueue('${boss.id}')" style="margin-top:6px;">取消排隊</button>
-        `;
-      } else if (queuedElsewhere) {
-        const otherBoss = WORLD_BOSSES.find(b => b.id === myQueuedBossId);
-        actionHtml = `<button class="btn btn-primary" disabled style="background:#4b5563;">已排隊在 ${otherBoss?.name || ''}</button>`;
-      } else {
-        const ahead = queue.length;
-        actionHtml = `<button class="btn btn-primary" onclick="joinBossQueue('${boss.id}')" style="background:linear-gradient(135deg,#f59e0b,#dc2626); box-shadow:0 4px 0 #991b1b;">📋 加入排隊${ahead > 0 ? `（前面 ${ahead} 人）` : ''}</button>`;
-      }
-      return `
-        <div class="boss-card ${isDead ? 'dead' : ''}">
-          <div class="boss-header">
-            <span class="boss-icon">${boss.icon}</span>
-            <div>
-              <div class="boss-name">${boss.name} Lv ${boss.level}</div>
-              <div class="boss-status">${isDead ? `💀 倒下　·　<span data-respawn-text data-respawn-at="${state.nextSpawnAt || 0}">${hr}:${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')} 後復活</span>` : `⚔️ 存活　·　ATK ${boss.atk} / DEF ${boss.def}　·　${describeAbility(boss.ability) || '無特殊能力'}`}</div>
-            </div>
-          </div>
-          <div class="boss-hp-bar">
-            <div class="boss-hp-fill" style="width:${hpPct}%"></div>
-            <div class="boss-hp-text">${Math.max(0, state.currentHp).toLocaleString()} / ${boss.hp.toLocaleString()}　(${hpPct.toFixed(1)}%)</div>
-          </div>
-          ${queueHtml}
-          ${renderBossRecentBattles(state, boss)}
-          ${top5.length > 0 ? `
-            <div class="boss-leaderboard">
-              <div class="bl-title">⚔️ 傷害排行榜</div>
-              ${top5.map(([pid, dmg], i) => {
-                const p = getPlayer(pid);
-                return `<div class="bl-row">
-                  <span class="bl-rank">${i+1}</span>
-                  <span class="bl-name">${p ? p.avatar + ' ' + escapeHtml(p.name) : '?'}</span>
-                  <span class="bl-dmg">${dmg.toLocaleString()}</span>
-                </div>`;
-              }).join('')}
-            </div>
-          ` : '<div style="font-size:11px; color:#fde68a; text-align:center; padding:8px; opacity:0.7;">尚無人挑戰</div>'}
-          ${state.lastKill ? `
-            <div style="font-size:11px; color:#fde047; text-align:center; margin-bottom:8px;">
-              🏆 第 ${state.killCount} 次擊殺：${getPlayer(state.lastKill.killer)?.name || '?'}
-            </div>
-          ` : ''}
-          ${actionHtml}
-        </div>
-      `;
-    }).join('');
-    document.getElementById('worldBossBody').innerHTML = html;
-    // 沒有當前戰報時，把過往戰報展給玩家看（進來就能點過往戰鬥）
-    const fr = document.getElementById('fightResult');
-    if (fr && !fr.innerHTML.trim() && typeof renderBossFightResult === 'function') {
-      renderBossFightResult(null);
-    }
-  }
-
-  // 綠茶指南書里程碑發放：遇綠茶鵝 10/20/30/50/75/100 次自動拿到對應的指南書
-  function grantGreenTeaGuides(player) {
-    if (!player || !player.rpg) return;
-    const rpg = player.rpg;
-    rpg.greenTeaGuidesGranted = rpg.greenTeaGuidesGranted || [];
-    const cnt = rpg.metGreenTea || 0;
-    rpg.inventory = rpg.inventory || [];
-    let granted = false;
-    for (const g of GREENTEA_GUIDES) {
-      if (cnt >= g.count && !rpg.greenTeaGuidesGranted.includes(g.itemId)) {
-        const def = ITEMS.find(i => i.id === g.itemId);
-        if (def) {
-          rpg.inventory.push(def.id);
-          rpg.greenTeaGuidesGranted.push(g.itemId);
-          granted = true;
-          // 跳通知
-          if (player.id === getMeId()) {
-            showToast(`📚 綠茶指南書達成！第 ${g.count} 次相遇 → 獲得 ${def.icon} ${def.name}`);
-          }
-        }
-      }
-    }
-    return granted;
-  }
-
-  // 玩家自己領取自己的待領獎勵（從 worldBoss[*].pendingRewards 取出 pid 等於自己的條目）
-  // 用 rpg.claimedBossRewards 防止重複領取（多端同步可能重複觸發）
-  function claimMyBossRewards() {
-    const me = getMe();
-    if (!me) return false;
-    const r = getRpg(me);
-    r.claimedBossRewards = r.claimedBossRewards || [];
-    let claimedAny = false;
-    let inventoryAdded = [];
-    let coinsAdded = 0;
-    let bossCoinsAdded = []; // [{ icon, name, qty }]
-    for (const boss of WORLD_BOSSES) {
-      const state = worldBoss && worldBoss[boss.id];
-      if (!state || !Array.isArray(state.pendingRewards)) continue;
-      for (const reward of state.pendingRewards) {
-        if (!reward || reward.pid !== me.id) continue;
-        if (r.claimedBossRewards.includes(reward.rewardId)) continue;
-        // 領取
-        if (reward.coins) refundCoins(me.id, reward.coins);
-        if (reward.item) {
-          // ⭐ Phase A: atomic tx
-          addInventoryItem(me.id, reward.item);
-          inventoryAdded.push(reward.item);
-        }
-        // ⭐ 王硬幣：用 increment atomic（不沾 inventory，不會被並發吃掉）
-        if (reward.bossCoinQty && boss.bossCoin) {
-          const def = boss.bossCoin;
-          addBossCoin(me.id, def.id, reward.bossCoinQty);
-          bossCoinsAdded.push({ icon: def.icon, name: def.name, qty: reward.bossCoinQty });
-        }
-        r.claimedBossRewards.push(reward.rewardId);
-        coinsAdded += reward.coins || 0;
-        claimedAny = true;
-      }
-    }
-    if (claimedAny) {
-      saveData();
-      const itemNote = inventoryAdded.length > 0 ? ` + ${inventoryAdded.length} 件神話裝備` : '';
-      // 合併同名硬幣顯示
-      const coinSummary = {};
-      bossCoinsAdded.forEach(c => {
-        coinSummary[c.name] = coinSummary[c.name] || { icon: c.icon, qty: 0 };
-        coinSummary[c.name].qty += c.qty;
-      });
-      const coinNote = Object.entries(coinSummary).map(([n, v]) => `${v.icon}×${v.qty}`).join(' ');
-      showToast(`🏆 世界王獎勵入帳：+${coinsAdded} 鵝鵝幣${coinNote ? ' / ' + coinNote : ''}${itemNote}`);
-    }
-    return claimedAny;
-  }
+  // ⭐ claimMyBossRewards：v9 不再使用 pendingRewards；保留空殼防止舊呼叫崩潰
+  function claimMyBossRewards() { return false; }
   window.claimMyBossRewards = claimMyBossRewards;
 
-  // 舊版的同步分發（保留為 fallback，但實際上已被 transaction 內的 pendingRewards 取代）
-  function distributeBossRewards(bossId, boss, state) {
-    const sortedDmg = Object.entries(state.damageLog || {}).sort((a, b) => b[1] - a[1]);
-    const ranks = [boss.rewardTop, boss.rewardSecond, boss.rewardThird];
-    // 尾刀大獎
-    const killerP = getPlayer(state.lastHit);
-    if (killerP) {
-      killerP.coinsSpent = (killerP.coinsSpent || 0) - boss.rewardKiller.coins;
-      if (boss.rewardKiller.item) {
-        const kr = getRpg(killerP); kr.inventory = kr.inventory || [];
-        kr.inventory.push(boss.rewardKiller.item);
-      }
-    }
-    // 排行 1-3 額外
-    sortedDmg.slice(0, 3).forEach(([pid, dmg], idx) => {
-      const reward = ranks[idx];
-      if (!reward) return;
-      const p = getPlayer(pid);
-      if (p) p.coinsSpent = (p.coinsSpent || 0) - reward.coins;
-    });
-    // 其餘參與者
-    sortedDmg.slice(3).forEach(([pid]) => {
-      const p = getPlayer(pid);
-      if (p && boss.rewardParticipant) p.coinsSpent = (p.coinsSpent || 0) - boss.rewardParticipant.coins;
-    });
-  }
+  // ⭐ v9：renderWorldBoss → 直接呼叫 wb9Render
+  function renderWorldBoss(opts) { if (typeof wb9Render === 'function') wb9Render(opts); }
+  window.renderWorldBoss = renderWorldBoss;
 
-  // 加入排隊（不扣體力、不打）
-  async function joinBossQueue(bossId) {
-    if (WORLD_BOSS_DISABLED) { showToast('🛠️ 世界王整修中'); return; }
-    const me = getMe(); if (!me) return;
-    const r = getRpg(me); if (!r.class) return;
-    const boss = WORLD_BOSSES.find(b => b.id === bossId);
-    if (!boss) return;
-    if (r.hp <= 0) { showToast('💀 HP 太低，先回滿再來'); return; }
-    // 全域 20 分鐘冷卻
-    const cdRemain = (r.lastBossAttackTime || 0) + BOSS_COOLDOWN_MS - Date.now();
-    if (cdRemain > 0) {
-      const m = Math.floor(cdRemain / 60000);
-      const s = Math.ceil((cdRemain % 60000) / 1000);
-      showToast(`⏳ 上次參戰冷卻中，還要等 ${m}:${String(s).padStart(2,'0')}`);
-      return;
-    }
-    if (!window.__firebaseSync || !window.__firebaseSync.joinBossQueue) {
-      showToast('☁️ 雲端尚未連線，稍後再試');
-      return;
-    }
-    try {
-      const out = await window.__firebaseSync.joinBossQueue(bossId, me.id, boss, BOSS_QUEUE_STALE_MS);
-      const pos = out.position;
-      if (pos === 0) showToast(`✅ 你目前是排隊頭，可以攻擊了！`);
-      else            showToast(`📋 已加入排隊：第 ${pos + 1} 位（前面 ${pos} 人）`);
-      renderWorldBoss();
-    } catch (e) {
-      const code = e?.code || '';
-      const msg = e?.message || String(e);
-      if (msg.startsWith('already-in-other-queue:')) {
-        const otherId = msg.split(':')[1];
-        const otherBoss = WORLD_BOSSES.find(b => b.id === otherId);
-        showToast(`你已排在 ${otherBoss?.name || otherId}，先取消才能改排這隻`);
-      } else if (msg === 'already-in-this-queue') {
-        showToast('你已經在這個排隊中');
-      } else if (msg === 'boss-already-dead') {
-        showToast('🦢 王已倒下，等復活吧');
-      } else if (code === 'resource-exhausted' || msg.includes('429')) {
-        showToast('☁️ Firestore 配額用完了');
-      } else {
-        showToast('☁️ 排隊失敗：' + (code || msg.slice(0, 40)));
-      }
-    }
-  }
+  // v8 dead code stubs (commit 7)
+  function bossRenderHash() { return ''; }
+  function updateBossLiveTimers() {}
+  function renderBossRecentBattles() { return ''; }
+  function renderBossFightResult() {}
+  function joinBossQueue() { showToast('請改用 v9 世界王系統'); }
   window.joinBossQueue = joinBossQueue;
-
-  // 退出排隊
-  async function leaveBossQueue(bossId) {
-    if (WORLD_BOSS_DISABLED) { showToast('🛠️ 世界王整修中'); return; }
-    const me = getMe(); if (!me) return;
-    if (!window.__firebaseSync || !window.__firebaseSync.leaveBossQueue) return;
-    try {
-      await window.__firebaseSync.leaveBossQueue(bossId, me.id);
-      showToast('已退出排隊');
-      renderWorldBoss();
-    } catch (e) {
-      console.warn('leave queue failed:', e);
-    }
-  }
+  function leaveBossQueue() {}
   window.leaveBossQueue = leaveBossQueue;
-
-  // 真正攻擊（必須是排隊頭）
-  async function runBossFight(bossId) {
-    if (WORLD_BOSS_DISABLED) { showToast('🛠️ 世界王整修中'); return; }
-    const me = getMe(); if (!me) return;
-    const r = getRpg(me); if (!r.class) return;
-    tickRecovery(me);
-    const boss = WORLD_BOSSES.find(b => b.id === bossId);
-    if (!boss) return;
-    const state = getBossState(bossId);
-    if (state.deadAt) { showToast('🦢 王還沒復活'); return; }
-    if (r.hp <= 0) { showToast('💀 HP 不足'); return; }
-    // 必須是排隊頭
-    const queue = (state.queue || []);
-    if (queue.length === 0 || queue[0].pid !== me.id) {
-      // 是不是過期 head？讓 transaction 自己處理
-      if (queue.length > 0 && queue[0].pid !== me.id) {
-        showToast('⏳ 還沒輪到你');
-        return;
-      }
-      showToast('先按「加入排隊」再來打');
-      return;
-    }
-    if (!window.__firebaseSync || !window.__firebaseSync.applyBossAttack) {
-      showToast('☁️ 雲端尚未連線，稍後再試');
-      return;
-    }
-
-    const monster = {
-      id: boss.id, tier: 99,
-      name: boss.name, icon: boss.icon, level: boss.level,
-      hp: state.currentHp, maxHp: boss.hp,
-      atk: boss.atk, def: boss.def, spd: boss.spd,
-      verb: boss.verb, dialogue: boss.dialogue, deathLine: boss.deathLine,
-      ability: boss.ability,
-      goldDrop: 0, xpDrop: 0,
-    };
-    const result = autoFight(me, monster);
-    const dmgRaw = Math.max(0, state.currentHp - result.mHpFinal);
-    const stats = computeStats(me);
-
-    // ⭐ 預先準備戰鬥快照（dmgDealt / killed 由 transaction 填上實際值）
-    // 整個快照會被推到 worldBoss[bossId].recentBattles，所有人都看得到
-    const partialBattleSnap = {
-      id: 'br_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-      ts: Date.now(),
-      bossId: boss.id,
-      bossName: boss.name,
-      bossIcon: boss.icon,
-      bossLevel: boss.level,
-      attackerId: me.id,
-      attackerName: me.name,
-      attackerAvatar: me.avatar || (CLASSES[r.class]?.icon) || '🎴',
-      // 給 replay UI 用的快照
-      playerSnap: {
-        name: me.name,
-        avatar: CLASSES[r.class]?.icon || '🎴',
-        level: r.level,
-        maxHp: stats.maxHp,
-        maxMp: stats.maxMp,
-      },
-      monsterSnap: {
-        name: monster.name,
-        icon: monster.icon,
-        level: monster.level,
-        // maxHp 在 tx 取得 actualDmg 後再算（fight-start hp = newState.currentHp + actualDmg）
-        ability: monster.ability,
-      },
-      // log 砍到最多 80 條防 firestore 太肥（每場 5 隻 × 3 王 = 1.2 MB 上限要小心）
-      log: (result.log || []).slice(0, 80),
-    };
-
-    // 把傷害透過 transaction 原子地寫上雲端
-    let txOut;
-    try {
-      txOut = await window.__firebaseSync.applyBossAttack(bossId, dmgRaw, me.id, boss, BOSS_QUEUE_STALE_MS, partialBattleSnap);
-    } catch (e) {
-      const msg = e?.message || String(e);
-      const code = e?.code || '';
-      console.warn('Boss attack tx failed:', code, msg);
-      if (code === 'resource-exhausted' || msg.includes('429')) {
-        showToast('☁️ Firestore 配額用完了，明天 UTC 0 點會重置');
-      } else if (msg === 'boss-already-dead' || msg.includes('boss-already-dead')) {
-        showToast('🦢 王已倒下');
-      } else if (msg === 'not-your-turn' || msg.includes('not-your-turn')) {
-        showToast('⏳ 還沒輪到你');
-      } else if (msg === 'not-in-queue' || msg.includes('not-in-queue')) {
-        showToast('你已經不在排隊中');
-      } else {
-        showToast('☁️ 連線出錯：' + (code || msg.slice(0, 40)));
-      }
-      renderWorldBoss();
-      return;
-    }
-    // 攻擊成功 → 設置全域冷卻
-    r.lastBossAttackTime = Date.now();
-    const dmgDealt = txOut.actualDmg;  // 雲端實際接受的傷害（可能比 dmgRaw 少：王只剩 50 HP 時你打 1000 也只算 50）
-    const newState = txOut.newState;
-    const killed = txOut.killed;
-    // 把雲端結果同步回本地
-    worldBoss[bossId] = newState;
-
-    // 玩家獲得：傷害 × 0.8 XP（一場最多 1000 EXP）/ 傷害 × 0.1 鵝鵝幣
-    const xpGain = Math.min(1000, Math.round(dmgDealt * 0.8));
-    const coinGain = Math.round(dmgDealt * 0.1);
-    r.xp = (r.xp || 0) + xpGain;
-    let leveled = 0;
-    while (r.xp >= xpForLevel(r.level)) {
-      r.xp -= xpForLevel(r.level);
-      r.level += 1;
-      r.skillPoints = (r.skillPoints || 0) + POINTS_PER_LEVEL.skill;
-      r.abilityPoints = (r.abilityPoints || 0) + POINTS_PER_LEVEL.ability;
-      leveled++;
-    }
-    refundCoins(me.id, coinGain);
-    // ⭐ HP/MP 戰後一律回滿（除非真的被打死）
-    //   尾刀者（killed=true）就算 HP 0 也視為勝利 → HP 滿血、不會死
-    const _s = computeStats(me);
-    if (killed) {
-      r.hp = _s.maxHp;
-      r.deathAt = null;
-    } else if (result.pHpFinal <= 0) {
-      r.hp = 0;
-      if (!r.deathAt) r.deathAt = Date.now();
-    } else {
-      r.hp = _s.maxHp;
-    }
-    r.mp = _s.maxMp;
-    if (result.critCount) r.critCount = (r.critCount || 0) + result.critCount;
-    if (leveled) {
-      const s = computeStats(me); r.hp = r.deathAt ? 0 : s.maxHp; r.mp = s.maxMp;
-    }
-
-    // ⭐ 世界王給尾刀者掉精魂
-    let worldSpiritDropped = null;
-    if (killed) {
-      try {
-        const sp = generateSpirit(boss.id);
-        if (sp) {
-          r.spiritBag = r.spiritBag || [];
-          r.spiritBag.push(sp);
-          worldSpiritDropped = sp;
-        }
-      } catch (e) {}
-    }
-
-    saveData();
-    // 領自己的待領獎勵（pendingRewards）
-    claimMyBossRewards();
-    renderCharCard();
-    renderCharQuickMenu();
-    updateStaminaUI();
-    renderWorldBoss();
-
-    // 結果顯示在 fightResult — 純摘要（過往戰報已在每隻王卡片底下）
-    renderBossFightResult({
-      bossId: boss.id, bossName: boss.name, bossIcon: boss.icon,
-      dmgDealt, xpGain, coinGain, killed,
-      worldSpiritDropped: worldSpiritDropped
-        ? { id: worldSpiritDropped.id, name: worldSpiritDropped.name, icon: worldSpiritDropped.icon, color: worldSpiritDropped.color }
-        : null,
-    });
-  }
+  function runBossFight() { showToast('請改用 v9 世界王系統'); }
   window.runBossFight = runBossFight;
-
-  // ⭐ 每隻王卡片底下：全體可見的最近 5 場戰報
-  function renderBossRecentBattles(state, boss) {
-    const list = (state && Array.isArray(state.recentBattles)) ? state.recentBattles : [];
-    if (list.length === 0) return '';
-    const rows = list.slice(0, 5).map(h => {
-      const dmg = (h.dmgDealt != null) ? h.dmgDealt.toLocaleString() : '?';
-      const att = h.attackerName || '?';
-      const av = h.attackerAvatar || '🎴';
-      const time = formatRelativeTime ? formatRelativeTime(h.ts) : '';
-      const killBadge = h.killed ? '<span class="bh-kill">🏆 尾刀</span>' : '';
-      return `
-        <button class="boss-history-row ${h.killed ? 'is-kill' : ''}" onclick="replayBossFightFromState('${boss.id}','${h.id}')">
-          <span class="bh-icon">${av}</span>
-          <div class="bh-meta">
-            <div class="bh-line1">${escapeHtml(att)} ${killBadge}</div>
-            <div class="bh-line2">傷害 <b>${dmg}</b>　·　${time}</div>
-          </div>
-          <span class="bh-play">▶</span>
-        </button>
-      `;
-    }).join('');
-    return `
-      <div class="boss-history" style="margin:10px 0;">
-        <div class="boss-history-title">📜 最近 ${list.length} 場（點 → 跑讀條動畫）</div>
-        ${rows}
-      </div>
-    `;
-  }
-
-  // ⭐ 渲染世界王戰報區（單純：自己這場的摘要）
-  // 過往戰報 5 場改放在 renderWorldBoss 的每隻王卡片底下（全體共用）
-  function renderBossFightResult(latest) {
-    const fr = document.getElementById('fightResult');
-    if (!fr) return;
-    if (!latest) { fr.innerHTML = ''; return; }
-    fr.innerHTML = `
-      <div class="reward-list" style="background:linear-gradient(135deg,#1e1b4b,#4c1d95); border-color:#f59e0b; color:#fff;">
-        <div class="rl-title" style="color:#fde68a;">🌍 ${escapeHtml(latest.bossName)} 戰報</div>
-        <div class="rl-item">⚔️ 你造成 <b style="color:#fca5a5;">${latest.dmgDealt.toLocaleString()}</b> 傷害</div>
-        <div class="rl-item">⭐ +${latest.xpGain} XP　·　🪙 +${latest.coinGain} 鵝鵝幣</div>
-        ${latest.killed
-          ? `<div style="margin-top:8px; padding:8px; background:rgba(245,158,11,0.3); border-radius:8px; color:#fde047; font-weight:700;">🏆 你給了尾刀！精魂 + 鵝鵝幣已入手</div>`
-          : ''}
-        ${latest.worldSpiritDropped ? `<div class="rl-item" style="color:${latest.worldSpiritDropped.color}; font-weight:700; padding:6px; background:#fff8; border-radius:6px;">🌟 掉落精魂：${latest.worldSpiritDropped.icon} ${escapeHtml(latest.worldSpiritDropped.name)}</div>` : ''}
-      </div>
-    `;
-  }
-  window.renderBossFightResult = renderBossFightResult;
-
-  function formatRelativeTime(ts) {
-    if (!ts) return '—';
-    const diff = Date.now() - ts;
-    if (diff < 60000) return '剛剛';
-    if (diff < 3600000) return Math.floor(diff / 60000) + ' 分鐘前';
-    if (diff < 86400000) return Math.floor(diff / 3600000) + ' 小時前';
-    return new Date(ts).toLocaleDateString('zh-TW') + ' ' + new Date(ts).toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit' });
-  }
-
-  // ⭐ 從世界王 state 中找出某場戰報並重播（每隻王獨立的最近 5 場 — 全體可見）
   function replayBossFightFromState(bossId, historyId) {
-    const state = worldBoss && worldBoss[bossId];
+    const state = wb9 && wb9[bossId];
     const list = (state && Array.isArray(state.recentBattles)) ? state.recentBattles : [];
     const snap = list.find(h => h.id === historyId);
     if (!snap) { showToast('找不到該戰報'); return; }
@@ -10996,23 +10356,8 @@ ${b.text}
   }
   window.attackPersonalBoss = attackPersonalBoss;
 
-  // 上次擊殺通知（每個 killCount 只跳一次）
-  function checkBossKillBanners() {
-    if (WORLD_BOSS_DISABLED) return; // 整修中不跳
-    for (const boss of WORLD_BOSSES) {
-      const state = worldBoss && worldBoss[boss.id];
-      if (!state || !state.lastKill) continue;
-      const seenKey = `boss-killed-${boss.id}-${state.lastKill.killCount}`;
-      if (localStorage.getItem(seenKey)) continue;
-      // 1 小時內才通知
-      if (Date.now() - state.lastKill.when > 60 * 60 * 1000) {
-        localStorage.setItem(seenKey, '1');
-        continue;
-      }
-      localStorage.setItem(seenKey, '1');
-      showBossKillBanner(boss, state.lastKill);
-    }
-  }
+  // ⭐ commit 7：v8 舊 kill banner 已移除，v9 用 wb9KillBannerHtml 在 render 時顯示
+  function checkBossKillBanners() { /* v9 uses wb9KillBannerHtml */ }
   function showBossKillBanner(boss, lastKill) {
     const killer = getPlayer(lastKill.killer);
     const settlement = Array.isArray(lastKill.settlement) ? lastKill.settlement.slice(0, 5) : [];
@@ -12554,31 +11899,29 @@ ${b.text}
   }
   window.adminClearWorldBossCloud = adminClearWorldBossCloud;
 
-  function adminRefillBosses() {
-    if (!confirm('💚 把所有世界王 HP 補滿（保留排隊 / 過往戰報 / 已擊殺紀錄）？')) return;
-    worldBoss = worldBoss || {};
+  // ⭐ commit 7：v9 版 adminRefillBosses — 透過 wb9SaveBoss 把每王 HP 補滿
+  async function adminRefillBosses() {
+    if (!confirm('💚 把所有 v9 世界王 HP 補滿（保留排隊 / 戰報 / 擊殺紀錄）？')) return;
+    if (!window.__firebaseSync?.wb9SaveBoss) { showToast('☁️ 雲端尚未連線'); return; }
     let refilled = 0;
-    for (const boss of WORLD_BOSSES) {
-      const cur = worldBoss[boss.id] || {};
-      worldBoss[boss.id] = {
-        currentHp: boss.hp,
-        spawnedAt: Date.now(),
-        deadAt: null,
-        nextSpawnAt: null,
-        damageLog: {},   // 新一輪傷害排行
-        lastHit: null,
-        killCount: cur.killCount || 0,
-        lastKill: cur.lastKill || null,
-        pendingRewards: cur.pendingRewards || [],
+    for (const boss of WB9_BOSSES) {
+      const cur = (wb9 && wb9[boss.id]) || {};
+      const newState = {
+        hp: boss.maxHp,
         queue: cur.queue || [],
+        damageLog: cur.damageLog || {},
+        killCount: cur.killCount || 0,
         recentBattles: cur.recentBattles || [],
+        lastKill: cur.lastKill || null,
+        lastHitAt: cur.lastHitAt || null,
       };
-      refilled++;
+      wb9[boss.id] = newState;
+      try { await window.__firebaseSync.wb9SaveBoss(boss.id, newState); refilled++; }
+      catch (e) { console.error('adminRefillBosses wb9SaveBoss failed:', boss.id, e); }
     }
-    saveData();
     render();
     hideModal();
-    showToast(`💚 已補滿 ${refilled} 隻世界王`);
+    showToast(`💚 已補滿 ${refilled} 隻世界王（v9）`);
   }
   window.adminRefillBosses = adminRefillBosses;
 
@@ -12761,7 +12104,7 @@ ${b.text}
         });
       },
       // 世界王打擊：用 transaction 原子地讀 + 扣 HP + 寫回，避免兩個玩家互相蓋掉
-      // bossDef 是 WORLD_BOSSES 裡的設定（要拿 hp / respawnMs / 各檔次獎勵）
+      // bossDef 是 WB9_BOSSES 裡的設定（要拿 maxHp / 各檔次獎勵）
       // 回傳 { actualDmg, newState, killed, pendingRewards }
       // ============================================================
       // ⭐ Phase B：v9 世界王 transactions（每王一份獨立 doc）
@@ -12860,237 +12203,9 @@ ${b.text}
         });
       },
 
-      // 加入排隊。若目前不在任何王的排隊裡才能加。回傳 { queue, position }
-      // bossDef 用來在第一次參戰時初始化王
-      joinBossQueue: async (bossId, attackerId, bossDef, staleMs) => {
-        return await runTransaction(db, async (tx) => {
-          const snap = await tx.get(metaRef);
-          const data = snap.exists() ? snap.data() : {};
-          const wb = data.worldBoss ? { ...data.worldBoss } : {};
-          let state = wb[bossId];
-          // respawnMs=0 → 死了就立刻重生（不用等 nextSpawnAt）
-          const __instantRespawn = !bossDef.respawnMs;
-          if (!state || (state.deadAt && (__instantRespawn || (state.nextSpawnAt && Date.now() >= state.nextSpawnAt)))) {
-            state = {
-              currentHp: bossDef.hp,
-              spawnedAt: Date.now(),
-              deadAt: null, nextSpawnAt: null,
-              damageLog: {}, lastHit: null,
-              killCount: state ? (state.killCount || 0) : 0,
-              lastKill: state ? state.lastKill : null,
-              pendingRewards: state ? (state.pendingRewards || []) : [],
-              queue: [],
-            };
-          }
-          if (state.deadAt) throw new Error('boss-already-dead');
-          state.queue = Array.isArray(state.queue) ? state.queue : [];
-          // ⭐ 清理過期 head：若 head 已 headSinceAt 1 分鐘以上沒動作 → 自動踢
-          //   headSinceAt 在每次 tx 都會給「現在的 head」設一次（沒設就設）
-          if (state.queue.length > 0 && state.queue[0]) {
-            if (!state.queue[0].headSinceAt) state.queue[0].headSinceAt = Date.now();
-            while (state.queue.length > 0) {
-              const head = state.queue[0];
-              if (head && head.headSinceAt && Date.now() - head.headSinceAt > staleMs) {
-                state.queue.shift();
-                if (state.queue[0]) state.queue[0].headSinceAt = Date.now();
-              } else break;
-            }
-          }
-          // 不能同時排兩個 boss
-          for (const bid of Object.keys(wb)) {
-            const q = (wb[bid] && wb[bid].queue) || [];
-            const stillThere = q.find(qi => qi.pid === attackerId);
-            if (stillThere) {
-              if (bid === bossId) throw new Error('already-in-this-queue');
-              throw new Error('already-in-other-queue:' + bid);
-            }
-          }
-          // 不能加進「同 pid」重複條目
-          if (state.queue.find(qi => qi.pid === attackerId)) {
-            throw new Error('already-in-this-queue');
-          }
-          state.queue.push({ pid: attackerId, joinedAt: Date.now() });
-          wb[bossId] = state;
-          tx.set(metaRef, { worldBoss: wb }, { merge: true });
-          const pos = state.queue.findIndex(qi => qi.pid === attackerId);
-          return { queue: state.queue, position: pos };
-        });
-      },
-      // 退出排隊
-      leaveBossQueue: async (bossId, attackerId) => {
-        return await runTransaction(db, async (tx) => {
-          const snap = await tx.get(metaRef);
-          const data = snap.exists() ? snap.data() : {};
-          const wb = data.worldBoss ? { ...data.worldBoss } : {};
-          const state = wb[bossId];
-          if (!state || !Array.isArray(state.queue)) return { queue: [] };
-          state.queue = state.queue.filter(qi => qi.pid !== attackerId);
-          wb[bossId] = state;
-          tx.set(metaRef, { worldBoss: wb }, { merge: true });
-          return { queue: state.queue };
-        });
-      },
-      applyBossAttack: async (bossId, requestedDmg, attackerId, bossDef, staleMs, battleSnap) => {
-        return await runTransaction(db, async (tx) => {
-          const snap = await tx.get(metaRef);
-          const data = snap.exists() ? snap.data() : {};
-          const wb = data.worldBoss ? { ...data.worldBoss } : {};
-          let state = wb[bossId];
-          // respawnMs=0 → 死了就立刻重生（不用等 nextSpawnAt）
-          const __instantRespawn = !bossDef.respawnMs;
-          // 若沒有狀態 / 已經到復活時間 → 重生
-          if (!state || (state.deadAt && (__instantRespawn || (state.nextSpawnAt && Date.now() >= state.nextSpawnAt)))) {
-            state = {
-              currentHp: bossDef.hp,
-              spawnedAt: Date.now(),
-              deadAt: null,
-              nextSpawnAt: null,
-              damageLog: {},
-              lastHit: null,
-              killCount: state ? (state.killCount || 0) : 0,
-              lastKill: state ? state.lastKill : null,
-              pendingRewards: state ? (state.pendingRewards || []) : [],
-              queue: [],
-              recentBattles: state ? (state.recentBattles || []) : [],
-            };
-          }
-          if (state.deadAt) {
-            // 王已倒下、還沒到復活時間
-            throw new Error('boss-already-dead');
-          }
-          // 排隊驗證：必須是排隊頭（headSinceAt 過期的會被自動踢）
-          state.queue = Array.isArray(state.queue) ? state.queue : [];
-          // 給當前 head 設 headSinceAt（首次當頭的瞬間）
-          if (state.queue.length > 0 && state.queue[0] && !state.queue[0].headSinceAt) {
-            state.queue[0].headSinceAt = Date.now();
-          }
-          while (state.queue.length > 0) {
-            const head = state.queue[0];
-            if (head && head.pid === attackerId) break;
-            // head 是別人 → 檢查他是否 headSinceAt 過期（1 分鐘沒動）
-            if (head && head.headSinceAt && Date.now() - head.headSinceAt > staleMs) {
-              state.queue.shift();
-              // 新的 head 也設 headSinceAt
-              if (state.queue[0] && !state.queue[0].headSinceAt) {
-                state.queue[0].headSinceAt = Date.now();
-              }
-              continue;
-            }
-            // head 是別人 + 還沒過期
-            throw new Error('not-your-turn');
-          }
-          if (state.queue.length === 0 || state.queue[0].pid !== attackerId) {
-            throw new Error('not-in-queue');
-          }
-          const actualDmg = Math.min(state.currentHp, Math.max(0, Math.floor(requestedDmg)));
-          state.currentHp -= actualDmg;
-          state.damageLog = state.damageLog || {};
-          state.damageLog[attackerId] = (state.damageLog[attackerId] || 0) + actualDmg;
-          state.lastHit = attackerId;
-          let killed = false;
-          let newPending = [];
-          if (state.currentHp <= 0) {
-            state.currentHp = 0;
-            state.deadAt = Date.now();
-            state.nextSpawnAt = state.deadAt + bossDef.respawnMs;
-            state.killCount = (state.killCount || 0) + 1;
-            killed = true;
-            // 把獎勵記在 pendingRewards 裡，由各玩家自己領
-            // ⭐ 結算階段：王硬幣（可堆疊道具）— 1名 6 / 2名 4 / 其他 2；尾刀額外 +6
-            //    舊的 rewardTop / rewardSecond ... coins 仍照舊發鵝鵝幣
-            const sortedDmg = Object.entries(state.damageLog).sort((a, b) => b[1] - a[1]);
-            const rankRewards = [bossDef.rewardTop, bossDef.rewardSecond, bossDef.rewardThird];
-            // ⭐ 把結算詳情塞進 lastKill，給 kill banner 用
-            const RANK_QTY = [6, 4, 2];
-            const settlement = sortedDmg.map(([pid, dmg], idx) => ({
-              pid,
-              dmg,
-              rank: idx + 1,
-              bossCoinQty: RANK_QTY[idx] != null ? RANK_QTY[idx] : 2,
-              isKiller: pid === attackerId,
-            }));
-            state.lastKill = {
-              killer: attackerId,
-              killerDmg: state.damageLog[attackerId] || 0,
-              when: state.deadAt,
-              killCount: state.killCount,
-              bossCoinId: bossDef.bossCoin?.id || null,
-              bossCoinIcon: bossDef.bossCoin?.icon || '🪙',
-              bossCoinName: bossDef.bossCoin?.name || '王硬幣',
-              settlement, // 全員結算（依傷害排序）
-            };
-            // 尾刀獎（鵝鵝幣 + 王硬幣 ×5 + 精魂的旗標）
-            newPending.push({
-              pid: attackerId,
-              coins: bossDef.rewardKiller.coins,
-              item: bossDef.rewardKiller.item || null,
-              bossCoinQty: 5,
-              rewardId: `${bossId}_${state.killCount}_killer`,
-              kind: '尾刀 +5',
-            });
-            // 排行 1-3：分別 6 / 4 / 2 顆王硬幣
-            const RANK_COIN_QTY = [6, 4, 2];
-            sortedDmg.slice(0, 3).forEach(([pid], idx) => {
-              const rr = rankRewards[idx];
-              newPending.push({
-                pid,
-                coins: rr ? rr.coins : 0,
-                item: null,
-                bossCoinQty: RANK_COIN_QTY[idx],
-                rewardId: `${bossId}_${state.killCount}_rank${idx+1}_${pid}`,
-                kind: `第 ${idx+1} 名 +${RANK_COIN_QTY[idx]}`,
-              });
-            });
-            // 其餘參與者：+2 顆王硬幣
-            sortedDmg.slice(3).forEach(([pid]) => {
-              newPending.push({
-                pid,
-                coins: bossDef.rewardParticipant ? bossDef.rewardParticipant.coins : 0,
-                item: null,
-                bossCoinQty: 2,
-                rewardId: `${bossId}_${state.killCount}_part_${pid}`,
-                kind: '參與 +2',
-              });
-            });
-            state.pendingRewards = (state.pendingRewards || []).concat(newPending);
-          }
-          // 攻擊完成 → 從排隊頭移除自己（讓下一位上場）
-          if (state.queue[0] && state.queue[0].pid === attackerId) {
-            state.queue.shift();
-          }
-          // ⭐ 把這場戰鬥推到「全體可見的最近 5 場」（每隻王獨立）
-          //    dmgDealt / killed / monsterSnap.maxHp 由 tx 填上實際值
-          if (battleSnap) {
-            const filledSnap = {
-              ...battleSnap,
-              dmgDealt: actualDmg,
-              killed,
-              monsterSnap: {
-                ...(battleSnap.monsterSnap || {}),
-                maxHp: actualDmg + state.currentHp || bossDef.hp,
-              },
-            };
-            state.recentBattles = Array.isArray(state.recentBattles) ? state.recentBattles : [];
-            state.recentBattles.unshift(filledSnap);
-            if (state.recentBattles.length > 5) state.recentBattles.length = 5;
-          }
-          // ⭐ 王死且 respawnMs=0：tx 內立即重生，HP 直接補滿
-          //   先前 deadAt / nextSpawnAt 設好但 HP 還顯示 0 → 排隊頭下次再打才重生
-          //   這次玩家會看到「打死 → 立刻滿血新一輪」的流暢感
-          if (killed && !bossDef.respawnMs) {
-            state.currentHp = bossDef.hp;
-            state.deadAt = null;
-            state.nextSpawnAt = null;
-            state.spawnedAt = Date.now();
-            state.damageLog = {};
-            state.lastHit = null;
-            // 保留 killCount / lastKill / pendingRewards / recentBattles / queue（接續排隊）
-          }
-          wb[bossId] = state;
-          tx.set(metaRef, { worldBoss: wb }, { merge: true });
-          return { actualDmg, newState: state, killed, pendingRewards: newPending };
-        });
-      },
+      // ⭐ 以下三個方法為 v8 舊世界王 TX（commit 7 保留殼防止未來誤呼叫，實作已移除）
+      joinBossQueue: async () => { throw new Error('v8-removed'); },
+      leaveBossQueue: async () => { throw new Error('v8-removed'); },
       // ⭐ 管理員專用：強制把所有玩家文件寫到 firestore，繞過 seenPlayerIds 限制
       //   洗白 / 重置時用，否則其他人的舊 rpg / coinsSpent 會殘留在雲端，下次同步又被拉回來
       forceWriteAllPlayers: async (allPlayers) => {
