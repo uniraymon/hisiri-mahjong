@@ -1916,29 +1916,30 @@
       hpPer: 9, atkPer: 1.5, defPer: 0.6, spdPer: 1.2,
       attackVerb: '射擊',
       skills: [
-        { id: 'a_god_arrow',   name: '神之矢',   icon: '🌟', unlockLv: 12, cooldown: 7, mpCost: 32, type: 'damage', mult: 2.8 },
-        { id: 'a_multishot',   name: '多重射擊', icon: '🏹', unlockLv: 5,  cooldown: 4, mpCost: 16, type: 'damage', mult: 1.8, hits: 3 },
+        // ⭐ 多重射擊已移除（被連射取代）；所有解鎖等級 -2
+        { id: 'a_god_arrow',   name: '神之矢',   icon: '🌟', unlockLv: 10, cooldown: 7, mpCost: 32, type: 'damage', mult: 2.8 },
         { id: 'a_precise_shot',name: '精準射擊', icon: '🎯', unlockLv: 1,  cooldown: 3, mpCost: 12, type: 'damage', mult: 1.4, cast: 5 },
-        { id: 'a_concentrate', name: '集中',     icon: '🧘', unlockLv: 4,  cooldown: 4, mpCost: 0,  type: 'heal', isMpRegen: true },
-        { id: 'a_barrage',     name: '連射',     icon: '🌊', unlockLv: 8,  cooldown: 5, mpCost: 28, type: 'damage', mult: 2.4, hits: 4 },
-        { id: 'a_lethal_aim',  name: '致命瞄準', icon: '💀', unlockLv: 14, cooldown: 8, mpCost: 40, type: 'damage', mult: 3.5, alwaysCrit: true, ignoreDef: true, cast: 90 },
+        { id: 'a_concentrate', name: '集中',     icon: '🧘', unlockLv: 2,  cooldown: 4, mpCost: 0,  type: 'heal', isMpRegen: true },
+        // ⭐ 連射重做：每段固定 ATK ×0.5（不吃 multi-hit ×1.3 加成）/ 4 段 / Lv 5 暴擊 +10% / Lv 10 多 1 段
+        { id: 'a_barrage',     name: '連射',     icon: '🌊', unlockLv: 6,  cooldown: 5, mpCost: 28, type: 'damage', mult: 0.5, hits: 4, fixedHitMult: true, customLv: true },
+        { id: 'a_lethal_aim',  name: '致命瞄準', icon: '💀', unlockLv: 12, cooldown: 8, mpCost: 40, type: 'damage', mult: 3.5, alwaysCrit: true, ignoreDef: true, cast: 90 },
         // ⭐ 多目標：雙箭齊發、毒箭
-        { id: 'a_twin_shot',   name: '雙箭齊發', icon: '🏹', unlockLv: 6,  cooldown: 4, mpCost: 24, type: 'damage', mult: 1.5, targetCount: 2 },
-        { id: 'a_poison_arrow',name: '毒箭',     icon: '🐍', unlockLv: 9,  cooldown: 5, mpCost: 26, type: 'damage', mult: 1.2, applyStatus: { type: 'poison', turns: 3, dmg: 12, chance: 0.7 } },
+        { id: 'a_twin_shot',   name: '雙箭齊發', icon: '🏹', unlockLv: 4,  cooldown: 4, mpCost: 24, type: 'damage', mult: 1.5, targetCount: 2 },
+        { id: 'a_poison_arrow',name: '毒箭',     icon: '🐍', unlockLv: 7,  cooldown: 5, mpCost: 26, type: 'damage', mult: 1.2, applyStatus: { type: 'poison', turns: 3, dmg: 12, chance: 0.7 } },
         // ⭐ 自身 buff：疾風步（SPD +8 4 回合）/ 鷹眼（暴擊率 +20% 4 回合）
-        { id: 'a_quickstep',   name: '疾風步',   icon: '💨', unlockLv: 6,  cooldown: 6, mpCost: 16, type: 'buff', selfBuff: { stat: 'spd', amount: 8, turns: 4 } },
-        { id: 'a_eagle_eye',   name: '鷹眼',     icon: '🦅', unlockLv: 8,  cooldown: 6, mpCost: 18, type: 'buff', selfBuff: { stat: 'critChance', amount: 0.20, turns: 4 } },
+        { id: 'a_quickstep',   name: '疾風步',   icon: '💨', unlockLv: 4,  cooldown: 6, mpCost: 16, type: 'buff', selfBuff: { stat: 'spd', amount: 8, turns: 4 } },
+        { id: 'a_eagle_eye',   name: '鷹眼',     icon: '🦅', unlockLv: 6,  cooldown: 6, mpCost: 18, type: 'buff', selfBuff: { stat: 'critChance', amount: 0.20, turns: 4 } },
         // ⭐ 新弓手技能：豐富特色
         // 吸血箭：低傷害但吸血，補血用
-        { id: 'a_lifesteal_arrow', name: '吸血箭', icon: '🩸', unlockLv: 7,  cooldown: 4, mpCost: 14, type: 'damage', mult: 1.2, lifesteal: 0.40 },
+        { id: 'a_lifesteal_arrow', name: '吸血箭', icon: '🩸', unlockLv: 5,  cooldown: 4, mpCost: 14, type: 'damage', mult: 1.2, lifesteal: 0.40 },
         // ⭐ 隱身（重做）: 15 MP / 免疫一次傷害 + 下次攻擊必爆
         //   每升一級 -1 MP 消費（max 5 級 → Lv 5 為 10 MP）
         //   Lv 5：buff 持續 +1 回合（既有 lv5Kind='buff' 機制）+ 本招 +20% 爆傷
-        { id: 'a_stealth',         name: '隱身',   icon: '🌫', unlockLv: 9,  cooldown: 7, mpCost: 15, type: 'buff', selfBuff: { stat: 'critChance', amount: 1.0, turns: 1 }, applyShield: 1, stealthLv5CritDmg: 0.20 },
+        { id: 'a_stealth',         name: '隱身',   icon: '🌫', unlockLv: 7,  cooldown: 7, mpCost: 15, type: 'buff', selfBuff: { stat: 'critChance', amount: 1.0, turns: 1 }, applyShield: 1, stealthLv5CritDmg: 0.20 },
         // 風之歌：補 MP + SPD buff（兼顧補給）
-        { id: 'a_wind_song',       name: '風之歌', icon: '🎵', unlockLv: 4,  cooldown: 5, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true },
-        // 遠程射手 LUK 系：本招暴擊率特高（已有 alwaysCrit 但這次也可以多目標）
-        { id: 'a_arrow_storm',     name: '箭雨',   icon: '🌧', unlockLv: 10, cooldown: 6, mpCost: 30, type: 'damage', mult: 1.0, targetCount: 'all' },
+        { id: 'a_wind_song',       name: '風之歌', icon: '🎵', unlockLv: 2,  cooldown: 5, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true },
+        // 遠程射手 LUK 系：本招暴擊率特高
+        { id: 'a_arrow_storm',     name: '箭雨',   icon: '🌧', unlockLv: 8,  cooldown: 6, mpCost: 30, type: 'damage', mult: 1.0, targetCount: 'all' },
       ],
       skillTree: [
         { id: 'a_crit', name: '致命瞄準', icon: '💥', desc: '+2% 暴擊率',         maxLevel: 5, effect: 'critChance', per: 0.02 },
@@ -2905,6 +2906,11 @@
     if (skill.id === 'a_stealth') {
       eff.mpCost = Math.max(0, (skill.mpCost || 0) - Math.min(5, level));
     }
+    // ⭐ 連射專屬：Lv 5 暴擊率 +10% / Lv 10 多 1 段
+    if (skill.id === 'a_barrage') {
+      if (level >= 5)  eff.extraCritChance = (eff.extraCritChance || 0) + 0.10;
+      if (level >= 10) eff.hits = (skill.hits || 4) + 1;
+    }
     if (level >= 3 && skill.applyStatus) {
       eff.applyStatus = {
         ...skill.applyStatus,
@@ -2920,19 +2926,21 @@
         amount: +(skill.selfBuff.amount * (1 + dmgBonus)).toFixed(3),
       };
     }
-    // ⭐ Lv 5 + Lv 10 雙段加成
-    const applyKindBonus = (mult) => {
-      const k = lv5BonusKind(skill);
-      if (k === 'lifesteal')    eff.lifesteal  = +((eff.lifesteal  || 0) + 0.10 * mult).toFixed(3);
-      else if (k === 'heal')    eff.healCaster = +((eff.healCaster || 0) + 0.05 * mult).toFixed(3);
-      else if (k === 'restore') eff.mpCostMult = (eff.mpCostMult || 1) * (1 - 0.25 * mult);
-      else if (k === 'critDmg') eff.extraCritDmg = (eff.extraCritDmg || 0) + 0.25 * mult;
-      else if (k === 'crit')    eff.extraCritChance = (eff.extraCritChance || 0) + 0.20 * mult;
-      else if (k === 'buff' && eff.selfBuff) eff.selfBuff = { ...eff.selfBuff, turns: (eff.selfBuff.turns || 1) + Math.round(mult) };
-      eff.lv5Kind = k;
-    };
-    if (level >= 5)  applyKindBonus(1);
-    if (level >= 10) applyKindBonus(1); // 第 10 級再給一波
+    // ⭐ Lv 5 + Lv 10 雙段加成（customLv 標記的技能跳過，由前面的特殊處理負責）
+    if (!skill.customLv) {
+      const applyKindBonus = (mult) => {
+        const k = lv5BonusKind(skill);
+        if (k === 'lifesteal')    eff.lifesteal  = +((eff.lifesteal  || 0) + 0.10 * mult).toFixed(3);
+        else if (k === 'heal')    eff.healCaster = +((eff.healCaster || 0) + 0.05 * mult).toFixed(3);
+        else if (k === 'restore') eff.mpCostMult = (eff.mpCostMult || 1) * (1 - 0.25 * mult);
+        else if (k === 'critDmg') eff.extraCritDmg = (eff.extraCritDmg || 0) + 0.25 * mult;
+        else if (k === 'crit')    eff.extraCritChance = (eff.extraCritChance || 0) + 0.20 * mult;
+        else if (k === 'buff' && eff.selfBuff) eff.selfBuff = { ...eff.selfBuff, turns: (eff.selfBuff.turns || 1) + Math.round(mult) };
+        eff.lv5Kind = k;
+      };
+      if (level >= 5)  applyKindBonus(1);
+      if (level >= 10) applyKindBonus(1); // 第 10 級再給一波
+    }
     return eff;
   }
   // 判斷某技能 Lv 5 應該拿什麼樣的加成
@@ -3007,7 +3015,6 @@
           { judgeId: 1000, param: 0,  skillId: 'a_poison_arrow' },    // 毒箭（中毒）
           { judgeId: 1000, param: 0,  skillId: 'a_stealth' },         // 隱身（必中暴擊 buff，HP 代價）
           { judgeId: 1000, param: 0,  skillId: 'a_barrage' },
-          { judgeId: 1000, param: 0,  skillId: 'a_multishot' },
           { judgeId: 1000, param: 0,  skillId: 'a_precise_shot' },
           { judgeId: 1000, param: 0,  skillId: 'basic' },
         ];
@@ -4874,7 +4881,8 @@
             const effDef = stats.def * (1 + (pBuff.defPct || 0));
             // ⭐ 多段技能：每段傷害 = 總傷害 / hits × 1.3（同 monster multiHit 公式）
             const skillHits = Math.max(1, skill.hits || 1);
-            const perHitFactor = skillHits === 1 ? 1.0 : (1.3 / skillHits);
+            // 一般多段：1.3 / hits 平均；fixedHitMult 標記 → 不享 ×1.3 共享傷，每段直接照 mult 算
+            const perHitFactor = skill.fixedHitMult ? 1.0 : (skillHits === 1 ? 1.0 : (1.3 / skillHits));
             if (skill.defMult != null) {
               // ⭐ 聖騎風格：以 DEF 結算傷害
               dmg = effDef * skill.defMult - Math.floor(monster.def / 2);
