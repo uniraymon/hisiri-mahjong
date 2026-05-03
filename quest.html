@@ -4559,15 +4559,34 @@
   };
 
   // ⭐ 智慧合併：判斷 remote 是否「太舊」會吞掉 local 剛拿到的物品
-  //    如果 remote 的 inventory 比 local 短 ≥2 件 AND local 在 60 秒內有動過 → keep local（防 stale snapshot 吃掉裝備）
+  //    Check 1：remote inventory 比 local 短 ≥2 件 AND local 在 60 秒內有動過 → keep local
+  //    Check 2：local 裝備欄有 item，但 remote 的同 slot 為空且該 item 仍在 remote inventory
+  //             → 代表 remote 是「裝備前」的 snapshot（另一個 tab/device 的舊存檔）→ keep local（2 分鐘視窗）
   function __remoteWouldDataLossInventory(local, remote) {
     if (!local || !remote) return false;
     const lInv = local.rpg?.inventory;
     const rInv = remote.rpg?.inventory;
-    if (!Array.isArray(lInv) || !Array.isArray(rInv)) return false;
-    if (lInv.length - rInv.length < 2) return false; // 沒短很多就放行
     const localTs = Number(local.lastTouchedAt) || 0;
-    return (Date.now() - localTs) < 60_000;          // local 60 秒內有動 → 不接受 remote
+
+    // Check 1：inventory 數量懸殊
+    if (Array.isArray(lInv) && Array.isArray(rInv)) {
+      if (lInv.length - rInv.length >= 2 && (Date.now() - localTs) < 60_000) return true;
+    }
+
+    // Check 2：裝備回朔偵測 — item 在 local equipment 但出現在 remote inventory（pre-equip 快照）
+    const lEq = local.rpg?.equipment;
+    const rEq = remote.rpg?.equipment;
+    if (lEq && typeof lEq === 'object' && (Date.now() - localTs) < 120_000) {
+      const rInvArr = Array.isArray(rInv) ? rInv : [];
+      const rEqSafe = (rEq && typeof rEq === 'object') ? rEq : {};
+      for (const slot of Object.keys(lEq)) {
+        const localItem = lEq[slot];
+        // local 有裝備這個 slot，remote 的同 slot 是空的，但 item 仍在 remote inventory
+        if (localItem && !rEqSafe[slot] && rInvArr.includes(localItem)) return true;
+      }
+    }
+
+    return false;
   }
 
   window.__applyRemotePlayer = function(remote) {
