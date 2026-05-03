@@ -2020,7 +2020,8 @@
       ability: { type: 'multiHit', hits: 2 },
       dialogue: ['吾乃鵝中之王！跪下臣服！', '弱者，退散吧！', '凡夫俗子也敢挑戰皇威？'],
       deathLine: ['啊...吾的皇位...就此...', '不...不可能...凡人怎能...', '記住...吾鵝皇...終將復生...'],
-      rewardKiller: { coins: 2000, item: 'shop_w_28' },
+      // ⭐ 世界王不再掉裝備 — 改用精魂（殺尾刀的人會拿到精魂）
+      rewardKiller: { coins: 2000 },
       rewardTop:    { coins: 1000 },
       rewardSecond: { coins: 500 },
       rewardThird:  { coins: 250 },
@@ -2038,11 +2039,34 @@
       ability: { type: 'physResist', resist: 0.25 },
       dialogue: ['古老的龍威甦醒...', '吾將焚盡一切！', '微不足道的鵝鵝...'],
       deathLine: ['千年龍威...化為塵土...', '吾將...沉睡...再起...', '汝...名留龍譜...'],
-      rewardKiller: { coins: 5000, item: 'shop_a_28' },
+      rewardKiller: { coins: 5000 },
       rewardTop:    { coins: 2500 },
       rewardSecond: { coins: 1500 },
       rewardThird:  { coins: 750 },
       rewardParticipant: { coins: 200 },
+    },
+    {
+      id: 'pebble_goose',
+      name: '🪨 鵝卵石',
+      icon: '🪨',
+      hp: 500000,
+      atk: 135, def: 65, spd: 8,
+      level: 55,
+      respawnMs: 0,
+      verb: '崩落巨石',
+      ability: { type: 'physResist', resist: 0.30 },
+      dialogue: ['億萬年的鵝魂沉睡於此…', '汝之物理…撼不動鵝石…', '化為塵埃吧…'],
+      deathLine: ['億萬年…崩裂了…', '吾乃永恆…竟有盡頭…', '吾魂…化為流沙…'],
+      skills: [
+        { verb: '落石擊', mult: 2.0, cooldown: 5 },
+        { verb: '大地震', mult: 1.4, applyStatus: { type: 'paralyze', turns: 2, chance: 0.45 }, cooldown: 6 },
+        { verb: '石化凝視', mult: 0.8, applyStatus: { type: 'paralyze', turns: 2, chance: 0.65 }, cooldown: 7 },
+      ],
+      rewardKiller: { coins: 12000 },
+      rewardTop:    { coins: 6000 },
+      rewardSecond: { coins: 3500 },
+      rewardThird:  { coins: 2000 },
+      rewardParticipant: { coins: 500 },
     },
   ];
 
@@ -2123,6 +2147,9 @@
     { id: 'sp_dragon_goose',sourceBossId: 'dragon_goose',name: '古龍鵝精魂', icon: '🐉', color: '#a855f7',
       theme: '龍威（全能+爆傷）',
       base: { atk: 8, def: 4, hp: 60, critDmg: 0.18 } },
+    { id: 'sp_pebble_goose', sourceBossId: 'pebble_goose', name: '鵝卵石精魂', icon: '🪨', color: '#78716c',
+      theme: '不朽（極厚生存）',
+      base: { hp: 150, def: 10 } },
   ];
   const SPIRIT_BY_BOSS = Object.fromEntries(SPIRIT_DEFS.map(s => [s.sourceBossId, s]));
 
@@ -7676,7 +7703,7 @@ ${b.text}
         <div class="rl-item">⚔️ 你造成 <b style="color:#fca5a5;">${dmgDealt.toLocaleString()}</b> 傷害</div>
         <div class="rl-item">⭐ +${xpGain} XP　·　🪙 +${coinGain} 鵝鵝幣</div>
         ${killed
-          ? `<div style="margin-top:8px; padding:8px; background:rgba(245,158,11,0.3); border-radius:8px; color:#fde047; font-weight:700;">🏆 你給了尾刀！獎勵已加到背包與鵝鵝幣</div>`
+          ? `<div style="margin-top:8px; padding:8px; background:rgba(245,158,11,0.3); border-radius:8px; color:#fde047; font-weight:700;">🏆 你給了尾刀！精魂 + 鵝鵝幣已入手</div>`
           : `<div class="rl-item">${boss.icon} ${boss.name} 還剩 ${newState.currentHp.toLocaleString()} HP（${(newState.currentHp/boss.hp*100).toFixed(1)}%）</div>`}
         ${worldSpiritDropped ? `<div class="rl-item" style="color:${worldSpiritDropped.color}; font-weight:700; padding:6px; background:#fff8; border-radius:6px;">🌟 掉落精魂：${worldSpiritDropped.icon} ${escapeHtml(worldSpiritDropped.name)}<div style="font-size:10px; color:#5b3d62; font-weight:500; margin-top:1px;">${escapeHtml(describeSpirit(worldSpiritDropped))}</div></div>` : ''}
       </div>
