@@ -1881,9 +1881,9 @@
       weaponImage: 'assets/equipment/sword.svg',
       accImage:    'assets/equipment/helmet.svg',
       desc: '高 HP / 高 ATK / 慢',
-      hp: 130, atk: 14, def: 8, spd: 7,
+      hp: 130, atk: 14, def: 8, spd: 7, mark: 5,
       mp: 25, mpPer: 1,
-      hpPer: 14, atkPer: 2.2, defPer: 1.2, spdPer: 0.4,
+      hpPer: 14, atkPer: 2.2, defPer: 1.2, spdPer: 0.4, markPer: 0.3,
       attackVerb: '揮砍',
       skills: [
         // ⭐ 解鎖 -4，cooldown 全 0；保留高階大招的 cast / hpCost 控制節奏
@@ -1918,9 +1918,9 @@
       weaponImage: 'assets/equipment/bow.svg',
       accImage:    'assets/equipment/wing-amulet.svg',
       desc: '速度先攻 / 平衡',
-      hp: 95, atk: 12, def: 5, spd: 14,
+      hp: 95, atk: 12, def: 5, spd: 14, mark: 4,
       mp: 30, mpPer: 1,
-      hpPer: 9, atkPer: 1.5, defPer: 0.6, spdPer: 1.2,
+      hpPer: 9, atkPer: 1.5, defPer: 0.6, spdPer: 1.2, markPer: 0.2,
       attackVerb: '射擊',
       skills: [
         // ⭐ 多重射擊已移除（被連射取代）；解鎖等級全 -4（這次再 -2，cooldown 全部歸 0）
@@ -1962,15 +1962,15 @@
       weaponImage: 'assets/equipment/staff.svg',
       accImage:    'assets/equipment/crown.svg',
       desc: '高暴擊 / 紙片',
-      hp: 80, atk: 17, def: 4, spd: 10,
+      hp: 80, atk: 17, def: 4, spd: 10, mark: 22,
       mp: 50, mpPer: 2,
-      hpPer: 7, atkPer: 2.6, defPer: 0.5, spdPer: 0.7,
+      hpPer: 7, atkPer: 2.6, defPer: 0.5, spdPer: 0.7, markPer: 2.2,
       attackVerb: '魔法',
       critBonus: 0.18,
       skills: [
         // ⭐ 解鎖 -4，cooldown 全 0；alwaysCrit 取消（不再有免費爆擊），多段技 fixedHitMult
         { id: 'm_meteor',         name: '隕石術',     icon: '☄️', unlockLv: 8,  cooldown: 0, mpCost: 50, type: 'damage', flat: 120, perLv: 5, ignoreDef: true },
-        { id: 'm_ice_lance',      name: '冰錐術',     icon: '❄️', unlockLv: 1,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.6, applyStatus: { type: 'paralyze', turns: 2, chance: 0.25 } },
+        { id: 'm_ice_lance',      name: '冰錐術',     icon: '❄️', unlockLv: 1,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.6, magic: true, useMark: true, applyStatus: { type: 'paralyze', turns: 2, chance: 0.25 } },
         { id: 'm_fireball',       name: '火球術',     icon: '🔥', unlockLv: 1,  cooldown: 0, mpCost: 25, type: 'damage', flat: 50, perLv: 3, ignoreDef: true, cast: 8 },
         { id: 'm_mana_spring',    name: '法力湧泉',   icon: '💧', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', isMpRegen: true, isMpRegenStrong: true },
         // 連環閃電：3 段固定傷害（不享 ×1.3 共享）
@@ -1981,11 +1981,11 @@
         { id: 'm_poison_cloud',   name: '毒霧',       icon: '☠️', unlockLv: 3,  cooldown: 0, mpCost: 30, type: 'damage', flat: 50, perLv: 3, ignoreDef: true, targetCount: 'all', maxLv: 5, applyStatus: { type: 'poison', turns: 4, chance: 0.85 } },
         { id: 'm_arcane_focus',   name: '元素灌注',   icon: '🌀', unlockLv: 2,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'critDmg', amount: 0.30, turns: 4 } },
         { id: 'm_blood_pact',     name: '血魔契約', icon: '🩸', unlockLv: 4,  cooldown: 0, mpCost: 0,  hpCostFlat: 50, type: 'buff', selfBuff: { stat: 'atkPct', amount: 0.50, turns: 4 } },
-        { id: 'm_freeze',         name: '冰封術',     icon: '🧊', unlockLv: 3,  cooldown: 0, mpCost: 25, type: 'damage', mult: 0.3, applyStatus: { type: 'paralyze', turns: 2, chance: 1 } },
+        { id: 'm_freeze',         name: '冰封術',     icon: '🧊', unlockLv: 3,  cooldown: 0, mpCost: 25, type: 'damage', mult: 0.3, magic: true, useMark: true, applyStatus: { type: 'paralyze', turns: 2, chance: 1 } },
         { id: 'm_dark_pact',      name: '暗黑契約', icon: '🦇', unlockLv: 8,  cooldown: 0, mpCost: 0,  hpCost: 0.25, type: 'buff', selfBuff: { stat: 'critDmg', amount: 0.80, turns: 5 } },
         { id: 'm_mana_shield',    name: '法力護甲',   icon: '🔷', unlockLv: 1,  cooldown: 0, mpCost: 22, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.50, turns: 3 } },
         // ⭐ 魔力虹吸改寫：0.8× ATK 傷害 + 回 4 MP（巫師回魔多一倍）
-        { id: 'm_arcane_drain',   name: '魔力虹吸', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 0.8, magic: true, mpRestore: 4 },
+        { id: 'm_arcane_drain',   name: '魔力虹吸', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 0.8, magic: true, useMark: true, mpRestore: 4 },
       ],
       skillTree: [
         { id: 'm_mp',    name: '法力深淵', icon: '💎', desc: '+5% 最大 MP',         maxLevel: 5, effect: 'mpPct',     per: 0.05 },
@@ -2008,9 +2008,9 @@
       accImage:    'assets/equipment/crown.svg',
       hasShield: true,
       desc: '高防禦 / 自癒 / 部份技能附加最大 HP 傷害',
-      hp: 115, atk: 11, def: 11, spd: 7,
+      hp: 115, atk: 11, def: 11, spd: 7, mark: 8,
       mp: 35, mpPer: 2,
-      hpPer: 12, atkPer: 1.4, defPer: 1.6, spdPer: 0.4,
+      hpPer: 12, atkPer: 1.4, defPer: 1.6, spdPer: 0.4, markPer: 0.5,
       attackVerb: '聖光斬',
       regenPer: 0.05,
       skills: [
@@ -3199,6 +3199,23 @@
         { req: 5, bonus: { spd: 20, atk: 15 },              desc: '5 件：SPD +20、ATK +15' },
       ],
     },
+    // ⭐ 星辰魔導套裝（MARK 路線，法師導向）
+    arcane_star: {
+      name: '星辰魔導', color: '#6366f1',
+      pieces: [
+        { id: 'ar_helmet', name: '星辰法冠', icon: '🔮', slot: 'helmet', mark: 12, mp: 20, lv: 8, setId: 'arcane_star' },
+        { id: 'ar_armor',  name: '星辰法袍', icon: '💫', slot: 'armor',  mark: 10, hp: 30, mp: 30, lv: 8, setId: 'arcane_star' },
+        { id: 'ar_gloves', name: '星辰法指', icon: '✨', slot: 'gloves', mark: 18, mp: 15, lv: 8, setId: 'arcane_star' },
+        { id: 'ar_boots',  name: '星辰法靴', icon: '🌌', slot: 'boots',  mark: 8,  spd: 6, lv: 8, setId: 'arcane_star' },
+        { id: 'ar_cape',   name: '星辰法披', icon: '🌠', slot: 'cape',   mark: 10, hp: 40, mp: 25, lv: 8, setId: 'arcane_star' },
+      ],
+      tiers: [
+        { req: 2, bonus: { mark: 15 },                          desc: '2 件：MARK +15' },
+        { req: 3, bonus: { mp: 40 },                            desc: '3 件：MP +40' },
+        { req: 4, bonus: { mark: 25 },                          desc: '4 件：MARK +25' },
+        { req: 5, bonus: { mark: 40, critDmg: 0.30, mp: 50 },   desc: '5 件：MARK +40、暴擊傷害 +30%、MP +50' },
+      ],
+    },
   };
 
   // ⭐ 寶物庫（探險取得，不會掉裝備）
@@ -4194,6 +4211,13 @@
     { id: 'p_dragon',  name: '龍鱗披', icon: '🐲', slot: 'cape', hp: 80, def: 8, lv: 16 },
     // 武器補強：Lv 16 銀劍
     { id: 'w_silver',  name: '銀劍',   icon: '🔱', slot: 'weapon', atk: 17, lv: 16 },
+    // ⭐ 法杖系列（MARK 武器，法師專屬路線）
+    { id: 'w_twig',     name: '木法杖',   icon: '🪄', slot: 'weapon', mark: 4,  lv: 1  },
+    { id: 'w_crystal',  name: '水晶法杖', icon: '💎', slot: 'weapon', mark: 8,  lv: 4  },
+    { id: 'w_mage',     name: '魔導法杖', icon: '🔮', slot: 'weapon', mark: 13, lv: 8  },
+    { id: 'w_arcane',   name: '奧術法杖', icon: '🌀', slot: 'weapon', mark: 19, lv: 13 },
+    { id: 'w_celestial',name: '星辰法杖', icon: '✨', slot: 'weapon', mark: 22, lv: 16 },
+    { id: 'w_elder',    name: '長老法杖', icon: '🌟', slot: 'weapon', mark: 30, lv: 20 },
     // 防具補強：Lv 16 鎧甲
     { id: 'a_silver',  name: '鎧甲',   icon: '🛡️', slot: 'armor', def: 17, lv: 16 },
     // 綠茶指南書（slot: guide）— 不掉落、不販售，遇綠茶鵝達到次數時自動發放
@@ -4229,7 +4253,7 @@
     { id: 'vit', name: '體力 VIT', short: 'VIT', icon: '🛡️', desc: '+5 HP / 點，每 2 點 +1 DEF' },
     { id: 'agi', name: '敏捷 AGI', short: 'AGI', icon: '🦅', desc: '每 2 點 +1 SPD' },
     { id: 'dex', name: '技巧 DEX', short: 'DEX', icon: '🎯', desc: '+0.4% 暴擊率 / 點' },
-    { id: 'int', name: '智力 INT', short: 'INT', icon: '📚', desc: '+2 MP / 點，+0.5 法術傷害' },
+    { id: 'int', name: '智力 INT', short: 'INT', icon: '📚', desc: '+2 MP / 點，+0.5 法術傷害，+1.5 MARK' },
     { id: 'luk', name: '幸運 LUK', short: 'LUK', icon: '🍀', desc: '+0.2% 暴擊率 +1% 暴擊傷害 / 點' },
   ];
   const POINTS_PER_LEVEL = { skill: 2, ability: 3 };
@@ -4685,13 +4709,15 @@
 
   // === 掉落物隨機詞綴系統 ===
   const AFFIXES = [
-    { type: 'atk', name: '鋒利', perLv: 0.35 },
-    { type: 'def', name: '堅固', perLv: 0.35 },
-    { type: 'spd', name: '迅速', perLv: 0.25 },
-    { type: 'hp',  name: '健壯', perLv: 2 },     // ⭐ HP 平衡：4 → 2
-    { type: 'atk', name: '暴怒', perLv: 0.3 },
-    { type: 'def', name: '鋼鐵', perLv: 0.3 },
-    { type: 'hp',  name: '巨魂', perLv: 2.5 },   // ⭐ HP 平衡：5 → 2.5
+    { type: 'atk',  name: '鋒利', perLv: 0.35 },
+    { type: 'def',  name: '堅固', perLv: 0.35 },
+    { type: 'spd',  name: '迅速', perLv: 0.25 },
+    { type: 'hp',   name: '健壯', perLv: 2 },     // ⭐ HP 平衡：4 → 2
+    { type: 'atk',  name: '暴怒', perLv: 0.3 },
+    { type: 'def',  name: '鋼鐵', perLv: 0.3 },
+    { type: 'hp',   name: '巨魂', perLv: 2.5 },   // ⭐ HP 平衡：5 → 2.5
+    { type: 'mark', name: '魔力', perLv: 0.35 },   // ⭐ MARK 詞條
+    { type: 'mark', name: '神秘', perLv: 0.3 },    // ⭐ MARK 詞條（次級）
   ];
   // ⭐ 稀有度：詞條數綁定顏色
   //   白 (common)    0 詞條
@@ -4750,10 +4776,11 @@
       icon: base.icon,
       slot: base.slot,
       lv: base.lv || 1,
-      atk: base.atk || 0,
-      def: base.def || 0,
-      spd: base.spd || 0,
-      hp:  base.hp  || 0,
+      atk:  base.atk  || 0,
+      def:  base.def  || 0,
+      spd:  base.spd  || 0,
+      hp:   base.hp   || 0,
+      mark: base.mark || 0,
       affixes: [],
     };
     // ⭐ 詞條數依稀有度：白 0 / 綠 1 / 藍 2 / 紫 3（精英用 forceAffixes 蓋過）
@@ -5054,6 +5081,7 @@
       critDmgBonus: (a.luk || 0) * 0.01,
       mp: (a.int || 0) * 2,
       skillFlat: (a.int || 0) * 0.5,
+      mark: (a.int || 0) * 1.5,
     };
   }
 
@@ -5249,6 +5277,7 @@
       atk:   Math.round(cls.atk + (lv - 1) * cls.atkPer) + b.atk + ab.atk,
       def:   Math.round(cls.def + (lv - 1) * cls.defPer) + b.def + ab.def,
       spd:   Math.round(cls.spd + (lv - 1) * cls.spdPer) + b.spd + ab.spd,
+      mark:  Math.round((cls.mark || 0) + (lv - 1) * (cls.markPer || 0)) + (ab.mark || 0),
     };
     // 裝備加成（10 個槽）— 同時累積裝備本身的 critChance / critDmg / mpRegen
     let itemCritChance = 0;
@@ -5259,11 +5288,12 @@
       if (itemId) {
         const item = resolveItem(itemId);
         if (item) {
-          if (item.atk) stats.atk += item.atk;
-          if (item.def) stats.def += item.def;
-          if (item.spd) stats.spd += item.spd;
-          if (item.hp)  stats.maxHp += item.hp;
-          if (item.mp)  stats.maxMp += item.mp;
+          if (item.atk)  stats.atk  += item.atk;
+          if (item.def)  stats.def  += item.def;
+          if (item.spd)  stats.spd  += item.spd;
+          if (item.hp)   stats.maxHp += item.hp;
+          if (item.mp)   stats.maxMp += item.mp;
+          if (item.mark) stats.mark += item.mark;
           if (item.critChance) itemCritChance += item.critChance;
           if (item.critDmg)    itemCritDmg    += item.critDmg;
           if (item.mpRegen)    itemMpRegen    += item.mpRegen;
@@ -5272,28 +5302,31 @@
     }
     // 套裝加成
     const setInfo = computeSetBonuses(player);
-    if (setInfo.bonuses.atk) stats.atk += setInfo.bonuses.atk;
-    if (setInfo.bonuses.def) stats.def += setInfo.bonuses.def;
-    if (setInfo.bonuses.spd) stats.spd += setInfo.bonuses.spd;
-    if (setInfo.bonuses.hp)  stats.maxHp += setInfo.bonuses.hp;
-    if (setInfo.bonuses.mp)  stats.maxMp += setInfo.bonuses.mp;
+    if (setInfo.bonuses.atk)  stats.atk  += setInfo.bonuses.atk;
+    if (setInfo.bonuses.def)  stats.def  += setInfo.bonuses.def;
+    if (setInfo.bonuses.spd)  stats.spd  += setInfo.bonuses.spd;
+    if (setInfo.bonuses.hp)   stats.maxHp += setInfo.bonuses.hp;
+    if (setInfo.bonuses.mp)   stats.maxMp += setInfo.bonuses.mp;
+    if (setInfo.bonuses.mark) stats.mark += setInfo.bonuses.mark;
     // ⭐ 寶物的直接屬性類加成（hp/mp/atk/def/spd/critChance/critDmg）
     const treasure = computeTreasureBonuses(rpg);
-    stats.maxHp += treasure.hp || 0;
-    stats.maxMp += treasure.mp || 0;
-    stats.atk   += treasure.atk || 0;
-    stats.def   += treasure.def || 0;
-    stats.spd   += treasure.spd || 0;
+    stats.maxHp += treasure.hp   || 0;
+    stats.maxMp += treasure.mp   || 0;
+    stats.atk   += treasure.atk  || 0;
+    stats.def   += treasure.def  || 0;
+    stats.spd   += treasure.spd  || 0;
+    stats.mark  += treasure.mark || 0;
     // ⭐ 精魂加成（裝在 5 個槽中的）
     let spiritCritChance = 0;
     let spiritCritDmg = 0;
     const spirits = getSpiritSlots(rpg);
     for (const sp of spirits) {
       if (!sp) continue;
-      stats.maxHp += sp.hp || 0;
-      stats.atk   += sp.atk || 0;
-      stats.def   += sp.def || 0;
-      stats.spd   += sp.spd || 0;
+      stats.maxHp += sp.hp   || 0;
+      stats.atk   += sp.atk  || 0;
+      stats.def   += sp.def  || 0;
+      stats.spd   += sp.spd  || 0;
+      stats.mark  += sp.mark || 0;
       spiritCritChance += sp.critChance || 0;
       spiritCritDmg    += sp.critDmg    || 0;
     }
@@ -5744,7 +5777,8 @@
             let dmg;
             const isFlat = skill.flat != null;
             // 受 buff 影響的攻擊力 / 防禦力 / 最大生命
-            const effAtk = stats.atk * (1 + (pBuff.atkPct || 0));
+            const effAtk  = stats.atk  * (1 + (pBuff.atkPct || 0));
+            const effMark = stats.mark * (1 + (pBuff.atkPct || 0)); // atkPct buff 也加成魔攻
             const effDef = (stats.def + (pBuff.def || 0)) * (1 + (pBuff.defPct || 0));
             // ⭐ 多段技能：每段傷害 = 總傷害 / hits × 1.3（同 monster multiHit 公式）
             const skillHits = Math.max(1, skill.hits || 1);
@@ -5760,7 +5794,9 @@
               dmg = (skill.flat + (bonus.skillFlat || 0) + (abil.skillFlat || 0)) + (skill.perLv || 0) * (player.rpg.level || 1);
               if (!skill.ignoreDef) dmg -= Math.floor(monster.def / 2);
             } else {
-              dmg = effAtk * (skill.mult || 1) - Math.floor(monster.def / 2);
+              // ⭐ useMark:true 的技能使用 MARK 而非 ATK（法師魔攻技）
+              const dmgStat = skill.useMark ? effMark : effAtk;
+              dmg = dmgStat * (skill.mult || 1) - Math.floor(monster.def / 2);
             }
             dmg *= perHitFactor;
             // 技能個別 % 加成（從技能樹點到的對應節點）— 只對前 3 個技能有效
@@ -8740,7 +8776,7 @@ ${b.text}
     if (s.maxHpMult != null) return `${Math.round(s.maxHpMult * 100)}% maxHP 傷害（魔攻）${hitsStr}`;
     if (s.flat != null) return `固定 ${s.flat}+Lv×${s.perLv} 傷害${s.ignoreDef ? '（無視防）' : ''}${hitsStr}`;
     let parts = [];
-    if (s.mult) parts.push(`${s.mult}× ATK${s.magic ? '（魔攻）' : ''}${hitsStr}`);
+    if (s.mult) parts.push(`${s.mult}× ${s.useMark ? 'MARK（魔攻）' : (s.magic ? 'ATK（魔攻）' : 'ATK')}${hitsStr}`);
     if (s.bonusMaxHpPct) parts.push(`+ ${Math.round(s.bonusMaxHpPct * 100)}% maxHp 傷害`);
     if (s.alwaysCrit) parts.push('必中暴擊');
     if (s.lifesteal) parts.push(`吸血 ${Math.round(s.lifesteal * 100)}%`);
@@ -9104,6 +9140,7 @@ ${b.text}
           <div class="stat-cell"><div class="sc-label">ATK</div><div class="sc-value">${stats.atk}</div></div>
           <div class="stat-cell"><div class="sc-label">DEF</div><div class="sc-value">${stats.def}</div></div>
           <div class="stat-cell"><div class="sc-label">SPD</div><div class="sc-value">${stats.spd}</div></div>
+          <div class="stat-cell"><div class="sc-label" style="color:#818cf8;">MARK</div><div class="sc-value" style="color:#818cf8;">${stats.mark || 0}</div></div>
           <div class="stat-cell"><div class="sc-label">爆擊率</div><div class="sc-value">${Math.round((stats.totalCritChance || 0) * 100)}%</div></div>
           <div class="stat-cell"><div class="sc-label">爆傷</div><div class="sc-value">${Math.round((stats.totalCritDmg || 1.7) * 100)}%</div></div>
         </div>
@@ -9467,11 +9504,12 @@ ${b.text}
   window.sellInvItem = sellInvItem;
   function formatItemStats(item) {
     const parts = [];
-    if (item.atk) parts.push(`ATK+${item.atk}`);
-    if (item.def) parts.push(`DEF+${item.def}`);
-    if (item.spd) parts.push(`SPD+${item.spd}`);
-    if (item.hp)  parts.push(`HP+${item.hp}`);
-    if (item.mp)  parts.push(`MP+${item.mp}`);
+    if (item.atk)  parts.push(`ATK+${item.atk}`);
+    if (item.def)  parts.push(`DEF+${item.def}`);
+    if (item.spd)  parts.push(`SPD+${item.spd}`);
+    if (item.hp)   parts.push(`HP+${item.hp}`);
+    if (item.mp)   parts.push(`MP+${item.mp}`);
+    if (item.mark) parts.push(`MARK+${item.mark}`);
     if (item.mpRegen) parts.push(`回MP+${item.mpRegen}/回合`);
     if (item.critChance) parts.push(`暴擊+${Math.round(item.critChance * 100)}%`);
     if (item.critDmg)    parts.push(`爆傷+${Math.round(item.critDmg * 100)}%`);
