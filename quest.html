@@ -4151,10 +4151,10 @@
       }
       // 補發過就不在這裡跳 toast，避免每次 getRpg 都跳
     }
-    // ⭐ 補發 v3（永遠檢查）：直接掃 inventory，缺書就補
-    //   之前 v2 用旗標控制，若旗標被早期錯誤設成 true 玩家就永遠拿不到 → 改成每次都掃
-    //   只有真的缺書時才會 push（不會重複），所以放心每次跑
-    if ((player.rpg.metGreenTea || 0) > 0) {
+    // ⭐ 補發 v4（一次性，避免重複補）：之前 v3 沒有旗標 → 賣掉後又會重補回來
+    //   這次 compV4 旗標確保每位玩家只跑一次，跑完之後完全交給 granted 機制
+    //   所以賣掉就賣掉了，不會復活
+    if (!player.rpg.greenTeaCompV4 && (player.rpg.metGreenTea || 0) > 0) {
       const invIds = new Set();
       (player.rpg.inventory || []).forEach(it => {
         const id = typeof it === 'string' ? it : (it && it.id) || null;
@@ -4162,6 +4162,7 @@
       });
       let backfilled = 0;
       for (const g of (typeof GREENTEA_GUIDES !== 'undefined' ? GREENTEA_GUIDES : [])) {
+        // 一次性：metGreenTea 達到但 inventory 沒書（不論 granted 旗標） → 補一次
         if ((player.rpg.metGreenTea || 0) >= g.count && !invIds.has(g.itemId)) {
           player.rpg.inventory.push(g.itemId);
           if (!player.rpg.greenTeaGuidesGranted.includes(g.itemId)) {
@@ -4170,15 +4171,12 @@
           backfilled++;
         }
       }
-      // 真的補了 → 對「我」存檔（推到 firebase），並 toast 一次
+      player.rpg.greenTeaCompV4 = true; // ⭐ 跑完鎖死，賣掉就不會再補
+      // 「我」自己這邊跳 toast + 強推存檔
       if (backfilled > 0 && typeof getMeId === 'function' && player.id === getMeId()) {
-        if (!player.rpg.greenTeaCompV2) {
-          if (typeof showToast === 'function') {
-            setTimeout(() => showToast(`📚 補發 ${backfilled} 本綠茶指南書到背包`), 500);
-          }
-          player.rpg.greenTeaCompV2 = true;
+        if (typeof showToast === 'function') {
+          setTimeout(() => showToast(`📚 補發 ${backfilled} 本綠茶指南書到背包`), 500);
         }
-        // 強制存檔，把補發的物品推到雲端
         if (typeof saveData === 'function') {
           setTimeout(() => { try { saveData(); } catch (e) {} }, 100);
         }
