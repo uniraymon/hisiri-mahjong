@@ -1887,7 +1887,7 @@
         // 死戰之怒：50 MP + 20 HP（固定）, 4.5× ATK
         { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 15, cooldown: 8, mpCost: 50, hpCostFlat: 20, type: 'damage', mult: 4.5, cast: 100 },
         // 補給技：兼顧 HP+MP
-        { id: 'w_war_cry',      name: '戰意呼喚', icon: '📢', unlockLv: 7,  cooldown: 5, mpCost: 0, type: 'heal', healPct: 0.15, mpFlat: 5 },
+        { id: 'w_war_cry',      name: '戰意呼喚', icon: '📢', unlockLv: 7,  cooldown: 5, mpCost: 0, type: 'heal', healPct: 0.15, isMpRegen: true },
         // ⭐ 自身 buff：嗜血怒嚎（ATK +30% 3 回合）
         { id: 'w_bloodlust',    name: '嗜血怒嚎', icon: '🦁', unlockLv: 6,  cooldown: 6, mpCost: 18, type: 'buff', selfBuff: { stat: 'atkPct', amount: 0.30, turns: 3 } },
       ],
@@ -1916,10 +1916,10 @@
       hpPer: 9, atkPer: 1.5, defPer: 0.6, spdPer: 1.2,
       attackVerb: '射擊',
       skills: [
-        { id: 'a_god_arrow',   name: '神之矢',   icon: '🌟', unlockLv: 12, cooldown: 7, mpCost: 32, type: 'damage', mult: 2.8, alwaysCrit: true },
+        { id: 'a_god_arrow',   name: '神之矢',   icon: '🌟', unlockLv: 12, cooldown: 7, mpCost: 32, type: 'damage', mult: 2.8 },
         { id: 'a_multishot',   name: '多重射擊', icon: '🏹', unlockLv: 5,  cooldown: 4, mpCost: 16, type: 'damage', mult: 1.8, hits: 3 },
-        { id: 'a_precise_shot',name: '精準射擊', icon: '🎯', unlockLv: 1,  cooldown: 3, mpCost: 12, type: 'damage', mult: 1.4, alwaysCrit: true, cast: 5 },
-        { id: 'a_concentrate', name: '集中',     icon: '🧘', unlockLv: 4,  cooldown: 4, mpCost: 0,  type: 'heal', mpFlat: 5 },
+        { id: 'a_precise_shot',name: '精準射擊', icon: '🎯', unlockLv: 1,  cooldown: 3, mpCost: 12, type: 'damage', mult: 1.4, cast: 5 },
+        { id: 'a_concentrate', name: '集中',     icon: '🧘', unlockLv: 4,  cooldown: 4, mpCost: 0,  type: 'heal', isMpRegen: true },
         { id: 'a_barrage',     name: '連射',     icon: '🌊', unlockLv: 8,  cooldown: 5, mpCost: 28, type: 'damage', mult: 2.4, hits: 4 },
         { id: 'a_lethal_aim',  name: '致命瞄準', icon: '💀', unlockLv: 14, cooldown: 8, mpCost: 40, type: 'damage', mult: 3.5, alwaysCrit: true, ignoreDef: true, cast: 90 },
         // ⭐ 多目標：雙箭齊發、毒箭
@@ -1931,10 +1931,12 @@
         // ⭐ 新弓手技能：豐富特色
         // 吸血箭：低傷害但吸血，補血用
         { id: 'a_lifesteal_arrow', name: '吸血箭', icon: '🩸', unlockLv: 7,  cooldown: 4, mpCost: 14, type: 'damage', mult: 1.2, lifesteal: 0.40 },
-        // 隱身：自身 buff，下一招必中暴擊（用 critChance buff 100% 1 回合）
-        { id: 'a_stealth',         name: '隱身',   icon: '🌫', unlockLv: 9,  cooldown: 7, mpCost: 0,  hpCostFlat: 30, type: 'buff', selfBuff: { stat: 'critChance', amount: 1.0, turns: 1 } },
+        // ⭐ 隱身（重做）: 15 MP / 免疫一次傷害 + 下次攻擊必爆
+        //   每升一級 -1 MP 消費（max 5 級 → Lv 5 為 10 MP）
+        //   Lv 5：buff 持續 +1 回合（既有 lv5Kind='buff' 機制）+ 本招 +20% 爆傷
+        { id: 'a_stealth',         name: '隱身',   icon: '🌫', unlockLv: 9,  cooldown: 7, mpCost: 15, type: 'buff', selfBuff: { stat: 'critChance', amount: 1.0, turns: 1 }, applyShield: 1, stealthLv5CritDmg: 0.20 },
         // 風之歌：補 MP + SPD buff（兼顧補給）
-        { id: 'a_wind_song',       name: '風之歌', icon: '🎵', unlockLv: 4,  cooldown: 5, mpCost: 0,  type: 'heal', mpFlat: 5, healPct: 0.05 },
+        { id: 'a_wind_song',       name: '風之歌', icon: '🎵', unlockLv: 4,  cooldown: 5, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true },
         // 遠程射手 LUK 系：本招暴擊率特高（已有 alwaysCrit 但這次也可以多目標）
         { id: 'a_arrow_storm',     name: '箭雨',   icon: '🌧', unlockLv: 10, cooldown: 6, mpCost: 30, type: 'damage', mult: 1.0, targetCount: 'all' },
       ],
@@ -1967,7 +1969,7 @@
         { id: 'm_meteor',         name: '隕石術',     icon: '☄️', unlockLv: 12, cooldown: 7, mpCost: 50, type: 'damage', flat: 120, perLv: 5, ignoreDef: true },
         { id: 'm_ice_lance',      name: '冰錐術',     icon: '❄️', unlockLv: 5,  cooldown: 4, mpCost: 20, type: 'damage', mult: 1.6, alwaysCrit: true, applyStatus: { type: 'paralyze', turns: 2, chance: 0.25 } },
         { id: 'm_fireball',       name: '火球術',     icon: '🔥', unlockLv: 1,  cooldown: 3, mpCost: 25, type: 'damage', flat: 50, perLv: 3, ignoreDef: true, cast: 8 },
-        { id: 'm_mana_spring',    name: '法力湧泉',   icon: '💧', unlockLv: 3,  cooldown: 4, mpCost: 0,  type: 'heal', mpFlat: 15 },
+        { id: 'm_mana_spring',    name: '法力湧泉',   icon: '💧', unlockLv: 3,  cooldown: 4, mpCost: 0,  type: 'heal', isMpRegen: true },
         { id: 'm_chain_lightning',name: '連環閃電',   icon: '⚡', unlockLv: 8,  cooldown: 5, mpCost: 35, type: 'damage', flat: 85, perLv: 4, ignoreDef: true, hits: 3 },
         { id: 'm_arcane_shield',  name: '魔力護盾',   icon: '🛡️', unlockLv: 9,  cooldown: 6, mpCost: 30, type: 'heal', healPct: 0.20 },
         { id: 'm_destruction',    name: '毀滅之怒',   icon: '💀', unlockLv: 16, cooldown: 9, mpCost: 65, type: 'damage', flat: 220, perLv: 8, ignoreDef: true, cast: 100 },
@@ -2018,7 +2020,7 @@
         { id: 'p_judgment',  name: '審判',     icon: '⚖️', unlockLv: 12, cooldown: 7, mpCost: 38, type: 'damage', mult: 2.5, alwaysCrit: true },
         { id: 'p_holy_slash',name: '聖光斬',   icon: '✝️', unlockLv: 5,  cooldown: 4, mpCost: 22, type: 'damage', mult: 1.6, healCaster: 0.05 },
         { id: 'p_holy_heal', name: '神聖治癒', icon: '✨', unlockLv: 1,  cooldown: 5, mpCost: 30, type: 'heal', healPct: 0.3 },
-        { id: 'p_pray',      name: '祈禱',     icon: '🙏', unlockLv: 3,  cooldown: 4, mpCost: 0,  type: 'heal', mpFlat: 5, healPct: 0.05 },
+        { id: 'p_pray',      name: '祈禱',     icon: '🙏', unlockLv: 3,  cooldown: 4, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true },
         { id: 'p_shelter',   name: '庇護術',   icon: '🤲', unlockLv: 7,  cooldown: 6, mpCost: 25, type: 'heal', healPct: 0.40 },
         { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 10, cooldown: 5, mpCost: 35, type: 'damage', mult: 2.0, alwaysCrit: true, healCaster: 0.10 },
         // ⭐ 多目標：神聖光波（兩個敵人）/ 神之拳（兩個敵人 + 麻痺）
@@ -2773,9 +2775,10 @@
     t_hp_1: { id: 't_hp_1', name: '生命水晶',     icon: '❤️', stat: 'hp', value: 15, desc: '紅色透明礦石，握著會微微發熱' },
     t_hp_2: { id: 't_hp_2', name: '鵝命之水',     icon: '🩸', stat: 'hp', value: 30, desc: '能延長鵝命的紅色液體' },
     t_hp_3: { id: 't_hp_3', name: '永生鵝心',     icon: '💖', stat: 'hp', value: 60, desc: '據說來自不死鵝的心臟，仍在跳' },
-    t_mp_1: { id: 't_mp_1', name: '法力水晶',     icon: '💙', stat: 'mp', value: 8,  desc: '藍色冰涼的小石頭' },
-    t_mp_2: { id: 't_mp_2', name: '法師眼淚',     icon: '💧', stat: 'mp', value: 18, desc: '某個鵝法師哭出來的眼淚，很值錢' },
-    t_mp_3: { id: 't_mp_3', name: '無盡法力珠',   icon: '🔵', stat: 'mp', value: 35, desc: '永遠不會用完的奇妙能量球' },
+    // ⭐ 配合 mpPer 大幅縮減（戰/弓 +1、法/聖 +2 / 等），MP 寶物拉高補足稀缺
+    t_mp_1: { id: 't_mp_1', name: '法力水晶',     icon: '💙', stat: 'mp', value: 15, desc: '藍色冰涼的小石頭' },
+    t_mp_2: { id: 't_mp_2', name: '法師眼淚',     icon: '💧', stat: 'mp', value: 30, desc: '某個鵝法師哭出來的眼淚，很值錢' },
+    t_mp_3: { id: 't_mp_3', name: '無盡法力珠',   icon: '🔵', stat: 'mp', value: 60, desc: '永遠不會用完的奇妙能量球' },
     // ⭐ 直接屬性類：ATK / DEF
     t_atk_1: { id: 't_atk_1', name: '銳利之牙',   icon: '🦷', stat: 'atk', value: 1, desc: '從鵝皇嘴邊掉下來的尖牙' },
     t_atk_2: { id: 't_atk_2', name: '殺氣徽章',   icon: '🗡', stat: 'atk', value: 2, desc: '戴上後攻擊變得更狠了' },
@@ -2876,16 +2879,31 @@
   const SKILL_MAX_LEVEL = 10;
   function getSkillEffectiveStats(skill, level) {
     const eff = { ...skill };
+    // ⭐ 回魔技能統一公式（不論職業）：
+    //   基底 5 MP + 5% maxMP；每級 +1 MP 固定；Lv 5 / Lv 10 各 +5% maxMP
+    //   未升級 (level=0)：5 MP + 5% maxMP
+    if (skill.isMpRegen) {
+      const lvSafe = Math.max(0, level || 0);
+      eff.mpFlat = 5 + lvSafe;
+      eff.mpPct = 0.05 + (lvSafe >= 5 ? 0.05 : 0) + (lvSafe >= 10 ? 0.05 : 0);
+    }
     if (!level || level <= 0) return eff;
     // 累進加成：Lv 1-5 每級 +10%，Lv 6-10 每級 +5%
     const dmgBonus = Math.min(level, 5) * 0.10 + Math.max(0, level - 5) * 0.05;
     if (skill.mult)         eff.mult     = +(skill.mult * (1 + dmgBonus)).toFixed(3);
     if (skill.flat != null) eff.flat     = Math.round(skill.flat * (1 + dmgBonus));
     if (skill.healPct)      eff.healPct  = +(skill.healPct * (1 + dmgBonus)).toFixed(3);
-    if (skill.mpPct)        eff.mpPct    = +(skill.mpPct * (1 + dmgBonus)).toFixed(3);
-    if (skill.mpFlat)       eff.mpFlat   = Math.round(skill.mpFlat * (1 + dmgBonus));
+    // mpFlat / mpPct: 若是 isMpRegen 已用上面公式覆蓋；否則照舊縮放
+    if (!skill.isMpRegen) {
+      if (skill.mpPct)        eff.mpPct    = +(skill.mpPct * (1 + dmgBonus)).toFixed(3);
+      if (skill.mpFlat)       eff.mpFlat   = Math.round(skill.mpFlat * (1 + dmgBonus));
+    }
     if (skill.defMult)      eff.defMult  = +(skill.defMult * (1 + dmgBonus)).toFixed(3);
     if (skill.maxHpMult)    eff.maxHpMult= +(skill.maxHpMult * (1 + dmgBonus)).toFixed(3);
+    // ⭐ 隱身專屬：每升一級 −1 MP（max 5 級 → Lv 5 為 10 MP）
+    if (skill.id === 'a_stealth') {
+      eff.mpCost = Math.max(0, (skill.mpCost || 0) - Math.min(5, level));
+    }
     if (level >= 3 && skill.applyStatus) {
       eff.applyStatus = {
         ...skill.applyStatus,
@@ -3991,7 +4009,9 @@
       if (biased.length > 0) eligible = biased;
     }
     const base = eligible[Math.floor(Math.random() * eligible.length)];
-    const rarity = rollRarity(boosted);
+    // ⭐ 支援 forceRarity：精英怪固定掉紫
+    const forceRarity = opts && opts.forceRarity;
+    const rarity = forceRarity && RARITY[forceRarity] ? forceRarity : rollRarity(boosted);
     const def = RARITY[rarity];
     const drop = {
       id: 'drop_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
@@ -4925,9 +4945,19 @@
             if (mHp <= 0) { pushDeathLine(); break; }
           } else if (skill.type === 'buff' && skill.selfBuff) {
             applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff.stat, amount: skill.selfBuff.amount, turns: skill.selfBuff.turns });
+            // ⭐ 隱身：另加 shield 狀態（吸收一次傷害）+ Lv 5 額外 +20% 爆傷 buff
+            const extraNote = [];
+            if (skill.applyShield) {
+              applyStatus(playerObj, { type: 'shield', charges: skill.applyShield, turns: 99 });
+              extraNote.push('🛡 免疫一次傷害');
+            }
+            if (skill.id === 'a_stealth' && (__skillLv || 0) >= 5) {
+              applyStatus(playerObj, { type: 'buff', stat: 'critDmg', amount: 0.20, turns: skill.selfBuff.turns });
+              extraNote.push('💥 爆傷 +20%');
+            }
             log.push({
               type: 'player',
-              text: `回合 ${round}：${skill.icon} ${skill.name} → ${describeBuff(skill.selfBuff)}（${skill.selfBuff.turns} 回合）${costStr}`,
+              text: `回合 ${round}：${skill.icon} ${skill.name} → ${describeBuff(skill.selfBuff)}（${skill.selfBuff.turns} 回合）${extraNote.length ? ' / ' + extraNote.join(' / ') : ''}${costStr}`,
               hp: { player: pHp, monster: mHp, mp: pMp }
             });
           } else if (skill.type === 'heal') {
@@ -5023,18 +5053,31 @@
           log.push({ type: 'crit-player', text: `回合 ${round}：🪞 反傷 → ${monster.name} -${r} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
         };
         let dead = false;
+        // ⭐ 共用：套用傷害前檢查 shield；有則吸收一次、回 0
+        const consumeShield = (incoming) => {
+          if (incoming <= 0) return incoming;
+          const s = (playerObj.statuses || []).find(x => x.type === 'shield' && (x.charges || 0) > 0);
+          if (!s) return incoming;
+          s.charges -= 1;
+          if (s.charges <= 0) playerObj.statuses = playerObj.statuses.filter(x => x !== s);
+          log.push({ type: 'system', text: `回合 ${round}：🌫 ${player.name} 隱身免疫此次傷害！`, hp: { player: pHp, monster: mHp, mp: pMp } });
+          return 0;
+        };
         if (mSkill) {
           let dmg = Math.max(1, monster.atk * (mSkill.mult || 1) - (mSkill.ignoreDef ? 0 : Math.floor(effDef / 2)));
           dmg *= (0.85 + Math.random() * 0.3);
           dmg *= (1 - (passive.dmgReduction || 0));
           dmg = Math.max(1, Math.round(dmg));
+          dmg = consumeShield(dmg);
           pHp = Math.max(0, pHp - dmg);
-          log.push({
-            type: 'monster',
-            text: `回合 ${round}：${monster.icon}${monster.name} ✨${mSkill.verb || '技能'} → ${player.name} -${dmg} HP`,
-            hp: { player: pHp, monster: mHp, mp: pMp }
-          });
-          applyReflect(dmg);
+          if (dmg > 0) {
+            log.push({
+              type: 'monster',
+              text: `回合 ${round}：${monster.icon}${monster.name} ✨${mSkill.verb || '技能'} → ${player.name} -${dmg} HP`,
+              hp: { player: pHp, monster: mHp, mp: pMp }
+            });
+            applyReflect(dmg);
+          }
           if (pHp <= 0) { dead = true; }
           if (mHp <= 0) { pushDeathLine(); break; }
           // 對玩家上狀態
@@ -5052,20 +5095,24 @@
             dmg *= perHitMult;
             dmg *= (1 - (passive.dmgReduction || 0));
             dmg = Math.max(1, Math.round(dmg));
+            dmg = consumeShield(dmg);
             pHp -= dmg;
-            log.push({
-              type: 'monster',
-              text: `回合 ${round}：${monster.name} ${monster.verb}${hits > 1 ? `（${h+1}/${hits}）` : ''} → ${player.name} -${dmg} HP`,
-              hp: { player: Math.max(0, pHp), monster: mHp, mp: pMp }
-            });
-            applyReflect(dmg);
+            if (dmg > 0) {
+              log.push({
+                type: 'monster',
+                text: `回合 ${round}：${monster.name} ${monster.verb}${hits > 1 ? `（${h+1}/${hits}）` : ''} → ${player.name} -${dmg} HP`,
+                hp: { player: Math.max(0, pHp), monster: mHp, mp: pMp }
+              });
+              applyReflect(dmg);
+            }
             if (mHp <= 0) { pushDeathLine(); dead = true; break; }
             if (pHp <= 0) { dead = true; break; }
           }
         }
-        // 偷錢：60% 機率得手
+        // 偷錢：60% 機率得手 — ⭐ 偷錢量降低 50%（綠茶不算 cameo 走另一條 path）
         if (!dead && mAbility?.type === 'steal' && Math.random() < 0.6) {
-          const stolen = mAbility.min + Math.floor(Math.random() * (mAbility.max - mAbility.min + 1));
+          const rawStolen = mAbility.min + Math.floor(Math.random() * (mAbility.max - mAbility.min + 1));
+          const stolen = Math.max(1, Math.floor(rawStolen * 0.5));
           coinsStolen += stolen;
           log.push({
             type: 'monster',
@@ -5402,9 +5449,18 @@
             }
           } else if (skill.type === 'buff' && skill.selfBuff) {
             applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff.stat, amount: skill.selfBuff.amount, turns: skill.selfBuff.turns });
+            const extraNote = [];
+            if (skill.applyShield) {
+              applyStatus(playerObj, { type: 'shield', charges: skill.applyShield, turns: 99 });
+              extraNote.push('🛡 免疫一次傷害');
+            }
+            if (skill.id === 'a_stealth' && (__skillLv || 0) >= 5) {
+              applyStatus(playerObj, { type: 'buff', stat: 'critDmg', amount: 0.20, turns: skill.selfBuff.turns });
+              extraNote.push('💥 爆傷 +20%');
+            }
             log.push({
               type: 'player',
-              text: `回合 ${round}：${skill.icon} ${skill.name} → ${describeBuff(skill.selfBuff)}（${skill.selfBuff.turns} 回合）${costStr}`,
+              text: `回合 ${round}：${skill.icon} ${skill.name} → ${describeBuff(skill.selfBuff)}（${skill.selfBuff.turns} 回合）${extraNote.length ? ' / ' + extraNote.join(' / ') : ''}${costStr}`,
               hp: hpsSnapshot(),
             });
           } else if (skill.type === 'heal') {
@@ -5502,18 +5558,31 @@
           if (m.hp <= 0) m.alive = false;
           log.push({ type: 'crit-player', text: `回合 ${round}：🪞 反傷 → ${m.icon}${m.name} -${r} HP`, hp: hpsSnapshot() });
         };
+        // ⭐ 試煉場也支援 shield 吸傷
+        const consumeShield2 = (incoming) => {
+          if (incoming <= 0) return incoming;
+          const s = (playerObj.statuses || []).find(x => x.type === 'shield' && (x.charges || 0) > 0);
+          if (!s) return incoming;
+          s.charges -= 1;
+          if (s.charges <= 0) playerObj.statuses = playerObj.statuses.filter(x => x !== s);
+          log.push({ type: 'system', text: `回合 ${round}：🌫 ${player.name} 隱身免疫此次傷害！`, hp: hpsSnapshot() });
+          return 0;
+        };
         if (mSkill) {
           let dmg = Math.max(1, m.atk * (mSkill.mult || 1) - (mSkill.ignoreDef ? 0 : Math.floor(effDef / 2)));
           dmg *= (0.85 + Math.random() * 0.3);
           dmg *= (1 - (passive.dmgReduction || 0));
           dmg = Math.max(1, Math.round(dmg));
+          dmg = consumeShield2(dmg);
           pHp = Math.max(0, pHp - dmg);
-          log.push({
-            type: 'monster',
-            text: `回合 ${round}：${m.icon}${m.name} ✨${mSkill.verb || '技能'} → ${player.name} -${dmg} HP`,
-            hp: hpsSnapshot(),
-          });
-          applyReflect2(dmg);
+          if (dmg > 0) {
+            log.push({
+              type: 'monster',
+              text: `回合 ${round}：${m.icon}${m.name} ✨${mSkill.verb || '技能'} → ${player.name} -${dmg} HP`,
+              hp: hpsSnapshot(),
+            });
+            applyReflect2(dmg);
+          }
           if (pHp > 0 && mSkill.applyStatus && Math.random() < (mSkill.applyStatus.chance || 1)) {
             applyStatus(playerObj, mSkill.applyStatus);
             log.push({ type: 'system', text: `回合 ${round}：${player.name} 進入 ${statusEmoji(mSkill.applyStatus.type)}${statusLabel(mSkill.applyStatus.type)} 狀態`, hp: hpsSnapshot() });
@@ -5528,13 +5597,16 @@
             dmg *= perHitMult;
             dmg *= (1 - (passive.dmgReduction || 0));
             dmg = Math.max(1, Math.round(dmg));
+            dmg = consumeShield2(dmg);
             pHp = Math.max(0, pHp - dmg);
-            log.push({
-              type: 'monster',
-              text: `回合 ${round}：${m.icon}${m.name} ${m.verb || '攻擊'}${hits > 1 ? ` (${h+1}/${hits})` : ''} → ${player.name} -${dmg} HP`,
-              hp: hpsSnapshot(),
-            });
-            applyReflect2(dmg);
+            if (dmg > 0) {
+              log.push({
+                type: 'monster',
+                text: `回合 ${round}：${m.icon}${m.name} ${m.verb || '攻擊'}${hits > 1 ? ` (${h+1}/${hits})` : ''} → ${player.name} -${dmg} HP`,
+                hp: hpsSnapshot(),
+              });
+              applyReflect2(dmg);
+            }
             if (!m.alive) break;
             if (pHp <= 0) break;
           }
@@ -7205,7 +7277,7 @@ ${b.text}
     let stamLimitNote = '';
     if (active.id === 'consumable') {
       if (STAM_POT_UNLIMITED) {
-        stamLimitNote = `<div style="font-size:11px; color:#15803d; padding:6px 10px; background:#dcfce7; border-radius:8px; margin-bottom:6px; border:1px dashed #16a34a;">🧪 封測期間：體力藥<b>無限制購買</b>（之後會恢復每小時 ${STAM_POT_HOURLY_LIMIT} 瓶）</div>`;
+        stamLimitNote = `<div style="font-size:11px; color:#15803d; padding:6px 10px; background:#dcfce7; border-radius:8px; margin-bottom:6px; border:1px dashed #16a34a;">🧪 封測期間：體力藥<b>無限制購買</b>（之後會恢復每 20 分鐘 ${STAM_POT_HOURLY_LIMIT} 瓶）</div>`;
       } else {
         const rpg = getRpg(me);
         const st = getStamPotState(rpg);
@@ -7216,10 +7288,10 @@ ${b.text}
             const minLeft = Math.ceil((STAM_POT_WINDOW_MS - (Date.now() - rpg.stamPotPurchases[0])) / 60000);
             extra = `（${minLeft} 分鐘後第 1 瓶過期）`;
           }
-          stamLimitNote = `<div style="font-size:11px; color:#8b6f9b; padding:6px 10px; background:#fef3c7; border-radius:8px; margin-bottom:6px; border:1px dashed #f59e0b;">🧪 體力藥本小時已購 <b>${used}/${STAM_POT_HOURLY_LIMIT}</b>${extra}</div>`;
+          stamLimitNote = `<div style="font-size:11px; color:#8b6f9b; padding:6px 10px; background:#fef3c7; border-radius:8px; margin-bottom:6px; border:1px dashed #f59e0b;">🧪 體力藥近 20 分鐘已購 <b>${used}/${STAM_POT_HOURLY_LIMIT}</b>${extra}</div>`;
         } else {
           const m = Math.ceil(st.nextRefillMs / 60000);
-          stamLimitNote = `<div style="font-size:11px; color:#dc2626; padding:6px 10px; background:#fee2e2; border-radius:8px; margin-bottom:6px; border:1px dashed #f87171;">🚫 體力藥已達本小時上限 ${STAM_POT_HOURLY_LIMIT} 瓶（${m} 分鐘後可再買）</div>`;
+          stamLimitNote = `<div style="font-size:11px; color:#dc2626; padding:6px 10px; background:#fee2e2; border-radius:8px; margin-bottom:6px; border:1px dashed #f87171;">🚫 體力藥已達 20 分鐘上限 ${STAM_POT_HOURLY_LIMIT} 瓶（${m} 分鐘後可再買）</div>`;
         }
       }
     }
@@ -7236,8 +7308,8 @@ ${b.text}
   // 體力藥每小時限購 5 瓶（避免「打工 → 買體力 → 打工」無限 loop）
   // 體力藥每小時限購 5 瓶（封測期已結束）
   const STAM_POT_UNLIMITED = false;
-  const STAM_POT_HOURLY_LIMIT = 5;
-  const STAM_POT_WINDOW_MS = 60 * 60 * 1000;
+  const STAM_POT_HOURLY_LIMIT = 3;             // ⭐ 每 20 分鐘最多 3 瓶
+  const STAM_POT_WINDOW_MS = 20 * 60 * 1000;   // 20 分鐘視窗
   function getStamPotState(rpg) {
     const now = Date.now();
     const list = (rpg.stamPotPurchases || []).filter(t => now - t < STAM_POT_WINDOW_MS);
@@ -9790,15 +9862,13 @@ ${b.text}
       let treasureDropped = null;     // 拿到的寶物本體（首次取得才會有）
       let treasureDupXp = 0;           // 重複的話換 XP
       if (monster.isElite && !monster.isForageElite) {
-        // ⭐ 地區精英：必掉 2 件「3 詞條」的裝備
-        for (let i = 0; i < 2; i++) {
-          const eliteDrop = generateDropItem(dropLv, { slotBias: _zone ? _zone.dropBias : null, forceAffixes: 3, boosted: true });
-          if (eliteDrop) {
-            rpg.inventory.push(eliteDrop);
-            eliteExtraDrops.push(eliteDrop);
-          }
+        // ⭐ 地區精英：必掉 1 件「紫裝」（legendary，3 詞條）100%
+        const eliteDrop = generateDropItem(dropLv, { slotBias: _zone ? _zone.dropBias : null, forceAffixes: 3, boosted: true, forceRarity: 'legendary' });
+        if (eliteDrop) {
+          rpg.inventory.push(eliteDrop);
+          eliteExtraDrops.push(eliteDrop);
         }
-        forageTrace('zone-elite drop (2x 3-affix)', { dropLv, count: eliteExtraDrops.length, ids: eliteExtraDrops.map(d => d.id) });
+        forageTrace('zone-elite drop (1x legendary)', { dropLv, count: eliteExtraDrops.length, ids: eliteExtraDrops.map(d => d.id) });
       } else if (monster.isForageElite) {
         // ⭐ 探險精英：改成給寶物（重複→ +1000 XP）
         rpg.treasures = rpg.treasures || [];
