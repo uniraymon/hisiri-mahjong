@@ -4610,8 +4610,11 @@
     const rpg = me && me.rpg ? me.rpg : null;
     // ⭐ 探險選錯路觸發的戰鬥：強制 forage 精英，跳過綠茶判斷
     // （否則綠茶有機率攔截，玩家以為打精英但其實打到綠茶 → 沒掉裝）
+    const noSpecial = !!(opts && opts.noSpecial);
     if (opts && opts.forageElite) {
       // 落入下面的 forage elite 分支
+    } else if (noSpecial) {
+      // 多怪同戰時的「補位怪」：跳過綠茶 / 寶箱 / 精英 roll，直接到普通怪邏輯
     } else {
       // 綠茶事件：頭 5 場固定 5%，第 6 場起每場 +2% 慢慢加，第 30 場保底必出
       if (rpg) {
@@ -4663,8 +4666,8 @@
         isForageElite: true,
       };
     }
-    // ⭐ 寶箱怪：在指定地區內 5% 機率出現（金錢 ×2 + 掉裝率 ×2）
-    if (opts && opts.zoneId && Math.random() < 0.05) {
+    // ⭐ 寶箱怪：在指定地區內 5% 機率出現（金錢 ×2 + 掉裝率 ×2）；noSpecial 跳過
+    if (!noSpecial && opts && opts.zoneId && Math.random() < 0.05) {
       const chest = MONSTERS.find(m => m.isChest && m.chestZone === opts.zoneId);
       if (chest) {
         const lv = Math.max(1, opts.targetLv || layerFloorToLevel(opts.layerId, opts.floor) || 1);
@@ -4684,8 +4687,8 @@
         };
       }
     }
-    // 精英怪：在指定地區內 7% 機率出現
-    if (opts && opts.zoneId && Math.random() < 0.07) {
+    // 精英怪：在指定地區內 7% 機率出現；noSpecial 跳過
+    if (!noSpecial && opts && opts.zoneId && Math.random() < 0.07) {
       const elite = ELITES.find(e => e.zone === opts.zoneId);
       const zone = ZONES.find(z => z.id === opts.zoneId);
       if (elite && zone) {
