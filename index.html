@@ -1367,8 +1367,28 @@
   };
   const COMMENT_COST = 5;
   // BET_REWARD 已停用：新版押注用「注額 × 2」回報
-  const GACHA_COST = 100;
-  const GACHA_DUP_REFUND = 50;
+  // ⭐ 扭蛋改用「鵝蛋幣」（一場麻將：第 1 名 +10、第 2 名 +7、第 3 名 +5、第 4 名 +3）
+  const GACHA_COST = 1;          // 1 顆鵝蛋幣
+  const GACHA_DUP_REFUND = 0;    // 重複不退（鵝蛋幣很值錢；改成全給 XP）
+  const MATCH_EGG_COIN_REWARDS = [10, 7, 5, 3]; // 第 1-4 名
+
+  // 鵝蛋幣 helpers
+  function getEggCoins(pid) {
+    const p = getPlayer(pid);
+    return p ? (p.eggCoins || 0) : 0;
+  }
+  function addEggCoins(pid, amount) {
+    const p = getPlayer(pid);
+    if (!p) return;
+    p.eggCoins = (p.eggCoins || 0) + amount;
+  }
+  function spendEggCoins(pid, amount) {
+    const p = getPlayer(pid);
+    if (!p) return false;
+    if ((p.eggCoins || 0) < amount) return false;
+    p.eggCoins = (p.eggCoins || 0) - amount;
+    return true;
+  }
 
   let players = [
     { id: 'p1', name: '小燈泡掉頭走了', avatar: '🌸' },
@@ -1698,7 +1718,7 @@
           <div class="me-label">這個裝置目前是…</div>
           <div class="me-name">${me ? escapeHtml(me.name) : (verified ? '已通過驗證，點擊選身份' : '未登入，點擊輸入密碼')}</div>
         </div>
-        ${me ? `<span class="coin-badge">🪙 ${myCoins}</span>` : ''}
+        ${me ? `<span class="coin-badge">🪙 ${myCoins}</span><span class="coin-badge" style="background:linear-gradient(135deg,#fef3c7,#fde047); color:#7c2d12; margin-left:4px;">🥚 ${getEggCoins(me.id)}</span>` : ''}
       </div>
     `;
 
@@ -2832,14 +2852,17 @@
         if (id && id.startsWith('g_')) ueIds.add(id);
       });
     }
+    const myEggCoins = getEggCoins(me.id);
     const html = `
       <div style="text-align:center; margin-bottom:12px;">
-        <span class="coin-badge">🪙 ${myCoins} 鵝鵝幣</span>
+        <span class="coin-badge" style="background:linear-gradient(135deg,#fef3c7,#fde047); color:#7c2d12;">🥚 ${myEggCoins} 鵝蛋幣</span>
       </div>
       <div style="font-size:12px; color:#b88a8a; text-align:center; margin-bottom:10px;">
-        100 幣 / 抽　·　35% 頭像 / 35% 稱號 / 30% 限定裝備<br>重複退 ${GACHA_DUP_REFUND} 幣
+        1 顆鵝蛋幣 / 抽　·　35% 頭像 / 35% 稱號 / 30% 限定裝備<br>
+        🥚 來源：每場麻將 第 1 名 +10 / 第 2 名 +7 / 第 3 名 +5 / 第 4 名 +3<br>
+        重複 → +50 XP（不退鵝蛋幣）
       </div>
-      <button class="btn btn-primary" onclick="spinGacha()" ${myCoins < GACHA_COST ? 'disabled' : ''}>🎰 抽 1 次（100 幣）</button>
+      <button class="btn btn-primary" onclick="spinGacha()" ${myEggCoins < GACHA_COST ? 'disabled' : ''}>🎰 抽 1 次（1 🥚）</button>
       <div id="gachaResult" style="margin-top:12px;"></div>
       <div style="margin-top:14px; font-size:12px; color:#b88a8a;">
         <b>已收集頭像</b> (${ua.length}/${GACHA_AVATARS.length})：${ua.length > 0 ? ua.map(a => `<span style="font-size:18px; margin:0 2px;">${a}</span>`).join('') : '（無）'}
@@ -2862,7 +2885,7 @@
   function spinGacha() {
     const me = getMe();
     if (!me) return;
-    if (!spendCoins(me.id, GACHA_COST)) { showToast('幣不夠 ♡'); return; }
+    if (!spendEggCoins(me.id, GACHA_COST)) { showToast('🥚 鵝蛋幣不夠 — 多打幾場麻將吧'); return; }
     // 30% 限定裝備 / 35% 頭像 / 35% 稱號
     const r = Math.random();
     const kind = r < 0.30 ? 'equipment' : r < 0.65 ? 'avatar' : 'title';
@@ -2875,11 +2898,10 @@
       const a = GACHA_AVATARS[Math.floor(Math.random() * GACHA_AVATARS.length)];
       if (!me.unlockedAvatars) me.unlockedAvatars = [];
       if (me.unlockedAvatars.includes(a)) {
-        refundCoins(me.id, GACHA_DUP_REFUND);
         me.bonusXp = (me.bonusXp || 0) + DUP_XP;
         isDup = true;
         dupItemName = `頭像 ${a}`;
-        resultHtml = `<div class="gacha-result"><div class="gr-icon">${a}</div><div class="gr-text">重複了…<br>退 ${GACHA_DUP_REFUND} 幣 + <b style="color:#fde047;">${DUP_XP} XP</b></div></div>`;
+        resultHtml = `<div class="gacha-result"><div class="gr-icon">${a}</div><div class="gr-text">重複了…<br>+ <b style="color:#fde047;">${DUP_XP} XP</b></div></div>`;
       } else {
         me.unlockedAvatars.push(a);
         isNew = true;
@@ -2889,11 +2911,10 @@
       const t = GACHA_TITLES[Math.floor(Math.random() * GACHA_TITLES.length)];
       if (!me.unlockedTitles) me.unlockedTitles = [];
       if (me.unlockedTitles.includes(t.id)) {
-        refundCoins(me.id, GACHA_DUP_REFUND);
         me.bonusXp = (me.bonusXp || 0) + DUP_XP;
         isDup = true;
         dupItemName = `稱號「${t.title}」`;
-        resultHtml = `<div class="gacha-result"><div class="gr-icon">${t.icon}</div><div class="gr-text">重複了「${t.title}」<br>退 ${GACHA_DUP_REFUND} 幣 + <b style="color:#fde047;">${DUP_XP} XP</b></div></div>`;
+        resultHtml = `<div class="gacha-result"><div class="gr-icon">${t.icon}</div><div class="gr-text">重複了「${t.title}」<br>+ <b style="color:#fde047;">${DUP_XP} XP</b></div></div>`;
       } else {
         me.unlockedTitles.push(t.id);
         isNew = true;
@@ -2908,11 +2929,10 @@
       const owned = me.rpg.inventory.some(it => (typeof it === 'object' ? it?.id : it) === eq.id)
         || Object.values(me.rpg.equipment).some(it => (typeof it === 'object' ? it?.id : it) === eq.id);
       if (owned) {
-        refundCoins(me.id, GACHA_DUP_REFUND);
         me.bonusXp = (me.bonusXp || 0) + DUP_XP;
         isDup = true;
         dupItemName = `裝備「${eq.name}」`;
-        resultHtml = `<div class="gacha-result"><div class="gr-icon">${eq.icon}</div><div class="gr-text">重複了「${eq.name}」<br>退 ${GACHA_DUP_REFUND} 幣 + <b style="color:#fde047;">${DUP_XP} XP</b></div></div>`;
+        resultHtml = `<div class="gacha-result"><div class="gr-icon">${eq.icon}</div><div class="gr-text">重複了「${eq.name}」<br>+ <b style="color:#fde047;">${DUP_XP} XP</b></div></div>`;
       } else {
         me.rpg.inventory.push({ ...eq, rarity: 'legendary' }); // 一律當作傳說稀有度顯示
         isNew = true;
@@ -3120,10 +3140,22 @@
       scores, money
     });
     settleBetsForRound([...currentPick], scores, money);
+    // ⭐ 鵝蛋幣獎勵：依本局名次發 10 / 7 / 5 / 3
+    const sortedByScore = scores.map((s, i) => ({ s, pid: currentPick[i] }))
+      .sort((a, b) => b.s - a.s);
+    const eggToast = [];
+    sortedByScore.forEach((row, rank) => {
+      const reward = MATCH_EGG_COIN_REWARDS[rank] || 0;
+      if (reward > 0) {
+        addEggCoins(row.pid, reward);
+        const p = getPlayer(row.pid);
+        if (p) eggToast.push(`${rank+1}🥚${p.name.slice(0,3)} +${reward}`);
+      }
+    });
     saveData();
     currentPick = [];
     render();
-    showToast('✨ 已記錄本局 ✨');
+    showToast(`✨ 已記錄　🥚 ${eggToast.join(' / ')}`);
   }
 
   function deleteRound(idx) {
