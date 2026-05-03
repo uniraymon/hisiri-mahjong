@@ -4399,6 +4399,28 @@
       + (mergedBonuses.critDmg || 0);
     return stats;
   }
+  // ⭐ 怪物 EXP 給予公式（依等級）
+  //   Lv 1-5  : 20, 25, 30, 35, 40       （tier 1，每等 +5）
+  //   Lv 6-10 : 80, 90, 100, 110, 120    （tier 2 起每階階內 +10、階間 base 跳躍）
+  //   Lv 11-15: 150, 160, 170, 180, 190
+  //   Lv 16-20: 230, 240, 250, 260, 270
+  //   Lv 21+  : 延續 (tier-3) × 80 為新階 base、階內每等 +10（Lv21=310, Lv26=390 ...）
+  function getMonsterBaseXp(level) {
+    const lv = Math.max(1, level | 0);
+    if (lv <= 5)  return 20  + (lv - 1)  * 5;
+    if (lv <= 10) return 80  + (lv - 6)  * 10;
+    if (lv <= 15) return 150 + (lv - 11) * 10;
+    if (lv <= 20) return 230 + (lv - 16) * 10;
+    const tier = Math.floor((lv - 1) / 5);              // 4=Lv21-25, 5=Lv26-30, ...
+    const tierBase = 230 + (tier - 3) * 80;             // 310, 390, 470, ...
+    return tierBase + (lv - tier * 5 - 1) * 10;
+  }
+  // ⭐ 不同品種品種隨機加成 0~20%（戰鬥當下 roll，所以「最多多 20%」）
+  function rollMonsterXpVariance(level) {
+    const base = getMonsterBaseXp(level);
+    return Math.round(base * (1 + Math.random() * 0.20));
+  }
+
   function generateMonster(playerLv, opts) {
     const me = (typeof getMe === 'function') ? getMe() : null;
     const rpg = me && me.rpg ? me.rpg : null;
@@ -4448,7 +4470,8 @@
         def: Math.round(4 * k * 0.7),
         spd: Math.round(8 + lv * 0.4),
         goldDrop: Math.round(110 + lv * 3 + Math.random() * lv * 2),
-        xpDrop: Math.round((220 + lv * 7) * 2),
+        // ⭐ 探險精英：基底依等級 + 0~20% 隨機 + 精英 ×2 倍
+        xpDrop: Math.round(rollMonsterXpVariance(lv) * 2),
         dialogue: tpl.dialogue,
         deathLine: tpl.deathLine,
         dropSet: setId,
@@ -4471,7 +4494,8 @@
           def: Math.round(chest.defBase * monsterDEFK(lv) * 0.7),
           spd: Math.round(chest.spdBase + lv * 0.3),
           goldDrop: coinDropByLevel(lv) * 2,         // ⭐ 金錢 ×2
-          xpDrop: Math.round((chest.xpBase + lv * 4) * 1.0),
+          // 寶箱怪：依等級給 EXP，無精英倍率（賺金錢用，EXP 標準）
+          xpDrop: rollMonsterXpVariance(lv),
           isChest: true,
         };
       }
@@ -4493,7 +4517,8 @@
           def: Math.round(elite.defBase * monsterDEFK(lv) * 0.7),
           spd: Math.round(elite.spdBase + lv * 0.4),
           goldDrop: coinDropByLevel(lv) * 2,  // 精英 = 同層普通 ×2
-          xpDrop: Math.round((elite.xpBase + lv * 6 + Math.random() * lv * 3) * 2),
+          // ⭐ 精英 = 同層普通 ×2 EXP（基底依等級 + 0~20% 隨機）
+          xpDrop: Math.round(rollMonsterXpVariance(lv) * 2),
           isElite: true,
         };
       }
@@ -4525,7 +4550,8 @@
       def: Math.round(m.defBase * monsterDEFK(lv) * 0.7),
       spd: Math.round(m.spdBase + lv * 0.4),
       goldDrop: coinDropByLevel(lv),  // 依層級，不看怪物 goldBase
-      xpDrop: Math.round((m.xpBase + lv * 6 + Math.random() * lv * 3) * 2),
+      // ⭐ 一般怪：依等級給 EXP（不看 m.xpBase）+ 0~20% 隨機品種變異
+      xpDrop: rollMonsterXpVariance(lv),
     };
   }
   function rollItemDrop(playerLv, opts) {
@@ -7719,7 +7745,8 @@ ${b.text}
         def: Math.round(m.defBase * monsterDEFK(lv) * 0.6),
         spd: Math.round(m.spdBase + lv * 0.4),
         goldDrop: Math.round(coinDropByLevel(lv) * 0.5),
-        xpDrop: Math.round((m.xpBase + lv * 6) * 1.3),
+        // ⭐ 試煉：基底依等級 + 0~20% 隨機 ×1.3（試煉場 EXP 略高於一般怪）
+        xpDrop: Math.round(rollMonsterXpVariance(lv) * 1.3),
       });
     }
     return out;
@@ -9896,15 +9923,19 @@ ${b.text}
   //   - 鵝鵝幣：清掉麻將對局歷史 + coinsSpent=0（calcCoinsEarned 從 history 算 → 0）
   //   - 綠茶遭遇：rpg.metGreenTea=0、greenTeaGuidesGranted=[]
   //   - 保留：玩家清單、職業、裝備、背包、鵝蛋幣、稱號、解鎖頭像
-  function adminResetLeaderboard() {
+  async function adminResetLeaderboard() {
     const sure = confirm('🏆 重置排行榜？\n\n會清空：\n• 所有玩家等級 → 1（技能點 / 能力點 / 技能樹歸零）\n• 所有玩家鵝鵝幣 → 0（清掉麻將對局歷史 + coinsSpent）\n• 所有玩家綠茶遭遇 → 0（指南書庫存也清掉）\n\n保留：玩家清單、職業、裝備、背包、鵝蛋幣、稱號、世界王\n\n確定？');
     if (!sure) return;
     const sure2 = prompt('再次確認：輸入「重置」才執行');
     if (sure2 !== '重置') { showToast('已取消'); return; }
     // 清麻將歷史（鵝鵝幣的來源）
     history = [];
+    const now = Date.now();
     players.forEach(p => {
       p.coinsSpent = 0;
+      // ⭐ 重要：bump lastTouchedAt 讓我這次的修改在「localTs > remoteTs」比較中勝出
+      //   否則其他客戶端拉到時會以為他們的本地版本比較新，反推回雲端蓋掉我的重置
+      p.lastTouchedAt = now;
       if (p.rpg) {
         p.rpg.level = 1;
         p.rpg.xp = 0;
@@ -9921,15 +9952,19 @@ ${b.text}
         p.rpg.forageCount = 0;
         p.rpg.forageBattles = 0;
         p.rpg.critCount = 0;
-        // 移掉自己保留的探索戰報（過時）
         p.rpg.forageBattleHistory = [];
-        // HP / MP 用最新值滿血
       }
     });
-    saveData();
+    saveData();           // 推 meta（清掉的 history） + 推「我」這個玩家
+    // ⭐ 關鍵：強制把「所有」玩家文件都推上去（save 平常會跳過已 seen 的其他玩家）
+    if (window.__firebaseSync && window.__firebaseSync.forceWriteAllPlayers) {
+      try {
+        await window.__firebaseSync.forceWriteAllPlayers(players);
+      } catch (e) { console.error(e); showToast('☁️ 雲端寫入失敗，本地已重置'); }
+    }
     render();
     hideModal();
-    showToast('🏆 排行榜已重置（玩家清單 / 裝備 / 鵝蛋幣保留）');
+    showToast('🏆 排行榜已重置（含全玩家雲端推送）');
   }
   window.adminResetLeaderboard = adminResetLeaderboard;
 
@@ -9956,7 +9991,7 @@ ${b.text}
 
   // ⭐ 全玩家洗白（清空 history / pendingBets / worldBoss / 每位玩家 rpg / 鵝鵝幣 / 鵝蛋幣 / 稱號）
   // 仍保留玩家清單（id / 名字 / 頭像）
-  function adminWipeAll() {
+  async function adminWipeAll() {
     const sure1 = confirm('💀 全玩家洗白：清空所有對局、戰鬥資料、鵝鵝幣、鵝蛋幣、RPG 角色、世界王紀錄。\n\n玩家清單（id / 名字 / 頭像）會保留。\n\n確定？');
     if (!sure1) return;
     const sure2 = prompt('再次確認：輸入「洗白」兩個字才執行');
@@ -9968,6 +10003,7 @@ ${b.text}
     pendingBets = [];
     betPool = 0;
     worldBoss = {};
+    const now = Date.now();
     // 清每位玩家的 RPG / 鵝鵝幣 / 鵝蛋幣 / 稱號
     players.forEach(p => {
       delete p.rpg;
@@ -9978,11 +10014,17 @@ ${b.text}
       p.chosenTitle = null;
       p.bonusXp = 0;
       p.bonusCoins = 0;
+      // ⭐ bump lastTouchedAt 讓這次修改在 ts 比較勝出
+      p.lastTouchedAt = now;
     });
     saveData();
+    if (window.__firebaseSync && window.__firebaseSync.forceWriteAllPlayers) {
+      try { await window.__firebaseSync.forceWriteAllPlayers(players); }
+      catch (e) { console.error(e); showToast('☁️ 雲端寫入失敗，本地已洗白'); }
+    }
     render();
     hideModal();
-    showToast('💀 全玩家已洗白（玩家清單保留）');
+    showToast('💀 全玩家已洗白（含全玩家雲端推送）');
   }
   window.adminWipeAll = adminWipeAll;
 
@@ -10242,6 +10284,30 @@ ${b.text}
           tx.set(metaRef, { worldBoss: wb }, { merge: true });
           return { actualDmg, newState: state, killed, pendingRewards: newPending };
         });
+      },
+      // ⭐ 管理員專用：強制把所有玩家文件寫到 firestore，繞過 seenPlayerIds 限制
+      //   洗白 / 重置時用，否則其他人的舊 rpg / coinsSpent 會殘留在雲端，下次同步又被拉回來
+      forceWriteAllPlayers: async (allPlayers) => {
+        const _prune = (v) => {
+          if (Array.isArray(v)) return v.map(_prune).filter(x => x !== undefined);
+          if (v !== null && typeof v === 'object') {
+            const out = {};
+            for (const k of Object.keys(v)) {
+              const x = _prune(v[k]);
+              if (x !== undefined) out[k] = x;
+            }
+            return out;
+          }
+          return v;
+        };
+        const tasks = [];
+        for (const p of (allPlayers || [])) {
+          if (!p || !p.id) continue;
+          tasks.push(setDoc(doc(playersCol, p.id), _prune(p)));
+        }
+        try {
+          await Promise.all(tasks);
+        } catch (e) { console.error('forceWriteAllPlayers failed:', e); throw e; }
       },
       save: (payload) => {
         const meId = window.__getMeId?.();
