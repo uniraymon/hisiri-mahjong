@@ -9159,7 +9159,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260505b';
+  const NEWS_LATEST_ID = 'patch_20260505c';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -9179,6 +9179,31 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#1e1b4b,#312e81); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">☠️ v11 深淵大改版 + 修復　<span style="font-size:11px; opacity:0.85;">2026-05-05</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#6d28d9; margin:6px 0 4px;">☠️ 新區域：深淵 &amp; 深淵 II（Lv 21–25，解鎖條件 Lv 20）</div>
+        <div>・<b>深淵</b>：普通怪 + 精英怪混合，難度大幅提升</div>
+        <div>・<b>深淵 II ⚔️</b>：固定 <b>2–3 隻普通怪</b>同時登場，無精英</div>
+        <div>・深淵怪物全面強化 <b>×10 基礎能力值</b>（ATK / DEF / HP），並附加物理 / 魔法抗性</div>
+
+        <div style="font-weight:700; color:#6d28d9; margin:10px 0 4px;">🌌 新裝備（可由深淵怪掉落）</div>
+        <div>・<b>Lv 20 龍系</b>：龍盔 🐉 / 龍爪套 🐉 / 龍翼靴 🐉 / 天界披 🕊️</div>
+        <div>・<b>Lv 25 神話系</b>：神話劍 / 神話法杖 / 神話甲 / 神話冠 / 神話護腕 / 神話靴 / 神話披（Lv 21+ 詞條倍率 ×1.5）</div>
+
+        <div style="font-weight:700; color:#dc2626; margin:10px 0 4px;">⚔️ 精英怪出現率提升</div>
+        <div>・精英怪出現機率 <b>7% → 14%</b>（翻倍）</div>
+
+        <div style="font-weight:700; color:#dc2626; margin:10px 0 4px;">🐛 修復</div>
+        <div>・<b>弓手多段普攻</b>無法觸發的 bug 已修復（之前每次只打一段）</div>
+        <div>・<b>不可升級技能</b>（瘋鵝術 / 隱身 / 嗜血怒嚎 / 底氣 / 魔力護盾 / 絕對防禦）現在正確顯示「固定效果，不可升級」，不再出現升級按鈕</div>
+        <div>・<b>深淵層掉落保底</b>：深淵所有怪物（包含低等級的 Lv21–22）現在都有機率掉落 Lv25 裝備</div>
+
+        <div style="background:#ede9fe; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#5b21b6;">
+          ⚙️ 深淵幣基礎 250 鵝鵝幣；Lv20 解鎖後即可在層選擇切換
+        </div>
 
         <div style="background:linear-gradient(135deg,#065f46,#047857); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🏹 弓手全面更新 + 系統修復　<span style="font-size:11px; opacity:0.85;">2026-05-05</span></div>
