@@ -5712,15 +5712,24 @@
     const SPD_BASE = 30;
     let pSpd = Math.max(1, SPD_BASE + effectiveSpd);   // 受 buff 影響，每回合會重算
     const mSpd = Math.max(1, SPD_BASE + monster.spd);
-    // ⭐ SPD 軟上限：行動比率 > 1.5:1 後急速遞減效益
-    //   弓手極限 2.5：係數 1.0 / 其他職業極限 2.0：係數 0.5
-    //   公式：effRatio = 1.5 + coeff × excess / (0.2 + excess)
+    // ⭐ SPD 軟上限 + 軟下限
+    //   軟上限：行動比率 > 1.5:1 後遞減，弓手極限 2.5（係數 1.0）、其他 2.0（係數 0.5）
+    //   軟下限：行動比率 < 1/1.5 後遞增，所有職業趨近 0.5:1（係數固定 0.5）
+    //   公式（上/下對稱）：effRatio = 1.5 + coeff × excess / (0.2 + excess)
     const _spdCapCoeff = player.rpg.class === 'archer' ? 1.0 : 0.5;
     const _capSpd = (rawP, refM) => {
+      if (!refM || refM <= 0) return rawP;
       const raw = rawP / refM;
-      if (raw <= 1.5) return rawP;
-      const excess = raw - 1.5;
-      return (1.5 + _spdCapCoeff * excess / (0.2 + excess)) * refM;
+      if (raw > 1.5) { // 軟上限
+        const excess = raw - 1.5;
+        return (1.5 + _spdCapCoeff * excess / (0.2 + excess)) * refM;
+      }
+      if (rawP > 0 && raw < 1 / 1.5) { // 軟下限：趨近 0.5:1
+        const invRaw = refM / rawP;
+        const excess = invRaw - 1.5;
+        return refM / (1.5 + 0.5 * excess / (0.2 + excess));
+      }
+      return rawP;
     };
     // 雙方都從 0 開始填條，誰先達到 100 誰先出手（速度高自然先到）
     let effPSpd = _capSpd(pSpd, mSpd);
@@ -6438,16 +6447,25 @@
     let pSpd = Math.max(1, SPD_BASE + effectiveSpd); // 受 buff 影響，每回合會重算
     // 把怪物 gauge 速度也加 SPD_BASE
     mList.forEach(m => { m._effSpd = Math.max(1, SPD_BASE + (m.spd || 0)); });
-    // ⭐ SPD 軟上限（多目標）：弓手極限 2.5，其他職業極限 2.0
+    // ⭐ SPD 軟上限 + 軟下限（多目標，以存活怪物平均速度為基準）
+    //   軟上限：弓手極限 2.5，其他 2.0；軟下限：所有職業趨近 0.5:1
     const _spdCapCoeffM = player.rpg.class === 'archer' ? 1.0 : 0.5;
     const _capSpdM = (rawP) => {
       const aliveM = mList.filter(m => m.alive);
       if (!aliveM.length) return rawP;
       const avgMSpd = aliveM.reduce((s, m) => s + m._effSpd, 0) / aliveM.length;
+      if (!avgMSpd || avgMSpd <= 0) return rawP;
       const raw = rawP / avgMSpd;
-      if (raw <= 1.5) return rawP;
-      const excess = raw - 1.5;
-      return (1.5 + _spdCapCoeffM * excess / (0.2 + excess)) * avgMSpd;
+      if (raw > 1.5) { // 軟上限
+        const excess = raw - 1.5;
+        return (1.5 + _spdCapCoeffM * excess / (0.2 + excess)) * avgMSpd;
+      }
+      if (rawP > 0 && raw < 1 / 1.5) { // 軟下限：趨近 0.5:1
+        const invRaw = avgMSpd / rawP;
+        const excess = invRaw - 1.5;
+        return avgMSpd / (1.5 + 0.5 * excess / (0.2 + excess));
+      }
+      return rawP;
     };
     let effPSpd = _capSpdM(pSpd);
     let pGauge = 0;
@@ -12579,6 +12597,22 @@ ${b.text}
   window.adminRefillAllStamina = adminRefillAllStamina;
 
   // ⭐ DEBUG：編輯 Boss 能力（世界王 + 個人王）
+  // ⭐ Boss 覆寫：從 Firestore 讀到的數值套用到 WB9_BOSSES / PERSONAL_BOSSES
+  function applyBossOverrides(data) {
+    if (!data) return;
+    const w = data.world || {};
+    WB9_BOSSES.forEach(b => {
+      const o = w[b.id]; if (!o) return;
+      ['maxHp','atk','def','spd'].forEach(f => { if (o[f] != null && o[f] > 0) b[f] = o[f]; });
+    });
+    const p = data.personal || {};
+    PERSONAL_BOSSES.forEach(b => {
+      const o = p[b.id]; if (!o) return;
+      ['hp','atk','def','spd'].forEach(f => { if (o[f] != null && o[f] > 0) b[f] = o[f]; });
+    });
+  }
+  window.__applyBossOverrides = applyBossOverrides;
+
   function adminEditBossStats() {
     // Build rows for world bosses
     const wbRows = WB9_BOSSES.map(b => `
@@ -12652,7 +12686,7 @@ ${b.text}
               <tbody id="bossEditPbBody">${pbRows}</tbody>
             </table>
 
-            <p style="margin:10px 0 0;font-size:11px;color:#9ca3af;">⚠️ 修改後立即生效（記憶體）。世界王 HP 變更需刷新 boss state 才反映。</p>
+            <p style="margin:10px 0 0;font-size:11px;color:#16a34a;">✅ 儲存後寫入雲端，全 SERVER 所有玩家即時生效（onSnapshot 推送）。</p>
           </div>
           <!-- footer -->
           <div style="padding:12px 18px;border-top:1px solid #e5e7eb;display:flex;gap:10px;justify-content:flex-end;">
@@ -12672,48 +12706,52 @@ ${b.text}
   }
   window.adminEditBossStats = adminEditBossStats;
 
-  function adminSaveBossStats() {
+  async function adminSaveBossStats() {
     const modal = document.getElementById('bossEditModal');
     if (!modal) return;
-    let changed = 0;
+    const overrides = { world: {}, personal: {} };
 
     // World bosses
     modal.querySelectorAll('#bossEditWbBody tr[data-boss-id]').forEach(row => {
-      const id   = row.dataset.bossId;
-      const boss = WB9_BOSSES.find(b => b.id === id);
-      if (!boss) return;
+      const id = row.dataset.bossId;
+      if (!WB9_BOSSES.find(b => b.id === id)) return;
+      const entry = {};
       row.querySelectorAll('input.boss-edit-input').forEach(inp => {
-        const field = inp.dataset.field;
-        const val   = parseInt(inp.value, 10);
-        if (!isNaN(val) && val > 0 && boss[field] !== val) {
-          boss[field] = val;
-          changed++;
-        }
+        const val = parseInt(inp.value, 10);
+        if (!isNaN(val) && val > 0) entry[inp.dataset.field] = val;
       });
+      overrides.world[id] = entry;
     });
 
     // Personal bosses
     modal.querySelectorAll('#bossEditPbBody tr[data-boss-id]').forEach(row => {
-      const id   = row.dataset.bossId;
-      const boss = PERSONAL_BOSSES.find(b => b.id === id);
-      if (!boss) return;
+      const id = row.dataset.bossId;
+      if (!PERSONAL_BOSSES.find(b => b.id === id)) return;
+      const entry = {};
       row.querySelectorAll('input.boss-edit-input').forEach(inp => {
-        const field = inp.dataset.field;
-        const val   = parseInt(inp.value, 10);
-        if (!isNaN(val) && val > 0 && boss[field] !== val) {
-          boss[field] = val;
-          changed++;
-        }
+        const val = parseInt(inp.value, 10);
+        if (!isNaN(val) && val > 0) entry[inp.dataset.field] = val;
       });
+      overrides.personal[id] = entry;
     });
 
     modal.remove();
-    if (changed > 0) {
-      saveData();
-      render();
-      showToast(`🐉 已更新 ${changed} 項 Boss 能力`);
+
+    // 先套用到本地記憶體
+    applyBossOverrides(overrides);
+    render();
+
+    // 寫入 Firestore → 全 SERVER 即時生效（onSnapshot 會推送給所有客戶端）
+    if (window.__firebaseSync?.saveBossOverrides) {
+      try {
+        await window.__firebaseSync.saveBossOverrides(overrides);
+        showToast('🐉 Boss 數值已寫入雲端，全 SERVER 即時生效！');
+      } catch (e) {
+        console.error('saveBossOverrides failed:', e);
+        showToast('❌ 寫入雲端失敗：' + e.message);
+      }
     } else {
-      showToast('沒有變更');
+      showToast('🐉 已套用（本地），雲端尚未連線');
     }
     showDebugModal();
   }
@@ -12946,6 +12984,11 @@ ${b.text}
       // 直接更新王 doc（commit 3 攻擊 TX 用）
       wb9SaveBoss: async (bossId, state) => {
         await setDoc(doc(wb9Col, bossId), _prune(state));
+      },
+      // ⭐ Boss 覆寫：寫入 Firestore config，onSnapshot 會自動推給全部客戶端
+      saveBossOverrides: async (overrides) => {
+        const ref = doc(db, 'rooms', ROOM_ID, 'config', 'bossOverrides');
+        await setDoc(ref, _prune(overrides));
       },
       // ⭐ commit 3：攻擊 TX
       // bossDef = { maxHp, staleMs }（從主腳本傳入）
@@ -13197,6 +13240,11 @@ ${b.text}
         playersReady = true; checkReady(); // ⭐ 連線錯誤也要解鎖
         window.__updateSyncStatus?.('☁️ 連線錯誤', 'err');
       });
+
+      // ⭐ Boss 覆寫：監聽 config/bossOverrides，自動套用到全部客戶端
+      onSnapshot(doc(db, 'rooms', ROOM_ID, 'config', 'bossOverrides'), (snap) => {
+        if (snap.exists()) window.__applyBossOverrides?.(snap.data());
+      }, (err) => { console.error('bossOverrides listen failed:', err); });
 
       // ⭐ Phase B：監聽 wb9 subcollection（每王一份 doc）
       //   透過 window.__applyRemoteWb9 橋接到主腳本（不能直接存取 let wb9）
