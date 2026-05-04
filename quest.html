@@ -4172,11 +4172,11 @@
     { id: 'a_plate',  name: '板甲',     icon: '🛡️', slot: 'armor', def: 14, lv: 13 },
     { id: 'a_dragon', name: '龍鱗甲',   icon: '🐉', slot: 'armor', def: 22, lv: 20 },
     // 飾品 — 每件最多 2 種能力，主題化（物理 / 法系 / 雙資源 / 暴擊路線）
-    { id: 'c_ring',   name: '銅戒',     icon: '💍', slot: 'accessory', atk: 2, critChance: 0.03, lv: 2 },
-    { id: 'c_foot',   name: '兔腳',     icon: '🐰', slot: 'accessory', spd: 4, mp: 10, lv: 5 },
-    { id: 'c_ruby',   name: '紅寶石',   icon: '💎', slot: 'accessory', atk: 5, critDmg: 0.15, lv: 8 },
-    { id: 'c_heart',  name: '心形吊墜', icon: '💖', slot: 'accessory', hp: 40, mp: 25, lv: 12 },
-    { id: 'c_oracle', name: '神諭',     icon: '🌠', slot: 'accessory', critChance: 0.08, critDmg: 0.30, lv: 18 },
+    { id: 'c_ring',   name: '鋼戒',     icon: '💍', slot: 'ring',      hp: 50, def: 20 },
+    { id: 'c_foot',   name: '兔腳',     icon: '🐰', slot: 'accessory', spd: 10, critChance: 0.05 },
+    { id: 'c_ruby',   name: '紅寶石',   icon: '💎', slot: 'accessory', hp: 30, atk: 10 },
+    { id: 'c_heart',  name: '心形吊墜', icon: '💖', slot: 'accessory', hp: 50, mp: 15 },
+    { id: 'c_oracle', name: '神諭',     icon: '🌠', slot: 'accessory', critChance: 0.05, critDmg: 0.20 },
     // 頭盔（補上 Lv 4 / Lv 13 中間階，讓每層都有「強一級」的版本）
     { id: 'h_cap',     name: '布帽',  icon: '🎩', slot: 'helmet', def: 2,  lv: 2 },
     { id: 'h_leather', name: '皮帽',  icon: '🧢', slot: 'helmet', def: 4,  lv: 4 },
@@ -4789,9 +4789,9 @@
     // 過濾：上限 playerLv+2；下限取靠近的（避免高等級玩家拿不到任何掉落）
     // 排除綠茶指南書（slot: guide）— 那是綠茶遭遇次數的里程碑獎勵，不能掉落
     // 排除飾品（accessory 不在 6 槽掉落清單中，從商店買）
-    let eligible = ITEMS.filter(i => i.slot !== 'guide' && i.slot !== 'accessory' && (i.lv || 1) <= playerLv + 2 && (i.lv || 1) >= Math.max(1, playerLv - 5));
-    if (eligible.length === 0) eligible = ITEMS.filter(i => i.slot !== 'guide' && i.slot !== 'accessory' && (i.lv || 1) <= playerLv + 2);
-    if (eligible.length === 0) eligible = ITEMS.filter(i => i.slot !== 'guide' && i.slot !== 'accessory'); // 終極 fallback
+    let eligible = ITEMS.filter(i => i.slot !== 'guide' && i.slot !== 'accessory' && i.slot !== 'ring' && (i.lv || 1) <= playerLv + 2 && (i.lv || 1) >= Math.max(1, playerLv - 5));
+    if (eligible.length === 0) eligible = ITEMS.filter(i => i.slot !== 'guide' && i.slot !== 'accessory' && i.slot !== 'ring' && (i.lv || 1) <= playerLv + 2);
+    if (eligible.length === 0) eligible = ITEMS.filter(i => i.slot !== 'guide' && i.slot !== 'accessory' && i.slot !== 'ring'); // 終極 fallback
     if (eligible.length === 0) return null;
     // 地區掉落偏好：80% 機率從偏好部位中選（提高 70→80）
     if (slotBias && slotBias.length > 0 && Math.random() < 0.80) {
@@ -5315,7 +5315,7 @@
     let itemCritChance = 0;
     let itemCritDmg = 0;
     let itemMpRegen = 0;
-    for (const slot of ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape', 'wings', 'pet', 'guide']) {
+    for (const slot of ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape', 'wings', 'pet', 'guide', 'ring1', 'ring2']) {
       const itemId = rpg.equipment?.[slot];
       if (itemId) {
         const item = resolveItem(itemId);
@@ -7681,15 +7681,21 @@
       id: 'explore',
       icon: '🧭',
       name: '探險扭蛋',
-      desc: '用探險幣抽飾品（5 種主題）',
-      cost: 30,
+      desc: '用探險幣抽飾品 / 寶物 / EXP（7 種）',
+      cost: 5,
       currency: 'exploreCoins',
       currencyIcon: '🧭',
       currencyName: '探險幣',
       status: 'open',
-      pool: ['c_ring', 'c_foot', 'c_ruby', 'c_heart', 'c_oracle'],
-      // 抽中各物品的權重（總和 100）
-      weights: [30, 25, 20, 15, 10],
+      pool: [
+        { type: 'xp',      amount: 2000, weight: 20, label: 'EXP +2000',   icon: '✨' },
+        { type: 'treasure',              weight: 15, label: '隨機寶物',     icon: '🎁' },
+        { type: 'item', id: 'c_ruby',   weight: 15 },
+        { type: 'item', id: 'c_foot',   weight: 15 },
+        { type: 'item', id: 'c_ring',   weight: 15 },
+        { type: 'item', id: 'c_oracle', weight: 10 },
+        { type: 'item', id: 'c_heart',  weight: 10 },
+      ],
     },
     {
       id: 'boss_king', icon: '👑', name: '鵝王扭蛋',
@@ -7948,6 +7954,19 @@
             if (r.level > 50) break;
           }
           results.push({ kind: 'reward', reward: picked });
+        } else if (picked.type === 'treasure') {
+          r.treasures = r.treasures || [];
+          const allTids = Object.keys(TREASURES);
+          const tid = allTids[Math.floor(Math.random() * allTids.length)];
+          const treasure = TREASURES[tid];
+          const isDup = r.treasures.includes(tid);
+          if (isDup) {
+            r.exploreCoins = (r.exploreCoins || 0) + 2;
+            results.push({ kind: 'reward', reward: { icon: treasure?.icon || '🎁', label: `${treasure?.name || '寶物'}（重複）→ 🧭 +2 探險幣` } });
+          } else {
+            r.treasures.push(tid);
+            results.push({ kind: 'reward', reward: { icon: treasure?.icon || '🎁', label: `寶物：${treasure?.name || tid}` } });
+          }
         }
       }
     } else {
@@ -9700,8 +9719,8 @@ ${b.text}
     if (!equipRowEl || !invGridEl) return;
     const me = getMe();
     const rpg = getRpg(me);
-    const slots = ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape', 'wings', 'pet', 'guide'];
-    const slotLabels = { weapon: '武器', armor: '防具', accessory: '飾品', helmet: '頭盔', gloves: '手套', boots: '鞋子', cape: '披風', wings: '翅膀', pet: '寵物', guide: '綠茶指南書' };
+    const slots = ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape', 'wings', 'pet', 'guide', 'ring1', 'ring2'];
+    const slotLabels = { weapon: '武器', armor: '防具', accessory: '飾品', helmet: '頭盔', gloves: '手套', boots: '鞋子', cape: '披風', wings: '翅膀', pet: '寵物', guide: '綠茶指南書', ring1: '💍 戒指 1', ring2: '💍 戒指 2' };
     equipRowEl.innerHTML = slots.map(s => {
       const id = rpg.equipment?.[s];
       const item = id ? resolveItem(id) : null;
@@ -9917,10 +9936,13 @@ ${b.text}
     const affixHtml = item.affixes && item.affixes.length
       ? `<div style="margin-top:6px; padding:6px 8px; background:${rarColor}20; border-radius:8px; font-size:11px;">${item.affixes.map(a => `<div style="color:${rarColor};">+${a.val} ${a.type.toUpperCase()}（${a.name}）</div>`).join('')}</div>`
       : '';
-    // ⭐ 比較：目前該槽位裝備的物件
+    // ⭐ 比較：目前該槽位裝備的物件（戒指：比較 ring1 / ring2 中第一個有裝的）
     let compareHtml = '';
-    if (item.slot && r.equipment) {
-      const curEquipped = resolveItem(r.equipment[item.slot]);
+    const _cmpSlot = item.slot === 'ring'
+      ? (r.equipment?.ring1 ? 'ring1' : 'ring2')
+      : item.slot;
+    if (_cmpSlot && r.equipment) {
+      const curEquipped = resolveItem(r.equipment[_cmpSlot]);
       if (curEquipped) {
         const curRar = curEquipped.rarity ? RARITY[curEquipped.rarity]?.color : (curEquipped.setId ? (SETS[curEquipped.setId]?.color || '#f59e0b') : '#9ca3af');
         const curRarLabel = curEquipped.rarity ? RARITY[curEquipped.rarity]?.label : (curEquipped.setId ? '套裝' : '');
@@ -10000,12 +10022,64 @@ ${b.text}
   window.backToBackpack = backToBackpack;
 
   function equipFromInvAndClose(idx) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const item = resolveItem(r.inventory[idx]);
+    if (item && item.slot === 'ring') {
+      // 戒指：先選槽位
+      hideModal();
+      pickRingSlotAndEquip(idx);
+      return;
+    }
     hideModal();
     equipFromInv(idx);
     // 回到裝備 modal 看結果
     if (typeof showEquipmentModal === 'function') showEquipmentModal();
   }
   window.equipFromInvAndClose = equipFromInvAndClose;
+
+  // ⭐ 戒指槽選擇器
+  function pickRingSlotAndEquip(idx) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const s1 = resolveItem(r.equipment?.ring1);
+    const s2 = resolveItem(r.equipment?.ring2);
+    const html = `
+      <div style="text-align:center; padding:8px 0;">
+        <div style="margin-bottom:12px; font-size:13px; color:#374151; font-weight:700;">選擇要裝到哪個戒指槽</div>
+        <button class="btn btn-primary" onclick="equipRingToSlot(${idx},'ring1')" style="width:100%; margin-bottom:8px;">
+          💍 戒指 1 — ${s1 ? `替換「${escapeHtml(s1.name)}」` : '（空槽）'}
+        </button>
+        <button class="btn btn-primary" onclick="equipRingToSlot(${idx},'ring2')" style="width:100%; margin-bottom:8px;">
+          💍 戒指 2 — ${s2 ? `替換「${escapeHtml(s2.name)}」` : '（空槽）'}
+        </button>
+        <button class="btn btn-secondary" onclick="backToBackpack()" style="width:100%;">取消</button>
+      </div>
+    `;
+    showModal('💍 選擇戒指槽', html);
+  }
+  window.pickRingSlotAndEquip = pickRingSlotAndEquip;
+
+  function equipRingToSlot(idx, slot) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const entry = r.inventory[idx];
+    const item = resolveItem(entry);
+    if (!item) return;
+    const cur = r.equipment[slot];
+    if (cur) r.inventory.push(cur);
+    r.equipment[slot] = entry;
+    r.inventory.splice(idx, 1);
+    r.equipmentLastChanged = Date.now();
+    syncEquipped(me);
+    saveData();
+    renderCharCard();
+    renderEquipment();
+    hideModal();
+    showToast(`已裝備 ${item.icon} ${item.name}（${slot === 'ring1' ? '戒指 1' : '戒指 2'}）`);
+    if (typeof showEquipmentModal === 'function') showEquipmentModal();
+  }
+  window.equipRingToSlot = equipRingToSlot;
 
   function sellInvItem(idx) {
     const me = getMe(); if (!me) return;
