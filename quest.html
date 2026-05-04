@@ -12503,27 +12503,32 @@ ${b.text}
       if (!p || !p.rpg) continue;
       const eq = p.rpg.equipment;
       if (!eq || !eq.accessory) continue;
-      const item = resolveItem(eq.accessory);
+      const entry = eq.accessory; // string ID 或 object instance
+      const item = resolveItem(entry);
       if (!item) continue;
       // 判斷是否為戒指類：slot === 'ring' 或 baseId / id 在清單內
       const isRing = item.slot === 'ring'
         || RING_BASE_IDS.includes(item.baseId)
         || RING_BASE_IDS.includes(item.id);
       if (!isRing) continue;
+      // ⭐ 若是物件 instance（有 slot 欄位），把 slot 改成 'ring'
+      if (typeof entry === 'object' && entry !== null) {
+        entry.slot = 'ring';
+      }
       // 找空戒指槽
       const target = !eq.ring1 ? 'ring1' : !eq.ring2 ? 'ring2' : null;
       if (!target) {
         // 兩槽都有：丟回背包
         p.rpg.inventory = p.rpg.inventory || [];
-        p.rpg.inventory.push(eq.accessory);
+        p.rpg.inventory.push(entry);
       } else {
-        eq[target] = eq.accessory;
+        eq[target] = entry;
       }
       delete eq.accessory;
       moved++;
     }
     saveData();
-    showToast(`💍 遷移完成：${moved} 個裝備從飾品槽移至戒指槽`);
+    showToast(`💍 遷移完成：${moved} 個裝備從飾品槽移至戒指槽（slot 已更新）`);
     showDebugModal();
   }
   window.adminMigrateAccessoryToRing = adminMigrateAccessoryToRing;
