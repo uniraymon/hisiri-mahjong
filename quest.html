@@ -1673,6 +1673,38 @@
   .bug-snapshot summary { font-size: 11px; color: #8b6f9b; cursor: pointer; padding: 2px 0; }
   .bug-snap-body { background: #f9fafb; border-radius: 6px; padding: 6px 8px; margin-top: 4px; }
 
+  /* 公告按鈕（右上角，圖鑑左邊） */
+  .news-btn {
+    position: fixed;
+    top: 10px;
+    right: 202px;
+    height: 36px;
+    min-width: 40px;
+    padding: 0 10px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #6ee7b7, #059669);
+    color: #fff;
+    border: 2px solid rgba(255,255,255,0.7);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 990;
+    opacity: 0.9;
+    transition: opacity 0.2s, transform 0.2s;
+    font-family: inherit;
+    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.4);
+  }
+  .news-btn:hover { opacity: 1; transform: scale(1.05); }
+  .news-btn.has-new::after {
+    content: '';
+    position: absolute;
+    top: -3px; right: -3px;
+    width: 10px; height: 10px;
+    background: #ef4444;
+    border-radius: 50%;
+    border: 2px solid #fff;
+  }
+
   /* 圖鑑按鈕（右上角，BUG 左邊） */
   .dex-btn {
     position: fixed;
@@ -1858,6 +1890,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<button class="news-btn" id="newsBtn" onclick="showNewsModal()" title="最新公告">📢</button>
 <button class="dex-btn" id="dexBtn" onclick="showItemDex()" title="裝備圖鑑">📖</button>
 <button class="bug-btn" id="bugListBtn" onclick="showBugList()" title="BUG 列表">🐛</button>
 <button class="help-btn" id="helpBtn" onclick="showActionPatternHelp()" title="HOF 行動規則教學">?</button>
@@ -2347,6 +2380,11 @@
       level: 30,
       verb: '皇者懲戒',
       ability: { type: 'multiHit', hits: 2 },
+      skills: [
+        { verb: '皇者震怒', mult: 2.2, cooldown: 3 },
+        { verb: '王冠碎擊', mult: 1.6, applyStatus: { type: 'paralyze', turns: 2, chance: 0.55 }, cooldown: 4 },
+        { verb: '御前斬', mult: 1.8, ignoreDef: true, cooldown: 5 },
+      ],
       bossCoin: { id: 'bc_goose_king', name: '鵝皇硬幣', icon: '👑' },
       rewardKiller: { coins: 2000 },
       rewardTop:    { coins: 1000 },
@@ -2362,6 +2400,11 @@
       level: 40,
       verb: '龍焰之息',
       ability: { type: 'physResist', resist: 0.25 },
+      skills: [
+        { verb: '龍焰爆炎', mult: 2.0, applyStatus: { type: 'poison', turns: 3, dmg: 60, chance: 0.8 }, cooldown: 3 },
+        { verb: '古龍咆哮', mult: 1.5, applyStatus: { type: 'paralyze', turns: 2, chance: 0.6 }, cooldown: 4 },
+        { verb: '龍鱗粉碎', mult: 2.5, ignoreDef: true, cooldown: 5 },
+      ],
       bossCoin: { id: 'bc_dragon_goose', name: '古龍鵝硬幣', icon: '🐲' },
       rewardKiller: { coins: 5000 },
       rewardTop:    { coins: 2500 },
@@ -2377,6 +2420,11 @@
       level: 55,
       verb: '崩落巨石',
       ability: { type: 'physResist', resist: 0.30 },
+      skills: [
+        { verb: '山崩地裂', mult: 2.8, ignoreDef: true, cooldown: 3 },
+        { verb: '磐石壓制', mult: 1.8, applyStatus: { type: 'paralyze', turns: 2, chance: 0.65 }, cooldown: 4 },
+        { verb: '隕石衝擊', mult: 3.2, ignoreDef: true, cooldown: 6 },
+      ],
       bossCoin: { id: 'bc_pebble_goose', name: '鵝卵石硬幣', icon: '🪨' },
       rewardKiller: { coins: 12000 },
       rewardTop:    { coins: 6000 },
@@ -2857,9 +2905,9 @@
       hp: 25000, atk: 300, def: 200, spd: 30, level: 30,
       verb: '塗果醬',
       skills: [
-        { verb: '太陽蛋砲擊', mult: 1.6, cooldown: 4 },
-        { verb: '烤吐司爆裂', mult: 1.3, applyStatus: { type: 'poison', turns: 3, dmg: 30, chance: 0.7 }, cooldown: 5 },
-        { verb: '培根纏繞', mult: 0.8, applyStatus: { type: 'paralyze', turns: 2, chance: 0.5 }, cooldown: 6 },
+        { verb: '太陽蛋砲擊', mult: 1.6, cooldown: 3 },
+        { verb: '烤吐司爆裂', mult: 1.3, applyStatus: { type: 'poison', turns: 3, dmg: 30, chance: 0.7 }, cooldown: 3 },
+        { verb: '培根纏繞', mult: 0.8, applyStatus: { type: 'paralyze', turns: 2, chance: 0.5 }, cooldown: 4 },
       ],
       dialogue: ['鵝鵝早安～來吃早餐了嗎？', '一日之計在於晨～你來打我？', '咖啡剛煮好，一起喝嗎？'],
       deathLine: ['鵝...早餐被打翻了...', '果醬撒了一地...', '...好吧，明早再戰...'],
@@ -2872,9 +2920,9 @@
       verb: '便當蓋下擊',
       ability: { type: 'multiHit', hits: 2 },
       skills: [
-        { verb: '拉麵纏繞', mult: 1.0, applyStatus: { type: 'paralyze', turns: 2, chance: 0.55 }, cooldown: 5 },
-        { verb: '咖哩潑灑', mult: 1.4, applyStatus: { type: 'poison', turns: 3, dmg: 40, chance: 0.7 }, cooldown: 5 },
-        { verb: '牛排重擊', mult: 2.0, cooldown: 6 },
+        { verb: '拉麵纏繞', mult: 1.0, applyStatus: { type: 'paralyze', turns: 2, chance: 0.55 }, cooldown: 3 },
+        { verb: '咖哩潑灑', mult: 1.4, applyStatus: { type: 'poison', turns: 3, dmg: 40, chance: 0.7 }, cooldown: 3 },
+        { verb: '牛排重擊', mult: 2.0, cooldown: 4 },
       ],
       dialogue: ['午餐時間到囉～', '吃飽才有力氣打架！', '便當涼了...怪你嗎？'],
       deathLine: ['午餐...被你搶走了...', '便當盒...碎了...', '下次午休再見...'],
@@ -2887,10 +2935,10 @@
       verb: '紅酒甩擊',
       ability: { type: 'magicResist', resist: 0.3 },
       skills: [
-        { verb: '料理長之刃', mult: 2.4, alwaysCrit: true, cooldown: 5 },
-        { verb: '燭光催眠', mult: 0.5, applyStatus: { type: 'paralyze', turns: 2, chance: 0.7 }, cooldown: 6 },
-        { verb: '主菜爆裂', mult: 1.6, applyStatus: { type: 'poison', turns: 4, dmg: 50, chance: 0.85 }, cooldown: 5 },
-        { verb: '甜點之吻', mult: 1.8, ignoreDef: true, cooldown: 7 },
+        { verb: '料理長之刃', mult: 2.4, alwaysCrit: true, cooldown: 3 },
+        { verb: '燭光催眠', mult: 0.5, applyStatus: { type: 'paralyze', turns: 2, chance: 0.7 }, cooldown: 3 },
+        { verb: '主菜爆裂', mult: 1.6, applyStatus: { type: 'poison', turns: 4, dmg: 50, chance: 0.85 }, cooldown: 4 },
+        { verb: '甜點之吻', mult: 1.8, ignoreDef: true, cooldown: 4 },
       ],
       dialogue: ['歡迎來到我的餐桌～', '今晚的主菜是…你？', '紅酒已經醒好，等你來品嚐～'],
       deathLine: ['宴會...結束了...', '紅酒...灑了...', '燭火...熄滅...'],
@@ -6016,10 +6064,10 @@
           log.push({ type: 'system', text: `回合 ${round}：${monster.name} ⚡麻痺，行動被取消`, hp: { player: pHp, monster: mHp, mp: pMp } });
           continue;
         }
-        // 怪物技能挑選：每次只有 40% 機率，且距離上次施放技能必須 ≥ 2 回合（中間至少 1 次普攻）
+        // 怪物技能挑選：65% 機率，且距離上次施放技能必須 ≥ 1 回合
         let mSkill = null;
-        const skillsAllowed = (round - mLastSkillRound) >= 2;
-        if (skillsAllowed && Array.isArray(monster.skills) && monster.skills.length && Math.random() < 0.40) {
+        const skillsAllowed = (round - mLastSkillRound) >= 1;
+        if (skillsAllowed && Array.isArray(monster.skills) && monster.skills.length && Math.random() < 0.65) {
           const ready = [];
           for (let si = 0; si < monster.skills.length; si++) {
             const s = monster.skills[si];
@@ -6594,8 +6642,8 @@
         let mSkill = null;
         const cdMap = mSkillLastByIdx[m.idx] = mSkillLastByIdx[m.idx] || {};
         const lastSkillR = cdMap.__lastSkillR ?? -999;
-        const skillsAllowed = (round - lastSkillR) >= 2;
-        if (skillsAllowed && Array.isArray(m.skills) && m.skills.length && Math.random() < 0.40) {
+        const skillsAllowed = (round - lastSkillR) >= 1;
+        if (skillsAllowed && Array.isArray(m.skills) && m.skills.length && Math.random() < 0.65) {
           const ready = [];
           for (let si = 0; si < m.skills.length; si++) {
             const s = m.skills[si];
@@ -6732,6 +6780,7 @@
     renderTrial();
     renderForageHistory(); // ⭐ 自己最近 5 場打怪戰報
     maybeFlashHelp();
+    initNewsBtn();
     refreshBugBadge();
     updateStaminaUI();
     checkBossKillBanners(); // ⭐ 尾刀通告（含傷害排行 + 王硬幣分配）
@@ -8006,6 +8055,75 @@ ${b.text}
     showToast(ok ? '✅ 已複製到剪貼簿' : '⚠ 複製失敗');
   }
   window.copyBugById = copyBugById;
+
+  // ============================================================
+  // 📢 最新公告
+  // ============================================================
+  const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
+  const NEWS_LATEST_ID = 'patch_20260504';
+
+  function markNewsSeen() {
+    try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
+    document.getElementById('newsBtn')?.classList.remove('has-new');
+  }
+
+  function initNewsBtn() {
+    try {
+      const seen = localStorage.getItem(NEWS_SEEN_KEY);
+      if (seen !== NEWS_LATEST_ID) {
+        document.getElementById('newsBtn')?.classList.add('has-new');
+      }
+    } catch(e) {}
+  }
+
+  function showNewsModal() {
+    markNewsSeen();
+    const html = `
+      <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#d1fae5,#a7f3d0); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#065f46;">📢 平衡性調整 v3　<span style="font-size:11px; color:#047857;">2026-05-04</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">⚔️ 戰士</div>
+        <div>・<b>嗜血怒嚎</b>：ATK +30% → <b>+25%</b></div>
+        <div>・<b>底氣</b>🆕：回復70% maxHP、DEF+30（1回合）、硬值150、不可升級</div>
+        <div>・<b>狂怒斬</b>：MP 14→<b>30</b>、硬值→<b>65</b></div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">🏹 弓手</div>
+        <div>・<b>精準射擊</b>：硬值→<b>0</b>、MP→<b>5</b></div>
+        <div>・<b>連射</b>：倍率 0.5→<b>1.2×ATK</b></div>
+        <div>・<b>致命瞄準</b>：倍率3.5→<b>3.0×ATK</b>、MP→20、硬值→30；新增🎯<b>易傷</b>（2回合）；Lv10 +1回合</div>
+        <div>・<b>神之矢</b>：倍率2.8→<b>4.5×ATK</b>、MP→30；Lv5/10各+20%爆傷</div>
+        <div>・<b>毒箭</b>：中毒上限 300→<b>1000</b></div>
+        <div>・<b>鷹眼</b>：追加 <b>爆傷+30%</b>（與暴擊率+20%同時生效）</div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">🧙 法師　<span style="font-weight:400; font-size:11px; color:#6b7280;">全面 MARK 化</span></div>
+        <div>・<b>魔力護盾</b>：改為物魔受傷<b>-50%</b>（4回合，不可升級）</div>
+        <div>・<b>元素灌注</b>：改為 <b>MARK +30%</b></div>
+        <div>・<b>火球術</b>：改為 <b>2×MARK</b>、硬值30</div>
+        <div>・<b>連環閃電</b>：改為 <b>0.8×MARK×3段</b>、硬值50</div>
+        <div>・<b>火焰風暴</b>：改為 <b>固定150 + 6×MARK</b>（全體）、硬值150</div>
+        <div>・<b>毀滅之怒</b>：改為 <b>3×MARK</b> + 🎯易傷3回合；Lv10 +1回合；硬值75</div>
+        <div>・<b>魔力虹吸</b>：物理傷（MARK算）+ 回<b>10% maxMP</b></div>
+        <div>・🗑 刪除：血魔契約 / 冰封術 / 暗黑契約 / 法力護甲 / 隕石術</div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">🛡️ 聖騎士</div>
+        <div>・<b>神聖祝福</b>：DEF +40%→<b>+25%</b>（最大HP +20%不變）</div>
+        <div>・<b>護盾衝鋒</b>：DEF+10效果縮短→<b>3回合</b>、硬值→40</div>
+        <div>・<b>神聖懲戒</b>：硬值→60；新增🎯<b>易傷</b>（2回合）；Lv10 +1回合</div>
+        <div>・<b>神之拳</b>：麻痺命中 40%→<b>80%</b>、硬值→30</div>
+        <div>・<b>聖光斬</b>：MP→<b>5</b></div>
+        <div>・🗑 刪除：庇護術 / 棘甲術 / 神聖光波</div>
+
+        <div style="background:#f3f4f6; border-radius:8px; padding:8px 12px; margin-top:12px; font-size:12px; color:#6b7280;">
+          🆕 新機制：<b>易傷</b>（受傷+50%）、<b>臨時最大HP</b>（戰鬥中有效）、<b>MARK加成路線</b>、<b>物魔全體減傷</b>
+        </div>
+      </div>
+    `;
+    showModal('📢 最新公告', html);
+  }
+  window.showNewsModal = showNewsModal;
 
   function showBugList() {
     const me = getMe();
