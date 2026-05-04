@@ -13418,6 +13418,7 @@ ${b.text}
       <button class="btn btn-secondary" onclick="adminApplyHpRebalanceAll()" style="margin-top:6px; background:linear-gradient(135deg,#a78bfa,#7c3aed); box-shadow:0 4px 0 #6d28d9; color:#fff;">🩸 全員 HP 平衡遷移（裝備 / 精魂套新公式）</button>
       <button class="btn btn-danger" onclick="adminClearWorldBossCloud()" style="margin-top:6px; background:linear-gradient(135deg,#fca5a5,#7f1d1d); box-shadow:0 4px 0 #450a0a;">🗑 清空雲端 worldBoss（v9 重寫前歸零）</button>
       <button class="btn btn-danger" onclick="adminResetBosses()" style="margin-top:6px; background:linear-gradient(135deg,#fdba74,#c2410c); box-shadow:0 4px 0 #7c2d12;">🗑 重置世界王紀錄（HP / 排隊 / 戰報 / 待領獎）</button>
+      <button class="btn btn-danger" onclick="adminRevokeKillRewards()" style="margin-top:6px; background:linear-gradient(135deg,#f9a8d4,#be185d); box-shadow:0 4px 0 #9d174d;">🔄 回收擊殺獎勵（清全員 扭蛋幣 / 原石 / claimedKills）</button>
       <button class="btn btn-danger" onclick="adminResetLeaderboard()" style="margin-top:6px; background:linear-gradient(135deg,#fde047,#d97706); box-shadow:0 4px 0 #92400e; color:#7c2d12;">🏆 重置排行榜（所有玩家等級 / 鵝鵝幣 / 綠茶遭遇歸零）</button>
       <button class="btn btn-danger" onclick="adminWipeAll()" style="margin-top:6px; background:linear-gradient(135deg,#fca5a5,#7f1d1d); box-shadow:0 4px 0 #450a0a;">💀 全玩家洗白（伺服器 + 本地都重置）</button>
       <button class="btn btn-secondary" onclick="adminMigrateAccessoryToRing()" style="margin-top:6px; background:linear-gradient(135deg,#ddd6fe,#7c3aed); box-shadow:0 4px 0 #6d28d9; color:#fff;">💍 遷移：飾品槽戒指 → 戒指槽（所有玩家）</button>
@@ -13822,6 +13823,34 @@ ${b.text}
     showToast('🗑 世界王紀錄已重置');
   }
   window.adminResetBosses = adminResetBosses;
+
+  // ⭐ 回收擊殺獎勵：清全員 gachaCoin / gem_raw / claimedKills
+  async function adminRevokeKillRewards() {
+    const sure = confirm(
+      '🔄 回收擊殺獎勵？\n\n會對所有玩家清除：\n• 🎟 扭蛋幣（全部歸零）\n• 🪨 原石（gemInventory 歸零）\n• claimedKills 紀錄（清空，下次重新可領）\n\n確定？'
+    );
+    if (!sure) return;
+    for (const p of (players || [])) {
+      if (!p) continue;
+      p.gachaCoin = 0;
+      const r = p.rpg;
+      if (r) {
+        if (r.gemInventory) r.gemInventory['gem_raw'] = 0;
+        r.claimedKills = {};
+      }
+    }
+    saveData();
+    renderCharCard();
+    hideModal();
+    // 同步到 Firebase
+    if (window.__firebaseSync?.forceWriteAllPlayers) {
+      try { await window.__firebaseSync.forceWriteAllPlayers(players); showToast('🔄 擊殺獎勵已回收並同步雲端'); }
+      catch (e) { showToast('🔄 本地已回收，雲端同步失敗：' + e.message); }
+    } else {
+      showToast('🔄 擊殺獎勵已回收（未連線雲端）');
+    }
+  }
+  window.adminRevokeKillRewards = adminRevokeKillRewards;
 
   // ⭐ 補滿所有世界王 HP（保留排隊 / 戰報 / 已殺次數）
   // ⭐ HP 平衡遷移：依 baseId 重建裝備（套新詞綴/稀有度/階層 mult）
