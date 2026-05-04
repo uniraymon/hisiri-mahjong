@@ -9027,7 +9027,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505o';
+  const APP_VERSION = '20260505p';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
@@ -9047,7 +9047,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260505a';
+  const NEWS_LATEST_ID = 'patch_20260505b';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -9067,6 +9067,38 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#065f46,#047857); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🏹 弓手全面更新 + 系統修復　<span style="font-size:11px; opacity:0.85;">2026-05-05</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#047857; margin:6px 0 4px;">🏹 弓手普攻重做：三連射</div>
+        <div>・普攻改為 <b>0.30 × ATK × 3 連射</b>，每發獨立計算爆擊</div>
+        <div>・<b>爆頭機率</b>：固定 5% + 爆擊率 × 20%</div>
+        <div>・爆頭效果：<b>無視防禦 + 3 倍傷害</b></div>
+        <div>・爆頭與暴擊可同時觸發 → <b>🎯【爆頭+暴擊】</b></div>
+
+        <div style="font-weight:700; color:#047857; margin:10px 0 4px;">🌫 隱身強化</div>
+        <div>・施放隱身後，<b>下一次普攻第一箭必定爆頭</b>（消耗型）</div>
+        <div>・搭配爆擊可疊加，開戰起手必定爆頭暴擊</div>
+
+        <div style="font-weight:700; color:#047857; margin:10px 0 4px;">🪿 新技能：瘋鵝術（Lv6 解鎖，不可升級）</div>
+        <div>・普攻段數 +1（<b>3 → 4 連射</b>），持續 <b>10 回合</b>（只算自己回合）</div>
+        <div>・額外 <b>爆頭率 +2%</b></div>
+        <div>・MP 消耗：12</div>
+
+        <div style="font-weight:700; color:#047857; margin:10px 0 4px;">🗑 弓手技能調整</div>
+        <div>・移除「集中」技能</div>
+        <div>・<b>奪魂箭</b>：確認命中後回復 <b>+2 MP</b>（技能說明已補上）</div>
+        <div>・<b>隱身</b>：改為不可升級</div>
+
+        <div style="font-weight:700; color:#dc2626; margin:10px 0 4px;">🐛 修復：信箱裝備刪除後回朔問題</div>
+        <div>・刪除 / 領取裝備後，Firebase 同步不再把舊資料覆蓋回來</div>
+        <div>・多分頁切換時刪除也能正確生效</div>
+
+        <div style="background:#f0fdf4; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#6b7280;">
+          ⚙️ 爆頭機率詳細：5% + 爆擊率 × 20%（裝備/buff 可再加成）
+        </div>
 
         <div style="background:linear-gradient(135deg,#0f172a,#1e3a5f); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">⚖️ 平衡調整　<span style="font-size:11px; opacity:0.85;">2026-05-05</span></div>
