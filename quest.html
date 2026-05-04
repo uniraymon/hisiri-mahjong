@@ -4171,12 +4171,12 @@
     { id: 'a_chain',  name: '鎖鏈甲',   icon: '⛓', slot: 'armor', def: 9,  lv: 8 },
     { id: 'a_plate',  name: '板甲',     icon: '🛡️', slot: 'armor', def: 14, lv: 13 },
     { id: 'a_dragon', name: '龍鱗甲',   icon: '🐉', slot: 'armor', def: 22, lv: 20 },
-    // 飾品 — 每件最多 2 種能力，主題化（物理 / 法系 / 雙資源 / 暴擊路線）
+    // 戒指 — 每件最多 2 種能力，主題化（物理 / 法系 / 雙資源 / 暴擊路線），可裝兩隻
     { id: 'c_ring',   name: '鋼戒',     icon: '💍', slot: 'ring',      hp: 50, def: 20 },
-    { id: 'c_foot',   name: '兔腳',     icon: '🐰', slot: 'accessory', spd: 10, critChance: 0.05 },
-    { id: 'c_ruby',   name: '紅寶石',   icon: '💎', slot: 'accessory', hp: 30, atk: 10 },
-    { id: 'c_heart',  name: '心形吊墜', icon: '💖', slot: 'accessory', hp: 50, mp: 15 },
-    { id: 'c_oracle', name: '神諭',     icon: '🌠', slot: 'accessory', critChance: 0.05, critDmg: 0.20 },
+    { id: 'c_foot',   name: '兔腳',     icon: '🐰', slot: 'ring', spd: 10, critChance: 0.05 },
+    { id: 'c_ruby',   name: '紅寶石',   icon: '💎', slot: 'ring', hp: 30, atk: 10 },
+    { id: 'c_heart',  name: '心形吊墜', icon: '💖', slot: 'ring', hp: 50, mp: 15 },
+    { id: 'c_oracle', name: '神諭',     icon: '🌠', slot: 'ring', critChance: 0.05, critDmg: 0.20 },
     // 頭盔（補上 Lv 4 / Lv 13 中間階，讓每層都有「強一級」的版本）
     { id: 'h_cap',     name: '布帽',  icon: '🎩', slot: 'helmet', def: 2,  lv: 2 },
     { id: 'h_leather', name: '皮帽',  icon: '🧢', slot: 'helmet', def: 4,  lv: 4 },
@@ -7627,48 +7627,62 @@
   window.showTreasureVault = showTreasureVault;
 
   // ⭐ 精魂 modal — 5 個槽 + 精魂背包
+  // ⭐ 精魂管理頁（改版：顯示完整詞條 + 拆解功能）
   function showSpiritsModal() {
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
     const slots = getSpiritSlots(rpg);
     const bag = rpg.spiritBag || [];
-    // 5 個裝備槽
+
+    // ── 已裝備槽 ──
     const slotHtml = slots.map((sp, idx) => {
       if (!sp) {
-        return `<button onclick="(()=>{ showToast('空槽位 — 從下面背包選一個精魂裝上'); })()" style="background:#f3e8ff; border:2px dashed #c4b5fd; border-radius:10px; padding:8px; min-height:78px; cursor:default; font-family:inherit;">
-          <div style="font-size:24px; opacity:0.4;">➕</div>
-          <div style="font-size:10px; color:#a78bfa;">空槽 ${idx+1}</div>
-        </button>`;
+        return `<div style="background:#f3e8ff; border:2px dashed #c4b5fd; border-radius:10px; padding:10px 6px; min-height:88px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:inherit;">
+          <div style="font-size:22px; opacity:0.35;">➕</div>
+          <div style="font-size:10px; color:#a78bfa; margin-top:2px;">槽 ${idx+1}</div>
+        </div>`;
       }
-      return `<button onclick="unequipSpirit(${idx})" style="background:linear-gradient(135deg,#fff,${sp.color}1a); border:2px solid ${sp.color}; border-radius:10px; padding:6px; cursor:pointer; font-family:inherit; min-height:78px;">
-        <div style="font-size:24px;">${sp.icon}</div>
-        <div style="font-size:10px; font-weight:700; color:${sp.color}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(sp.name)}</div>
-        <div style="font-size:8px; color:#8b6f9b; line-height:1.2; margin-top:1px;">${escapeHtml(describeSpirit(sp))}</div>
+      return `<button onclick="openEquippedSpiritDetail(${idx})" style="background:linear-gradient(135deg,#fff,${sp.color}1a); border:2px solid ${sp.color}; border-radius:10px; padding:6px; cursor:pointer; font-family:inherit; min-height:88px; text-align:left; width:100%;">
+        <div style="font-size:22px; text-align:center;">${sp.icon}</div>
+        <div style="font-size:10px; font-weight:700; color:${sp.color}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;">${escapeHtml(sp.name)}</div>
+        <div style="font-size:9px; color:#8b6f9b; line-height:1.4; margin-top:2px;">${escapeHtml(describeSpirit(sp))}</div>
+        <div style="font-size:8px; color:#a78bfa; margin-top:2px; text-align:center;">點擊查看 / 卸下</div>
       </button>`;
     }).join('');
-    // 背包
+
+    // ── 精魂背包 ──
     const bagHtml = bag.length === 0
-      ? '<div style="font-size:11px; color:#9ca3af; padding:8px; text-align:center;">背包沒有未裝備的精魂 — 打王掉的精魂會放這</div>'
-      : bag.map((sp, idx) => `<button onclick="equipSpiritFromBag(${idx})" style="background:linear-gradient(135deg,#fff,${sp.color}1a); border:2px solid ${sp.color}; border-radius:10px; padding:6px; cursor:pointer; font-family:inherit;">
-        <div style="font-size:22px;">${sp.icon}</div>
-        <div style="font-size:10px; font-weight:700; color:${sp.color}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(sp.name)}</div>
-        <div style="font-size:8px; color:#8b6f9b; line-height:1.2;">${escapeHtml(describeSpirit(sp))}</div>
-        <div style="font-size:8px; color:#9ca3af; margin-top:2px;">點擊裝備</div>
-      </button>`).join('');
+      ? '<div style="font-size:12px; color:#9ca3af; padding:16px; text-align:center;">背包沒有精魂<br><span style="font-size:10px;">打王掉的精魂會放在這裡</span></div>'
+      : bag.map((sp, idx) => {
+          const affixLines = (sp.affixes || []).map(a =>
+            `<div style="color:#7c3aed; font-size:9px;">✦ ${escapeHtml(a.name)}（+${a.val} ${a.type.toUpperCase()}）</div>`
+          ).join('');
+          return `<button onclick="openSpiritActions(${idx})" style="background:linear-gradient(135deg,#fff,${sp.color}1a); border:2px solid ${sp.color}; border-radius:10px; padding:8px; cursor:pointer; font-family:inherit; text-align:left; width:100%;">
+            <div style="display:flex; gap:8px; align-items:flex-start;">
+              <div style="font-size:28px; flex-shrink:0;">${sp.icon}</div>
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:11px; font-weight:700; color:${sp.color};">${escapeHtml(sp.name)}</div>
+                <div style="font-size:9px; color:#8b6f9b; margin-top:1px;">${escapeHtml(describeSpirit(sp))}</div>
+                ${affixLines}
+              </div>
+            </div>
+          </button>`;
+        }).join('');
+
     const html = `
       <div>
         <div style="font-size:11px; color:#5b3d62; padding:6px 10px; background:linear-gradient(135deg,#ede9fe,#ddd6fe); border-radius:8px; margin-bottom:10px; border:1px dashed #a78bfa;">
-          🌟 每位角色可裝 5 個精魂　·　每個精魂有「固定基礎屬性」+ 隨機 2 詞條<br>
-          打王（個人 BOSS / 世界王）會掉對應精魂
+          🌟 最多裝 5 個精魂　·　袋裡的精魂可裝備或拆解成 💠 精華碎片<br>
+          <b>精華碎片</b>：${rpg.essenceFragments || 0} 片（拆解精魂 1 隻 → 1 片）
         </div>
-        <div style="font-size:11px; color:#5b3d62; font-weight:700; margin-bottom:4px;">已裝備</div>
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:5px; margin-bottom:10px;">${slotHtml}</div>
-        <div style="font-size:11px; color:#5b3d62; font-weight:700; margin-bottom:4px;">背包（${bag.length}）</div>
-        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:5px; max-height:36vh; overflow-y:auto;">${bagHtml}</div>
+        <div style="font-size:11px; color:#5b3d62; font-weight:700; margin-bottom:5px;">⚔️ 已裝備（${slots.filter(x=>x).length}/5）<span style="font-size:9px; font-weight:400; color:#9ca3af;">　點擊查看詳情 / 卸下</span></div>
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:5px; margin-bottom:12px;">${slotHtml}</div>
+        <div style="font-size:11px; color:#5b3d62; font-weight:700; margin-bottom:5px;">🎒 精魂背包（${bag.length}）<span style="font-size:9px; font-weight:400; color:#9ca3af;">　點擊裝備 / 拆解</span></div>
+        <div style="display:flex; flex-direction:column; gap:6px; max-height:38vh; overflow-y:auto;">${bagHtml}</div>
         <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:10px;">關閉</button>
       </div>
     `;
-    showModal('🌟 精魂', html);
+    showModal('🌟 精魂管理', html);
   }
   window.showSpiritsModal = showSpiritsModal;
 
@@ -8146,6 +8160,175 @@
   }
   window.unequipSpirit = unequipSpirit;
 
+  // ⭐ 已裝備精魂詳情（查看 + 卸下）
+  function openEquippedSpiritDetail(slotIdx) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const slots = getSpiritSlots(rpg);
+    const sp = slots[slotIdx];
+    if (!sp) return;
+    const affixHtml = (sp.affixes || []).map(a =>
+      `<div style="display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px dashed #e5e7eb; font-size:11px;">
+        <span style="color:#7c3aed; font-weight:700;">✦ ${escapeHtml(a.name)}</span>
+        <span style="color:#374151; font-weight:700;">+${a.val} ${a.type.toUpperCase()}</span>
+      </div>`
+    ).join('') || '<div style="font-size:11px; color:#9ca3af;">（無詞條）</div>';
+    const statsHtml = buildSpiritStatsHtml(sp);
+    const html = `
+      <div style="text-align:center; padding:6px 0;">
+        <div style="font-size:52px; margin-bottom:4px;">${sp.icon}</div>
+        <div style="font-size:11px; color:${sp.color}; font-weight:700; margin-bottom:2px;">${escapeHtml(sp.theme || '')}</div>
+        <div style="font-weight:800; font-size:16px; color:${sp.color};">${escapeHtml(sp.name)}</div>
+        <div style="background:${sp.color}15; border:1.5px solid ${sp.color}40; border-radius:8px; padding:8px 12px; margin:10px 0; text-align:left;">
+          <div style="font-size:10px; font-weight:700; color:${sp.color}; margin-bottom:4px;">📊 基礎屬性</div>
+          ${statsHtml}
+        </div>
+        <div style="background:#faf5ff; border:1.5px solid #c4b5fd; border-radius:8px; padding:8px 12px; margin:8px 0; text-align:left;">
+          <div style="font-size:10px; font-weight:700; color:#7c3aed; margin-bottom:4px;">✦ 隨機詞條</div>
+          ${affixHtml}
+        </div>
+        <button class="btn btn-secondary" onclick="unequipSpiritAndRefresh(${slotIdx})" style="width:100%; margin-top:8px;">📦 卸下（移到精魂背包）</button>
+        <button class="btn btn-secondary" onclick="showSpiritsModal()" style="width:100%; margin-top:6px;">← 返回精魂</button>
+      </div>
+    `;
+    showModal(`🌟 裝備中：${sp.name}`, html);
+  }
+  window.openEquippedSpiritDetail = openEquippedSpiritDetail;
+
+  function unequipSpiritAndRefresh(slotIdx) {
+    unequipSpirit(slotIdx);
+    // unequipSpirit already calls showSpiritsModal
+  }
+  window.unequipSpiritAndRefresh = unequipSpiritAndRefresh;
+
+  // ⭐ 背包精魂詳情（裝備 / 拆解）
+  function openSpiritActions(bagIdx) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const bag = rpg.spiritBag || [];
+    const sp = bag[bagIdx];
+    if (!sp) return;
+    const affixHtml = (sp.affixes || []).map(a =>
+      `<div style="display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px dashed #e5e7eb; font-size:11px;">
+        <span style="color:#7c3aed; font-weight:700;">✦ ${escapeHtml(a.name)}</span>
+        <span style="color:#374151; font-weight:700;">+${a.val} ${a.type.toUpperCase()}</span>
+      </div>`
+    ).join('') || '<div style="font-size:11px; color:#9ca3af;">（無詞條）</div>';
+    const statsHtml = buildSpiritStatsHtml(sp);
+    const html = `
+      <div style="text-align:center; padding:6px 0;">
+        <div style="font-size:52px; margin-bottom:4px;">${sp.icon}</div>
+        <div style="font-size:11px; color:${sp.color}; font-weight:700; margin-bottom:2px;">${escapeHtml(sp.theme || '')}</div>
+        <div style="font-weight:800; font-size:16px; color:${sp.color};">${escapeHtml(sp.name)}</div>
+        <div style="background:${sp.color}15; border:1.5px solid ${sp.color}40; border-radius:8px; padding:8px 12px; margin:10px 0; text-align:left;">
+          <div style="font-size:10px; font-weight:700; color:${sp.color}; margin-bottom:4px;">📊 基礎屬性</div>
+          ${statsHtml}
+        </div>
+        <div style="background:#faf5ff; border:1.5px solid #c4b5fd; border-radius:8px; padding:8px 12px; margin:8px 0; text-align:left;">
+          <div style="font-size:10px; font-weight:700; color:#7c3aed; margin-bottom:4px;">✦ 隨機詞條</div>
+          ${affixHtml}
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px;">
+          <button class="btn btn-primary" onclick="equipSpiritFromBagIdx(${bagIdx})">✨ 裝備</button>
+          <button class="btn btn-warning" onclick="disassembleSpirit(${bagIdx})" style="background:linear-gradient(135deg,#7c3aed,#5b21b6); box-shadow:0 4px 0 #4c1d95; color:#fff;">🔨 拆解 → 💠×1</button>
+        </div>
+        <button class="btn btn-secondary" onclick="showSpiritsModal()" style="width:100%; margin-top:6px;">← 返回精魂</button>
+      </div>
+    `;
+    showModal(`🌟 ${sp.name}`, html);
+  }
+  window.openSpiritActions = openSpiritActions;
+
+  // ── 輔助：精魂完整屬性 HTML ──
+  function buildSpiritStatsHtml(sp) {
+    const rows = [];
+    const statMap = { hp:'HP', atk:'ATK', def:'DEF', spd:'SPD', critChance:'暴擊率', critDmg:'爆傷' };
+    for (const [k, label] of Object.entries(statMap)) {
+      if (!sp[k]) continue;
+      const val = (k === 'critChance' || k === 'critDmg') ? `+${Math.round(sp[k]*100)}%` : `+${sp[k]}`;
+      rows.push(`<div style="display:flex; justify-content:space-between; font-size:11px; padding:2px 0;">
+        <span style="color:#6b7280;">${label}</span>
+        <span style="color:#374151; font-weight:700;">${val}</span>
+      </div>`);
+    }
+    return rows.join('') || '<div style="font-size:11px; color:#9ca3af;">無屬性</div>';
+  }
+  window.buildSpiritStatsHtml = buildSpiritStatsHtml;
+
+  // ── 從詳情頁裝備精魂 ──
+  function equipSpiritFromBagIdx(bagIdx) {
+    hideModal();
+    equipSpiritFromBag(bagIdx);
+  }
+  window.equipSpiritFromBagIdx = equipSpiritFromBagIdx;
+
+  // ── 拆解精魂 → +1 精華碎片 ──
+  function disassembleSpirit(bagIdx) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const bag = rpg.spiritBag || [];
+    const sp = bag[bagIdx];
+    if (!sp) return;
+    if (!confirm(`確定拆解 ${sp.icon} ${sp.name}？\n拆解後獲得 💠 精華碎片 ×1，無法還原。`)) return;
+    bag.splice(bagIdx, 1);
+    rpg.spiritBag = bag;
+    rpg.essenceFragments = (rpg.essenceFragments || 0) + 1;
+    saveData();
+    renderCharCard();
+    renderCharQuickMenu();
+    hideModal();
+    showToast(`🔨 拆解完成！獲得 💠 精華碎片 ×1（共 ${rpg.essenceFragments} 片）`);
+    showSpiritsModal();
+  }
+  window.disassembleSpirit = disassembleSpirit;
+
+  // ⭐ 資源頁（探險幣 / 精華碎片 / 王硬幣）
+  function showResourcesModal() {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const bossCoins = rpg.bossCoins || {};
+    const bcEntries = Object.entries(bossCoins).filter(([_, q]) => (q||0) > 0);
+    const bcHtml = bcEntries.length > 0
+      ? bcEntries.map(([id, qty]) => {
+          const boss = PERSONAL_BOSSES.find(b => b.id === id.replace('bc_','').replace(/_/g,'-'))
+                    || WB9_BOSSES.find(b => 'bc_'+b.id.replace(/-/g,'_') === id)
+                    || { name: id, icon: '👑' };
+          return `<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px; background:#fef3c7; border:1px solid #f59e0b; border-radius:8px; margin-bottom:4px;">
+            <span>${boss.icon || '👑'} ${escapeHtml(boss.name || id)}</span>
+            <span style="font-weight:800; color:#92400e;">×${qty}</span>
+          </div>`;
+        }).join('')
+      : '<div style="font-size:11px; color:#9ca3af; text-align:center;">暫無王硬幣</div>';
+
+    const html = `
+      <div style="line-height:1.7; font-size:13px;">
+        <div style="font-weight:700; color:#0ea5e9; margin:4px 0 8px;">📊 資源總覽</div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;">
+          <div style="background:linear-gradient(135deg,#e0f2fe,#bae6fd); border:1.5px solid #0ea5e9; border-radius:10px; padding:12px; text-align:center;">
+            <div style="font-size:28px;">🧭</div>
+            <div style="font-size:12px; color:#0369a1; font-weight:700; margin-top:4px;">探險幣</div>
+            <div style="font-size:22px; font-weight:800; color:#0c4a6e;">${rpg.exploreCoins || 0}</div>
+            <div style="font-size:9px; color:#7c9cb0; margin-top:2px;">每次探險 / 扭蛋都會用到</div>
+          </div>
+          <div style="background:linear-gradient(135deg,#ede9fe,#ddd6fe); border:1.5px solid #7c3aed; border-radius:10px; padding:12px; text-align:center;">
+            <div style="font-size:28px;">💠</div>
+            <div style="font-size:12px; color:#5b21b6; font-weight:700; margin-top:4px;">精華碎片</div>
+            <div style="font-size:22px; font-weight:800; color:#4c1d95;">${rpg.essenceFragments || 0}</div>
+            <div style="font-size:9px; color:#8b6f9b; margin-top:2px;">拆解精魂取得</div>
+          </div>
+        </div>
+
+        <div style="font-weight:700; color:#f59e0b; margin:8px 0 6px;">👑 王硬幣</div>
+        ${bcHtml}
+
+        <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:14px;">關閉</button>
+      </div>
+    `;
+    showModal('💰 資源', html);
+  }
+  window.showResourcesModal = showResourcesModal;
+
   // ========================================================================
   // 🐛 BUG 回報系統
   // ========================================================================
@@ -8314,7 +8497,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260504d';
+  const NEWS_LATEST_ID = 'patch_20260504e';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -8334,6 +8517,24 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#7c3aed,#a855f7); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🌟 精魂系統改版 + 資源頁　<span style="font-size:11px; opacity:0.85;">2026-05-04</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:6px 0 4px;">🌟 精魂管理頁全面升級</div>
+        <div>・精魂背包現在顯示<b>完整詞條資訊</b>（隨機詞條名稱 + 數值）</div>
+        <div>・點擊精魂 → 查看基礎屬性 + 詞條詳情</div>
+        <div>・已裝備精魂：點擊可查看詳情 / 直接卸下</div>
+        <div>・🆕 <b>拆解精魂</b>：袋裡的精魂可拆解，每隻得 <b>💠 精華碎片 ×1</b></div>
+
+        <div style="font-weight:700; color:#0ea5e9; margin:10px 0 4px;">💰 全新資源頁</div>
+        <div>・快選單新增「<b>💠 資源</b>」按鈕，一眼看清所有資源</div>
+        <div>・顯示：🧭 探險幣 / 💠 精華碎片 / 👑 王硬幣（各種類）</div>
+
+        <div style="background:#f3f4f6; border-radius:8px; padding:8px 12px; margin-top:12px; margin-bottom:16px; font-size:12px; color:#6b7280;">
+          ⚙️ 精華碎片目前為存儲資源，後續版本將開放兌換功能
+        </div>
 
         <div style="background:linear-gradient(135deg,#dc2626,#7c3aed); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">⚔️ 技能平衡調整　<span style="font-size:11px; opacity:0.85;">2026-05-04</span></div>
@@ -8689,6 +8890,11 @@ ${b.text}
         <span class="cqm-icon">🎰</span>
         <span class="cqm-label">扭蛋</span>
         <span class="cqm-badge">🧭 ${rpg.exploreCoins || 0}</span>
+      </button>
+      <button class="cqm-btn" onclick="showResourcesModal()" title="資源">
+        <span class="cqm-icon">💠</span>
+        <span class="cqm-label">資源</span>
+        <span class="cqm-badge">${rpg.essenceFragments || 0} 片</span>
       </button>
     `;
   }
