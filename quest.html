@@ -10854,14 +10854,21 @@ ${b.text}
     const coins = getCoins(me.id);
 
     // 轉蛋區塊
+    const can1  = coins >= 5000;
+    const can10 = coins >= 50000;
     const gachaHtml = `
       <div style="background:linear-gradient(135deg,#7c3aed,#c026d3); border-radius:12px; padding:10px 14px; margin-bottom:12px; text-align:center;">
         <div style="font-weight:800; font-size:14px; color:#fff; margin-bottom:2px;">🎰 寶石轉蛋</div>
-        <div style="font-size:11px; color:#e9d5ff; margin-bottom:8px;">5,000 鵝鵝幣 / 次 · 98% 一階晶石 · 2% 原石</div>
+        <div style="font-size:11px; color:#e9d5ff; margin-bottom:6px;">5,000 鵝鵝幣 / 次 · 98% 一階晶石 · 2% 原石</div>
         <div style="font-size:11px; color:#d8b4fe; margin-bottom:8px;">目前鵝鵝幣：<b style="color:#fff;">${coins.toLocaleString()}</b></div>
-        <button onclick="doGemGacha()" style="padding:7px 24px; background:${coins >= 5000 ? '#fff' : '#6b7280'}; color:${coins >= 5000 ? '#7c3aed' : '#d1d5db'}; font-weight:800; font-size:13px; border:none; border-radius:20px; cursor:${coins >= 5000 ? 'pointer' : 'not-allowed'};">
-          💎 轉蛋一次（5,000 🪙）
-        </button>
+        <div style="display:flex; gap:8px; justify-content:center;">
+          <button onclick="doGemGacha(1)" style="flex:1; max-width:140px; padding:7px 0; background:${can1 ? '#fff' : '#6b7280'}; color:${can1 ? '#7c3aed' : '#d1d5db'}; font-weight:800; font-size:12px; border:none; border-radius:20px; cursor:${can1 ? 'pointer' : 'not-allowed'};">
+            💎 ×1（5,000 🪙）
+          </button>
+          <button onclick="doGemGacha(10)" style="flex:1; max-width:160px; padding:7px 0; background:${can10 ? '#fbbf24' : '#6b7280'}; color:${can10 ? '#7c2d12' : '#d1d5db'}; font-weight:800; font-size:12px; border:none; border-radius:20px; cursor:${can10 ? 'pointer' : 'not-allowed'};">
+            💎 ×10（50,000 🪙）
+          </button>
+        </div>
       </div>
     `;
 
@@ -10985,27 +10992,65 @@ ${b.text}
   }
   window.doCombineGem = doCombineGem;
 
-  function doGemGacha() {
+  function rollOneGem() {
+    if (Math.random() < 0.02) return GEMS['gem_raw'];
+    const type = GEM_TYPES_LIST[Math.floor(Math.random() * GEM_TYPES_LIST.length)];
+    return GEMS[`gem_${type}_1`];
+  }
+
+  function doGemGacha(count) {
+    count = count || 1;
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
-    const COST = 5000;
-    if (getCoins(me.id) < COST) { showToast('鵝鵝幣不足（需要 5,000）'); return; }
+    const COST = 5000 * count;
+    if (getCoins(me.id) < COST) { showToast(`鵝鵝幣不足（需要 ${COST.toLocaleString()}）`); return; }
     spendCoins(me.id, COST);
 
-    let result;
-    if (Math.random() < 0.02) {
-      result = GEMS['gem_raw'];
-    } else {
-      const type = GEM_TYPES_LIST[Math.floor(Math.random() * GEM_TYPES_LIST.length)];
-      result = GEMS[`gem_${type}_1`];
-    }
-
     rpg.gemInventory = rpg.gemInventory || {};
-    rpg.gemInventory[result.id] = (rpg.gemInventory[result.id] || 0) + 1;
+    const results = [];
+    for (let i = 0; i < count; i++) {
+      const gem = rollOneGem();
+      rpg.gemInventory[gem.id] = (rpg.gemInventory[gem.id] || 0) + 1;
+      results.push(gem);
+    }
     saveData();
     renderCharCard();
-    showToast(result.type === 'raw' ? `✨ 稀有！${result.icon} ${result.name}（2%）` : `${result.icon} ${result.name}！`);
-    renderGemModal();
+
+    if (count === 1) {
+      const r = results[0];
+      showToast(r.type === 'raw' ? `✨ 稀有！${r.icon} ${r.name}（2%）` : `${r.icon} ${r.name}！`);
+      renderGemModal();
+    } else {
+      // ×10：顯示結果摘要 modal
+      const tally = {};
+      let rawCount = 0;
+      for (const g of results) {
+        tally[g.id] = (tally[g.id] || 0) + 1;
+        if (g.type === 'raw') rawCount++;
+      }
+      const rows = Object.entries(tally).map(([id, cnt]) => {
+        const g = GEMS[id];
+        const isRaw = g.type === 'raw';
+        return `<div style="display:flex; align-items:center; gap:8px; padding:5px 8px; background:${isRaw ? '#fef3c7' : '#f3e8ff'}; border-radius:8px; margin:3px 0;">
+          <span style="font-size:22px;">${g.icon}</span>
+          <div style="flex:1;">
+            <span style="font-weight:700; font-size:13px; color:${isRaw ? '#92400e' : '#5b21b6'};">${g.name}</span>
+            ${isRaw ? '<span style="font-size:11px; color:#d97706;"> ✨ 稀有</span>' : `<span style="font-size:11px; color:#6b7280;"> ${gemStatText(g)}</span>`}
+          </div>
+          <span style="font-weight:800; font-size:14px; color:#374151;">×${cnt}</span>
+        </div>`;
+      }).join('');
+      const html = `
+        <div style="padding:4px 0;">
+          <div style="font-size:12px; color:#5b3d62; font-weight:700; margin-bottom:8px; text-align:center;">
+            💎 ×10 轉蛋結果${rawCount > 0 ? ' — <span style="color:#d97706;">✨ 有原石！</span>' : ''}
+          </div>
+          ${rows}
+          <button class="btn btn-primary" onclick="renderGemModal()" style="width:100%; margin-top:12px;">確認</button>
+        </div>
+      `;
+      showModal('🎰 轉蛋 ×10', html);
+    }
   }
   window.doGemGacha = doGemGacha;
 
