@@ -4323,7 +4323,7 @@
   const MP_PER_TICK = 2;
   const TICK_MS = 60 * 1000;
   const REST_MS = 5 * 60 * 1000; // HP=0 → 5 分後恢復到 50%（之前 10 分）
-  const REST_HP_RATIO = 0.5;
+  const REST_HP_RATIO = 1.0;
 
   const ABILITIES = [
     { id: 'str', name: '力量 STR', short: 'STR', icon: '💪', desc: '+1 ATK / 點' },
@@ -11839,12 +11839,12 @@ ${b.text}
         rpg.deathAt = null;
         const div = document.createElement('div');
         div.className = 'log-line log-defeat';
-        div.textContent = `💀 你被打倒了… HP 恢復到 50%`;
+        div.textContent = `💀 你被打倒了… HP 全滿恢復`;
         logEl.appendChild(div);
         rewardHtml = `
           <div class="reward-list reward-loss">
             <div class="rl-title">😭 失敗了</div>
-            <div class="rl-item">💀 HP 恢復至 50%，可繼續挑戰</div>
+            <div class="rl-item">💀 HP 全滿恢復，可繼續挑戰</div>
             ${result.coinsStolen > 0 ? `<div class="rl-item" style="color:#dc2626;">💰 被偷走 −${result.coinsStolen} 鵝鵝幣</div>` : ''}
           </div>
         `;
