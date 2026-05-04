@@ -4472,6 +4472,29 @@
   const ME_KEY = 'mahjong-me-id';
   const PASS_KEY = 'mahjong-pass-ok';
 
+  // ⭐ Tab Leader：同帳號只有最新開的頁面能推送 Firebase，防多 tab race condition
+  const TAB_LEADER_KEY = 'hisiri_active_tab';
+  const TAB_ID = Date.now() + '-' + Math.random().toString(36).slice(2);
+  let __iAmLeader = true;
+  // 宣告主權
+  try { localStorage.setItem(TAB_LEADER_KEY, TAB_ID); } catch (e) {}
+  // 偵測其他分頁搶走主權
+  window.addEventListener('storage', (e) => {
+    if (e.key !== TAB_LEADER_KEY) return;
+    if (e.newValue && e.newValue !== TAB_ID) {
+      __iAmLeader = false;
+      // 顯示橫幅通知
+      let banner = document.getElementById('__tabDemotedBanner');
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = '__tabDemotedBanner';
+        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#dc2626;color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:700;letter-spacing:.5px;box-shadow:0 2px 8px #0005;';
+        banner.innerHTML = '⚠️ 已開啟新的鵝霸天下頁面，此頁面已停止儲存。請切換到新分頁。';
+        document.body.appendChild(banner);
+      }
+    }
+  });
+
   // ============================================================
   // 工具
   // ============================================================
@@ -4557,6 +4580,8 @@
     } catch (e) { console.error(e); }
   }
   function saveData() {
+    // ⭐ Tab Leader：非主分頁不推 Firebase，防多 tab race condition
+    if (!__iAmLeader) return;
     // 蓋上「我自己」的時間戳，applyRemote 時防 stale 客戶端覆蓋掉我剛拿到的裝備
     const meId = getMeId && getMeId();
     if (meId && Array.isArray(players)) {
