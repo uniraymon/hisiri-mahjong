@@ -8502,7 +8502,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260504e';
+  const NEWS_LATEST_ID = 'patch_20260504f';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -8522,6 +8522,29 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#0ea5e9,#7c3aed); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">💍 裝備系統 + 行動規則　<span style="font-size:11px; opacity:0.85;">2026-05-04</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#0ea5e9; margin:6px 0 4px;">💍 雙戒指槽系統</div>
+        <div>・裝備欄新增 <b>戒指 1</b> 和 <b>戒指 2</b> 兩個獨立槽位</div>
+        <div>・裝備戒指時會彈出選槽視窗，可自由決定裝哪一格</div>
+        <div>・<b>飾品</b>槽保留給 👑 鵝王恩賜 / 商店飾品；戒指槽專屬扭蛋裝備</div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">🧭 探險扭蛋大改版</div>
+        <div>・扭蛋費用 30 → <b>5 探險幣</b></div>
+        <div>・全新 7 種獎池：EXP 2000 / 隨機寶物 / 🐰兔腳 / 💎紅寶石 / 💍鋼戒 / 🌠神諭 / 💖心形吊墜</div>
+        <div>・所有扭蛋裝備均為 <b>戒指部位</b>，可裝進戒指 1 或 2</div>
+        <div>・裝備數值：兔腳 SPD+10 暴擊+5%、紅寶石 HP+30 ATK+10、鋼戒 HP+50 DEF+20、神諭 暴擊+5% 爆傷+20%、心形吊墜 HP+50 MP+15</div>
+
+        <div style="font-weight:700; color:#dc2626; margin:10px 0 4px;">⚙️ 行動規則新觸發條件</div>
+        <div>・HOF 規則表新增「<b>每 X 次行動觸發一次</b>」條件</div>
+        <div>・例：每 3 次行動自動使用狂怒；衝突時由規則順序決定優先，其餘跳過，計時器不漂移</div>
+
+        <div style="background:#f3f4f6; border-radius:8px; padding:8px 12px; margin-top:12px; margin-bottom:16px; font-size:12px; color:#6b7280;">
+          ⚙️ 同期修正：鵝王恩賜維持飾品槽不受影響；修復巫師「絕對防禦」規則條件判斷的隱藏 bug
+        </div>
 
         <div style="background:linear-gradient(135deg,#7c3aed,#a855f7); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🌟 精魂系統改版 + 資源頁　<span style="font-size:11px; opacity:0.85;">2026-05-04</span></div>
@@ -12357,6 +12380,13 @@ ${b.text}
         <button class="btn btn-secondary" onclick="adminAddCoins(10000)">+10,000</button>
       </div>
 
+      <div class="shop-section-title">🧭 探險幣</div>
+      <div class="debug-grid">
+        <button class="btn btn-secondary" onclick="adminAddExploreCoins(10)">+10</button>
+        <button class="btn btn-secondary" onclick="adminAddExploreCoins(50)">+50</button>
+        <button class="btn btn-secondary" onclick="adminAddExploreCoins(200)">+200</button>
+      </div>
+
       <div class="shop-section-title">⭐ 經驗值（會自動升級）</div>
       <div class="debug-grid">
         <button class="btn btn-secondary" onclick="adminAddXp(100)">+100</button>
@@ -12413,6 +12443,15 @@ ${b.text}
     showToast(`🪙 +${amount} 鵝鵝幣`);
   }
   window.adminAddCoins = adminAddCoins;
+
+  function adminAddExploreCoins(amount) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    r.exploreCoins = (r.exploreCoins || 0) + amount;
+    saveData(); showDebugModal();
+    showToast(`🧭 +${amount} 探險幣（現有 ${r.exploreCoins}）`);
+  }
+  window.adminAddExploreCoins = adminAddExploreCoins;
 
   function adminAddXp(amount) {
     const me = getMe(); if (!me) return;
