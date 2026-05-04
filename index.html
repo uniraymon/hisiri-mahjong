@@ -1624,11 +1624,32 @@
 
     document.getElementById('baseMoney').value = baseMoney;
     document.getElementById('basePoint').value = basePoint;
+    // ⭐ 首次載入就嘗試認領（離線送禮 / 第一次開頁）
+    claimEquipGifts();
     renderTabs();
     render();
   }
 
   let __isApplyingRemote = false;
+
+  // ⭐ 認領待收裝備：掃描 gifts 裡未領取的 equip 條目，加入自己 inventory 後由自己 saveData
+  //    只有本人才能寫入自己的 player doc，所以必須由收件者主動 claim
+  function claimEquipGifts() {
+    const me = getMe();
+    if (!me || !me.rpg) return false;
+    if (!Array.isArray(me.rpg.claimedGiftIds)) me.rpg.claimedGiftIds = [];
+    const claimedSet = new Set(me.rpg.claimedGiftIds);
+    const unclaimed = gifts.filter(g =>
+      g.to === me.id && g.type === 'equip' && g.itemData && !claimedSet.has(g.id)
+    );
+    if (unclaimed.length === 0) return false;
+    if (!Array.isArray(me.rpg.inventory)) me.rpg.inventory = [];
+    for (const g of unclaimed) {
+      me.rpg.inventory.push(g.itemData);
+      me.rpg.claimedGiftIds.push(g.id);
+    }
+    return unclaimed.length; // 回傳認領件數
+  }
 
   function saveData() {
     // 在每個 saveData 蓋上「我自己」的時間戳，applyRemote 時用來判斷誰新誰舊
@@ -1701,6 +1722,13 @@
       renderTabs();
       render();
     } finally { __isApplyingRemote = false; }
+    // ⭐ gifts 同步完成後，嘗試認領新到的裝備禮物（必須在 __isApplyingRemote = false 後才 saveData）
+    const claimed = claimEquipGifts();
+    if (claimed) {
+      saveData();
+      render();
+      showToast(`🎁 收到 ${claimed} 件裝備禮物！已加入背包`);
+    }
   };
 
   // 一次匯入所有玩家（首次載入 / 全量補回）
@@ -1900,6 +1928,9 @@
         <div style="margin-top:8px; font-size:11px; color:#b88a8a;">💝 最近收到：
           ${recentGiftsToMe.map(g => {
             const sender = getPlayer(g.from);
+            if (g.type === 'equip') {
+              return `<span class="gift-badge" style="background:linear-gradient(135deg,#ede9fe,#c4b5fd); color:#5b21b6;">${g.itemIcon || '📦'} <span class="gb-from">${sender?.avatar || '?'}</span></span>`;
+            }
             const gt = GIFT_TYPES[g.type] || { icon: '🎀' };
             return `<span class="gift-badge">${gt.icon} <span class="gb-from">${sender?.avatar || '?'}</span></span>`;
           }).join(' ')}
@@ -2930,15 +2961,16 @@
     const info = describeInvItem(entry);
     if (info?.gachaOnly) { showToast('扭蛋限定裝備不能送'); return; }
     if (!confirm(`確定送出 ${info?.icon || '📦'} ${info?.name || '物品'} 給 ${target.name}？`)) return;
-    // 從自己背包移除 → 進對方背包
+    // ⭐ 從自己背包移除
     me.rpg.inventory.splice(idx, 1);
-    if (!target.rpg) target.rpg = {};
-    if (!Array.isArray(target.rpg.inventory)) target.rpg.inventory = [];
-    target.rpg.inventory.push(entry);
-    // 紀錄 gift log（新類型 'equip'）
+    // ⭐ 不直接寫入對方 inventory！
+    //    Firebase 拆檔架構：只有本人才能寫自己的 player doc。
+    //    直接 push 進記憶體後 Firebase 同步一到就被覆蓋，裝備消失。
+    //    改法：把完整 itemData 存入 gifts（meta，共用），讓對方自己 claim。
     gifts.push({
       id: Date.now() + '_' + Math.random().toString(36).slice(2,6),
       from: me.id, to: toPid, type: 'equip',
+      itemData: entry,                          // ⭐ 完整裝備資料
       itemIcon: info?.icon || '📦', itemName: info?.name || '物品',
       ts: new Date().toISOString(),
     });
