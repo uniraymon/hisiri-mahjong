@@ -1894,7 +1894,7 @@
         { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 6,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.0, lifesteal: 0.20, customLv: true },
         { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 50, hpCostFlat: 20, type: 'damage', mult: 4.5, cast: 100 },
         { id: 'w_war_cry',      name: '戰意呼喚', icon: '📢', unlockLv: 3,  cooldown: 0, mpCost: 0, type: 'heal', healPct: 0.15, isMpRegen: true },
-        { id: 'w_bloodlust',    name: '嗜血怒嚎', icon: '🦁', unlockLv: 2,  cooldown: 0, mpCost: 25, type: 'buff', selfBuff: { stat: 'atkPct', amount: 0.30, turns: 3 } },
+        { id: 'w_bloodlust',    name: '嗜血怒嚎', icon: '🦁', unlockLv: 2,  cooldown: 0, mpCost: 25, type: 'buff', selfBuff: { stat: 'atkPct', amount: 0.25, turns: 3 } },
         // ⭐ 新增：魔吸斬 — 0.8× ATK 傷害 + 回 2 MP（戰術用，低 MP 時穩定恢復）
         { id: 'w_mana_strike',  name: '魔吸斬',   icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0, type: 'damage', mult: 0.8, mpRestore: 2 },
         // ⭐ 新增：底氣 — 回血 70% + DEF +30（1 回合）；硬值 150；不可升級
@@ -1935,7 +1935,7 @@
         { id: 'a_twin_shot',   name: '雙箭齊發', icon: '🏹', unlockLv: 2,  cooldown: 0, mpCost: 24, type: 'damage', mult: 1.5, targetCount: 2 },
         { id: 'a_poison_arrow',name: '毒箭',     icon: '🐍', unlockLv: 5,  cooldown: 0, mpCost: 26, type: 'damage', mult: 1.2, maxLv: 5, applyStatus: { type: 'poison', turns: 3, chance: 0.7 } },
         { id: 'a_quickstep',   name: '疾風步',   icon: '💨', unlockLv: 2,  cooldown: 0, mpCost: 16, type: 'buff', selfBuff: { stat: 'spd', amount: 8, turns: 4 } },
-        { id: 'a_eagle_eye',   name: '鷹眼',     icon: '🦅', unlockLv: 4,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'critChance', amount: 0.20, turns: 4 } },
+        { id: 'a_eagle_eye',   name: '鷹眼',     icon: '🦅', unlockLv: 4,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'critChance', amount: 0.20, turns: 4 }, selfBuff2: { stat: 'critDmg', amount: 0.30, turns: 4 } },
         { id: 'a_lifesteal_arrow', name: '吸血箭', icon: '🩸', unlockLv: 3,  cooldown: 0, mpCost: 14, type: 'damage', mult: 1.2, lifesteal: 0.40 },
         // 隱身重做：15 MP / 免疫一次傷害 + 下次攻擊必爆 / 每級 -1 MP / Lv 5 +1 回合 +20% 爆傷
         { id: 'a_stealth',         name: '隱身',   icon: '🌫', unlockLv: 5,  cooldown: 0, mpCost: 15, type: 'buff', selfBuff: { stat: 'critChance', amount: 1.0, turns: 1 }, applyShield: 1, stealthLv5CritDmg: 0.20, maxLv: 5 },
@@ -2022,7 +2022,7 @@
         { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 6,  cooldown: 0, mpCost: 35, type: 'damage', mult: 2.5, bonusMaxHpPct: 0.10, cast: 60, applyStatus: { type: 'vulnerable', amount: 0.5, turns: 2, chance: 1 }, customLv: true },
         { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 7,  cooldown: 0, mpCost: 35, type: 'damage', mult: 1.7, targetCount: 2, applyStatus: { type: 'paralyze', turns: 2, chance: 0.8 }, cast: 30 },
         // ⭐ 神聖祝福：DEF +40%（3 回合）+ 臨時最大HP +20%（僅戰鬥中有效）
-        { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.40, turns: 3 }, buffMaxHpPct: 0.20 },
+        { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.25, turns: 3 }, buffMaxHpPct: 0.20 },
         // ⭐ 護盾衝鋒：6× DEF；攻擊完後 +10 DEF（持續 3 回合）硬值 40
         { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 22, type: 'damage', defMult: 6, postSelfBuff: { stat: 'def', amount: 10, turns: 3 }, cast: 40 },
         { id: 'p_aegis',         name: '反傷護盾', icon: '🪞', unlockLv: 8,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.50, turns: 3 } },
@@ -5919,8 +5919,13 @@
             if (mHp <= 0) { pushDeathLine(); break; }
           } else if (skill.type === 'buff' && skill.selfBuff) {
             applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff.stat, amount: skill.selfBuff.amount, turns: skill.selfBuff.turns });
-            // ⭐ 隱身：另加 shield 狀態（吸收一次傷害）+ Lv 5 額外 +20% 爆傷 buff
+            // ⭐ selfBuff2：第二個 buff（鷹眼：暴擊率 + 暴傷）
             const extraNote = [];
+            if (skill.selfBuff2) {
+              applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff2.stat, amount: skill.selfBuff2.amount, turns: skill.selfBuff2.turns });
+              extraNote.push(describeBuff(skill.selfBuff2));
+            }
+            // ⭐ 隱身：另加 shield 狀態（吸收一次傷害）+ Lv 5 額外 +20% 爆傷 buff
             if (skill.applyShield) {
               applyStatus(playerObj, { type: 'shield', charges: skill.applyShield, turns: 99 });
               extraNote.push('🛡 免疫一次傷害');
@@ -6487,7 +6492,12 @@
             }
           } else if (skill.type === 'buff' && skill.selfBuff) {
             applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff.stat, amount: skill.selfBuff.amount, turns: skill.selfBuff.turns });
+            // ⭐ selfBuff2：第二個 buff（鷹眼：暴擊率 + 暴傷）
             const extraNote = [];
+            if (skill.selfBuff2) {
+              applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff2.stat, amount: skill.selfBuff2.amount, turns: skill.selfBuff2.turns });
+              extraNote.push(describeBuff(skill.selfBuff2));
+            }
             if (skill.applyShield) {
               applyStatus(playerObj, { type: 'shield', charges: skill.applyShield, turns: 99 });
               extraNote.push('🛡 免疫一次傷害');
@@ -8841,7 +8851,8 @@ ${b.text}
       return parts.join(' + ') || '輔助';
     }
     if (s.type === 'buff' && s.selfBuff) {
-      const buffStr = `${describeBuff(s.selfBuff)}　持續 ${s.selfBuff.turns} 回合`;
+      const buff2Str = s.selfBuff2 ? ` / ${describeBuff(s.selfBuff2)}` : '';
+      const buffStr = `${describeBuff(s.selfBuff)}${buff2Str}　持續 ${s.selfBuff.turns} 回合`;
       const bonusHealStr = s.bonusHealPct ? `　+　即時補 ${Math.round(s.bonusHealPct * 100)}% maxHp（可超出上限）` : '';
       return buffStr + bonusHealStr;
     }
