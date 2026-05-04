@@ -1928,7 +1928,8 @@
         { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 6,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.0, lifesteal: 0.20, customLv: true },
         { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 50, hpCostFlat: 20, type: 'damage', mult: 4.5, cast: 50 },
         { id: 'w_war_cry',      name: '戰意呼喚', icon: '📢', unlockLv: 3,  cooldown: 0, mpCost: 0, type: 'heal', healPct: 0.15, isMpRegen: true },
-        { id: 'w_bloodlust',    name: '嗜血怒嚎', icon: '🦁', unlockLv: 2,  cooldown: 0, mpCost: 25, type: 'buff', selfBuff: { stat: 'atkPct', amount: 0.25, turns: 3 } },
+        // ⭐ 改版：不耗 MP，改扣 20% 當前 HP；ATK 加成 20%；cast 60；不可升級
+        { id: 'w_bloodlust',    name: '嗜血怒嚎', icon: '🦁', unlockLv: 2,  cooldown: 0, mpCost: 0, hpCost: 0.20, type: 'buff', selfBuff: { stat: 'atkPct', amount: 0.20, turns: 3 }, cast: 60, maxLv: 1 },
         // ⭐ 新增：魔吸斬 — 0.8× ATK 傷害 + 回 2 MP（戰術用，低 MP 時穩定恢復）
         { id: 'w_mana_strike',  name: '魔吸斬',   icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0, type: 'damage', mult: 0.8, mpRestore: 2 },
         // ⭐ 新增：底氣 — 回血 70% + DEF +30（1 回合）；硬值 150；不可升級
@@ -3482,6 +3483,10 @@
       if (level >= 5)  eff.extraCritChance = (eff.extraCritChance || 0) + 0.20;
       if (level >= 10) eff.hits = (skill.hits || 4) + 1;
     }
+    // ⭐ 血祭斬專屬：Lv 10 多斬一下（hits 1→2）
+    if (skill.id === 'w_blood_slash' && level >= 10) {
+      eff.hits = 2;
+    }
     // ⭐ 中毒專用公式：每級 +1 charge，Lv 5 額外 +1（由 tickStatuses 每次觸發扣 3% maxHp）
     if (skill.applyStatus && skill.applyStatus.type === 'poison' && level >= 1) {
       const extraCharge = Math.min(level, 5) + (level >= 5 ? 1 : 0);
@@ -3607,8 +3612,16 @@
     if (skill.applyStatus && skill.applyStatus.type === 'poison') {
       const baseCharges = skill.applyStatus.charges || 3;
       const charges = baseCharges + Math.min(level, 5) + (level >= 5 ? 1 : 0);
-      const parts = [`☠️ 中毒 ${charges} 次（每次觸發扣 3% maxHP，上限 1000）`];
+      const parts = [`☠️ 中毒 ${charges} 次（一般怪 3% maxHP / 王 0.5% maxHP，無上限）`];
       if (level === 5) parts.push('🌟 中毒次數再 +1');
+      return parts.join('、');
+    }
+    // ⭐ 血祭斬：Lv 10 多斬一下（hits 1→2）
+    if (skill.id === 'w_blood_slash') {
+      const totalPct = Math.round((Math.min(level, 5) * 10 + Math.max(0, level - 5) * 5));
+      const parts = [`效果 +${totalPct}%`];
+      if (level === 5)  parts.push('🎯 暴擊率 +20%（本招）');
+      if (level === 10) parts.push('🌟 多斬 1 次（×2 段）');
       return parts.join('、');
     }
     const totalPct = Math.round((Math.min(level, 5) * 10 + Math.max(0, level - 5) * 5));
@@ -3645,7 +3658,7 @@
         return [
           { judgeId: 1101, param: 20, skillId: 'w_guts' },             // 自身 HP ≤ 20% → 底氣（回血 70% + DEF +30）
           { judgeId: 1101, param: 30, skillId: 'w_war_cry' },        // 自身 HP ≤ 30% → 戰意呼喚（補 HP+MP）
-          { judgeId: 1000, param: 0,  skillId: 'w_bloodlust' },      // 嗜血怒嚎（ATK +30% buff）
+          { judgeId: 1000, param: 0,  skillId: 'w_bloodlust' },      // 嗜血怒嚎（ATK +20% buff，耗 20% HP）
           { judgeId: 1300, param: 25, skillId: 'w_death_rage' },     // 敵血 ≤ 25% → 死戰之怒（HP 代價收頭）
           { judgeId: 1300, param: 50, skillId: 'w_blood_burst' },    // 敵血 ≤ 50% → 嗜血爆裂
           { judgeId: 1300, param: 30, skillId: 'w_rage_flame' },     // 敵血 ≤ 30% → 怒之炎
