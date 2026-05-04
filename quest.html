@@ -2016,6 +2016,8 @@
         // 隱身重做：15 MP / 免疫一次傷害 + 下次攻擊必爆 / 每級 -1 MP / Lv 5 +1 回合 +20% 爆傷
         // ⭐ v1.1：新增即時回血 50% maxHp（弓手唯一回血手段）；不可升級
         { id: 'a_stealth',         name: '隱身',   icon: '🌫', unlockLv: 5,  cooldown: 0, mpCost: 15, type: 'buff', selfBuff: { stat: 'critChance', amount: 1.0, turns: 1 }, applyShield: 1, bonusHealPct: 0.50, maxLv: 1 },
+        // ⭐ 瘋鵝術：普攻段數+1（4連射）+ 爆頭率+2%，持續 10 回合（只算玩家回合），不可升級
+        { id: 'a_mad_goose',       name: '瘋鵝術', icon: '🪿', unlockLv: 6,  cooldown: 0, mpCost: 12, type: 'buff', selfBuff: { stat: 'extraHits', amount: 1, turns: 10 }, selfBuff2: { stat: 'headshotChance', amount: 0.02, turns: 10 }, maxLv: 1 },
         { id: 'a_wind_song',       name: '風之歌', icon: '🎵', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true },
         { id: 'a_arrow_storm',     name: '箭雨',   icon: '🌧', unlockLv: 6,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.5, targetCount: 'all' },
         // 奪魂箭：0.8× ATK 傷害 + 回 2 MP（免費，每次攻擊都能補魔）
@@ -6321,6 +6323,11 @@
               applyStatus(playerObj, { type: 'buff', stat: 'critDmg', amount: 0.20, turns: skill.selfBuff.turns });
               extraNote.push('💥 爆傷 +20%');
             }
+            // ⭐ 隱身：下一次普攻第一箭必定爆頭
+            if (skill.id === 'a_stealth') {
+              applyStatus(playerObj, { type: 'stealthHeadshot', charges: 1, turns: 99 });
+              extraNote.push('🎯 下一次普攻必定爆頭');
+            }
             // ⭐ 底氣 / 隱身：額外即時補血（上限 maxHp）
             if (skill.bonusHealPct) {
               const heal = Math.round(stats.maxHp * skill.bonusHealPct);
@@ -6390,10 +6397,15 @@
 
           if (cls.id === 'archer') {
             // ⭐ 弓手三連射：每發 0.30×ATK，獨立爆擊，爆頭率 5%+爆擊率×20%（無視防禦×3傷，可疊爆擊）
-            const HEADSHOT_CHANCE = 0.05 + baseCrit2 * 0.2;
+            const HEADSHOT_CHANCE = 0.05 + baseCrit2 * 0.2 + (pBuff.headshotChance || 0);
+            const totalHits = 3 + Math.round(pBuff.extraHits || 0);
+            // 隱身爆頭保證：消耗後第一箭必中爆頭
+            const _stealthHsSt = (playerObj.statuses || []).find(s => s.type === 'stealthHeadshot');
             let lastDmg = 0;
-            for (let hit = 1; hit <= 3; hit++) {
-              const isHs   = Math.random() < HEADSHOT_CHANCE;
+            for (let hit = 1; hit <= totalHits; hit++) {
+              const forceHs = (hit === 1 && _stealthHsSt);
+              if (forceHs) playerObj.statuses = playerObj.statuses.filter(s => s !== _stealthHsSt);
+              const isHs   = forceHs || Math.random() < HEADSHOT_CHANCE;
               const isCrit = Math.random() < baseCrit2;
               const defVal = isHs ? 0 : Math.floor(monDef0 / 2); // 爆頭無視防禦
               let dmg = Math.max(1, effAtk * 0.30 - defVal);
@@ -6410,7 +6422,7 @@
               const label = (isHs && isCrit) ? '🎯【爆頭+暴擊】' : isHs ? '🎯【爆頭】' : isCrit ? '【暴擊】' : '';
               log.push({
                 type: (isHs || isCrit) ? 'crit-player' : 'player',
-                text: `回合 ${round}（${hit}/3）：${cls.attackVerb}${label} → ${monster.name} -${dmg} HP`,
+                text: `回合 ${round}（${hit}/${totalHits}）：${cls.attackVerb}${label} → ${monster.name} -${dmg} HP`,
                 hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp }
               });
               if (mAbility?.type === 'reflect' && mAbility.resist) {
@@ -6741,7 +6753,9 @@
     if (buff.stat === 'reflectPct')   return `🪞 反傷 ${Math.round(buff.amount * 100)}%（單次最多 300）`;
     if (buff.stat === 'maxHpPct')     return `💖 最大HP +${Math.round(buff.amount * 100)}%（戰鬥中有效）`;
     if (buff.stat === 'markPct')      return `🌀 MARK +${Math.round(buff.amount * 100)}%`;
-    if (buff.stat === 'dmgReducePct') return `🛡 受傷 -${Math.round(buff.amount * 100)}%（物理 + 魔法）`;
+    if (buff.stat === 'dmgReducePct')    return `🛡 受傷 -${Math.round(buff.amount * 100)}%（物理 + 魔法）`;
+    if (buff.stat === 'extraHits')       return `🪿 普攻段數 +${buff.amount}`;
+    if (buff.stat === 'headshotChance')  return `🎯 爆頭率 +${Math.round(buff.amount * 100)}%`;
     return `✨ ${buff.stat} +${buff.amount}`;
   }
   function statusEmoji(type) {
@@ -7129,6 +7143,11 @@
               applyStatus(playerObj, { type: 'buff', stat: 'critDmg', amount: 0.20, turns: skill.selfBuff.turns });
               extraNote.push('💥 爆傷 +20%');
             }
+            // ⭐ 隱身：下一次普攻第一箭必定爆頭
+            if (skill.id === 'a_stealth') {
+              applyStatus(playerObj, { type: 'stealthHeadshot', charges: 1, turns: 99 });
+              extraNote.push('🎯 下一次普攻必定爆頭');
+            }
             // ⭐ 底氣 / 隱身：額外即時補血（上限 maxHp）
             if (skill.bonusHealPct) {
               const heal = Math.round(stats.maxHp * skill.bonusHealPct);
@@ -7186,9 +7205,13 @@
           const critMult2 = critMult + (pBuff.critDmg || 0);
           if (cls.id === 'archer') {
             // ⭐ 弓手三連射：每發 0.30×ATK，獨立爆擊，爆頭率 5%+爆擊率×20%（無視防禦×3傷，可疊爆擊）
-            const HEADSHOT_CHANCE = 0.05 + baseCrit2 * 0.2;
-            for (let hit = 1; hit <= 3; hit++) {
-              const isHs   = Math.random() < HEADSHOT_CHANCE;
+            const HEADSHOT_CHANCE = 0.05 + baseCrit2 * 0.2 + (pBuff.headshotChance || 0);
+            const totalHits = 3 + Math.round(pBuff.extraHits || 0);
+            const _stealthHsSt = (playerObj.statuses || []).find(s => s.type === 'stealthHeadshot');
+            for (let hit = 1; hit <= totalHits; hit++) {
+              const forceHs = (hit === 1 && _stealthHsSt);
+              if (forceHs) playerObj.statuses = playerObj.statuses.filter(s => s !== _stealthHsSt);
+              const isHs   = forceHs || Math.random() < HEADSHOT_CHANCE;
               const isCrit = Math.random() < baseCrit2;
               const defVal = isHs ? 0 : Math.floor(tgt.def / 2); // 爆頭無視防禦
               let dmg = Math.max(1, effAtk * 0.30 - defVal);
@@ -7204,7 +7227,7 @@
               const label = (isHs && isCrit) ? '🎯【爆頭+暴擊】' : isHs ? '🎯【爆頭】' : isCrit ? '【暴擊】' : '';
               log.push({
                 type: (isHs || isCrit) ? 'crit-player' : 'player',
-                text: `回合 ${round}（${hit}/3）：${cls.attackVerb}${label} → ${tgt.icon}${tgt.name} -${dmg} HP`,
+                text: `回合 ${round}（${hit}/${totalHits}）：${cls.attackVerb}${label} → ${tgt.icon}${tgt.name} -${dmg} HP`,
                 hp: hpsSnapshot(),
               });
               if (tgt.ability?.type === 'reflect' && tgt.ability.resist) {
@@ -9002,7 +9025,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505m';
+  const APP_VERSION = '20260505n';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
