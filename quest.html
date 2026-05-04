@@ -2936,10 +2936,10 @@
       ability: { type: 'magicResist', resist: 0.3 },
       fixedSkillOrder: true,
       skills: [
-        { verb: '料理長之刃', mult: 2.4, alwaysCrit: true, cooldown: 5 },
-        { verb: '燭光催眠', mult: 0.5, applyStatus: { type: 'paralyze', turns: 2, chance: 0.7 }, cooldown: 3 },
         { verb: '主菜爆裂', mult: 1.6, applyStatus: { type: 'poison', turns: 4, dmg: 50, chance: 0.85 }, cooldown: 4 },
         { verb: '甜點之吻', mult: 1.8, ignoreDef: true, cooldown: 4 },
+        { verb: '燭光催眠', mult: 0.5, applyStatus: { type: 'paralyze', turns: 2, chance: 0.7 }, cooldown: 3 },
+        { verb: '料理長之刃', mult: 2.4, alwaysCrit: true, cooldown: 5 },
       ],
       dialogue: ['歡迎來到我的餐桌～', '今晚的主菜是…你？', '紅酒已經醒好，等你來品嚐～'],
       deathLine: ['宴會...結束了...', '紅酒...灑了...', '燭火...熄滅...'],
@@ -8161,7 +8161,7 @@ ${b.text}
         <div>・<b>🪨 鵝卵石</b>：山崩地裂（2.8×無視防）/ 磐石壓制（1.8×+麻痺）/ 隕石衝擊（3.2×無視防）</div>
 
         <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">🍷 晚餐鵝　<span style="font-weight:400; font-size:11px; color:#6b7280;">固定出招順序</span></div>
-        <div>・技能按固定順序循環：<b>料理長之刃</b>（必爆）→ <b>燭光催眠</b>（麻痺）→ <b>主菜爆裂</b>（中毒）→ <b>甜點之吻</b>（無視防）→ 循環</div>
+        <div>・技能按固定順序循環：<b>主菜爆裂</b>（中毒）→ <b>甜點之吻</b>（無視防）→ <b>燭光催眠</b>（麻痺）→ <b>料理長之刃</b>（必爆）→ 循環</div>
         <div>・料理長之刃 CD：3→<b>5</b>（每輪循環必爆一次，但等待更久）</div>
 
         <div style="background:#f3f4f6; border-radius:8px; padding:8px 12px; margin-top:12px; font-size:12px; color:#6b7280;">
