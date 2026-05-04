@@ -2377,8 +2377,15 @@
   // 開發階段旗標：
   //   WB9_TESTING_NO_REWARDS = true → 獎勵都不發（避免測試弄壞玩家進度）
   //   設為 false 後恢復正常結算
-  const WB9_TESTING_NO_REWARDS = true;     // ⭐ 測試期間：不發鵝鵝幣 / 王硬幣 / 精魂 / EXP
+  const WB9_TESTING_NO_REWARDS = false;    // ⭐ 正式開放獎勵
   const WB9_MAX_XP_PER_FIGHT   = 500;      // ⭐ v9 單場最多 500 EXP（舊版 1000）
+  // 擊殺結算獎勵（所有世界王通用）
+  const WB9_KILL_REWARDS = {
+    top:         { gemRaw: 3, gachaCoin: 5 },   // 傷害第一
+    second:      { gemRaw: 2, gachaCoin: 4 },   // 傷害第二
+    participant: { gemRaw: 1, gachaCoin: 2 },   // 其他參與者
+    killer:      { gemRaw: 2, gachaCoin: 5 },   // 尾刀額外獎勵
+  };
   const WB9_QUEUE_STALE_MS     = 60 * 1000;
   const WB9_COOLDOWN_MS        = 0; // ⭐ 測試中：冷卻關閉（原 5 * 60 * 1000）
 
@@ -2386,7 +2393,7 @@
     {
       id: 'goose_king',
       name: '🦢 鵝皇', icon: '🦢',
-      maxHp: 900000,
+      maxHp: 1800000,
       atk: 150, def: 80, spd: 70, defPen: 0.30,
       level: 30,
       verb: '皇者懲戒',
@@ -2406,7 +2413,7 @@
     {
       id: 'dragon_goose',
       name: '🐉 古龍鵝', icon: '🐉',
-      maxHp: 2000000,
+      maxHp: 4000000,
       atk: 220, def: 120, spd: 100, defPen: 0.30,
       level: 40,
       verb: '龍焰之息',
@@ -2426,7 +2433,7 @@
     {
       id: 'pebble_goose',
       name: '🪨 鵝卵石', icon: '🪨',
-      maxHp: 5000000,
+      maxHp: 10000000,
       atk: 350, def: 350, spd: 50, defPen: 0.30,
       level: 55,
       verb: '崩落巨石',
@@ -2600,8 +2607,10 @@
     r.lastBossAttackTime = Date.now();
     // 同步本地 wb9
     wb9[bossId] = newState;
+    // 尾刀者立即領取擊殺獎勵
+    if (killed) wb9ClaimKillReward(bossId);
 
-    // 獎勵（測試中全關）
+    // 每場戰鬥 XP / 鵝鵝幣
     let xpGain = 0, coinGain = 0;
     if (!WB9_TESTING_NO_REWARDS) {
       xpGain   = Math.min(WB9_MAX_XP_PER_FIGHT, Math.round(actualDmg * 0.8));
@@ -2641,6 +2650,42 @@
   }
   window.wb9Attack = wb9Attack;
 
+  // 擊殺結算：找自己在 settlement 裡的項目，發原石 + 扭蛋幣（防重複）
+  function wb9ClaimKillReward(bossId) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const state = wb9 && wb9[bossId];
+    if (!state || !state.lastKill || !state.lastKill.ts) return;
+    const lk  = state.lastKill;
+    const ts  = lk.ts;
+    // 防重複
+    const claimedArr = Array.isArray(r.claimedKills?.[bossId]) ? r.claimedKills[bossId] : [];
+    if (claimedArr.includes(ts)) return;
+    // 找我在結算裡的條目
+    const settlement = Array.isArray(lk.settlement) ? lk.settlement : [];
+    const myEntry = settlement.find(s => s.pid === me.id);
+    if (!myEntry) return;
+    // 發獎勵
+    r.gemInventory = r.gemInventory || {};
+    if (myEntry.gemRaw > 0) r.gemInventory['gem_raw'] = (r.gemInventory['gem_raw'] || 0) + myEntry.gemRaw;
+    if (myEntry.gachaCoin > 0) addGachaCoin(me.id, myEntry.gachaCoin);
+    // 標記已領
+    if (!r.claimedKills) r.claimedKills = {};
+    r.claimedKills[bossId] = [...claimedArr, ts].slice(-30);
+    saveData();
+    renderCharCard();
+    // Toast 通知
+    const boss = WB9_BOSSES.find(b => b.id === bossId);
+    const bossName = boss ? boss.name : bossId;
+    const rankLabel = myEntry.rank === 1 ? '🥇第一' : myEntry.rank === 2 ? '🥈第二' : '👤參與';
+    const killerLabel = myEntry.isKiller ? '⚔️尾刀 ' : '';
+    const parts = [];
+    if (myEntry.gemRaw > 0)   parts.push(`🪨原石×${myEntry.gemRaw}`);
+    if (myEntry.gachaCoin > 0) parts.push(`🎟扭蛋幣×${myEntry.gachaCoin}`);
+    showToast(`🏆 ${bossName} 擊殺獎勵（${killerLabel}${rankLabel}）：${parts.join('、')}`);
+  }
+  window.wb9ClaimKillReward = wb9ClaimKillReward;
+
   // 本場戰鬥結果（顯示在 #fightResult）
   function wb9ShowFightResult({ boss, dmgDealt, killed, xpGain, coinGain, won, log }) {
     const fr = document.getElementById('fightResult');
@@ -2651,9 +2696,10 @@
     const defeatLine = !won
       ? `<div style="font-size:13px; color:#dc2626; text-align:center;">💀 你被打倒了（HP 歸 0）</div>`
       : '';
-    const rewardLine = WB9_TESTING_NO_REWARDS
-      ? `<div style="font-size:11px; color:#92400e; text-align:center;">🛠️ 測試期間，獎勵不發放</div>`
-      : `<div style="font-size:12px; text-align:center;">+${xpGain.toLocaleString()} XP　·　+${coinGain.toLocaleString()} 鵝鵝幣</div>`;
+    const killRewardLine = killed
+      ? `<div style="font-size:11px; color:#92400e; text-align:center; margin-top:2px;">🏆 擊殺獎勵已發放（原石 + 扭蛋幣）</div>`
+      : '';
+    const rewardLine = `<div style="font-size:12px; text-align:center;">+${xpGain.toLocaleString()} XP　·　+${coinGain.toLocaleString()} 鵝鵝幣</div>${killRewardLine}`;
     fr.innerHTML = `
       <div class="card" style="border-color:#f59e0b; margin-top:10px;">
         <h2>⚔️ ${boss.name} — 攻擊結果</h2>
@@ -2781,9 +2827,20 @@
     const killerPlayer = getPlayer(lk.pid);
     const killerName = killerPlayer ? (killerPlayer.avatar || '🎴') + ' ' + escapeHtml(killerPlayer.name) : '?';
     const ago = typeof formatRelativeTime === 'function' ? formatRelativeTime(lk.ts) : '';
+    const settlement = Array.isArray(lk.settlement) ? lk.settlement.slice(0, 6) : [];
+    const settleRows = settlement.map(s => {
+      const p = getPlayer(s.pid);
+      const name = p ? (p.avatar || '🎴') + ' ' + escapeHtml(p.name) : '?';
+      const medal = ['🥇','🥈','🥉'][s.rank - 1] || '👤';
+      return `<div style="display:flex; justify-content:space-between; align-items:center; padding:1px 0; font-size:11px;">
+        <span>${medal} ${name}${s.isKiller ? ' <span style="color:#ef4444;">⚔️</span>' : ''}</span>
+        <span style="color:#92400e; font-weight:700;">🪨×${s.gemRaw} 🎟×${s.gachaCoin}</span>
+      </div>`;
+    }).join('');
     return `
-      <div style="background:linear-gradient(135deg,#fef3c7,#fde68a); border:2px solid #f59e0b; border-radius:10px; padding:6px 10px; margin-bottom:6px; text-align:center; font-size:12px; animation:wb9KillFlash 1s ease;">
-        🏆 <b>${killerName}</b> 剛剛擊殺！${ago}
+      <div style="background:linear-gradient(135deg,#fef3c7,#fde68a); border:2px solid #f59e0b; border-radius:10px; padding:8px 10px; margin-bottom:6px; font-size:12px; animation:wb9KillFlash 1s ease;">
+        <div style="text-align:center; font-weight:700; margin-bottom:${settleRows ? 5 : 0}px;">🏆 <b>${killerName}</b> 剛剛擊殺！${ago}</div>
+        ${settleRows ? `<div style="border-top:1px dashed #f59e0b; padding-top:4px;">${settleRows}</div>` : ''}
       </div>`;
   }
 
@@ -4549,6 +4606,21 @@
     if (!p) return;
     p.coinsSpent = (p.coinsSpent || 0) - amount;
   }
+  // 🎟 扭蛋幣（世界王擊殺獎勵）
+  function getGachaCoin(playerId) {
+    const p = getPlayer(playerId); if (!p) return 0;
+    return p.gachaCoin || 0;
+  }
+  function addGachaCoin(playerId, amount) {
+    const p = getPlayer(playerId); if (!p) return;
+    p.gachaCoin = (p.gachaCoin || 0) + Math.round(amount);
+  }
+  function spendGachaCoin(playerId, amount) {
+    const p = getPlayer(playerId); if (!p) return false;
+    if ((p.gachaCoin || 0) < amount) return false;
+    p.gachaCoin = (p.gachaCoin || 0) - Math.round(amount);
+    return true;
+  }
 
   // ============================================================
   // 載入 / 儲存（主檔同 schema）
@@ -4624,10 +4696,14 @@
   window.__applyRemoteWb9 = function(type, payload) {
     if (!payload || typeof payload !== 'object') return;
     if (type === 'init') {
-      // 整批覆蓋（首次 snap）
+      // 整批覆蓋（首次 snap）—— 初始化時不主動領取，避免搶先於 claimedKills 載入
       wb9 = payload;
     } else if (type === 'set') {
       Object.assign(wb9, payload);
+      // 其他玩家收到 boss 更新時嘗試領取擊殺獎勵
+      for (const bossId of Object.keys(payload)) {
+        try { wb9ClaimKillReward(bossId); } catch(e) {}
+      }
     } else if (type === 'remove') {
       for (const id of Object.keys(payload)) delete wb9[id];
     }
@@ -4975,6 +5051,7 @@
     if (!Array.isArray(player.rpg.spiritBag)) player.rpg.spiritBag = [];
     if (!player.rpg.gemInventory  || typeof player.rpg.gemInventory  !== 'object') player.rpg.gemInventory  = {};
     if (!player.rpg.equippedGems  || typeof player.rpg.equippedGems  !== 'object') player.rpg.equippedGems  = {};
+    if (!player.rpg.claimedKills  || typeof player.rpg.claimedKills  !== 'object') player.rpg.claimedKills  = {};
     if (!player.rpg.skillLevels || typeof player.rpg.skillLevels !== 'object') player.rpg.skillLevels = {};
     // HOF 行動規則：沒有就帶入該職業的預設規則
     // ⚠️ 之前的 actionPatternV2/V3 強制升級會在每次 render 重跑而覆蓋玩家自訂 → 已移除
@@ -8782,7 +8859,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260504j';
+  const NEWS_LATEST_ID = 'patch_20260504k';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -8802,6 +8879,30 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#dc2626,#f59e0b); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🏆 世界王獎勵正式開放　<span style="font-size:11px; opacity:0.85;">2026-05-04</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#dc2626; margin:6px 0 4px;">⚔️ 世界王擊殺結算獎勵</div>
+        <div>・<b>傷害第一名</b>：🪨原石×3 ＋ 🎟扭蛋幣×5</div>
+        <div>・<b>傷害第二名</b>：🪨原石×2 ＋ 🎟扭蛋幣×4</div>
+        <div>・<b>其他參與者</b>：🪨原石×1 ＋ 🎟扭蛋幣×2</div>
+        <div>・<b>尾刀加碼</b>：再+🪨原石×2 ＋ 🎟扭蛋幣×5（可疊加排名獎勵）</div>
+        <div style="font-size:11px; color:#6b7280; margin-top:2px;">→ 擊殺後自動發放，下線期間打死的獎勵在下次上線時自動領取</div>
+
+        <div style="font-weight:700; color:#dc2626; margin:10px 0 4px;">🎟 扭蛋幣系統</div>
+        <div>・擊殺世界王獲得的<b>扭蛋幣</b>可免費在寶石系統轉蛋（1枚=1次）</div>
+        <div>・扭蛋幣顯示於角色欄位，寶石轉蛋頁有🎟專屬按鈕</div>
+
+        <div style="font-weight:700; color:#dc2626; margin:10px 0 4px;">🐉 世界王血量加倍</div>
+        <div>・🦢 鵝皇 HP：900,000 → <b>1,800,000</b></div>
+        <div>・🐉 古龍鵝 HP：2,000,000 → <b>4,000,000</b></div>
+        <div>・🪨 鵝卵石 HP：5,000,000 → <b>10,000,000</b></div>
+
+        <div style="background:#f3f4f6; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#6b7280;">
+          ⚙️ 每次 wb9 擊殺結算在玩家端計算並標記，30 次記錄內防止重複領取
+        </div>
 
         <div style="background:linear-gradient(135deg,#7c3aed,#c026d3); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">💎 寶石系統上線　<span style="font-size:11px; opacity:0.85;">2026-05-04</span></div>
@@ -10278,7 +10379,7 @@ ${b.text}
       <div class="char-info">
         <div class="char-name">${escapeHtml(me.name)}</div>
         <div class="char-class">${cls.name} · Lv ${rpg.level}</div>
-        <div class="char-coins">🪙 ${coins} 鵝鵝幣　·　🧭 ${rpg.exploreCoins || 0} 探險幣</div>
+        <div class="char-coins">🪙 ${coins} 鵝鵝幣　·　🧭 ${rpg.exploreCoins || 0} 探險幣　·　🎟 ${me.gachaCoin || 0} 扭蛋幣</div>
         <div class="stat-bar">
           <div class="stat-bar-label"><span>❤️ HP</span><span>${rpg.hp} / ${stats.maxHp}</span></div>
           <div class="stat-bar-track"><div class="stat-bar-fill hp-fill" style="width:${hpPercent}%"></div></div>
@@ -10857,17 +10958,28 @@ ${b.text}
     // 轉蛋區塊
     const can1  = coins >= 5000;
     const can10 = coins >= 50000;
+    const gc    = getGachaCoin(me.id);
+    const canGc1  = gc >= 1;
+    const canGc10 = gc >= 10;
     const gachaHtml = `
       <div style="background:linear-gradient(135deg,#7c3aed,#c026d3); border-radius:12px; padding:10px 14px; margin-bottom:12px; text-align:center;">
         <div style="font-weight:800; font-size:14px; color:#fff; margin-bottom:2px;">🎰 寶石轉蛋</div>
-        <div style="font-size:11px; color:#e9d5ff; margin-bottom:6px;">5,000 鵝鵝幣 / 次 · 98% 一階晶石 · 2% 原石</div>
-        <div style="font-size:11px; color:#d8b4fe; margin-bottom:8px;">目前鵝鵝幣：<b style="color:#fff;">${coins.toLocaleString()}</b></div>
-        <div style="display:flex; gap:8px; justify-content:center;">
-          <button onclick="doGemGacha(1)" style="flex:1; max-width:140px; padding:7px 0; background:${can1 ? '#fff' : '#6b7280'}; color:${can1 ? '#7c3aed' : '#d1d5db'}; font-weight:800; font-size:12px; border:none; border-radius:20px; cursor:${can1 ? 'pointer' : 'not-allowed'};">
+        <div style="font-size:11px; color:#e9d5ff; margin-bottom:2px;">5,000 鵝鵝幣 / 次 · 98% 一階晶石 · 2% 原石</div>
+        <div style="font-size:11px; color:#d8b4fe; margin-bottom:6px;">🪙 ${coins.toLocaleString()}　·　🎟 扭蛋幣 ${gc}</div>
+        <div style="display:flex; gap:6px; justify-content:center; flex-wrap:wrap;">
+          <button onclick="doGemGacha(1)" style="padding:7px 10px; background:${can1 ? '#fff' : '#6b7280'}; color:${can1 ? '#7c3aed' : '#d1d5db'}; font-weight:800; font-size:12px; border:none; border-radius:20px; cursor:${can1 ? 'pointer' : 'not-allowed'};">
             💎 ×1（5,000 🪙）
           </button>
-          <button onclick="doGemGacha(10)" style="flex:1; max-width:160px; padding:7px 0; background:${can10 ? '#fbbf24' : '#6b7280'}; color:${can10 ? '#7c2d12' : '#d1d5db'}; font-weight:800; font-size:12px; border:none; border-radius:20px; cursor:${can10 ? 'pointer' : 'not-allowed'};">
+          <button onclick="doGemGacha(10)" style="padding:7px 10px; background:${can10 ? '#fbbf24' : '#6b7280'}; color:${can10 ? '#7c2d12' : '#d1d5db'}; font-weight:800; font-size:12px; border:none; border-radius:20px; cursor:${can10 ? 'pointer' : 'not-allowed'};">
             💎 ×10（50,000 🪙）
+          </button>
+        </div>
+        <div style="margin-top:7px; border-top:1px solid rgba(255,255,255,0.25); padding-top:7px; display:flex; gap:6px; justify-content:center; flex-wrap:wrap;">
+          <button onclick="doGemGachaFree(1)" style="padding:7px 10px; background:${canGc1 ? '#d1fae5' : '#6b7280'}; color:${canGc1 ? '#065f46' : '#d1d5db'}; font-weight:800; font-size:12px; border:none; border-radius:20px; cursor:${canGc1 ? 'pointer' : 'not-allowed'};">
+            🎟 ×1（1 扭蛋幣）
+          </button>
+          <button onclick="doGemGachaFree(10)" style="padding:7px 10px; background:${canGc10 ? '#a7f3d0' : '#6b7280'}; color:${canGc10 ? '#064e3b' : '#d1d5db'}; font-weight:800; font-size:12px; border:none; border-radius:20px; cursor:${canGc10 ? 'pointer' : 'not-allowed'};">
+            🎟 ×10（10 扭蛋幣）
           </button>
         </div>
       </div>
@@ -11054,6 +11166,54 @@ ${b.text}
     }
   }
   window.doGemGacha = doGemGacha;
+
+  // 🎟 扭蛋幣版轉蛋（世界王獎勵）
+  function doGemGachaFree(count) {
+    count = count || 1;
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (!spendGachaCoin(me.id, count)) {
+      showToast(`🎟 扭蛋幣不足（需要 ${count} 枚，現有 ${getGachaCoin(me.id)} 枚）`);
+      return;
+    }
+    rpg.gemInventory = rpg.gemInventory || {};
+    const results = [];
+    for (let i = 0; i < count; i++) {
+      const gem = rollOneGem();
+      rpg.gemInventory[gem.id] = (rpg.gemInventory[gem.id] || 0) + 1;
+      results.push(gem);
+    }
+    saveData();
+    renderCharCard();
+    if (count === 1) {
+      const r = results[0];
+      showToast(r.type === 'raw' ? `✨ 稀有！${r.icon} ${r.name}（2%）` : `${r.icon} ${r.name}！`);
+      renderGemModal();
+    } else {
+      const tally = {};
+      let rawCount = 0;
+      for (const g of results) { tally[g.id] = (tally[g.id] || 0) + 1; if (g.type === 'raw') rawCount++; }
+      const rows = Object.entries(tally).map(([id, cnt]) => {
+        const g = GEMS[id];
+        const isRaw = g.type === 'raw';
+        return `<div style="display:flex; align-items:center; gap:8px; padding:5px 8px; background:${isRaw ? '#fef3c7' : '#f3e8ff'}; border-radius:8px; margin:3px 0;">
+          <span style="font-size:22px;">${g.icon}</span>
+          <div style="flex:1;"><span style="font-weight:700; font-size:13px; color:${isRaw ? '#92400e' : '#5b21b6'};">${g.name}</span>
+            ${isRaw ? '<span style="font-size:11px; color:#d97706;"> ✨ 稀有</span>' : `<span style="font-size:11px; color:#6b7280;"> ${gemStatText(g)}</span>`}
+          </div>
+          <span style="font-weight:800; font-size:14px; color:#374151;">×${cnt}</span>
+        </div>`;
+      }).join('');
+      showModal('🎟 扭蛋幣 ×10', `<div style="padding:4px 0;">
+        <div style="font-size:12px; color:#065f46; font-weight:700; margin-bottom:8px; text-align:center;">
+          🎟 ×10 轉蛋結果${rawCount > 0 ? ' — <span style="color:#d97706;">✨ 有原石！</span>' : ''}
+        </div>
+        ${rows}
+        <button class="btn btn-primary" onclick="renderGemModal()" style="width:100%; margin-top:12px;">確認</button>
+      </div>`);
+    }
+  }
+  window.doGemGachaFree = doGemGachaFree;
 
   // ⭐ 判斷某物品是否為戒指部位（slot 可能是舊值 'accessory'，故同時檢查 baseId / id）
   const RING_ITEM_IDS = new Set(['c_ring','c_foot','c_ruby','c_heart','c_oracle']);
@@ -14411,7 +14571,27 @@ ${b.text}
           // 尾刀：重置王、清隊列、記錄
           if (killed) {
             state.killCount = (state.killCount || 0) + 1;
-            state.lastKill = { pid: attackerId, ts: Date.now(), damageLog: { ...state.damageLog } };
+            // 建立擊殺結算（傷害排名 → 原石 + 扭蛋幣）
+            const _kr = {
+              top:         { gemRaw: 3, gachaCoin: 5 },
+              second:      { gemRaw: 2, gachaCoin: 4 },
+              participant: { gemRaw: 1, gachaCoin: 2 },
+              killer:      { gemRaw: 2, gachaCoin: 5 },
+            };
+            const _sortedDmg = Object.entries(state.damageLog)
+              .map(([pid, dmg]) => ({ pid, dmg: Number(dmg) || 0 }))
+              .sort((a, b) => b.dmg - a.dmg);
+            const _settlement = _sortedDmg.map((entry, i) => {
+              const rank = i + 1;
+              const rankKey = rank === 1 ? 'top' : rank === 2 ? 'second' : 'participant';
+              const base  = _kr[rankKey];
+              const isKiller = entry.pid === attackerId;
+              const bonus = isKiller ? _kr.killer : { gemRaw: 0, gachaCoin: 0 };
+              return { pid: entry.pid, rank, dmg: entry.dmg, isKiller,
+                gemRaw: base.gemRaw + bonus.gemRaw, gachaCoin: base.gachaCoin + bonus.gachaCoin };
+            });
+            state.lastKill = { pid: attackerId, ts: Date.now(), killCount: state.killCount,
+              damageLog: { ...state.damageLog }, settlement: _settlement };
             state.damageLog = {};
             state.queue = [];
             state.hp = (bossDef && bossDef.maxHp) || (state.hp);  // 重生滿血
