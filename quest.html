@@ -8938,7 +8938,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505j';
+  const APP_VERSION = '20260505k';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
@@ -10514,9 +10514,12 @@ ${b.text}
               ${affixLine ? `<div style="font-size:10px; margin-top:2px; line-height:1.4;">${affixLine}</div>` : ''}
             </div>
           </div>
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px; gap:6px;">
             <div style="font-size:11px; color:#9ca3af;">來自 ${senderStr} · ${new Date(g.ts).toLocaleDateString('zh-TW')}</div>
-            <button onclick="claimGift('${g.id}')" style="padding:5px 14px; background:linear-gradient(135deg,#7c3aed,#4f46e5); color:#fff; border:none; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; box-shadow:0 2px 0 #3730a3;">收下 ✨</button>
+            <div style="display:flex; gap:5px;">
+              <button onclick="deleteGift('${g.id}')" style="padding:5px 10px; background:#f3f4f6; color:#6b7280; border:1px solid #d1d5db; border-radius:8px; font-size:12px; cursor:pointer;">🗑 刪除</button>
+              <button onclick="claimGift('${g.id}')" style="padding:5px 14px; background:linear-gradient(135deg,#7c3aed,#4f46e5); color:#fff; border:none; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; box-shadow:0 2px 0 #3730a3;">收下 ✨</button>
+            </div>
           </div>
         </div>`;
     }).join('');
@@ -10552,8 +10555,23 @@ ${b.text}
     else showMailbox();
     renderCharCard();
   }
+  function deleteGift(giftId) {
+    const me = getMe(); if (!me) return;
+    const idx = (gifts || []).findIndex(g => g.id === giftId);
+    if (idx === -1) { showToast('找不到禮物'); return; }
+    if (gifts[idx].to !== me.id) { showToast('這不是你的禮物'); return; }
+    gifts.splice(idx, 1);
+    saveData();
+    showToast('🗑 已刪除');
+    const remaining = (gifts || []).filter(g => g.to === me.id && g.type === 'equip' && !g.claimed);
+    if (remaining.length === 0) hideModal();
+    else showMailbox();
+    renderCharCard();
+    renderCharRightMenu();
+  }
   window.showMailbox  = showMailbox;
   window.claimGift    = claimGift;
+  window.deleteGift   = deleteGift;
 
   function renderCharCard() {
     const me = getMe();
@@ -13644,6 +13662,7 @@ ${b.text}
       <button class="btn btn-danger" onclick="adminResetBosses()" style="margin-top:6px; background:linear-gradient(135deg,#fdba74,#c2410c); box-shadow:0 4px 0 #7c2d12;">🗑 重置世界王紀錄（HP / 排隊 / 戰報 / 待領獎）</button>
       <button class="btn btn-danger" onclick="adminRevokeKillRewards()" style="margin-top:6px; background:linear-gradient(135deg,#f9a8d4,#be185d); box-shadow:0 4px 0 #9d174d;">🔄 回收擊殺獎勵（清全員 扭蛋幣 / 原石 / claimedKills）</button>
       <button class="btn btn-danger" onclick="adminResetWb9Server()" style="margin-top:6px; background:linear-gradient(135deg,#818cf8,#4338ca); box-shadow:0 4px 0 #3730a3;">🔄 世界王伺服器重開（清隊列 / 冷卻 / 重置 HP）</button>
+      <button class="btn btn-danger" onclick="adminPurgeBrokenGifts()" style="margin-top:6px; background:linear-gradient(135deg,#fda4af,#be185d); box-shadow:0 4px 0 #9d174d;">🗑 清除損壞的裝備禮物（無資料 / 無名稱）</button>
       <button class="btn btn-danger" onclick="adminResetLeaderboard()" style="margin-top:6px; background:linear-gradient(135deg,#fde047,#d97706); box-shadow:0 4px 0 #92400e; color:#7c2d12;">🏆 重置排行榜（所有玩家等級 / 鵝鵝幣 / 綠茶遭遇歸零）</button>
       <button class="btn btn-danger" onclick="adminWipeAll()" style="margin-top:6px; background:linear-gradient(135deg,#fca5a5,#7f1d1d); box-shadow:0 4px 0 #450a0a;">💀 全玩家洗白（伺服器 + 本地都重置）</button>
       <button class="btn btn-secondary" onclick="adminMigrateAccessoryToRing()" style="margin-top:6px; background:linear-gradient(135deg,#ddd6fe,#7c3aed); box-shadow:0 4px 0 #6d28d9; color:#fff;">💍 遷移：飾品槽戒指 → 戒指槽（所有玩家）</button>
@@ -14109,6 +14128,27 @@ ${b.text}
     }
   }
   window.adminResetWb9Server = adminResetWb9Server;
+
+  // ⭐ 清掉 itemData 缺失 / 名稱空的爛禮物
+  async function adminPurgeBrokenGifts() {
+    const before = (gifts || []).length;
+    const broken = (gifts || []).filter(g =>
+      g.type === 'equip' && (!g.itemData || !g.itemData.name)
+    );
+    if (broken.length === 0) { showToast('沒有損壞的裝備禮物'); return; }
+    if (!confirm(`發現 ${broken.length} 筆損壞的裝備禮物（無資料或無名稱），確定全部刪除？`)) return;
+    gifts = (gifts || []).filter(g =>
+      !(g.type === 'equip' && (!g.itemData || !g.itemData.name))
+    );
+    saveData();
+    if (window.__firebaseSync?.forceWriteAllPlayers) {
+      try { await window.__firebaseSync.forceWriteAllPlayers(players); } catch(e) {}
+    }
+    showToast(`🗑 已清除 ${broken.length} 筆損壞禮物（剩 ${gifts.length}）`);
+    renderCharCard();
+    renderCharRightMenu();
+  }
+  window.adminPurgeBrokenGifts = adminPurgeBrokenGifts;
 
   // ⭐ 補滿所有世界王 HP（保留排隊 / 戰報 / 已殺次數）
   // ⭐ HP 平衡遷移：依 baseId 重建裝備（套新詞綴/稀有度/階層 mult）
