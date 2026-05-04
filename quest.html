@@ -2380,7 +2380,7 @@
       id: 'goose_king',
       name: '🦢 鵝皇', icon: '🦢',
       maxHp: 90000,
-      atk: 180, def: 80, spd: 80,
+      atk: 150, def: 80, spd: 70,
       level: 30,
       verb: '皇者懲戒',
       ability: { type: 'multiHit', hits: 2 },
@@ -2400,7 +2400,7 @@
       id: 'dragon_goose',
       name: '🐉 古龍鵝', icon: '🐉',
       maxHp: 200000,
-      atk: 250, def: 120, spd: 120,
+      atk: 220, def: 120, spd: 100,
       level: 40,
       verb: '龍焰之息',
       ability: { type: 'physResist', resist: 0.25 },
@@ -2420,7 +2420,7 @@
       id: 'pebble_goose',
       name: '🪨 鵝卵石', icon: '🪨',
       maxHp: 5000000,
-      atk: 500, def: 500, spd: 50,
+      atk: 350, def: 350, spd: 50,
       level: 55,
       verb: '崩落巨石',
       ability: { type: 'physResist', resist: 0.30 },
@@ -2908,7 +2908,7 @@
     {
       id: 'breakfast_goose',
       name: '早餐鵝', icon: '🍳',
-      hp: 25000, atk: 300, def: 200, spd: 80, level: 30,
+      hp: 25000, atk: 150, def: 150, spd: 80, level: 30,
       verb: '塗果醬',
       fixedSkillOrder: true,
       skills: [
@@ -2923,7 +2923,7 @@
     {
       id: 'lunch_goose',
       name: '午餐鵝', icon: '🍱',
-      hp: 40000, atk: 400, def: 250, spd: 100, level: 30,
+      hp: 40000, atk: 200, def: 180, spd: 100, level: 30,
       verb: '便當蓋下擊',
       ability: { type: 'multiHit', hits: 2 },
       fixedSkillOrder: true,
@@ -2939,7 +2939,7 @@
     {
       id: 'dinner_goose',
       name: '晚餐鵝', icon: '🍷',
-      hp: 60000, atk: 350, def: 300, spd: 70, level: 30,
+      hp: 60000, atk: 220, def: 200, spd: 70, level: 30,
       verb: '紅酒甩擊',
       ability: { type: 'magicResist', resist: 0.3 },
       fixedSkillOrder: true,
@@ -9580,6 +9580,13 @@ ${b.text}
         <div class="char-name">${escapeHtml(me.name)}</div>
         <div class="char-class">${cls.name} · Lv ${rpg.level}</div>
         <div class="char-coins">🪙 ${coins} 鵝鵝幣　·　🧭 ${rpg.exploreCoins || 0} 探險幣</div>
+        ${(() => {
+          const ants = rpg.antiques || {};
+          const total = Object.values(ants).reduce((a,b) => a+(b||0), 0);
+          if (!total) return '';
+          const icons = ANTIQUE_TYPES.filter(a => ants[a.id] > 0).map(a => `${a.icon}×${ants[a.id]}`).join(' ');
+          return `<div style="font-size:11px; color:#a16207; margin-top:2px;">🏺 古董：${icons}</div>`;
+        })()}
         <div class="stat-bar">
           <div class="stat-bar-label"><span>❤️ HP</span><span>${rpg.hp} / ${stats.maxHp}</span></div>
           <div class="stat-bar-track"><div class="stat-bar-fill hp-fill" style="width:${hpPercent}%"></div></div>
@@ -11087,11 +11094,6 @@ ${b.text}
     tickRecovery(me);
     if (r.stamina < FORAGE_STAMINA) { showToast(`⚡ 體力不足（需 ${FORAGE_STAMINA}）`); return; }
     if (r.hp <= 0) { showToast('💀 HP 太低，先回滿再探險'); return; }
-    const _restUntil = r.forageRestUntil || 0;
-    if (Date.now() < _restUntil) {
-      const _remainS = Math.ceil((_restUntil - Date.now()) / 1000);
-      showToast(`😴 休息中，剩餘 ${_remainS} 秒`); return;
-    }
     r.stamina -= FORAGE_STAMINA;
     r.forageCount = (r.forageCount || 0) + 1;
 
@@ -11314,11 +11316,6 @@ ${b.text}
       // 是否觸發指南書
       if (typeof grantGreenTeaGuides === 'function') grantGreenTeaGuides(me);
     }
-    // rest：強制休息 N 秒（壞結果）
-    if (outcome.rest) {
-      r.forageRestUntil = Date.now() + outcome.rest * 1000;
-      parts.push(`<span style="color:#ef4444;">😴 強制休息 ${outcome.rest} 秒</span>`);
-    }
     // ⭐ 加成擲骰：每個選項都有機率額外獲得古董 / 探險幣
     const _isPaid = !!(choice.requiresCoins > 0);
     const _antiqueChance = _isPaid ? 0.07 : 0.05;
@@ -11327,7 +11324,8 @@ ${b.text}
       r.antiques = r.antiques || {};
       const ant = ANTIQUE_TYPES[Math.floor(Math.random() * ANTIQUE_TYPES.length)];
       r.antiques[ant.id] = (r.antiques[ant.id] || 0) + 1;
-      parts.push(`<span style="color:#a16207;">🎁 額外獲得 ${ant.icon}${ant.name} ×1！</span>`);
+      const antTotal = r.antiques[ant.id];
+      parts.push(`<span style="color:#a16207;">🏺 額外獲得 ${ant.icon}<b>${ant.name}</b>！（持有 ${antTotal} 個）</span>`);
     }
     if (Math.random() < _exploreChance) {
       const ec = 1 + Math.floor(Math.random() * 3); // 1–3
