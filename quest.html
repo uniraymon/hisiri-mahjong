@@ -3459,6 +3459,8 @@
     }
     if (skill.defMult)      eff.defMult  = +(skill.defMult * (1 + dmgBonus)).toFixed(3);
     if (skill.maxHpMult)    eff.maxHpMult= +(skill.maxHpMult * (1 + dmgBonus)).toFixed(3);
+    // ⭐ markMult（火焰風暴 / 怒雷風暴）：每級同步按 dmgBonus 縮放
+    if (skill.markMult)     eff.markMult = +(skill.markMult * (1 + dmgBonus)).toFixed(2);
     // ⭐ bonusMaxHpPct 不跟 dmgBonus 自動縮放（用 customLv 的 Lv5 / Lv10 顯式 +%）
     // ⭐ 隱身專屬：每升一級 −1 MP（max 5 級 → Lv 5 為 10 MP）
     if (skill.id === 'a_stealth') {
@@ -3506,7 +3508,8 @@
     if (!skill.customLv) {
       const applyKindBonus = (mult) => {
         const k = lv5BonusKind(skill);
-        if (k === 'lifesteal')    eff.lifesteal  = +((eff.lifesteal  || 0) + 0.10 * mult).toFixed(3);
+        if (k === 'mark')         eff.markMult = +((eff.markMult || 0) + 1 * mult).toFixed(2); // ⭐ 法師魔攻 +1 MARK 加傷
+        else if (k === 'lifesteal')    eff.lifesteal  = +((eff.lifesteal  || 0) + 0.10 * mult).toFixed(3);
         else if (k === 'heal')    eff.healCaster = +((eff.healCaster || 0) + 0.05 * mult).toFixed(3);
         else if (k === 'restore') eff.mpCostMult = (eff.mpCostMult || 1) * (1 - 0.25 * mult);
         else if (k === 'critDmg') eff.extraCritDmg = (eff.extraCritDmg || 0) + 0.25 * mult;
@@ -3532,10 +3535,16 @@
       if (level >= 5)  eff.extraCritDmg = (eff.extraCritDmg || 0) + 0.20;
       if (level >= 10) eff.extraCritDmg = (eff.extraCritDmg || 0) + 0.20;
     }
+    // ⭐ 毀滅之怒（customLv）：Lv 5 / Lv 10 各 +1 MARK 加傷
+    if (skill.id === 'm_destruction') {
+      if (level >= 5)  eff.markMult = (eff.markMult || 0) + 1;
+      if (level >= 10) eff.markMult = (eff.markMult || 0) + 1;
+    }
     return eff;
   }
   // 判斷某技能 Lv 5 應該拿什麼樣的加成
   function lv5BonusKind(skill) {
+    if (skill.useMark || skill.markMult) return 'mark';  // ⭐ 法師魔攻技：Lv5/10 各 +1 MARK 加傷
     if (skill.selfBuff)         return 'buff';
     if (skill.applyStatus)      return 'status';
     if (skill.lifesteal)        return 'lifesteal';
@@ -3546,6 +3555,7 @@
   }
   function describeLv5Bonus(skill) {
     switch (lv5BonusKind(skill)) {
+      case 'mark':      return '🌀 MARK 加傷 +1（本招）';
       case 'buff':      return '✨ 持續 +1 回合';
       case 'status':    return `${statusEmoji(skill.applyStatus.type)} ${statusLabel(skill.applyStatus.type)} +1 次`;
       case 'lifesteal': return '🩸 吸血 +10%';
@@ -3603,7 +3613,8 @@
       } else if (skill.id === 'a_lethal_aim') {
         if (level === 10) parts.push('🎯 易傷 +1 次（共 3 次）');
       } else if (skill.id === 'm_destruction') {
-        if (level === 10) parts.push('🎯 易傷 +1 次（共 4 次）');
+        if (level === 5)  parts.push('🌀 MARK 加傷 +1（本招）');
+        if (level === 10) parts.push('🌀 MARK 加傷 再 +1（共 +2）　🎯 易傷 +1 次（共 4 次）');
       }
     } else {
       if (level === 5)  parts.push(describeLv5Bonus(skill));
@@ -8581,7 +8592,7 @@ ${b.text}
     if (eff.bonusMaxHpPct)   buffPairs.push(`🩸 maxHp 加傷 +${Math.round(eff.bonusMaxHpPct * 100)}%（純加值，無視怪 DEF）`);
     if (skill.buffMaxHpPct)  buffPairs.push(`💖 最大HP +${Math.round(skill.buffMaxHpPct * 100)}%（戰鬥中有效）`);
     if (skill.bonusHealPct)  buffPairs.push(`💚 施放後回復 ${Math.round(skill.bonusHealPct * 100)}% maxHP`);
-    if (skill.markMult)      buffPairs.push(`🌀 追加 ${skill.markMult}× MARK 傷害`);
+    if (eff.markMult)        buffPairs.push(`🌀 MARK 加傷 ×${Number(eff.markMult).toFixed(2).replace(/\.?0+$/, '')}（每點 MARK 多這麼多傷害）`);
     if (skill.mpRestorePct)  buffPairs.push(`💙 回復 ${Math.round(skill.mpRestorePct * 100)}% maxMP`);
     if (eff.postSelfBuff)    buffPairs.push(`✨ 攻擊完後：${describeBuff(eff.postSelfBuff)}（${eff.postSelfBuff.turns} 回合）`);
     if (eff.mpCostMult && eff.mpCostMult < 1) buffPairs.push(`💙 MP 消耗 -${Math.round((1 - eff.mpCostMult) * 100)}%`);
