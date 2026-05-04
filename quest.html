@@ -8091,7 +8091,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260504';
+  const NEWS_LATEST_ID = 'patch_20260504b';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -8149,6 +8149,23 @@ ${b.text}
 
         <div style="background:#f3f4f6; border-radius:8px; padding:8px 12px; margin-top:12px; font-size:12px; color:#6b7280;">
           🆕 新機制：<b>易傷</b>（受傷+50%）、<b>臨時最大HP</b>（戰鬥中有效）、<b>MARK加成路線</b>、<b>物魔全體減傷</b>
+        </div>
+
+        <div style="background:linear-gradient(135deg,#fef3c7,#fde68a); border-radius:10px; padding:10px 14px; margin:14px 0 6px;">
+          <div style="font-size:15px; font-weight:800; color:#92400e;">👾 戰鬥多樣化更新　<span style="font-size:11px; color:#b45309;">2026-05-04</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">🌍 世界王　<span style="font-weight:400; font-size:11px; color:#6b7280;">新增技能，不再只會普攻</span></div>
+        <div>・<b>🦢 鵝皇</b>：皇者震怒（2.2×）/ 王冠碎擊（1.6×+麻痺）/ 御前斬（1.8×無視防）</div>
+        <div>・<b>🐉 古龍鵝</b>：龍焰爆炎（2.0×+中毒）/ 古龍咆哮（1.5×+麻痺）/ 龍鱗粉碎（2.5×無視防）</div>
+        <div>・<b>🪨 鵝卵石</b>：山崩地裂（2.8×無視防）/ 磐石壓制（1.8×+麻痺）/ 隕石衝擊（3.2×無視防）</div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">🍷 晚餐鵝　<span style="font-weight:400; font-size:11px; color:#6b7280;">固定出招順序</span></div>
+        <div>・技能按固定順序循環：<b>料理長之刃</b>（必爆）→ <b>燭光催眠</b>（麻痺）→ <b>主菜爆裂</b>（中毒）→ <b>甜點之吻</b>（無視防）→ 循環</div>
+        <div>・料理長之刃 CD：3→<b>5</b>（每輪循環必爆一次，但等待更久）</div>
+
+        <div style="background:#f3f4f6; border-radius:8px; padding:8px 12px; margin-top:12px; font-size:12px; color:#6b7280;">
+          ⚙️ 怪物技能觸發率 40%→<b>65%</b>，技能間隔縮短，戰鬥節奏更豐富
         </div>
       </div>
     `;
