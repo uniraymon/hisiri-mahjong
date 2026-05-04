@@ -2399,7 +2399,7 @@
       id: 'dragon_goose',
       name: '🐉 古龍鵝', icon: '🐉',
       maxHp: 200000,
-      atk: 300, def: 120, spd: 120,
+      atk: 250, def: 120, spd: 120,
       level: 40,
       verb: '龍焰之息',
       ability: { type: 'physResist', resist: 0.25 },
@@ -2938,7 +2938,7 @@
     {
       id: 'dinner_goose',
       name: '晚餐鵝', icon: '🍷',
-      hp: 60000, atk: 500, def: 300, spd: 70, level: 30,
+      hp: 60000, atk: 350, def: 300, spd: 70, level: 30,
       verb: '紅酒甩擊',
       ability: { type: 'magicResist', resist: 0.3 },
       fixedSkillOrder: true,
@@ -5809,8 +5809,8 @@
           log.push({ type: 'monster', text: `回合 ${round}：${player.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${ev.dmg} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
         }
         if (pHp <= 0) break;
-        // ⭐ 麻痺（charge-based）：確定跳過，消耗 1 層
-        if (consumeParalyze(playerObj)) {
+        // ⭐ 麻痺（charge-based + 30% RNG）：玩家受麻痺發動率 30%
+        if (consumeParalyze(playerObj, 0.30)) {
           log.push({ type: 'system', text: `回合 ${round}：${player.name} ⚡麻痺，無法行動！`, hp: { player: pHp, monster: mHp, mp: pMp } });
           continue;
         }
@@ -6141,8 +6141,8 @@
           log.push({ type: 'player', text: `回合 ${round}：${monster.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${ev.dmg} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
         }
         if (mHp <= 0) { pushDeathLine(); break; }
-        // ⭐ 麻痺（charge-based）：確定跳過，消耗 1 層
-        if (consumeParalyze(monster)) {
+        // ⭐ 麻痺（charge-based）：50% RNG 決定跳過，消耗 1 層
+        if (consumeParalyze(monster, 0.50)) {
           log.push({ type: 'system', text: `回合 ${round}：${monster.name} ⚡麻痺，行動被取消`, hp: { player: pHp, monster: mHp, mp: pMp } });
           continue;
         }
@@ -6355,13 +6355,14 @@
     if (v.hits <= 0) target.statuses = target.statuses.filter(s => s !== v);
     return 1 + (v.amount || 0.5);
   }
-  // ⭐ 麻痺（charge-based）：有麻痺時消耗 1 層並回傳 true（行動被取消）；無麻痺回傳 false
-  function consumeParalyze(target) {
+  // ⭐ 麻痺（charge-based + RNG）：每次行動消耗 1 層，依 skipChance 決定是否真的跳過
+  //   玩家受麻痺：skipChance = 0.30（30%）；怪物受麻痺：skipChance = 0.50（50%）
+  function consumeParalyze(target, skipChance) {
     const p = (target.statuses || []).find(s => s.type === 'paralyze' && (s.charges || 0) > 0);
     if (!p) return false;
     p.charges -= 1;
     if (p.charges <= 0) target.statuses = target.statuses.filter(s => s !== p);
-    return true;
+    return Math.random() < skipChance; // true = 跳過行動
   }
   // 把目前生效的 buff 加總（atkPct/defPct/spd/critChance/critDmg/reflectPct/maxHpPct）
   function getBuffBonus(target) {
@@ -6514,8 +6515,8 @@
         }
         if (pHp <= 0) break;
 
-        // ⭐ 麻痺（charge-based）：確定跳過，消耗 1 層
-        if (consumeParalyze(playerObj)) {
+        // ⭐ 麻痺（charge-based）：30% RNG 決定跳過，消耗 1 層
+        if (consumeParalyze(playerObj, 0.30)) {
           log.push({ type: 'system', text: `回合 ${round}：${player.name} ⚡麻痺，無法行動！`, hp: hpsSnapshot() });
           continue;
         }
@@ -6805,8 +6806,8 @@
           log.push({ type: 'player', text: `回合 ${round}：${m.icon}${m.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${ev.dmg} HP`, hp: hpsSnapshot() });
         }
         if (!m.alive) continue;
-        // ⭐ 麻痺（charge-based）：確定跳過，消耗 1 層
-        if (consumeParalyze(m)) {
+        // ⭐ 麻痺（charge-based）：50% RNG 決定跳過，消耗 1 層
+        if (consumeParalyze(m, 0.50)) {
           log.push({ type: 'system', text: `回合 ${round}：${m.icon}${m.name} ⚡麻痺，行動被取消`, hp: hpsSnapshot() });
           continue;
         }
