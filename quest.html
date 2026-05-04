@@ -5871,8 +5871,8 @@
         };
       }
     }
-    // 精英怪：在指定地區內 7% 機率出現；noSpecial 跳過
-    if (!noSpecial && opts && opts.zoneId && Math.random() < 0.07) {
+    // 精英怪：在指定地區內 14% 機率出現；noSpecial 跳過
+    if (!noSpecial && opts && opts.zoneId && Math.random() < 0.14) {
       const elite = ELITES.find(e => e.zone === opts.zoneId);
       const zone = ZONES.find(z => z.id === opts.zoneId);
       if (elite && zone) {
