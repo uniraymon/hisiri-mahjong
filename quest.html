@@ -1891,12 +1891,14 @@
         { id: 'w_heavy_strike', name: '重擊',     icon: '⚡', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'damage', mult: 1.3, alwaysCrit: true },
         { id: 'w_rage_slash',   name: '狂怒斬',   icon: '🔥', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.8, hits: 2, cast: 65 },
         { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 1,  cooldown: 0, mpCost: 0, hpCost: 0.15, type: 'damage', mult: 2.0, cast: 10 },
-        { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 6,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.0, lifesteal: 0.20 },
+        { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 6,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.0, lifesteal: 0.20, customLv: true },
         { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 50, hpCostFlat: 20, type: 'damage', mult: 4.5, cast: 100 },
         { id: 'w_war_cry',      name: '戰意呼喚', icon: '📢', unlockLv: 3,  cooldown: 0, mpCost: 0, type: 'heal', healPct: 0.15, isMpRegen: true },
         { id: 'w_bloodlust',    name: '嗜血怒嚎', icon: '🦁', unlockLv: 2,  cooldown: 0, mpCost: 25, type: 'buff', selfBuff: { stat: 'atkPct', amount: 0.30, turns: 3 } },
         // ⭐ 新增：魔吸斬 — 0.8× ATK 傷害 + 回 2 MP（戰術用，低 MP 時穩定恢復）
         { id: 'w_mana_strike',  name: '魔吸斬',   icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0, type: 'damage', mult: 0.8, mpRestore: 2 },
+        // ⭐ 新增：底氣 — 回血 70% + DEF +30（1 回合）；硬值 150；不可升級
+        { id: 'w_guts',         name: '底氣',     icon: '💪', unlockLv: 4,  cooldown: 0, mpCost: 25, type: 'buff', selfBuff: { stat: 'def', amount: 30, turns: 1 }, bonusHealPct: 0.70, cast: 150, maxLv: 1 },
       ],
       skillTree: [
         { id: 'w_hp',   name: '鋼鐵之軀', icon: '🛡',  desc: '+5% 最大 HP',         maxLevel: 5, effect: 'hpPct',     per: 0.05 },
@@ -2018,19 +2020,16 @@
         // ⭐ 審判：法術 2× ATK，打全體
         { id: 'p_judgment',  name: '審判',     icon: '⚖️', unlockLv: 8,  cooldown: 0, mpCost: 38, type: 'damage', mult: 2.0, magic: true, targetCount: 'all' },
         // ⭐ 聖光斬：1.2 ATK + 5% maxHp（不回血）；Lv 5 / Lv 10 各 +10% 暴擊率
-        { id: 'p_holy_slash',name: '聖光斬',   icon: '✝️', unlockLv: 1,  cooldown: 0, mpCost: 22, type: 'damage', mult: 1.2, bonusMaxHpPct: 0.05, customLv: true },
+        { id: 'p_holy_slash',name: '聖光斬',   icon: '✝️', unlockLv: 1,  cooldown: 0, mpCost: 5,  type: 'damage', mult: 1.2, bonusMaxHpPct: 0.05, customLv: true },
         { id: 'p_holy_heal', name: '神聖治癒', icon: '✨', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'heal', healPct: 0.3 },
         { id: 'p_pray',      name: '祈禱',     icon: '🙏', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true, isMpRegenStrong: true },
-        { id: 'p_shelter',   name: '庇護術',   icon: '🤲', unlockLv: 3,  cooldown: 0, mpCost: 25, type: 'heal', healPct: 0.40 },
-        // ⭐ 神聖懲戒：2.5× ATK + 10% maxHp；Lv 5 / Lv 10 各 +5% maxHp
-        { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 6,  cooldown: 0, mpCost: 35, type: 'damage', mult: 2.5, bonusMaxHpPct: 0.10, customLv: true },
-        // ⭐ 神聖光波：1× ATK，打 2 段（不再多目標、不回血）
-        { id: 'p_holy_wave', name: '神聖光波', icon: '🌟', unlockLv: 2,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.0, hits: 2 },
-        { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 7,  cooldown: 0, mpCost: 35, type: 'damage', mult: 1.7, targetCount: 2, applyStatus: { type: 'paralyze', turns: 2, chance: 0.4 } },
-        { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.40, turns: 3 }, bonusHealPct: 0.20 },
-        // ⭐ 護盾衝鋒：6× DEF；攻擊完後 +10 DEF（持續整場）
-        { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 22, type: 'damage', defMult: 6, postSelfBuff: { stat: 'def', amount: 10, turns: 99 } },
-        { id: 'p_thorn_armor',   name: '棘甲術',   icon: '🌵', unlockLv: 4,  cooldown: 0, mpCost: 22, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.50, turns: 4 } },
+        // ⭐ 神聖懲戒：2.5× ATK + 10% maxHp；Lv 5 +5% maxHp / Lv 10 易傷持續 +1 回合
+        { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 6,  cooldown: 0, mpCost: 35, type: 'damage', mult: 2.5, bonusMaxHpPct: 0.10, cast: 60, applyStatus: { type: 'vulnerable', amount: 0.5, turns: 2, chance: 1 }, customLv: true },
+        { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 7,  cooldown: 0, mpCost: 35, type: 'damage', mult: 1.7, targetCount: 2, applyStatus: { type: 'paralyze', turns: 2, chance: 0.8 }, cast: 30 },
+        // ⭐ 神聖祝福：DEF +40%（3 回合）+ 臨時最大HP +20%（僅戰鬥中有效）
+        { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.40, turns: 3 }, buffMaxHpPct: 0.20 },
+        // ⭐ 護盾衝鋒：6× DEF；攻擊完後 +10 DEF（持續 3 回合）硬值 40
+        { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 22, type: 'damage', defMult: 6, postSelfBuff: { stat: 'def', amount: 10, turns: 3 }, cast: 40 },
         { id: 'p_aegis',         name: '反傷護盾', icon: '🪞', unlockLv: 8,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.50, turns: 3 } },
         // ⭐ 新增：神聖奪魂 — 0.8× ATK 傷害 + 回 4 MP（聖騎回魔多一倍）
         { id: 'p_mana_drain',    name: '神聖奪魂', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 0.8, mpRestore: 4 },
@@ -3426,12 +3425,15 @@
         chance: Math.min(1, (skill.applyStatus.chance || 1) * (1 + level * 0.05)),
         turns: (skill.applyStatus.turns || 1) + extraTurn,
       };
-    } else if (skill.id === 'a_lethal_aim' && skill.applyStatus) {
-      // 致命瞄準：易傷固定 2 回合，僅 Lv 10 +1 回合
+    } else if ((skill.id === 'a_lethal_aim' || skill.id === 'p_holy_smite') && skill.applyStatus) {
+      // 致命瞄準 / 神聖懲戒：易傷固定 2 回合，僅 Lv 10 +1 回合
       eff.applyStatus = {
         ...skill.applyStatus,
         turns: (skill.applyStatus.turns || 2) + (level >= 10 ? 1 : 0),
       };
+    } else if (skill.id === 'p_godfist' && skill.applyStatus) {
+      // 神之拳：麻痺不隨等級縮放（固定 80%）
+      eff.applyStatus = { ...skill.applyStatus };
     } else if (level >= 3 && skill.applyStatus) {
       eff.applyStatus = {
         ...skill.applyStatus,
@@ -3467,10 +3469,10 @@
       if (level >= 5)  eff.extraCritChance = (eff.extraCritChance || 0) + 0.10;
       if (level >= 10) eff.extraCritChance = (eff.extraCritChance || 0) + 0.10;
     }
-    // ⭐ 神聖懲戒：customLv → Lv 5 / Lv 10 各 +5% maxHp 傷害
+    // ⭐ 神聖懲戒：customLv → Lv 5 +5% maxHp 傷害 / Lv 10 改為易傷持續 +1 回合（由 applyStatus 處理）
     if (skill.id === 'p_holy_smite') {
-      if (level >= 5)  eff.bonusMaxHpPct = (eff.bonusMaxHpPct || 0) + 0.05;
-      if (level >= 10) eff.bonusMaxHpPct = (eff.bonusMaxHpPct || 0) + 0.05;
+      if (level >= 5) eff.bonusMaxHpPct = (eff.bonusMaxHpPct || 0) + 0.05;
+      // Lv 10：易傷 +1 回合（已在 applyStatus 特殊處理）
     }
     // ⭐ 神之矢：customLv → Lv 5 / Lv 10 各 +20% 爆擊傷害（本招）
     if (skill.id === 'a_god_arrow') {
@@ -3541,7 +3543,7 @@
         if (level === 10) parts.push('🌟 暴擊率 再 +10%（本招，共 +20%）');
       } else if (skill.id === 'p_holy_smite') {
         if (level === 5)  parts.push('🩸 maxHp 加傷 +5%（本招，共 15%）');
-        if (level === 10) parts.push('🌟 maxHp 加傷 再 +5%（本招，共 20%）');
+        if (level === 10) parts.push('🎯 易傷持續 +1 回合（共 3 回合）');
       } else if (skill.id === 'a_god_arrow') {
         if (level === 5)  parts.push('💥 爆擊傷害 +20%（本招）');
         if (level === 10) parts.push('🌟 爆擊傷害 再 +20%（本招，共 +40%）');
@@ -3560,6 +3562,7 @@
     switch (classId) {
       case 'warrior':
         return [
+          { judgeId: 1101, param: 20, skillId: 'w_guts' },             // 自身 HP ≤ 20% → 底氣（回血 70% + DEF +30）
           { judgeId: 1101, param: 30, skillId: 'w_war_cry' },        // 自身 HP ≤ 30% → 戰意呼喚（補 HP+MP）
           { judgeId: 1000, param: 0,  skillId: 'w_bloodlust' },      // 嗜血怒嚎（ATK +30% buff）
           { judgeId: 1300, param: 25, skillId: 'w_death_rage' },     // 敵血 ≤ 25% → 死戰之怒（HP 代價收頭）
@@ -3607,17 +3610,14 @@
         ];
       case 'paladin':
         return [
-          { judgeId: 1101, param: 35, skillId: 'p_shelter' },
           { judgeId: 1101, param: 60, skillId: 'p_holy_heal' },
-          { judgeId: 1000, param: 0,  skillId: 'p_thorn_armor' },     // 棘甲術（反傷 50% buff）
-          { judgeId: 1000, param: 0,  skillId: 'p_blessing' },        // 神聖祝福（DEF +40% + HP +20% buff）
+          { judgeId: 1000, param: 0,  skillId: 'p_blessing' },        // 神聖祝福（DEF +40% + 最大HP +20% buff）
           { judgeId: 1201, param: 25, skillId: 'p_pray' },
           { judgeId: 1450, param: 2,  skillId: 'p_judgment' },        // 多隻怪 → 審判（魔傷 2× ATK 全體）
           { judgeId: 1000, param: 0,  skillId: 'p_aegis' },           // 反傷護盾（50% reflect）
           { judgeId: 1000, param: 0,  skillId: 'p_shield_charge' },   // 護盾衝鋒（6× DEF + DEF +10 buff）
           { judgeId: 1000, param: 0,  skillId: 'p_godfist' },         // 神之拳（2 目標 + 麻痺）
-          { judgeId: 1000, param: 0,  skillId: 'p_holy_wave' },       // 神聖光波（1× ATK ×2 段）
-          { judgeId: 1000, param: 0,  skillId: 'p_holy_smite' },      // 神聖懲戒（2.5× ATK + 10% maxHp）
+          { judgeId: 1000, param: 0,  skillId: 'p_holy_smite' },      // 神聖懲戒（2.5× ATK + 10% maxHp + 易傷）
           { judgeId: 1000, param: 0,  skillId: 'p_holy_slash' },      // 聖光斬（1.2× ATK + 5% maxHp）
           { judgeId: 1000, param: 0,  skillId: 'basic' },
         ];
@@ -5839,7 +5839,8 @@
             //    ATK 部分被高 DEF 壓到負值時，先 clamp 0 再加 maxHp，避免被 Math.max(1) 蓋掉
             let __bonusMaxHpDmg = 0;
             if (skill.bonusMaxHpPct) {
-              __bonusMaxHpDmg = stats.maxHp * skill.bonusMaxHpPct;
+              const effMaxHp = Math.round(stats.maxHp * (1 + (pBuff.maxHpPct || 0)));
+              __bonusMaxHpDmg = effMaxHp * skill.bonusMaxHpPct;
               dmg = Math.max(0, dmg) + __bonusMaxHpDmg;
             }
             // 怪物抗性（魔攻吃法抗，物攻吃物抗）
@@ -5932,6 +5933,12 @@
               const heal = Math.round(stats.maxHp * skill.bonusHealPct);
               pHp = pHp + heal; // 不 cap，允許超過 maxHp
               extraNote.push(`💚 +${heal} HP（${Math.round(skill.bonusHealPct * 100)}% maxHp，可超出上限）`);
+            }
+            // ⭐ buffMaxHpPct：臨時提升最大 HP（以 buff 狀態存在，戰鬥結束自動清除）
+            if (skill.buffMaxHpPct) {
+              const bTurns = (skill.selfBuff && skill.selfBuff.turns) ? skill.selfBuff.turns : 3;
+              applyStatus(playerObj, { type: 'buff', stat: 'maxHpPct', amount: skill.buffMaxHpPct, turns: bTurns });
+              extraNote.push(`💖 最大HP +${Math.round(skill.buffMaxHpPct * 100)}%（${bTurns} 回合）`);
             }
             log.push({
               type: 'player',
@@ -6154,9 +6161,9 @@
   function hasStatus(target, type) {
     return (target.statuses || []).some(s => s.type === type);
   }
-  // 把目前生效的 buff 加總（atkPct/defPct/spd/critChance/critDmg/reflectPct）
+  // 把目前生效的 buff 加總（atkPct/defPct/spd/critChance/critDmg/reflectPct/maxHpPct）
   function getBuffBonus(target) {
-    const out = { atkPct: 0, defPct: 0, def: 0, spd: 0, critChance: 0, critDmg: 0, reflectPct: 0 };
+    const out = { atkPct: 0, defPct: 0, def: 0, spd: 0, critChance: 0, critDmg: 0, reflectPct: 0, maxHpPct: 0 };
     if (!target || !target.statuses) return out;
     for (const s of target.statuses) {
       if (s.type !== 'buff' || !s.stat) continue;
@@ -6173,6 +6180,7 @@
     if (buff.stat === 'critChance') return `🎯 暴擊率 +${Math.round(buff.amount * 100)}%`;
     if (buff.stat === 'critDmg')    return `💥 爆傷 +${Math.round(buff.amount * 100)}%`;
     if (buff.stat === 'reflectPct') return `🪞 反傷 ${Math.round(buff.amount * 100)}%（單次最多 300）`;
+    if (buff.stat === 'maxHpPct')   return `💖 最大HP +${Math.round(buff.amount * 100)}%（戰鬥中有效）`;
     return `✨ ${buff.stat} +${buff.amount}`;
   }
   function statusEmoji(type) {
@@ -6393,7 +6401,8 @@
               else         dmg *= (1 + (passive.physPct || 0));
               // ⭐ 聖騎 bonusMaxHpPct：純加值，不吃怪 DEF（同單體 path）
               if (skill.bonusMaxHpPct) {
-                dmg = Math.max(0, dmg) + stats.maxHp * skill.bonusMaxHpPct;
+                const effMaxHp = Math.round(stats.maxHp * (1 + (pBuff.maxHpPct || 0)));
+                dmg = Math.max(0, dmg) + effMaxHp * skill.bonusMaxHpPct;
               }
               if (isMagic && tgt.ability?.type === 'magicResist') dmg *= (1 - tgt.ability.resist);
               if (!isMagic && tgt.ability?.type === 'physResist') dmg *= (1 - tgt.ability.resist);
@@ -6475,6 +6484,12 @@
               const heal = Math.round(stats.maxHp * skill.bonusHealPct);
               pHp = pHp + heal;
               extraNote.push(`💚 +${heal} HP（${Math.round(skill.bonusHealPct * 100)}% maxHp，可超出上限）`);
+            }
+            // ⭐ buffMaxHpPct：臨時提升最大 HP（以 buff 狀態存在，戰鬥結束自動清除）
+            if (skill.buffMaxHpPct) {
+              const bTurns = (skill.selfBuff && skill.selfBuff.turns) ? skill.selfBuff.turns : 3;
+              applyStatus(playerObj, { type: 'buff', stat: 'maxHpPct', amount: skill.buffMaxHpPct, turns: bTurns });
+              extraNote.push(`💖 最大HP +${Math.round(skill.buffMaxHpPct * 100)}%（${bTurns} 回合）`);
             }
             log.push({
               type: 'player',
@@ -8238,6 +8253,8 @@ ${b.text}
     if (eff.extraCritChance) buffPairs.push(`🎯 暴擊率 +${Math.round(eff.extraCritChance * 100)}%（本招）`);
     if (eff.extraCritDmg)    buffPairs.push(`💥 爆傷 +${Math.round(eff.extraCritDmg * 100)}%（本招）`);
     if (eff.bonusMaxHpPct)   buffPairs.push(`🩸 maxHp 加傷 +${Math.round(eff.bonusMaxHpPct * 100)}%（純加值，無視怪 DEF）`);
+    if (skill.buffMaxHpPct)  buffPairs.push(`💖 最大HP +${Math.round(skill.buffMaxHpPct * 100)}%（戰鬥中有效）`);
+    if (skill.bonusHealPct)  buffPairs.push(`💚 施放後回復 ${Math.round(skill.bonusHealPct * 100)}% maxHP`);
     if (eff.postSelfBuff)    buffPairs.push(`✨ 攻擊完後：${describeBuff(eff.postSelfBuff)}（${eff.postSelfBuff.turns} 回合）`);
     if (eff.mpCostMult && eff.mpCostMult < 1) buffPairs.push(`💙 MP 消耗 -${Math.round((1 - eff.mpCostMult) * 100)}%`);
     if (eff.magic) buffPairs.push('🔮 魔攻（吃法抗）');
