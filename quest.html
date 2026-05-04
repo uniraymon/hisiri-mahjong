@@ -919,6 +919,42 @@
     line-height: 1.4;
   }
 
+  /* ⭐ 裝備信箱 */
+  .mailbox-btn {
+    position: relative;
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    padding: 3px 10px 3px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 2px 0 #3730a3;
+  }
+  .mailbox-btn:active { transform: translateY(1px); box-shadow: none; }
+  .mailbox-badge {
+    background: #ef4444;
+    color: #fff;
+    border-radius: 99px;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 1px 5px;
+    min-width: 16px;
+    text-align: center;
+    animation: wb9KillFlash 1s ease infinite;
+  }
+  .mailbox-gift-card {
+    border: 2px solid #c4b5fd;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #fdf4ff, #ede9fe);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+
   /* ⭐ 世界王戰報歷史 */
   .boss-history {
     margin-top: 10px;
@@ -8901,7 +8937,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505h';
+  const APP_VERSION = '20260505i';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
@@ -10416,6 +10452,91 @@ ${b.text}
     `).join('');
   }
 
+  // ============================================================
+  // 📬 裝備信箱（index.html 送禮 → gifts[] → quest.html 領取）
+  // ============================================================
+  function getUnclaimedGiftCount(pid) {
+    return (gifts || []).filter(g => g.to === pid && g.type === 'equip' && !g.claimed).length;
+  }
+
+  function showMailbox() {
+    const me = getMe(); if (!me) return;
+    const pending = (gifts || []).filter(g => g.to === me.id && g.type === 'equip' && !g.claimed);
+    if (pending.length === 0) {
+      showModal('📬 裝備信箱', `<div style="text-align:center; padding:30px 16px; color:#9ca3af;">
+        <div style="font-size:40px; margin-bottom:8px;">📭</div>
+        <div style="font-size:14px;">沒有待領的裝備</div>
+        <div style="font-size:11px; margin-top:4px;">朋友在麻將頁面可以送裝備給你</div>
+      </div>`);
+      return;
+    }
+    const rows = pending.map(g => {
+      const item = g.itemData || {};
+      const sender = (players || []).find(p => p.id === g.from);
+      const senderStr = sender ? `${sender.avatar || ''} ${escapeHtml(sender.name)}` : '？';
+      const statParts = [];
+      if (item.atk)        statParts.push(`ATK+${item.atk}`);
+      if (item.def)        statParts.push(`DEF+${item.def}`);
+      if (item.spd)        statParts.push(`SPD+${item.spd}`);
+      if (item.hp)         statParts.push(`HP+${item.hp}`);
+      if (item.mark)       statParts.push(`MARK+${item.mark}`);
+      if (item.mp)         statParts.push(`MP+${item.mp}`);
+      if (item.critChance) statParts.push(`暴擊+${Math.round(item.critChance*100)}%`);
+      if (item.critDmg)    statParts.push(`爆傷+${Math.round(item.critDmg*100)}%`);
+      const affixLine = (item.affixes || []).map(a => `<span style="color:#7c3aed;">${escapeHtml(a.name)}+${a.val}</span>`).join(' · ');
+      const rarColor = ({ common:'#9ca3af', magic:'#22c55e', rare:'#3b82f6', legendary:'#a855f7', gold:'#f59e0b' })[item.rarity] || '#c4b5fd';
+      return `
+        <div class="mailbox-gift-card" style="border-color:${rarColor};">
+          <div style="display:flex; align-items:flex-start; gap:10px;">
+            <span style="font-size:28px; line-height:1;">${item.icon || '📦'}</span>
+            <div style="flex:1; min-width:0;">
+              <div style="font-weight:800; font-size:13px; color:${rarColor}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(item.name || '裝備')}</div>
+              ${item.lv ? `<div style="font-size:10px; color:#8b5cf6;">Lv ${item.lv}${item.slot ? ' · ' + item.slot : ''}</div>` : ''}
+              ${statParts.length ? `<div style="font-size:11px; color:#5b3d62; margin-top:2px;">${statParts.join(' · ')}</div>` : ''}
+              ${affixLine ? `<div style="font-size:10px; margin-top:2px; line-height:1.4;">${affixLine}</div>` : ''}
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+            <div style="font-size:11px; color:#9ca3af;">來自 ${senderStr} · ${new Date(g.ts).toLocaleDateString('zh-TW')}</div>
+            <button onclick="claimGift('${g.id}')" style="padding:5px 14px; background:linear-gradient(135deg,#7c3aed,#4f46e5); color:#fff; border:none; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; box-shadow:0 2px 0 #3730a3;">收下 ✨</button>
+          </div>
+        </div>`;
+    }).join('');
+
+    showModal('📬 裝備信箱', `
+      <div style="font-size:12px; color:#7c3aed; font-weight:700; margin-bottom:10px;">📦 ${pending.length} 件裝備等你領取</div>
+      <div style="max-height:420px; overflow-y:auto; padding-right:2px;">${rows}</div>
+    `);
+  }
+
+  function claimGift(giftId) {
+    const me = getMe(); if (!me) return;
+    const idx = (gifts || []).findIndex(g => g.id === giftId);
+    if (idx === -1) { showToast('找不到禮物，可能已被取消'); return; }
+    const gift = gifts[idx];
+    if (gift.to !== me.id) { showToast('這不是你的禮物'); return; }
+    if (gift.claimed) { showToast('已經領取過了'); return; }
+    const item = gift.itemData;
+    if (!item) { showToast('裝備資料遺失'); return; }
+    // 推進背包
+    const rpg = getRpg(me);
+    rpg.inventory = rpg.inventory || [];
+    rpg.inventory.push(item);
+    // 標記已領
+    gifts[idx] = { ...gift, claimed: true, claimedAt: new Date().toISOString() };
+    me.lastTouchedAt = Date.now();
+    __persistLocalSnapshot();
+    saveData();
+    showToast(`✨ 收下 ${item.icon || '📦'} ${escapeHtml(item.name || '裝備')}！已放入背包`);
+    // 刷新信箱 or 關閉
+    const remaining = (gifts || []).filter(g => g.to === me.id && g.type === 'equip' && !g.claimed);
+    if (remaining.length === 0) hideModal();
+    else showMailbox();
+    renderCharCard();
+  }
+  window.showMailbox  = showMailbox;
+  window.claimGift    = claimGift;
+
   function renderCharCard() {
     const me = getMe();
     const rpg = getRpg(me);
@@ -10464,7 +10585,13 @@ ${b.text}
       <div class="char-info">
         <div class="char-name">${escapeHtml(me.name)}</div>
         <div class="char-class">${cls.name} · Lv ${rpg.level}</div>
-        <div class="char-coins">🪙 ${coins} 鵝鵝幣　·　🧭 ${rpg.exploreCoins || 0} 探險幣</div>
+        <div class="char-coins" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px;">
+          <span>🪙 ${coins} 鵝鵝幣　·　🧭 ${rpg.exploreCoins || 0} 探險幣</span>
+          ${(() => {
+            const n = getUnclaimedGiftCount(me.id);
+            return `<button class="mailbox-btn" onclick="showMailbox()">📬 信箱${n > 0 ? ` <span class="mailbox-badge">${n}</span>` : ''}</button>`;
+          })()}
+        </div>
         <div class="stat-bar">
           <div class="stat-bar-label"><span>❤️ HP</span><span>${rpg.hp} / ${stats.maxHp}</span></div>
           <div class="stat-bar-track"><div class="stat-bar-fill hp-fill" style="width:${hpPercent}%"></div></div>
