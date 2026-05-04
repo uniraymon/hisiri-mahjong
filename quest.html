@@ -5998,11 +5998,12 @@
               applyStatus(playerObj, { type: 'buff', stat: 'critDmg', amount: 0.20, turns: skill.selfBuff.turns });
               extraNote.push('💥 爆傷 +20%');
             }
-            // ⭐ 底氣 / 神聖祝福：額外即時補血（可超過上限）
+            // ⭐ 底氣 / 隱身：額外即時補血（上限 maxHp）
             if (skill.bonusHealPct) {
               const heal = Math.round(stats.maxHp * skill.bonusHealPct);
-              pHp = pHp + heal; // 不 cap，允許超過 maxHp
-              extraNote.push(`💚 +${heal} HP（${Math.round(skill.bonusHealPct * 100)}% maxHp，可超出上限）`);
+              const actualHeal = Math.min(heal, Math.max(0, stats.maxHp - pHp));
+              pHp = Math.min(stats.maxHp, pHp + heal);
+              extraNote.push(`💚 +${actualHeal} HP（${Math.round(skill.bonusHealPct * 100)}% maxHp）`);
             }
             // ⭐ buffMaxHpPct：臨時提升最大 HP（以 buff 狀態存在，戰鬥結束自動清除）
             if (skill.buffMaxHpPct) {
@@ -6350,7 +6351,7 @@
     if (buff.stat === 'defPct')     return `🛡 DEF +${Math.round(buff.amount * 100)}%`;
     if (buff.stat === 'def')        return `🛡 DEF +${buff.amount}`;
     if (buff.stat === 'spd')        return `💨 SPD +${buff.amount}`;
-    if (buff.stat === 'critChance') return `🎯 暴擊率 +${Math.round(buff.amount * 100)}%`;
+    if (buff.stat === 'critChance') return buff.amount >= 1.0 ? `🎯 必中暴擊（1 次）` : `🎯 暴擊率 +${Math.round(buff.amount * 100)}%`;
     if (buff.stat === 'critDmg')    return `💥 爆傷 +${Math.round(buff.amount * 100)}%`;
     if (buff.stat === 'reflectPct')   return `🪞 反傷 ${Math.round(buff.amount * 100)}%（單次最多 300）`;
     if (buff.stat === 'maxHpPct')     return `💖 最大HP +${Math.round(buff.amount * 100)}%（戰鬥中有效）`;
@@ -6709,11 +6710,12 @@
               applyStatus(playerObj, { type: 'buff', stat: 'critDmg', amount: 0.20, turns: skill.selfBuff.turns });
               extraNote.push('💥 爆傷 +20%');
             }
-            // ⭐ 底氣 / 神聖祝福：額外即時補血（可超過上限）
+            // ⭐ 底氣 / 隱身：額外即時補血（上限 maxHp）
             if (skill.bonusHealPct) {
               const heal = Math.round(stats.maxHp * skill.bonusHealPct);
-              pHp = pHp + heal;
-              extraNote.push(`💚 +${heal} HP（${Math.round(skill.bonusHealPct * 100)}% maxHp，可超出上限）`);
+              const actualHeal = Math.min(heal, Math.max(0, stats.maxHp - pHp));
+              pHp = Math.min(stats.maxHp, pHp + heal);
+              extraNote.push(`💚 +${actualHeal} HP（${Math.round(skill.bonusHealPct * 100)}% maxHp）`);
             }
             // ⭐ buffMaxHpPct：臨時提升最大 HP（以 buff 狀態存在，戰鬥結束自動清除）
             if (skill.buffMaxHpPct) {
@@ -8983,7 +8985,8 @@ ${b.text}
     if (eff.extraCritDmg)    buffPairs.push(`💥 爆傷 +${Math.round(eff.extraCritDmg * 100)}%（本招）`);
     if (eff.bonusMaxHpPct)   buffPairs.push(`🩸 maxHp 加傷 +${Math.round(eff.bonusMaxHpPct * 100)}%（純加值，無視怪 DEF）`);
     if (skill.buffMaxHpPct)  buffPairs.push(`💖 最大HP +${Math.round(skill.buffMaxHpPct * 100)}%（戰鬥中有效）`);
-    if (skill.bonusHealPct)  buffPairs.push(`💚 施放後回復 ${Math.round(skill.bonusHealPct * 100)}% maxHP`);
+    if (skill.bonusHealPct)  buffPairs.push(`💚 即時回血 ${Math.round(skill.bonusHealPct * 100)}% maxHP（不超出上限）`);
+    if (skill.applyShield)   buffPairs.push(`🛡 免疫一次傷害`);
     if (eff.markMult)        buffPairs.push(`🌀 MARK 加傷 ×${Number(eff.markMult).toFixed(2).replace(/\.?0+$/, '')}（每點 MARK 多這麼多傷害）`);
     if (skill.mpRestorePct)  buffPairs.push(`💙 回復 ${Math.round(skill.mpRestorePct * 100)}% maxMP`);
     if (eff.postSelfBuff)    buffPairs.push(`✨ 攻擊完後：${describeBuff(eff.postSelfBuff)}（${eff.postSelfBuff.turns} 回合）`);
@@ -9553,8 +9556,15 @@ ${b.text}
     if (s.type === 'buff' && s.selfBuff) {
       const buff2Str = s.selfBuff2 ? ` / ${describeBuff(s.selfBuff2)}` : '';
       const buffStr = `${describeBuff(s.selfBuff)}${buff2Str}　持續 ${s.selfBuff.turns} 回合`;
-      const bonusHealStr = s.bonusHealPct ? `　+　即時補 ${Math.round(s.bonusHealPct * 100)}% maxHp（可超出上限）` : '';
-      return buffStr + bonusHealStr;
+      const shieldStr = s.applyShield ? `　+　🛡 免疫一次傷害` : '';
+      const bonusHealStr = s.bonusHealPct ? `　+　💚 即時回血 ${Math.round(s.bonusHealPct * 100)}% maxHp` : '';
+      const partialShieldStr = s.applyPartialShield ? `　+　🛡 受傷 -${Math.round(s.applyPartialShield.reducePct * 100)}%（${s.applyPartialShield.hits} 次）` : '';
+      return buffStr + shieldStr + bonusHealStr + partialShieldStr;
+    }
+    if (s.type === 'buff' && s.applyPartialShield) {
+      const shieldStr = `🛡 受傷 -${Math.round(s.applyPartialShield.reducePct * 100)}%（${s.applyPartialShield.hits} 次）`;
+      const bonusHealStr = s.bonusHealPct ? `　+　💚 即時回血 ${Math.round(s.bonusHealPct * 100)}% maxHp` : '';
+      return shieldStr + bonusHealStr;
     }
     const hitsStr = (s.hits && s.hits > 1) ? ` ×${s.hits} 段` : '';
     if (s.defMult != null)   return `${s.defMult}× DEF 傷害${hitsStr}`;
