@@ -2005,7 +2005,6 @@
         // ⭐ 多重射擊已移除（被連射取代）；解鎖等級全 -4（這次再 -2，cooldown 全部歸 0）
         { id: 'a_god_arrow',   name: '神之矢',   icon: '🌟', unlockLv: 8,  cooldown: 0, mpCost: 30, type: 'damage', mult: 4.5, customLv: true },
         { id: 'a_precise_shot',name: '精準射擊', icon: '🎯', unlockLv: 1,  cooldown: 0, mpCost: 5,  type: 'damage', mult: 1.4, cast: 0 },
-        { id: 'a_concentrate', name: '集中',     icon: '🧘', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', isMpRegen: true },
         // ⭐ 連射：每段固定 ATK ×1.5 / 4 段 / Lv 5 暴擊 +10% / Lv 10 多 1 段
         { id: 'a_barrage',     name: '連射',     icon: '🌊', unlockLv: 4,  cooldown: 0, mpCost: 28, type: 'damage', mult: 1.2, hits: 4, fixedHitMult: true, customLv: true },
         { id: 'a_lethal_aim',  name: '致命瞄準', icon: '💀', unlockLv: 10, cooldown: 0, mpCost: 20, type: 'damage', mult: 3.0, alwaysCrit: true, ignoreDef: true, cast: 15, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 2, chance: 1 }, customLv: true },
@@ -2019,7 +2018,7 @@
         { id: 'a_stealth',         name: '隱身',   icon: '🌫', unlockLv: 5,  cooldown: 0, mpCost: 15, type: 'buff', selfBuff: { stat: 'critChance', amount: 1.0, turns: 1 }, applyShield: 1, bonusHealPct: 0.50, maxLv: 1 },
         { id: 'a_wind_song',       name: '風之歌', icon: '🎵', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true },
         { id: 'a_arrow_storm',     name: '箭雨',   icon: '🌧', unlockLv: 6,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.5, targetCount: 'all' },
-        // ⭐ 新增：奪魂箭 — 1.8× ATK 傷害 + 回 2 MP
+        // 奪魂箭：0.8× ATK 傷害 + 回 2 MP（免費，每次攻擊都能補魔）
         { id: 'a_mana_arrow',      name: '奪魂箭', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0, type: 'damage', mult: 0.8, mpRestore: 2 },
       ],
       skillTree: [
@@ -8938,7 +8937,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505k';
+  const APP_VERSION = '20260505l';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
@@ -9426,7 +9425,7 @@ ${b.text}
 
         <div style="font-size:13px; font-weight:700; color:#7c3aed; margin:8px 0 4px;">⚙️ 新版技能機制</div>
         <ul style="margin:4px 0 8px 18px; padding:0; font-size:12px;">
-          <li><b>戰鬥中 MP 不會自動回</b>，要靠回魔技能（如法師「💧法力湧泉」、聖騎「🙏祈禱」、弓手「🧘集中」、戰士「📢戰意呼喚」）</li>
+          <li><b>戰鬥中 MP 不會自動回</b>，要靠回魔技能（如法師「💧法力湧泉」、聖騎「🙏祈禱」、弓手「🔵奪魂箭」、戰士「📢戰意呼喚」）</li>
           <li>戰士有 <b>HP 代價</b>系列技能（🩸血祭斬 / ☠️死戰之怒）：不耗 MP、改扣自身 HP</li>
           <li>HP 代價技不會直接讓你死（最少留 1 HP），但接著被打就慘</li>
           <li>💥嗜血爆裂 現在消耗 <b>20 MP</b>，施放後回吸傷害 20% 為 HP</li>
@@ -9597,7 +9596,8 @@ ${b.text}
     if (skill.bonusHealPct)  buffPairs.push(`💚 即時回血 ${Math.round(skill.bonusHealPct * 100)}% maxHP（不超出上限）`);
     if (skill.applyShield)   buffPairs.push(`🛡 免疫一次傷害`);
     if (eff.markMult)        buffPairs.push(`🌀 MARK 加傷 ×${Number(eff.markMult).toFixed(2).replace(/\.?0+$/, '')}（每點 MARK 多這麼多傷害）`);
-    if (skill.mpRestorePct)  buffPairs.push(`💙 回復 ${Math.round(skill.mpRestorePct * 100)}% maxMP`);
+    if (skill.mpRestore)     buffPairs.push(`💙 命中後回復 +${skill.mpRestore} MP`);
+    if (skill.mpRestorePct)  buffPairs.push(`💙 命中後回復 ${Math.round(skill.mpRestorePct * 100)}% maxMP`);
     if (eff.postSelfBuff)    buffPairs.push(`✨ 攻擊完後：${describeBuff(eff.postSelfBuff)}（${eff.postSelfBuff.turns} 回合）`);
     if (eff.mpCostMult && eff.mpCostMult < 1) buffPairs.push(`💙 MP 消耗 -${Math.round((1 - eff.mpCostMult) * 100)}%`);
     if (eff.magic) buffPairs.push('🔮 魔攻（吃法抗）');
