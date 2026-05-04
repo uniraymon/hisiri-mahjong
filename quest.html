@@ -1867,6 +1867,7 @@
     <div class="char-with-menu">
       <div class="char-quick-menu" id="charQuickMenu"></div>
       <div class="card char-card" id="charCard"></div>
+      <div class="char-quick-menu" id="charRightMenu"></div>
     </div>
 
     <div class="card">
@@ -8937,7 +8938,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505i';
+  const APP_VERSION = '20260505j';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
@@ -9516,8 +9517,25 @@ ${b.text}
         <span class="cqm-badge">${rpg.essenceFragments || 0} 片</span>
       </button>
     `;
+    // ⭐ 同步渲染右側選單
+    renderCharRightMenu();
   }
   window.renderCharQuickMenu = renderCharQuickMenu;
+
+  function renderCharRightMenu() {
+    const rHost = document.getElementById('charRightMenu');
+    if (!rHost) return;
+    const me = getMe(); if (!me) return;
+    const unclaimedN = getUnclaimedGiftCount(me.id);
+    rHost.innerHTML = `
+      <button class="cqm-btn" onclick="showMailbox()" title="裝備信箱">
+        <span class="cqm-icon">📬</span>
+        <span class="cqm-label">信箱</span>
+        <span class="cqm-badge" ${unclaimedN > 0 ? 'style="background:#ef4444; color:#fff; animation:wb9KillFlash 1s ease infinite;"' : ''}>${unclaimedN > 0 ? unclaimedN + ' 件' : '空'}</span>
+      </button>
+    `;
+  }
+  window.renderCharRightMenu = renderCharRightMenu;
 
   // ⭐ 技能詳細 + 升級
   function showSkillDetailModal(skillId) {
@@ -10585,13 +10603,7 @@ ${b.text}
       <div class="char-info">
         <div class="char-name">${escapeHtml(me.name)}</div>
         <div class="char-class">${cls.name} · Lv ${rpg.level}</div>
-        <div class="char-coins" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px;">
-          <span>🪙 ${coins} 鵝鵝幣　·　🧭 ${rpg.exploreCoins || 0} 探險幣</span>
-          ${(() => {
-            const n = getUnclaimedGiftCount(me.id);
-            return `<button class="mailbox-btn" onclick="showMailbox()">📬 信箱${n > 0 ? ` <span class="mailbox-badge">${n}</span>` : ''}</button>`;
-          })()}
-        </div>
+        <div class="char-coins">🪙 ${coins} 鵝鵝幣　·　🧭 ${rpg.exploreCoins || 0} 探險幣</div>
         <div class="stat-bar">
           <div class="stat-bar-label"><span>❤️ HP</span><span>${rpg.hp} / ${stats.maxHp}</span></div>
           <div class="stat-bar-track"><div class="stat-bar-fill hp-fill" style="width:${hpPercent}%"></div></div>
