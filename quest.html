@@ -5064,6 +5064,14 @@
         window.__pendingUpdateV9.add(player.id);
       }
     }
+    // ⭐ v10：探險重製 + 法師強化 + 技能全面重平衡公告
+    if (!player.rpg.updateV10 && typeof getMeId === 'function' && player.id === getMeId()) {
+      player.rpg.updateV10 = true;
+      if (typeof window !== 'undefined') {
+        window.__pendingUpdateV10 = window.__pendingUpdateV10 || new Set();
+        window.__pendingUpdateV10.add(player.id);
+      }
+    }
     // skillPoints migration
     if (player.rpg.skillPoints == null) {
       const earned = Math.max(0, (player.rpg.level || 1) - 1) * POINTS_PER_LEVEL.skill;
@@ -6933,6 +6941,47 @@
   function maybeShowBetaCompModal() {
     const me = getMe();
     if (!me) return;
+    // ⭐ v10 優先（最新）：探險重製 + 法師強化 + 技能全面重平衡
+    if (window.__pendingUpdateV10 && window.__pendingUpdateV10.has(me.id)) {
+      window.__pendingUpdateV10.delete(me.id);
+      const html = `
+        <div style="text-align:left; padding:6px 0;">
+          <div style="text-align:center; font-size:48px; margin-bottom:6px;">⚡🗺️</div>
+          <div style="text-align:center; font-weight:800; font-size:17px; color:#7c3aed; margin-bottom:8px;">v10 大改版上線！</div>
+          <div style="font-size:12px; color:#5b3d62; line-height:1.8; padding:10px 14px; background:#f3e8ff; border-radius:10px; border:2px dashed #c4b5fd;">
+
+            <div style="font-weight:800; color:#0ea5e9; margin-bottom:4px;">🗺️ 探險系統全面重製</div>
+            • 8 個全新劇情事件（樹懶鵝、NFT鵝、賭博鵝、哭泣鵝等）<br>
+            • 每個事件 3 個選項，各 3 種機率結果（好/普通/壞）<br>
+            • <b>好結果</b>：獲得 (15~20) × 玩家等級 的 EXP<br>
+            • <b>壞結果</b>（5%）：強制休息 60 秒<br>
+            • <b>額外加成</b>：每次選擇有 5% 獲得古董 / 10% 獲得探險幣<br>
+            • 付費選項機率更高：古董 7% / 探險幣 13%<br>
+
+            <div style="font-weight:800; color:#dc2626; margin:10px 0 4px;">⚔️ 戰鬥死亡機制改善</div>
+            • 打輸後 <b>HP 立刻恢復 100%</b>（之前是 50%）<br>
+            • <b>SPD 軟下限</b>新增：速度差距最大 2:1，不再被對手速度輾壓<br>
+
+            <div style="font-weight:800; color:#7c3aed; margin:10px 0 4px;">🧙 法師大加強</div>
+            • 🆕 <b>怒雷風暴</b> ⚡（Lv9 解鎖、45 MP）：固定 400 + 10×MARK，魔攻穿防，硬值 25<br>
+            • 所有含 <b>MARK 的技能</b>：每升一等級 markMult 跟著成長<br>
+            • <b>Lv5 / Lv10</b>：額外 +1 MARK 加傷乘數（useMark 技能也適用）<br>
+
+            <div style="font-weight:800; color:#f59e0b; margin:10px 0 4px;">⚙️ 全技能硬值（詠唱懲罰）減半</div>
+            • 狂怒斬 65→32　血祭斬 10→5　死戰之怒 100→50<br>
+            • 底氣 150→75　致命瞄準 30→15　火球術 30→15<br>
+            • 連環閃電 50→25　魔力護盾 20→10　毀滅之怒 75→37<br>
+            • <b>火焰風暴</b> 150→50　護盾衝鋒 40→20　神聖懲戒 60→30　神之拳 30→15<br>
+            <span style="font-size:10px; color:#6b7280;">→ SPD 軟上限已上線，技能行動懲罰同步調小，施放更流暢</span>
+
+          </div>
+          <button class="btn btn-primary" onclick="hideModal()" style="margin-top:14px; width:100%; background:linear-gradient(135deg,#7c3aed,#0ea5e9);">🚀 開始冒險！</button>
+        </div>
+      `;
+      showModal('🎉 v10 更新公告', html);
+      saveData();
+      return;
+    }
     // ⭐ v9 優先（最新）：世界王重寫完成公告
     if (window.__pendingUpdateV9 && window.__pendingUpdateV9.has(me.id)) {
       window.__pendingUpdateV9.delete(me.id);
@@ -8202,7 +8251,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260504b';
+  const NEWS_LATEST_ID = 'patch_20260504c';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -8222,6 +8271,31 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#7c3aed,#0ea5e9); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">⚡🗺️ v10 大改版　<span style="font-size:11px; opacity:0.85;">2026-05-04</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#0ea5e9; margin:6px 0 4px;">🗺️ 探險系統全面重製</div>
+        <div>・8 個全新劇情事件（樹懶鵝、NFT鵝、賭博鵝、哭泣鵝...）</div>
+        <div>・每事件 3 選項 × 3 種結果；<b>好結果</b>給 (15~20)×等級 EXP；<b>壞結果</b>(5%) 強制休息 60 秒</div>
+        <div>・每次選擇有 <b>5% 古董 / 10% 探險幣</b>加成；付費選項 7% / 13%</div>
+
+        <div style="font-weight:700; color:#dc2626; margin:10px 0 4px;">⚔️ 死亡改制 + SPD 軟下限</div>
+        <div>・打輸後 HP <b>立刻回滿 100%</b>（之前 50%）</div>
+        <div>・<b>SPD 軟下限</b>：速度差距上限 ~2:1，不再被高速對手輾壓到無法行動</div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">🧙 法師大加強</div>
+        <div>・🆕 <b>怒雷風暴</b> ⚡（Lv9、45 MP）：固定 400 + 10×MARK，魔攻穿防，硬值 25</div>
+        <div>・技能每升一級 <b>markMult 自動成長</b>；Lv5 / Lv10 各 <b>+1 MARK 加傷乘數</b></div>
+
+        <div style="font-weight:700; color:#f59e0b; margin:10px 0 4px;">⚙️ 全技能硬值（詠唱懲罰）減半</div>
+        <div>・所有技能 cast 值一律 ÷2（火焰風暴 150→50，毀滅之怒 75→37...）</div>
+        <div style="font-size:11px; color:#6b7280;">→ SPD 軟上限已上線，技能行動懲罰同步調整，戰鬥節奏更流暢</div>
+
+        <div style="background:#f3f4f6; border-radius:8px; padding:8px 12px; margin-top:12px; margin-bottom:14px; font-size:11px; color:#6b7280;">
+          ⚙️ 同期修正：復活藥恢復上架（商店 300 幣）・Boss 數值微調（古龍鵝 ATK 250, 晚餐鵝 ATK 350）
+        </div>
 
         <div style="background:linear-gradient(135deg,#ede9fe,#ddd6fe); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#5b21b6;">⚙️ 系統優化補丁　<span style="font-size:11px; color:#7c3aed;">2026-05-04</span></div>
