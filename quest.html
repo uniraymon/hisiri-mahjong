@@ -2509,6 +2509,8 @@
         const otherBossId = msg.slice('already-queued:'.length);
         const otherBoss = WB9_BOSSES.find(b => b.id === otherBossId);
         showToast(`已在 ${otherBoss?.name || '其他王'} 排隊中，先取消才能加入`);
+      } else if (msg.includes('cooldown')) {
+        showToast('⏳ 攻擊冷卻中，請稍後再加入排隊');
       } else {
         console.warn('wb9JoinQueue failed:', e);
         showToast('☁️ 加入排隊失敗');
@@ -2597,6 +2599,8 @@
         showToast('☁️ Firestore 配額用完，明天 UTC 0 點重置');
       } else if (msg.includes('not-your-turn') || msg.includes('not-in-queue')) {
         showToast('⏳ 還沒輪到你，已刷新'); wb9Render({ force: true });
+      } else if (msg.includes('cooldown')) {
+        showToast('⏳ 冷卻中！請勿多視窗操作'); wb9Render({ force: true });
       } else if (msg.includes('boss-not-found')) {
         showToast('🦢 王資料異常，請重新加入排隊');
       } else {
@@ -8882,7 +8886,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505e';
+  const APP_VERSION = '20260505f';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
@@ -14588,13 +14592,18 @@ ${b.text}
           // 讀取所有王的 doc（確認是否已排隊）
           const refs  = allIds.map(id => doc(wb9Col, id));
           const snaps = await Promise.all(refs.map(r => tx.get(r)));
+          let _lastAttackTs = 0;
           for (const s of snaps) {
             if (!s.exists()) continue;
             const q = (s.data().queue) || [];
             if (q.find(x => x && x.pid === attackerId)) {
               throw new Error('already-queued:' + s.id);
             }
+            // ⭐ 伺服器端冷卻驗證：從每個王 doc 的 attackCooldowns 取最新時間戳
+            const cds = s.data().attackCooldowns || {};
+            _lastAttackTs = Math.max(_lastAttackTs, cds[attackerId] || 0);
           }
+          if (Date.now() - _lastAttackTs < 5 * 60 * 1000) throw new Error('cooldown');
           // 取得 / 初始化目標王 state
           const bossRef = doc(wb9Col, bossId);
           const bossSnap = snaps[allIds.indexOf(bossId)];
@@ -14648,6 +14657,11 @@ ${b.text}
           if (!state.queue.length || state.queue[0].pid !== attackerId) {
             throw new Error('not-your-turn');
           }
+          // ⭐ 伺服器端冷卻驗證（防止多視窗/多裝置繞過）
+          const _atCds = state.attackCooldowns || {};
+          if (Date.now() - (_atCds[attackerId] || 0) < 5 * 60 * 1000) {
+            throw new Error('cooldown');
+          }
           // 套用傷害（上限為當前 HP）
           const actualDmg = Math.min(state.hp || 0, Math.max(0, dmgRaw));
           state.hp = Math.max(0, (state.hp || 0) - actualDmg);
@@ -14658,6 +14672,12 @@ ${b.text}
           // 移出隊頭
           state.queue = state.queue.slice(1);
           state.lastHitAt = Date.now();
+          // ⭐ 記錄攻擊時間戳（伺服器端冷卻用），清除 30 分前過期紀錄防 doc 膨脹
+          state.attackCooldowns = { ..._atCds, [attackerId]: Date.now() };
+          const _cdCutoff = Date.now() - 30 * 60 * 1000;
+          for (const _pid of Object.keys(state.attackCooldowns)) {
+            if (state.attackCooldowns[_pid] < _cdCutoff) delete state.attackCooldowns[_pid];
+          }
           // 最近戰報（最多 10 筆）
           if (partialBattleSnap) {
             const entry = { ...partialBattleSnap, dmgDealt: actualDmg, killed };
