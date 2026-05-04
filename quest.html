@@ -2388,6 +2388,7 @@
   };
   const WB9_QUEUE_STALE_MS     = 60 * 1000;
   const WB9_COOLDOWN_MS        = 5 * 60 * 1000; // 5 分鐘冷卻
+  const WB9_CD_LS_PREFIX       = '__wb9cd_';    // localStorage key 前綴（不依賴 Firebase 同步）
 
   const WB9_BOSSES = [
     {
@@ -2482,7 +2483,7 @@
     if (!boss) return;
     if (r.hp <= 0) { showToast('💀 HP 太低，先回滿再來'); return; }
     // 全域 5 分冷卻
-    const cdRemain = (r.lastBossAttackTime || 0) + WB9_COOLDOWN_MS - Date.now();
+    const cdRemain = wb9GetLastAttack(me) + WB9_COOLDOWN_MS - Date.now();
     if (cdRemain > 0) {
       const m = Math.floor(cdRemain / 60000);
       const s = Math.ceil((cdRemain % 60000) / 1000);
@@ -2603,8 +2604,12 @@
     }
 
     const { actualDmg, killed, newState } = txOut;
-    // 全域 5 分冷卻
-    r.lastBossAttackTime = Date.now();
+    // 全域 5 分冷卻（同時存 rpg 物件 + localStorage，防 Firebase 同步覆蓋）
+    const _cdNow = Date.now();
+    r.lastBossAttackTime = _cdNow;
+    try { localStorage.setItem(WB9_CD_LS_PREFIX + me.id, String(_cdNow)); } catch(e) {}
+    me.lastTouchedAt = _cdNow; // 確保 applyRemotePlayers 時 local 版本勝出
+    __persistLocalSnapshot();
     // 同步本地 wb9
     wb9[bossId] = newState;
     // 尾刀者立即領取擊殺獎勵
@@ -2720,7 +2725,7 @@
   function __wb9Hash() {
     const me = getMe();
     const r = me ? getRpg(me) : null;
-    const onCd = r ? ((Date.now() - (r.lastBossAttackTime || 0)) < WB9_COOLDOWN_MS) : false;
+    const onCd = me ? ((Date.now() - wb9GetLastAttack(me)) < WB9_COOLDOWN_MS) : false;
     const parts = [`me:${me?.id || ''}`, `cd:${onCd ? '1' : '0'}`];
     for (const boss of WB9_BOSSES) {
       const s = wb9 && wb9[boss.id];
@@ -2744,7 +2749,7 @@
     const now = Date.now();
     const me = getMe();
     const r = me ? getRpg(me) : null;
-    const cdRemain = r ? Math.max(0, (r.lastBossAttackTime || 0) + WB9_COOLDOWN_MS - now) : 0;
+    const cdRemain = me ? Math.max(0, wb9GetLastAttack(me) + WB9_COOLDOWN_MS - now) : 0;
     document.querySelectorAll('[data-wb9-cd-text]').forEach(el => {
       if (cdRemain > 0) {
         const m = Math.floor(cdRemain / 60000);
@@ -2772,7 +2777,7 @@
     __wb9LastHash = hash;
     const me = getMe();
     const r = me ? getRpg(me) : null;
-    const cdRemain = r ? Math.max(0, (r.lastBossAttackTime || 0) + WB9_COOLDOWN_MS - Date.now()) : 0;
+    const cdRemain = me ? Math.max(0, wb9GetLastAttack(me) + WB9_COOLDOWN_MS - Date.now()) : 0;
     const onCd = cdRemain > 0;
     // 我目前在哪個王排隊
     let myQueuedBossId = null;
@@ -2819,6 +2824,15 @@
   }
 
   // ⭐ commit 4：尾刀橫幅（王被殺時顯示 10 秒）
+  // 冷卻時間：取 rpg 物件 與 localStorage 兩者最大值，避免 Firebase 同步或 Tab Leader 問題
+  function wb9GetLastAttack(me) {
+    const r = me ? getRpg(me) : null;
+    const rpgTs = r ? (r.lastBossAttackTime || 0) : 0;
+    let lsTs = 0;
+    try { lsTs = parseInt(localStorage.getItem(WB9_CD_LS_PREFIX + (me && me.id)) || '0') || 0; } catch(e) {}
+    return Math.max(rpgTs, lsTs);
+  }
+
   function wb9KillBannerHtml(state) {
     const lk = state && state.lastKill;
     if (!lk || !lk.ts) return '';
