@@ -3394,6 +3394,7 @@
     1601: { id: 1601, label: '自身麻痺',                 paramType: 'none' },
     1610: { id: 1610, label: '敵方有人中毒',             paramType: 'none' },
     1611: { id: 1611, label: '敵方有人麻痺',             paramType: 'none' },
+    1612: { id: 1612, label: '敵方有人流血',             paramType: 'none' },
     1620: { id: 1620, label: '敵方全部中毒',             paramType: 'none' },
     // 行動次數
     1900: { id: 1900, label: '我的第 X 次行動',           paramType: 'count' },
@@ -3430,6 +3431,7 @@
       case 1601: return !!ctx.selfParalyzed;
       case 1610: return !!ctx.anyEnemyPoisoned;
       case 1611: return !!ctx.anyEnemyParalyzed;
+      case 1612: return !!ctx.anyEnemyBled;
       case 1620: return !!ctx.allEnemyPoisoned;
       // 行動次數 / 機率
       case 1900: return ctx.playerActions === v;
@@ -3664,6 +3666,7 @@
           { judgeId: 1300, param: 25, skillId: 'w_death_rage' },     // 敵血 ≤ 25% → 死戰之怒（HP 代價收頭）
           { judgeId: 1300, param: 50, skillId: 'w_blood_burst' },    // 敵血 ≤ 50% → 嗜血爆裂
           { judgeId: 1300, param: 30, skillId: 'w_rage_flame' },     // 敵血 ≤ 30% → 怒之炎
+          { judgeId: 1612, param: 0,  skillId: 'w_blood_slash' },    // 敵方流血 → 血祭斬（+30% 傷害）
           { judgeId: 1000, param: 0,  skillId: 'w_bleed_sword' },    // 血鵝刀法（施加流血 3 層）
           { judgeId: 1201, param: 25, skillId: 'w_blood_slash' },    // MP ≤ 25% → 血祭斬（不耗 MP）
           { judgeId: 1000, param: 0,  skillId: 'w_heavy_strike' },
@@ -5794,6 +5797,13 @@
           mHp, maxMHp: monster.maxHp,
           playerActions,
           ruleUseCount,
+          // ⭐ 狀態判定
+          selfPoisoned:    hasStatus(playerObj, 'poison'),
+          selfParalyzed:   hasStatus(playerObj, 'paralyze'),
+          anyEnemyPoisoned:  hasStatus(monster, 'poison'),
+          anyEnemyParalyzed: hasStatus(monster, 'paralyze'),
+          anyEnemyBled:      hasStatus(monster, 'bleed'),
+          allEnemyPoisoned:  hasStatus(monster, 'poison'),
         };
         for (let r = 0; r < actionPattern.length; r++) {
           const rule = actionPattern[r];
@@ -6603,6 +6613,13 @@
           aliveCount: aliveM.length,
           playerActions,
           ruleUseCount,
+          // ⭐ 狀態判定
+          selfPoisoned:    hasStatus(playerObj, 'poison'),
+          selfParalyzed:   hasStatus(playerObj, 'paralyze'),
+          anyEnemyPoisoned:  aliveM.some(m => hasStatus(m, 'poison')),
+          anyEnemyParalyzed: aliveM.some(m => hasStatus(m, 'paralyze')),
+          anyEnemyBled:      aliveM.some(m => hasStatus(m, 'bleed')),
+          allEnemyPoisoned:  aliveM.length > 0 && aliveM.every(m => hasStatus(m, 'poison')),
         };
         let useSkill = null, useSkillIdx = -1, usedRuleIdx = -1;
         for (let r = 0; r < actionPattern.length; r++) {
@@ -8648,7 +8665,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260504h';
+  const NEWS_LATEST_ID = 'patch_20260504i';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -8670,7 +8687,7 @@ ${b.text}
       <div style="line-height:1.7; font-size:13px; color:#374151;">
 
         <div style="background:linear-gradient(135deg,#b91c1c,#9f1239); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
-          <div style="font-size:15px; font-weight:800; color:#fff;">🗡 戰士新技能 + 流血系統　<span style="font-size:11px; opacity:0.85;">2026-05-04</span></div>
+          <div style="font-size:15px; font-weight:800; color:#fff;">🗡 戰士新技能 + 流血系統 + 行動規則新判定　<span style="font-size:11px; opacity:0.85;">2026-05-04</span></div>
         </div>
 
         <div style="font-weight:700; color:#dc2626; margin:6px 0 4px;">⚔️ 戰士新技能：血鵝刀法</div>
@@ -8685,8 +8702,13 @@ ${b.text}
         <div>・Lv10 效果：多斬一次 → <b>傷害 ×1.5（+50%）</b></div>
         <div style="font-size:11px; color:#6b7280; margin-top:2px;">→ 配合流血機制強化，讓血祭斬打流血敵人時傷害更可觀</div>
 
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">🧭 行動規則新判定條件</div>
+        <div>・🆕 <b>「敵方有人流血」</b>判定（1612）——可設定「有敵人流血時才用血祭斬」</div>
+        <div>・同步修正：中毒/麻痺/流血等狀態判定現在正確生效（原先 ctx 沒傳入，永遠為否）</div>
+        <div style="font-size:11px; color:#6b7280; margin-top:2px;">→ 戰士 HOF 預設規則：流血 → 血祭斬（+30%）→ 血鵝刀法（補流血）→ 其餘</div>
+
         <div style="background:#f3f4f6; border-radius:8px; padding:8px 12px; margin-top:12px; margin-bottom:16px; font-size:12px; color:#6b7280;">
-          ⚙️ 流血狀態同樣 charge-based；HOF 預設規則已加入血鵝刀法
+          ⚙️ 流血狀態同樣 charge-based；所有狀態判定（中毒/麻痺/流血）兩個戰鬥引擎均已正確實裝
         </div>
 
         <div style="background:linear-gradient(135deg,#dc2626,#f59e0b); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
