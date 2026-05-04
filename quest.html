@@ -2381,7 +2381,7 @@
   //   WB9_TESTING_NO_REWARDS = true → 獎勵都不發（避免測試弄壞玩家進度）
   //   設為 false 後恢復正常結算
   const WB9_TESTING_NO_REWARDS = false;    // ⭐ 獎勵正式開放
-  const WB9_MAINTENANCE = true;            // 🔧 維護中 → true = 封閉世界王入口（改完再設 false）
+  const WB9_MAINTENANCE = false;           // 🔧 維護中 → true = 封閉世界王入口（改完再設 false）
   const WB9_MAX_XP_PER_FIGHT   = 500;      // ⭐ v9 單場最多 500 EXP（舊版 1000）
   // 擊殺結算獎勵（所有世界王通用）
   const WB9_KILL_REWARDS = {
@@ -8901,7 +8901,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505g';
+  const APP_VERSION = '20260505h';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
@@ -13950,6 +13950,7 @@ ${b.text}
         const cur = wb9GetState(boss.id);
         const fresh = {
           hp: boss.maxHp,
+          maxHp: boss.maxHp,   // ⭐ 存入可信的滿血值，避免客戶端快取舊值導致尾刀重生錯誤
           queue: [],
           attackCooldowns: {},
           damageLog: cur.damageLog || {},
@@ -14657,7 +14658,7 @@ ${b.text}
           const bossSnap = snaps[allIds.indexOf(bossId)];
           const state = bossSnap?.exists()
             ? { ...bossSnap.data() }
-            : { hp: bossDef.maxHp, queue: [], damageLog: {}, killCount: 0, recentBattles: [], lastKill: null };
+            : { hp: bossDef.maxHp, maxHp: bossDef.maxHp, queue: [], damageLog: {}, killCount: 0, recentBattles: [], lastKill: null };
           state.queue = Array.isArray(state.queue) ? [...state.queue] : [];
           state.queue.push({ pid: attackerId, joinedAt: Date.now() });
           tx.set(bossRef, _prune(state));
@@ -14758,7 +14759,7 @@ ${b.text}
               damageLog: { ...state.damageLog }, settlement: _settlement };
             state.damageLog = {};
             state.queue = [];
-            state.hp = (bossDef && bossDef.maxHp) || (state.hp);  // 重生滿血
+            state.hp = state.maxHp || (bossDef && bossDef.maxHp) || state.hp;  // ⭐ 優先用 doc 內的可信 maxHp，防客戶端快取舊值
           }
           tx.set(bossRef, _prune(state));
           return { actualDmg, killed, newState: state };
