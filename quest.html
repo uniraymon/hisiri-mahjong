@@ -2375,6 +2375,10 @@
   const WB9_MAX_XP_PER_FIGHT   = 500;      // ⭐ v9 單場最多 500 EXP（舊版 1000）
   const WB9_QUEUE_STALE_MS     = 60 * 1000;
   const WB9_COOLDOWN_MS        = 0; // ⭐ 測試中：冷卻關閉（原 5 * 60 * 1000）
+  // ⭐ 每次改 Boss 硬值就 +1，讓舊的 Firebase bossOverrides doc 自動被捨棄
+  const BOSS_STATS_VERSION = 2;
+  window.__bossStatsVersion = BOSS_STATS_VERSION;
+
   const WB9_BOSSES = [
     {
       id: 'goose_king',
@@ -2964,6 +2968,10 @@
       reward: { coins: 0, xp: 0 },
     },
   ];
+
+  // ⭐ 暴露給 Firebase module 做版本比對 + 重寫 bossOverrides
+  window.__wb9BossDefaults = WB9_BOSSES.map(b => ({ id: b.id, maxHp: b.maxHp, atk: b.atk, def: b.def, spd: b.spd }));
+  window.__pbBossDefaults  = PERSONAL_BOSSES.map(b => ({ id: b.id, hp: b.hp, atk: b.atk, def: b.def, spd: b.spd }));
 
   // === 精魂（王掉落）===
   // 每隻王有自己的精魂，固定基礎屬性 + 2 條隨機詞條
@@ -3772,32 +3780,16 @@
 
   // === 探索 / 採集 ===
   const FORAGE_STAMINA = 40;
-  const FORAGE_REST_DURATION_MS = 60 * 1000; // 強制休息時長，隨時可調
   // ⭐ 探險幣（rpg.exploreCoins）— 探索取得，未來用於兌換物品 / 道具
   const EXPLORE_COIN_BASE_MIN = 5;
   const EXPLORE_COIN_BASE_MAX = 15;
 
-  // ⭐ 古董：探險中的稀有收藏品，完全隨機種類
-  const ANTIQUE_TYPES = [
-    { id: 'ant_vase',    name: '古花瓶',  icon: '🏺' },
-    { id: 'ant_coin',   name: '古銅錢',  icon: '🥉' },
-    { id: 'ant_scroll', name: '古卷軸',  icon: '📜' },
-    { id: 'ant_sword',  name: '古劍',    icon: '🗡️' },
-    { id: 'ant_gem',    name: '古寶石',  icon: '💎' },
-    { id: 'ant_statue', name: '古石像',  icon: '🗿' },
-    { id: 'ant_book',   name: '古書',    icon: '📚' },
-    { id: 'ant_ring',   name: '古戒指',  icon: '💍' },
-    { id: 'ant_bell',   name: '古銅鐘',  icon: '🔔' },
-    { id: 'ant_jar',    name: '古陶罐',  icon: '🫙' },
-  ];
-
   // ⭐ 探險分支事件（新版）
   // outcome 欄位：
   //   coins (數字 or [min,max])、xpPerLv: [min,max]（EXP = rand × LV）
-  //   rest: 秒數 → 強制休息（壞結果，約 5%）
   // 隱藏加成（每次選擇後另外 roll）：
-  //   一般選項：5% 古董、10% 探險幣 1-3
-  //   付費選項：7% 古董、13% 探險幣 1-3
+  //   一般選項：5% 寶物庫掉落（重複 → +2 探險幣）、10% 探險幣 1-3
+  //   付費選項：7% 寶物庫掉落、13% 探險幣 1-3
   const FORAGE_QUESTS = [
     {
       id: 'sleeping_sloth', icon: '🦥',
@@ -9580,13 +9572,6 @@ ${b.text}
         <div class="char-name">${escapeHtml(me.name)}</div>
         <div class="char-class">${cls.name} · Lv ${rpg.level}</div>
         <div class="char-coins">🪙 ${coins} 鵝鵝幣　·　🧭 ${rpg.exploreCoins || 0} 探險幣</div>
-        ${(() => {
-          const ants = rpg.antiques || {};
-          const total = Object.values(ants).reduce((a,b) => a+(b||0), 0);
-          if (!total) return '';
-          const icons = ANTIQUE_TYPES.filter(a => ants[a.id] > 0).map(a => `${a.icon}×${ants[a.id]}`).join(' ');
-          return `<div style="font-size:11px; color:#a16207; margin-top:2px;">🏺 古董：${icons}</div>`;
-        })()}
         <div class="stat-bar">
           <div class="stat-bar-label"><span>❤️ HP</span><span>${rpg.hp} / ${stats.maxHp}</span></div>
           <div class="stat-bar-track"><div class="stat-bar-fill hp-fill" style="width:${hpPercent}%"></div></div>
@@ -11316,16 +11301,30 @@ ${b.text}
       // 是否觸發指南書
       if (typeof grantGreenTeaGuides === 'function') grantGreenTeaGuides(me);
     }
-    // ⭐ 加成擲骰：每個選項都有機率額外獲得古董 / 探險幣
+    // ⭐ 加成擲骰：每個選項都有機率額外獲得寶物 / 探險幣
     const _isPaid = !!(choice.requiresCoins > 0);
-    const _antiqueChance = _isPaid ? 0.07 : 0.05;
-    const _exploreChance = _isPaid ? 0.13 : 0.10;
-    if (Math.random() < _antiqueChance && ANTIQUE_TYPES.length > 0) {
-      r.antiques = r.antiques || {};
-      const ant = ANTIQUE_TYPES[Math.floor(Math.random() * ANTIQUE_TYPES.length)];
-      r.antiques[ant.id] = (r.antiques[ant.id] || 0) + 1;
-      const antTotal = r.antiques[ant.id];
-      parts.push(`<span style="color:#a16207;">🏺 額外獲得 ${ant.icon}<b>${ant.name}</b>！（持有 ${antTotal} 個）</span>`);
+    const _treasureChance = _isPaid ? 0.07 : 0.05;
+    const _exploreChance  = _isPaid ? 0.13 : 0.10;
+    if (Math.random() < _treasureChance) {
+      r.treasures = r.treasures || [];
+      const allTids = Object.keys(TREASURES);
+      const tid = allTids[Math.floor(Math.random() * allTids.length)];
+      const treasure = TREASURES[tid];
+      const isDup = r.treasures.includes(tid);
+      if (isDup) {
+        // 重複寶物 → +2 探險幣
+        r.exploreCoins = (r.exploreCoins || 0) + 2;
+        parts.push(`<span style="color:#0ea5e9; font-weight:700;">🎁 ${treasure?.icon || '🎁'} ${escapeHtml(treasure?.name || '寶物')}（重複）→ 🧭 +2 探險幣</span>`);
+      } else {
+        r.treasures.push(tid);
+        let effStr = '';
+        if (treasure?.ability) effStr = `+${treasure.value} ${treasure.ability.toUpperCase()}`;
+        else if (treasure?.stat) {
+          const statMap = { hp:'HP', mp:'MP', atk:'ATK', def:'DEF', spd:'SPD', critChance:'暴擊率', critDmg:'爆傷' };
+          effStr = `+${treasure.value} ${statMap[treasure.stat] || treasure.stat}`;
+        }
+        parts.push(`<span style="color:#a16207; font-weight:700;">🎁 獲得寶物 ${treasure?.icon || '🎁'} <b>${escapeHtml(treasure?.name || '寶物')}</b>（${effStr}）！</span>`);
+      }
     }
     if (Math.random() < _exploreChance) {
       const ec = 1 + Math.floor(Math.random() * 3); // 1–3
@@ -12772,6 +12771,9 @@ ${b.text}
       overrides.personal[id] = entry;
     });
 
+    // 加入版本號，讓 onSnapshot 知道這是 admin 主動設定的值
+    overrides._v = BOSS_STATS_VERSION;
+
     modal.remove();
 
     // 先套用到本地記憶體
@@ -13279,8 +13281,23 @@ ${b.text}
       });
 
       // ⭐ Boss 覆寫：監聽 config/bossOverrides，自動套用到全部客戶端
-      onSnapshot(doc(db, 'rooms', ROOM_ID, 'config', 'bossOverrides'), (snap) => {
-        if (snap.exists()) window.__applyBossOverrides?.(snap.data());
+      onSnapshot(doc(db, 'rooms', ROOM_ID, 'config', 'bossOverrides'), async (snap) => {
+        const REQUIRED_V = window.__bossStatsVersion || 1;
+        if (!snap.exists() || (snap.data()?._v || 0) < REQUIRED_V) {
+          // 舊文件（版本過低）→ 用硬值蓋掉 Firestore（只讓 leader 寫一次）
+          if (window.__iAmLeader) {
+            try {
+              const fresh = { world: {}, personal: {}, _v: REQUIRED_V };
+              (window.__wb9BossDefaults || []).forEach(b => { fresh.world[b.id] = { maxHp: b.maxHp, atk: b.atk, def: b.def, spd: b.spd }; });
+              (window.__pbBossDefaults || []).forEach(b => { fresh.personal[b.id] = { hp: b.hp, atk: b.atk, def: b.def, spd: b.spd }; });
+              const ref = doc(db, 'rooms', ROOM_ID, 'config', 'bossOverrides');
+              await setDoc(ref, fresh);
+            } catch (e) { console.error('boss fresh-write failed:', e); }
+          }
+          // 不套用舊值，硬值就是當前的
+        } else {
+          window.__applyBossOverrides?.(snap.data());
+        }
       }, (err) => { console.error('bossOverrides listen failed:', err); });
 
       // ⭐ Phase B：監聽 wb9 subcollection（每王一份 doc）
