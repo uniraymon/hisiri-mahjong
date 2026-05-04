@@ -1932,7 +1932,7 @@
         // ⭐ 新增：魔吸斬 — 0.8× ATK 傷害 + 回 2 MP（戰術用，低 MP 時穩定恢復）
         { id: 'w_mana_strike',  name: '魔吸斬',   icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0, type: 'damage', mult: 0.8, mpRestore: 2 },
         // ⭐ 新增：底氣 — 回血 70% + DEF +30（1 回合）；硬值 150；不可升級
-        { id: 'w_guts',         name: '底氣',     icon: '💪', unlockLv: 4,  cooldown: 0, mpCost: 25, type: 'buff', selfBuff: { stat: 'def', amount: 30, turns: 1 }, bonusHealPct: 0.70, cast: 75, maxLv: 1 },
+        { id: 'w_guts',         name: '底氣',     icon: '💪', unlockLv: 4,  cooldown: 0, mpCost: 25, type: 'buff', applyPartialShield: { reducePct: 0.20, hits: 3 }, bonusHealPct: 0.50, cast: 75, maxLv: 1 },
       ],
       skillTree: [
         { id: 'w_hp',   name: '鋼鐵之軀', icon: '🛡',  desc: '+5% 最大 HP',         maxLevel: 5, effect: 'hpPct',     per: 0.05 },
@@ -2020,8 +2020,8 @@
         { id: 'm_arcane_focus',   name: '元素灌注',   icon: '🌀', unlockLv: 2,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'markPct', amount: 0.30, turns: 4 } },
         // ⭐ 魔力虹吸：物理傷（MARK 計算）+ 回 10% maxMP
         { id: 'm_arcane_drain',   name: '魔力虹吸', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 0.8, useMark: true, mpRestorePct: 0.10 },
-        // ⭐ 血吸術：2.0 × MARK 魔法傷害 + 吸血 20%
-        { id: 'm_blood_drain',    name: '血吸術',   icon: '🩸', unlockLv: 6,  cooldown: 0, mpCost: 28, type: 'damage', markMult: 2.0, magic: true, lifesteal: 0.20 },
+        // ⭐ 血吸術：1.4 × MARK 魔法傷害 + 吸血 20%（v1.1 砍 30%）
+        { id: 'm_blood_drain',    name: '血吸術',   icon: '🩸', unlockLv: 6,  cooldown: 0, mpCost: 28, type: 'damage', markMult: 1.4, magic: true, lifesteal: 0.20 },
       ],
       skillTree: [
         { id: 'm_mp',    name: '法力深淵', icon: '💎', desc: '+5% 最大 MP',         maxLevel: 5, effect: 'mpPct',     per: 0.05 },
@@ -3533,6 +3533,10 @@
     if (skill.id === 'p_holy_smite') {
       if (level >= 5) eff.bonusMaxHpPct = (eff.bonusMaxHpPct || 0) + 0.05;
       // Lv 10：易傷 +1 次（已在 applyStatus 特殊處理）
+    }
+    // ⭐ 嗜血爆裂：customLv → Lv 10 +5% 吸血
+    if (skill.id === 'w_blood_burst') {
+      if (level >= 10) eff.lifesteal = +((eff.lifesteal || 0) + 0.05).toFixed(3);
     }
     // ⭐ 神之矢：customLv → Lv 5 / Lv 10 各 +20% 爆擊傷害（本招）
     if (skill.id === 'a_god_arrow') {
@@ -5964,10 +5968,17 @@
               log.push({ type: 'system', text: `回合 ${round}：${monster.name} 進入 ${statusEmoji(skill.applyStatus.type)}${statusLabel(skill.applyStatus.type)} 狀態`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
             }
             if (mHp <= 0) { pushDeathLine(); break; }
-          } else if (skill.type === 'buff' && skill.selfBuff) {
-            applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff.stat, amount: skill.selfBuff.amount, turns: skill.selfBuff.turns });
-            // ⭐ selfBuff2：第二個 buff（鷹眼：暴擊率 + 暴傷）
+          } else if (skill.type === 'buff' && (skill.selfBuff || skill.applyPartialShield)) {
             const extraNote = [];
+            if (skill.selfBuff) {
+              applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff.stat, amount: skill.selfBuff.amount, turns: skill.selfBuff.turns });
+            }
+            // ⭐ 魔坑：hit-based 減傷護盾
+            if (skill.applyPartialShield) {
+              applyStatus(playerObj, { type: 'partialShield', reducePct: skill.applyPartialShield.reducePct, hitsLeft: skill.applyPartialShield.hits, turns: 99 });
+              extraNote.push(`🛡 魔坑 −${Math.round(skill.applyPartialShield.reducePct*100)}%（${skill.applyPartialShield.hits} 次）`);
+            }
+            // ⭐ selfBuff2：第二個 buff（鷹眼：暴擊率 + 暴傷）
             if (skill.selfBuff2) {
               applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff2.stat, amount: skill.selfBuff2.amount, turns: skill.selfBuff2.turns });
               extraNote.push(describeBuff(skill.selfBuff2));
@@ -5981,7 +5992,7 @@
               applyStatus(playerObj, { type: 'buff', stat: 'critDmg', amount: 0.20, turns: skill.selfBuff.turns });
               extraNote.push('💥 爆傷 +20%');
             }
-            // ⭐ 神聖祝福：額外 +20% maxHp（即時補血、可超過上限）
+            // ⭐ 底氣 / 神聖祝福：額外即時補血（可超過上限）
             if (skill.bonusHealPct) {
               const heal = Math.round(stats.maxHp * skill.bonusHealPct);
               pHp = pHp + heal; // 不 cap，允許超過 maxHp
@@ -5993,9 +6004,10 @@
               applyStatus(playerObj, { type: 'buff', stat: 'maxHpPct', amount: skill.buffMaxHpPct, turns: bTurns });
               extraNote.push(`💖 最大HP +${Math.round(skill.buffMaxHpPct * 100)}%（${bTurns} 回合）`);
             }
+            const mainDesc = skill.selfBuff ? `${describeBuff(skill.selfBuff)}（${skill.selfBuff.turns} 回合）` : skill.name;
             log.push({
               type: 'player',
-              text: `回合 ${round}：${skill.icon} ${skill.name} → ${describeBuff(skill.selfBuff)}（${skill.selfBuff.turns} 回合）${extraNote.length ? ' / ' + extraNote.join(' / ') : ''}${costStr}`,
+              text: `回合 ${round}：${skill.icon} ${skill.name} → ${mainDesc}${extraNote.length ? ' / ' + extraNote.join(' / ') : ''}${costStr}`,
               hp: { player: pHp, monster: mHp, mp: pMp }
             });
           } else if (skill.type === 'heal') {
@@ -6132,6 +6144,17 @@
           log.push({ type: 'system', text: `回合 ${round}：🌫 ${player.name} 隱身免疫此次傷害！`, hp: { player: pHp, monster: mHp, mp: pMp } });
           return 0;
         };
+        // ⭐ 魔坑：hit-based 減傷 reducePct，消耗 1 次
+        const consumePartialShield = (incoming) => {
+          if (incoming <= 0) return incoming;
+          const ps = (playerObj.statuses || []).find(x => x.type === 'partialShield' && (x.hitsLeft || 0) > 0);
+          if (!ps) return incoming;
+          const reduced = Math.max(1, Math.round(incoming * (1 - (ps.reducePct || 0))));
+          ps.hitsLeft -= 1;
+          if (ps.hitsLeft <= 0) playerObj.statuses = playerObj.statuses.filter(x => x !== ps);
+          log.push({ type: 'system', text: `回合 ${round}：🛡 魔坑 −${Math.round((ps.reducePct||0)*100)}% 傷害（剩 ${ps.hitsLeft} 次）`, hp: { player: pHp, monster: mHp, mp: pMp } });
+          return reduced;
+        };
         if (mSkill) {
           if (mSkill.type === 'monsterSelfBuff') {
             // ⭐ 怪物自身加 buff（早餐鵝加防）
@@ -6148,6 +6171,7 @@
             dmg *= (1 - (pBuff.dmgReducePct || 0));
             dmg = Math.max(1, Math.round(dmg));
             dmg = consumeShield(dmg);
+            dmg = consumePartialShield(dmg);
             pHp = Math.max(0, pHp - dmg);
             if (dmg > 0) {
               log.push({
@@ -6177,6 +6201,7 @@
             dmg *= (1 - (pBuff.dmgReducePct || 0));
             dmg = Math.max(1, Math.round(dmg));
             dmg = consumeShield(dmg);
+            dmg = consumePartialShield(dmg);
             pHp -= dmg;
             if (dmg > 0) {
               log.push({
@@ -6237,6 +6262,10 @@
         // ⭐ hit-based：取較多次數，疊加量取最大
         existing.hits   = Math.max(existing.hits   || 0, status.hits   || 0);
         existing.amount = Math.max(existing.amount || 0, status.amount || 0);
+      } else if (status.type === 'partialShield') {
+        // ⭐ 魔坑：hit-based，取較多次數 / 較高減傷
+        existing.hitsLeft  = Math.max(existing.hitsLeft  || 0, status.hitsLeft  || 0);
+        existing.reducePct = Math.max(existing.reducePct || 0, status.reducePct || 0);
       } else if (status.type === 'shield' || status.type === 'paralyze' || status.type === 'poison') {
         // ⭐ charge-based：護盾/麻痺/中毒均取較多層
         existing.charges = Math.max(existing.charges || 0, status.charges || 0);
@@ -6264,16 +6293,17 @@
         events.push({ type: 'poison', dmg });
         s.charges = (s.charges || 0) - 1; // ⭐ charge-based：每次觸發消耗 1 層
       }
-      // ⭐ 易傷/護盾/麻痺/中毒：全部 charge-based，不計 turns
-      if (s.type !== 'vulnerable' && s.type !== 'shield' && s.type !== 'paralyze' && s.type !== 'poison') {
+      // ⭐ 易傷/護盾/麻痺/中毒/魔坑：全部 charge/hit-based，不計 turns
+      if (s.type !== 'vulnerable' && s.type !== 'shield' && s.type !== 'paralyze' && s.type !== 'poison' && s.type !== 'partialShield') {
         s.turns = (s.turns || 0) - 1;
       }
     }
     target.statuses = target.statuses.filter(s => {
-      if (s.type === 'vulnerable') return (s.hits    || 0) > 0;
-      if (s.type === 'shield')     return (s.charges || 0) > 0;
-      if (s.type === 'paralyze')   return (s.charges || 0) > 0; // ⭐ charge-based
-      if (s.type === 'poison')     return (s.charges || 0) > 0; // ⭐ charge-based
+      if (s.type === 'vulnerable')    return (s.hits     || 0) > 0;
+      if (s.type === 'shield')        return (s.charges  || 0) > 0;
+      if (s.type === 'paralyze')      return (s.charges  || 0) > 0; // ⭐ charge-based
+      if (s.type === 'poison')        return (s.charges  || 0) > 0; // ⭐ charge-based
+      if (s.type === 'partialShield') return (s.hitsLeft || 0) > 0; // ⭐ hit-based
       return s.turns > 0;
     });
     return events;
@@ -6650,10 +6680,17 @@
                 log.push({ type: 'system', text: `${stuck.map(h => h.tgt.name).join(' / ')} 進入 ${statusEmoji(skill.applyStatus.type)}${statusLabel(skill.applyStatus.type)} 狀態`, hp: hpsSnapshot() });
               }
             }
-          } else if (skill.type === 'buff' && skill.selfBuff) {
-            applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff.stat, amount: skill.selfBuff.amount, turns: skill.selfBuff.turns });
-            // ⭐ selfBuff2：第二個 buff（鷹眼：暴擊率 + 暴傷）
+          } else if (skill.type === 'buff' && (skill.selfBuff || skill.applyPartialShield)) {
             const extraNote = [];
+            if (skill.selfBuff) {
+              applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff.stat, amount: skill.selfBuff.amount, turns: skill.selfBuff.turns });
+            }
+            // ⭐ 魔坑：hit-based 減傷護盾
+            if (skill.applyPartialShield) {
+              applyStatus(playerObj, { type: 'partialShield', reducePct: skill.applyPartialShield.reducePct, hitsLeft: skill.applyPartialShield.hits, turns: 99 });
+              extraNote.push(`🛡 魔坑 −${Math.round(skill.applyPartialShield.reducePct*100)}%（${skill.applyPartialShield.hits} 次）`);
+            }
+            // ⭐ selfBuff2：第二個 buff（鷹眼：暴擊率 + 暴傷）
             if (skill.selfBuff2) {
               applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff2.stat, amount: skill.selfBuff2.amount, turns: skill.selfBuff2.turns });
               extraNote.push(describeBuff(skill.selfBuff2));
@@ -6666,7 +6703,7 @@
               applyStatus(playerObj, { type: 'buff', stat: 'critDmg', amount: 0.20, turns: skill.selfBuff.turns });
               extraNote.push('💥 爆傷 +20%');
             }
-            // ⭐ 神聖祝福：額外 +20% maxHp（即時補血、可超過上限）
+            // ⭐ 底氣 / 神聖祝福：額外即時補血（可超過上限）
             if (skill.bonusHealPct) {
               const heal = Math.round(stats.maxHp * skill.bonusHealPct);
               pHp = pHp + heal;
@@ -6678,9 +6715,10 @@
               applyStatus(playerObj, { type: 'buff', stat: 'maxHpPct', amount: skill.buffMaxHpPct, turns: bTurns });
               extraNote.push(`💖 最大HP +${Math.round(skill.buffMaxHpPct * 100)}%（${bTurns} 回合）`);
             }
+            const mainDesc2 = skill.selfBuff ? `${describeBuff(skill.selfBuff)}（${skill.selfBuff.turns} 回合）` : skill.name;
             log.push({
               type: 'player',
-              text: `回合 ${round}：${skill.icon} ${skill.name} → ${describeBuff(skill.selfBuff)}（${skill.selfBuff.turns} 回合）${extraNote.length ? ' / ' + extraNote.join(' / ') : ''}${costStr}`,
+              text: `回合 ${round}：${skill.icon} ${skill.name} → ${mainDesc2}${extraNote.length ? ' / ' + extraNote.join(' / ') : ''}${costStr}`,
               hp: hpsSnapshot(),
             });
           } else if (skill.type === 'heal') {
@@ -6808,6 +6846,17 @@
           log.push({ type: 'system', text: `回合 ${round}：🌫 ${player.name} 隱身免疫此次傷害！`, hp: hpsSnapshot() });
           return 0;
         };
+        // ⭐ 試煉場魔坑
+        const consumePartialShield2 = (incoming) => {
+          if (incoming <= 0) return incoming;
+          const ps = (playerObj.statuses || []).find(x => x.type === 'partialShield' && (x.hitsLeft || 0) > 0);
+          if (!ps) return incoming;
+          const reduced = Math.max(1, Math.round(incoming * (1 - (ps.reducePct || 0))));
+          ps.hitsLeft -= 1;
+          if (ps.hitsLeft <= 0) playerObj.statuses = playerObj.statuses.filter(x => x !== ps);
+          log.push({ type: 'system', text: `回合 ${round}：🛡 魔坑 −${Math.round((ps.reducePct||0)*100)}% 傷害（剩 ${ps.hitsLeft} 次）`, hp: hpsSnapshot() });
+          return reduced;
+        };
         if (mSkill) {
           if (mSkill.type === 'monsterSelfBuff') {
             applyStatus(m, { type: 'buff', stat: mSkill.stat, amount: mSkill.amount, turns: mSkill.turns });
@@ -6823,6 +6872,7 @@
             dmg *= (1 - (pBuff.dmgReducePct || 0));
             dmg = Math.max(1, Math.round(dmg));
             dmg = consumeShield2(dmg);
+            dmg = consumePartialShield2(dmg);
             pHp = Math.max(0, pHp - dmg);
             if (dmg > 0) {
               log.push({
@@ -6849,6 +6899,7 @@
             dmg *= (1 - (pBuff.dmgReducePct || 0));
             dmg = Math.max(1, Math.round(dmg));
             dmg = consumeShield2(dmg);
+            dmg = consumePartialShield2(dmg);
             pHp = Math.max(0, pHp - dmg);
             if (dmg > 0) {
               log.push({
@@ -8640,6 +8691,9 @@ ${b.text}
     if (eff.healCaster) buffPairs.push(`💚 自癒 ${Math.round(eff.healCaster*100)}% maxHP`);
     if (eff.selfBuff) {
       buffPairs.push(`${describeBuff(eff.selfBuff)}　持續 ${eff.selfBuff.turns} 回合`);
+    }
+    if (skill.applyPartialShield) {
+      buffPairs.push(`🛡 魔坑 −${Math.round(skill.applyPartialShield.reducePct*100)}% 受到傷害（${skill.applyPartialShield.hits} 次）`);
     }
     if (eff.applyStatus) {
       const s = eff.applyStatus;
