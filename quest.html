@@ -7952,8 +7952,8 @@
         if (picked.type === 'item') {
           const baseItem = findItem(picked.id);
           if (!baseItem) continue;
-          // 鵝王恩賜：金裝、不洗詞綴、保留 affixDesc
-          const drop = createBossGiftInstance(baseItem);
+          // 鵝王恩賜：金裝、不洗詞綴；其餘（探險扭蛋戒指）：固定 3 詞條隨機
+          const drop = baseItem.isBossGift ? createBossGiftInstance(baseItem) : createExploreRingInstance(baseItem);
           r.inventory = r.inventory || [];
           r.inventory.push(drop);
           results.push({ kind: 'item', item: drop });
@@ -8106,6 +8106,36 @@
     for (let i = 0; i < affixCount; i++) {
       const a = AFFIXES[Math.floor(Math.random() * AFFIXES.length)];
       const val = Math.max(1, Math.round((1 + drop.lv * a.perLv) * def.mult));
+      drop[a.type] = (drop[a.type] || 0) + val;
+      drop.affixes.push({ type: a.type, name: a.name, val });
+    }
+    if (drop.affixes.length > 0) drop.name = `${drop.affixes[0].name}的 ${base.name}`;
+    return drop;
+  }
+
+  // ⭐ 探險扭蛋戒指：固定 3 詞條，傳說稀有度（紫）
+  function createExploreRingInstance(base) {
+    const EXPLORE_LV = 15; // 詞條強度基準等級
+    const mult = RARITY['legendary'].mult; // 1.5
+    const drop = {
+      id: 'exring_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      baseId: base.id,
+      rarity: 'legendary',
+      name: base.name,
+      icon: base.icon,
+      slot: base.slot,
+      atk: base.atk || 0,
+      def: base.def || 0,
+      spd: base.spd || 0,
+      hp:  base.hp  || 0,
+      mp:  base.mp  || 0,
+      critChance: base.critChance || 0,
+      critDmg:    base.critDmg   || 0,
+      affixes: [],
+    };
+    for (let i = 0; i < 3; i++) {
+      const a = AFFIXES[Math.floor(Math.random() * AFFIXES.length)];
+      const val = Math.max(1, Math.round((1 + EXPLORE_LV * a.perLv) * mult));
       drop[a.type] = (drop[a.type] || 0) + val;
       drop.affixes.push({ type: a.type, name: a.name, val });
     }
@@ -12438,6 +12468,7 @@ ${b.text}
       <button class="btn btn-danger" onclick="adminResetBosses()" style="margin-top:6px; background:linear-gradient(135deg,#fdba74,#c2410c); box-shadow:0 4px 0 #7c2d12;">🗑 重置世界王紀錄（HP / 排隊 / 戰報 / 待領獎）</button>
       <button class="btn btn-danger" onclick="adminResetLeaderboard()" style="margin-top:6px; background:linear-gradient(135deg,#fde047,#d97706); box-shadow:0 4px 0 #92400e; color:#7c2d12;">🏆 重置排行榜（所有玩家等級 / 鵝鵝幣 / 綠茶遭遇歸零）</button>
       <button class="btn btn-danger" onclick="adminWipeAll()" style="margin-top:6px; background:linear-gradient(135deg,#fca5a5,#7f1d1d); box-shadow:0 4px 0 #450a0a;">💀 全玩家洗白（伺服器 + 本地都重置）</button>
+      <button class="btn btn-secondary" onclick="adminMigrateAccessoryToRing()" style="margin-top:6px; background:linear-gradient(135deg,#ddd6fe,#7c3aed); box-shadow:0 4px 0 #6d28d9; color:#fff;">💍 遷移：飾品槽戒指 → 戒指槽（所有玩家）</button>
       <button class="btn btn-secondary" onclick="adminLockDebug()" style="margin-top:6px;">🔐 鎖回 Debug</button>
 
       <div style="margin-top:10px; font-size:11px; color:#8b6f9b; text-align:center;">
@@ -12463,6 +12494,39 @@ ${b.text}
     showToast(`🧭 +${amount} 探險幣（現有 ${r.exploreCoins}）`);
   }
   window.adminAddExploreCoins = adminAddExploreCoins;
+
+  // ⭐ 遷移：飾品槽裡的戒指類物品 → 戒指 1 / 戒指 2
+  const RING_BASE_IDS = ['c_ring','c_foot','c_ruby','c_heart','c_oracle'];
+  function adminMigrateAccessoryToRing() {
+    let moved = 0;
+    for (const p of players) {
+      if (!p || !p.rpg) continue;
+      const eq = p.rpg.equipment;
+      if (!eq || !eq.accessory) continue;
+      const item = resolveItem(eq.accessory);
+      if (!item) continue;
+      // 判斷是否為戒指類：slot === 'ring' 或 baseId / id 在清單內
+      const isRing = item.slot === 'ring'
+        || RING_BASE_IDS.includes(item.baseId)
+        || RING_BASE_IDS.includes(item.id);
+      if (!isRing) continue;
+      // 找空戒指槽
+      const target = !eq.ring1 ? 'ring1' : !eq.ring2 ? 'ring2' : null;
+      if (!target) {
+        // 兩槽都有：丟回背包
+        p.rpg.inventory = p.rpg.inventory || [];
+        p.rpg.inventory.push(eq.accessory);
+      } else {
+        eq[target] = eq.accessory;
+      }
+      delete eq.accessory;
+      moved++;
+    }
+    saveData();
+    showToast(`💍 遷移完成：${moved} 個裝備從飾品槽移至戒指槽`);
+    showDebugModal();
+  }
+  window.adminMigrateAccessoryToRing = adminMigrateAccessoryToRing;
 
   function adminAddXp(amount) {
     const me = getMe(); if (!me) return;
