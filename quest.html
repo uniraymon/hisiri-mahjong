@@ -6384,32 +6384,66 @@
             log.push({ type: 'system', text: `回合 ${round}：🫙 ${monster.name} 護盾抵擋此次傷害！（剩 ${sh.charges} 層）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
             return 0;
           };
-          const isCrit = Math.random() < baseCritChance;
-          const effAtk = stats.atk * (1 + (pBuff.atkPct || 0));
+          const effAtk  = stats.atk * (1 + (pBuff.atkPct || 0));
           const baseCrit2 = baseCritChance + (pBuff.critChance || 0);
           const critMult2 = critMult + (pBuff.critDmg || 0);
-          const isCrit2 = Math.random() < baseCrit2;
-          let dmg = Math.max(1, effAtk - Math.floor(monDef0 / 2));
-          dmg *= (0.85 + Math.random() * 0.3);
-          if (isCrit2) { dmg *= critMult2; critCount++; }
-          if (mAbility?.type === 'physResist') dmg *= (1 - mAbility.resist);
-          dmg *= consumeVulnerable(monster); // ⭐ 易傷（hit-based）
-          dmg = Math.max(1, Math.round(dmg));
-          if (mAbility?.type === 'flatCapDmg') dmg = Math.min(dmg, mAbility.cap || 1);
-          dmg = monShield0(dmg);
-          mHp -= dmg;
-          log.push({
-            type: isCrit2 ? 'crit-player' : 'player',
-            text: `回合 ${round}：${cls.attackVerb}${isCrit2 ? '【暴擊】' : ''} → ${monster.name} -${dmg} HP`,
-            hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp }
-          });
-          if (mAbility?.type === 'reflect' && mAbility.resist) {
-            // 反傷：受到傷害的 50%，最多 300
-            const r = Math.min(300, Math.max(1, Math.round(dmg * mAbility.resist)));
-            pHp = Math.max(0, pHp - r);
-            log.push({ type: 'monster', text: `回合 ${round}：🪞 ${monster.name} 反射光芒 → ${player.name} -${r} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+
+          if (cls.id === 'archer') {
+            // ⭐ 弓手三連射：每發 0.30×ATK，獨立爆擊，爆頭率 5%+爆擊率×20%（無視防禦×3傷，可疊爆擊）
+            const HEADSHOT_CHANCE = 0.05 + baseCrit2 * 0.2;
+            let lastDmg = 0;
+            for (let hit = 1; hit <= 3; hit++) {
+              const isHs   = Math.random() < HEADSHOT_CHANCE;
+              const isCrit = Math.random() < baseCrit2;
+              const defVal = isHs ? 0 : Math.floor(monDef0 / 2); // 爆頭無視防禦
+              let dmg = Math.max(1, effAtk * 0.30 - defVal);
+              dmg *= (0.85 + Math.random() * 0.3);
+              if (isCrit) { dmg *= critMult2; critCount++; }
+              if (isHs)   dmg *= 3;
+              if (mAbility?.type === 'physResist') dmg *= (1 - mAbility.resist);
+              dmg *= consumeVulnerable(monster);
+              dmg = Math.max(1, Math.round(dmg));
+              if (mAbility?.type === 'flatCapDmg') dmg = Math.min(dmg, mAbility.cap || 1);
+              dmg = monShield0(dmg);
+              mHp -= dmg;
+              lastDmg = dmg;
+              const label = (isHs && isCrit) ? '🎯【爆頭+暴擊】' : isHs ? '🎯【爆頭】' : isCrit ? '【暴擊】' : '';
+              log.push({
+                type: (isHs || isCrit) ? 'crit-player' : 'player',
+                text: `回合 ${round}（${hit}/3）：${cls.attackVerb}${label} → ${monster.name} -${dmg} HP`,
+                hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp }
+              });
+              if (mAbility?.type === 'reflect' && mAbility.resist) {
+                const r = Math.min(300, Math.max(1, Math.round(dmg * mAbility.resist)));
+                pHp = Math.max(0, pHp - r);
+                log.push({ type: 'monster', text: `回合 ${round}：🪞 ${monster.name} 反射光芒 → ${player.name} -${r} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+              }
+              if (mHp <= 0) { pushDeathLine(); break; }
+            }
+          } else {
+            // 其他職業普攻（單擊）
+            const isCrit2 = Math.random() < baseCrit2;
+            let dmg = Math.max(1, effAtk - Math.floor(monDef0 / 2));
+            dmg *= (0.85 + Math.random() * 0.3);
+            if (isCrit2) { dmg *= critMult2; critCount++; }
+            if (mAbility?.type === 'physResist') dmg *= (1 - mAbility.resist);
+            dmg *= consumeVulnerable(monster);
+            dmg = Math.max(1, Math.round(dmg));
+            if (mAbility?.type === 'flatCapDmg') dmg = Math.min(dmg, mAbility.cap || 1);
+            dmg = monShield0(dmg);
+            mHp -= dmg;
+            log.push({
+              type: isCrit2 ? 'crit-player' : 'player',
+              text: `回合 ${round}：${cls.attackVerb}${isCrit2 ? '【暴擊】' : ''} → ${monster.name} -${dmg} HP`,
+              hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp }
+            });
+            if (mAbility?.type === 'reflect' && mAbility.resist) {
+              const r = Math.min(300, Math.max(1, Math.round(dmg * mAbility.resist)));
+              pHp = Math.max(0, pHp - r);
+              log.push({ type: 'monster', text: `回合 ${round}：🪞 ${monster.name} 反射光芒 → ${player.name} -${r} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+            }
+            if (mHp <= 0) { pushDeathLine(); break; }
           }
-          if (mHp <= 0) { pushDeathLine(); break; }
         }
       } else {
         mGauge -= ATB_THRESHOLD;
@@ -7150,26 +7184,57 @@
           const effAtk = stats.atk * (1 + (pBuff.atkPct || 0));
           const baseCrit2 = baseCritChance + (pBuff.critChance || 0);
           const critMult2 = critMult + (pBuff.critDmg || 0);
-          const isCrit = Math.random() < baseCrit2;
-          let dmg = Math.max(1, effAtk - Math.floor(tgt.def / 2));
-          dmg *= (0.85 + Math.random() * 0.3);
-          if (isCrit) { dmg *= critMult2; critCount++; }
-          if (tgt.ability?.type === 'physResist') dmg *= (1 - tgt.ability.resist);
-          dmg *= consumeVulnerable(tgt); // ⭐ 易傷（hit-based）
-          dmg = Math.max(1, Math.round(dmg));
-          if (tgt.ability?.type === 'flatCapDmg') dmg = Math.min(dmg, tgt.ability.cap || 1);
-          tgt.hp = Math.max(0, tgt.hp - dmg);
-          if (tgt.hp <= 0) tgt.alive = false;
-          if (tgt.ability?.type === 'reflect' && tgt.ability.resist) {
-            // 反傷：受到傷害的 50%，最多 300
-            const r = Math.min(300, Math.max(1, Math.round(dmg * tgt.ability.resist)));
-            pHp = Math.max(0, pHp - r);
+          if (cls.id === 'archer') {
+            // ⭐ 弓手三連射：每發 0.30×ATK，獨立爆擊，爆頭率 5%+爆擊率×20%（無視防禦×3傷，可疊爆擊）
+            const HEADSHOT_CHANCE = 0.05 + baseCrit2 * 0.2;
+            for (let hit = 1; hit <= 3; hit++) {
+              const isHs   = Math.random() < HEADSHOT_CHANCE;
+              const isCrit = Math.random() < baseCrit2;
+              const defVal = isHs ? 0 : Math.floor(tgt.def / 2); // 爆頭無視防禦
+              let dmg = Math.max(1, effAtk * 0.30 - defVal);
+              dmg *= (0.85 + Math.random() * 0.3);
+              if (isCrit) { dmg *= critMult2; critCount++; }
+              if (isHs)   dmg *= 3;
+              if (tgt.ability?.type === 'physResist') dmg *= (1 - tgt.ability.resist);
+              dmg *= consumeVulnerable(tgt);
+              dmg = Math.max(1, Math.round(dmg));
+              if (tgt.ability?.type === 'flatCapDmg') dmg = Math.min(dmg, tgt.ability.cap || 1);
+              tgt.hp = Math.max(0, tgt.hp - dmg);
+              if (tgt.hp <= 0) tgt.alive = false;
+              const label = (isHs && isCrit) ? '🎯【爆頭+暴擊】' : isHs ? '🎯【爆頭】' : isCrit ? '【暴擊】' : '';
+              log.push({
+                type: (isHs || isCrit) ? 'crit-player' : 'player',
+                text: `回合 ${round}（${hit}/3）：${cls.attackVerb}${label} → ${tgt.icon}${tgt.name} -${dmg} HP`,
+                hp: hpsSnapshot(),
+              });
+              if (tgt.ability?.type === 'reflect' && tgt.ability.resist) {
+                const r = Math.min(300, Math.max(1, Math.round(dmg * tgt.ability.resist)));
+                pHp = Math.max(0, pHp - r);
+              }
+              if (tgt.hp <= 0) break;
+            }
+          } else {
+            const isCrit = Math.random() < baseCrit2;
+            let dmg = Math.max(1, effAtk - Math.floor(tgt.def / 2));
+            dmg *= (0.85 + Math.random() * 0.3);
+            if (isCrit) { dmg *= critMult2; critCount++; }
+            if (tgt.ability?.type === 'physResist') dmg *= (1 - tgt.ability.resist);
+            dmg *= consumeVulnerable(tgt); // ⭐ 易傷（hit-based）
+            dmg = Math.max(1, Math.round(dmg));
+            if (tgt.ability?.type === 'flatCapDmg') dmg = Math.min(dmg, tgt.ability.cap || 1);
+            tgt.hp = Math.max(0, tgt.hp - dmg);
+            if (tgt.hp <= 0) tgt.alive = false;
+            if (tgt.ability?.type === 'reflect' && tgt.ability.resist) {
+              // 反傷：受到傷害的 50%，最多 300
+              const r = Math.min(300, Math.max(1, Math.round(dmg * tgt.ability.resist)));
+              pHp = Math.max(0, pHp - r);
+            }
+            log.push({
+              type: isCrit ? 'crit-player' : 'player',
+              text: `回合 ${round}：${cls.attackVerb}${isCrit ? '【暴擊】' : ''} → ${tgt.icon}${tgt.name} -${dmg} HP`,
+              hp: hpsSnapshot(),
+            });
           }
-          log.push({
-            type: isCrit ? 'crit-player' : 'player',
-            text: `回合 ${round}：${cls.attackVerb}${isCrit ? '【暴擊】' : ''} → ${tgt.icon}${tgt.name} -${dmg} HP`,
-            hp: hpsSnapshot(),
-          });
         }
       } else {
         // 怪物的回合
@@ -8937,7 +9002,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505l';
+  const APP_VERSION = '20260505m';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
