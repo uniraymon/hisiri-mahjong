@@ -9781,21 +9781,24 @@ ${b.text}
     if (!skill) { showToast('找不到技能'); return; }
     const lv = (rpg.skillLevels || {})[skillId] || 0;
     const skillMax = skill.maxLv || SKILL_MAX_LEVEL;
+    const noUpgrade = skillMax <= 1;
     const eff = getSkillEffectiveStats(skill, lv);
     const isLocked = (skill.unlockLv || 1) > rpg.level;
-    const canUpgrade = !isLocked && lv < skillMax && (rpg.skillPoints || 0) >= 1;
-    // 等級 breakdown
+    const canUpgrade = !isLocked && !noUpgrade && lv < skillMax && (rpg.skillPoints || 0) >= 1;
+    // 等級 breakdown（不可升級的技能跳過）
     const levelRows = [];
-    for (let i = 1; i <= skillMax; i++) {
-      const owned = i <= lv;
-      const isNext = i === lv + 1;
-      const desc = describeSkillLevelEffect(skill, i);
-      levelRows.push(`
-        <div class="skl-row ${owned ? 'owned' : ''} ${isNext ? 'next' : ''}">
-          <span class="skl-num">Lv ${i}</span>
-          <span class="skl-desc">${owned ? '✓ ' : isNext ? '➤ ' : '🔒 '}${desc}</span>
-        </div>
-      `);
+    if (!noUpgrade) {
+      for (let i = 1; i <= skillMax; i++) {
+        const owned = i <= lv;
+        const isNext = i === lv + 1;
+        const desc = describeSkillLevelEffect(skill, i);
+        levelRows.push(`
+          <div class="skl-row ${owned ? 'owned' : ''} ${isNext ? 'next' : ''}">
+            <span class="skl-num">Lv ${i}</span>
+            <span class="skl-desc">${owned ? '✓ ' : isNext ? '➤ ' : '🔒 '}${desc}</span>
+          </div>
+        `);
+      }
     }
     // 對應的詞綴 / 自身 buff（用 effective）
     const buffPairs = [];
@@ -9843,7 +9846,7 @@ ${b.text}
         <div style="font-size:48px; line-height:1; margin-bottom:4px;">${skill.icon}</div>
         <div style="font-weight:700; font-size:16px; color:#5b3d62;">${escapeHtml(skill.name)}</div>
         <div style="font-size:11px; color:#8b6f9b; margin-top:2px;">
-          ${isLocked ? `🔒 Lv ${skill.unlockLv} 解鎖` : `等級 <b style="color:#7c3aed;">${lv}/${skillMax}</b>`}
+          ${isLocked ? `🔒 Lv ${skill.unlockLv} 解鎖` : noUpgrade ? `固定效果（不可升級）` : `等級 <b style="color:#7c3aed;">${lv}/${skillMax}</b>`}
           　·　硬值 ${getEffectiveCast(skill)}　·　${formatSkillCost(skill)}
         </div>
         <div style="font-size:12px; color:#7c3aed; margin-top:6px; padding:6px 8px; background:#f3e8ff; border-radius:8px;">
@@ -9854,20 +9857,23 @@ ${b.text}
             ${buffPairs.map(p => `<div style="padding:1px 0;">${p}</div>`).join('')}
           </div>
         ` : ''}
+        ${noUpgrade ? '' : `
         <div style="margin-top:10px; text-align:left;">
           <div style="font-size:11px; font-weight:700; color:#5b3d62; margin-bottom:4px;">📈 等級加成</div>
           ${levelRows.join('')}
-        </div>
+        </div>`}
         <div style="margin-top:14px;">
-          ${isLocked
-            ? `<div style="font-size:11px; color:#dc2626;">尚未解鎖（Lv ${skill.unlockLv} 才能升級）</div>`
-            : canUpgrade
-              ? `<button class="btn btn-primary" onclick="upgradeSkillLevel('${skillId}')" style="background:linear-gradient(135deg,#c4b5fd,#7c3aed); box-shadow:0 4px 0 #5b21b6;">升級到 Lv ${lv + 1}（-1 SP）</button>`
-              : lv >= skillMax
-                ? `<div style="font-size:12px; color:#16a34a; font-weight:700;">✓ 已滿級</div>`
-                : `<div style="font-size:12px; color:#dc2626;">技能點不足（你有 ${rpg.skillPoints || 0} SP）</div>`
+          ${noUpgrade
+            ? `<div style="font-size:12px; color:#8b6f9b;">🔒 此技能固定效果，不可升級</div>`
+            : isLocked
+              ? `<div style="font-size:11px; color:#dc2626;">尚未解鎖（Lv ${skill.unlockLv} 才能升級）</div>`
+              : canUpgrade
+                ? `<button class="btn btn-primary" onclick="upgradeSkillLevel('${skillId}')" style="background:linear-gradient(135deg,#c4b5fd,#7c3aed); box-shadow:0 4px 0 #5b21b6;">升級到 Lv ${lv + 1}（-1 SP）</button>`
+                : lv >= skillMax
+                  ? `<div style="font-size:12px; color:#16a34a; font-weight:700;">✓ 已滿級</div>`
+                  : `<div style="font-size:12px; color:#dc2626;">技能點不足（你有 ${rpg.skillPoints || 0} SP）</div>`
           }
-          <div style="font-size:10px; color:#8b6f9b; margin-top:6px;">技能點與「屬性強化」共用同一個池</div>
+          ${noUpgrade ? '' : `<div style="font-size:10px; color:#8b6f9b; margin-top:6px;">技能點與「屬性強化」共用同一個池</div>`}
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px;">
           <button class="btn btn-secondary" onclick="showSkillsModal()">← 返回列表</button>
@@ -9890,6 +9896,7 @@ ${b.text}
     if ((skill.unlockLv || 1) > rpg.level) { showToast('等級不足，未解鎖'); return; }
     const cur = (rpg.skillLevels || {})[skillId] || 0;
     const skillMax = skill.maxLv || SKILL_MAX_LEVEL;
+    if (skillMax <= 1) { showToast('此技能不可升級'); return; }
     if (cur >= skillMax) { showToast('已達最高等級'); return; }
     if ((rpg.skillPoints || 0) < 1) { showToast('技能點不足'); return; }
     rpg.skillLevels = rpg.skillLevels || {};
@@ -9915,9 +9922,10 @@ ${b.text}
       const locked = (s.unlockLv || 1) > rpg.level;
       const sLv = (rpg.skillLevels || {})[s.id] || 0;
       const sMax = s.maxLv || SKILL_MAX_LEVEL;
-      const canUp = !locked && sLv < sMax && points >= 1;
+      const sNoUp = sMax <= 1;
+      const canUp = !locked && !sNoUp && sLv < sMax && points >= 1;
       return `<div class="skill-row${locked ? ' locked' : ''}" onclick="hideModal(); showSkillDetailModal('${s.id}')">
-        <span>${locked ? '🔒' : '✓'} <b>${s.icon} ${s.name}</b>${sLv > 0 ? ` <span class="skill-row-lv">Lv ${sLv}/${sMax}</span>` : ''}${locked ? ` <span style="font-size:10px;">(${s.unlockLv})</span>` : ''}${canUp ? ` <span style="font-size:9px; color:#7c3aed; font-weight:700;">⬆ 可升級</span>` : ''}</span>
+        <span>${locked ? '🔒' : '✓'} <b>${s.icon} ${s.name}</b>${!sNoUp && sLv > 0 ? ` <span class="skill-row-lv">Lv ${sLv}/${sMax}</span>` : ''}${locked ? ` <span style="font-size:10px;">(${s.unlockLv})</span>` : ''}${canUp ? ` <span style="font-size:9px; color:#7c3aed; font-weight:700;">⬆ 可升級</span>` : ''}</span>
         <span style="opacity:0.85; font-size:10px; white-space:nowrap;">硬值 ${getEffectiveCast(s)} · ${formatSkillCost(s)}</span>
       </div>`;
     }).join('');
