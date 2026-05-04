@@ -2375,9 +2375,6 @@
   const WB9_MAX_XP_PER_FIGHT   = 500;      // ⭐ v9 單場最多 500 EXP（舊版 1000）
   const WB9_QUEUE_STALE_MS     = 60 * 1000;
   const WB9_COOLDOWN_MS        = 0; // ⭐ 測試中：冷卻關閉（原 5 * 60 * 1000）
-  // ⭐ 每次改 Boss 硬值就 +1，讓舊的 Firebase bossOverrides doc 自動被捨棄
-  const BOSS_STATS_VERSION = 2;
-  window.__bossStatsVersion = BOSS_STATS_VERSION;
 
   const WB9_BOSSES = [
     {
@@ -2969,9 +2966,6 @@
     },
   ];
 
-  // ⭐ 暴露給 Firebase module 做版本比對 + 重寫 bossOverrides
-  window.__wb9BossDefaults = WB9_BOSSES.map(b => ({ id: b.id, maxHp: b.maxHp, atk: b.atk, def: b.def, spd: b.spd }));
-  window.__pbBossDefaults  = PERSONAL_BOSSES.map(b => ({ id: b.id, hp: b.hp, atk: b.atk, def: b.def, spd: b.spd }));
 
   // === 精魂（王掉落）===
   // 每隻王有自己的精魂，固定基礎屬性 + 2 條隨機詞條
@@ -4346,6 +4340,7 @@
   let pendingBets = [];
   let betPool = 0;
   let worldBoss = {};
+  let _bossOverrides = {}; // 儲存 admin 設定的 Boss 數值覆寫（隨 meta 同步）
   let bugs = []; // [{ id, reporter, reporterName, text, ts, snapshot }]
   // 暫存最近一場戰鬥的 log，回報 bug 時帶過去
   let __lastFightSnapshot = null; // { bossId: { currentHp, deadAt, nextSpawnAt, damageLog, lastHit, killCount, lastKill } }
@@ -4511,7 +4506,7 @@
       const meRec = players.find(p => p && p.id === meId);
       if (meRec) meRec.lastTouchedAt = Date.now();
     }
-    const payload = { players, history, gifts, comments, pendingBets, betPool, worldBoss, wb9, baseMoney, basePoint };
+    const payload = { players, history, gifts, comments, pendingBets, betPool, worldBoss, wb9, baseMoney, basePoint, bossOverrides: _bossOverrides };
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch (e) {}
     if (!__isApplyingRemote && window.__firebaseSync && window.__firebaseSync.ready) {
       window.__firebaseSync.save(payload);
@@ -4539,6 +4534,10 @@
       if (Array.isArray(data.bugs)) bugs = data.bugs;
       if (typeof data.baseMoney === 'number') baseMoney = data.baseMoney;
       if (typeof data.basePoint === 'number') basePoint = data.basePoint;
+      if (data.bossOverrides && typeof data.bossOverrides === 'object') {
+        _bossOverrides = data.bossOverrides;
+        applyBossOverrides(_bossOverrides);
+      }
       __persistLocalSnapshot();
       render();
     } finally { __isApplyingRemote = false; }
@@ -12742,7 +12741,7 @@ ${b.text}
   }
   window.adminEditBossStats = adminEditBossStats;
 
-  async function adminSaveBossStats() {
+  function adminSaveBossStats() {
     const modal = document.getElementById('bossEditModal');
     if (!modal) return;
     const overrides = { world: {}, personal: {} };
@@ -12771,27 +12770,16 @@ ${b.text}
       overrides.personal[id] = entry;
     });
 
-    // 加入版本號，讓 onSnapshot 知道這是 admin 主動設定的值
-    overrides._v = BOSS_STATS_VERSION;
-
     modal.remove();
 
-    // 先套用到本地記憶體
+    // 套用到本地記憶體
+    _bossOverrides = overrides;
     applyBossOverrides(overrides);
     render();
 
-    // 寫入 Firestore → 全 SERVER 即時生效（onSnapshot 會推送給所有客戶端）
-    if (window.__firebaseSync?.saveBossOverrides) {
-      try {
-        await window.__firebaseSync.saveBossOverrides(overrides);
-        showToast('🐉 Boss 數值已寫入雲端，全 SERVER 即時生效！');
-      } catch (e) {
-        console.error('saveBossOverrides failed:', e);
-        showToast('❌ 寫入雲端失敗：' + e.message);
-      }
-    } else {
-      showToast('🐉 已套用（本地），雲端尚未連線');
-    }
+    // 透過正常的 saveData 路徑寫入 Firebase（bossOverrides 已在 payload 裡）
+    saveData();
+    showToast('🐉 Boss 數值已儲存，全 SERVER 即時生效！');
     showDebugModal();
   }
   window.adminSaveBossStats = adminSaveBossStats;
@@ -13025,10 +13013,7 @@ ${b.text}
         await setDoc(doc(wb9Col, bossId), _prune(state));
       },
       // ⭐ Boss 覆寫：寫入 Firestore config，onSnapshot 會自動推給全部客戶端
-      saveBossOverrides: async (overrides) => {
-        const ref = doc(db, 'rooms', ROOM_ID, 'config', 'bossOverrides');
-        await setDoc(ref, _prune(overrides));
-      },
+      // saveBossOverrides 已移除 — 改透過 saveData() + meta doc 同步
       // ⭐ commit 3：攻擊 TX
       // bossDef = { maxHp, staleMs }（從主腳本傳入）
       // partialBattleSnap = 戰鬥日誌快照
@@ -13136,6 +13121,7 @@ ${b.text}
           bugs: payload.bugs,
           baseMoney: payload.baseMoney,
           basePoint: payload.basePoint,
+          bossOverrides: payload.bossOverrides, // ⭐ Admin boss stat overrides
         };
         const meta = pruneUndef(rawMeta);
 
@@ -13281,24 +13267,7 @@ ${b.text}
       });
 
       // ⭐ Boss 覆寫：監聽 config/bossOverrides，自動套用到全部客戶端
-      onSnapshot(doc(db, 'rooms', ROOM_ID, 'config', 'bossOverrides'), async (snap) => {
-        const REQUIRED_V = window.__bossStatsVersion || 1;
-        if (!snap.exists() || (snap.data()?._v || 0) < REQUIRED_V) {
-          // 舊文件（版本過低）→ 用硬值蓋掉 Firestore（只讓 leader 寫一次）
-          if (window.__iAmLeader) {
-            try {
-              const fresh = { world: {}, personal: {}, _v: REQUIRED_V };
-              (window.__wb9BossDefaults || []).forEach(b => { fresh.world[b.id] = { maxHp: b.maxHp, atk: b.atk, def: b.def, spd: b.spd }; });
-              (window.__pbBossDefaults || []).forEach(b => { fresh.personal[b.id] = { hp: b.hp, atk: b.atk, def: b.def, spd: b.spd }; });
-              const ref = doc(db, 'rooms', ROOM_ID, 'config', 'bossOverrides');
-              await setDoc(ref, fresh);
-            } catch (e) { console.error('boss fresh-write failed:', e); }
-          }
-          // 不套用舊值，硬值就是當前的
-        } else {
-          window.__applyBossOverrides?.(snap.data());
-        }
-      }, (err) => { console.error('bossOverrides listen failed:', err); });
+      // ⭐ bossOverrides 已改為透過 meta doc 同步（不再使用 config/bossOverrides 子文件）
 
       // ⭐ Phase B：監聽 wb9 subcollection（每王一份 doc）
       //   透過 window.__applyRemoteWb9 橋接到主腳本（不能直接存取 let wb9）
