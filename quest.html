@@ -10905,13 +10905,14 @@ ${b.text}
               </div>`;
           }
         }
-        // HP/MP 屬性化：戰後 HP/MP 自動回滿（除非真的死了）
+        // HP/MP 屬性化：戰後 HP/MP 自動回滿（輸了恢復 50%，不會真的死亡）
         const ns = computeStats(me);
-        if (result.pHpFinal <= 0 && (rpg.level || 1) > 4) {
-          rpg.hp = 0; rpg.deathAt = Date.now();
+        if (result.pHpFinal <= 0) {
+          rpg.hp = Math.max(1, Math.floor(ns.maxHp * REST_HP_RATIO));
         } else {
-          rpg.hp = ns.maxHp; rpg.mp = ns.maxMp; rpg.deathAt = null;
+          rpg.hp = ns.maxHp; rpg.mp = ns.maxMp;
         }
+        rpg.deathAt = null;
         if (rpg.critCount == null) rpg.critCount = 0;
         rpg.critCount += (result.critCount || 0);
 
@@ -11219,8 +11220,8 @@ ${b.text}
     if (outcome.hp) {
       const amt = applyAmount(outcome.hp);
       const stats = computeStats(me);
-      r.hp = Math.max(0, Math.min(stats.maxHp, (r.hp || 0) + amt));
-      if (r.hp <= 0 && (r.level || 1) > 4) r.deathAt = Date.now();
+      // ⭐ 探險事件傷害不再造成真死亡：HP 最低為 1
+      r.hp = Math.max(1, Math.min(stats.maxHp, (r.hp || 0) + amt));
       parts.push(amt >= 0
         ? `<span style="color:#16a34a;">+${amt} HP</span>`
         : `<span style="color:#dc2626;">${amt} HP</span>`);
@@ -11621,9 +11622,10 @@ ${b.text}
       rpg.hp = ns.maxHp; rpg.mp = ns.maxMp; rpg.deathAt = null;
     }
     if (!result.won) {
-      if ((rpg.level || 1) > 4) {
-        rpg.hp = 0; rpg.deathAt = Date.now();
-      }
+      // ⭐ 不再有真死亡：輸了立刻恢復 50% HP
+      const _ns = computeStats(player);
+      rpg.hp = Math.max(1, Math.floor(_ns.maxHp * REST_HP_RATIO));
+      rpg.deathAt = null;
       rpg.fightsLost = (rpg.fightsLost || 0) + 1;
     }
     // 渲染獎勵
