@@ -2027,8 +2027,8 @@
         { id: 'm_arcane_focus',   name: '元素灌注',   icon: '🌀', unlockLv: 2,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'markPct', amount: 0.30, turns: 4 } },
         // ⭐ 魔力虹吸：物理傷（MARK 計算）+ 回 10% maxMP
         { id: 'm_arcane_drain',   name: '魔力虹吸', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 0.8, useMark: true, mpRestorePct: 0.10 },
-        // ⭐ 血吸術：1.4 × MARK 魔法傷害 + 吸血 20%（v1.1 砍 30%）
-        { id: 'm_blood_drain',    name: '血吸術',   icon: '🩸', unlockLv: 6,  cooldown: 0, mpCost: 28, type: 'damage', markMult: 1.4, magic: true, lifesteal: 0.20 },
+        // ⭐ 血吸術：1.4 × MARK 魔法傷害 + 吸血 10%（v1.2 再砍 10%）
+        { id: 'm_blood_drain',    name: '血吸術',   icon: '🩸', unlockLv: 6,  cooldown: 0, mpCost: 28, type: 'damage', markMult: 1.4, magic: true, lifesteal: 0.10 },
       ],
       skillTree: [
         { id: 'm_mp',    name: '法力深淵', icon: '💎', desc: '+5% 最大 MP',         maxLevel: 5, effect: 'mpPct',     per: 0.05 },
