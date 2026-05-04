@@ -1923,16 +1923,16 @@
         // ⭐ 解鎖 -4，cooldown 全 0；保留高階大招的 cast / hpCost 控制節奏
         { id: 'w_rage_flame',   name: '怒之炎',   icon: '☄️', unlockLv: 8,  cooldown: 0, mpCost: 50, type: 'damage', mult: 3.5, magic: true },
         { id: 'w_heavy_strike', name: '重擊',     icon: '⚡', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'damage', mult: 1.3, alwaysCrit: true },
-        { id: 'w_rage_slash',   name: '狂怒斬',   icon: '🔥', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.8, hits: 2, cast: 65 },
-        { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 1,  cooldown: 0, mpCost: 0, hpCost: 0.15, type: 'damage', mult: 2.0, cast: 10 },
+        { id: 'w_rage_slash',   name: '狂怒斬',   icon: '🔥', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.8, hits: 2, cast: 32 },
+        { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 1,  cooldown: 0, mpCost: 0, hpCost: 0.15, type: 'damage', mult: 2.0, cast: 5 },
         { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 6,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.0, lifesteal: 0.20, customLv: true },
-        { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 50, hpCostFlat: 20, type: 'damage', mult: 4.5, cast: 100 },
+        { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 50, hpCostFlat: 20, type: 'damage', mult: 4.5, cast: 50 },
         { id: 'w_war_cry',      name: '戰意呼喚', icon: '📢', unlockLv: 3,  cooldown: 0, mpCost: 0, type: 'heal', healPct: 0.15, isMpRegen: true },
         { id: 'w_bloodlust',    name: '嗜血怒嚎', icon: '🦁', unlockLv: 2,  cooldown: 0, mpCost: 25, type: 'buff', selfBuff: { stat: 'atkPct', amount: 0.25, turns: 3 } },
         // ⭐ 新增：魔吸斬 — 0.8× ATK 傷害 + 回 2 MP（戰術用，低 MP 時穩定恢復）
         { id: 'w_mana_strike',  name: '魔吸斬',   icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0, type: 'damage', mult: 0.8, mpRestore: 2 },
         // ⭐ 新增：底氣 — 回血 70% + DEF +30（1 回合）；硬值 150；不可升級
-        { id: 'w_guts',         name: '底氣',     icon: '💪', unlockLv: 4,  cooldown: 0, mpCost: 25, type: 'buff', selfBuff: { stat: 'def', amount: 30, turns: 1 }, bonusHealPct: 0.70, cast: 150, maxLv: 1 },
+        { id: 'w_guts',         name: '底氣',     icon: '💪', unlockLv: 4,  cooldown: 0, mpCost: 25, type: 'buff', selfBuff: { stat: 'def', amount: 30, turns: 1 }, bonusHealPct: 0.70, cast: 75, maxLv: 1 },
       ],
       skillTree: [
         { id: 'w_hp',   name: '鋼鐵之軀', icon: '🛡',  desc: '+5% 最大 HP',         maxLevel: 5, effect: 'hpPct',     per: 0.05 },
@@ -1965,7 +1965,7 @@
         { id: 'a_concentrate', name: '集中',     icon: '🧘', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', isMpRegen: true },
         // ⭐ 連射：每段固定 ATK ×1.5 / 4 段 / Lv 5 暴擊 +10% / Lv 10 多 1 段
         { id: 'a_barrage',     name: '連射',     icon: '🌊', unlockLv: 4,  cooldown: 0, mpCost: 28, type: 'damage', mult: 1.2, hits: 4, fixedHitMult: true, customLv: true },
-        { id: 'a_lethal_aim',  name: '致命瞄準', icon: '💀', unlockLv: 10, cooldown: 0, mpCost: 20, type: 'damage', mult: 3.0, alwaysCrit: true, ignoreDef: true, cast: 30, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 2, chance: 1 }, customLv: true },
+        { id: 'a_lethal_aim',  name: '致命瞄準', icon: '💀', unlockLv: 10, cooldown: 0, mpCost: 20, type: 'damage', mult: 3.0, alwaysCrit: true, ignoreDef: true, cast: 15, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 2, chance: 1 }, customLv: true },
         { id: 'a_twin_shot',   name: '雙箭齊發', icon: '🏹', unlockLv: 2,  cooldown: 0, mpCost: 24, type: 'damage', mult: 1.5, targetCount: 2 },
         { id: 'a_poison_arrow',name: '毒箭',     icon: '🐍', unlockLv: 5,  cooldown: 0, mpCost: 26, type: 'damage', mult: 1.2, maxLv: 5, applyStatus: { type: 'poison', charges: 3, chance: 0.7 } },
         { id: 'a_quickstep',   name: '疾風步',   icon: '💨', unlockLv: 2,  cooldown: 0, mpCost: 16, type: 'buff', selfBuff: { stat: 'spd', amount: 8, turns: 4 } },
@@ -2006,15 +2006,16 @@
       skills: [
         // ⭐ 法師技能組（v2 平衡調整）
         { id: 'm_ice_lance',      name: '冰錐術',     icon: '❄️', unlockLv: 1,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.6, magic: true, useMark: true, applyStatus: { type: 'paralyze', charges: 2, chance: 0.25 } },
-        { id: 'm_fireball',       name: '火球術',     icon: '🔥', unlockLv: 1,  cooldown: 0, mpCost: 25, type: 'damage', mult: 2, magic: true, useMark: true, ignoreDef: true, cast: 30 },
+        { id: 'm_fireball',       name: '火球術',     icon: '🔥', unlockLv: 1,  cooldown: 0, mpCost: 25, type: 'damage', mult: 2, magic: true, useMark: true, ignoreDef: true, cast: 15 },
         { id: 'm_mana_spring',    name: '法力湧泉',   icon: '💧', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', isMpRegen: true, isMpRegenStrong: true },
         // 連環閃電：3 段 MARK 傷害
-        { id: 'm_chain_lightning',name: '連環閃電',   icon: '⚡', unlockLv: 4,  cooldown: 0, mpCost: 35, type: 'damage', mult: 0.8, magic: true, useMark: true, ignoreDef: true, hits: 3, fixedHitMult: true, cast: 50 },
-        { id: 'm_arcane_shield',  name: '魔力護盾',   icon: '🛡️', unlockLv: 5,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'dmgReducePct', amount: 0.50, turns: 4 }, cast: 20, maxLv: 1 },
+        { id: 'm_chain_lightning',name: '連環閃電',   icon: '⚡', unlockLv: 4,  cooldown: 0, mpCost: 35, type: 'damage', mult: 0.8, magic: true, useMark: true, ignoreDef: true, hits: 3, fixedHitMult: true, cast: 25 },
+        { id: 'm_arcane_shield',  name: '魔力護盾',   icon: '🛡️', unlockLv: 5,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'dmgReducePct', amount: 0.50, turns: 4 }, cast: 10, maxLv: 1 },
         // ⭐ 絕對防禦：回血 50% + 抵擋下一次傷害（不能升級）
         { id: 'm_absolute_defense', name: '絕對防禦', icon: '🔰', unlockLv: 8,  cooldown: 0, mpCost: 55, type: 'heal', healPct: 0.5, applyShield: 1, maxLv: 1 },
-        { id: 'm_destruction',    name: '毀滅之怒',   icon: '💀', unlockLv: 12, cooldown: 0, mpCost: 65, type: 'damage', mult: 3, magic: true, useMark: true, ignoreDef: true, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 3, chance: 1 }, cast: 75, customLv: true },
-        { id: 'm_firestorm',      name: '火焰風暴',   icon: '🌋', unlockLv: 7,  cooldown: 0, mpCost: 55, type: 'damage', flat: 150, markMult: 6, ignoreDef: true, targetCount: 'all', cast: 150 },
+        { id: 'm_destruction',    name: '毀滅之怒',   icon: '💀', unlockLv: 12, cooldown: 0, mpCost: 65, type: 'damage', mult: 3, magic: true, useMark: true, ignoreDef: true, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 3, chance: 1 }, cast: 37, customLv: true },
+        { id: 'm_firestorm',      name: '火焰風暴',   icon: '🌋', unlockLv: 7,  cooldown: 0, mpCost: 55, type: 'damage', flat: 150, markMult: 6, ignoreDef: true, targetCount: 'all', cast: 50 },
+        { id: 'm_thunder_storm',  name: '怒雷風暴',   icon: '⚡', unlockLv: 9,  cooldown: 0, mpCost: 45, type: 'damage', flat: 400, markMult: 10, magic: true, ignoreDef: true, cast: 25 },
         { id: 'm_poison_cloud',   name: '毒霧',       icon: '☠️', unlockLv: 3,  cooldown: 0, mpCost: 30, type: 'damage', flat: 50, perLv: 3, ignoreDef: true, targetCount: 'all', maxLv: 5, applyStatus: { type: 'poison', charges: 4, chance: 0.85 } },
         { id: 'm_arcane_focus',   name: '元素灌注',   icon: '🌀', unlockLv: 2,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'markPct', amount: 0.30, turns: 4 } },
         // ⭐ 魔力虹吸：物理傷（MARK 計算）+ 回 10% maxMP
@@ -2055,12 +2056,12 @@
         { id: 'p_holy_heal', name: '神聖治癒', icon: '✨', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'heal', healPct: 0.3 },
         { id: 'p_pray',      name: '祈禱',     icon: '🙏', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true, isMpRegenStrong: true },
         // ⭐ 神聖懲戒：2.5× ATK + 10% maxHp；Lv 5 +5% maxHp / Lv 10 易傷 +1 次
-        { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 6,  cooldown: 0, mpCost: 35, type: 'damage', mult: 2.5, bonusMaxHpPct: 0.10, cast: 60, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 2, chance: 1 }, customLv: true },
-        { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 7,  cooldown: 0, mpCost: 35, type: 'damage', mult: 1.7, targetCount: 2, applyStatus: { type: 'paralyze', charges: 2, chance: 0.8 }, cast: 30 },
+        { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 6,  cooldown: 0, mpCost: 35, type: 'damage', mult: 2.5, bonusMaxHpPct: 0.10, cast: 30, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 2, chance: 1 }, customLv: true },
+        { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 7,  cooldown: 0, mpCost: 35, type: 'damage', mult: 1.7, targetCount: 2, applyStatus: { type: 'paralyze', charges: 2, chance: 0.8 }, cast: 15 },
         // ⭐ 神聖祝福：DEF +40%（3 回合）+ 臨時最大HP +20%（僅戰鬥中有效）
         { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.25, turns: 3 }, buffMaxHpPct: 0.20 },
         // ⭐ 護盾衝鋒：6× DEF；攻擊完後 +10 DEF（持續 3 回合）硬值 40
-        { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 22, type: 'damage', defMult: 6, postSelfBuff: { stat: 'def', amount: 10, turns: 3 }, cast: 40 },
+        { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 22, type: 'damage', defMult: 6, postSelfBuff: { stat: 'def', amount: 10, turns: 3 }, cast: 20 },
         { id: 'p_aegis',         name: '反傷護盾', icon: '🪞', unlockLv: 8,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.50, turns: 3 } },
         // ⭐ 新增：神聖奪魂 — 0.8× ATK 傷害 + 回 4 MP（聖騎回魔多一倍）
         { id: 'p_mana_drain',    name: '神聖奪魂', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 0.8, mpRestore: 4 },
@@ -3760,363 +3761,274 @@
 
   // === 探索 / 採集 ===
   const FORAGE_STAMINA = 40;
+  const FORAGE_REST_DURATION_MS = 60 * 1000; // 強制休息時長，隨時可調
   // ⭐ 探險幣（rpg.exploreCoins）— 探索取得，未來用於兌換物品 / 道具
   const EXPLORE_COIN_BASE_MIN = 5;
   const EXPLORE_COIN_BASE_MAX = 15;
-  // 新版：分支事件（玩家做選擇 → 影響結果）
+
+  // ⭐ 古董：探險中的稀有收藏品，完全隨機種類
+  const ANTIQUE_TYPES = [
+    { id: 'ant_vase',    name: '古花瓶',  icon: '🏺' },
+    { id: 'ant_coin',   name: '古銅錢',  icon: '🥉' },
+    { id: 'ant_scroll', name: '古卷軸',  icon: '📜' },
+    { id: 'ant_sword',  name: '古劍',    icon: '🗡️' },
+    { id: 'ant_gem',    name: '古寶石',  icon: '💎' },
+    { id: 'ant_statue', name: '古石像',  icon: '🗿' },
+    { id: 'ant_book',   name: '古書',    icon: '📚' },
+    { id: 'ant_ring',   name: '古戒指',  icon: '💍' },
+    { id: 'ant_bell',   name: '古銅鐘',  icon: '🔔' },
+    { id: 'ant_jar',    name: '古陶罐',  icon: '🫙' },
+  ];
+
+  // ⭐ 探險分支事件（新版）
   // outcome 欄位：
-  //   coins (數字 or [min,max])、hp (扣血)、xp、stat (永久 +1 屬性)
-  //   item: 'drop' = 隨機掉落、'rare' = 提升稀有度的掉落
-  //   greentea: true = 觸發綠茶事件、battle: true = 進入戰鬥（怪物從這次選擇衍生）
-  //   battleLine: 戰鬥前的描述（在 dailyResult 顯示）
+  //   coins (數字 or [min,max])、xpPerLv: [min,max]（EXP = rand × LV）
+  //   rest: 秒數 → 強制休息（壞結果，約 5%）
+  // 隱藏加成（每次選擇後另外 roll）：
+  //   一般選項：5% 古董、10% 探險幣 1-3
+  //   付費選項：7% 古董、13% 探險幣 1-3
   const FORAGE_QUESTS = [
     {
-      id: 'sleeping_sloth',
-      icon: '🦥',
+      id: 'sleeping_sloth', icon: '🦥',
       intro: '你看到一隻樹懶鵝在樹下打盹，旁邊放著一袋叮叮噹噹的鵝鵝幣...',
       choices: [
         {
           text: '🤫 偷偷摸走錢袋',
           outcomes: [
-            { p: 0.20, line: '成功！樹懶鵝還在打呼。', coins: [60, 100] },
-            { p: 0.10, line: '不只摸到錢袋，連腰間的腰飾都拿了！', coins: [80, 130], item: 'drop' },
-            { p: 0.08, line: '錢袋裡有顆稀有寶石，嗡嗡發光！', coins: [40, 80], item: 'drop' },
-            { p: 0.05, line: '錢袋裡是綠茶鵝的私房錢——糟糕！', greentea: true },
-            { p: 0.05, line: '錢袋是空的，但樹懶嘴邊的口水黏住了一張彩票，居然中獎了！', coins: [200, 350] },
-            { p: 0.07, line: '樹懶鵝迷糊中以為你是好朋友，從口袋掏出禮物送你。', coins: [20, 40], xp: 80 },
-            { p: 0.10, line: '錢袋打開全是石頭，原來樹懶在開玩笑釣魚。', coins: [-10, -5] },
-            { p: 0.35, line: '樹懶突然張開眼：「鵝...你...想試試嗎...」', battle: true, battleLine: '🦥 樹懶鵝化身試煉守護者，向你發起挑戰！' },
+            { p: 0.75, line: '成功！悄悄把錢袋揣進懷裡，樹懶還在打呼。', xpPerLv: [15,20], coins: [30,60] },
+            { p: 0.20, line: '錢袋是空的，空手而回。', coins: [5,10] },
+            { p: 0.05, line: '樹懶突然翻身，把你壓在地上動彈不得！', rest: 60 },
           ],
         },
         {
           text: '📷 跟牠合照自拍',
           outcomes: [
-            { p: 0.30, line: '樹懶鵝在睡夢中露出微笑。可以發 IG 了。', xp: [120, 180], coins: [10, 20] },
-            { p: 0.15, line: '照片爆紅！廣告商鵝塞了一筆錢給你授權。', xp: 60, coins: [80, 150] },
-            { p: 0.15, line: '樹懶醒來看到照片很得意，從窩裡掏出珍藏送你。', xp: 80, item: 'drop' },
-            { p: 0.10, line: '不小心拍到樹懶夢遊踢腿的瞬間，肌肉鵝形象崩塌但你拿到曝光費。', coins: [60, 100] },
-            { p: 0.10, line: '相機沒電，什麼都沒拍到。但散步本身就是收穫。', xp: 30 },
-            { p: 0.10, line: '一隻路過的綠茶鵝看到合照，吃醋偷走你錢包！', greentea: true },
-            { p: 0.10, line: '樹懶醒了笑出聲：「你拍得真好！」送你一顆神奇蘋果。', xp: 50, hp: 30, coins: [10, 20] },
+            { p: 0.75, line: '樹懶鵝在睡夢中露出微笑，這張照片太療癒了！', xpPerLv: [15,20], coins: [10,20] },
+            { p: 0.20, line: '相機沒電，什麼都沒拍成。只好繼續上路。', coins: [5,10] },
+            { p: 0.05, line: '閃光燈把樹懶嚇醒，牠嚎叫把你困在現場！', rest: 60 },
           ],
         },
         {
           text: '🚶 不關我事，繼續走',
           outcomes: [
-            { p: 0.45, line: '走了一段路，撿到幾顆人家不要的鵝鵝幣。', coins: [15, 30] },
-            { p: 0.15, line: '路邊長了一棵會掉錢的樹，你站好就有錢飄下來。', coins: [50, 90] },
-            { p: 0.10, line: '撿到一張「冒險者鵝鵝」會員卡，可惜過期了。', coins: [5, 10], xp: 30 },
-            { p: 0.10, line: '路邊有人擺地攤丟下的舊裝備，沒人理你撿走。', item: 'drop' },
-            { p: 0.10, line: '前方有人在追跑馬路，你看戲還賺到一些觀眾打賞。', coins: [25, 50], xp: 20 },
-            { p: 0.05, line: '繞路撞到樹懶的同伴，反而受到熱情招待！', coins: 50, hp: 20, xp: 40 },
-            { p: 0.05, line: '走著走著就回到出發點，純粹是繞了一圈白工。', coins: 0 },
+            { p: 0.75, line: '走了一段路，心情舒暢，對探險有了新的感悟。', xpPerLv: [15,20] },
+            { p: 0.20, line: '路邊撿到幾顆散幣，不多，但心意到了。', coins: [10,25] },
+            { p: 0.05, line: '踢到一顆大石頭，腳痛得只能坐在路邊休息。', rest: 60 },
           ],
         },
       ],
     },
     {
-      id: 'nft_snake',
-      icon: '🐍',
+      id: 'nft_snake', icon: '🐍',
       intro: '一隻穿西裝的蛇鵝湊過來：「兄弟！這隻 NFT 鵝鵝原圖即將漲 100 倍！只賣 80 幣！」',
       choices: [
         {
           text: '💰 買！(花 80 幣)',
           requiresCoins: 80,
           outcomes: [
-            { p: 0.10, line: '欸真的暴漲！？這次運氣爆棚！', coins: 800 },
-            { p: 0.05, line: '居然還是限量編號 #001！收藏家鵝出手收購！', coins: 1500 },
-            { p: 0.10, line: '附贈一個實體紀念品，意外有用！', coins: -80, item: 'drop' },
-            { p: 0.10, line: '蛇鵝多送了一個 airdrop，是某個套裝碎片！', coins: -80, item: 'drop' },
-            { p: 0.15, line: '半夜接到客服電話：「您的 NFT 已升級！」結果只是改名。', coins: -80, xp: 60 },
-            { p: 0.05, line: '檔案打開居然是綠茶鵝偷拍你的照片，你還被踢了一腳。', coins: -80, greentea: true },
-            { p: 0.10, line: '幾天後賣回給另一個盤子，剛好回本還賺一點。', coins: 30 },
-            { p: 0.35, line: '檔案連打開都打不開。鵝鵝盤子確認。', coins: -80 },
+            { p: 0.70, line: '欸，真的暴漲了！這次運氣不錯。', xpPerLv: [15,20], coins: 400 },
+            { p: 0.25, line: '打開是普通圖。鵝鵝盤子確認。', coins: -80 },
+            { p: 0.05, line: '電腦當機，NFT 網站關閉，錢也飛了，還要等人救你。', coins: -80, rest: 60 },
           ],
         },
         {
           text: '😤 嗆「鵝鵝才不想當盤子」',
           outcomes: [
-            { p: 0.20, line: '蛇鵝氣噗噗離開。圍觀路鵝給你拍手。', xp: [80, 140], coins: [20, 40] },
-            { p: 0.15, line: '附近的反詐騙協會鵝過來頒獎給你。', xp: 50, coins: [60, 120] },
-            { p: 0.10, line: '路人聽到你犀利吐槽，當場錄影上傳，你變反詐騙網紅！', coins: [80, 160], xp: 80 },
-            { p: 0.10, line: '一個受害鵝鵝衝過來抱著你大哭、塞給你他的舊裝備。', xp: 40, item: 'drop' },
-            { p: 0.05, line: '蛇鵝心虛，反過來付你「沉默費」。', coins: [50, 100] },
-            { p: 0.40, line: '蛇鵝惱羞成怒：「兄弟你給我等著！」', battle: true, battleLine: '🐍 蛇鵝氣到變身盤子大魔王！' },
+            { p: 0.75, line: '蛇鵝氣噗噗離開，圍觀路鵝給你拍手叫好。', xpPerLv: [15,20], coins: [20,40] },
+            { p: 0.20, line: '蛇鵝翻白眼走了，你繼續上路。', coins: [5,10] },
+            { p: 0.05, line: '蛇鵝惱羞成怒，抓住你的行李要求賠償，耽誤半天！', rest: 60 },
           ],
         },
         {
           text: '👀 假裝沒看見走掉',
           outcomes: [
-            { p: 0.45, line: '路邊撿到 10 塊。蛇鵝翻白眼。', coins: [10, 20] },
-            { p: 0.20, line: '走遠後聽到蛇鵝又騙到下一隻鵝，慶幸自己逃過一劫。', xp: 40 },
-            { p: 0.10, line: '不小心踩到別的盤子掉下來的錢，撿了！', coins: [50, 100] },
-            { p: 0.10, line: '前方有個免費試用攤位，拿了一份小贈品。', item: 'drop' },
-            { p: 0.10, line: '走兩步就忘記了發生什麼事。鵝鵝失憶症。', coins: 0 },
-            { p: 0.05, line: '蛇鵝其實是綠茶鵝偽裝，看你想走，氣到追上來踹一腳！', greentea: true },
+            { p: 0.75, line: '遠離是非，心靜則智生。走著走著想通了很多事。', xpPerLv: [15,20] },
+            { p: 0.20, line: '路邊撿到 10 塊，蛇鵝翻白眼。', coins: [10,20] },
+            { p: 0.05, line: '不小心走進死路，繞了半天才回到正軌！', rest: 60 },
           ],
         },
       ],
     },
     {
-      id: 'casino_goose',
-      icon: '🎰',
+      id: 'casino_goose', icon: '🎰',
       intro: '黑色西裝的鵝在路邊擺骰盅：「翻倍翻倍翻倍！下注 50 幣猜大小！」',
       choices: [
         {
           text: '🎲 下 50 幣賭一把',
           requiresCoins: 50,
           outcomes: [
-            { p: 0.20, line: '鵝鵝賭神出列！翻倍！', coins: 100 },
-            { p: 0.15, line: '骰盅打開：六六六！押大爆殺！', coins: [200, 300] },
-            { p: 0.10, line: '一把 All In 全槓！還賺到一件東西！', coins: 150, item: 'drop' },
-            { p: 0.05, line: '一連中三把！黑鵝氣到掀桌跑了，桌上錢都歸你！', coins: [400, 700] },
-            { p: 0.05, line: '居然丟出超罕見「五同」，黑鵝跪下說「您是賭神！」送你紀念品。', coins: 80, item: 'drop' },
-            { p: 0.10, line: '骰子滾出去掉進水溝，黑鵝罵罵咧咧跑了。', coins: 0 },
-            { p: 0.30, line: '骰盅打開：鵝鵝鵝鵝鵝。輸了。', coins: -50 },
-            { p: 0.05, line: '不只輸了還被嗆，氣到偷拍上傳，意外賺到關注。', coins: -50, xp: 40 },
+            { p: 0.70, line: '骰盅打開：六六六！押大爆殺！賭神在此！', xpPerLv: [15,20], coins: 200 },
+            { p: 0.25, line: '骰子還沒打開就知道輸了，認賠殺出。', coins: -50 },
+            { p: 0.05, line: '輸得太慘，情緒崩潰，在路邊坐了好一會兒。', coins: -50, rest: 60 },
           ],
         },
         {
           text: '👁 站旁邊看人賭、學經驗',
           outcomes: [
-            { p: 0.30, line: '看了 10 場，總結：「鵝鵝看不懂為什麼大家都在輸」。', xp: [100, 160], coins: [15, 30] },
-            { p: 0.20, line: '看到一個玩法漏洞！偷偷記下來。', xp: 200 },
-            { p: 0.15, line: '剛好旁邊一隻贏家鵝大方分你紅利。', coins: [100, 200] },
-            { p: 0.10, line: '一個輸光的鵝塞給你他的家當，要你帶走遠離賭場。', coins: 50, item: 'drop' },
-            { p: 0.10, line: '看著看著睡著了，醒來時口袋裡多了一些錢（？）', coins: [30, 70] },
-            { p: 0.10, line: '看到綠茶鵝偽裝賭客在偷別人錢，你被牽連也被罵了一頓！', greentea: true },
-            { p: 0.05, line: '荷官誤把贏的籌碼推到你面前，你不動聲色拿走！', coins: [80, 150] },
+            { p: 0.75, line: '看完十場，研究出一套鵝鵝賭博觀察學。', xpPerLv: [15,20], coins: [10,30] },
+            { p: 0.20, line: '看了半天沒什麼收穫，繼續趕路。', coins: [5,15] },
+            { p: 0.05, line: '站太久腳麻，不得不坐下來休息。', rest: 60 },
           ],
         },
         {
           text: '📞 報警',
           outcomes: [
-            { p: 0.20, line: '警察鵝出現了！檢舉獎金到帳。', coins: 150 },
-            { p: 0.15, line: '警察鵝特別表揚你，頒發勳章 + 獎金！', coins: 80, xp: 200 },
-            { p: 0.10, line: '警察鵝丟了沒收到的贓物給你當謝禮。', coins: 100, item: 'drop' },
-            { p: 0.10, line: '警察沒空，但路邊好心鵝聽到你的義舉自發送錢。', coins: [40, 80] },
-            { p: 0.05, line: '警察鵝是綠茶鵝假扮的，反而搶走你電話費！', greentea: true },
-            { p: 0.05, line: '黑鵝心虛塞錢叫你撤回檢舉，雙倍滿足。', coins: 200 },
-            { p: 0.35, line: '黑鵝發現你報警，他自己跳出來想滅口！', battle: true, battleLine: '🎰 黑鵝甩開西裝顯露真身，是個試煉強者！' },
+            { p: 0.75, line: '警察鵝出現！拍手叫好，還給你一筆檢舉獎金。', xpPerLv: [15,20], coins: [50,120] },
+            { p: 0.20, line: '電話沒有訊號，報警失敗。繼續趕路。', coins: [5,10] },
+            { p: 0.05, line: '警察占線，等了好久沒人接，白白浪費時間。', rest: 60 },
           ],
         },
       ],
     },
     {
-      id: 'crying_goose',
-      icon: '👻',
+      id: 'crying_goose', icon: '👻',
       intro: '草叢深處傳來幽幽哭聲：「嗚嗚嗚...鵝鵝...沒有人...愛我...」',
       choices: [
         {
           text: '🤗 上前安慰',
           outcomes: [
-            { p: 0.20, line: '原來只是被甩了。聽完牠哭兩小時，賺到一袋謝禮。', coins: [60, 100], xp: 120 },
-            { p: 0.10, line: '失戀鵝聽完你給的建議，送你前任送的禮物：「拿走拿走！」', xp: 80, item: 'drop' },
-            { p: 0.10, line: '其實是失戀的小富翁鵝，請你吃飯還包了大紅包。', coins: [200, 350], xp: 50 },
-            { p: 0.10, line: '安慰時不小心讓他笑了，他開心送你寶物。', xp: 60, item: 'drop' },
-            { p: 0.05, line: '居然是失蹤多年的鵝鵝富翁！重重有賞！', coins: 400, item: 'drop' },
-            { p: 0.05, line: '哭著哭著兩隻鵝開始一起哭，但有 KOL 拍到你們，廣告費入帳。', coins: [80, 150], xp: 40 },
-            { p: 0.05, line: '安慰得太到位，對方倒貼一個小幫派任你差遣（賺到一袋幣）。', coins: 200 },
-            { p: 0.20, line: '是綠茶鵝偽裝的！你被踢了一腳還被偷錢！', greentea: true },
-            { p: 0.15, line: '其實是埋伏！跳出一隻試煉者！', battle: true, battleLine: '👻 哭聲是試煉者的偽裝，現出真身！' },
+            { p: 0.75, line: '聽完兩小時的哭訴，對方感激地塞了袋謝禮，你也從中學到道理。', xpPerLv: [15,20], coins: [40,80] },
+            { p: 0.20, line: '安慰半天，對方還是在哭，你只好離開。', coins: [5,15] },
+            { p: 0.05, line: '哭聲太有感染力，你也跟著哭了起來，坐在那裡哭了好久。', rest: 60 },
           ],
         },
         {
           text: '🚷 假裝沒聽到默默離開',
           outcomes: [
-            { p: 0.50, line: '良心被狗叼走了。但路上撿到一些散錢。', coins: [15, 35] },
-            { p: 0.15, line: '逃出一段距離後，剛好踩到別人遺落的小金庫。', coins: [80, 150] },
-            { p: 0.10, line: '一隻看不下去的義氣鵝跑來追你，邊罵邊塞紀念品要你回去。', xp: 30, item: 'drop' },
-            { p: 0.10, line: '走遠後聽到爆炸聲：原來那是綠茶鵝的陷阱，你逃過一劫！', coins: 50, xp: 50 },
-            { p: 0.10, line: '路上一個阿嬤鵝攔住你：「年輕人不要冷漠喔！」順手塞給你一些零錢。', coins: [25, 50] },
-            { p: 0.05, line: '良心譴責你回到原地，發現是綠茶...', greentea: true },
+            { p: 0.75, line: '逃出一段距離後，思緒意外地清晰了許多。', xpPerLv: [15,20] },
+            { p: 0.20, line: '走遠後路上撿到一些散幣。', coins: [10,30] },
+            { p: 0.05, line: '良心過不去，原地呆站許久，不知道該怎麼辦才好。', rest: 60 },
           ],
         },
         {
           text: '😭 跟著一起哭',
           outcomes: [
-            { p: 0.40, line: '兩隻鵝在樹下哭整晚，路人看不下去丟了零錢給你。', coins: [25, 50], xp: 60 },
-            { p: 0.15, line: '哭聲被路過的音樂製作鵝聽到，付費收錄成 BGM！', coins: [100, 180], xp: 30 },
-            { p: 0.10, line: '另一隻路過的悲傷鵝加入，三鵝合唱「鵝生苦短」變成街頭表演。', coins: [80, 130], xp: 50 },
-            { p: 0.10, line: '哭累睡著，醒來發現口袋多了禮物：「謝謝陪伴」。', xp: 80, item: 'drop' },
-            { p: 0.10, line: '哭到對方覺得你比他慘，反過來安慰你還塞錢。', coins: [50, 100] },
-            { p: 0.10, line: '哭到最後對方不哭了——其實是綠茶鵝在演戲！', greentea: true },
-            { p: 0.05, line: '哭聲驚動了試煉者：「弱者沒資格在這裡哭！」', battle: true, battleLine: '👻 哭聲驚動了試煉者！' },
+            { p: 0.75, line: '兩隻鵝哭完之後都神清氣爽，對方感謝地分享了一些小零錢。', xpPerLv: [15,20], coins: [20,50] },
+            { p: 0.20, line: '哭完什麼感覺都沒了，默默站起來繼續趕路。', coins: [5,10] },
+            { p: 0.05, line: '哭到睡著了，醒來發現天都黑了！', rest: 60 },
           ],
         },
       ],
     },
     {
-      id: 'fruit_stand',
-      icon: '🍎',
+      id: 'fruit_stand', icon: '🍎',
       intro: '一隻鵝在賣「超神奇蘋果！吃了能變強！只要 60 幣！」',
       choices: [
         {
           text: '💵 買一顆 (60 幣)',
           requiresCoins: 60,
           outcomes: [
-            { p: 0.18, line: '蘋果格外甜，吃完精神抖擻，獲得大量經驗。', coins: -60, xp: 250 },
-            { p: 0.18, line: '蘋果裡夾了張古地圖，賣給收藏家鵝賺一筆。', coins: 100, xp: 80 },
-            { p: 0.10, line: '蘋果裡居然有顆寶石，掉出一件裝備！', coins: -60, item: 'drop' },
-            { p: 0.10, line: '吃下去後找到傳說中的隱藏蘋果園，撿了一袋鵝幣！', coins: [150, 280] },
-            { p: 0.07, line: '吃完開始打嗝，每打一次就掉一塊錢。', coins: [-60, -60], xp: 80 },
-            { p: 0.05, line: '蘋果有蟲，但蟲是稀有蟲，賣回攤主賺更多！', coins: [80, 150] },
-            { p: 0.05, line: '吃完發現攤主也是綠茶鵝偽裝，順手把你錢包也偷了！', greentea: true },
-            { p: 0.27, line: '......就是普通蘋果。但很甜。', coins: -60, hp: 30, xp: 30 },
+            { p: 0.70, line: '蘋果格外甜，吃完精神抖擻，感覺整個人都變聰明了！', xpPerLv: [15,20], coins: [10,30] },
+            { p: 0.25, line: '就是普通蘋果，不過還算甜。', coins: -60 },
+            { p: 0.05, line: '吃了過敏，只能在路邊等身體恢復！', coins: -60, rest: 60 },
           ],
         },
         {
           text: '🦹 偷一顆',
           outcomes: [
-            { p: 0.20, line: '成功偷走！攤主忙著叫客，沒發現！', coins: [60, 120], item: 'drop' },
-            { p: 0.15, line: '不只偷到蘋果，順手摸走攤位下的小錢箱！', coins: [80, 150], item: 'drop' },
-            { p: 0.10, line: '偷蘋果還順便偷到一籃，賣給黑市賺一筆！', coins: [120, 220] },
-            { p: 0.05, line: '攤主居然沒發現，還補貨給你「這位客人剛剛拿了什麼？」', coins: [30, 60], item: 'drop' },
-            { p: 0.05, line: '偷到爆炸蘋果，逃跑時手上炸了。', hp: -10 },
-            { p: 0.05, line: '攤主原來是個老朋友，假裝沒看到還塞給你紀念品。', xp: 80, item: 'drop' },
-            { p: 0.40, line: '攤主：「給我抓住那隻鵝！」', battle: true, battleLine: '🍎 水果攤主放下鋤頭，露出昔日試煉者的身手！' },
+            { p: 0.75, line: '攤主忙著叫客，完全沒注意到！蘋果到手，心情愉快。', xpPerLv: [15,20], coins: [30,60] },
+            { p: 0.20, line: '偷到的是顆壞掉的蘋果，白費力氣。', coins: [2,5] },
+            { p: 0.05, line: '被抓個正著，被攤主抓著理論了很久！', rest: 60 },
           ],
         },
         {
           text: '🚶 路過不買',
           outcomes: [
-            { p: 0.40, line: '攤主大喊「不買也來看一下嘛！」鵝鵝沒理。', coins: [5, 10] },
-            { p: 0.20, line: '走遠後路上撿到一顆掉落的蘋果，是普通的。', hp: 15, xp: 10 },
-            { p: 0.15, line: '路上有人塞免費試吃，吃到肚子飽飽。', hp: 25 },
-            { p: 0.10, line: '隔壁攤位有送贈品活動。', item: 'drop' },
-            { p: 0.10, line: '走著走著走進另一個事件，但決定先回家了。', coins: [10, 20] },
-            { p: 0.05, line: '攤主追上來：「等等！這顆免費送！」順手塞給你。', hp: 30, xp: 50 },
+            { p: 0.75, line: '攤主大喊「試吃免費！」你順手拿了一顆，意外有感悟。', xpPerLv: [15,20] },
+            { p: 0.20, line: '走過去，撿到隔壁攤掉的散幣。', coins: [8,20] },
+            { p: 0.05, line: '太熱了，路邊坐下來乘涼，休息了一會兒。', rest: 60 },
           ],
         },
       ],
     },
     {
-      id: 'street_singer',
-      icon: '🎤',
+      id: 'street_singer', icon: '🎤',
       intro: '一隻鵝拿著吉他在唱歌，完全走音，路鵝紛紛掩耳逃跑',
       choices: [
         {
           text: '💝 打賞 20 幣',
           requiresCoins: 20,
           outcomes: [
-            { p: 0.30, line: '鵝鵝音樂家感動到唱不下去，給了你一張簽名照。', coins: -20, xp: 160 },
-            { p: 0.20, line: '鵝鵝音樂家把家傳吉他撥片送給你（看似普通卻有奇效）！', coins: -20, xp: 80, item: 'drop' },
-            { p: 0.15, line: '其實是大牌歌星微服私訪，邀請你進 VIP 區免費吃飯。', coins: 80 },
-            { p: 0.10, line: '感動到一連唱了 3 首改編你的人生故事，路人投錢給你。', coins: [60, 120], xp: 60 },
-            { p: 0.10, line: '原來是綠茶鵝偽裝，拿到錢就跑，還順手再偷你一筆！', coins: -20, greentea: true },
-            { p: 0.10, line: '街頭演奏結束，他送你他剛買的彩票。', coins: [-20, 200] },
-            { p: 0.05, line: '一個粉絲鵝衝過來抱住你說「你也是粉絲對吧！」塞東西給你。', coins: -20, item: 'drop' },
+            { p: 0.70, line: '鵝鵝音樂家感動不已，唱了特別應援曲，路人也投錢回來！', xpPerLv: [15,20], coins: [30,80] },
+            { p: 0.25, line: '歌手鞠躬道謝，繼續走音。你繼續趕路。', coins: -20 },
+            { p: 0.05, line: '感動得太久，被人群卡住動彈不得！', coins: -20, rest: 60 },
           ],
         },
         {
           text: '🔇 嗆「太難聽了！」',
           outcomes: [
-            { p: 0.20, line: '鵝鵝大哭跑掉了。你深深感受到罪惡感。', xp: 20 },
-            { p: 0.30, line: '附近的人聽到笑出聲、丟錢給你打圓場。', coins: [40, 80] },
-            { p: 0.15, line: '吐槽得太精采，經紀人挖角你當評論家。', coins: [80, 150], xp: 80 },
-            { p: 0.10, line: '路人剪片上傳，你變反酸網紅！', coins: [60, 120], xp: 60 },
-            { p: 0.10, line: '街頭歌手居然認同你：「你說得對！」表演結束送你裝備。', xp: 50, item: 'drop' },
-            { p: 0.10, line: '附近的綠茶鵝聽到也來嗆你，趁亂偷你錢！', greentea: true },
-            { p: 0.05, line: '街頭歌手反過來變身：「酸民鵝？看招！」', battle: true, battleLine: '🎤 街頭歌手原來是隱世搖滾魂！' },
+            { p: 0.75, line: '吐槽得太精采，附近的路鵝笑出聲，還給你打賞！', xpPerLv: [15,20], coins: [20,50] },
+            { p: 0.20, line: '歌手假裝沒聽到，你繼續趕路。', coins: [5,10] },
+            { p: 0.05, line: '歌手的粉絲鵝湧上來質問你，理論了很久。', rest: 60 },
           ],
         },
         {
           text: '🎸 上去搶吉他自彈',
           outcomes: [
-            { p: 0.10, line: '你變網紅！整條街都在打賞！', coins: [150, 250], xp: 80 },
-            { p: 0.10, line: '一夜爆紅！經紀人鵝塞了一件超神道具給你！', coins: [80, 150], item: 'drop' },
-            { p: 0.10, line: '彈到一半電流通過全身，靈感大爆發！獲得大量經驗。', xp: 300 },
-            { p: 0.05, line: '彈到一半發現吉他裡藏著一袋金幣！', coins: [200, 350], item: 'drop' },
-            { p: 0.05, line: '原來吉他是綠茶鵝放的陷阱，被踢一腳！', greentea: true },
-            { p: 0.60, line: '吉他被原主人搶回。歌手鵝氣到變身！', battle: true, battleLine: '🎤 走音歌手原來是金屬搖滾界的隱世強者！' },
+            { p: 0.75, line: '竟然彈出天籟！路人圍觀打賞，你一夜成名！', xpPerLv: [15,20], coins: [80,160] },
+            { p: 0.20, line: '彈得比歌手還難聽，大家散開了。', coins: [5,15] },
+            { p: 0.05, line: '吉他弦斷了彈到手，痛到在路邊坐了好一會兒。', rest: 60 },
           ],
         },
       ],
     },
     {
-      id: 'fake_monk',
-      icon: '🧘',
+      id: 'fake_monk', icon: '🧘',
       intro: '一隻僧袍鵝坐在路邊：「施主，看你印堂發黑，需要鵝鵝消災...只要 100 幣...」',
       choices: [
         {
           text: '🙏 給香油錢 (100 幣)',
           requiresCoins: 100,
           outcomes: [
-            { p: 0.10, line: '居然真的是高僧！心靈受到洗禮，獲得頓悟。', coins: -100, xp: 500 },
-            { p: 0.15, line: '高僧贈你一件禪意法器！', coins: -100, xp: 150, item: 'drop' },
-            { p: 0.10, line: '高僧贈你一袋幸運符，賣到二手市場大賺一筆！', coins: 250, xp: 100 },
-            { p: 0.10, line: '僧鵝邀你共修，三小時後你獲得頓悟。', coins: -100, xp: 400 },
-            { p: 0.05, line: '僧鵝為你算出明天會發財，順手把今天的香油倒給你。', coins: 50 },
-            { p: 0.05, line: '原來是綠茶鵝偽裝高僧！收完錢還偷你裝備！', coins: -100, greentea: true },
-            { p: 0.10, line: '僧鵝淚眼汪汪：「謝謝你，我家鵝媳婦今天有錢買飯了。」', coins: -100, xp: 60 },
-            { p: 0.35, line: '鵝鵝才剛出家，那 100 幣他直接拿去買鵝鵝奶茶了。', coins: -100, xp: 30 },
+            { p: 0.70, line: '居然是真的高僧！心靈受到洗禮，頓悟中！', xpPerLv: [15,20], coins: [50,100] },
+            { p: 0.25, line: '鵝鵝剛出家，那 100 幣他直接拿去買奶茶了。', coins: -100 },
+            { p: 0.05, line: '消災法事太長，你被困在現場動彈不得！', coins: -100, rest: 60 },
           ],
         },
         {
           text: '🤔 反問「鵝鵝消的是什麼災？」',
           outcomes: [
-            { p: 0.30, line: '僧鵝答不出來，灰溜溜走了。圍觀群眾鼓掌。', xp: [120, 200], coins: [20, 40] },
-            { p: 0.15, line: '你的問題太精采，被路過的學者鵝重金邀請當研究助理。', coins: [120, 200], xp: 80 },
-            { p: 0.10, line: '僧鵝認真回答了一段佛理，你聽到頓悟了！', xp: 250 },
-            { p: 0.10, line: '僧鵝發現你的問題太深，跪下說「您才是高僧」並送你裝備。', xp: 60, item: 'drop' },
-            { p: 0.05, line: '僧鵝答到一半，路人忍不住塞錢給你「跟你一起 debug」。', coins: [60, 120] },
-            { p: 0.30, line: '僧鵝惱羞變身武僧：「真理需要拳頭！」', battle: true, battleLine: '🧘 假和尚露出肌肉，原來是試煉武鵝！' },
+            { p: 0.75, line: '僧鵝答不出來，灰溜溜走了。圍觀群眾鼓掌，你有所領悟。', xpPerLv: [15,20], coins: [15,35] },
+            { p: 0.20, line: '僧鵝答了一堆廢話，你繼續趕路。', coins: [5,10] },
+            { p: 0.05, line: '僧鵝突然掉眼淚，你不知道怎麼辦，乾脆在原地呆站許久。', rest: 60 },
           ],
         },
         {
-          text: '🦢 比僧鵝更兇地驅趕他',
+          text: '🦢 兇巴巴驅趕他',
           outcomes: [
-            { p: 0.20, line: '僧鵝跑掉時掉了個袋子，裡面全是別人的香油錢。', coins: [100, 180] },
-            { p: 0.15, line: '袋子裡還有一件神秘物品！', coins: [60, 120], item: 'drop' },
-            { p: 0.10, line: '驅趕得太霸氣，地方居民送你「街道守護者」獎章。', coins: 80, xp: 100 },
-            { p: 0.10, line: '僧鵝跑時掉了張支票，金額嚇人！', coins: [200, 400] },
-            { p: 0.05, line: '僧鵝是綠茶鵝，氣到反過來偷你！', greentea: true },
-            { p: 0.40, line: '僧鵝其實是真武僧偽裝！', battle: true, battleLine: '🧘 假和尚扯下袈裟，是隱世試煉者！' },
+            { p: 0.75, line: '僧鵝跑掉時掉了個袋子，裡面全是別人的香油錢！', xpPerLv: [15,20], coins: [80,150] },
+            { p: 0.20, line: '僧鵝識相地跑了，你繼續趕路。', coins: [5,15] },
+            { p: 0.05, line: '驅趕時太用力撞到石柱，頭昏眼花只能坐在原地！', rest: 60 },
           ],
         },
       ],
     },
     {
-      id: 'mysterious_chest',
-      icon: '📦',
+      id: 'mysterious_chest', icon: '📦',
       intro: '路邊一個寫著「打開有獎」的箱子，旁邊沒人',
       choices: [
         {
           text: '📦 打開',
           outcomes: [
-            { p: 0.15, line: '裡面是一袋鵝鵝幣！', coins: [100, 180] },
-            { p: 0.20, line: '裡面是一件裝備！', item: 'drop' },
-            { p: 0.10, line: '裡面是大袋金幣 + 一件東西！', coins: [150, 250], item: 'drop' },
-            { p: 0.05, line: '裡面是傳說裝備 + 巨額金幣！', coins: [400, 600], item: 'drop' },
-            { p: 0.05, line: '裡面塞著一本書，看完功力大增！', xp: 350 },
-            { p: 0.05, line: '箱子是壞的，裡面卻夾著別人忘記的會員卡。', coins: [30, 60], xp: 40 },
-            { p: 0.05, line: '打開時冒出煙霧，醒來口袋多了東西也少了東西。', coins: [-50, 100], xp: 30 },
-            { p: 0.20, line: '彈簧鵝跳出來，原來是試煉守護者！', battle: true, battleLine: '📦 神秘箱子的守護者現身！' },
-            { p: 0.10, line: '裡面是綠茶鵝。', greentea: true },
-            { p: 0.05, line: '箱底有張紙條：「下次再來」，旁邊放著 50 幣聊表心意。', coins: 50 },
+            { p: 0.75, line: '打開是一袋鵝鵝幣！意外的好運。', xpPerLv: [15,20], coins: [60,120] },
+            { p: 0.20, line: '裡面是張紙條：「下次再來」。你嘆口氣繼續走。', coins: [5,10] },
+            { p: 0.05, line: '彈簧彈到臉，暈了半天！', rest: 60 },
           ],
         },
         {
           text: '🦶 用腳踢一下測試',
           outcomes: [
-            { p: 0.20, line: '什麼也沒發生，但路人覺得你有病。', coins: [5, 15] },
-            { p: 0.30, line: '彈簧鵝被踢到外太空，箱底有鵝鵝幣！', coins: [50, 100] },
-            { p: 0.15, line: '一腳把箱子踢開，露出地下密室！搬一箱錢出來。', coins: [120, 200] },
-            { p: 0.10, line: '踢到自己的腳，鵝鵝痛！', hp: -8 },
-            { p: 0.10, line: '踢飛箱子時掉出一件裝備！', item: 'drop' },
-            { p: 0.10, line: '箱子滾到路人腳邊，他撿到也分你一半。', coins: [40, 80] },
-            { p: 0.05, line: '箱子炸開，是綠茶鵝陷阱！', greentea: true },
+            { p: 0.75, line: '踢開後露出地下密室！搬一箱錢出來，感悟頗深。', xpPerLv: [15,20], coins: [50,100] },
+            { p: 0.20, line: '什麼也沒發生，路人覺得你有病。', coins: [5,10] },
+            { p: 0.05, line: '踢到自己腳，痛到在路邊坐了好一會兒。', rest: 60 },
           ],
         },
         {
           text: '🚶 走人，鵝鵝才不上當',
           outcomes: [
-            { p: 0.40, line: '智者鵝。沒得獎勵但也沒虧錢。', xp: 50 },
-            { p: 0.20, line: '走遠後聽到爆炸聲，逃過一劫，獲得「冷靜者」獎章。', xp: 100, coins: 30 },
-            { p: 0.15, line: '幾步外有別人剛開箱被炸飛，你撿走他掉下的東西。', coins: [50, 100], item: 'drop' },
-            { p: 0.10, line: '路上一隻鵝鵝主動付你「智慧諮詢費」。', coins: [60, 120] },
-            { p: 0.10, line: '走遠後突然想起來，回去發現箱子已經被拿走。鵝鵝失憶。', coins: 0 },
-            { p: 0.05, line: '路人看到你冷靜走開，跟你交朋友還送禮。', xp: 50, item: 'drop' },
+            { p: 0.75, line: '智者鵝！走遠後聽到爆炸聲，逃過一劫，感悟良多。', xpPerLv: [15,20] },
+            { p: 0.20, line: '沒得獎勵但也沒虧錢，繼續趕路。', coins: [2,8] },
+            { p: 0.05, line: '繞路繞到迷路，花了很多時間才找回來！', rest: 60 },
           ],
         },
       ],
@@ -11090,6 +11002,11 @@ ${b.text}
     tickRecovery(me);
     if (r.stamina < FORAGE_STAMINA) { showToast(`⚡ 體力不足（需 ${FORAGE_STAMINA}）`); return; }
     if (r.hp <= 0) { showToast('💀 HP 太低，先回滿再探險'); return; }
+    const _restUntil = r.forageRestUntil || 0;
+    if (Date.now() < _restUntil) {
+      const _remainS = Math.ceil((_restUntil - Date.now()) / 1000);
+      showToast(`😴 休息中，剩餘 ${_remainS} 秒`); return;
+    }
     r.stamina -= FORAGE_STAMINA;
     r.forageCount = (r.forageCount || 0) + 1;
 
@@ -11265,6 +11182,23 @@ ${b.text}
         ? `<span style="color:#7c3aed;">+${amt} XP</span>${leveled ? `<span style="color:#7c3aed; font-weight:700;">（升級到 Lv ${r.level}！）</span>` : ''}`
         : `<span style="color:#9ca3af;">${amt} XP</span>`);
     }
+    // xpPerLv：新探險事件格式 — EXP = random(min,max) × playerLevel
+    if (outcome.xpPerLv) {
+      const [xMin, xMax] = outcome.xpPerLv;
+      const mult = xMin + Math.floor(Math.random() * (xMax - xMin + 1));
+      const amt = mult * (r.level || 1);
+      r.xp = (r.xp || 0) + amt;
+      let leveled = 0;
+      while (r.xp >= xpForLevel(r.level)) {
+        r.xp -= xpForLevel(r.level);
+        r.level += 1;
+        r.skillPoints = (r.skillPoints || 0) + POINTS_PER_LEVEL.skill;
+        r.abilityPoints = (r.abilityPoints || 0) + POINTS_PER_LEVEL.ability;
+        leveled++;
+      }
+      if (leveled) { const ns = computeStats(me); r.hp = ns.maxHp; r.mp = ns.maxMp; r.deathAt = null; }
+      parts.push(`<span style="color:#7c3aed;">+${amt} XP (×${mult}×Lv${r.level})</span>${leveled ? `<span style="color:#7c3aed; font-weight:700;">（升級到 Lv ${r.level}！）</span>` : ''}`);
+    }
     // 永久屬性的舊路徑已移除——統一從寶物庫取得。
     // 萬一還有舊事件帶 stat:，靜默轉成 50 XP，避免出錯。
     if (outcome.stat) {
@@ -11294,6 +11228,26 @@ ${b.text}
       parts.push(`<span style="color:#dc2626;">🍵 綠茶鵝偷襲 −${stolen} 幣 / −${kickDmg} HP</span>`);
       // 是否觸發指南書
       if (typeof grantGreenTeaGuides === 'function') grantGreenTeaGuides(me);
+    }
+    // rest：強制休息 N 秒（壞結果）
+    if (outcome.rest) {
+      r.forageRestUntil = Date.now() + outcome.rest * 1000;
+      parts.push(`<span style="color:#ef4444;">😴 強制休息 ${outcome.rest} 秒</span>`);
+    }
+    // ⭐ 加成擲骰：每個選項都有機率額外獲得古董 / 探險幣
+    const _isPaid = !!(choice.requiresCoins > 0);
+    const _antiqueChance = _isPaid ? 0.07 : 0.05;
+    const _exploreChance = _isPaid ? 0.13 : 0.10;
+    if (Math.random() < _antiqueChance && ANTIQUE_TYPES.length > 0) {
+      r.antiques = r.antiques || {};
+      const ant = ANTIQUE_TYPES[Math.floor(Math.random() * ANTIQUE_TYPES.length)];
+      r.antiques[ant.id] = (r.antiques[ant.id] || 0) + 1;
+      parts.push(`<span style="color:#a16207;">🎁 額外獲得 ${ant.icon}${ant.name} ×1！</span>`);
+    }
+    if (Math.random() < _exploreChance) {
+      const ec = 1 + Math.floor(Math.random() * 3); // 1–3
+      r.exploreCoins = (r.exploreCoins || 0) + ec;
+      parts.push(`<span style="color:#0ea5e9; font-weight:700;">🧭 額外 +${ec} 探險幣</span>`);
     }
     saveData();
     renderCharCard();
