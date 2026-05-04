@@ -3409,6 +3409,7 @@
       // 自身 HP / MP
       case 1100: return ctx.maxHp > 0 && (ctx.pHp / ctx.maxHp * 100) >= v;
       case 1101: return ctx.maxHp > 0 && (ctx.pHp / ctx.maxHp * 100) <= v;
+      case 1150: return ctx.maxHp > 0 && (ctx.pHp / ctx.maxHp * 100) <= v; // 同 1101，作次要 HP 條件使用
       case 1200: return ctx.maxMp > 0 && (ctx.pMp / ctx.maxMp * 100) >= v;
       case 1201: return ctx.maxMp > 0 && (ctx.pMp / ctx.maxMp * 100) <= v;
       case 1205: return ctx.pMp >= v;
@@ -3428,6 +3429,7 @@
       // 行動次數 / 機率
       case 1900: return ctx.playerActions === v;
       case 1901: return ctx.playerActions >= v;
+      case 1910: return v > 0 && ctx.playerActions > 0 && (ctx.playerActions % v === 0); // ⭐ 每 X 次行動觸發一次
       case 1920: return (ctx.ruleUseCount[ruleIdx] || 0) < v;
       case 1940: return Math.random() < (v / 100);
       default:   return false;
