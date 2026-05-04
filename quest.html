@@ -3363,6 +3363,47 @@
       isBossGift: true, rarity: 'gold', affixDesc: '每回合 +1 MP（鵝王恩賜限定）' },
   ];
 
+  // ============================================================
+  // 💎 寶石系統 — 7 種 × 3 階 = 21 個，另有原石（合成材料）
+  // 孔數：稀有(rare)=1 孔, 傳說/金(legendary/gold)=2 孔; 武器額外 +1
+  // 轉蛋：5,000 鵝鵝幣 / 次，98% 一階晶石，2% 原石
+  // 合成：4 個一階 → 1 個二階；3 個二階 → 1 個三階
+  //        3 個一階 + 1 個原石 → 1 個二階（同種）
+  // ============================================================
+  const GEM_TYPES_LIST = ['atk','mark','def','spd','hp','mp','crit'];
+  const GEMS = {
+    // ── 攻擊晶石（紅）── +ATK
+    gem_atk_1:  { id:'gem_atk_1',  name:'攻擊晶石', icon:'🔴', grade:1, type:'atk',  atk:5,           desc:'蘊含微弱攻擊力量的紅色晶石' },
+    gem_atk_2:  { id:'gem_atk_2',  name:'攻擊寶石', icon:'🔴', grade:2, type:'atk',  atk:14,          desc:'攻擊力量濃縮的深紅寶石' },
+    gem_atk_3:  { id:'gem_atk_3',  name:'攻擊鑽石', icon:'🔴', grade:3, type:'atk',  atk:28,          desc:'攻擊力量的極致紅色結晶' },
+    // ── 法術晶石（紫）── +MARK
+    gem_mark_1: { id:'gem_mark_1', name:'法術晶石', icon:'🟣', grade:1, type:'mark', mark:5,          desc:'蘊含微弱法術能量的紫色晶石' },
+    gem_mark_2: { id:'gem_mark_2', name:'法術寶石', icon:'🟣', grade:2, type:'mark', mark:14,         desc:'法術能量濃縮的深紫寶石' },
+    gem_mark_3: { id:'gem_mark_3', name:'法術鑽石', icon:'🟣', grade:3, type:'mark', mark:28,         desc:'法術能量的極致紫色結晶' },
+    // ── 防禦晶石（藍）── +DEF
+    gem_def_1:  { id:'gem_def_1',  name:'防禦晶石', icon:'🔵', grade:1, type:'def',  def:4,           desc:'蘊含微弱防禦力的藍色晶石' },
+    gem_def_2:  { id:'gem_def_2',  name:'防禦寶石', icon:'🔵', grade:2, type:'def',  def:11,          desc:'防禦力濃縮的深藍寶石' },
+    gem_def_3:  { id:'gem_def_3',  name:'防禦鑽石', icon:'🔵', grade:3, type:'def',  def:22,          desc:'防禦力量的極致藍色結晶' },
+    // ── 速度晶石（黃）── +SPD
+    gem_spd_1:  { id:'gem_spd_1',  name:'速度晶石', icon:'🟡', grade:1, type:'spd',  spd:3,           desc:'蘊含微弱速度能量的黃色晶石' },
+    gem_spd_2:  { id:'gem_spd_2',  name:'速度寶石', icon:'🟡', grade:2, type:'spd',  spd:8,           desc:'速度能量濃縮的金黃寶石' },
+    gem_spd_3:  { id:'gem_spd_3',  name:'速度鑽石', icon:'🟡', grade:3, type:'spd',  spd:16,          desc:'速度力量的極致黃色結晶' },
+    // ── 生命晶石（紅心）── +HP （數值為同級其他屬性 2 倍）
+    gem_hp_1:   { id:'gem_hp_1',   name:'生命晶石', icon:'❤️', grade:1, type:'hp',   hp:50,           desc:'蘊含微弱生命力的赤色晶石' },
+    gem_hp_2:   { id:'gem_hp_2',   name:'生命寶石', icon:'❤️', grade:2, type:'hp',   hp:130,          desc:'生命力濃縮的赤色寶石' },
+    gem_hp_3:   { id:'gem_hp_3',   name:'生命鑽石', icon:'❤️', grade:3, type:'hp',   hp:260,          desc:'生命力量的極致赤色結晶' },
+    // ── 魔力晶石（水藍）── +MP
+    gem_mp_1:   { id:'gem_mp_1',   name:'魔力晶石', icon:'🔹', grade:1, type:'mp',   mp:15,           desc:'蘊含微弱魔力的水藍晶石' },
+    gem_mp_2:   { id:'gem_mp_2',   name:'魔力寶石', icon:'🔹', grade:2, type:'mp',   mp:40,           desc:'魔力濃縮的水藍寶石' },
+    gem_mp_3:   { id:'gem_mp_3',   name:'魔力鑽石', icon:'🔹', grade:3, type:'mp',   mp:80,           desc:'魔力的極致水藍結晶' },
+    // ── 暴擊晶石（星）── +暴擊率
+    gem_crit_1: { id:'gem_crit_1', name:'暴擊晶石', icon:'⭐', grade:1, type:'crit', critChance:0.02, desc:'蘊含微弱暴擊能量的星形晶石' },
+    gem_crit_2: { id:'gem_crit_2', name:'暴擊寶石', icon:'⭐', grade:2, type:'crit', critChance:0.05, desc:'暴擊能量濃縮的星形寶石' },
+    gem_crit_3: { id:'gem_crit_3', name:'暴擊鑽石', icon:'⭐', grade:3, type:'crit', critChance:0.10, desc:'暴擊能量的極致星形結晶' },
+    // ── 原石（合成材料）── 轉蛋 2% 出貨
+    gem_raw:    { id:'gem_raw',    name:'原石',     icon:'🪨', grade:0, type:'raw',                   desc:'未加工的魔力石英，合成時可代替任意一階晶石' },
+  };
+
   // 職業 → 該職業專屬套裝（探險精英怪會掉這個）
   const CLASS_SET = {
     warrior: 'warrior_iron',
@@ -4932,6 +4973,8 @@
     if (!Array.isArray(player.rpg.treasures)) player.rpg.treasures = [];
     if (!Array.isArray(player.rpg.spirits)) player.rpg.spirits = [null, null, null, null, null];
     if (!Array.isArray(player.rpg.spiritBag)) player.rpg.spiritBag = [];
+    if (!player.rpg.gemInventory  || typeof player.rpg.gemInventory  !== 'object') player.rpg.gemInventory  = {};
+    if (!player.rpg.equippedGems  || typeof player.rpg.equippedGems  !== 'object') player.rpg.equippedGems  = {};
     if (!player.rpg.skillLevels || typeof player.rpg.skillLevels !== 'object') player.rpg.skillLevels = {};
     // HOF 行動規則：沒有就帶入該職業的預設規則
     // ⚠️ 之前的 actionPatternV2/V3 強制升級會在每次 render 重跑而覆蓋玩家自訂 → 已移除
@@ -5388,9 +5431,27 @@
       spiritCritChance += sp.critChance || 0;
       spiritCritDmg    += sp.critDmg    || 0;
     }
-    // critChance / critDmg：把裝備 + 寶物 + 精魂加成併到 setBonuses，autoFight 直接讀
+    // ⭐ 寶石加成
+    let gemCritChance = 0;
+    for (const slot of ['weapon','armor','accessory','helmet','gloves','boots','cape','wings','pet','guide','ring1','ring2']) {
+      const gemArr = rpg.equippedGems?.[slot];
+      if (!Array.isArray(gemArr)) continue;
+      for (const gid of gemArr) {
+        if (!gid) continue;
+        const gem = GEMS[gid];
+        if (!gem) continue;
+        stats.atk   += gem.atk   || 0;
+        stats.def   += gem.def   || 0;
+        stats.spd   += gem.spd   || 0;
+        stats.maxHp += gem.hp    || 0;
+        stats.maxMp += gem.mp    || 0;
+        stats.mark  += gem.mark  || 0;
+        gemCritChance += gem.critChance || 0;
+      }
+    }
+    // critChance / critDmg：把裝備 + 寶物 + 精魂 + 寶石加成併到 setBonuses，autoFight 直接讀
     const mergedBonuses = { ...setInfo.bonuses };
-    mergedBonuses.critChance = (mergedBonuses.critChance || 0) + itemCritChance + (treasure.critChance || 0) + spiritCritChance;
+    mergedBonuses.critChance = (mergedBonuses.critChance || 0) + itemCritChance + (treasure.critChance || 0) + spiritCritChance + gemCritChance;
     mergedBonuses.critDmg    = (mergedBonuses.critDmg    || 0) + itemCritDmg    + (treasure.critDmg || 0)    + spiritCritDmg;
     stats.setBonuses = mergedBonuses;
     stats.setCounts = setInfo.counts;
@@ -5412,6 +5473,61 @@
     stats.mpRegen = itemMpRegen;
     return stats;
   }
+
+  // ============================================================
+  // 💎 寶石系統 helpers
+  // ============================================================
+  // 計算裝備槽位的寶石孔數（稀有=1, 傳說/金=2；武器多 +1）
+  function getGemSocketCount(item) {
+    if (!item) return 0;
+    const r = item.rarity;
+    const base = (r === 'legendary' || r === 'gold') ? 2 : (r === 'rare') ? 1 : 0;
+    return (base > 0 && item.slot === 'weapon') ? base + 1 : base;
+  }
+
+  // 取得某裝備槽的寶石陣列（長度固定 = 孔數，空孔為 null）
+  function getEquippedGemArray(rpg, slot) {
+    const item = resolveItem(rpg.equipment?.[slot]);
+    const count = getGemSocketCount(item);
+    if (count === 0) return [];
+    const stored = rpg.equippedGems?.[slot];
+    const arr = Array.isArray(stored) ? stored.slice(0, count) : [];
+    while (arr.length < count) arr.push(null);
+    return arr;
+  }
+
+  // 寶石屬性描述字串
+  function gemStatText(gem) {
+    if (!gem || gem.type === 'raw') return gem?.desc || '';
+    const parts = [];
+    if (gem.atk)        parts.push(`ATK +${gem.atk}`);
+    if (gem.mark)       parts.push(`MARK +${gem.mark}`);
+    if (gem.def)        parts.push(`DEF +${gem.def}`);
+    if (gem.spd)        parts.push(`SPD +${gem.spd}`);
+    if (gem.hp)         parts.push(`HP +${gem.hp}`);
+    if (gem.mp)         parts.push(`MP +${gem.mp}`);
+    if (gem.critChance) parts.push(`暴擊 +${Math.round(gem.critChance*100)}%`);
+    return parts.join(' / ');
+  }
+
+  // 寶石種類中文名
+  function gemTypeName(type) {
+    return { atk:'攻擊', mark:'法術', def:'防禦', spd:'速度', hp:'生命', mp:'魔力', crit:'暴擊', raw:'原石' }[type] || type;
+  }
+
+  // 卸下裝備時把孔位寶石全部退回 gemInventory
+  function clearSlotGems(rpg, slot) {
+    if (!rpg || !slot) return;
+    const arr = rpg.equippedGems?.[slot];
+    if (!Array.isArray(arr)) return;
+    rpg.gemInventory = rpg.gemInventory || {};
+    for (const gid of arr) {
+      if (!gid) continue;
+      rpg.gemInventory[gid] = (rpg.gemInventory[gid] || 0) + 1;
+    }
+    delete rpg.equippedGems[slot];
+  }
+
   // ⭐ 怪物 EXP 給予公式（依等級）— 全面 +20%
   //   Lv 1-5  : 24, 30, 36, 42, 48
   //   Lv 6-10 : 96, 108, 120, 132, 144
@@ -8665,7 +8781,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260504i';
+  const NEWS_LATEST_ID = 'patch_20260504j';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -8685,6 +8801,35 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#7c3aed,#c026d3); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">💎 寶石系統上線　<span style="font-size:11px; opacity:0.85;">2026-05-04</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:6px 0 4px;">💎 寶石系統全新登場</div>
+        <div>・<b>7 種晶石 × 3 階</b>：攻擊🔴 / 法術🟣 / 防禦🔵 / 速度🟡 / 生命❤️ / 魔力🔹 / 暴擊⭐</div>
+        <div>・<b>稀有</b>裝備：1 個寶石孔；<b>傳說/金裝</b>：2 個孔；<b>武器</b>額外 +1 孔</div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">🎰 寶石轉蛋</div>
+        <div>・每次 <b>5,000 鵝鵝幣</b>，98% 機率獲得隨機一階晶石，2% 機率獲得<b>原石🪨</b></div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">⚗️ 合成進階</div>
+        <div>・<b>4 個一階 → 1 個二階</b>（同種）；<b>3 個二階 → 1 個三階</b>（同種）</div>
+        <div>・<b>3 個一階 + 1 個原石 → 1 個二階</b>（靈活配方）</div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">📊 一階→二階→三階屬性</div>
+        <div>・攻擊 / 法術：ATK/MARK +5 → +14 → +28</div>
+        <div>・防禦：DEF +4 → +11 → +22　·　速度：SPD +3 → +8 → +16</div>
+        <div>・生命：HP +50 → +130 → +260　·　魔力：MP +15 → +40 → +80</div>
+        <div>・暴擊：暴擊率 +2% → +5% → +10%</div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">🎒 操作方式</div>
+        <div>・點角色欄「💎 寶石」按鈕 → 開寶石系統（轉蛋 / 背包 / 合成）</div>
+        <div>・點已裝備的裝備格 → 查看詳情並可<b>鑲嵌或取出寶石</b></div>
+
+        <div style="background:#f3f4f6; border-radius:8px; padding:8px 12px; margin-top:12px; margin-bottom:16px; font-size:12px; color:#6b7280;">
+          ⚙️ 卸下裝備時，孔位寶石自動退回寶石背包，不會消失
+        </div>
 
         <div style="background:linear-gradient(135deg,#b91c1c,#9f1239); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🗡 戰士新技能 + 流血系統 + 行動規則新判定　<span style="font-size:11px; opacity:0.85;">2026-05-04</span></div>
@@ -9137,6 +9282,11 @@ ${b.text}
         <span class="cqm-label">扭蛋</span>
         <span class="cqm-badge">🧭 ${rpg.exploreCoins || 0}</span>
       </button>
+      <button class="cqm-btn" onclick="showGemModal()" title="寶石系統">
+        <span class="cqm-icon">💎</span>
+        <span class="cqm-label">寶石</span>
+        <span class="cqm-badge">${Object.values(rpg.gemInventory||{}).reduce((s,v)=>s+v,0)}</span>
+      </button>
       <button class="cqm-btn" onclick="showResourcesModal()" title="資源">
         <span class="cqm-icon">💠</span>
         <span class="cqm-label">資源</span>
@@ -9459,10 +9609,11 @@ ${b.text}
     const html = `
       <div>
         <div style="font-size:11px; color:#5b3d62; padding:6px 10px; background:#fef3c7; border-radius:8px; margin-bottom:8px; border:1px dashed #f59e0b;">
-          🎒 點裝備格 = 卸下；點背包物品 = 裝備 / 賣掉。批量模式下點物品 = 勾選。
+          🎒 點裝備格 = 查看詳情 / 鑲嵌寶石；點背包物品 = 裝備 / 賣掉。
         </div>
         <div class="equip-row" id="equipRow"></div>
-        <div style="font-size:12px; color:#8b6f9b; margin:10px 0 6px; font-weight:600;">背包</div>
+        <button onclick="showGemModal()" style="width:100%; margin:8px 0 4px; padding:7px 0; background:linear-gradient(135deg,#7c3aed,#c026d3); color:#fff; font-weight:700; font-size:12px; border:none; border-radius:10px; cursor:pointer;">💎 寶石系統（轉蛋 / 合成 / 鑲嵌）</button>
+        <div style="font-size:12px; color:#8b6f9b; margin:8px 0 6px; font-weight:600;">背包</div>
         <div id="invPageTabs" class="inv-page-tabs"></div>
         <div id="invToolbar" class="inv-toolbar"></div>
         <div id="invGrid" class="inv-page-grid"></div>
@@ -10194,10 +10345,18 @@ ${b.text}
       const rarColor = item.rarity ? RARITY[item.rarity]?.color : null;
       // ⭐ hover tooltip：顯示完整資訊（名字、Lv、屬性、詞綴、套裝）
       const tooltip = buildItemTooltipText(item);
-      return `<button class="equip-slot" onclick="unequip('${s}')" style="${rarColor ? `border-color:${rarColor};` : ''}" title="${escapeHtml(tooltip)}">
+      // ⭐ 寶石孔徽章
+      const socketCount = getGemSocketCount(item);
+      const gemArr = getEquippedGemArray(rpg, s);
+      const filledGems = gemArr.filter(Boolean).length;
+      const gemBadge = socketCount > 0
+        ? `<div class="es-gem-badge" style="font-size:8px; color:${item.rarity==='legendary'||item.rarity==='gold'?'#a855f7':'#3b82f6'}; margin-top:1px;">💎${filledGems}/${socketCount}</div>`
+        : '';
+      return `<button class="equip-slot" onclick="openEquippedSlotDetail('${s}')" style="${rarColor ? `border-color:${rarColor};` : ''}" title="${escapeHtml(tooltip)}">
         <div class="es-icon">${item.icon}</div>
         <div class="es-name" style="${rarColor ? `color:${rarColor};` : ''}">${item.name}</div>
         <div class="es-stat">${formatItemStats(item)}</div>
+        ${gemBadge}
       </button>`;
     }).join('');
 
@@ -10485,6 +10644,371 @@ ${b.text}
   }
   window.backToBackpack = backToBackpack;
 
+  // ============================================================
+  // 💎 已裝備裝備詳情 + 寶石孔管理
+  // ============================================================
+  function openEquippedSlotDetail(slot) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const itemRef = rpg.equipment?.[slot];
+    if (!itemRef) return;
+    const item = resolveItem(itemRef);
+    if (!item) return;
+
+    const rarColor = item.rarity ? RARITY[item.rarity]?.color : (item.setId ? (SETS[item.setId]?.color || '#f59e0b') : '#7c3aed');
+    const rarLabel = item.rarity ? RARITY[item.rarity]?.label : (item.setId ? '套裝' : '');
+    const affixHtml = item.affixes && item.affixes.length
+      ? `<div style="margin-top:6px; padding:5px 8px; background:${rarColor}20; border-radius:6px; font-size:11px;">${item.affixes.map(a => `<div style="color:${rarColor};">+${a.val} ${a.type.toUpperCase()}（${a.name}）</div>`).join('')}</div>`
+      : '';
+
+    // 套裝資訊
+    let setHtml = '';
+    if (item.setId && SETS[item.setId]) {
+      const set = SETS[item.setId];
+      const setInfo = computeSetBonuses(me);
+      const currentCount = setInfo.counts[item.setId] || 0;
+      const tiers = set.tiers.map(t => {
+        const active = currentCount >= t.req;
+        return `<div style="font-size:10px; padding:2px 6px; margin:2px 0; border-radius:5px; ${active ? `background:${set.color}; color:#fff;` : 'background:#fff; color:#9ca3af; border:1px dashed #d1d5db;'}">${active ? '✓' : `${t.req}件：`}${t.desc}</div>`;
+      }).join('');
+      setHtml = `<div style="margin-top:8px; padding:6px 10px; background:${set.color}15; border:1.5px solid ${set.color}; border-radius:8px; text-align:left;">
+        <div style="font-size:11px; color:${set.color}; font-weight:700; margin-bottom:2px;">🛡 ${set.name}（已裝 ${currentCount}/${set.pieces.length}）</div>
+        ${tiers}
+      </div>`;
+    }
+
+    // 寶石孔 UI
+    const socketCount = getGemSocketCount(item);
+    const gemArr = getEquippedGemArray(rpg, slot);
+    let gemSlotsHtml = '';
+    if (socketCount > 0) {
+      const sc = (item.rarity === 'legendary' || item.rarity === 'gold') ? '#a855f7' : '#3b82f6';
+      const sockets = gemArr.map((gid, i) => {
+        const gem = gid ? GEMS[gid] : null;
+        if (gem) {
+          return `<button onclick="openGemSlotAction('${slot}',${i})" style="display:inline-flex; flex-direction:column; align-items:center; padding:6px 8px; margin:2px; background:#4b0082; border:2px solid ${sc}; border-radius:10px; cursor:pointer; min-width:58px;" title="${escapeHtml(gemStatText(gem))}">
+            <span style="font-size:22px;">${gem.icon}</span>
+            <span style="font-size:9px; color:#e9d5ff; font-weight:700; margin-top:2px;">${escapeHtml(gem.name)}</span>
+            <span style="font-size:9px; color:#c4b5fd;">${escapeHtml(gemStatText(gem))}</span>
+            <span style="font-size:8px; color:#a78bfa; margin-top:1px;">點選取出</span>
+          </button>`;
+        } else {
+          return `<button onclick="openGemPicker('${slot}',${i})" style="display:inline-flex; flex-direction:column; align-items:center; justify-content:center; padding:6px 8px; margin:2px; background:#f3f4f6; border:2px dashed ${sc}; border-radius:10px; cursor:pointer; min-width:58px; min-height:58px;">
+            <span style="font-size:18px; color:${sc};">💠</span>
+            <span style="font-size:9px; color:${sc}; margin-top:2px;">鑲嵌寶石</span>
+          </button>`;
+        }
+      }).join('');
+      gemSlotsHtml = `<div style="margin-top:10px; padding:8px 10px; background:#faf5ff; border:1.5px solid ${sc}40; border-radius:10px; text-align:left;">
+        <div style="font-size:11px; font-weight:700; color:${sc}; margin-bottom:6px;">💎 寶石孔（${socketCount} 孔）</div>
+        <div style="display:flex; flex-wrap:wrap; gap:2px;">${sockets}</div>
+      </div>`;
+    } else {
+      gemSlotsHtml = `<div style="margin-top:10px; padding:6px 10px; background:#f9fafb; border:1px dashed #d1d5db; border-radius:8px; font-size:11px; color:#9ca3af; text-align:center;">
+        此裝備無寶石孔（稀有及以上品質才有孔）
+      </div>`;
+    }
+
+    const html = `
+      <div style="text-align:center; padding:6px 0;">
+        <div style="font-size:52px; margin-bottom:4px;">${item.icon}</div>
+        ${rarLabel ? `<div style="font-size:10px; color:${rarColor}; font-weight:700; letter-spacing:1px;">[${rarLabel}]</div>` : ''}
+        <div style="font-weight:700; font-size:16px; color:${rarColor};">${escapeHtml(item.name)}</div>
+        <div style="font-size:12px; color:#8b6f9b; margin-top:4px;">${item.lv ? `Lv ${item.lv}　·　` : ''}${formatItemStats(item)}</div>
+        ${affixHtml}
+        ${setHtml}
+        ${gemSlotsHtml}
+        <button class="btn btn-warning" onclick="unequipAndReturn('${slot}')" style="width:100%; margin-top:14px;">卸下裝備</button>
+        <button class="btn btn-secondary" onclick="closeAndRefreshEquip()" style="width:100%; margin-top:6px;">← 返回</button>
+      </div>
+    `;
+    showModal(`🎒 ${escapeHtml(item.name)}`, html);
+  }
+  window.openEquippedSlotDetail = openEquippedSlotDetail;
+
+  function unequipAndReturn(slot) {
+    unequip(slot);
+    hideModal();
+    if (typeof showEquipmentModal === 'function') showEquipmentModal();
+  }
+  window.unequipAndReturn = unequipAndReturn;
+
+  function closeAndRefreshEquip() {
+    hideModal();
+    if (typeof showEquipmentModal === 'function') showEquipmentModal();
+  }
+  window.closeAndRefreshEquip = closeAndRefreshEquip;
+
+  // 選擇要鑲入哪個孔位的寶石
+  function openGemPicker(slot, socketIdx) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const inv = rpg.gemInventory || {};
+    // 過濾有庫存的晶石（排除原石 — 不能直接鑲嵌）
+    const available = Object.keys(inv).filter(gid => inv[gid] > 0 && gid !== 'gem_raw' && GEMS[gid]);
+    if (available.length === 0) {
+      showToast('寶石背包是空的！先去轉蛋或合成吧 💎');
+      openEquippedSlotDetail(slot);
+      return;
+    }
+    const byType = {};
+    for (const gid of available) {
+      const gem = GEMS[gid];
+      if (!byType[gem.type]) byType[gem.type] = [];
+      byType[gem.type].push(gem);
+    }
+    let gemListHtml = '';
+    for (const type of GEM_TYPES_LIST) {
+      const gems = byType[type];
+      if (!gems) continue;
+      gemListHtml += `<div style="margin-bottom:8px;">
+        <div style="font-size:10px; font-weight:700; color:#7c3aed; margin-bottom:4px; padding:2px 6px; background:#f3e8ff; border-radius:5px; display:inline-block;">${gemTypeName(type)}</div>
+        <div style="display:flex; flex-wrap:wrap; gap:4px;">`;
+      for (const gem of gems.sort((a,b) => a.grade - b.grade)) {
+        const cnt = inv[gem.id] || 0;
+        const gc = ['', '#9ca3af', '#3b82f6', '#a855f7'][gem.grade] || '#9ca3af';
+        gemListHtml += `<button onclick="doSocketGem('${slot}',${socketIdx},'${gem.id}')" style="display:inline-flex; flex-direction:column; align-items:center; padding:6px 8px; background:linear-gradient(135deg,#f3e8ff,#ede9fe); border:2px solid ${gc}; border-radius:10px; cursor:pointer; min-width:58px;" title="${escapeHtml(gemStatText(gem))}">
+          <span style="font-size:20px;">${gem.icon}</span>
+          <span style="font-size:9px; font-weight:700; color:${gc};">${escapeHtml(gem.name)}</span>
+          <span style="font-size:8px; color:#6b7280;">${escapeHtml(gemStatText(gem))}</span>
+          <span style="font-size:10px; font-weight:800; color:#374151; margin-top:1px;">×${cnt}</span>
+        </button>`;
+      }
+      gemListHtml += `</div></div>`;
+    }
+    const html = `
+      <div style="padding:4px 0;">
+        <div style="font-size:11px; color:#5b3d62; padding:6px 10px; background:#fef3c7; border-radius:8px; margin-bottom:10px; border:1px dashed #f59e0b;">
+          選擇要鑲入的寶石。鑲嵌後可從裝備詳情取出（返回寶石背包）。
+        </div>
+        ${gemListHtml}
+        <button class="btn btn-secondary" onclick="openEquippedSlotDetail('${slot}')" style="width:100%; margin-top:6px;">← 取消</button>
+      </div>
+    `;
+    showModal('💎 選擇寶石', html);
+  }
+  window.openGemPicker = openGemPicker;
+
+  function doSocketGem(slot, socketIdx, gemId) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const inv = rpg.gemInventory || {};
+    if (!inv[gemId] || inv[gemId] <= 0) { showToast('庫存不足'); return; }
+    inv[gemId]--;
+    if (inv[gemId] <= 0) delete inv[gemId];
+    const gemArr = getEquippedGemArray(rpg, slot);
+    gemArr[socketIdx] = gemId;
+    rpg.equippedGems[slot] = gemArr;
+    saveData();
+    renderCharCard();
+    const gem = GEMS[gemId];
+    showToast(`💎 鑲嵌 ${gem.icon} ${gem.name}！`);
+    openEquippedSlotDetail(slot);
+  }
+  window.doSocketGem = doSocketGem;
+
+  function openGemSlotAction(slot, socketIdx) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const gemArr = getEquippedGemArray(rpg, slot);
+    const gemId = gemArr[socketIdx];
+    if (!gemId) return;
+    const gem = GEMS[gemId];
+    if (!gem) return;
+    if (confirm(`取出 ${gem.icon} ${gem.name}（返回寶石背包）？`)) {
+      gemArr[socketIdx] = null;
+      rpg.equippedGems[slot] = gemArr;
+      rpg.gemInventory = rpg.gemInventory || {};
+      rpg.gemInventory[gemId] = (rpg.gemInventory[gemId] || 0) + 1;
+      saveData();
+      renderCharCard();
+      showToast(`取出 ${gem.icon} ${gem.name}`);
+      openEquippedSlotDetail(slot);
+    }
+  }
+  window.openGemSlotAction = openGemSlotAction;
+
+  // ============================================================
+  // 💎 寶石系統主頁（轉蛋 / 背包 / 合成）
+  // ============================================================
+  let __gemTab = 'bag';
+
+  function showGemModal() {
+    const me = getMe(); if (!me) return;
+    getRpg(me);
+    __gemTab = 'bag';
+    renderGemModal();
+  }
+  window.showGemModal = showGemModal;
+
+  function setGemTab(tab) {
+    __gemTab = tab;
+    renderGemModal();
+  }
+  window.setGemTab = setGemTab;
+
+  function renderGemModal() {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const inv = rpg.gemInventory || {};
+    const coins = getCoins(me.id);
+
+    // 轉蛋區塊
+    const gachaHtml = `
+      <div style="background:linear-gradient(135deg,#7c3aed,#c026d3); border-radius:12px; padding:10px 14px; margin-bottom:12px; text-align:center;">
+        <div style="font-weight:800; font-size:14px; color:#fff; margin-bottom:2px;">🎰 寶石轉蛋</div>
+        <div style="font-size:11px; color:#e9d5ff; margin-bottom:8px;">5,000 鵝鵝幣 / 次 · 98% 一階晶石 · 2% 原石</div>
+        <div style="font-size:11px; color:#d8b4fe; margin-bottom:8px;">目前鵝鵝幣：<b style="color:#fff;">${coins.toLocaleString()}</b></div>
+        <button onclick="doGemGacha()" style="padding:7px 24px; background:${coins >= 5000 ? '#fff' : '#6b7280'}; color:${coins >= 5000 ? '#7c3aed' : '#d1d5db'}; font-weight:800; font-size:13px; border:none; border-radius:20px; cursor:${coins >= 5000 ? 'pointer' : 'not-allowed'};">
+          💎 轉蛋一次（5,000 🪙）
+        </button>
+      </div>
+    `;
+
+    // 分頁 tabs
+    const tabsHtml = `
+      <div style="display:flex; gap:6px; margin-bottom:10px;">
+        <button onclick="setGemTab('bag')" style="flex:1; padding:7px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; ${__gemTab==='bag' ? 'background:#7c3aed; color:#fff; border:none;' : 'background:#f3f4f6; color:#374151; border:1px solid #d1d5db;'}">🎒 寶石背包</button>
+        <button onclick="setGemTab('combine')" style="flex:1; padding:7px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; ${__gemTab==='combine' ? 'background:#7c3aed; color:#fff; border:none;' : 'background:#f3f4f6; color:#374151; border:1px solid #d1d5db;'}">⚗️ 合成</button>
+      </div>
+    `;
+
+    let bodyHtml = '';
+    if (__gemTab === 'bag') {
+      const hasAny = Object.keys(inv).some(k => inv[k] > 0);
+      if (!hasAny) {
+        bodyHtml = `<div style="text-align:center; color:#9ca3af; padding:24px; font-size:13px;">寶石背包空空如也<br>快去轉蛋吧 💎</div>`;
+      } else {
+        for (const type of [...GEM_TYPES_LIST, 'raw']) {
+          const gems = Object.values(GEMS).filter(g => g.type === type && inv[g.id] > 0);
+          if (gems.length === 0) continue;
+          const tc = { atk:'#ef4444', mark:'#a855f7', def:'#3b82f6', spd:'#ca8a04', hp:'#f43f5e', mp:'#0ea5e9', crit:'#f97316', raw:'#6b7280' }[type] || '#7c3aed';
+          bodyHtml += `<div style="margin-bottom:10px;">
+            <div style="font-size:10px; font-weight:700; color:${tc}; margin-bottom:4px; padding:2px 8px; background:${tc}18; border-radius:6px; display:inline-block;">${gemTypeName(type)}</div>
+            <div style="display:flex; flex-wrap:wrap; gap:4px;">`;
+          for (const gem of gems.sort((a,b) => a.grade - b.grade)) {
+            const cnt = inv[gem.id] || 0;
+            const gc = ['', '#9ca3af', '#3b82f6', '#a855f7'][gem.grade] || '#9ca3af';
+            const gradeName = ['', '一階', '二階', '三階'][gem.grade] || '';
+            bodyHtml += `<div style="display:inline-flex; flex-direction:column; align-items:center; padding:6px 7px; background:linear-gradient(135deg,#fafafa,#f3e8ff); border:1.5px solid ${gc}; border-radius:8px; min-width:54px;" title="${escapeHtml(gem.desc)}">
+              <span style="font-size:20px;">${gem.icon}</span>
+              <span style="font-size:9px; font-weight:700; color:${gc};">${escapeHtml(gem.name)}</span>
+              <span style="font-size:8px; color:#6b7280;">${gem.grade > 0 ? gemStatText(gem) : gem.desc}</span>
+              <span style="font-size:11px; font-weight:800; color:#374151; margin-top:2px;">×${cnt}</span>
+            </div>`;
+          }
+          bodyHtml += `</div></div>`;
+        }
+      }
+    } else {
+      bodyHtml = buildCombineUI(rpg);
+    }
+
+    const html = `
+      <div style="padding:0 2px;">
+        ${gachaHtml}
+        ${tabsHtml}
+        ${bodyHtml}
+        <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:12px; width:100%;">關閉</button>
+      </div>
+    `;
+    showModal('💎 寶石系統', html);
+  }
+  window.renderGemModal = renderGemModal;
+
+  // 合成 UI 內容建構
+  function buildCombineUI(rpg) {
+    const inv = rpg.gemInventory || {};
+    const rawCount = inv['gem_raw'] || 0;
+    let html = `<div style="font-size:11px; color:#5b3d62; padding:6px 10px; background:#fef3c7; border-radius:8px; margin-bottom:10px; border:1px dashed #f59e0b;">
+      ⚗️ <b>4 個一階 → 1 個二階</b>　·　<b>3 個二階 → 1 個三階</b><br>
+      🪨 <b>3 個一階 + 1 個原石 → 1 個二階</b>（同種）${rawCount > 0 ? `　<span style="color:#a855f7; font-weight:700;">原石 ×${rawCount}</span>` : ''}
+    </div>`;
+
+    for (const type of GEM_TYPES_LIST) {
+      const g1 = GEMS[`gem_${type}_1`];
+      const g2 = GEMS[`gem_${type}_2`];
+      const g3 = GEMS[`gem_${type}_3`];
+      const cnt1 = inv[g1.id] || 0;
+      const cnt2 = inv[g2.id] || 0;
+      const cnt3 = inv[g3.id] || 0;
+      const can4to1  = cnt1 >= 4;
+      const can3raw  = cnt1 >= 3 && rawCount >= 1;
+      const can3to2  = cnt2 >= 3;
+      const tc = { atk:'#ef4444', mark:'#a855f7', def:'#3b82f6', spd:'#ca8a04', hp:'#f43f5e', mp:'#0ea5e9', crit:'#f97316' }[type] || '#7c3aed';
+      html += `<div style="border:1.5px solid ${tc}30; border-radius:10px; padding:8px 10px; margin-bottom:8px; background:${tc}08;">
+        <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+          <span style="font-size:16px;">${g1.icon}</span>
+          <span style="font-size:12px; font-weight:700; color:${tc};">${gemTypeName(type)}</span>
+          <span style="margin-left:auto; font-size:10px; color:#6b7280;">一×${cnt1} · 二×${cnt2} · 三×${cnt3}</span>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:4px;">
+          <button onclick="doCombineGem('${type}',1,'normal')" ${can4to1 ? '' : 'disabled'} style="flex:1; min-width:90px; padding:6px 4px; font-size:10px; border-radius:7px; ${can4to1 ? `background:${tc}; color:#fff; cursor:pointer; border:none; font-weight:700;` : 'background:#f3f4f6; color:#9ca3af; border:1px solid #e5e7eb;'}">
+            ${g1.icon}×4 → ${g2.icon}×1
+          </button>
+          <button onclick="doCombineGem('${type}',1,'raw')" ${can3raw ? '' : 'disabled'} style="flex:1; min-width:90px; padding:6px 4px; font-size:10px; border-radius:7px; ${can3raw ? `background:${tc}; color:#fff; cursor:pointer; border:none; font-weight:700;` : 'background:#f3f4f6; color:#9ca3af; border:1px solid #e5e7eb;'}">
+            ${g1.icon}×3+🪨 → ${g2.icon}×1
+          </button>
+          <button onclick="doCombineGem('${type}',2,'normal')" ${can3to2 ? '' : 'disabled'} style="flex:1; min-width:90px; padding:6px 4px; font-size:10px; border-radius:7px; ${can3to2 ? `background:${tc}; color:#fff; cursor:pointer; border:none; font-weight:700;` : 'background:#f3f4f6; color:#9ca3af; border:1px solid #e5e7eb;'}">
+            ${g2.icon}×3 → ${g3.icon}×1
+          </button>
+        </div>
+      </div>`;
+    }
+    return html;
+  }
+
+  function doCombineGem(type, fromGrade, mode) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const inv = rpg.gemInventory || {};
+    const fromId = `gem_${type}_${fromGrade}`;
+    const toId   = `gem_${type}_${fromGrade + 1}`;
+    if (!GEMS[fromId] || !GEMS[toId]) return;
+
+    if (mode === 'raw') {
+      if (fromGrade !== 1 || (inv[fromId]||0) < 3 || (inv['gem_raw']||0) < 1) { showToast('材料不足'); return; }
+      inv[fromId] = (inv[fromId] || 0) - 3;
+      inv['gem_raw'] = (inv['gem_raw'] || 0) - 1;
+      if (inv['gem_raw'] <= 0) delete inv['gem_raw'];
+    } else {
+      const need = fromGrade === 1 ? 4 : 3;
+      if ((inv[fromId]||0) < need) { showToast('材料不足'); return; }
+      inv[fromId] = (inv[fromId] || 0) - need;
+    }
+    if ((inv[fromId]||0) <= 0) delete inv[fromId];
+    inv[toId] = (inv[toId] || 0) + 1;
+    saveData();
+    const gem = GEMS[toId];
+    showToast(`⚗️ 合成成功！${gem.icon} ${gem.name}`);
+    renderGemModal();
+  }
+  window.doCombineGem = doCombineGem;
+
+  function doGemGacha() {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const COST = 5000;
+    if (getCoins(me.id) < COST) { showToast('鵝鵝幣不足（需要 5,000）'); return; }
+    spendCoins(me.id, COST);
+
+    let result;
+    if (Math.random() < 0.02) {
+      result = GEMS['gem_raw'];
+    } else {
+      const type = GEM_TYPES_LIST[Math.floor(Math.random() * GEM_TYPES_LIST.length)];
+      result = GEMS[`gem_${type}_1`];
+    }
+
+    rpg.gemInventory = rpg.gemInventory || {};
+    rpg.gemInventory[result.id] = (rpg.gemInventory[result.id] || 0) + 1;
+    saveData();
+    renderCharCard();
+    showToast(result.type === 'raw' ? `✨ 稀有！${result.icon} ${result.name}（2%）` : `${result.icon} ${result.name}！`);
+    renderGemModal();
+  }
+  window.doGemGacha = doGemGacha;
+
   // ⭐ 判斷某物品是否為戒指部位（slot 可能是舊值 'accessory'，故同時檢查 baseId / id）
   const RING_ITEM_IDS = new Set(['c_ring','c_foot','c_ruby','c_heart','c_oracle']);
   function isRingItem(item) {
@@ -10542,7 +11066,10 @@ ${b.text}
     const item = resolveItem(entry);
     if (!item) return;
     const cur = r.equipment[slot];
-    if (cur) r.inventory.push(cur);
+    if (cur) {
+      clearSlotGems(r, slot);
+      r.inventory.push(cur);
+    }
     r.equipment[slot] = entry;
     r.inventory.splice(idx, 1);
     r.equipmentLastChanged = Date.now();
@@ -12556,9 +13083,12 @@ ${b.text}
       pickRingSlotAndEquip(idx);
       return;
     }
-    // 把現有同 slot 裝備丟回背包
+    // 把現有同 slot 裝備丟回背包（並回收其寶石孔）
     const cur = rpg.equipment[item.slot];
-    if (cur) rpg.inventory.push(cur);
+    if (cur) {
+      clearSlotGems(rpg, item.slot);
+      rpg.inventory.push(cur);
+    }
     rpg.equipment[item.slot] = entry;
     rpg.inventory.splice(idx, 1);
     rpg.equipmentLastChanged = Date.now();
@@ -12580,6 +13110,8 @@ ${b.text}
     if (slot === 'ring1' || slot === 'ring2') {
       if (typeof cur === 'object' && cur !== null) cur.slot = 'ring';
     }
+    // 寶石孔回收到 gemInventory
+    clearSlotGems(rpg, slot);
     rpg.inventory.push(cur);
     rpg.equipment[slot] = null;
     rpg.equipmentLastChanged = Date.now();
