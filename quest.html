@@ -1969,7 +1969,7 @@
         { id: 'a_twin_shot',   name: '雙箭齊發', icon: '🏹', unlockLv: 2,  cooldown: 0, mpCost: 24, type: 'damage', mult: 1.5, targetCount: 2 },
         { id: 'a_poison_arrow',name: '毒箭',     icon: '🐍', unlockLv: 5,  cooldown: 0, mpCost: 26, type: 'damage', mult: 1.2, maxLv: 5, applyStatus: { type: 'poison', charges: 3, chance: 0.7 } },
         { id: 'a_quickstep',   name: '疾風步',   icon: '💨', unlockLv: 2,  cooldown: 0, mpCost: 16, type: 'buff', selfBuff: { stat: 'spd', amount: 8, turns: 4 } },
-        { id: 'a_eagle_eye',   name: '鷹眼',     icon: '🦅', unlockLv: 4,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'critChance', amount: 0.20, turns: 4 }, selfBuff2: { stat: 'critDmg', amount: 0.30, turns: 4 } },
+        { id: 'a_eagle_eye',   name: '鷹眼',     icon: '🦅', unlockLv: 4,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'critChance', amount: 0.20, turns: 4 }, selfBuff2: { stat: 'critDmg', amount: 0.30, turns: 4 }, selfBuff3: { stat: 'atkPct', amount: 0.25, turns: 4 } },
         { id: 'a_lifesteal_arrow', name: '吸血箭', icon: '🩸', unlockLv: 3,  cooldown: 0, mpCost: 14, type: 'damage', mult: 1.2, lifesteal: 0.40 },
         // 隱身重做：15 MP / 免疫一次傷害 + 下次攻擊必爆 / 每級 -1 MP / Lv 5 +1 回合 +20% 爆傷
         // ⭐ v1.1：新增即時回血 50% maxHp（弓手唯一回血手段）；不可升級
@@ -1990,7 +1990,7 @@
       passives: [
         { id: 'a_p1', name: '鷹眼',   icon: '🦅', stat: 'dex', threshold: 20, desc: 'DEX ≥ 20：暴擊率 +10%',          effect: 'critChance', per: 0.10 },
         { id: 'a_p2', name: '疾風',   icon: '💨', stat: 'agi', threshold: 30, desc: 'AGI ≥ 30：SPD +15',              effect: 'spd',        per: 15 },
-        { id: 'a_p3', name: '致命',   icon: '🌟', stat: 'luk', threshold: 30, desc: 'LUK ≥ 30：暴擊傷害 +50%',        effect: 'critDmg',    per: 0.50 },
+        { id: 'a_p3', name: '致命',   icon: '🌟', stat: 'luk', threshold: 30, desc: 'LUK ≥ 30：暴擊傷害 +80%',        effect: 'critDmg',    per: 0.80 },
       ],
     },
     mage: {
@@ -2064,7 +2064,7 @@
         // ⭐ 神聖祝福：DEF +40%（3 回合）+ 臨時最大HP +20%（僅戰鬥中有效）
         { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.25, turns: 3 }, buffMaxHpPct: 0.20 },
         // ⭐ 護盾衝鋒：6× DEF；攻擊完後 +10 DEF（持續 3 回合）硬值 40
-        { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 22, type: 'damage', defMult: 6, postSelfBuff: { stat: 'def', amount: 10, turns: 3 }, cast: 20 },
+        { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 22, type: 'damage', defMult: 5.1, postSelfBuff: { stat: 'def', amount: 10, turns: 3 }, cast: 20 },
         { id: 'p_aegis',         name: '反傷護盾', icon: '🪞', unlockLv: 8,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.50, turns: 3 } },
         // ⭐ 新增：神聖奪魂 — 0.8× ATK 傷害 + 回 4 MP（聖騎回魔多一倍）
         { id: 'p_mana_drain',    name: '神聖奪魂', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 0.8, mpRestore: 4 },
@@ -2383,8 +2383,8 @@
     {
       id: 'goose_king',
       name: '🦢 鵝皇', icon: '🦢',
-      maxHp: 90000,
-      atk: 150, def: 80, spd: 70,
+      maxHp: 900000,
+      atk: 150, def: 80, spd: 70, defPen: 0.30,
       level: 30,
       verb: '皇者懲戒',
       ability: { type: 'multiHit', hits: 2 },
@@ -2403,8 +2403,8 @@
     {
       id: 'dragon_goose',
       name: '🐉 古龍鵝', icon: '🐉',
-      maxHp: 200000,
-      atk: 220, def: 120, spd: 100,
+      maxHp: 2000000,
+      atk: 220, def: 120, spd: 100, defPen: 0.30,
       level: 40,
       verb: '龍焰之息',
       ability: { type: 'physResist', resist: 0.25 },
@@ -2424,7 +2424,7 @@
       id: 'pebble_goose',
       name: '🪨 鵝卵石', icon: '🪨',
       maxHp: 5000000,
-      atk: 350, def: 350, spd: 50,
+      atk: 350, def: 350, spd: 50, defPen: 0.30,
       level: 55,
       verb: '崩落巨石',
       ability: { type: 'physResist', resist: 0.30 },
@@ -2912,7 +2912,7 @@
     {
       id: 'breakfast_goose',
       name: '早餐鵝', icon: '🍳',
-      hp: 25000, atk: 150, def: 150, spd: 80, level: 30,
+      hp: 25000, atk: 150, def: 150, spd: 80, level: 30, defPen: 0.30,
       verb: '塗果醬',
       fixedSkillOrder: true,
       skills: [
@@ -2927,7 +2927,7 @@
     {
       id: 'lunch_goose',
       name: '午餐鵝', icon: '🍱',
-      hp: 40000, atk: 200, def: 180, spd: 100, level: 30,
+      hp: 40000, atk: 200, def: 180, spd: 100, level: 30, defPen: 0.30,
       verb: '便當蓋下擊',
       ability: { type: 'multiHit', hits: 2 },
       fixedSkillOrder: true,
@@ -2943,7 +2943,7 @@
     {
       id: 'dinner_goose',
       name: '晚餐鵝', icon: '🍷',
-      hp: 60000, atk: 220, def: 200, spd: 70, level: 30,
+      hp: 60000, atk: 220, def: 200, spd: 70, level: 30, defPen: 0.30,
       verb: '紅酒甩擊',
       ability: { type: 'magicResist', resist: 0.3 },
       fixedSkillOrder: true,
@@ -3476,9 +3476,9 @@
     if (skill.id === 'a_stealth') {
       eff.mpCost = Math.max(0, (skill.mpCost || 0) - Math.min(5, level));
     }
-    // ⭐ 連射專屬：Lv 5 暴擊率 +10% / Lv 10 多 1 段
+    // ⭐ 連射專屬：Lv 5 暴擊率 +20% / Lv 10 多 1 段
     if (skill.id === 'a_barrage') {
-      if (level >= 5)  eff.extraCritChance = (eff.extraCritChance || 0) + 0.10;
+      if (level >= 5)  eff.extraCritChance = (eff.extraCritChance || 0) + 0.20;
       if (level >= 10) eff.hits = (skill.hits || 4) + 1;
     }
     // ⭐ 中毒專用公式：每級 +1 charge，Lv 5 額外 +1（由 tickStatuses 每次觸發扣 3% maxHp）
@@ -5747,10 +5747,17 @@
         pGauge -= ATB_THRESHOLD;
         playerActions++;
         // 玩家身上狀態 tick（中毒、buff 倒數）
+        const _hadMaxHpPct = (playerObj.statuses || []).some(s => s.type === 'buff' && s.stat === 'maxHpPct');
         const pevs = tickStatuses(playerObj, stats.maxHp);
         for (const ev of pevs) {
           pHp = Math.max(0, pHp - ev.dmg);
           log.push({ type: 'monster', text: `回合 ${round}：${player.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${ev.dmg} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
+        }
+        // ⭐ 神聖祝福 maxHpPct 到期：HP 壓回 base maxHp，確保再施放時看得到加血效果
+        const _nowHasMaxHpPct = (playerObj.statuses || []).some(s => s.type === 'buff' && s.stat === 'maxHpPct');
+        if (_hadMaxHpPct && !_nowHasMaxHpPct && pHp > stats.maxHp) {
+          pHp = stats.maxHp;
+          log.push({ type: 'system', text: `回合 ${round}：💖 最大HP 加成結束，HP 恢復上限 ${stats.maxHp}`, hp: { player: pHp, monster: mHp, mp: pMp } });
         }
         if (pHp <= 0) break;
         // ⭐ 麻痺（charge-based + 30% RNG）：玩家受麻痺發動率 30%
@@ -5989,6 +5996,11 @@
               applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff2.stat, amount: skill.selfBuff2.amount, turns: skill.selfBuff2.turns });
               extraNote.push(describeBuff(skill.selfBuff2));
             }
+            // ⭐ selfBuff3：第三個 buff（鷹眼：+25% ATK）
+            if (skill.selfBuff3) {
+              applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff3.stat, amount: skill.selfBuff3.amount, turns: skill.selfBuff3.turns });
+              extraNote.push(describeBuff(skill.selfBuff3));
+            }
             // ⭐ 隱身：另加 shield 狀態（吸收一次傷害）+ Lv 5 額外 +20% 爆傷 buff
             if (skill.applyShield) {
               applyStatus(playerObj, { type: 'shield', charges: skill.applyShield, turns: 99 });
@@ -6005,11 +6017,14 @@
               pHp = Math.min(stats.maxHp, pHp + heal);
               extraNote.push(`💚 +${actualHeal} HP（${Math.round(skill.bonusHealPct * 100)}% maxHp）`);
             }
-            // ⭐ buffMaxHpPct：臨時提升最大 HP（以 buff 狀態存在，戰鬥結束自動清除）
+            // ⭐ buffMaxHpPct：臨時提升最大 HP + 即時補血至新上限（確保再施放時明顯有效）
             if (skill.buffMaxHpPct) {
               const bTurns = (skill.selfBuff && skill.selfBuff.turns) ? skill.selfBuff.turns : 3;
               applyStatus(playerObj, { type: 'buff', stat: 'maxHpPct', amount: skill.buffMaxHpPct, turns: bTurns });
-              extraNote.push(`💖 最大HP +${Math.round(skill.buffMaxHpPct * 100)}%（${bTurns} 回合）`);
+              const _newEffMaxHp = Math.round(stats.maxHp * (1 + skill.buffMaxHpPct));
+              const _bonusHeal = Math.max(0, _newEffMaxHp - pHp);
+              if (_bonusHeal > 0) pHp = Math.min(_newEffMaxHp, pHp + _bonusHeal);
+              extraNote.push(`💖 最大HP +${Math.round(skill.buffMaxHpPct * 100)}%（${bTurns} 回合）${_bonusHeal > 0 ? ` / 💚+${_bonusHeal} HP` : ''}`);
             }
             const mainDesc = skill.selfBuff ? `${describeBuff(skill.selfBuff)}（${skill.selfBuff.turns} 回合）` : skill.name;
             log.push({
@@ -6172,7 +6187,15 @@
             applyStatus(monster, { type: 'shield', charges: mSkill.charges || 1, turns: 99 });
             log.push({ type: 'monster', text: `回合 ${round}：${monster.icon}${monster.name} 🫙 ${mSkill.verb} → 無視下 ${mSkill.charges} 次傷害！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
           } else {
-            let dmg = Math.max(1, monster.atk * (mSkill.mult || 1) - (mSkill.ignoreDef ? 0 : Math.floor(effDef / 2)));
+            // ⭐ 30% DEF 穿透：boss 有 defPen 屬性時，部分 ATK 直接無視防禦
+            const _mPen = monster.defPen || 0;
+            let dmg;
+            if (mSkill.ignoreDef || _mPen <= 0) {
+              dmg = Math.max(1, monster.atk * (mSkill.mult || 1) - (mSkill.ignoreDef ? 0 : Math.floor(effDef / 2)));
+            } else {
+              const _totAtk = monster.atk * (mSkill.mult || 1);
+              dmg = Math.max(1, _totAtk * _mPen + Math.max(0, _totAtk * (1 - _mPen) - Math.floor(effDef / 2)));
+            }
             dmg *= (0.85 + Math.random() * 0.3);
             dmg *= (1 - (passive.dmgReduction || 0));
             dmg *= (1 - (pBuff.dmgReducePct || 0));
@@ -6200,8 +6223,14 @@
           // 多段攻擊：1.3x 總傷害平均分散
           const hits = (mAbility?.type === 'multiHit') ? Math.max(1, mAbility.hits || 2) : 1;
           const perHitMult = hits === 1 ? 1.0 : (1.3 / hits);
+          const _mPen2 = monster.defPen || 0;
           for (let h = 0; h < hits; h++) {
-            let dmg = Math.max(1, monster.atk - Math.floor(effDef / 2));
+            let dmg;
+            if (_mPen2 > 0) {
+              dmg = Math.max(1, monster.atk * _mPen2 + Math.max(0, monster.atk * (1 - _mPen2) - Math.floor(effDef / 2)));
+            } else {
+              dmg = Math.max(1, monster.atk - Math.floor(effDef / 2));
+            }
             dmg *= (0.85 + Math.random() * 0.3);
             dmg *= perHitMult;
             dmg *= (1 - (passive.dmgReduction || 0));
@@ -6296,7 +6325,9 @@
     const safeMax = Math.max(1, maxHp || target.maxHp || 0);
     for (const s of target.statuses) {
       if (s.type === 'poison') {
-        const dmg = Math.min(1000, Math.max(1, Math.round(safeMax * 0.03)));
+        // ⭐ 中毒傷害去上限：Boss（有 defPen）固定 0.5% maxHp；一般怪 3% maxHp
+        const _poisonPct = target.defPen ? 0.005 : 0.03;
+        const dmg = Math.max(1, Math.round(safeMax * _poisonPct));
         events.push({ type: 'poison', dmg });
         s.charges = (s.charges || 0) - 1; // ⭐ charge-based：每次觸發消耗 1 層
       }
@@ -6488,10 +6519,17 @@
         playerActions++;
 
         // 自身狀態 tick（中毒等）
+        const _hadMaxHpPct2 = (playerObj.statuses || []).some(s => s.type === 'buff' && s.stat === 'maxHpPct');
         const evs = tickStatuses(playerObj, stats.maxHp);
         for (const ev of evs) {
           pHp = Math.max(0, pHp - ev.dmg);
           log.push({ type: 'monster', text: `回合 ${round}：${player.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${ev.dmg} HP`, hp: hpsSnapshot() });
+        }
+        // ⭐ 神聖祝福 maxHpPct 到期：HP 壓回 base maxHp
+        const _nowHasMaxHpPct2 = (playerObj.statuses || []).some(s => s.type === 'buff' && s.stat === 'maxHpPct');
+        if (_hadMaxHpPct2 && !_nowHasMaxHpPct2 && pHp > stats.maxHp) {
+          pHp = stats.maxHp;
+          log.push({ type: 'system', text: `回合 ${round}：💖 最大HP 加成結束，HP 恢復上限 ${stats.maxHp}`, hp: hpsSnapshot() });
         }
         if (pHp <= 0) break;
 
@@ -6702,6 +6740,11 @@
               applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff2.stat, amount: skill.selfBuff2.amount, turns: skill.selfBuff2.turns });
               extraNote.push(describeBuff(skill.selfBuff2));
             }
+            // ⭐ selfBuff3：第三個 buff（鷹眼：+25% ATK）
+            if (skill.selfBuff3) {
+              applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff3.stat, amount: skill.selfBuff3.amount, turns: skill.selfBuff3.turns });
+              extraNote.push(describeBuff(skill.selfBuff3));
+            }
             if (skill.applyShield) {
               applyStatus(playerObj, { type: 'shield', charges: skill.applyShield, turns: 99 });
               extraNote.push('🛡 免疫一次傷害');
@@ -6717,11 +6760,14 @@
               pHp = Math.min(stats.maxHp, pHp + heal);
               extraNote.push(`💚 +${actualHeal} HP（${Math.round(skill.bonusHealPct * 100)}% maxHp）`);
             }
-            // ⭐ buffMaxHpPct：臨時提升最大 HP（以 buff 狀態存在，戰鬥結束自動清除）
+            // ⭐ buffMaxHpPct：臨時提升最大 HP + 即時補血至新上限（確保再施放時明顯有效）
             if (skill.buffMaxHpPct) {
               const bTurns = (skill.selfBuff && skill.selfBuff.turns) ? skill.selfBuff.turns : 3;
               applyStatus(playerObj, { type: 'buff', stat: 'maxHpPct', amount: skill.buffMaxHpPct, turns: bTurns });
-              extraNote.push(`💖 最大HP +${Math.round(skill.buffMaxHpPct * 100)}%（${bTurns} 回合）`);
+              const _newEffMaxHp2 = Math.round(stats.maxHp * (1 + skill.buffMaxHpPct));
+              const _bonusHeal2 = Math.max(0, _newEffMaxHp2 - pHp);
+              if (_bonusHeal2 > 0) pHp = Math.min(_newEffMaxHp2, pHp + _bonusHeal2);
+              extraNote.push(`💖 最大HP +${Math.round(skill.buffMaxHpPct * 100)}%（${bTurns} 回合）${_bonusHeal2 > 0 ? ` / 💚+${_bonusHeal2} HP` : ''}`);
             }
             const mainDesc2 = skill.selfBuff ? `${describeBuff(skill.selfBuff)}（${skill.selfBuff.turns} 回合）` : skill.name;
             log.push({
@@ -6874,7 +6920,15 @@
             applyStatus(m, { type: 'shield', charges: mSkill.charges || 1, turns: 99 });
             log.push({ type: 'monster', text: `回合 ${round}：${m.icon}${m.name} ✨${mSkill.verb || '護盾'} → 無視下 ${mSkill.charges || 1} 次傷害！`, hp: hpsSnapshot() });
           } else {
-            let dmg = Math.max(1, m.atk * (mSkill.mult || 1) - (mSkill.ignoreDef ? 0 : Math.floor(effDef / 2)));
+            // ⭐ 30% DEF 穿透（試煉場）
+            const _mPen3 = m.defPen || 0;
+            let dmg;
+            if (mSkill.ignoreDef || _mPen3 <= 0) {
+              dmg = Math.max(1, m.atk * (mSkill.mult || 1) - (mSkill.ignoreDef ? 0 : Math.floor(effDef / 2)));
+            } else {
+              const _totAtk3 = m.atk * (mSkill.mult || 1);
+              dmg = Math.max(1, _totAtk3 * _mPen3 + Math.max(0, _totAtk3 * (1 - _mPen3) - Math.floor(effDef / 2)));
+            }
             dmg *= (0.85 + Math.random() * 0.3);
             dmg *= (1 - (passive.dmgReduction || 0));
             dmg *= (1 - (pBuff.dmgReducePct || 0));
@@ -6899,8 +6953,14 @@
           // 攻擊（含多段）
           const hits = (m.ability?.type === 'multiHit') ? Math.max(1, m.ability.hits || 2) : 1;
           const perHitMult = hits === 1 ? 1.0 : (1.3 / hits);
+          const _mPen4 = m.defPen || 0;
           for (let h = 0; h < hits; h++) {
-            let dmg = Math.max(1, m.atk - Math.floor(effDef / 2));
+            let dmg;
+            if (_mPen4 > 0) {
+              dmg = Math.max(1, m.atk * _mPen4 + Math.max(0, m.atk * (1 - _mPen4) - Math.floor(effDef / 2)));
+            } else {
+              dmg = Math.max(1, m.atk - Math.floor(effDef / 2));
+            }
             dmg *= (0.85 + Math.random() * 0.3);
             dmg *= perHitMult;
             dmg *= (1 - (passive.dmgReduction || 0));
@@ -8535,7 +8595,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260504f';
+  const NEWS_LATEST_ID = 'patch_20260504g';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -8555,6 +8615,36 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#dc2626,#f59e0b); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">⚔️ 平衡調整 + 弓手加強　<span style="font-size:11px; opacity:0.85;">2026-05-04</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#dc2626; margin:6px 0 4px;">👑 世界王大幅強化</div>
+        <div>・<b>🦢 鵝皇</b> HP：90,000 → <b>900,000</b>（×10）</div>
+        <div>・<b>🐉 古龍鵝</b> HP：200,000 → <b>2,000,000</b>（×10）</div>
+        <div>・<b>所有王</b>攻擊帶 <b>30% 防禦穿透</b>——玩家防禦再高也會有 30% ATK 直接穿透</div>
+        <div style="font-size:11px; color:#6b7280; margin-top:2px;">→ 目標：讓大家都能打到王、拉長競傷時間，而不是被一兩個人秒殺</div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">☠️ 中毒機制改版</div>
+        <div>・移除中毒傷害 1000 上限</div>
+        <div>・<b>一般怪</b>：中毒每層仍扣 3% maxHP</div>
+        <div>・<b>Boss（王）</b>：中毒每層扣 <b>0.5% Boss maxHP</b>（無上限）</div>
+        <div style="font-size:11px; color:#6b7280; margin-top:2px;">→ 例：鵝皇 90萬HP → 每層中毒 -4,500；古龍鵝 200萬 → 每層 -10,000</div>
+
+        <div style="font-weight:700; color:#0ea5e9; margin:10px 0 4px;">🏹 弓手加強</div>
+        <div>・<b>鷹眼</b>🦅：新增 <b>ATK +25%</b>（原有暴擊率+20%、爆傷+30% 保留）</div>
+        <div>・<b>致命被動</b>🌟（LUK ≥ 30）：爆傷 +50% → <b>+80%</b></div>
+        <div>・<b>連射</b>🌊 Lv5：暴擊率加成 +10% → <b>+20%</b></div>
+        <div style="font-size:11px; color:#6b7280; margin-top:2px;">→ 鷹眼 buff 期間：ATK+25% + 暴擊率+20% + 爆傷+30%（+ 被動 +80%）同時生效</div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">🛡️ 聖騎微調</div>
+        <div>・<b>護盾衝鋒</b>：傷害倍率 6× → <b>5.1×</b>（−15%）</div>
+        <div>・<b>神聖祝福</b>：重複施放時 HP 現在會正確上升（最大HP加成到期時 HP 同步調整）</div>
+
+        <div style="background:#f3f4f6; border-radius:8px; padding:8px 12px; margin-top:12px; margin-bottom:16px; font-size:12px; color:#6b7280;">
+          ⚙️ 所有王新增 defPen 標記，毒傷公式自動識別王與一般怪，邏輯兼容舊有技能
+        </div>
 
         <div style="background:linear-gradient(135deg,#0ea5e9,#7c3aed); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">💍 裝備系統 + 行動規則　<span style="font-size:11px; opacity:0.85;">2026-05-04</span></div>
@@ -9585,7 +9675,8 @@ ${b.text}
     }
     if (s.type === 'buff' && s.selfBuff) {
       const buff2Str = s.selfBuff2 ? ` / ${describeBuff(s.selfBuff2)}` : '';
-      const buffStr = `${describeBuff(s.selfBuff)}${buff2Str}　持續 ${s.selfBuff.turns} 回合`;
+      const buff3Str = s.selfBuff3 ? ` / ${describeBuff(s.selfBuff3)}` : '';
+      const buffStr = `${describeBuff(s.selfBuff)}${buff2Str}${buff3Str}　持續 ${s.selfBuff.turns} 回合`;
       const shieldStr = s.applyShield ? `　+　🛡 免疫一次傷害` : '';
       const bonusHealStr = s.bonusHealPct ? `　+　💚 即時回血 ${Math.round(s.bonusHealPct * 100)}% maxHp` : '';
       const partialShieldStr = s.applyPartialShield ? `　+　🛡 受傷 -${Math.round(s.applyPartialShield.reducePct * 100)}%（${s.applyPartialShield.hits} 次）` : '';
