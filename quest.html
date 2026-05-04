@@ -1924,8 +1924,8 @@
         { id: 'w_rage_flame',   name: '怒之炎',   icon: '☄️', unlockLv: 8,  cooldown: 0, mpCost: 50, type: 'damage', mult: 3.5, magic: true },
         { id: 'w_heavy_strike', name: '重擊',     icon: '⚡', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'damage', mult: 1.3, alwaysCrit: true },
         { id: 'w_rage_slash',   name: '狂怒斬',   icon: '🔥', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.8, hits: 2, cast: 32 },
-        { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 1,  cooldown: 0, mpCost: 0, hpCost: 0.15, type: 'damage', mult: 2.0, cast: 5 },
-        { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 6,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.0, lifesteal: 0.20, customLv: true },
+        { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 1,  cooldown: 0, mpCost: 0, hpCost: 0.15, type: 'damage', mult: 2.0, cast: 5, bleedBonus: 0.30 },
+        { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 6,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.0, lifesteal: 0.20, customLv: true, bleedLifestealBonus: 0.10 },
         { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 50, hpCostFlat: 20, type: 'damage', mult: 4.5, cast: 50 },
         { id: 'w_war_cry',      name: '戰意呼喚', icon: '📢', unlockLv: 3,  cooldown: 0, mpCost: 0, type: 'heal', healPct: 0.15, isMpRegen: true },
         // ⭐ 改版：不耗 MP，改扣 20% 當前 HP；ATK 加成 20%；cast 60；不可升級
@@ -1934,6 +1934,8 @@
         { id: 'w_mana_strike',  name: '魔吸斬',   icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0, type: 'damage', mult: 0.8, mpRestore: 2 },
         // ⭐ 新增：底氣 — 回血 70% + DEF +30（1 回合）；硬值 150；不可升級
         { id: 'w_guts',         name: '底氣',     icon: '💪', unlockLv: 4,  cooldown: 0, mpCost: 25, type: 'buff', applyPartialShield: { reducePct: 0.20, hits: 3 }, bonusHealPct: 0.50, cast: 75, maxLv: 1 },
+        // ⭐ 新增：血鵝刀法 — 傷害 + 讓敵人流血 3 次（每次 0.5% 當前 HP）
+        { id: 'w_bleed_sword',  name: '血鵝刀法', icon: '🗡', unlockLv: 3,  cooldown: 0, mpCost: 18, type: 'damage', mult: 1.0, applyStatus: { type: 'bleed', charges: 3, chance: 1.0 } },
       ],
       skillTree: [
         { id: 'w_hp',   name: '鋼鐵之軀', icon: '🛡',  desc: '+5% 最大 HP',         maxLevel: 5, effect: 'hpPct',     per: 0.05 },
@@ -3483,9 +3485,9 @@
       if (level >= 5)  eff.extraCritChance = (eff.extraCritChance || 0) + 0.20;
       if (level >= 10) eff.hits = (skill.hits || 4) + 1;
     }
-    // ⭐ 血祭斬專屬：Lv 10 多斬一下（hits 1→2）
+    // ⭐ 血祭斬專屬：Lv 10 傷害 +50%
     if (skill.id === 'w_blood_slash' && level >= 10) {
-      eff.hits = 2;
+      eff.mult = (eff.mult || skill.mult || 1) * 1.50;
     }
     // ⭐ 中毒專用公式：每級 +1 charge，Lv 5 額外 +1（由 tickStatuses 每次觸發扣 3% maxHp）
     if (skill.applyStatus && skill.applyStatus.type === 'poison' && level >= 1) {
@@ -3616,12 +3618,12 @@
       if (level === 5) parts.push('🌟 中毒次數再 +1');
       return parts.join('、');
     }
-    // ⭐ 血祭斬：Lv 10 多斬一下（hits 1→2）
+    // ⭐ 血祭斬：Lv 10 傷害 +50%
     if (skill.id === 'w_blood_slash') {
       const totalPct = Math.round((Math.min(level, 5) * 10 + Math.max(0, level - 5) * 5));
       const parts = [`效果 +${totalPct}%`];
       if (level === 5)  parts.push('🎯 暴擊率 +20%（本招）');
-      if (level === 10) parts.push('🌟 多斬 1 次（×2 段）');
+      if (level === 10) parts.push('🌟 傷害 ×1.5（額外 +50%）');
       return parts.join('、');
     }
     const totalPct = Math.round((Math.min(level, 5) * 10 + Math.max(0, level - 5) * 5));
@@ -3662,6 +3664,7 @@
           { judgeId: 1300, param: 25, skillId: 'w_death_rage' },     // 敵血 ≤ 25% → 死戰之怒（HP 代價收頭）
           { judgeId: 1300, param: 50, skillId: 'w_blood_burst' },    // 敵血 ≤ 50% → 嗜血爆裂
           { judgeId: 1300, param: 30, skillId: 'w_rage_flame' },     // 敵血 ≤ 30% → 怒之炎
+          { judgeId: 1000, param: 0,  skillId: 'w_bleed_sword' },    // 血鵝刀法（施加流血 3 層）
           { judgeId: 1201, param: 25, skillId: 'w_blood_slash' },    // MP ≤ 25% → 血祭斬（不耗 MP）
           { judgeId: 1000, param: 0,  skillId: 'w_heavy_strike' },
           { judgeId: 1000, param: 0,  skillId: 'w_rage_slash' },
@@ -5761,6 +5764,7 @@
         pGauge -= ATB_THRESHOLD;
         playerActions++;
         // 玩家身上狀態 tick（中毒、buff 倒數）
+        playerObj._curHp = pHp; // ⭐ 流血傷害需要當前 HP
         const _hadMaxHpPct = (playerObj.statuses || []).some(s => s.type === 'buff' && s.stat === 'maxHpPct');
         const pevs = tickStatuses(playerObj, stats.maxHp);
         for (const ev of pevs) {
@@ -5918,6 +5922,10 @@
             // 怪物抗性（魔攻吃法抗，物攻吃物抗）
             if (isMagic && mAbility?.type === 'magicResist') dmg *= (1 - mAbility.resist);
             if (!isMagic && mAbility?.type === 'physResist') dmg *= (1 - mAbility.resist);
+            // ⭐ 流血加傷：血祭斬打流血目標 +30% 傷害
+            if (skill.bleedBonus && hasStatus(monster, 'bleed')) {
+              dmg *= (1 + skill.bleedBonus);
+            }
             const skillCrit = baseCritChance + (skill.extraCritChance || 0) + (pBuff.critChance || 0);
             const skillCritMult = critMult + (skill.extraCritDmg || 0) + (pBuff.critDmg || 0);
             const baseDmg = dmg;
@@ -5953,6 +5961,13 @@
               const before = pHp;
               pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + heal));  // 不下調（神聖祝福可讓 HP 超過 maxHp，後續補血不應拉低）
               if (pHp - before > 0) extra += ` 🩸+${pHp - before} HP (吸血)`;
+            }
+            // ⭐ 流血吸血（嗜血爆裂）：打流血目標額外 +10% 吸血
+            if (skill.bleedLifestealBonus && hasStatus(monster, 'bleed')) {
+              const extraHeal = Math.max(1, Math.round(totalDmg * skill.bleedLifestealBonus));
+              const before = pHp;
+              pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + extraHeal));
+              if (pHp - before > 0) extra += ` 🩸+${pHp - before} HP (流血吸血)`;
             }
             if (skill.healCaster) {
               const heal = Math.max(1, Math.round(stats.maxHp * skill.healCaster));
@@ -6116,7 +6131,8 @@
         }
       } else {
         mGauge -= ATB_THRESHOLD;
-        // 怪物身上狀態 tick（中毒、麻痺）
+        // 怪物身上狀態 tick（中毒、流血、麻痺）
+        monster._curHp = mHp; // ⭐ 流血傷害需要當前 HP
         const mevs = tickStatuses(monster, monster.maxHp);
         for (const ev of mevs) {
           mHp = Math.max(0, mHp - ev.dmg);
@@ -6316,8 +6332,8 @@
         // ⭐ 魔坑：hit-based，取較多次數 / 較高減傷
         existing.hitsLeft  = Math.max(existing.hitsLeft  || 0, status.hitsLeft  || 0);
         existing.reducePct = Math.max(existing.reducePct || 0, status.reducePct || 0);
-      } else if (status.type === 'shield' || status.type === 'paralyze' || status.type === 'poison') {
-        // ⭐ charge-based：護盾/麻痺/中毒均取較多層
+      } else if (status.type === 'shield' || status.type === 'paralyze' || status.type === 'poison' || status.type === 'bleed') {
+        // ⭐ charge-based：護盾/麻痺/中毒/流血均取較多層
         existing.charges = Math.max(existing.charges || 0, status.charges || 0);
         if (status.type === 'poison') existing.dmg = Math.max(existing.dmg || 0, status.dmg || 0);
       } else {
@@ -6345,8 +6361,15 @@
         events.push({ type: 'poison', dmg });
         s.charges = (s.charges || 0) - 1; // ⭐ charge-based：每次觸發消耗 1 層
       }
-      // ⭐ 易傷/護盾/麻痺/中毒/魔坑：全部 charge/hit-based，不計 turns
-      if (s.type !== 'vulnerable' && s.type !== 'shield' && s.type !== 'paralyze' && s.type !== 'poison' && s.type !== 'partialShield') {
+      // ⭐ 流血：每次觸發扣目標當前 HP 的 0.5%，消耗 1 層
+      if (s.type === 'bleed') {
+        const curHp = target._curHp !== undefined ? target._curHp : (target.hp || safeMax);
+        const dmg = Math.max(1, Math.round(curHp * 0.005));
+        events.push({ type: 'bleed', dmg });
+        s.charges = (s.charges || 0) - 1;
+      }
+      // ⭐ 易傷/護盾/麻痺/中毒/流血/魔坑：全部 charge/hit-based，不計 turns
+      if (s.type !== 'vulnerable' && s.type !== 'shield' && s.type !== 'paralyze' && s.type !== 'poison' && s.type !== 'partialShield' && s.type !== 'bleed') {
         s.turns = (s.turns || 0) - 1;
       }
     }
@@ -6355,6 +6378,7 @@
       if (s.type === 'shield')        return (s.charges  || 0) > 0;
       if (s.type === 'paralyze')      return (s.charges  || 0) > 0; // ⭐ charge-based
       if (s.type === 'poison')        return (s.charges  || 0) > 0; // ⭐ charge-based
+      if (s.type === 'bleed')         return (s.charges  || 0) > 0; // ⭐ charge-based
       if (s.type === 'partialShield') return (s.hitsLeft || 0) > 0; // ⭐ hit-based
       return s.turns > 0;
     });
@@ -6405,10 +6429,10 @@
     return `✨ ${buff.stat} +${buff.amount}`;
   }
   function statusEmoji(type) {
-    return type === 'poison' ? '☠️' : type === 'paralyze' ? '⚡' : type === 'vulnerable' ? '🎯' : type === 'buff' ? '✨' : '✨';
+    return type === 'poison' ? '☠️' : type === 'paralyze' ? '⚡' : type === 'vulnerable' ? '🎯' : type === 'bleed' ? '🩸' : type === 'buff' ? '✨' : '✨';
   }
   function statusLabel(type) {
-    return type === 'poison' ? '中毒' : type === 'paralyze' ? '麻痺' : type === 'vulnerable' ? '易傷' : type === 'buff' ? '增益' : type;
+    return type === 'poison' ? '中毒' : type === 'paralyze' ? '麻痺' : type === 'vulnerable' ? '易傷' : type === 'bleed' ? '流血' : type === 'buff' ? '增益' : type;
   }
 
   // 多目標戰鬥（最多 N 隻怪物 vs 玩家），用在「試煉戰場」
@@ -6672,6 +6696,10 @@
               if (isMagic && tgt.ability?.type === 'magicResist') dmg *= (1 - tgt.ability.resist);
               if (!isMagic && tgt.ability?.type === 'physResist') dmg *= (1 - tgt.ability.resist);
               dmg *= consumeVulnerable(tgt); // ⭐ 易傷（hit-based）
+              // ⭐ 流血加傷：血祭斬打流血目標 +30% 傷害
+              if (skill.bleedBonus && hasStatus(tgt, 'bleed')) {
+                dmg *= (1 + skill.bleedBonus);
+              }
               const skillCrit = baseCritChance + (skill.extraCritChance || 0) + (pBuff.critChance || 0);
               const skillCritMult = critMult + (skill.extraCritDmg || 0) + (pBuff.critDmg || 0);
               const isCrit = skill.alwaysCrit || Math.random() < skillCrit;
@@ -6701,6 +6729,17 @@
               pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + heal));  // 不下調（神聖祝福可讓 HP 超過 maxHp，後續補血不應拉低）
               const gained = pHp - before;
               if (gained > 0) extra += ` 🩸+${gained} HP`;
+            }
+            // ⭐ 流血吸血（嗜血爆裂）：打流血目標額外 +10% 吸血
+            if (skill.bleedLifestealBonus && hits.length) {
+              const bleedHits = hits.filter(h => hasStatus(h.tgt, 'bleed'));
+              if (bleedHits.length) {
+                const bleedTotalDmg = bleedHits.reduce((s, h) => s + h.dmg, 0);
+                const extraHeal = Math.max(1, Math.round(bleedTotalDmg * skill.bleedLifestealBonus));
+                const before = pHp;
+                pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + extraHeal));
+                if (pHp - before > 0) extra += ` 🩸+${pHp - before} HP (流血吸血)`;
+              }
             }
             if (skill.healCaster) {
               const heal = Math.max(1, Math.round(stats.maxHp * skill.healCaster));
@@ -8609,7 +8648,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260504g';
+  const NEWS_LATEST_ID = 'patch_20260504h';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -8629,6 +8668,26 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#b91c1c,#9f1239); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🗡 戰士新技能 + 流血系統　<span style="font-size:11px; opacity:0.85;">2026-05-04</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#dc2626; margin:6px 0 4px;">⚔️ 戰士新技能：血鵝刀法</div>
+        <div>・<b>血鵝刀法</b> 🗡（Lv3 解鎖、18 MP）：1.0× ATK 傷害 + 讓敵人<b>流血 3 次</b></div>
+        <div>・流血：每次觸發扣敵人<b>當前 HP 的 0.5%</b>，消耗 1 層（charge-based）</div>
+
+        <div style="font-weight:700; color:#dc2626; margin:10px 0 4px;">🩸 流血協同效果</div>
+        <div>・<b>血祭斬</b>：對流血目標 <b>+30% 傷害</b></div>
+        <div>・<b>嗜血爆裂</b>：對流血目標<b>額外 +10% 吸血</b></div>
+
+        <div style="font-weight:700; color:#dc2626; margin:10px 0 4px;">⚔️ 血祭斬 Lv10 調整</div>
+        <div>・Lv10 效果：多斬一次 → <b>傷害 ×1.5（+50%）</b></div>
+        <div style="font-size:11px; color:#6b7280; margin-top:2px;">→ 配合流血機制強化，讓血祭斬打流血敵人時傷害更可觀</div>
+
+        <div style="background:#f3f4f6; border-radius:8px; padding:8px 12px; margin-top:12px; margin-bottom:16px; font-size:12px; color:#6b7280;">
+          ⚙️ 流血狀態同樣 charge-based；HOF 預設規則已加入血鵝刀法
+        </div>
 
         <div style="background:linear-gradient(135deg,#dc2626,#f59e0b); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">⚔️ 平衡調整 + 弓手加強　<span style="font-size:11px; opacity:0.85;">2026-05-04</span></div>
@@ -9095,6 +9154,8 @@ ${b.text}
     // 對應的詞綴 / 自身 buff（用 effective）
     const buffPairs = [];
     if (eff.lifesteal) buffPairs.push(`🩸 吸血 ${Math.round(eff.lifesteal*100)}%`);
+    if (skill.bleedBonus) buffPairs.push(`🩸 流血目標傷害 +${Math.round(skill.bleedBonus*100)}%`);
+    if (skill.bleedLifestealBonus) buffPairs.push(`🩸 流血目標額外吸血 +${Math.round(skill.bleedLifestealBonus*100)}%`);
     if (eff.healCaster) buffPairs.push(`💚 自癒 ${Math.round(eff.healCaster*100)}% maxHP`);
     if (eff.selfBuff) {
       buffPairs.push(`${describeBuff(eff.selfBuff)}　持續 ${eff.selfBuff.turns} 回合`);
@@ -9108,6 +9169,7 @@ ${b.text}
                     : s.type === 'shield'     ? `${s.charges || 1} 次`
                     : s.type === 'paralyze'   ? `${s.charges || 2} 次`
                     : s.type === 'poison'     ? `${s.charges || 3} 次`
+                    : s.type === 'bleed'      ? `${s.charges || 3} 次`
                     : `持續 ${s.turns} 回合`;
       buffPairs.push(`${statusEmoji(s.type)} 賦予 ${statusLabel(s.type)}（${Math.round((s.chance||1)*100)}%、${durText}${s.dmg ? `、每次觸發 ${s.dmg} 傷害` : ''}）`);
     }
