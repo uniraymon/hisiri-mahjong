@@ -1848,6 +1848,7 @@
       <h2><span>🍳 個人 BOSS</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（每 5 分挑戰 1 次、每場結束王回 5% HP）</span></h2>
       <div id="personalBossBody"></div>
       <div id="personalBossResult"></div>
+      <div id="personalBossHistoryArea"></div>
     </div>
 
     <div class="card">
@@ -6907,6 +6908,7 @@
     renderCharQuickMenu();
     renderTrial();
     renderForageHistory(); // ⭐ 自己最近 5 場打怪戰報
+    renderPersonalBossHistory(); // ⭐ 個人王最近 15 場戰報
     maybeFlashHelp();
     initNewsBtn();
     refreshBugBadge();
@@ -10075,7 +10077,7 @@ ${b.text}
       // 個人 BOSS 共用冷卻倒數
       const me2 = getMe();
       const myRpg2 = me2 ? getRpg(me2) : null;
-      if (myRpg2 && getPersonalBossCdRemain(myRpg2) > 0) renderPersonalBoss();
+      if (myRpg2 && getPersonalBossCdRemain(myRpg2) > 0 && !__personalBossInProgress) renderPersonalBoss();
       if (Math.floor(Date.now() / 1000) % 30 === 0) renderCharCard();
     }
   }, 1000);
@@ -10424,6 +10426,50 @@ ${b.text}
     return _doReplay(snap);
   }
   window.replayForageFight = replayForageFight;
+
+  // ⭐ 個人王戰報 history
+  function renderPersonalBossHistory() {
+    const area = document.getElementById('personalBossHistoryArea');
+    if (!area) return;
+    const me = getMe(); if (!me) { area.innerHTML = ''; return; }
+    const r = getRpg(me);
+    const list = Array.isArray(r.personalBossHistory) ? r.personalBossHistory : [];
+    if (list.length === 0) { area.innerHTML = ''; return; }
+    area.innerHTML = `
+      <div class="boss-history" style="margin-top:12px;">
+        <div class="boss-history-title">📜 個人王戰報（${list.length}/15）　<span style="font-weight:500; opacity:0.75;">點 → 重播</span></div>
+        ${list.map(h => {
+          const time = typeof formatRelativeTime === 'function' ? formatRelativeTime(h.ts) : '';
+          const resultLabel = h.killed ? '🏆 擊殺' : '💢 傷害';
+          const resultColor = h.killed ? '#86efac' : '#fca5a5';
+          const hasLog = h.id && Array.isArray(h.log) && h.log.length > 0;
+          return `
+            <button class="boss-history-row ${h.killed ? 'is-kill' : ''}"
+                    style="cursor:${hasLog ? 'pointer' : 'default'}; width:100%; text-align:left;"
+                    ${hasLog ? `onclick="replayPersonalBossFight('${h.id}')"` : ''}>
+              <span class="bh-icon">${h.bossIcon || '🍳'}</span>
+              <div class="bh-meta">
+                <div class="bh-line1">${escapeHtml(h.bossName || '???')} Lv ${h.bossLevel || '?'} <span style="color:${resultColor}; font-weight:700; margin-left:6px;">${resultLabel}</span></div>
+                <div class="bh-line2">傷害 <b>${(h.dmgDealt || 0).toLocaleString()}</b>　·　${time}</div>
+              </div>
+              <span class="bh-play">${hasLog ? '▶' : ''}</span>
+            </button>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+  window.renderPersonalBossHistory = renderPersonalBossHistory;
+
+  function replayPersonalBossFight(historyId) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const list = Array.isArray(r.personalBossHistory) ? r.personalBossHistory : [];
+    const snap = list.find(h => h.id === historyId);
+    if (!snap) { showToast('找不到該戰報'); return; }
+    return _doReplay(snap);
+  }
+  window.replayPersonalBossFight = replayPersonalBossFight;
 
   // ⭐ 舊介面：從自己的戰報歷史播 — 保留 fallback（已棄用）
   function replayBossFight(historyId) {
@@ -10789,11 +10835,33 @@ ${b.text}
         const _pbRes = document.getElementById('personalBossResult');
         if (_pbRes) _pbRes.innerHTML = rewardHtml;
         snapshotLastFight(monster, result);
+        // ⭐ 個人王戰報 history（最多 15 筆，假人不記錄）
+        if (!def.isDummy) {
+          try {
+            const pbSnap = {
+              id: 'pb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+              ts: Date.now(),
+              bossId: def.id,
+              bossName: def.name,
+              bossIcon: def.icon,
+              bossLevel: def.level,
+              dmgDealt: monster.hp - result.mHpFinal,
+              killed,
+              playerSnap: { name: me.name, avatar: CLASSES[rpg.class]?.icon || '🎴', level: rpg.level, maxHp: stats.maxHp, maxMp: stats.maxMp },
+              monsterSnap: { name: def.name, icon: def.icon, level: def.level, maxHp: def.hp, ability: def.ability },
+              log: (result.log || []).slice(0, 100),
+            };
+            rpg.personalBossHistory = Array.isArray(rpg.personalBossHistory) ? rpg.personalBossHistory : [];
+            rpg.personalBossHistory.unshift(pbSnap);
+            if (rpg.personalBossHistory.length > 15) rpg.personalBossHistory.length = 15;
+          } catch (e) { console.warn('personalBoss history snap fail', e); }
+        }
         saveData();
         renderCharCard();
         renderEquipment();
         renderRpgStats();
         renderPersonalBoss();
+        renderPersonalBossHistory();
         __personalBossInProgress = false;
         if (typeof updateStaminaUI === 'function') updateStaminaUI(); // ⭐ 立刻更新小怪戰按鈕狀態
         return;
