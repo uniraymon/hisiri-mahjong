@@ -1967,7 +1967,7 @@
         { id: 'a_barrage',     name: '連射',     icon: '🌊', unlockLv: 4,  cooldown: 0, mpCost: 28, type: 'damage', mult: 1.2, hits: 4, fixedHitMult: true, customLv: true },
         { id: 'a_lethal_aim',  name: '致命瞄準', icon: '💀', unlockLv: 10, cooldown: 0, mpCost: 20, type: 'damage', mult: 3.0, alwaysCrit: true, ignoreDef: true, cast: 30, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 2, chance: 1 }, customLv: true },
         { id: 'a_twin_shot',   name: '雙箭齊發', icon: '🏹', unlockLv: 2,  cooldown: 0, mpCost: 24, type: 'damage', mult: 1.5, targetCount: 2 },
-        { id: 'a_poison_arrow',name: '毒箭',     icon: '🐍', unlockLv: 5,  cooldown: 0, mpCost: 26, type: 'damage', mult: 1.2, maxLv: 5, applyStatus: { type: 'poison', turns: 3, chance: 0.7 } },
+        { id: 'a_poison_arrow',name: '毒箭',     icon: '🐍', unlockLv: 5,  cooldown: 0, mpCost: 26, type: 'damage', mult: 1.2, maxLv: 5, applyStatus: { type: 'poison', charges: 3, chance: 0.7 } },
         { id: 'a_quickstep',   name: '疾風步',   icon: '💨', unlockLv: 2,  cooldown: 0, mpCost: 16, type: 'buff', selfBuff: { stat: 'spd', amount: 8, turns: 4 } },
         { id: 'a_eagle_eye',   name: '鷹眼',     icon: '🦅', unlockLv: 4,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'critChance', amount: 0.20, turns: 4 }, selfBuff2: { stat: 'critDmg', amount: 0.30, turns: 4 } },
         { id: 'a_lifesteal_arrow', name: '吸血箭', icon: '🩸', unlockLv: 3,  cooldown: 0, mpCost: 14, type: 'damage', mult: 1.2, lifesteal: 0.40 },
@@ -2005,7 +2005,7 @@
       critBonus: 0.18,
       skills: [
         // ⭐ 法師技能組（v2 平衡調整）
-        { id: 'm_ice_lance',      name: '冰錐術',     icon: '❄️', unlockLv: 1,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.6, magic: true, useMark: true, applyStatus: { type: 'paralyze', turns: 2, chance: 0.25 } },
+        { id: 'm_ice_lance',      name: '冰錐術',     icon: '❄️', unlockLv: 1,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.6, magic: true, useMark: true, applyStatus: { type: 'paralyze', charges: 2, chance: 0.25 } },
         { id: 'm_fireball',       name: '火球術',     icon: '🔥', unlockLv: 1,  cooldown: 0, mpCost: 25, type: 'damage', mult: 2, magic: true, useMark: true, ignoreDef: true, cast: 30 },
         { id: 'm_mana_spring',    name: '法力湧泉',   icon: '💧', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', isMpRegen: true, isMpRegenStrong: true },
         // 連環閃電：3 段 MARK 傷害
@@ -2015,7 +2015,7 @@
         { id: 'm_absolute_defense', name: '絕對防禦', icon: '🔰', unlockLv: 8,  cooldown: 0, mpCost: 55, type: 'heal', healPct: 0.5, applyShield: 1, maxLv: 1 },
         { id: 'm_destruction',    name: '毀滅之怒',   icon: '💀', unlockLv: 12, cooldown: 0, mpCost: 65, type: 'damage', mult: 3, magic: true, useMark: true, ignoreDef: true, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 3, chance: 1 }, cast: 75, customLv: true },
         { id: 'm_firestorm',      name: '火焰風暴',   icon: '🌋', unlockLv: 7,  cooldown: 0, mpCost: 55, type: 'damage', flat: 150, markMult: 6, ignoreDef: true, targetCount: 'all', cast: 150 },
-        { id: 'm_poison_cloud',   name: '毒霧',       icon: '☠️', unlockLv: 3,  cooldown: 0, mpCost: 30, type: 'damage', flat: 50, perLv: 3, ignoreDef: true, targetCount: 'all', maxLv: 5, applyStatus: { type: 'poison', turns: 4, chance: 0.85 } },
+        { id: 'm_poison_cloud',   name: '毒霧',       icon: '☠️', unlockLv: 3,  cooldown: 0, mpCost: 30, type: 'damage', flat: 50, perLv: 3, ignoreDef: true, targetCount: 'all', maxLv: 5, applyStatus: { type: 'poison', charges: 4, chance: 0.85 } },
         { id: 'm_arcane_focus',   name: '元素灌注',   icon: '🌀', unlockLv: 2,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'markPct', amount: 0.30, turns: 4 } },
         // ⭐ 魔力虹吸：物理傷（MARK 計算）+ 回 10% maxMP
         { id: 'm_arcane_drain',   name: '魔力虹吸', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 0.8, useMark: true, mpRestorePct: 0.10 },
@@ -2056,7 +2056,7 @@
         { id: 'p_pray',      name: '祈禱',     icon: '🙏', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true, isMpRegenStrong: true },
         // ⭐ 神聖懲戒：2.5× ATK + 10% maxHp；Lv 5 +5% maxHp / Lv 10 易傷 +1 次
         { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 6,  cooldown: 0, mpCost: 35, type: 'damage', mult: 2.5, bonusMaxHpPct: 0.10, cast: 60, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 2, chance: 1 }, customLv: true },
-        { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 7,  cooldown: 0, mpCost: 35, type: 'damage', mult: 1.7, targetCount: 2, applyStatus: { type: 'paralyze', turns: 2, chance: 0.8 }, cast: 30 },
+        { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 7,  cooldown: 0, mpCost: 35, type: 'damage', mult: 1.7, targetCount: 2, applyStatus: { type: 'paralyze', charges: 2, chance: 0.8 }, cast: 30 },
         // ⭐ 神聖祝福：DEF +40%（3 回合）+ 臨時最大HP +20%（僅戰鬥中有效）
         { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.25, turns: 3 }, buffMaxHpPct: 0.20 },
         // ⭐ 護盾衝鋒：6× DEF；攻擊完後 +10 DEF（持續 3 回合）硬值 40
@@ -2096,7 +2096,7 @@
     // tier 2（玩家 Lv 4-8）
     { id: 'spider',tier: 2, name: '蜘蛛鵝',    icon: '🕷', hpBase: 110, atkBase: 8,  defBase: 2, spdBase: 11, goldBase: 18, xpBase: 50, verb: '毒咬', ability: { type: 'multiHit', hits: 2 },
       skills: [
-        { verb: '毒網噴吐', mult: 0.8, applyStatus: { type: 'poison', turns: 3, dmg: 6, chance: 1 }, cooldown: 4 },
+        { verb: '毒網噴吐', mult: 0.8, applyStatus: { type: 'poison', charges: 3, dmg: 6, chance: 1 }, cooldown: 4 },
       ],
       dialogue: ['汝已陷入吾之八腳神羅...', '毒之絲，將融化爾之靈魂...', '蛛網中、唯有絕望...'],
       deathLine: ['蛛網...崩塌了...', '汝...贏得了這一回合...', '吾...將消逝於陰影...'] },
@@ -2121,46 +2121,46 @@
     // tier 3（玩家 Lv 8-14）
     { id: 'orc',   tier: 3, name: '獸人鵝',    icon: '👹', hpBase: 150, atkBase: 11, defBase: 4, spdBase: 7,  goldBase: 38, xpBase: 95, verb: '怒吼',
       skills: [
-        { verb: '重斧揮砍', mult: 1.8, applyStatus: { type: 'paralyze', turns: 2, chance: 0.35 }, cooldown: 5 },
+        { verb: '重斧揮砍', mult: 1.8, applyStatus: { type: 'paralyze', charges: 2, chance: 0.35 }, cooldown: 5 },
         { verb: '狂暴猛擊', mult: 2.0, cooldown: 6 },
       ],
       dialogue: ['鵝啊啊啊啊啊啊！！', '鵝鵝撕碎你！碎屑碎屑！', '鵝來砸碎你！！'],
       deathLine: ['鵝...啊啊啊...', '鵝鵝...倒下...', '鵝鵝會...回來的...！'] },
     { id: 'mummy', tier: 3, name: '木乃鵝',    icon: '🧟', hpBase: 145, atkBase: 9,  defBase: 6, spdBase: 4,  goldBase: 42, xpBase: 105, verb: '詛咒', ability: { type: 'magicResist', resist: 0.5 },
       skills: [
-        { verb: '痛苦詛咒', mult: 0.8, applyStatus: { type: 'poison', turns: 4, dmg: 14, chance: 1 }, cooldown: 4 },
-        { verb: '靈魂凝視', mult: 0.5, applyStatus: { type: 'paralyze', turns: 2, chance: 0.7 }, cooldown: 5 },
+        { verb: '痛苦詛咒', mult: 0.8, applyStatus: { type: 'poison', charges: 4, dmg: 14, chance: 1 }, cooldown: 4 },
+        { verb: '靈魂凝視', mult: 0.5, applyStatus: { type: 'paralyze', charges: 2, chance: 0.7 }, cooldown: 5 },
       ],
       dialogue: ['我都死這麼久了...你還來吵...真的好過分...', '三千年的怨念...也不是針對你...只是恰好遇到...', '我又沒做什麼...為什麼總是被打...嗚...'],
       deathLine: ['唉...又被打死了...都是我的錯吧...', '三千年的修為...就這樣...沒事的習慣了...', '你開心就好...我繼續沉睡...'] },
     { id: 'troll', tier: 3, name: '巨魔鵝',    icon: '🧌', hpBase: 150, atkBase: 12, defBase: 5, spdBase: 5,  goldBase: 50, xpBase: 125, verb: '巨拳', ability: { type: 'multiHit', hits: 2 },
       skills: [
         { verb: '巨棒掃擊', mult: 1.7, cooldown: 4 },
-        { verb: '怒吼震地', mult: 1.0, applyStatus: { type: 'paralyze', turns: 2, chance: 0.4 }, cooldown: 6 },
+        { verb: '怒吼震地', mult: 1.0, applyStatus: { type: 'paralyze', charges: 2, chance: 0.4 }, cooldown: 6 },
       ],
       dialogue: ['笨笨鵝鵝要打架啦~笨笨鵝鵝要打架~', '哥哥可以打嗎？哥哥可以痛嗎？我可以喔！', '鵝鵝想要你的閃亮亮~給鵝鵝~'],
       deathLine: ['嗚嗚嗚~好痛~~', '鵝鵝不玩了！哭哭~', '媽媽~~~~'] },
     { id: 'merch', tier: 3, name: '商人鵝',    icon: '💰', hpBase: 100, atkBase: 8,  defBase: 3, spdBase: 8,  goldBase: 130,xpBase: 75,  verb: '推銷',
       skills: [
         { verb: '銅板飛擲', mult: 1.5, cooldown: 4 },
-        { verb: '坑人合約', mult: 0.6, applyStatus: { type: 'poison', turns: 3, dmg: 10, chance: 0.8 }, cooldown: 5 },
+        { verb: '坑人合約', mult: 0.6, applyStatus: { type: 'poison', charges: 3, dmg: 10, chance: 0.8 }, cooldown: 5 },
       ],
       dialogue: ['客倌！買賣不成仁義在嘛~買條命吧！', '限時優惠！打折戰鬥！只要打輸 50% HP！', '童叟無欺！戰勝我有大禮包！'],
       deathLine: ['客倌承讓承讓！下次再來惠顧！', '今日生意失敗，明日重新開張！', '拿好你的戰利品，慢走不送！'] },
     // tier 4（玩家 Lv 14-22）
     { id: 'lich',   tier: 4, name: '巫妖鵝',   icon: '☠️', hpBase: 130, atkBase: 13, defBase: 4, spdBase: 12, goldBase: 110,xpBase: 280, verb: '死亡之觸', ability: { type: 'magicResist', resist: 0.6 },
       skills: [
-        { verb: '靈魂啃食', mult: 1.6, applyStatus: { type: 'poison', turns: 4, dmg: 18, chance: 0.9 }, cooldown: 4 },
-        { verb: '冰封凝視', mult: 1.2, applyStatus: { type: 'paralyze', turns: 2, chance: 0.55 }, cooldown: 5 },
+        { verb: '靈魂啃食', mult: 1.6, applyStatus: { type: 'poison', charges: 4, dmg: 18, chance: 0.9 }, cooldown: 4 },
+        { verb: '冰封凝視', mult: 1.2, applyStatus: { type: 'paralyze', charges: 2, chance: 0.55 }, cooldown: 5 },
         { verb: '骨之爆發', mult: 2.2, ignoreDef: true, cooldown: 7 },
       ],
       dialogue: ['於虛無中我獲得了永恆...名為鵝の死亡...', '千年沉睡...此時・此地，吾將品嘗汝之絕望...', '汝之靈魂、將成為吾之養分...覺悟吧...'],
       deathLine: ['歸於塵土...歸於虛無...', '千年計畫...終究...化為泡影...', '汝之名...吾將銘記於黃泉...'] },
     { id: 'dragon', tier: 4, name: '龍鵝',     icon: '🐲', hpBase: 150, atkBase: 14, defBase: 6, spdBase: 11, goldBase: 100,xpBase: 260, verb: '龍息',
       skills: [
-        { verb: '火球', mult: 1.7, applyStatus: { type: 'poison', turns: 2, dmg: 20, chance: 0.7 }, cooldown: 4 },
+        { verb: '火球', mult: 1.7, applyStatus: { type: 'poison', charges: 2, dmg: 20, chance: 0.7 }, cooldown: 4 },
         { verb: '尾掃', mult: 1.8, cooldown: 5 },
-        { verb: '龍威咆哮', mult: 1.0, applyStatus: { type: 'paralyze', turns: 2, chance: 0.5 }, cooldown: 6 },
+        { verb: '龍威咆哮', mult: 1.0, applyStatus: { type: 'paralyze', charges: 2, chance: 0.5 }, cooldown: 6 },
       ],
       dialogue: ['凡人...跪下感受真正的龍威吧。', '汝之勇氣，將化為龍焰中的灰燼。', '吾乃天空之主，膽敢挑戰？'],
       deathLine: ['強者...也有殞落之時...', '汝乃...真正的勇者...', '龍焰...將熄滅...'] },
@@ -2168,15 +2168,15 @@
     { id: 'demon',  tier: 5, name: '惡魔鵝',   icon: '😈', hpBase: 145, atkBase: 15, defBase: 5, spdBase: 14, goldBase: 170,xpBase: 420, verb: '地獄火', ability: { type: 'multiHit', hits: 2 },
       skills: [
         { verb: '暗影斬', mult: 1.7, cooldown: 4 },
-        { verb: '靈魂烈焰', mult: 1.4, applyStatus: { type: 'poison', turns: 3, dmg: 28, chance: 0.85 }, cooldown: 5 },
-        { verb: '混沌印記', mult: 1.0, applyStatus: { type: 'paralyze', turns: 2, chance: 0.5 }, cooldown: 7 },
+        { verb: '靈魂烈焰', mult: 1.4, applyStatus: { type: 'poison', charges: 3, dmg: 28, chance: 0.85 }, cooldown: 5 },
+        { verb: '混沌印記', mult: 1.0, applyStatus: { type: 'paralyze', charges: 2, chance: 0.5 }, cooldown: 7 },
       ],
       dialogue: ['人家也不想傷害你的呀~規矩就是規矩嘛~', '你看你，那麼可愛...讓我多痛你幾下嘛~♡', '哎呀流血啦~是你體質問題吧~與我無關喔~'],
       deathLine: ['嗚嗚~你怎麼真的下手呀~人家受傷了啦~', '好過分喔~我也只是工作而已...', '下次別這麼用力嘛~人家會記恨的喔...'] },
     { id: 'titan',  tier: 5, name: '泰坦鵝',   icon: '🗿', hpBase: 160, atkBase: 12, defBase: 10, spdBase: 8,  goldBase: 180,xpBase: 440, verb: '大地碎裂', ability: { type: 'physResist', resist: 0.3 },
       skills: [
         { verb: '巨石擲', mult: 2.0, cooldown: 5 },
-        { verb: '震地波', mult: 1.2, applyStatus: { type: 'paralyze', turns: 2, chance: 0.6 }, cooldown: 6 },
+        { verb: '震地波', mult: 1.2, applyStatus: { type: 'paralyze', charges: 2, chance: 0.6 }, cooldown: 6 },
       ],
       dialogue: ['...', '...嗯。', '......（凝視）'],
       deathLine: ['...感謝指教。', '......（沉睡）', '...再會。'] },
@@ -2229,7 +2229,7 @@
     { id: 'steel', tier: 3, name: '鋼鵝', icon: '🔩', hpBase: 145, atkBase: 7, defBase: 12, spdBase: 4, goldBase: 50, xpBase: 110,
       verb: '鋼鐵敲擊', ability: { type: 'physResist', resist: 0.5 },
       skills: [
-        { verb: '鐵壁反擊', mult: 0.8, applyStatus: { type: 'paralyze', turns: 2, chance: 0.4 }, cooldown: 5 },
+        { verb: '鐵壁反擊', mult: 0.8, applyStatus: { type: 'paralyze', charges: 2, chance: 0.4 }, cooldown: 5 },
       ],
       dialogue: ['鵝鋼之軀...堅不可摧。', '喀喀喀...你的攻擊...無效。', '靜止不動...才是答案。'],
       deathLine: ['銹蝕...終將...來臨...', '金屬...也有極限...', '咯吱...斷裂...'] },
@@ -2238,8 +2238,8 @@
       verb: '元素湧動', ability: { type: 'magicResist', resist: 0.7 },
       skills: [
         { verb: '火焰球', mult: 1.6, cooldown: 3 },
-        { verb: '冰錐刺', mult: 1.4, applyStatus: { type: 'paralyze', turns: 2, chance: 0.4 }, cooldown: 5 },
-        { verb: '燃燒詛咒', mult: 0.8, applyStatus: { type: 'poison', turns: 4, dmg: 14, chance: 0.85 }, cooldown: 5 },
+        { verb: '冰錐刺', mult: 1.4, applyStatus: { type: 'paralyze', charges: 2, chance: 0.4 }, cooldown: 5 },
+        { verb: '燃燒詛咒', mult: 0.8, applyStatus: { type: 'poison', charges: 4, dmg: 14, chance: 0.85 }, cooldown: 5 },
       ],
       dialogue: ['元素將為我所用...', '法力之河流向你...', '微不足道的物理...'],
       deathLine: ['法力...枯竭...', '元素...回歸虛無...', '嗚嗚...咒語斷了...'] },
@@ -2248,7 +2248,7 @@
       verb: '迷惑',  ability: { type: 'steal', min: 8, max: 20 },
       skills: [
         { verb: '幻象一擊', mult: 1.3, cooldown: 3 },
-        { verb: '黑暗之吻', mult: 0.9, applyStatus: { type: 'poison', turns: 3, dmg: 10, chance: 0.8 }, cooldown: 5 },
+        { verb: '黑暗之吻', mult: 0.9, applyStatus: { type: 'poison', charges: 3, dmg: 10, chance: 0.8 }, cooldown: 5 },
       ],
       dialogue: ['你看到的是真的嗎？', '嘻嘻嘻...錢錢...', '小鵝鵝迷路了嗎～'],
       deathLine: ['哎呀～被識破了～', '把錢還給你...一半好了...', '下次見囉～'] },
@@ -2385,7 +2385,7 @@
       ability: { type: 'multiHit', hits: 2 },
       skills: [
         { verb: '皇者震怒', mult: 2.2, cooldown: 3 },
-        { verb: '王冠碎擊', mult: 1.6, applyStatus: { type: 'paralyze', turns: 2, chance: 0.55 }, cooldown: 4 },
+        { verb: '王冠碎擊', mult: 1.6, applyStatus: { type: 'paralyze', charges: 2, chance: 0.55 }, cooldown: 4 },
         { verb: '御前斬', mult: 1.8, ignoreDef: true, cooldown: 5 },
       ],
       bossCoin: { id: 'bc_goose_king', name: '鵝皇硬幣', icon: '👑' },
@@ -2404,8 +2404,8 @@
       verb: '龍焰之息',
       ability: { type: 'physResist', resist: 0.25 },
       skills: [
-        { verb: '龍焰爆炎', mult: 2.0, applyStatus: { type: 'poison', turns: 3, dmg: 60, chance: 0.8 }, cooldown: 3 },
-        { verb: '古龍咆哮', mult: 1.5, applyStatus: { type: 'paralyze', turns: 2, chance: 0.6 }, cooldown: 4 },
+        { verb: '龍焰爆炎', mult: 2.0, applyStatus: { type: 'poison', charges: 3, dmg: 60, chance: 0.8 }, cooldown: 3 },
+        { verb: '古龍咆哮', mult: 1.5, applyStatus: { type: 'paralyze', charges: 2, chance: 0.6 }, cooldown: 4 },
         { verb: '龍鱗粉碎', mult: 2.5, ignoreDef: true, cooldown: 5 },
       ],
       bossCoin: { id: 'bc_dragon_goose', name: '古龍鵝硬幣', icon: '🐲' },
@@ -2425,7 +2425,7 @@
       ability: { type: 'physResist', resist: 0.30 },
       skills: [
         { verb: '山崩地裂', mult: 2.8, ignoreDef: true, cooldown: 3 },
-        { verb: '磐石壓制', mult: 1.8, applyStatus: { type: 'paralyze', turns: 2, chance: 0.65 }, cooldown: 4 },
+        { verb: '磐石壓制', mult: 1.8, applyStatus: { type: 'paralyze', charges: 2, chance: 0.65 }, cooldown: 4 },
         { verb: '隕石衝擊', mult: 3.2, ignoreDef: true, cooldown: 6 },
       ],
       bossCoin: { id: 'bc_pebble_goose', name: '鵝卵石硬幣', icon: '🪨' },
@@ -2912,7 +2912,7 @@
       fixedSkillOrder: true,
       skills: [
         { verb: '早餐防禦', type: 'monsterSelfBuff', stat: 'def', amount: 100, turns: 4, cooldown: 3 },
-        { verb: '烤吐司爆裂', mult: 1.3, applyStatus: { type: 'poison', turns: 3, dmg: 30, chance: 0.7 }, cooldown: 3 },
+        { verb: '烤吐司爆裂', mult: 1.3, applyStatus: { type: 'poison', charges: 3, dmg: 30, chance: 0.7 }, cooldown: 3 },
         { verb: '太陽蛋砲擊', mult: 1.0, hits: 3, fixedHitMult: true, cooldown: 3 },
       ],
       dialogue: ['鵝鵝早安～來吃早餐了嗎？', '一日之計在於晨～你來打我？', '咖啡剛煮好，一起喝嗎？'],
@@ -2927,7 +2927,7 @@
       ability: { type: 'multiHit', hits: 2 },
       fixedSkillOrder: true,
       skills: [
-        { verb: '拉麵纏繞', mult: 1.0, applyStatus: { type: 'paralyze', turns: 2, chance: 0.55 }, cooldown: 3 },
+        { verb: '拉麵纏繞', mult: 1.0, applyStatus: { type: 'paralyze', charges: 2, chance: 0.55 }, cooldown: 3 },
         { verb: '牛排重擊', mult: 3.0, cooldown: 4 },
         { verb: '咖哩潑灑', type: 'monsterShield', charges: 2, cooldown: 4 },
       ],
@@ -2943,9 +2943,9 @@
       ability: { type: 'magicResist', resist: 0.3 },
       fixedSkillOrder: true,
       skills: [
-        { verb: '主菜爆裂', mult: 1.6, applyStatus: { type: 'poison', turns: 4, dmg: 50, chance: 0.85 }, cooldown: 4 },
+        { verb: '主菜爆裂', mult: 1.6, applyStatus: { type: 'poison', charges: 4, dmg: 50, chance: 0.85 }, cooldown: 4 },
         { verb: '甜點之吻', mult: 1.8, ignoreDef: true, cooldown: 4 },
-        { verb: '燭光催眠', mult: 0.5, applyStatus: { type: 'paralyze', turns: 2, chance: 0.7 }, cooldown: 3 },
+        { verb: '燭光催眠', mult: 0.5, applyStatus: { type: 'paralyze', charges: 2, chance: 0.7 }, cooldown: 3 },
         { verb: '料理長之刃', mult: 2.4, alwaysCrit: true, cooldown: 5 },
       ],
       dialogue: ['歡迎來到我的餐桌～', '今晚的主菜是…你？', '紅酒已經醒好，等你來品嚐～'],
@@ -3468,13 +3468,13 @@
       if (level >= 5)  eff.extraCritChance = (eff.extraCritChance || 0) + 0.10;
       if (level >= 10) eff.hits = (skill.hits || 4) + 1;
     }
-    // ⭐ 中毒專用公式：每級 +1 turn，Lv 5 額外 +1（不再看 dmg，由 tickStatuses 用 3% maxHp 計）
+    // ⭐ 中毒專用公式：每級 +1 charge，Lv 5 額外 +1（由 tickStatuses 每次觸發扣 3% maxHp）
     if (skill.applyStatus && skill.applyStatus.type === 'poison' && level >= 1) {
-      const extraTurn = Math.min(level, 5) + (level >= 5 ? 1 : 0);
+      const extraCharge = Math.min(level, 5) + (level >= 5 ? 1 : 0);
       eff.applyStatus = {
         ...skill.applyStatus,
         chance: Math.min(1, (skill.applyStatus.chance || 1) * (1 + level * 0.05)),
-        turns: (skill.applyStatus.turns || 1) + extraTurn,
+        charges: (skill.applyStatus.charges || 1) + extraCharge,
       };
     } else if ((skill.id === 'a_lethal_aim' || skill.id === 'p_holy_smite' || skill.id === 'm_destruction') && skill.applyStatus) {
       // 致命瞄準 / 神聖懲戒 / 毀滅之怒：易傷 hit-based，僅 Lv 10 +1 次
@@ -3486,10 +3486,11 @@
       // 神之拳：麻痺不隨等級縮放（固定 80%）
       eff.applyStatus = { ...skill.applyStatus };
     } else if (level >= 3 && skill.applyStatus) {
+      // ⭐ charge-based：麻痺等技能每級升次數不升回合
       eff.applyStatus = {
         ...skill.applyStatus,
         chance: Math.min(1, (skill.applyStatus.chance || 1) * (1 + (level - 2) * 0.12)),
-        turns: (skill.applyStatus.turns || 1) + (level >= 10 ? 3 : level >= 5 ? 2 : 1),
+        charges: (skill.applyStatus.charges || 1) + (level >= 10 ? 3 : level >= 5 ? 2 : 1),
         dmg: Math.round((skill.applyStatus.dmg || 0) * (1 + dmgBonus)),
       };
     }
@@ -3545,7 +3546,7 @@
   function describeLv5Bonus(skill) {
     switch (lv5BonusKind(skill)) {
       case 'buff':      return '✨ 持續 +1 回合';
-      case 'status':    return `${statusEmoji(skill.applyStatus.type)} ${statusLabel(skill.applyStatus.type)} 持續 +1`;
+      case 'status':    return `${statusEmoji(skill.applyStatus.type)} ${statusLabel(skill.applyStatus.type)} +1 次`;
       case 'lifesteal': return '🩸 吸血 +10%';
       case 'heal':      return '💚 自癒 +5% maxHP';
       case 'restore':   return '💙 MP 消耗 -25%';
@@ -3576,17 +3577,17 @@
       if (level === 10) parts.push('🌟 再額外 +5% maxMP');
       return parts.join('、');
     }
-    // ⭐ 中毒技：每級 +1 持續回合，Lv 5 額外再 +1
+    // ⭐ 中毒技：每級 +1 次，Lv 5 額外再 +1
     if (skill.applyStatus && skill.applyStatus.type === 'poison') {
-      const baseTurns = skill.applyStatus.turns || 3;
-      const turns = baseTurns + Math.min(level, 5) + (level >= 5 ? 1 : 0);
-      const parts = [`☠️ 中毒持續 ${turns} 回合（每回合扣 3% maxHP，上限 1000）`];
-      if (level === 5) parts.push('🌟 持續再 +1 回合');
+      const baseCharges = skill.applyStatus.charges || 3;
+      const charges = baseCharges + Math.min(level, 5) + (level >= 5 ? 1 : 0);
+      const parts = [`☠️ 中毒 ${charges} 次（每次觸發扣 3% maxHP，上限 1000）`];
+      if (level === 5) parts.push('🌟 中毒次數再 +1');
       return parts.join('、');
     }
     const totalPct = Math.round((Math.min(level, 5) * 10 + Math.max(0, level - 5) * 5));
     const parts = [`效果 +${totalPct}%`];
-    if (level === 3 && skill.applyStatus) parts.push(`${statusEmoji(skill.applyStatus.type)} ${statusLabel(skill.applyStatus.type)} 機率/持續 +`);
+    if (level === 3 && skill.applyStatus) parts.push(`${statusEmoji(skill.applyStatus.type)} ${statusLabel(skill.applyStatus.type)} 機率/次數 +`);
     // ⭐ customLv 技能：用各自的 Lv 5 / 10 描述（不走預設 lv5BonusKind）
     if (skill.customLv) {
       if (skill.id === 'p_holy_slash') {
@@ -5807,8 +5808,8 @@
           log.push({ type: 'monster', text: `回合 ${round}：${player.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${ev.dmg} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
         }
         if (pHp <= 0) break;
-        // 麻痺 → 30% 機率跳過
-        if (hasStatus(playerObj, 'paralyze') && Math.random() < 0.5) {
+        // ⭐ 麻痺（charge-based）：確定跳過，消耗 1 層
+        if (consumeParalyze(playerObj)) {
           log.push({ type: 'system', text: `回合 ${round}：${player.name} ⚡麻痺，無法行動！`, hp: { player: pHp, monster: mHp, mp: pMp } });
           continue;
         }
@@ -6139,8 +6140,8 @@
           log.push({ type: 'player', text: `回合 ${round}：${monster.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${ev.dmg} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
         }
         if (mHp <= 0) { pushDeathLine(); break; }
-        // 麻痺 → 50% 機率跳過
-        if (hasStatus(monster, 'paralyze') && Math.random() < 0.5) {
+        // ⭐ 麻痺（charge-based）：確定跳過，消耗 1 層
+        if (consumeParalyze(monster)) {
           log.push({ type: 'system', text: `回合 ${round}：${monster.name} ⚡麻痺，行動被取消`, hp: { player: pHp, monster: mHp, mp: pMp } });
           continue;
         }
@@ -6285,8 +6286,10 @@
   // ============================================================
   // 異常狀態系統 + 多目標戰鬥引擎（試煉戰場用）
   // ============================================================
-  // 狀態結構：{ type: 'poison'|'paralyze', turns, dmg }
-  // poison: 每回合扣 dmg；paralyze: 玩家回合 30% 機率跳過、怪物 100% 跳過
+  // 狀態結構（全部 charge-based）：
+  //   poison:    { type, charges, [dmg] } — 每次行動觸發扣 3% maxHP，消耗 1 層
+  //   paralyze:  { type, charges }        — 必定跳過行動，消耗 1 層（consumeParalyze）
+  //   vulnerable/shield: 見 consumeVulnerable / 護盾處理
   function applyStatus(target, status) {
     target.statuses = target.statuses || [];
     // 同類覆蓋（取較長 turns）— 'buff' 型用 stat 區分，可同時帶多個不同 stat 的 buff
@@ -6299,9 +6302,10 @@
         // ⭐ hit-based：取較多次數，疊加量取最大
         existing.hits   = Math.max(existing.hits   || 0, status.hits   || 0);
         existing.amount = Math.max(existing.amount || 0, status.amount || 0);
-      } else if (status.type === 'shield') {
-        // ⭐ charge-based：取較多層護盾
+      } else if (status.type === 'shield' || status.type === 'paralyze' || status.type === 'poison') {
+        // ⭐ charge-based：護盾/麻痺/中毒均取較多層
         existing.charges = Math.max(existing.charges || 0, status.charges || 0);
+        if (status.type === 'poison') existing.dmg = Math.max(existing.dmg || 0, status.dmg || 0);
       } else {
         existing.turns = Math.max(existing.turns, status.turns);
         if (isBuff) existing.amount = Math.max(existing.amount || 0, status.amount || 0);
@@ -6311,8 +6315,9 @@
       target.statuses.push({ ...status });
     }
   }
-  // ⭐ 中毒新公式：每回合扣目標 maxHP 的 3%（單次上限 300）
-  //   不再看 s.dmg（保留欄位但被忽略）；持續回合數仍由施毒技能 / 怪物 skill 設定
+  // ⭐ 狀態 tick：易傷/護盾/麻痺/中毒 均為 charge-based，不計 turns
+  //   poison：每次行動觸發扣目標 3% maxHP（單次上限 1000），消耗 1 層
+  //   paralyze：由 consumeParalyze() 負責消耗，tickStatuses 不處理
   //   maxHp 由呼叫端傳入（玩家 stats.maxHp / 怪物 monster.maxHp）
   function tickStatuses(target, maxHp) {
     if (!target.statuses || target.statuses.length === 0) return [];
@@ -6322,15 +6327,18 @@
       if (s.type === 'poison') {
         const dmg = Math.min(1000, Math.max(1, Math.round(safeMax * 0.03)));
         events.push({ type: 'poison', dmg });
+        s.charges = (s.charges || 0) - 1; // ⭐ charge-based：每次觸發消耗 1 層
       }
-      // ⭐ 易傷/護盾：hit-based，不計 turns — 由 consumeVulnerable / consumeShield 負責消耗
-      if (s.type !== 'vulnerable' && s.type !== 'shield') {
+      // ⭐ 易傷/護盾/麻痺/中毒：全部 charge-based，不計 turns
+      if (s.type !== 'vulnerable' && s.type !== 'shield' && s.type !== 'paralyze' && s.type !== 'poison') {
         s.turns = (s.turns || 0) - 1;
       }
     }
     target.statuses = target.statuses.filter(s => {
       if (s.type === 'vulnerable') return (s.hits    || 0) > 0;
       if (s.type === 'shield')     return (s.charges || 0) > 0;
+      if (s.type === 'paralyze')   return (s.charges || 0) > 0; // ⭐ charge-based
+      if (s.type === 'poison')     return (s.charges || 0) > 0; // ⭐ charge-based
       return s.turns > 0;
     });
     return events;
@@ -6345,6 +6353,14 @@
     v.hits -= 1;
     if (v.hits <= 0) target.statuses = target.statuses.filter(s => s !== v);
     return 1 + (v.amount || 0.5);
+  }
+  // ⭐ 麻痺（charge-based）：有麻痺時消耗 1 層並回傳 true（行動被取消）；無麻痺回傳 false
+  function consumeParalyze(target) {
+    const p = (target.statuses || []).find(s => s.type === 'paralyze' && (s.charges || 0) > 0);
+    if (!p) return false;
+    p.charges -= 1;
+    if (p.charges <= 0) target.statuses = target.statuses.filter(s => s !== p);
+    return true;
   }
   // 把目前生效的 buff 加總（atkPct/defPct/spd/critChance/critDmg/reflectPct/maxHpPct）
   function getBuffBonus(target) {
@@ -6496,9 +6512,9 @@
         }
         if (pHp <= 0) break;
 
-        // 麻痺 → 30% 機率跳過行動
-        if (hasStatus(playerObj, 'paralyze') && Math.random() < 0.5) {
-          log.push({ type: 'system', text: `回合 ${round}：${player.name} 麻痺，無法行動！`, hp: hpsSnapshot() });
+        // ⭐ 麻痺（charge-based）：確定跳過，消耗 1 層
+        if (consumeParalyze(playerObj)) {
+          log.push({ type: 'system', text: `回合 ${round}：${player.name} ⚡麻痺，無法行動！`, hp: hpsSnapshot() });
           continue;
         }
         // 自癒
@@ -6787,8 +6803,8 @@
           log.push({ type: 'player', text: `回合 ${round}：${m.icon}${m.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${ev.dmg} HP`, hp: hpsSnapshot() });
         }
         if (!m.alive) continue;
-        // 麻痺 → 50% 機率跳過
-        if (hasStatus(m, 'paralyze') && Math.random() < 0.5) {
+        // ⭐ 麻痺（charge-based）：確定跳過，消耗 1 層
+        if (consumeParalyze(m)) {
           log.push({ type: 'system', text: `回合 ${round}：${m.icon}${m.name} ⚡麻痺，行動被取消`, hp: hpsSnapshot() });
           continue;
         }
@@ -8262,7 +8278,33 @@ ${b.text}
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
 
-        <div style="background:linear-gradient(135deg,#d1fae5,#a7f3d0); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+        <div style="background:linear-gradient(135deg,#ede9fe,#ddd6fe); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#5b21b6;">⚙️ 系統優化補丁　<span style="font-size:11px; color:#7c3aed;">2026-05-04</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:6px 0 4px;">🎯 狀態系統全面 Charge-Based 化</div>
+        <div>・<b>易傷</b>：改為「<b>命中次數</b>」計算，每次受擊消耗 1 層，不再按回合遞減</div>
+        <div>・<b>護盾</b>：原已是 charge-based，現統一邏輯</div>
+        <div>・<b>麻痺</b>：改為「<b>確定跳過 N 次行動</b>」，移除原 50% RNG，每次行動消耗 1 層</div>
+        <div>・<b>中毒</b>：改為「<b>觸發 N 次</b>」，每次你的行動到來時觸發並消耗 1 層</div>
+        <div style="font-size:11px; color:#6b7280; margin-top:2px;">→ 所有狀態效果現在都是可預測的——你能準確知道還剩幾次效果</div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">⚡ SPD 軟上限</div>
+        <div>・行動比率超過 <b>1.5:1</b> 後效益急速遞減，<b>~2:1 為實際極限</b></div>
+        <div style="font-size:11px; color:#6b7280;">→ 堆速度到 2 倍以上幾乎沒有意義，戰鬥平衡更健康</div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">💀 移除死亡懲罰</div>
+        <div>・打輸後 <b>HP 即時恢復 50%</b>，無需等待 5 分鐘或購買復活藥</div>
+        <div>・商店已移除「復活藥水」</div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">🧙 巫師新技能</div>
+        <div>・🔰 <b>絕對防禦</b>（Lv 8 解鎖、55 MP、不可升級）：回血 50% + 免疫下一次傷害</div>
+
+        <div style="background:#f3f4f6; border-radius:8px; padding:8px 12px; margin-top:12px; margin-bottom:4px; font-size:12px; color:#6b7280;">
+          ✅ 所有狀態類技能的升級描述已同步更新（顯示「次數」而非「回合」）
+        </div>
+
+        <div style="background:linear-gradient(135deg,#d1fae5,#a7f3d0); border-radius:10px; padding:10px 14px; margin-bottom:14px; margin-top:16px;">
           <div style="font-size:15px; font-weight:800; color:#065f46;">📢 平衡性調整 v3　<span style="font-size:11px; color:#047857;">2026-05-04</span></div>
         </div>
 
@@ -8591,8 +8633,10 @@ ${b.text}
       const s = eff.applyStatus;
       const durText = s.type === 'vulnerable' ? `${s.hits || 2} 次`
                     : s.type === 'shield'     ? `${s.charges || 1} 次`
+                    : s.type === 'paralyze'   ? `${s.charges || 2} 次`
+                    : s.type === 'poison'     ? `${s.charges || 3} 次`
                     : `持續 ${s.turns} 回合`;
-      buffPairs.push(`${statusEmoji(s.type)} 賦予 ${statusLabel(s.type)}（${Math.round((s.chance||1)*100)}%、${durText}${s.dmg ? `、每回合 ${s.dmg} 傷害` : ''}）`);
+      buffPairs.push(`${statusEmoji(s.type)} 賦予 ${statusLabel(s.type)}（${Math.round((s.chance||1)*100)}%、${durText}${s.dmg ? `、每次觸發 ${s.dmg} 傷害` : ''}）`);
     }
     if (eff.targetCount && eff.targetCount !== 1) {
       buffPairs.push(`🎯 同時打 ${eff.targetCount === 'all' ? '全體' : eff.targetCount + ' 個目標'}`);
