@@ -1965,7 +1965,7 @@
         { id: 'a_concentrate', name: '集中',     icon: '🧘', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', isMpRegen: true },
         // ⭐ 連射：每段固定 ATK ×1.5 / 4 段 / Lv 5 暴擊 +10% / Lv 10 多 1 段
         { id: 'a_barrage',     name: '連射',     icon: '🌊', unlockLv: 4,  cooldown: 0, mpCost: 28, type: 'damage', mult: 1.2, hits: 4, fixedHitMult: true, customLv: true },
-        { id: 'a_lethal_aim',  name: '致命瞄準', icon: '💀', unlockLv: 10, cooldown: 0, mpCost: 20, type: 'damage', mult: 3.0, alwaysCrit: true, ignoreDef: true, cast: 30, applyStatus: { type: 'vulnerable', amount: 0.5, turns: 2, chance: 1 }, customLv: true },
+        { id: 'a_lethal_aim',  name: '致命瞄準', icon: '💀', unlockLv: 10, cooldown: 0, mpCost: 20, type: 'damage', mult: 3.0, alwaysCrit: true, ignoreDef: true, cast: 30, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 2, chance: 1 }, customLv: true },
         { id: 'a_twin_shot',   name: '雙箭齊發', icon: '🏹', unlockLv: 2,  cooldown: 0, mpCost: 24, type: 'damage', mult: 1.5, targetCount: 2 },
         { id: 'a_poison_arrow',name: '毒箭',     icon: '🐍', unlockLv: 5,  cooldown: 0, mpCost: 26, type: 'damage', mult: 1.2, maxLv: 5, applyStatus: { type: 'poison', turns: 3, chance: 0.7 } },
         { id: 'a_quickstep',   name: '疾風步',   icon: '💨', unlockLv: 2,  cooldown: 0, mpCost: 16, type: 'buff', selfBuff: { stat: 'spd', amount: 8, turns: 4 } },
@@ -2011,7 +2011,9 @@
         // 連環閃電：3 段 MARK 傷害
         { id: 'm_chain_lightning',name: '連環閃電',   icon: '⚡', unlockLv: 4,  cooldown: 0, mpCost: 35, type: 'damage', mult: 0.8, magic: true, useMark: true, ignoreDef: true, hits: 3, fixedHitMult: true, cast: 50 },
         { id: 'm_arcane_shield',  name: '魔力護盾',   icon: '🛡️', unlockLv: 5,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'dmgReducePct', amount: 0.50, turns: 4 }, cast: 20, maxLv: 1 },
-        { id: 'm_destruction',    name: '毀滅之怒',   icon: '💀', unlockLv: 12, cooldown: 0, mpCost: 65, type: 'damage', mult: 3, magic: true, useMark: true, ignoreDef: true, applyStatus: { type: 'vulnerable', amount: 0.5, turns: 3, chance: 1 }, cast: 75, customLv: true },
+        // ⭐ 絕對防禦：回血 50% + 抵擋下一次傷害（不能升級）
+        { id: 'm_absolute_defense', name: '絕對防禦', icon: '🔰', unlockLv: 8,  cooldown: 0, mpCost: 55, type: 'heal', healPct: 0.5, applyShield: 1, maxLv: 1 },
+        { id: 'm_destruction',    name: '毀滅之怒',   icon: '💀', unlockLv: 12, cooldown: 0, mpCost: 65, type: 'damage', mult: 3, magic: true, useMark: true, ignoreDef: true, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 3, chance: 1 }, cast: 75, customLv: true },
         { id: 'm_firestorm',      name: '火焰風暴',   icon: '🌋', unlockLv: 7,  cooldown: 0, mpCost: 55, type: 'damage', flat: 150, markMult: 6, ignoreDef: true, targetCount: 'all', cast: 150 },
         { id: 'm_poison_cloud',   name: '毒霧',       icon: '☠️', unlockLv: 3,  cooldown: 0, mpCost: 30, type: 'damage', flat: 50, perLv: 3, ignoreDef: true, targetCount: 'all', maxLv: 5, applyStatus: { type: 'poison', turns: 4, chance: 0.85 } },
         { id: 'm_arcane_focus',   name: '元素灌注',   icon: '🌀', unlockLv: 2,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'markPct', amount: 0.30, turns: 4 } },
@@ -2052,8 +2054,8 @@
         { id: 'p_holy_slash',name: '聖光斬',   icon: '✝️', unlockLv: 1,  cooldown: 0, mpCost: 5,  type: 'damage', mult: 1.2, bonusMaxHpPct: 0.05, customLv: true },
         { id: 'p_holy_heal', name: '神聖治癒', icon: '✨', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'heal', healPct: 0.3 },
         { id: 'p_pray',      name: '祈禱',     icon: '🙏', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true, isMpRegenStrong: true },
-        // ⭐ 神聖懲戒：2.5× ATK + 10% maxHp；Lv 5 +5% maxHp / Lv 10 易傷持續 +1 回合
-        { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 6,  cooldown: 0, mpCost: 35, type: 'damage', mult: 2.5, bonusMaxHpPct: 0.10, cast: 60, applyStatus: { type: 'vulnerable', amount: 0.5, turns: 2, chance: 1 }, customLv: true },
+        // ⭐ 神聖懲戒：2.5× ATK + 10% maxHp；Lv 5 +5% maxHp / Lv 10 易傷 +1 次
+        { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 6,  cooldown: 0, mpCost: 35, type: 'damage', mult: 2.5, bonusMaxHpPct: 0.10, cast: 60, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 2, chance: 1 }, customLv: true },
         { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 7,  cooldown: 0, mpCost: 35, type: 'damage', mult: 1.7, targetCount: 2, applyStatus: { type: 'paralyze', turns: 2, chance: 0.8 }, cast: 30 },
         // ⭐ 神聖祝福：DEF +40%（3 回合）+ 臨時最大HP +20%（僅戰鬥中有效）
         { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.25, turns: 3 }, buffMaxHpPct: 0.20 },
@@ -2612,7 +2614,8 @@
     // HP / MP 處理（每次打王都是全力出擊，輸掉 HP 歸 0）
     const _s = computeStats(me);
     if (result.pHpFinal <= 0 && !killed) {
-      r.hp = 0; if (!r.deathAt) r.deathAt = Date.now();
+      // ⭐ 死亡即時恢復 50%
+      r.hp = Math.max(1, Math.floor(_s.maxHp * REST_HP_RATIO)); r.deathAt = null;
     } else {
       r.hp = _s.maxHp; r.deathAt = null;
     }
@@ -3474,10 +3477,10 @@
         turns: (skill.applyStatus.turns || 1) + extraTurn,
       };
     } else if ((skill.id === 'a_lethal_aim' || skill.id === 'p_holy_smite' || skill.id === 'm_destruction') && skill.applyStatus) {
-      // 致命瞄準 / 神聖懲戒 / 毀滅之怒：易傷固定 N 回合，僅 Lv 10 +1 回合
+      // 致命瞄準 / 神聖懲戒 / 毀滅之怒：易傷 hit-based，僅 Lv 10 +1 次
       eff.applyStatus = {
         ...skill.applyStatus,
-        turns: (skill.applyStatus.turns || 2) + (level >= 10 ? 1 : 0),
+        hits: (skill.applyStatus.hits || 2) + (level >= 10 ? 1 : 0),
       };
     } else if (skill.id === 'p_godfist' && skill.applyStatus) {
       // 神之拳：麻痺不隨等級縮放（固定 80%）
@@ -3517,10 +3520,10 @@
       if (level >= 5)  eff.extraCritChance = (eff.extraCritChance || 0) + 0.10;
       if (level >= 10) eff.extraCritChance = (eff.extraCritChance || 0) + 0.10;
     }
-    // ⭐ 神聖懲戒：customLv → Lv 5 +5% maxHp 傷害 / Lv 10 改為易傷持續 +1 回合（由 applyStatus 處理）
+    // ⭐ 神聖懲戒：customLv → Lv 5 +5% maxHp 傷害 / Lv 10 易傷 +1 次（由 applyStatus 特殊處理）
     if (skill.id === 'p_holy_smite') {
       if (level >= 5) eff.bonusMaxHpPct = (eff.bonusMaxHpPct || 0) + 0.05;
-      // Lv 10：易傷 +1 回合（已在 applyStatus 特殊處理）
+      // Lv 10：易傷 +1 次（已在 applyStatus 特殊處理）
     }
     // ⭐ 神之矢：customLv → Lv 5 / Lv 10 各 +20% 爆擊傷害（本招）
     if (skill.id === 'a_god_arrow') {
@@ -3591,12 +3594,14 @@
         if (level === 10) parts.push('🌟 暴擊率 再 +10%（本招，共 +20%）');
       } else if (skill.id === 'p_holy_smite') {
         if (level === 5)  parts.push('🩸 maxHp 加傷 +5%（本招，共 15%）');
-        if (level === 10) parts.push('🎯 易傷持續 +1 回合（共 3 回合）');
+        if (level === 10) parts.push('🎯 易傷 +1 次（共 3 次）');
       } else if (skill.id === 'a_god_arrow') {
         if (level === 5)  parts.push('💥 爆擊傷害 +20%（本招）');
         if (level === 10) parts.push('🌟 爆擊傷害 再 +20%（本招，共 +40%）');
       } else if (skill.id === 'a_lethal_aim') {
-        if (level === 10) parts.push('🎯 易傷持續 +1 回合（共 3 回合）');
+        if (level === 10) parts.push('🎯 易傷 +1 次（共 3 次）');
+      } else if (skill.id === 'm_destruction') {
+        if (level === 10) parts.push('🎯 易傷 +1 次（共 4 次）');
       }
     } else {
       if (level === 5)  parts.push(describeLv5Bonus(skill));
@@ -3641,8 +3646,9 @@
       case 'mage':
         return [
           { judgeId: 1201, param: 25, skillId: 'm_mana_spring' },
-          { judgeId: 1101, param: 40, skillId: 'm_arcane_shield' },   // 魔力護盾（物魔減傷50% buff）
-          { judgeId: 1000, param: 0,  skillId: 'm_arcane_focus' },    // 元素灌注（MARK +30% buff）
+          { judgeId: 1101, param: 40, skillId: 'm_arcane_shield' },      // 魔力護盾（物魔減傷50% buff）
+          { judgeId: 1150, param: 30, skillId: 'm_absolute_defense' }, // 絕對防禦（回血50% + 免疫一次）
+          { judgeId: 1000, param: 0,  skillId: 'm_arcane_focus' },     // 元素灌注（MARK +30% buff）
           { judgeId: 1300, param: 20, skillId: 'm_destruction' },     // 毀滅之怒（3×MARK + 易傷）
           { judgeId: 1450, param: 2,  skillId: 'm_firestorm' },       // 火焰風暴（AOE：150固定+6×MARK）
           { judgeId: 1000, param: 0,  skillId: 'm_poison_cloud' },    // 毒霧（AOE + 中毒）
@@ -4334,8 +4340,6 @@
       { id: 'pot_stam_s', name: '體力藥 (小)', icon: '🧪', desc: '+30 體力',  cost: 100, type: 'consumable', effect: { stamina: 30 } },
       { id: 'pot_stam_m', name: '體力藥 (中)', icon: '🍶', desc: '+60 體力',  cost: 180, type: 'consumable', effect: { stamina: 60 } },
       { id: 'pot_stam_l', name: '體力藥 (大)', icon: '🍹', desc: '+100 體力', cost: 280, type: 'consumable', effect: { stamina: 100 } },
-      // ⭐ 復活藥水：死掉時用，跳過 5 分休息（沒死時無效果，可帶不能用）
-      { id: 'pot_revive', name: '復活藥水',     icon: '🧚', desc: '死亡時立刻復活、HP 回滿', cost: 100, type: 'consumable', effect: { revive: true } },
       // ⭐ 取消 HP / MP / 智慧藥水（HP/MP 變屬性、每場戰鬥自動回滿）
     ];
     // ⭐ 商店只賣基本裝（Lv 1 + Lv 2）— 高等級裝備改從掉落 / 王 / 套裝取得
@@ -5310,20 +5314,11 @@
       rpg.lastTickAt += ticks * TICK_MS;
     }
 
-    // 死亡休息（HP = 0 時）
-    let resting = false, restLeftMs = 0;
+    // ⭐ 死亡即時恢復：HP = 0 時立刻恢復 50%，不再有休息等待
     if (rpg.hp <= 0) {
-      if (!rpg.deathAt) rpg.deathAt = Date.now();
-      const restElapsed = Date.now() - rpg.deathAt;
-      if (restElapsed >= REST_MS) {
-        rpg.hp = Math.max(1, Math.floor(stats.maxHp * REST_HP_RATIO));
-        rpg.deathAt = null;
-      } else {
-        resting = true;
-        restLeftMs = REST_MS - restElapsed;
-      }
+      rpg.hp = Math.max(1, Math.floor(stats.maxHp * REST_HP_RATIO));
+      rpg.deathAt = null;
     } else {
-      // HP > 0 → 確保沒卡 deathAt
       if (rpg.deathAt) rpg.deathAt = null;
     }
 
@@ -5334,8 +5329,6 @@
       hp: rpg.hp,
       hpMax: stats.maxHp,
       untilNextTick: Math.max(0, TICK_MS - sinceLast),
-      resting,
-      restLeftMs,
     };
   }
   // ⭐ Lv 1-5 標準曲線；Lv 6+ 系數 ×0.8（升級需求降 20%，配合怪物 XP +20%，中後期成長變快）
@@ -5947,12 +5940,10 @@
             // 怪物抗性（魔攻吃法抗，物攻吃物抗）
             if (isMagic && mAbility?.type === 'magicResist') dmg *= (1 - mAbility.resist);
             if (!isMagic && mAbility?.type === 'physResist') dmg *= (1 - mAbility.resist);
-            // 易傷：受到傷害增加 50%
-            if (hasStatus(monster, 'vulnerable')) dmg *= 1.5;
             const skillCrit = baseCritChance + (skill.extraCritChance || 0) + (pBuff.critChance || 0);
             const skillCritMult = critMult + (skill.extraCritDmg || 0) + (pBuff.critDmg || 0);
             const baseDmg = dmg;
-            // ⭐ 多段：每段獨立 roll 暴擊 + 變異
+            // ⭐ 多段：每段獨立 roll 暴擊 + 變異 + 易傷（hit-based，每段各消耗 1 層）
             let totalDmg = 0;
             let lastIsCrit = false;
             const hitLogs = [];
@@ -5961,6 +5952,8 @@
               let hitDmg = baseDmg * (0.9 + Math.random() * 0.2);
               const hitCrit = skill.alwaysCrit || Math.random() < skillCrit;
               if (hitCrit) { hitDmg *= skillCritMult; critCount++; lastIsCrit = true; }
+              // ⭐ 易傷（hit-based）：每段各消耗 1 層
+              hitDmg *= consumeVulnerable(monster);
               hitDmg = Math.max(1, Math.round(hitDmg));
               if (mAbility?.type === 'flatCapDmg') hitDmg = Math.min(hitDmg, mAbility.cap || 1);
               hitDmg = consumeMonsterShield(hitDmg);
@@ -6075,6 +6068,11 @@
               pMp = Math.min(stats.maxMp, pMp + flat + pct);
               if (pMp - before > 0) gainedParts.push(`💙+${pMp - before} MP`);
             }
+            // ⭐ 治療技能也可附帶護盾（絕對防禦）
+            if (skill.applyShield) {
+              applyStatus(playerObj, { type: 'shield', charges: skill.applyShield, turns: 99 });
+              gainedParts.push('🛡 免疫一次傷害');
+            }
             const gainedStr = gainedParts.length ? gainedParts.join(' ') : '無效果';
             log.push({
               type: 'player',
@@ -6103,6 +6101,7 @@
           dmg *= (0.85 + Math.random() * 0.3);
           if (isCrit2) { dmg *= critMult2; critCount++; }
           if (mAbility?.type === 'physResist') dmg *= (1 - mAbility.resist);
+          dmg *= consumeVulnerable(monster); // ⭐ 易傷（hit-based）
           dmg = Math.max(1, Math.round(dmg));
           if (mAbility?.type === 'flatCapDmg') dmg = Math.min(dmg, mAbility.cap || 1);
           dmg = monShield0(dmg);
@@ -6285,9 +6284,18 @@
       ? target.statuses.find(s => s.type === 'buff' && s.stat === status.stat)
       : target.statuses.find(s => s.type === status.type);
     if (existing) {
-      existing.turns = Math.max(existing.turns, status.turns);
-      if (isBuff) existing.amount = Math.max(existing.amount || 0, status.amount || 0);
-      else        existing.dmg    = Math.max(existing.dmg    || 0, status.dmg    || 0);
+      if (status.type === 'vulnerable') {
+        // ⭐ hit-based：取較多次數，疊加量取最大
+        existing.hits   = Math.max(existing.hits   || 0, status.hits   || 0);
+        existing.amount = Math.max(existing.amount || 0, status.amount || 0);
+      } else if (status.type === 'shield') {
+        // ⭐ charge-based：取較多層護盾
+        existing.charges = Math.max(existing.charges || 0, status.charges || 0);
+      } else {
+        existing.turns = Math.max(existing.turns, status.turns);
+        if (isBuff) existing.amount = Math.max(existing.amount || 0, status.amount || 0);
+        else        existing.dmg    = Math.max(existing.dmg    || 0, status.dmg    || 0);
+      }
     } else {
       target.statuses.push({ ...status });
     }
@@ -6304,13 +6312,28 @@
         const dmg = Math.min(1000, Math.max(1, Math.round(safeMax * 0.03)));
         events.push({ type: 'poison', dmg });
       }
-      s.turns = (s.turns || 0) - 1;
+      // ⭐ 易傷/護盾：hit-based，不計 turns — 由 consumeVulnerable / consumeShield 負責消耗
+      if (s.type !== 'vulnerable' && s.type !== 'shield') {
+        s.turns = (s.turns || 0) - 1;
+      }
     }
-    target.statuses = target.statuses.filter(s => s.turns > 0);
+    target.statuses = target.statuses.filter(s => {
+      if (s.type === 'vulnerable') return (s.hits    || 0) > 0;
+      if (s.type === 'shield')     return (s.charges || 0) > 0;
+      return s.turns > 0;
+    });
     return events;
   }
   function hasStatus(target, type) {
     return (target.statuses || []).some(s => s.type === type);
+  }
+  // ⭐ 易傷（hit-based）：消耗 1 層並回傳傷害倍率；無易傷時回傳 1.0
+  function consumeVulnerable(target) {
+    const v = (target.statuses || []).find(s => s.type === 'vulnerable' && (s.hits || 0) > 0);
+    if (!v) return 1.0;
+    v.hits -= 1;
+    if (v.hits <= 0) target.statuses = target.statuses.filter(s => s !== v);
+    return 1 + (v.amount || 0.5);
   }
   // 把目前生效的 buff 加總（atkPct/defPct/spd/critChance/critDmg/reflectPct/maxHpPct）
   function getBuffBonus(target) {
@@ -6574,8 +6597,7 @@
               }
               if (isMagic && tgt.ability?.type === 'magicResist') dmg *= (1 - tgt.ability.resist);
               if (!isMagic && tgt.ability?.type === 'physResist') dmg *= (1 - tgt.ability.resist);
-              // 易傷：受到傷害增加 50%
-              if (hasStatus(tgt, 'vulnerable')) dmg *= 1.5;
+              dmg *= consumeVulnerable(tgt); // ⭐ 易傷（hit-based）
               const skillCrit = baseCritChance + (skill.extraCritChance || 0) + (pBuff.critChance || 0);
               const skillCritMult = critMult + (skill.extraCritDmg || 0) + (pBuff.critDmg || 0);
               const isCrit = skill.alwaysCrit || Math.random() < skillCrit;
@@ -6692,6 +6714,11 @@
               pMp = Math.min(stats.maxMp, pMp + flat + pct);
               if (pMp - before > 0) gainedParts.push(`💙+${pMp - before} MP`);
             }
+            // ⭐ 治療技能也可附帶護盾（絕對防禦）
+            if (skill.applyShield) {
+              applyStatus(playerObj, { type: 'shield', charges: skill.applyShield, turns: 99 });
+              gainedParts.push('🛡 免疫一次傷害');
+            }
             log.push({
               type: 'player',
               text: `回合 ${round}：${skill.icon} ${skill.name} ${gainedParts.join(' ') || '無效果'}${costStr}`,
@@ -6709,6 +6736,7 @@
           dmg *= (0.85 + Math.random() * 0.3);
           if (isCrit) { dmg *= critMult2; critCount++; }
           if (tgt.ability?.type === 'physResist') dmg *= (1 - tgt.ability.resist);
+          dmg *= consumeVulnerable(tgt); // ⭐ 易傷（hit-based）
           dmg = Math.max(1, Math.round(dmg));
           if (tgt.ability?.type === 'flatCapDmg') dmg = Math.min(dmg, tgt.ability.cap || 1);
           tgt.hp = Math.max(0, tgt.hp - dmg);
@@ -8538,7 +8566,10 @@ ${b.text}
     }
     if (eff.applyStatus) {
       const s = eff.applyStatus;
-      buffPairs.push(`${statusEmoji(s.type)} 賦予 ${statusLabel(s.type)}（${Math.round((s.chance||1)*100)}%、持續 ${s.turns} 回合${s.dmg ? `、每回合 ${s.dmg} 傷害` : ''}）`);
+      const durText = s.type === 'vulnerable' ? `${s.hits || 2} 次`
+                    : s.type === 'shield'     ? `${s.charges || 1} 次`
+                    : `持續 ${s.turns} 回合`;
+      buffPairs.push(`${statusEmoji(s.type)} 賦予 ${statusLabel(s.type)}（${Math.round((s.chance||1)*100)}%、${durText}${s.dmg ? `、每回合 ${s.dmg} 傷害` : ''}）`);
     }
     if (eff.targetCount && eff.targetCount !== 1) {
       buffPairs.push(`🎯 同時打 ${eff.targetCount === 'all' ? '全體' : eff.targetCount + ' 個目標'}`);
@@ -9351,24 +9382,6 @@ ${b.text}
         rpg.stamina = Math.min(STAMINA_MAX, (rpg.stamina || 0) + it.effect.stamina);
         msg = `⚡ +${it.effect.stamina} 體力`;
       }
-      // ⭐ 復活藥水：必須是死亡狀態才有用
-      if (it.effect.revive) {
-        if (rpg.deathAt && rpg.hp <= 0) {
-          rpg.hp = stats.maxHp;
-          rpg.mp = stats.maxMp;
-          rpg.deathAt = null;
-          msg = `🧚 復活！HP / MP 回滿`;
-        } else {
-          // 還沒死就買沒效果 → 退錢
-          refundCoins(me.id, it.cost);
-          showToast('🧚 你還活著呢～復活藥水沒效果，已退款');
-          hideModal();
-          renderCharCard();
-          renderEquipment();
-          renderShop();
-          return;
-        }
-      }
       if (it.effect.xp) {
         rpg.xp = (rpg.xp || 0) + it.effect.xp;
         let leveled = 0;
@@ -10055,11 +10068,7 @@ ${b.text}
     const canFight = !__fightInProgress && state.stamina >= STAMINA_PER_FIGHT && state.hp > 0;
     fightBtn.disabled = !canFight;
     let parts = [`⚡ 體力 ${state.stamina}/${state.staminaMax}`];
-    if (state.resting) {
-      const m = Math.floor(state.restLeftMs / 60000);
-      const s = Math.floor((state.restLeftMs % 60000) / 1000);
-      parts.push(`💀 休息中：${m}:${s.toString().padStart(2,'0')} 後恢復 50% HP`);
-    } else {
+    {
       const sec = Math.ceil(state.untilNextTick / 1000);
       if (state.stamina < state.staminaMax || state.hp < state.hpMax) {
         parts.push(`每分鐘 +${STAMINA_PER_TICK} 體力 / +${HP_PER_TICK} HP / +${MP_PER_TICK} MP（${sec}s）`);
@@ -10686,7 +10695,7 @@ ${b.text}
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
     if (!rpg.class) { showToast('先選職業'); return; }
-    if (rpg.hp <= 0) { showToast('💀 你還在休息中'); return; }
+    if (rpg.hp <= 0) { showToast('💀 HP 不足'); return; }
     const def = PERSONAL_BOSSES.find(b => b.id === bossId);
     if (!def) return;
     const st = getPersonalBossState(rpg, bossId);
@@ -11225,7 +11234,7 @@ ${b.text}
         return;
       }
     }
-    if (rpg.hp <= 0) { showToast('💀 你還在休息中，等復活或喝復活藥'); return; }
+    if (rpg.hp <= 0) { showToast('💀 HP 不足'); return; }
 
     // 鎖按鈕，扣體力
     document.getElementById('fightBtn').disabled = true;
@@ -11745,36 +11754,20 @@ ${b.text}
       if (leveledUp) showLevelUp(rpg.level);
     } else {
       rpg.fightsLost = (rpg.fightsLost || 0) + 1;
-      // 新手保護：頭 4 等死掉直接 HP 回滿、不進入休息
-      if ((rpg.level || 1) <= 4) {
+      // ⭐ 死亡即時恢復 50% HP，無休息懲罰
+      {
         const newStats = computeStats(player);
-        rpg.hp = newStats.maxHp;
+        rpg.hp = Math.max(1, Math.floor(newStats.maxHp * REST_HP_RATIO));
         rpg.deathAt = null;
         const div = document.createElement('div');
-        div.className = 'log-line log-system';
-        div.textContent = `🍀 新手保護：HP 自動回滿（Lv 5 起死亡需休息 5 分鐘）`;
-        logEl.appendChild(div);
-        rewardHtml = `
-          <div class="reward-list" style="background:#fef9c3; border-color:#fde047;">
-            <div class="rl-title" style="color:#a16207;">😭 失敗了…但</div>
-            <div class="rl-item">🍀 <b>新手保護啟動</b>：HP 已自動回滿</div>
-            <div class="rl-item" style="font-size:11px; color:#92400e;">Lv 5 起，敗北後需休息 5 分鐘</div>
-            ${result.coinsStolen > 0 ? `<div class="rl-item" style="color:#dc2626;">💰 被偷走 −${result.coinsStolen} 鵝鵝幣</div>` : ''}
-          </div>
-        `;
-      } else {
-        rpg.hp = 0;
-        rpg.deathAt = Date.now();
-        const div = document.createElement('div');
         div.className = 'log-line log-defeat';
-        div.textContent = `💀 你被打倒了… 5 分鐘後恢復 50% HP，或用 🧚 復活藥水`;
+        div.textContent = `💀 你被打倒了… HP 恢復到 50%`;
         logEl.appendChild(div);
         rewardHtml = `
           <div class="reward-list reward-loss">
             <div class="rl-title">😭 失敗了</div>
-            <div class="rl-item">💀 進入休息：5 分鐘後恢復到 50% HP</div>
+            <div class="rl-item">💀 HP 恢復至 50%，可繼續挑戰</div>
             ${result.coinsStolen > 0 ? `<div class="rl-item" style="color:#dc2626;">💰 被偷走 −${result.coinsStolen} 鵝鵝幣</div>` : ''}
-            <div class="rl-item" style="margin-top:4px;">🧚 想立刻復活可去商店買「復活藥水」（100 鵝幣）</div>
           </div>
         `;
       }
