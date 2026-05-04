@@ -1924,12 +1924,12 @@
       attackVerb: '射擊',
       skills: [
         // ⭐ 多重射擊已移除（被連射取代）；解鎖等級全 -4（這次再 -2，cooldown 全部歸 0）
-        { id: 'a_god_arrow',   name: '神之矢',   icon: '🌟', unlockLv: 8,  cooldown: 0, mpCost: 32, type: 'damage', mult: 2.8 },
-        { id: 'a_precise_shot',name: '精準射擊', icon: '🎯', unlockLv: 1,  cooldown: 0, mpCost: 12, type: 'damage', mult: 1.4, cast: 5 },
+        { id: 'a_god_arrow',   name: '神之矢',   icon: '🌟', unlockLv: 8,  cooldown: 0, mpCost: 30, type: 'damage', mult: 4.5, customLv: true },
+        { id: 'a_precise_shot',name: '精準射擊', icon: '🎯', unlockLv: 1,  cooldown: 0, mpCost: 5,  type: 'damage', mult: 1.4, cast: 0 },
         { id: 'a_concentrate', name: '集中',     icon: '🧘', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', isMpRegen: true },
         // ⭐ 連射：每段固定 ATK ×1.5 / 4 段 / Lv 5 暴擊 +10% / Lv 10 多 1 段
-        { id: 'a_barrage',     name: '連射',     icon: '🌊', unlockLv: 4,  cooldown: 0, mpCost: 28, type: 'damage', mult: 0.5, hits: 4, fixedHitMult: true, customLv: true },
-        { id: 'a_lethal_aim',  name: '致命瞄準', icon: '💀', unlockLv: 10, cooldown: 0, mpCost: 40, type: 'damage', mult: 3.5, alwaysCrit: true, ignoreDef: true, cast: 90 },
+        { id: 'a_barrage',     name: '連射',     icon: '🌊', unlockLv: 4,  cooldown: 0, mpCost: 28, type: 'damage', mult: 1.2, hits: 4, fixedHitMult: true, customLv: true },
+        { id: 'a_lethal_aim',  name: '致命瞄準', icon: '💀', unlockLv: 10, cooldown: 0, mpCost: 20, type: 'damage', mult: 3.0, alwaysCrit: true, ignoreDef: true, cast: 30, applyStatus: { type: 'vulnerable', amount: 0.5, turns: 2, chance: 1 }, customLv: true },
         { id: 'a_twin_shot',   name: '雙箭齊發', icon: '🏹', unlockLv: 2,  cooldown: 0, mpCost: 24, type: 'damage', mult: 1.5, targetCount: 2 },
         { id: 'a_poison_arrow',name: '毒箭',     icon: '🐍', unlockLv: 5,  cooldown: 0, mpCost: 26, type: 'damage', mult: 1.2, maxLv: 5, applyStatus: { type: 'poison', turns: 3, chance: 0.7 } },
         { id: 'a_quickstep',   name: '疾風步',   icon: '💨', unlockLv: 2,  cooldown: 0, mpCost: 16, type: 'buff', selfBuff: { stat: 'spd', amount: 8, turns: 4 } },
@@ -3426,6 +3426,12 @@
         chance: Math.min(1, (skill.applyStatus.chance || 1) * (1 + level * 0.05)),
         turns: (skill.applyStatus.turns || 1) + extraTurn,
       };
+    } else if (skill.id === 'a_lethal_aim' && skill.applyStatus) {
+      // 致命瞄準：易傷固定 2 回合，僅 Lv 10 +1 回合
+      eff.applyStatus = {
+        ...skill.applyStatus,
+        turns: (skill.applyStatus.turns || 2) + (level >= 10 ? 1 : 0),
+      };
     } else if (level >= 3 && skill.applyStatus) {
       eff.applyStatus = {
         ...skill.applyStatus,
@@ -3465,6 +3471,11 @@
     if (skill.id === 'p_holy_smite') {
       if (level >= 5)  eff.bonusMaxHpPct = (eff.bonusMaxHpPct || 0) + 0.05;
       if (level >= 10) eff.bonusMaxHpPct = (eff.bonusMaxHpPct || 0) + 0.05;
+    }
+    // ⭐ 神之矢：customLv → Lv 5 / Lv 10 各 +20% 爆擊傷害（本招）
+    if (skill.id === 'a_god_arrow') {
+      if (level >= 5)  eff.extraCritDmg = (eff.extraCritDmg || 0) + 0.20;
+      if (level >= 10) eff.extraCritDmg = (eff.extraCritDmg || 0) + 0.20;
     }
     return eff;
   }
@@ -3516,7 +3527,7 @@
     if (skill.applyStatus && skill.applyStatus.type === 'poison') {
       const baseTurns = skill.applyStatus.turns || 3;
       const turns = baseTurns + Math.min(level, 5) + (level >= 5 ? 1 : 0);
-      const parts = [`☠️ 中毒持續 ${turns} 回合（每回合扣 3% maxHP，上限 300）`];
+      const parts = [`☠️ 中毒持續 ${turns} 回合（每回合扣 3% maxHP，上限 1000）`];
       if (level === 5) parts.push('🌟 持續再 +1 回合');
       return parts.join('、');
     }
@@ -3531,6 +3542,11 @@
       } else if (skill.id === 'p_holy_smite') {
         if (level === 5)  parts.push('🩸 maxHp 加傷 +5%（本招，共 15%）');
         if (level === 10) parts.push('🌟 maxHp 加傷 再 +5%（本招，共 20%）');
+      } else if (skill.id === 'a_god_arrow') {
+        if (level === 5)  parts.push('💥 爆擊傷害 +20%（本招）');
+        if (level === 10) parts.push('🌟 爆擊傷害 再 +20%（本招，共 +40%）');
+      } else if (skill.id === 'a_lethal_aim') {
+        if (level === 10) parts.push('🎯 易傷持續 +1 回合（共 3 回合）');
       }
     } else {
       if (level === 5)  parts.push(describeLv5Bonus(skill));
@@ -5829,6 +5845,8 @@
             // 怪物抗性（魔攻吃法抗，物攻吃物抗）
             if (isMagic && mAbility?.type === 'magicResist') dmg *= (1 - mAbility.resist);
             if (!isMagic && mAbility?.type === 'physResist') dmg *= (1 - mAbility.resist);
+            // 易傷：受到傷害增加 50%
+            if (hasStatus(monster, 'vulnerable')) dmg *= 1.5;
             const skillCrit = baseCritChance + (skill.extraCritChance || 0) + (pBuff.critChance || 0);
             const skillCritMult = critMult + (skill.extraCritDmg || 0) + (pBuff.critDmg || 0);
             const baseDmg = dmg;
@@ -6125,7 +6143,7 @@
     const safeMax = Math.max(1, maxHp || target.maxHp || 0);
     for (const s of target.statuses) {
       if (s.type === 'poison') {
-        const dmg = Math.min(300, Math.max(1, Math.round(safeMax * 0.03)));
+        const dmg = Math.min(1000, Math.max(1, Math.round(safeMax * 0.03)));
         events.push({ type: 'poison', dmg });
       }
       s.turns = (s.turns || 0) - 1;
@@ -6158,10 +6176,10 @@
     return `✨ ${buff.stat} +${buff.amount}`;
   }
   function statusEmoji(type) {
-    return type === 'poison' ? '☠️' : type === 'paralyze' ? '⚡' : type === 'buff' ? '✨' : '✨';
+    return type === 'poison' ? '☠️' : type === 'paralyze' ? '⚡' : type === 'vulnerable' ? '🎯' : type === 'buff' ? '✨' : '✨';
   }
   function statusLabel(type) {
-    return type === 'poison' ? '中毒' : type === 'paralyze' ? '麻痺' : type === 'buff' ? '增益' : type;
+    return type === 'poison' ? '中毒' : type === 'paralyze' ? '麻痺' : type === 'vulnerable' ? '易傷' : type === 'buff' ? '增益' : type;
   }
 
   // 多目標戰鬥（最多 N 隻怪物 vs 玩家），用在「試煉戰場」
@@ -6379,6 +6397,8 @@
               }
               if (isMagic && tgt.ability?.type === 'magicResist') dmg *= (1 - tgt.ability.resist);
               if (!isMagic && tgt.ability?.type === 'physResist') dmg *= (1 - tgt.ability.resist);
+              // 易傷：受到傷害增加 50%
+              if (hasStatus(tgt, 'vulnerable')) dmg *= 1.5;
               const skillCrit = baseCritChance + (skill.extraCritChance || 0) + (pBuff.critChance || 0);
               const skillCritMult = critMult + (skill.extraCritDmg || 0) + (pBuff.critDmg || 0);
               const isCrit = skill.alwaysCrit || Math.random() < skillCrit;
@@ -8222,6 +8242,7 @@ ${b.text}
     if (eff.mpCostMult && eff.mpCostMult < 1) buffPairs.push(`💙 MP 消耗 -${Math.round((1 - eff.mpCostMult) * 100)}%`);
     if (eff.magic) buffPairs.push('🔮 魔攻（吃法抗）');
     if (eff.ignoreDef) buffPairs.push('🗡 無視防禦');
+    if (skill.applyShield)   buffPairs.push('🛡 免疫一次傷害');
 
     const html = `
       <div style="text-align:center; padding:4px 0;">
