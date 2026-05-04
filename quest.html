@@ -5477,12 +5477,13 @@
   // ============================================================
   // 💎 寶石系統 helpers
   // ============================================================
-  // 計算裝備槽位的寶石孔數（稀有=1, 傳說/金=2；武器多 +1）
+  // 計算裝備槽位的寶石孔數
+  // 武器：3 孔；衣服/鞋/頭盔/披風/手套：1 孔；其餘：0 孔
   function getGemSocketCount(item) {
     if (!item) return 0;
-    const r = item.rarity;
-    const base = (r === 'legendary' || r === 'gold') ? 2 : (r === 'rare') ? 1 : 0;
-    return (base > 0 && item.slot === 'weapon') ? base + 1 : base;
+    if (item.slot === 'weapon') return 3;
+    if (['armor','boots','helmet','cape','gloves'].includes(item.slot)) return 1;
+    return 0;
   }
 
   // 取得某裝備槽的寶石陣列（長度固定 = 孔數，空孔為 null）
@@ -8808,7 +8809,7 @@ ${b.text}
 
         <div style="font-weight:700; color:#7c3aed; margin:6px 0 4px;">💎 寶石系統全新登場</div>
         <div>・<b>7 種晶石 × 3 階</b>：攻擊🔴 / 法術🟣 / 防禦🔵 / 速度🟡 / 生命❤️ / 魔力🔹 / 暴擊⭐</div>
-        <div>・<b>稀有</b>裝備：1 個寶石孔；<b>傳說/金裝</b>：2 個孔；<b>武器</b>額外 +1 孔</div>
+        <div>・<b>武器</b>：3 個孔；<b>衣服/鞋/頭盔/披風/手套</b>：各 1 個孔；其餘裝備無孔</div>
 
         <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">🎰 寶石轉蛋</div>
         <div>・每次 <b>5,000 鵝鵝幣</b>，98% 機率獲得隨機一階晶石，2% 機率獲得<b>原石🪨</b></div>
@@ -10350,7 +10351,7 @@ ${b.text}
       const gemArr = getEquippedGemArray(rpg, s);
       const filledGems = gemArr.filter(Boolean).length;
       const gemBadge = socketCount > 0
-        ? `<div class="es-gem-badge" style="font-size:8px; color:${item.rarity==='legendary'||item.rarity==='gold'?'#a855f7':'#3b82f6'}; margin-top:1px;">💎${filledGems}/${socketCount}</div>`
+        ? `<div class="es-gem-badge" style="font-size:8px; color:${item.slot==='weapon'?'#a855f7':'#3b82f6'}; margin-top:1px;">💎${filledGems}/${socketCount}</div>`
         : '';
       return `<button class="equip-slot" onclick="openEquippedSlotDetail('${s}')" style="${rarColor ? `border-color:${rarColor};` : ''}" title="${escapeHtml(tooltip)}">
         <div class="es-icon">${item.icon}</div>
@@ -10682,7 +10683,7 @@ ${b.text}
     const gemArr = getEquippedGemArray(rpg, slot);
     let gemSlotsHtml = '';
     if (socketCount > 0) {
-      const sc = (item.rarity === 'legendary' || item.rarity === 'gold') ? '#a855f7' : '#3b82f6';
+      const sc = item.slot === 'weapon' ? '#a855f7' : '#3b82f6';
       const sockets = gemArr.map((gid, i) => {
         const gem = gid ? GEMS[gid] : null;
         if (gem) {
@@ -10705,7 +10706,7 @@ ${b.text}
       </div>`;
     } else {
       gemSlotsHtml = `<div style="margin-top:10px; padding:6px 10px; background:#f9fafb; border:1px dashed #d1d5db; border-radius:8px; font-size:11px; color:#9ca3af; text-align:center;">
-        此裝備無寶石孔（稀有及以上品質才有孔）
+        此裝備無寶石孔（武器 3 孔；衣服/鞋/頭盔/披風/手套各 1 孔）
       </div>`;
     }
 
