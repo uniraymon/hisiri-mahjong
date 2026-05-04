@@ -1887,16 +1887,16 @@
       attackVerb: '揮砍',
       skills: [
         // ⭐ 解鎖 -4，cooldown 全 0；保留高階大招的 cast / hpCost 控制節奏
-        { id: 'w_rage_flame',   name: '怒之炎',   icon: '☄️', unlockLv: 8,  cooldown: 0, mpCost: 50, type: 'damage', mult: 4.5, magic: true },
-        { id: 'w_heavy_strike', name: '重擊',     icon: '⚡', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'damage', mult: 2.3, alwaysCrit: true },
-        { id: 'w_rage_slash',   name: '狂怒斬',   icon: '🔥', unlockLv: 1,  cooldown: 0, mpCost: 14, type: 'damage', mult: 2.8, hits: 2 },
-        { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 1,  cooldown: 0, mpCost: 0, hpCost: 0.15, type: 'damage', mult: 3.0, cast: 10 },
-        { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 6,  cooldown: 0, mpCost: 20, type: 'damage', mult: 2.0, lifesteal: 0.20 },
-        { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 50, hpCostFlat: 20, type: 'damage', mult: 5.5, cast: 100 },
+        { id: 'w_rage_flame',   name: '怒之炎',   icon: '☄️', unlockLv: 8,  cooldown: 0, mpCost: 50, type: 'damage', mult: 3.5, magic: true },
+        { id: 'w_heavy_strike', name: '重擊',     icon: '⚡', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'damage', mult: 1.3, alwaysCrit: true },
+        { id: 'w_rage_slash',   name: '狂怒斬',   icon: '🔥', unlockLv: 1,  cooldown: 0, mpCost: 14, type: 'damage', mult: 1.8, hits: 2 },
+        { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 1,  cooldown: 0, mpCost: 0, hpCost: 0.15, type: 'damage', mult: 2.0, cast: 10 },
+        { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 6,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.0, lifesteal: 0.20 },
+        { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 50, hpCostFlat: 20, type: 'damage', mult: 4.5, cast: 100 },
         { id: 'w_war_cry',      name: '戰意呼喚', icon: '📢', unlockLv: 3,  cooldown: 0, mpCost: 0, type: 'heal', healPct: 0.15, isMpRegen: true },
         { id: 'w_bloodlust',    name: '嗜血怒嚎', icon: '🦁', unlockLv: 2,  cooldown: 0, mpCost: 25, type: 'buff', selfBuff: { stat: 'atkPct', amount: 0.30, turns: 3 } },
         // ⭐ 新增：魔吸斬 — 0.8× ATK 傷害 + 回 2 MP（戰術用，低 MP 時穩定恢復）
-        { id: 'w_mana_strike',  name: '魔吸斬',   icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0, type: 'damage', mult: 1.8, mpRestore: 2 },
+        { id: 'w_mana_strike',  name: '魔吸斬',   icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0, type: 'damage', mult: 0.8, mpRestore: 2 },
       ],
       skillTree: [
         { id: 'w_hp',   name: '鋼鐵之軀', icon: '🛡',  desc: '+5% 最大 HP',         maxLevel: 5, effect: 'hpPct',     per: 0.05 },
@@ -1924,23 +1924,23 @@
       attackVerb: '射擊',
       skills: [
         // ⭐ 多重射擊已移除（被連射取代）；解鎖等級全 -4（這次再 -2，cooldown 全部歸 0）
-        { id: 'a_god_arrow',   name: '神之矢',   icon: '🌟', unlockLv: 8,  cooldown: 0, mpCost: 32, type: 'damage', mult: 3.8 },
-        { id: 'a_precise_shot',name: '精準射擊', icon: '🎯', unlockLv: 1,  cooldown: 0, mpCost: 12, type: 'damage', mult: 2.4, cast: 5 },
+        { id: 'a_god_arrow',   name: '神之矢',   icon: '🌟', unlockLv: 8,  cooldown: 0, mpCost: 32, type: 'damage', mult: 2.8 },
+        { id: 'a_precise_shot',name: '精準射擊', icon: '🎯', unlockLv: 1,  cooldown: 0, mpCost: 12, type: 'damage', mult: 1.4, cast: 5 },
         { id: 'a_concentrate', name: '集中',     icon: '🧘', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', isMpRegen: true },
         // ⭐ 連射：每段固定 ATK ×1.5 / 4 段 / Lv 5 暴擊 +10% / Lv 10 多 1 段
-        { id: 'a_barrage',     name: '連射',     icon: '🌊', unlockLv: 4,  cooldown: 0, mpCost: 28, type: 'damage', mult: 1.5, hits: 4, fixedHitMult: true, customLv: true },
-        { id: 'a_lethal_aim',  name: '致命瞄準', icon: '💀', unlockLv: 10, cooldown: 0, mpCost: 40, type: 'damage', mult: 4.5, alwaysCrit: true, ignoreDef: true, cast: 90 },
-        { id: 'a_twin_shot',   name: '雙箭齊發', icon: '🏹', unlockLv: 2,  cooldown: 0, mpCost: 24, type: 'damage', mult: 2.5, targetCount: 2 },
-        { id: 'a_poison_arrow',name: '毒箭',     icon: '🐍', unlockLv: 5,  cooldown: 0, mpCost: 26, type: 'damage', mult: 2.2, maxLv: 5, applyStatus: { type: 'poison', turns: 3, chance: 0.7 } },
+        { id: 'a_barrage',     name: '連射',     icon: '🌊', unlockLv: 4,  cooldown: 0, mpCost: 28, type: 'damage', mult: 0.5, hits: 4, fixedHitMult: true, customLv: true },
+        { id: 'a_lethal_aim',  name: '致命瞄準', icon: '💀', unlockLv: 10, cooldown: 0, mpCost: 40, type: 'damage', mult: 3.5, alwaysCrit: true, ignoreDef: true, cast: 90 },
+        { id: 'a_twin_shot',   name: '雙箭齊發', icon: '🏹', unlockLv: 2,  cooldown: 0, mpCost: 24, type: 'damage', mult: 1.5, targetCount: 2 },
+        { id: 'a_poison_arrow',name: '毒箭',     icon: '🐍', unlockLv: 5,  cooldown: 0, mpCost: 26, type: 'damage', mult: 1.2, maxLv: 5, applyStatus: { type: 'poison', turns: 3, chance: 0.7 } },
         { id: 'a_quickstep',   name: '疾風步',   icon: '💨', unlockLv: 2,  cooldown: 0, mpCost: 16, type: 'buff', selfBuff: { stat: 'spd', amount: 8, turns: 4 } },
         { id: 'a_eagle_eye',   name: '鷹眼',     icon: '🦅', unlockLv: 4,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'critChance', amount: 0.20, turns: 4 } },
-        { id: 'a_lifesteal_arrow', name: '吸血箭', icon: '🩸', unlockLv: 3,  cooldown: 0, mpCost: 14, type: 'damage', mult: 2.2, lifesteal: 0.40 },
+        { id: 'a_lifesteal_arrow', name: '吸血箭', icon: '🩸', unlockLv: 3,  cooldown: 0, mpCost: 14, type: 'damage', mult: 1.2, lifesteal: 0.40 },
         // 隱身重做：15 MP / 免疫一次傷害 + 下次攻擊必爆 / 每級 -1 MP / Lv 5 +1 回合 +20% 爆傷
         { id: 'a_stealth',         name: '隱身',   icon: '🌫', unlockLv: 5,  cooldown: 0, mpCost: 15, type: 'buff', selfBuff: { stat: 'critChance', amount: 1.0, turns: 1 }, applyShield: 1, stealthLv5CritDmg: 0.20, maxLv: 5 },
         { id: 'a_wind_song',       name: '風之歌', icon: '🎵', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true },
-        { id: 'a_arrow_storm',     name: '箭雨',   icon: '🌧', unlockLv: 6,  cooldown: 0, mpCost: 30, type: 'damage', mult: 2.5, targetCount: 'all' },
+        { id: 'a_arrow_storm',     name: '箭雨',   icon: '🌧', unlockLv: 6,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.5, targetCount: 'all' },
         // ⭐ 新增：奪魂箭 — 1.8× ATK 傷害 + 回 2 MP
-        { id: 'a_mana_arrow',      name: '奪魂箭', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0, type: 'damage', mult: 1.8, mpRestore: 2 },
+        { id: 'a_mana_arrow',      name: '奪魂箭', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0, type: 'damage', mult: 0.8, mpRestore: 2 },
       ],
       skillTree: [
         { id: 'a_crit', name: '致命瞄準', icon: '💥', desc: '+2% 暴擊率',         maxLevel: 5, effect: 'critChance', per: 0.02 },
@@ -1970,7 +1970,7 @@
       skills: [
         // ⭐ 解鎖 -4，cooldown 全 0；alwaysCrit 取消（不再有免費爆擊），多段技 fixedHitMult
         { id: 'm_meteor',         name: '隕石術',     icon: '☄️', unlockLv: 8,  cooldown: 0, mpCost: 50, type: 'damage', flat: 120, perLv: 5, ignoreDef: true },
-        { id: 'm_ice_lance',      name: '冰錐術',     icon: '❄️', unlockLv: 1,  cooldown: 0, mpCost: 20, type: 'damage', mult: 2.6, magic: true, useMark: true, applyStatus: { type: 'paralyze', turns: 2, chance: 0.25 } },
+        { id: 'm_ice_lance',      name: '冰錐術',     icon: '❄️', unlockLv: 1,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.6, magic: true, useMark: true, applyStatus: { type: 'paralyze', turns: 2, chance: 0.25 } },
         { id: 'm_fireball',       name: '火球術',     icon: '🔥', unlockLv: 1,  cooldown: 0, mpCost: 25, type: 'damage', flat: 50, perLv: 3, ignoreDef: true, cast: 8 },
         { id: 'm_mana_spring',    name: '法力湧泉',   icon: '💧', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', isMpRegen: true, isMpRegenStrong: true },
         // 連環閃電：3 段固定傷害（不享 ×1.3 共享）
@@ -1981,11 +1981,11 @@
         { id: 'm_poison_cloud',   name: '毒霧',       icon: '☠️', unlockLv: 3,  cooldown: 0, mpCost: 30, type: 'damage', flat: 50, perLv: 3, ignoreDef: true, targetCount: 'all', maxLv: 5, applyStatus: { type: 'poison', turns: 4, chance: 0.85 } },
         { id: 'm_arcane_focus',   name: '元素灌注',   icon: '🌀', unlockLv: 2,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'critDmg', amount: 0.30, turns: 4 } },
         { id: 'm_blood_pact',     name: '血魔契約', icon: '🩸', unlockLv: 4,  cooldown: 0, mpCost: 0,  hpCostFlat: 50, type: 'buff', selfBuff: { stat: 'atkPct', amount: 0.50, turns: 4 } },
-        { id: 'm_freeze',         name: '冰封術',     icon: '🧊', unlockLv: 3,  cooldown: 0, mpCost: 25, type: 'damage', mult: 1.3, magic: true, useMark: true, applyStatus: { type: 'paralyze', turns: 2, chance: 1 } },
+        { id: 'm_freeze',         name: '冰封術',     icon: '🧊', unlockLv: 3,  cooldown: 0, mpCost: 25, type: 'damage', mult: 0.3, magic: true, useMark: true, applyStatus: { type: 'paralyze', turns: 2, chance: 1 } },
         { id: 'm_dark_pact',      name: '暗黑契約', icon: '🦇', unlockLv: 8,  cooldown: 0, mpCost: 0,  hpCost: 0.25, type: 'buff', selfBuff: { stat: 'critDmg', amount: 0.80, turns: 5 } },
         { id: 'm_mana_shield',    name: '法力護甲',   icon: '🔷', unlockLv: 1,  cooldown: 0, mpCost: 22, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.50, turns: 3 } },
         // ⭐ 魔力虹吸改寫：0.8× ATK 傷害 + 回 4 MP（巫師回魔多一倍）
-        { id: 'm_arcane_drain',   name: '魔力虹吸', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 1.8, magic: true, useMark: true, mpRestore: 4 },
+        { id: 'm_arcane_drain',   name: '魔力虹吸', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 0.8, magic: true, useMark: true, mpRestore: 4 },
       ],
       skillTree: [
         { id: 'm_mp',    name: '法力深淵', icon: '💎', desc: '+5% 最大 MP',         maxLevel: 5, effect: 'mpPct',     per: 0.05 },
@@ -2016,24 +2016,24 @@
       skills: [
         // ⭐ 解鎖 -4，cooldown 全 0；alwaysCrit 只保留神之裁決（最高階收頭技）
         // ⭐ 審判：法術 2× ATK，打全體
-        { id: 'p_judgment',  name: '審判',     icon: '⚖️', unlockLv: 8,  cooldown: 0, mpCost: 38, type: 'damage', mult: 3.0, magic: true, targetCount: 'all' },
+        { id: 'p_judgment',  name: '審判',     icon: '⚖️', unlockLv: 8,  cooldown: 0, mpCost: 38, type: 'damage', mult: 2.0, magic: true, targetCount: 'all' },
         // ⭐ 聖光斬：1.2 ATK + 5% maxHp（不回血）；Lv 5 / Lv 10 各 +10% 暴擊率
-        { id: 'p_holy_slash',name: '聖光斬',   icon: '✝️', unlockLv: 1,  cooldown: 0, mpCost: 22, type: 'damage', mult: 2.2, bonusMaxHpPct: 0.05, customLv: true },
+        { id: 'p_holy_slash',name: '聖光斬',   icon: '✝️', unlockLv: 1,  cooldown: 0, mpCost: 22, type: 'damage', mult: 1.2, bonusMaxHpPct: 0.05, customLv: true },
         { id: 'p_holy_heal', name: '神聖治癒', icon: '✨', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'heal', healPct: 0.3 },
         { id: 'p_pray',      name: '祈禱',     icon: '🙏', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true, isMpRegenStrong: true },
         { id: 'p_shelter',   name: '庇護術',   icon: '🤲', unlockLv: 3,  cooldown: 0, mpCost: 25, type: 'heal', healPct: 0.40 },
         // ⭐ 神聖懲戒：2.5× ATK + 10% maxHp；Lv 5 / Lv 10 各 +5% maxHp
-        { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 6,  cooldown: 0, mpCost: 35, type: 'damage', mult: 3.5, bonusMaxHpPct: 0.10, customLv: true },
+        { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 6,  cooldown: 0, mpCost: 35, type: 'damage', mult: 2.5, bonusMaxHpPct: 0.10, customLv: true },
         // ⭐ 神聖光波：1× ATK，打 2 段（不再多目標、不回血）
-        { id: 'p_holy_wave', name: '神聖光波', icon: '🌟', unlockLv: 2,  cooldown: 0, mpCost: 30, type: 'damage', mult: 2.0, hits: 2 },
-        { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 7,  cooldown: 0, mpCost: 35, type: 'damage', mult: 2.7, targetCount: 2, applyStatus: { type: 'paralyze', turns: 2, chance: 0.4 } },
+        { id: 'p_holy_wave', name: '神聖光波', icon: '🌟', unlockLv: 2,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.0, hits: 2 },
+        { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 7,  cooldown: 0, mpCost: 35, type: 'damage', mult: 1.7, targetCount: 2, applyStatus: { type: 'paralyze', turns: 2, chance: 0.4 } },
         { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.40, turns: 3 }, bonusHealPct: 0.20 },
         // ⭐ 護盾衝鋒：6× DEF；攻擊完後 +10 DEF（持續整場）
         { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 22, type: 'damage', defMult: 6, postSelfBuff: { stat: 'def', amount: 10, turns: 99 } },
         { id: 'p_thorn_armor',   name: '棘甲術',   icon: '🌵', unlockLv: 4,  cooldown: 0, mpCost: 22, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.50, turns: 4 } },
         { id: 'p_aegis',         name: '反傷護盾', icon: '🪞', unlockLv: 8,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.50, turns: 3 } },
         // ⭐ 新增：神聖奪魂 — 0.8× ATK 傷害 + 回 4 MP（聖騎回魔多一倍）
-        { id: 'p_mana_drain',    name: '神聖奪魂', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 1.8, mpRestore: 4 },
+        { id: 'p_mana_drain',    name: '神聖奪魂', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 0.8, mpRestore: 4 },
       ],
       skillTree: [
         { id: 'p_def',   name: '聖光鎧甲', icon: '🛡',  desc: '+2 DEF',              maxLevel: 5, effect: 'def',          per: 2 },
