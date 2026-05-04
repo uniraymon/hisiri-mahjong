@@ -13498,6 +13498,10 @@ ${b.text}
     if (result.critCount) rpg.critCount = (rpg.critCount || 0) + result.critCount;
     if (result.won) rpg.fightsWon = (rpg.fightsWon || 0) + 1;
     const _zone = ZONES.find(z => z.id === (rpg.currentZone || 'forest'));
+    // ⭐ 層級掉落保底：確保同一層的最高級裝備都有機會掉（例：深淵 Lv21 怪也能掉 Lv25 裝）
+    const _layerId = (ctx && ctx.layerId) || rpg.currentLayer || 'upper';
+    const _layer = ZONE_LAYERS.find(l => l.id === _layerId);
+    const _layerDropFloor = _layer ? _layer.maxLv - 2 : 0;
     let totalXp = 0, totalGold = 0;
     const drops = [];
     // 從 result.monsters 找 alive=false 的（已死）
@@ -13510,7 +13514,7 @@ ${b.text}
         if (!summary || summary.alive) return; // 沒死不發
         totalXp += m.xpDrop || 0;
         totalGold += m.goldDrop || 0;
-        const dropLv = m.level || rpg.level;
+        const dropLv = Math.max(m.level || rpg.level, _layerDropFloor);
         const drop = rollItemDrop(dropLv, { slotBias: _zone ? _zone.dropBias : null });
         if (drop) {
           // ⭐ Phase A：走 atomic tx，避免並發 race 把剛拿的裝備吃掉
@@ -13648,9 +13652,10 @@ ${b.text}
       rpg.mp = Math.min(stats.maxMp, rpg.mp + mpBack);
       // 獎勵鵝鵝幣
       refundCoins(player.id, monster.goldDrop);
-      // 使用目前地區的掉落偏好；掉落等級 = 怪物等級（樓層）
+      // 使用目前地區的掉落偏好；掉落等級 = 怪物等級（樓層），但最低保底到層級最高裝 -2
       const _zone = ZONES.find(z => z.id === (rpg.currentZone || 'forest'));
-      const dropLv = monster.level || rpg.level;
+      const _curLayer = ZONE_LAYERS.find(l => l.id === (rpg.currentLayer || 'upper'));
+      const dropLv = Math.max(monster.level || rpg.level, _curLayer ? _curLayer.maxLv - 2 : 0);
       // 防護：確保 inventory 是陣列（防止 sync race 造成 undefined）
       if (!Array.isArray(rpg.inventory)) rpg.inventory = [];
       // 寶箱怪：roll 兩次 → 掉裝率變 ~2 倍
