@@ -3073,7 +3073,7 @@
       skills: [
         { verb: '拉麵纏繞', mult: 1.0, applyStatus: { type: 'paralyze', charges: 2, chance: 0.55 }, cooldown: 3 },
         { verb: '牛排重擊', mult: 3.0, cooldown: 4 },
-        { verb: '咖哩潑灑', type: 'monsterShield', charges: 2, cooldown: 4 },
+        { verb: '咖哩潑灑', type: 'monsterShield', charges: 2, cooldown: 10 },
       ],
       dialogue: ['午餐時間到囉～', '吃飽才有力氣打架！', '便當涼了...怪你嗎？'],
       deathLine: ['午餐...被你搶走了...', '便當盒...碎了...', '下次午休再見...'],
@@ -9027,7 +9027,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505p';
+  const APP_VERSION = '20260505q';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
