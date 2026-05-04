@@ -8295,7 +8295,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260504c';
+  const NEWS_LATEST_ID = 'patch_20260504d';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -8315,6 +8315,23 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#dc2626,#7c3aed); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">⚔️ 技能平衡調整　<span style="font-size:11px; opacity:0.85;">2026-05-04</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:6px 0 4px;">🧙 法師　新技能 + 調整</div>
+        <div>・🆕 <b>血吸術</b> 🩸（Lv6、28 MP）：<b>1.4×MARK</b> 魔法傷害 + <b>吸血 20%</b></div>
+        <div>・<b>怒雷風暴</b>：MARK 倍率 10→<b>8</b>（−20%）</div>
+
+        <div style="font-weight:700; color:#dc2626; margin:10px 0 4px;">⚔️ 戰士　技能改版</div>
+        <div>・<b>嗜血爆裂</b>：Lv10 新增 <b>+5% 吸血值</b>（最終 25%）</div>
+        <div>・<b>底氣</b>：DEF +30 → 🛡 <b>魔坑 −20%（未來 3 次傷害）</b>；回血 70%→<b>50%</b></div>
+        <div style="font-size:11px; color:#6b7280; margin-top:2px;">→ 魔坑：每次受擊消耗 1 次，戰鬥記錄顯示剩餘次數</div>
+
+        <div style="background:#f3f4f6; border-radius:8px; padding:8px 12px; margin-top:12px; margin-bottom:16px; font-size:12px; color:#6b7280;">
+          ⚙️ 血吸術倍率由 2.0 調至 1.4（−30%）以避免過高傷害；怒雷風暴同步微幅削弱
+        </div>
 
         <div style="background:linear-gradient(135deg,#7c3aed,#0ea5e9); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">⚡🗺️ v10 大改版　<span style="font-size:11px; opacity:0.85;">2026-05-04</span></div>
