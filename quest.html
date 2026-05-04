@@ -5913,8 +5913,9 @@
       const elite = ELITES.find(e => e.zone === opts.zoneId);
       const zone = ZONES.find(z => z.id === opts.zoneId);
       if (elite && zone) {
-        // 等級 = 樓層直接決定
-        const lv = Math.max(1, opts.targetLv || layerFloorToLevel(opts.layerId, opts.floor) || 1);
+        // ⭐ 精英怪強制使用該層最高等級（保證掉落當層最強裝備）
+        const _eliteLayer = opts.layerId ? ZONE_LAYERS.find(l => l.id === opts.layerId) : null;
+        const lv = _eliteLayer ? _eliteLayer.maxLv : Math.max(1, opts.targetLv || layerFloorToLevel(opts.layerId, opts.floor) || 1);
         const k = monsterK(lv);
         // ⭐ 深淵層（Lv 21+）使用 deepBase 強化數值
         const effectiveElite = (lv > 20 && elite.deepBase) ? { ...elite, ...elite.deepBase } : elite;
@@ -9248,7 +9249,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505043407';
+  const APP_VERSION = '20260505044311';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
