@@ -12360,7 +12360,12 @@ ${b.text}
     const entry = rpg.inventory[idx];
     const item = resolveItem(entry);
     if (!item) return;
-    // ⭐ 裝備不再有等級限制（拿到就能用）
+    // ⭐ 戒指類物品不應走這裡，應透過 pickRingSlotAndEquip 選槽
+    if (isRingItem(item)) {
+      if (typeof entry === 'object' && entry !== null) entry.slot = 'ring';
+      pickRingSlotAndEquip(idx);
+      return;
+    }
     // 把現有同 slot 裝備丟回背包
     const cur = rpg.equipment[item.slot];
     if (cur) rpg.inventory.push(cur);
@@ -12380,6 +12385,11 @@ ${b.text}
     const rpg = getRpg(me);
     const cur = rpg.equipment[slot];
     if (!cur) return;
+    // ⭐ 從戒指槽拆下來時，確保物件 instance 的 slot 標記為 'ring'，
+    //    避免放回背包後 isRingItem 失效而走進飾品槽
+    if (slot === 'ring1' || slot === 'ring2') {
+      if (typeof cur === 'object' && cur !== null) cur.slot = 'ring';
+    }
     rpg.inventory.push(cur);
     rpg.equipment[slot] = null;
     rpg.equipmentLastChanged = Date.now();
