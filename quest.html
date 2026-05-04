@@ -2381,10 +2381,10 @@
   const WB9_MAX_XP_PER_FIGHT   = 500;      // ⭐ v9 單場最多 500 EXP（舊版 1000）
   // 擊殺結算獎勵（所有世界王通用）
   const WB9_KILL_REWARDS = {
-    top:         { gemRaw: 3, gachaCoin: 5 },   // 傷害第一
-    second:      { gemRaw: 2, gachaCoin: 4 },   // 傷害第二
-    participant: { gemRaw: 1, gachaCoin: 2 },   // 其他參與者
-    killer:      { gemRaw: 2, gachaCoin: 5 },   // 尾刀額外獎勵
+    top:         { gemRaw: 3, bossCoinQty: 5 },   // 傷害第一
+    second:      { gemRaw: 2, bossCoinQty: 4 },   // 傷害第二
+    participant: { gemRaw: 1, bossCoinQty: 2 },   // 其他參與者
+    killer:      { gemRaw: 2, bossCoinQty: 5 },   // 尾刀額外獎勵
   };
   const WB9_QUEUE_STALE_MS     = 60 * 1000;
   const WB9_COOLDOWN_MS        = 5 * 60 * 1000; // 5 分鐘冷卻
@@ -2414,7 +2414,7 @@
     {
       id: 'dragon_goose',
       name: '🐉 古龍鵝', icon: '🐉',
-      maxHp: 4000000,
+      maxHp: 2000000,
       atk: 220, def: 120, spd: 100, defPen: 0.30,
       level: 40,
       verb: '龍焰之息',
@@ -2434,7 +2434,7 @@
     {
       id: 'pebble_goose',
       name: '🪨 鵝卵石', icon: '🪨',
-      maxHp: 10000000,
+      maxHp: 5000000,
       atk: 350, def: 350, spd: 50, defPen: 0.30,
       level: 55,
       verb: '崩落巨石',
@@ -2584,7 +2584,7 @@
     try {
       txOut = await window.__firebaseSync.wb9AttackTx(
         bossId, me.id, dmgRaw,
-        { maxHp: boss.maxHp, staleMs: WB9_QUEUE_STALE_MS },
+        { maxHp: boss.maxHp, staleMs: WB9_QUEUE_STALE_MS, bossCoinId: boss.bossCoin?.id },
         snap_
       );
     } catch (e) {
@@ -2673,7 +2673,9 @@
     // 發獎勵
     r.gemInventory = r.gemInventory || {};
     if (myEntry.gemRaw > 0) r.gemInventory['gem_raw'] = (r.gemInventory['gem_raw'] || 0) + myEntry.gemRaw;
-    if (myEntry.gachaCoin > 0) addGachaCoin(me.id, myEntry.gachaCoin);
+    if (myEntry.bossCoinQty > 0 && myEntry.bossCoinId) {
+      addBossCoin(me.id, myEntry.bossCoinId, myEntry.bossCoinQty);
+    }
     // 標記已領
     if (!r.claimedKills) r.claimedKills = {};
     r.claimedKills[bossId] = [...claimedArr, ts].slice(-30);
@@ -2682,11 +2684,13 @@
     // Toast 通知
     const boss = WB9_BOSSES.find(b => b.id === bossId);
     const bossName = boss ? boss.name : bossId;
+    const coinName = boss?.bossCoin?.name || '王硬幣';
+    const coinIcon = boss?.bossCoin?.icon || '🪙';
     const rankLabel = myEntry.rank === 1 ? '🥇第一' : myEntry.rank === 2 ? '🥈第二' : '👤參與';
     const killerLabel = myEntry.isKiller ? '⚔️尾刀 ' : '';
     const parts = [];
-    if (myEntry.gemRaw > 0)   parts.push(`🪨原石×${myEntry.gemRaw}`);
-    if (myEntry.gachaCoin > 0) parts.push(`🎟扭蛋幣×${myEntry.gachaCoin}`);
+    if (myEntry.gemRaw > 0)      parts.push(`🪨原石×${myEntry.gemRaw}`);
+    if (myEntry.bossCoinQty > 0) parts.push(`${coinIcon}${coinName}×${myEntry.bossCoinQty}`);
     showToast(`🏆 ${bossName} 擊殺獎勵（${killerLabel}${rankLabel}）：${parts.join('、')}`);
   }
   window.wb9ClaimKillReward = wb9ClaimKillReward;
@@ -2848,7 +2852,7 @@
       const medal = ['🥇','🥈','🥉'][s.rank - 1] || '👤';
       return `<div style="display:flex; justify-content:space-between; align-items:center; padding:1px 0; font-size:11px;">
         <span>${medal} ${name}${s.isKiller ? ' <span style="color:#ef4444;">⚔️</span>' : ''}</span>
-        <span style="color:#92400e; font-weight:700;">🪨×${s.gemRaw} 🎟×${s.gachaCoin}</span>
+        <span style="color:#92400e; font-weight:700;">🪨×${s.gemRaw} ${s.bossCoinId ? (WB9_BOSSES.find(b=>b.bossCoin?.id===s.bossCoinId)?.bossCoin?.icon||'🪙')+'×'+s.bossCoinQty : ''}</span>
       </div>`;
     }).join('');
     return `
@@ -10393,7 +10397,7 @@ ${b.text}
       <div class="char-info">
         <div class="char-name">${escapeHtml(me.name)}</div>
         <div class="char-class">${cls.name} · Lv ${rpg.level}</div>
-        <div class="char-coins">🪙 ${coins} 鵝鵝幣　·　🧭 ${rpg.exploreCoins || 0} 探險幣　·　🎟 ${me.gachaCoin || 0} 扭蛋幣</div>
+        <div class="char-coins">🪙 ${coins} 鵝鵝幣　·　🧭 ${rpg.exploreCoins || 0} 探險幣</div>
         <div class="stat-bar">
           <div class="stat-bar-label"><span>❤️ HP</span><span>${rpg.hp} / ${stats.maxHp}</span></div>
           <div class="stat-bar-track"><div class="stat-bar-fill hp-fill" style="width:${hpPercent}%"></div></div>
@@ -10972,28 +10976,17 @@ ${b.text}
     // 轉蛋區塊
     const can1  = coins >= 5000;
     const can10 = coins >= 50000;
-    const gc    = getGachaCoin(me.id);
-    const canGc1  = gc >= 1;
-    const canGc10 = gc >= 10;
     const gachaHtml = `
       <div style="background:linear-gradient(135deg,#7c3aed,#c026d3); border-radius:12px; padding:10px 14px; margin-bottom:12px; text-align:center;">
         <div style="font-weight:800; font-size:14px; color:#fff; margin-bottom:2px;">🎰 寶石轉蛋</div>
-        <div style="font-size:11px; color:#e9d5ff; margin-bottom:2px;">5,000 鵝鵝幣 / 次 · 98% 一階晶石 · 2% 原石</div>
-        <div style="font-size:11px; color:#d8b4fe; margin-bottom:6px;">🪙 ${coins.toLocaleString()}　·　🎟 扭蛋幣 ${gc}</div>
+        <div style="font-size:11px; color:#e9d5ff; margin-bottom:6px;">5,000 鵝鵝幣 / 次 · 98% 一階晶石 · 2% 原石</div>
+        <div style="font-size:11px; color:#d8b4fe; margin-bottom:8px;">目前鵝鵝幣：<b style="color:#fff;">${coins.toLocaleString()}</b></div>
         <div style="display:flex; gap:6px; justify-content:center; flex-wrap:wrap;">
           <button onclick="doGemGacha(1)" style="padding:7px 10px; background:${can1 ? '#fff' : '#6b7280'}; color:${can1 ? '#7c3aed' : '#d1d5db'}; font-weight:800; font-size:12px; border:none; border-radius:20px; cursor:${can1 ? 'pointer' : 'not-allowed'};">
             💎 ×1（5,000 🪙）
           </button>
           <button onclick="doGemGacha(10)" style="padding:7px 10px; background:${can10 ? '#fbbf24' : '#6b7280'}; color:${can10 ? '#7c2d12' : '#d1d5db'}; font-weight:800; font-size:12px; border:none; border-radius:20px; cursor:${can10 ? 'pointer' : 'not-allowed'};">
             💎 ×10（50,000 🪙）
-          </button>
-        </div>
-        <div style="margin-top:7px; border-top:1px solid rgba(255,255,255,0.25); padding-top:7px; display:flex; gap:6px; justify-content:center; flex-wrap:wrap;">
-          <button onclick="doGemGachaFree(1)" style="padding:7px 10px; background:${canGc1 ? '#d1fae5' : '#6b7280'}; color:${canGc1 ? '#065f46' : '#d1d5db'}; font-weight:800; font-size:12px; border:none; border-radius:20px; cursor:${canGc1 ? 'pointer' : 'not-allowed'};">
-            🎟 ×1（1 扭蛋幣）
-          </button>
-          <button onclick="doGemGachaFree(10)" style="padding:7px 10px; background:${canGc10 ? '#a7f3d0' : '#6b7280'}; color:${canGc10 ? '#064e3b' : '#d1d5db'}; font-weight:800; font-size:12px; border:none; border-radius:20px; cursor:${canGc10 ? 'pointer' : 'not-allowed'};">
-            🎟 ×10（10 扭蛋幣）
           </button>
         </div>
       </div>
@@ -14616,11 +14609,12 @@ ${b.text}
             state.killCount = (state.killCount || 0) + 1;
             // 建立擊殺結算（傷害排名 → 原石 + 扭蛋幣）
             const _kr = {
-              top:         { gemRaw: 3, gachaCoin: 5 },
-              second:      { gemRaw: 2, gachaCoin: 4 },
-              participant: { gemRaw: 1, gachaCoin: 2 },
-              killer:      { gemRaw: 2, gachaCoin: 5 },
+              top:         { gemRaw: 3, bossCoinQty: 5 },
+              second:      { gemRaw: 2, bossCoinQty: 4 },
+              participant: { gemRaw: 1, bossCoinQty: 2 },
+              killer:      { gemRaw: 2, bossCoinQty: 5 },
             };
+            const _bossCoinId = (bossDef && bossDef.bossCoinId) || null;
             const _sortedDmg = Object.entries(state.damageLog)
               .map(([pid, dmg]) => ({ pid, dmg: Number(dmg) || 0 }))
               .sort((a, b) => b.dmg - a.dmg);
@@ -14629,9 +14623,9 @@ ${b.text}
               const rankKey = rank === 1 ? 'top' : rank === 2 ? 'second' : 'participant';
               const base  = _kr[rankKey];
               const isKiller = entry.pid === attackerId;
-              const bonus = isKiller ? _kr.killer : { gemRaw: 0, gachaCoin: 0 };
-              return { pid: entry.pid, rank, dmg: entry.dmg, isKiller,
-                gemRaw: base.gemRaw + bonus.gemRaw, gachaCoin: base.gachaCoin + bonus.gachaCoin };
+              const bonus = isKiller ? _kr.killer : { gemRaw: 0, bossCoinQty: 0 };
+              return { pid: entry.pid, rank, dmg: entry.dmg, isKiller, bossCoinId: _bossCoinId,
+                gemRaw: base.gemRaw + bonus.gemRaw, bossCoinQty: base.bossCoinQty + bonus.bossCoinQty };
             });
             state.lastKill = { pid: attackerId, ts: Date.now(), killCount: state.killCount,
               damageLog: { ...state.damageLog }, settlement: _settlement };
