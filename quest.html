@@ -4546,6 +4546,7 @@
   let players = [];
   let history = [];
   let gifts = [];
+  let _giftsLocalTs = 0; // ⭐ 上次本地修改 gifts 的時間戳，防 Firebase 快照回朔
   let comments = [];
   let pendingBets = [];
   let betPool = 0;
@@ -4750,7 +4751,8 @@
     __isApplyingRemote = true;
     try {
       if (Array.isArray(data.history)) history = data.history;
-      if (Array.isArray(data.gifts)) gifts = data.gifts;
+      // ⭐ gifts 防回朔：本地剛修改過（10 秒內），拒絕遠端快照覆蓋
+      if (Array.isArray(data.gifts) && Date.now() - _giftsLocalTs > 10000) gifts = data.gifts;
       if (Array.isArray(data.comments)) comments = data.comments;
       if (Array.isArray(data.pendingBets)) pendingBets = data.pendingBets;
       if (typeof data.betPool === 'number') betPool = data.betPool;
@@ -9025,7 +9027,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505n';
+  const APP_VERSION = '20260505o';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
@@ -10634,8 +10636,13 @@ ${b.text}
     // 標記已領
     gifts[idx] = { ...gift, claimed: true, claimedAt: new Date().toISOString() };
     me.lastTouchedAt = Date.now();
+    _giftsLocalTs = Date.now(); // ⭐ 防 Firebase 快照回朔
     __persistLocalSnapshot();
     saveData();
+    // ⭐ 強制立即寫入 gifts，不論 leader 狀態
+    if (window.__firebaseSync?.forceSaveGifts) {
+      window.__firebaseSync.forceSaveGifts(gifts).catch(() => {});
+    }
     showToast(`✨ 收下 ${item.icon || '📦'} ${escapeHtml(item.name || '裝備')}！已放入背包`);
     // 刷新信箱 or 關閉
     const remaining = (gifts || []).filter(g => g.to === me.id && g.type === 'equip' && !g.claimed);
@@ -10643,13 +10650,19 @@ ${b.text}
     else showMailbox();
     renderCharCard();
   }
-  function deleteGift(giftId) {
+  async function deleteGift(giftId) {
     const me = getMe(); if (!me) return;
     const idx = (gifts || []).findIndex(g => g.id === giftId);
     if (idx === -1) { showToast('找不到禮物'); return; }
     if (gifts[idx].to !== me.id) { showToast('這不是你的禮物'); return; }
     gifts.splice(idx, 1);
-    saveData();
+    _giftsLocalTs = Date.now(); // ⭐ 防 Firebase 快照回朔
+    __persistLocalSnapshot();   // 立即寫入 localStorage
+    saveData();                  // 走一般流程（leader check + debounce）
+    // ⭐ 不論是否為 leader，都強制立即寫入 Firebase
+    if (window.__firebaseSync?.forceSaveGifts) {
+      window.__firebaseSync.forceSaveGifts(gifts).catch(() => {});
+    }
     showToast('🗑 已刪除');
     const remaining = (gifts || []).filter(g => g.to === me.id && g.type === 'equip' && !g.claimed);
     if (remaining.length === 0) hideModal();
@@ -14228,9 +14241,12 @@ ${b.text}
     gifts = (gifts || []).filter(g =>
       !(g.type === 'equip' && (!g.itemData || !g.itemData.name))
     );
+    _giftsLocalTs = Date.now(); // ⭐ 防 Firebase 快照回朔
+    __persistLocalSnapshot();
     saveData();
-    if (window.__firebaseSync?.forceWriteAllPlayers) {
-      try { await window.__firebaseSync.forceWriteAllPlayers(players); } catch(e) {}
+    // ⭐ 強制立即寫入 gifts，不論 leader 狀態
+    if (window.__firebaseSync?.forceSaveGifts) {
+      try { await window.__firebaseSync.forceSaveGifts(gifts); } catch(e) {}
     }
     showToast(`🗑 已清除 ${broken.length} 筆損壞禮物（剩 ${gifts.length}）`);
     renderCharCard();
@@ -15038,6 +15054,21 @@ ${b.text}
       leaveBossQueue: async () => { throw new Error('v8-removed'); },
       // ⭐ 管理員專用：強制把所有玩家文件寫到 firestore，繞過 seenPlayerIds 限制
       //   洗白 / 重置時用，否則其他人的舊 rpg / coinsSpent 會殘留在雲端，下次同步又被拉回來
+      // ⭐ 強制立即寫入 gifts 到 Firebase（不受 leader 限制、不 debounce）
+      forceSaveGifts: async (giftsArr) => {
+        const pruneUndef = (v) => {
+          if (Array.isArray(v)) return v.map(pruneUndef).filter(x => x !== undefined);
+          if (v !== null && typeof v === 'object') {
+            const out = {};
+            for (const k of Object.keys(v)) { const x = pruneUndef(v[k]); if (x !== undefined) out[k] = x; }
+            return out;
+          }
+          return v;
+        };
+        try {
+          await setDoc(metaRef, { gifts: pruneUndef(giftsArr) }, { merge: true });
+        } catch (e) { console.error('forceSaveGifts failed:', e); }
+      },
       forceWriteAllPlayers: async (allPlayers) => {
         const _prune = (v) => {
           if (Array.isArray(v)) return v.map(_prune).filter(x => x !== undefined);
