@@ -9215,7 +9215,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505042052';
+  const APP_VERSION = '20260505042536';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
@@ -13760,10 +13760,13 @@ ${b.text}
       rpg.mp = Math.min(stats.maxMp, rpg.mp + mpBack);
       // 獎勵鵝鵝幣
       refundCoins(player.id, monster.goldDrop);
-      // 使用目前地區的掉落偏好；掉落等級 = 怪物等級（樓層），但最低保底到層級最高裝 -2
+      // 使用目前地區的掉落偏好；精英怪固定掉當層最高等級；普通怪保底 maxLv-2
       const _zone = ZONES.find(z => z.id === (rpg.currentZone || 'forest'));
       const _curLayer = ZONE_LAYERS.find(l => l.id === (rpg.currentLayer || 'upper'));
-      const dropLv = Math.max(monster.level || rpg.level, _curLayer ? _curLayer.maxLv - 2 : 0);
+      const _isElite = !!(monster.isElite && !monster.isForageElite);
+      const dropLv = _isElite
+        ? (_curLayer ? _curLayer.maxLv : (monster.level || rpg.level))
+        : Math.max(monster.level || rpg.level, _curLayer ? _curLayer.maxLv - 2 : 0);
       // 防護：確保 inventory 是陣列（防止 sync race 造成 undefined）
       if (!Array.isArray(rpg.inventory)) rpg.inventory = [];
       // 寶箱怪：roll 兩次 → 掉裝率變 ~2 倍
