@@ -5085,17 +5085,29 @@
     const boosted = opts === true || (opts && opts.boosted);
     const slotBias = opts && opts.slotBias;
     const forceAffixes = opts && opts.forceAffixes; // 給精英怪用：固定詞條數
-    const strictLv = opts && opts.strictLv;         // ⭐ 精英專用：只取恰好 playerLv 的裝備
+    const layerRange = opts && opts.layerRange; // ⭐ 精英專用：{ min, max } 自動找層內等級最高裝備
     // 過濾：上限 playerLv+2；下限取靠近的（避免高等級玩家拿不到任何掉落）
     // 排除綠茶指南書（slot: guide）— 那是綠茶遭遇次數的里程碑獎勵，不能掉落
     // 排除飾品（accessory 不在 6 槽掉落清單中，從商店買）
     const _baseFilter = i => i.slot !== 'guide' && i.slot !== 'accessory' && i.slot !== 'ring';
     let eligible;
-    if (strictLv) {
-      // 精英掉落：必須是恰好 playerLv 的裝備；fallback 逐步放寬
-      eligible = ITEMS.filter(i => _baseFilter(i) && (i.lv || 1) === playerLv);
-      if (eligible.length === 0) eligible = ITEMS.filter(i => _baseFilter(i) && (i.lv || 1) >= playerLv - 2 && (i.lv || 1) <= playerLv + 2);
-      if (eligible.length === 0) eligible = ITEMS.filter(i => _baseFilter(i) && (i.lv || 1) <= playerLv + 2);
+    if (layerRange) {
+      // ⭐ 精英掉落：在層的 [min, max] 範圍找等級最高的裝備
+      // 好處：新增層時不需要手動對齊裝備等級，系統自動抓最高那批
+      const inRange = ITEMS.filter(i => _baseFilter(i) && (i.lv || 1) >= layerRange.min && (i.lv || 1) <= layerRange.max);
+      if (inRange.length > 0) {
+        const topLv = Math.max(...inRange.map(i => i.lv || 1));
+        eligible = inRange.filter(i => (i.lv || 1) === topLv);
+      } else {
+        // fallback：找 max 以下等級最近的裝備
+        const below = ITEMS.filter(i => _baseFilter(i) && (i.lv || 1) <= layerRange.max);
+        if (below.length > 0) {
+          const topLv = Math.max(...below.map(i => i.lv || 1));
+          eligible = below.filter(i => (i.lv || 1) === topLv);
+        } else {
+          eligible = ITEMS.filter(i => _baseFilter(i));
+        }
+      }
     } else {
       eligible = ITEMS.filter(i => _baseFilter(i) && (i.lv || 1) <= playerLv + 2 && (i.lv || 1) >= Math.max(1, playerLv - 5));
       if (eligible.length === 0) eligible = ITEMS.filter(i => _baseFilter(i) && (i.lv || 1) <= playerLv + 2);
@@ -9259,7 +9271,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505045833';
+  const APP_VERSION = '20260505050233';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
@@ -13969,8 +13981,10 @@ ${b.text}
       let treasureDropped = null;     // 拿到的寶物本體（首次取得才會有）
       let treasureDupXp = 0;           // 重複的話換 XP
       if (monster.isElite && !monster.isForageElite) {
-        // ⭐ 地區精英：必掉 1 件「紫裝」（legendary，3 詞條）100%，且等級恰好等於該層 maxLv
-        const eliteDrop = generateDropItem(dropLv, { slotBias: _zone ? _zone.dropBias : null, forceAffixes: 3, boosted: true, forceRarity: 'legendary', strictLv: true });
+        // ⭐ 地區精英：必掉 1 件「紫裝」（legendary，3 詞條）100%
+        // layerRange 讓系統自動找該層 [minLv,maxLv] 內等級最高的裝備，新增層不需手動對齊
+        const _eliteLayerRange = _curLayer ? { min: _curLayer.minLv, max: _curLayer.maxLv } : null;
+        const eliteDrop = generateDropItem(dropLv, { slotBias: _zone ? _zone.dropBias : null, forceAffixes: 3, boosted: true, forceRarity: 'legendary', layerRange: _eliteLayerRange });
         if (eliteDrop) {
           addInventoryItem(player.id, eliteDrop);  // ⭐ Phase A: atomic tx
           eliteExtraDrops.push(eliteDrop);
