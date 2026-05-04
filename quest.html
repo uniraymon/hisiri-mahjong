@@ -2904,10 +2904,11 @@
       name: '早餐鵝', icon: '🍳',
       hp: 25000, atk: 300, def: 200, spd: 30, level: 30,
       verb: '塗果醬',
+      fixedSkillOrder: true,
       skills: [
-        { verb: '太陽蛋砲擊', mult: 1.6, cooldown: 3 },
+        { verb: '早餐防禦', type: 'monsterSelfBuff', stat: 'def', amount: 100, turns: 4, cooldown: 3 },
         { verb: '烤吐司爆裂', mult: 1.3, applyStatus: { type: 'poison', turns: 3, dmg: 30, chance: 0.7 }, cooldown: 3 },
-        { verb: '培根纏繞', mult: 0.8, applyStatus: { type: 'paralyze', turns: 2, chance: 0.5 }, cooldown: 4 },
+        { verb: '太陽蛋砲擊', mult: 1.0, hits: 3, fixedHitMult: true, cooldown: 3 },
       ],
       dialogue: ['鵝鵝早安～來吃早餐了嗎？', '一日之計在於晨～你來打我？', '咖啡剛煮好，一起喝嗎？'],
       deathLine: ['鵝...早餐被打翻了...', '果醬撒了一地...', '...好吧，明早再戰...'],
@@ -2919,10 +2920,11 @@
       hp: 40000, atk: 400, def: 250, spd: 35, level: 30,
       verb: '便當蓋下擊',
       ability: { type: 'multiHit', hits: 2 },
+      fixedSkillOrder: true,
       skills: [
         { verb: '拉麵纏繞', mult: 1.0, applyStatus: { type: 'paralyze', turns: 2, chance: 0.55 }, cooldown: 3 },
-        { verb: '咖哩潑灑', mult: 1.4, applyStatus: { type: 'poison', turns: 3, dmg: 40, chance: 0.7 }, cooldown: 3 },
-        { verb: '牛排重擊', mult: 2.0, cooldown: 4 },
+        { verb: '牛排重擊', mult: 3.0, cooldown: 4 },
+        { verb: '咖哩潑灑', type: 'monsterShield', charges: 2, cooldown: 4 },
       ],
       dialogue: ['午餐時間到囉～', '吃飽才有力氣打架！', '便當涼了...怪你嗎？'],
       deathLine: ['午餐...被你搶走了...', '便當盒...碎了...', '下次午休再見...'],
@@ -5848,22 +5850,34 @@
             const effAtk  = stats.atk  * (1 + (pBuff.atkPct || 0));
             const effMark = stats.mark * (1 + (pBuff.atkPct || 0) + (pBuff.markPct || 0)); // atkPct + markPct buff 加成魔攻
             const effDef = (stats.def + (pBuff.def || 0)) * (1 + (pBuff.defPct || 0));
+            // ⭐ 怪物防禦（含自身 buff）
+            const monDefBuff = getBuffBonus(monster).def || 0;
+            const monDef = monster.def + monDefBuff;
+            // ⭐ 怪物護盾：有護盾時玩家傷害歸零（消耗一層）
+            const consumeMonsterShield = (d) => {
+              const sh = (monster.statuses || []).find(x => x.type === 'shield' && (x.charges || 0) > 0);
+              if (!sh || d <= 0) return d;
+              sh.charges -= 1;
+              if (sh.charges <= 0) monster.statuses = monster.statuses.filter(x => x !== sh);
+              log.push({ type: 'system', text: `回合 ${round}：🫙 ${monster.name} 護盾抵擋此次傷害！（剩 ${sh.charges} 層）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+              return 0;
+            };
             // ⭐ 多段技能：mult = 每段獨立乘率，直接套用（不再 ÷ hits 均分）
             const skillHits = Math.max(1, skill.hits || 1);
             const perHitFactor = 1.0; // 每段都用完整 mult
             if (skill.defMult != null) {
               // ⭐ 聖騎風格：以 DEF 結算傷害
-              dmg = effDef * skill.defMult - Math.floor(monster.def / 2);
+              dmg = effDef * skill.defMult - Math.floor(monDef / 2);
             } else if (skill.maxHpMult != null) {
               // ⭐ 聖騎風格：以 maxHp 結算傷害（魔攻）
-              dmg = stats.maxHp * skill.maxHpMult - Math.floor(monster.def / 2);
+              dmg = stats.maxHp * skill.maxHpMult - Math.floor(monDef / 2);
             } else if (isFlat) {
               dmg = (skill.flat + (bonus.skillFlat || 0) + (abil.skillFlat || 0)) + (skill.perLv || 0) * (player.rpg.level || 1);
-              if (!skill.ignoreDef) dmg -= Math.floor(monster.def / 2);
+              if (!skill.ignoreDef) dmg -= Math.floor(monDef / 2);
             } else {
               // ⭐ useMark:true 的技能使用 MARK 而非 ATK（法師魔攻技）
               const dmgStat = skill.useMark ? effMark : effAtk;
-              dmg = dmgStat * (skill.mult || 1) - Math.floor(monster.def / 2);
+              dmg = dmgStat * (skill.mult || 1) - Math.floor(monDef / 2);
             }
             // ⭐ markMult：flat 傷害後追加 MARK 加傷（火焰風暴：固定150 + 6*MARK）
             if (skill.markMult) {
@@ -5908,6 +5922,7 @@
               if (hitCrit) { hitDmg *= skillCritMult; critCount++; lastIsCrit = true; }
               hitDmg = Math.max(1, Math.round(hitDmg));
               if (mAbility?.type === 'flatCapDmg') hitDmg = Math.min(hitDmg, mAbility.cap || 1);
+              hitDmg = consumeMonsterShield(hitDmg);
               mHp -= hitDmg;
               totalDmg += hitDmg;
               hitLogs.push(`${hitDmg}${hitCrit ? '【爆】' : ''}`);
@@ -6028,17 +6043,28 @@
           }
         } else {
           // 普攻
+          const monDefBuff0 = getBuffBonus(monster).def || 0;
+          const monDef0 = monster.def + monDefBuff0;
+          const monShield0 = (d) => {
+            const sh = (monster.statuses || []).find(x => x.type === 'shield' && (x.charges || 0) > 0);
+            if (!sh || d <= 0) return d;
+            sh.charges -= 1;
+            if (sh.charges <= 0) monster.statuses = monster.statuses.filter(x => x !== sh);
+            log.push({ type: 'system', text: `回合 ${round}：🫙 ${monster.name} 護盾抵擋此次傷害！（剩 ${sh.charges} 層）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+            return 0;
+          };
           const isCrit = Math.random() < baseCritChance;
           const effAtk = stats.atk * (1 + (pBuff.atkPct || 0));
           const baseCrit2 = baseCritChance + (pBuff.critChance || 0);
           const critMult2 = critMult + (pBuff.critDmg || 0);
           const isCrit2 = Math.random() < baseCrit2;
-          let dmg = Math.max(1, effAtk - Math.floor(monster.def / 2));
+          let dmg = Math.max(1, effAtk - Math.floor(monDef0 / 2));
           dmg *= (0.85 + Math.random() * 0.3);
           if (isCrit2) { dmg *= critMult2; critCount++; }
           if (mAbility?.type === 'physResist') dmg *= (1 - mAbility.resist);
           dmg = Math.max(1, Math.round(dmg));
           if (mAbility?.type === 'flatCapDmg') dmg = Math.min(dmg, mAbility.cap || 1);
+          dmg = monShield0(dmg);
           mHp -= dmg;
           log.push({
             type: isCrit2 ? 'crit-player' : 'player',
@@ -6067,9 +6093,10 @@
           log.push({ type: 'system', text: `回合 ${round}：${monster.name} ⚡麻痺，行動被取消`, hp: { player: pHp, monster: mHp, mp: pMp } });
           continue;
         }
-        // 怪物技能挑選
+        // 怪物技能挑選（fixedSkillOrder 需間隔 ≥ 2 回合，確保兩技能間至少有一次普攻）
         let mSkill = null;
-        const skillsAllowed = (round - mLastSkillRound) >= 1;
+        const minSkillGap = monster.fixedSkillOrder ? 2 : 1;
+        const skillsAllowed = (round - mLastSkillRound) >= minSkillGap;
         if (skillsAllowed && Array.isArray(monster.skills) && monster.skills.length) {
           if (monster.fixedSkillOrder) {
             // ⭐ 固定出招順序（晚餐鵝）：按技能陣列順序循環，等待 CD 就緒才出招
@@ -6119,27 +6146,37 @@
           return 0;
         };
         if (mSkill) {
-          let dmg = Math.max(1, monster.atk * (mSkill.mult || 1) - (mSkill.ignoreDef ? 0 : Math.floor(effDef / 2)));
-          dmg *= (0.85 + Math.random() * 0.3);
-          dmg *= (1 - (passive.dmgReduction || 0));
-          dmg *= (1 - (pBuff.dmgReducePct || 0));
-          dmg = Math.max(1, Math.round(dmg));
-          dmg = consumeShield(dmg);
-          pHp = Math.max(0, pHp - dmg);
-          if (dmg > 0) {
-            log.push({
-              type: 'monster',
-              text: `回合 ${round}：${monster.icon}${monster.name} ✨${mSkill.verb || '技能'} → ${player.name} -${dmg} HP`,
-              hp: { player: pHp, monster: mHp, mp: pMp }
-            });
-            applyReflect(dmg);
-          }
-          if (pHp <= 0) { dead = true; }
-          if (mHp <= 0) { pushDeathLine(); break; }
-          // 對玩家上狀態
-          if (!dead && mSkill.applyStatus && Math.random() < (mSkill.applyStatus.chance || 1)) {
-            applyStatus(playerObj, mSkill.applyStatus);
-            log.push({ type: 'system', text: `回合 ${round}：${player.name} 進入 ${statusEmoji(mSkill.applyStatus.type)}${statusLabel(mSkill.applyStatus.type)} 狀態`, hp: { player: pHp, monster: mHp, mp: pMp } });
+          if (mSkill.type === 'monsterSelfBuff') {
+            // ⭐ 怪物自身加 buff（早餐鵝加防）
+            applyStatus(monster, { type: 'buff', stat: mSkill.stat, amount: mSkill.amount, turns: mSkill.turns });
+            log.push({ type: 'monster', text: `回合 ${round}：${monster.icon}${monster.name} 🛡 ${mSkill.verb} → ${mSkill.stat === 'def' ? `DEF +${mSkill.amount}（${mSkill.turns} 回合）` : `${mSkill.stat} +${mSkill.amount}`}`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+          } else if (mSkill.type === 'monsterShield') {
+            // ⭐ 怪物獲得護盾（午餐鵝咖哩潑灑：無視傷害 N 次）
+            applyStatus(monster, { type: 'shield', charges: mSkill.charges || 1, turns: 99 });
+            log.push({ type: 'monster', text: `回合 ${round}：${monster.icon}${monster.name} 🫙 ${mSkill.verb} → 無視下 ${mSkill.charges} 次傷害！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+          } else {
+            let dmg = Math.max(1, monster.atk * (mSkill.mult || 1) - (mSkill.ignoreDef ? 0 : Math.floor(effDef / 2)));
+            dmg *= (0.85 + Math.random() * 0.3);
+            dmg *= (1 - (passive.dmgReduction || 0));
+            dmg *= (1 - (pBuff.dmgReducePct || 0));
+            dmg = Math.max(1, Math.round(dmg));
+            dmg = consumeShield(dmg);
+            pHp = Math.max(0, pHp - dmg);
+            if (dmg > 0) {
+              log.push({
+                type: 'monster',
+                text: `回合 ${round}：${monster.icon}${monster.name} ✨${mSkill.verb || '技能'} → ${player.name} -${dmg} HP`,
+                hp: { player: pHp, monster: mHp, mp: pMp }
+              });
+              applyReflect(dmg);
+            }
+            if (pHp <= 0) { dead = true; }
+            if (mHp <= 0) { pushDeathLine(); break; }
+            // 對玩家上狀態
+            if (!dead && mSkill.applyStatus && Math.random() < (mSkill.applyStatus.chance || 1)) {
+              applyStatus(playerObj, mSkill.applyStatus);
+              log.push({ type: 'system', text: `回合 ${round}：${player.name} 進入 ${statusEmoji(mSkill.applyStatus.type)}${statusLabel(mSkill.applyStatus.type)} 狀態`, hp: { player: pHp, monster: mHp, mp: pMp } });
+            }
           }
         } else {
           // 多段攻擊：1.3x 總傷害平均分散
@@ -6457,19 +6494,28 @@
             const effMark = stats.mark * (1 + (pBuff.atkPct || 0) + (pBuff.markPct || 0));
             const effDef = (stats.def + (pBuff.def || 0)) * (1 + (pBuff.defPct || 0));
             // 對每個目標各打一發（不分散傷害）
+            const consumeMonsterShield2 = (tgt, d) => {
+              const sh = (tgt.statuses || []).find(x => x.type === 'shield' && (x.charges || 0) > 0);
+              if (!sh || d <= 0) return d;
+              sh.charges -= 1;
+              if (sh.charges <= 0) tgt.statuses = tgt.statuses.filter(x => x !== sh);
+              log.push({ type: 'system', text: `回合 ${round}：🫙 ${tgt.icon}${tgt.name} 護盾抵擋此次傷害！（剩 ${sh.charges} 層）`, hp: hpsSnapshot() });
+              return 0;
+            };
             const hits = [];
             for (const tgt of targets) {
+              const tgtMonDef = tgt.def + (getBuffBonus(tgt).def || 0);
               let dmg;
               if (skill.defMult != null) {
-                dmg = effDef * skill.defMult - Math.floor(tgt.def / 2);
+                dmg = effDef * skill.defMult - Math.floor(tgtMonDef / 2);
               } else if (skill.maxHpMult != null) {
-                dmg = stats.maxHp * skill.maxHpMult - Math.floor(tgt.def / 2);
+                dmg = stats.maxHp * skill.maxHpMult - Math.floor(tgtMonDef / 2);
               } else if (isFlat) {
                 dmg = (skill.flat + (bonus.skillFlat || 0) + (abil.skillFlat || 0)) + (skill.perLv || 0) * (player.rpg.level || 1);
-                if (!skill.ignoreDef) dmg -= Math.floor(tgt.def / 2);
+                if (!skill.ignoreDef) dmg -= Math.floor(tgtMonDef / 2);
               } else {
                 const dmgStat = skill.useMark ? effMark : effAtk;
-                dmg = dmgStat * (skill.mult || 1) - Math.floor(tgt.def / 2);
+                dmg = dmgStat * (skill.mult || 1) - Math.floor(tgtMonDef / 2);
               }
               // ⭐ markMult：flat 傷害後追加 MARK 加傷（火焰風暴：固定150 + 6*MARK）
               if (skill.markMult) {
@@ -6496,6 +6542,7 @@
               if (isCrit) { dmg *= skillCritMult; critCount++; }
               dmg = Math.max(1, Math.round(dmg));
               if (tgt.ability?.type === 'flatCapDmg') dmg = Math.min(dmg, tgt.ability.cap || 1);
+              dmg = consumeMonsterShield2(tgt, dmg);
               tgt.hp = Math.max(0, tgt.hp - dmg);
               if (tgt.hp <= 0) tgt.alive = false;
               hits.push({ tgt, dmg, isCrit });
@@ -6659,7 +6706,8 @@
         let mSkill = null;
         const cdMap = mSkillLastByIdx[m.idx] = mSkillLastByIdx[m.idx] || {};
         const lastSkillR = cdMap.__lastSkillR ?? -999;
-        const skillsAllowed = (round - lastSkillR) >= 1;
+        const minSkillGap2 = m.fixedSkillOrder ? 2 : 1;
+        const skillsAllowed = (round - lastSkillR) >= minSkillGap2;
         if (skillsAllowed && Array.isArray(m.skills) && m.skills.length) {
           if (m.fixedSkillOrder) {
             // ⭐ 固定出招順序：按陣列循環，等 CD 就緒才出招
@@ -6707,24 +6755,33 @@
           return 0;
         };
         if (mSkill) {
-          let dmg = Math.max(1, m.atk * (mSkill.mult || 1) - (mSkill.ignoreDef ? 0 : Math.floor(effDef / 2)));
-          dmg *= (0.85 + Math.random() * 0.3);
-          dmg *= (1 - (passive.dmgReduction || 0));
-          dmg *= (1 - (pBuff.dmgReducePct || 0));
-          dmg = Math.max(1, Math.round(dmg));
-          dmg = consumeShield2(dmg);
-          pHp = Math.max(0, pHp - dmg);
-          if (dmg > 0) {
-            log.push({
-              type: 'monster',
-              text: `回合 ${round}：${m.icon}${m.name} ✨${mSkill.verb || '技能'} → ${player.name} -${dmg} HP`,
-              hp: hpsSnapshot(),
-            });
-            applyReflect2(dmg);
-          }
-          if (pHp > 0 && mSkill.applyStatus && Math.random() < (mSkill.applyStatus.chance || 1)) {
-            applyStatus(playerObj, mSkill.applyStatus);
-            log.push({ type: 'system', text: `回合 ${round}：${player.name} 進入 ${statusEmoji(mSkill.applyStatus.type)}${statusLabel(mSkill.applyStatus.type)} 狀態`, hp: hpsSnapshot() });
+          if (mSkill.type === 'monsterSelfBuff') {
+            applyStatus(m, { type: 'buff', stat: mSkill.stat, amount: mSkill.amount, turns: mSkill.turns });
+            const buffDesc = mSkill.stat === 'def' ? `DEF +${mSkill.amount}（${mSkill.turns} 回合）` : `強化 ${mSkill.turns} 回合`;
+            log.push({ type: 'monster', text: `回合 ${round}：${m.icon}${m.name} ✨${mSkill.verb || '強化'} → ${buffDesc}`, hp: hpsSnapshot() });
+          } else if (mSkill.type === 'monsterShield') {
+            applyStatus(m, { type: 'shield', charges: mSkill.charges || 1, turns: 99 });
+            log.push({ type: 'monster', text: `回合 ${round}：${m.icon}${m.name} ✨${mSkill.verb || '護盾'} → 無視下 ${mSkill.charges || 1} 次傷害！`, hp: hpsSnapshot() });
+          } else {
+            let dmg = Math.max(1, m.atk * (mSkill.mult || 1) - (mSkill.ignoreDef ? 0 : Math.floor(effDef / 2)));
+            dmg *= (0.85 + Math.random() * 0.3);
+            dmg *= (1 - (passive.dmgReduction || 0));
+            dmg *= (1 - (pBuff.dmgReducePct || 0));
+            dmg = Math.max(1, Math.round(dmg));
+            dmg = consumeShield2(dmg);
+            pHp = Math.max(0, pHp - dmg);
+            if (dmg > 0) {
+              log.push({
+                type: 'monster',
+                text: `回合 ${round}：${m.icon}${m.name} ✨${mSkill.verb || '技能'} → ${player.name} -${dmg} HP`,
+                hp: hpsSnapshot(),
+              });
+              applyReflect2(dmg);
+            }
+            if (pHp > 0 && mSkill.applyStatus && Math.random() < (mSkill.applyStatus.chance || 1)) {
+              applyStatus(playerObj, mSkill.applyStatus);
+              log.push({ type: 'system', text: `回合 ${round}：${player.name} 進入 ${statusEmoji(mSkill.applyStatus.type)}${statusLabel(mSkill.applyStatus.type)} 狀態`, hp: hpsSnapshot() });
+            }
           }
         } else {
           // 攻擊（含多段）
