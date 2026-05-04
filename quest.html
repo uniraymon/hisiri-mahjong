@@ -3067,7 +3067,7 @@
       base: { hp: 60, def: 5 } },
     { id: 'sp_dinner',    sourceBossId: 'dinner_goose',    name: '晚餐鵝精魂',  icon: '🍷', color: '#dc2626',
       theme: '華麗（暴擊+爆傷）',
-      base: { critChance: 0.05, critDmg: 0.12, atk: 3 } },
+      base: { critChance: 0.05, critDmg: 0.12, atk: 3, mark: 15 } },
     // 世界王精魂（傳說級）
     { id: 'sp_goose_king',  sourceBossId: 'goose_king',  name: '鵝皇精魂',   icon: '🦢', color: '#fde047',
       theme: '霸氣（純輸出）',
@@ -3098,6 +3098,7 @@
       atk: def.base.atk || 0,
       def: def.base.def || 0,
       spd: def.base.spd || 0,
+      mark: def.base.mark || 0,
       critChance: def.base.critChance || 0,
       critDmg: def.base.critDmg || 0,
       affixes: [],
@@ -3122,6 +3123,7 @@
     if (s.atk) parts.push(`ATK+${s.atk}`);
     if (s.def) parts.push(`DEF+${s.def}`);
     if (s.spd) parts.push(`SPD+${s.spd}`);
+    if (s.mark) parts.push(`MARK+${s.mark}`);
     if (s.critChance) parts.push(`暴擊+${Math.round(s.critChance * 100)}%`);
     if (s.critDmg)    parts.push(`爆傷+${Math.round(s.critDmg * 100)}%`);
     return parts.join(' · ');
@@ -8880,7 +8882,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505c';
+  const APP_VERSION = '20260505d';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
