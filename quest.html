@@ -4341,6 +4341,7 @@
       { id: 'pot_stam_s', name: '體力藥 (小)', icon: '🧪', desc: '+30 體力',  cost: 100, type: 'consumable', effect: { stamina: 30 } },
       { id: 'pot_stam_m', name: '體力藥 (中)', icon: '🍶', desc: '+60 體力',  cost: 180, type: 'consumable', effect: { stamina: 60 } },
       { id: 'pot_stam_l', name: '體力藥 (大)', icon: '🍹', desc: '+100 體力', cost: 280, type: 'consumable', effect: { stamina: 100 } },
+      { id: 'pot_revive', name: '復活藥水', icon: '💊', desc: '死亡後立刻復活，恢復 50% HP', cost: 300, type: 'consumable', effect: { revive: true } },
       // ⭐ 取消 HP / MP / 智慧藥水（HP/MP 變屬性、每場戰鬥自動回滿）
     ];
     // ⭐ 商店只賣基本裝（Lv 1 + Lv 2）— 高等級裝備改從掉落 / 王 / 套裝取得
@@ -9448,6 +9449,11 @@ ${b.text}
       tickRecovery(me);
       const stats = computeStats(me);
       let msg = '';
+      if (it.effect.revive) {
+        rpg.hp = Math.max(1, Math.floor(stats.maxHp * 0.5));
+        rpg.deathAt = null;
+        msg = `💊 復活！HP 恢復 50%`;
+      }
       if (it.effect.stamina) {
         rpg.stamina = Math.min(STAMINA_MAX, (rpg.stamina || 0) + it.effect.stamina);
         msg = `⚡ +${it.effect.stamina} 體力`;
