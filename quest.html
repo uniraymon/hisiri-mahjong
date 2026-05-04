@@ -12778,7 +12778,12 @@ ${b.text}
     // 鎖按鈕，扣體力
     document.getElementById('fightBtn').disabled = true;
     __fightInProgress = true;
-    if (!skipStamina) rpg.stamina -= STAMINA_PER_FIGHT;
+    if (!skipStamina) {
+      rpg.stamina -= STAMINA_PER_FIGHT;
+      // 立刻 bump lastTouchedAt + 存 localStorage，防戰鬥動畫期間 Firebase 同步覆蓋體力
+      me.lastTouchedAt = Date.now();
+      __persistLocalSnapshot();
+    }
 
     // 使用目前選擇的地區/層數
     const zoneId = rpg.currentZone || 'forest';
