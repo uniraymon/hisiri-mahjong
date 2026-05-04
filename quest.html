@@ -3247,7 +3247,7 @@
       pieces: [
         { id: 'sg_helmet', name: '森林之冠', icon: '🍃', slot: 'helmet', def: 8,  hp: 25, lv: 4 },
         { id: 'sg_armor',  name: '森林之鎧', icon: '🌲', slot: 'armor',  def: 12, hp: 35, lv: 4 },
-        { id: 'sg_gloves', name: '森林之爪', icon: '🌿', slot: 'gloves', atk: 7,  spd: 3, lv: 4 },
+        { id: 'sg_gloves', name: '森林之爪', icon: '🌿', slot: 'gloves', atk: 7,  mark: 5,  spd: 3, lv: 4 },
         { id: 'sg_boots',  name: '森林之履', icon: '🌳', slot: 'boots',  spd: 6,  hp: 20, lv: 4 },
         { id: 'sg_cape',   name: '森林之披', icon: '🍂', slot: 'cape',   def: 5,  hp: 30, lv: 4 },
       ],
@@ -3263,7 +3263,7 @@
       pieces: [
         { id: 'ru_helmet', name: '亡者頭骨',   icon: '💀', slot: 'helmet', def: 14, hp: 30, lv: 10 },
         { id: 'ru_armor',  name: '亡者法袍',   icon: '🥼', slot: 'armor',  def: 18, hp: 50, lv: 10 },
-        { id: 'ru_gloves', name: '亡者枯骨',   icon: '✋', slot: 'gloves', atk: 10, hp: 15, lv: 10 },
+        { id: 'ru_gloves', name: '亡者枯骨',   icon: '✋', slot: 'gloves', atk: 10, mark: 8,  hp: 15, lv: 10 },
         { id: 'ru_boots',  name: '亡者鞋',     icon: '👢', slot: 'boots',  def: 6,  hp: 35, lv: 10 },
         { id: 'ru_cape',   name: '亡者披風',   icon: '🦇', slot: 'cape',   def: 8,  hp: 50, lv: 10 },
       ],
@@ -3277,11 +3277,11 @@
     volcano_warrior: {
       name: '火山戰神', color: '#dc2626',
       pieces: [
-        { id: 'vw_helmet', name: '熔岩盔', icon: '🔥', slot: 'helmet', atk: 8,  def: 10, lv: 16 },
-        { id: 'vw_armor',  name: '熔岩鎧', icon: '🌋', slot: 'armor',  atk: 6,  def: 18, hp: 40, lv: 16 },
-        { id: 'vw_gloves', name: '熔岩拳', icon: '👊', slot: 'gloves', atk: 18, spd: 4,  lv: 16 },
-        { id: 'vw_boots',  name: '熔岩靴', icon: '🥾', slot: 'boots',  atk: 5,  spd: 8,  lv: 16 },
-        { id: 'vw_cape',   name: '熔岩披', icon: '🧥', slot: 'cape',   atk: 8,  hp: 45, lv: 16 },
+        { id: 'vw_helmet', name: '熔岩盔', icon: '🔥', slot: 'helmet', atk: 8,  mark: 6,  def: 10, lv: 16 },
+        { id: 'vw_armor',  name: '熔岩鎧', icon: '🌋', slot: 'armor',  atk: 6,  mark: 5,  def: 18, hp: 40, lv: 16 },
+        { id: 'vw_gloves', name: '熔岩拳', icon: '👊', slot: 'gloves', atk: 18, mark: 14, spd: 4,  lv: 16 },
+        { id: 'vw_boots',  name: '熔岩靴', icon: '🥾', slot: 'boots',  atk: 5,  mark: 4,  spd: 8,  lv: 16 },
+        { id: 'vw_cape',   name: '熔岩披', icon: '🧥', slot: 'cape',   atk: 8,  mark: 6,  hp: 45, lv: 16 },
       ],
       tiers: [
         { req: 2, bonus: { atk: 12 },                  desc: '2 件：ATK +12' },
@@ -3295,7 +3295,7 @@
       pieces: [
         { id: 'ih_helmet', name: '冰晶冠', icon: '❄️', slot: 'helmet', def: 18, hp: 60, lv: 22 },
         { id: 'ih_armor',  name: '冰晶鎧', icon: '🧊', slot: 'armor',  def: 25, hp: 90, lv: 22 },
-        { id: 'ih_gloves', name: '冰晶爪', icon: '🥶', slot: 'gloves', atk: 14, def: 8,  lv: 22 },
+        { id: 'ih_gloves', name: '冰晶爪', icon: '🥶', slot: 'gloves', atk: 14, mark: 11, def: 8,  lv: 22 },
         { id: 'ih_boots',  name: '冰晶靴', icon: '⛸',  slot: 'boots',  spd: 10, hp: 50, lv: 22 },
         { id: 'ih_cape',   name: '冰晶披', icon: '🪽',  slot: 'cape',   def: 12, hp: 70, lv: 22 },
       ],
@@ -3310,9 +3310,9 @@
     warrior_iron: {
       name: '鐵血戰魂', color: '#b91c1c',
       pieces: [
-        { id: 'wi_helmet', name: '鐵血盔',   icon: '🪖', slot: 'helmet', atk: 12, def: 10, lv: 8 },
+        { id: 'wi_helmet', name: '鐵血盔',   icon: '🪖', slot: 'helmet', atk: 12, mark: 9,  def: 10, lv: 8 },
         { id: 'wi_armor',  name: '鐵血鎧',   icon: '🛡', slot: 'armor',  def: 24, hp: 70, lv: 8 },
-        { id: 'wi_gloves', name: '鐵血拳',   icon: '👊', slot: 'gloves', atk: 20, hp: 25, lv: 8 },
+        { id: 'wi_gloves', name: '鐵血拳',   icon: '👊', slot: 'gloves', atk: 20, mark: 15, hp: 25, lv: 8 },
         { id: 'wi_boots',  name: '鐵血靴',   icon: '🥾', slot: 'boots',  def: 10, spd: 5, lv: 8 },
         { id: 'wi_cape',   name: '鐵血披',   icon: '🟥', slot: 'cape',   def: 12, hp: 70, lv: 8 },
       ],
@@ -3326,11 +3326,11 @@
     archer_swift: {
       name: '疾風神射', color: '#16a34a',
       pieces: [
-        { id: 'as_helmet', name: '疾風冠',   icon: '🎯', slot: 'helmet', atk: 10, spd: 5, lv: 8 },
+        { id: 'as_helmet', name: '疾風冠',   icon: '🎯', slot: 'helmet', atk: 10, mark: 8,  spd: 5, lv: 8 },
         { id: 'as_armor',  name: '疾風衣',   icon: '🟢', slot: 'armor',  hp: 50, spd: 8, def: 6, lv: 8 },
-        { id: 'as_gloves', name: '疾風指',   icon: '🏹', slot: 'gloves', atk: 22, spd: 4, lv: 8 },
+        { id: 'as_gloves', name: '疾風指',   icon: '🏹', slot: 'gloves', atk: 22, mark: 17, spd: 4, lv: 8 },
         { id: 'as_boots',  name: '疾風靴',   icon: '👟', slot: 'boots',  spd: 14, hp: 25, lv: 8 },
-        { id: 'as_cape',   name: '疾風披',   icon: '🍃', slot: 'cape',   spd: 6,  atk: 6, hp: 45, lv: 8 },
+        { id: 'as_cape',   name: '疾風披',   icon: '🍃', slot: 'cape',   spd: 6,  atk: 6, mark: 5, hp: 45, lv: 8 },
       ],
       tiers: [
         { req: 2, bonus: { spd: 8 },                                 desc: '2 件：SPD +8' },
@@ -3342,9 +3342,9 @@
     mage_arcane: {
       name: '元素奧義', color: '#8b5cf6',
       pieces: [
-        { id: 'ma_helmet', name: '奧義冠',   icon: '🔮', slot: 'helmet', atk: 8,  mp: 25, lv: 8 },
+        { id: 'ma_helmet', name: '奧義冠',   icon: '🔮', slot: 'helmet', atk: 8,  mark: 6,  mp: 25, lv: 8 },
         { id: 'ma_armor',  name: '奧義袍',   icon: '🟣', slot: 'armor',  hp: 60, mp: 35, lv: 8 },
-        { id: 'ma_gloves', name: '奧義指',   icon: '✨', slot: 'gloves', atk: 18, mp: 20, lv: 8 },
+        { id: 'ma_gloves', name: '奧義指',   icon: '✨', slot: 'gloves', atk: 18, mark: 14, mp: 20, lv: 8 },
         { id: 'ma_boots',  name: '奧義靴',   icon: '👞', slot: 'boots',  spd: 7,  mp: 25, lv: 8 },
         { id: 'ma_cape',   name: '奧義披',   icon: '🌌', slot: 'cape',   hp: 40, mp: 50, lv: 8 },
       ],
@@ -3375,11 +3375,11 @@
     blade_lord: {
       name: '劍主', color: '#dc2626',
       pieces: [
-        { id: 'bl_helmet', name: '劍主之冠',   icon: '🗡', slot: 'helmet', atk: 8,  hp: 15, lv: 5 },
-        { id: 'bl_armor',  name: '劍主之鎧',   icon: '⚔️', slot: 'armor',  atk: 6,  hp: 30, lv: 5 },
-        { id: 'bl_gloves', name: '劍主之握',   icon: '🤜', slot: 'gloves', atk: 14, lv: 5 },
-        { id: 'bl_boots',  name: '劍主之履',   icon: '👟', slot: 'boots',  atk: 6,  spd: 4, lv: 5 },
-        { id: 'bl_cape',   name: '劍主之披',   icon: '🟥', slot: 'cape',   atk: 8,  hp: 25, lv: 5 },
+        { id: 'bl_helmet', name: '劍主之冠',   icon: '🗡', slot: 'helmet', atk: 8,  mark: 6,  hp: 15, lv: 5 },
+        { id: 'bl_armor',  name: '劍主之鎧',   icon: '⚔️', slot: 'armor',  atk: 6,  mark: 5,  hp: 30, lv: 5 },
+        { id: 'bl_gloves', name: '劍主之握',   icon: '🤜', slot: 'gloves', atk: 14, mark: 11, lv: 5 },
+        { id: 'bl_boots',  name: '劍主之履',   icon: '👟', slot: 'boots',  atk: 6,  mark: 5,  spd: 4, lv: 5 },
+        { id: 'bl_cape',   name: '劍主之披',   icon: '🟥', slot: 'cape',   atk: 8,  mark: 6,  hp: 25, lv: 5 },
       ],
       tiers: [
         { req: 2, bonus: { atk: 12 },                       desc: '2 件：ATK +12' },
@@ -3409,9 +3409,9 @@
       pieces: [
         { id: 'sn_helmet', name: '狙擊鏡',     icon: '🔭', slot: 'helmet', critChance: 0.04, lv: 5 },
         { id: 'sn_armor',  name: '狙擊衣',     icon: '🟩', slot: 'armor',  critChance: 0.03, hp: 25, lv: 5 },
-        { id: 'sn_gloves', name: '狙擊手',     icon: '🎯', slot: 'gloves', critChance: 0.06, atk: 6, lv: 5 },
+        { id: 'sn_gloves', name: '狙擊手',     icon: '🎯', slot: 'gloves', critChance: 0.06, atk: 6, mark: 5, lv: 5 },
         { id: 'sn_boots',  name: '狙擊靴',     icon: '🦶', slot: 'boots',  spd: 6,  critChance: 0.03, lv: 5 },
-        { id: 'sn_cape',   name: '狙擊披',     icon: '🌳', slot: 'cape',   atk: 8,  critChance: 0.03, lv: 5 },
+        { id: 'sn_cape',   name: '狙擊披',     icon: '🌳', slot: 'cape',   atk: 8,  mark: 6,  critChance: 0.03, lv: 5 },
       ],
       tiers: [
         { req: 2, bonus: { critChance: 0.05 },              desc: '2 件：暴擊率 +5%' },
@@ -3425,9 +3425,9 @@
       pieces: [
         { id: 'dm_helmet', name: '爆裂帽',     icon: '💥', slot: 'helmet', critDmg: 0.10, lv: 5 },
         { id: 'dm_armor',  name: '爆裂鎧',     icon: '🟧', slot: 'armor',  critDmg: 0.08, hp: 30, lv: 5 },
-        { id: 'dm_gloves', name: '爆裂拳',     icon: '👊', slot: 'gloves', critDmg: 0.12, atk: 10, lv: 5 },
+        { id: 'dm_gloves', name: '爆裂拳',     icon: '👊', slot: 'gloves', critDmg: 0.12, atk: 10, mark: 8, lv: 5 },
         { id: 'dm_boots',  name: '爆裂靴',     icon: '🥿', slot: 'boots',  critDmg: 0.08, spd: 4, lv: 5 },
-        { id: 'dm_cape',   name: '爆裂披',     icon: '🟠', slot: 'cape',   critDmg: 0.10, atk: 6, lv: 5 },
+        { id: 'dm_cape',   name: '爆裂披',     icon: '🟠', slot: 'cape',   critDmg: 0.10, atk: 6, mark: 5, lv: 5 },
       ],
       tiers: [
         { req: 2, bonus: { critDmg: 0.20 },                 desc: '2 件：暴擊傷害 +20%' },
@@ -3441,7 +3441,7 @@
       pieces: [
         { id: 'wr_helmet', name: '疾風冠',     icon: '🌬', slot: 'helmet', spd: 6,  lv: 5 },
         { id: 'wr_armor',  name: '疾風衣',     icon: '🟦', slot: 'armor',  spd: 7,  hp: 25, lv: 5 },
-        { id: 'wr_gloves', name: '疾風手',     icon: '🪶', slot: 'gloves', atk: 6,  spd: 5, lv: 5 },
+        { id: 'wr_gloves', name: '疾風手',     icon: '🪶', slot: 'gloves', atk: 6,  mark: 5, spd: 5, lv: 5 },
         { id: 'wr_boots',  name: '疾風靴',     icon: '👟', slot: 'boots',  spd: 14, lv: 5 },
         { id: 'wr_cape',   name: '疾風披',     icon: '💨', slot: 'cape',   spd: 6,  hp: 20, lv: 5 },
       ],
@@ -4447,13 +4447,13 @@
     { id: 'h_leather', name: '皮帽',  icon: '🧢', slot: 'helmet', def: 4,  lv: 4 },
     { id: 'h_iron',    name: '鐵盔',  icon: '🪖', slot: 'helmet', def: 6,  lv: 8 },
     { id: 'h_silver',  name: '銀冠',  icon: '👑', slot: 'helmet', def: 9,  lv: 13 },
-    { id: 'h_spirit',  name: '靈光盔', icon: '⛑', slot: 'helmet', def: 12, atk: 3, lv: 16 },
+    { id: 'h_spirit',  name: '靈光盔', icon: '⛑', slot: 'helmet', def: 12, atk: 3, mark: 2, lv: 16 },
     // 手套
-    { id: 'g_cloth',   name: '布手套', icon: '🧤', slot: 'gloves', atk: 2, lv: 2 },
-    { id: 'g_leather', name: '皮手套', icon: '🤲', slot: 'gloves', atk: 4, lv: 4 },
-    { id: 'g_iron',    name: '鐵拳套', icon: '✊', slot: 'gloves', atk: 6, lv: 8 },
-    { id: 'g_silver',  name: '銀指環', icon: '💍', slot: 'gloves', atk: 9, spd: 2, lv: 13 },
-    { id: 'g_thunder', name: '雷霆拳', icon: '⚡', slot: 'gloves', atk: 12, spd: 4, lv: 16 },
+    { id: 'g_cloth',   name: '布手套', icon: '🧤', slot: 'gloves', atk: 2,  mark: 2, lv: 2 },
+    { id: 'g_leather', name: '皮手套', icon: '🤲', slot: 'gloves', atk: 4,  mark: 3, lv: 4 },
+    { id: 'g_iron',    name: '鐵拳套', icon: '✊', slot: 'gloves', atk: 6,  mark: 5, lv: 8 },
+    { id: 'g_silver',  name: '銀指環', icon: '💍', slot: 'gloves', atk: 9,  mark: 7, spd: 2, lv: 13 },
+    { id: 'g_thunder', name: '雷霆拳', icon: '⚡', slot: 'gloves', atk: 12, mark: 9, spd: 4, lv: 16 },
     // 鞋子
     { id: 'b_cloth',  name: '草鞋',     icon: '👣', slot: 'boots', spd: 2, hp: 8, lv: 2 },
     { id: 'b_leather',name: '皮靴',     icon: '👞', slot: 'boots', spd: 3, hp: 14, lv: 4 },
@@ -4478,16 +4478,16 @@
     // 防具補強：Lv 16 鎧甲
     { id: 'a_silver',  name: '鎧甲',   icon: '🛡️', slot: 'armor', def: 17, lv: 16 },
     // ⭐ Lv 20 填充：補齊頭盔 / 手套 / 鞋子 / 披風第五階
-    { id: 'h_dragon',  name: '龍盔',   icon: '🐉', slot: 'helmet', def: 16, atk: 5,  lv: 20 },
-    { id: 'g_dragon',  name: '龍爪套', icon: '🐉', slot: 'gloves', atk: 16, spd: 6,  lv: 20 },
+    { id: 'h_dragon',  name: '龍盔',   icon: '🐉', slot: 'helmet', def: 16, atk: 5,  mark: 4,  lv: 20 },
+    { id: 'g_dragon',  name: '龍爪套', icon: '🐉', slot: 'gloves', atk: 16, mark: 12, spd: 6,  lv: 20 },
     { id: 'b_dragon',  name: '龍翼靴', icon: '🐉', slot: 'boots',  spd: 13, hp: 55,  lv: 20 },
     { id: 'p_heaven',  name: '天界披', icon: '🕊️', slot: 'cape',   hp: 110, def: 12, lv: 20 },
     // ✨ Lv 25 神話階（全槽位新頂階）
     { id: 'w_myth',     name: '神話劍',   icon: '🌌', slot: 'weapon', atk: 32,        lv: 25 },
     { id: 'w_godstaff', name: '神話法杖', icon: '🌌', slot: 'weapon', mark: 42,       lv: 25 },
     { id: 'a_myth',     name: '神話甲',   icon: '🌌', slot: 'armor',  def: 32,        lv: 25 },
-    { id: 'h_myth',     name: '神話冠',   icon: '🌌', slot: 'helmet', def: 22, atk: 8, lv: 25 },
-    { id: 'g_myth',     name: '神話護腕', icon: '🌌', slot: 'gloves', atk: 22, spd: 8, lv: 25 },
+    { id: 'h_myth',     name: '神話冠',   icon: '🌌', slot: 'helmet', def: 22, atk: 8,  mark: 6,  lv: 25 },
+    { id: 'g_myth',     name: '神話護腕', icon: '🌌', slot: 'gloves', atk: 22, mark: 17, spd: 8, lv: 25 },
     { id: 'b_myth',     name: '神話靴',   icon: '🌌', slot: 'boots',  spd: 18, hp: 80, lv: 25 },
     { id: 'p_myth',     name: '神話披',   icon: '🌌', slot: 'cape',   hp: 150, def: 18, lv: 25 },
     // 綠茶指南書（slot: guide）— 不掉落、不販售，遇綠茶鵝達到次數時自動發放
@@ -9249,7 +9249,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505044311';
+  const APP_VERSION = '20260505044937';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
