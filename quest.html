@@ -2934,8 +2934,9 @@
       hp: 60000, atk: 500, def: 300, spd: 40, level: 30,
       verb: '紅酒甩擊',
       ability: { type: 'magicResist', resist: 0.3 },
+      fixedSkillOrder: true,
       skills: [
-        { verb: '料理長之刃', mult: 2.4, alwaysCrit: true, cooldown: 3 },
+        { verb: '料理長之刃', mult: 2.4, alwaysCrit: true, cooldown: 5 },
         { verb: '燭光催眠', mult: 0.5, applyStatus: { type: 'paralyze', turns: 2, chance: 0.7 }, cooldown: 3 },
         { verb: '主菜爆裂', mult: 1.6, applyStatus: { type: 'poison', turns: 4, dmg: 50, chance: 0.85 }, cooldown: 4 },
         { verb: '甜點之吻', mult: 1.8, ignoreDef: true, cooldown: 4 },
@@ -5698,6 +5699,8 @@
     const mSkillLast = {};
     // ⭐ 上次施放技能的回合 — 確保兩招間至少夾一次普攻
     let mLastSkillRound = -999;
+    // ⭐ fixedSkillOrder：下一個要出的技能 index（循環）
+    let mSkillNextIdx = 0;
 
     log.push({ type: 'system', text: `═══ ⚔️ ${player.name} VS ${monster.icon} ${monster.name} Lv ${monster.level} ═══` });
     log.push({ type: 'system', text: `🌬 速度：你 ${effectiveSpd} vs ${monster.name} ${monster.spd}（行動頻率比 ${(pSpd/mSpd).toFixed(2)} : 1）` });
@@ -6064,21 +6067,35 @@
           log.push({ type: 'system', text: `回合 ${round}：${monster.name} ⚡麻痺，行動被取消`, hp: { player: pHp, monster: mHp, mp: pMp } });
           continue;
         }
-        // 怪物技能挑選：65% 機率，且距離上次施放技能必須 ≥ 1 回合
+        // 怪物技能挑選
         let mSkill = null;
         const skillsAllowed = (round - mLastSkillRound) >= 1;
-        if (skillsAllowed && Array.isArray(monster.skills) && monster.skills.length && Math.random() < 0.65) {
-          const ready = [];
-          for (let si = 0; si < monster.skills.length; si++) {
+        if (skillsAllowed && Array.isArray(monster.skills) && monster.skills.length) {
+          if (monster.fixedSkillOrder) {
+            // ⭐ 固定出招順序（晚餐鵝）：按技能陣列順序循環，等待 CD 就緒才出招
+            const si = mSkillNextIdx % monster.skills.length;
             const s = monster.skills[si];
             const last = mSkillLast[si] ?? -999;
-            if (round - last >= (s.cooldown || 3)) ready.push({ s, si });
-          }
-          if (ready.length) {
-            const pick = ready[Math.floor(Math.random() * ready.length)];
-            mSkill = pick.s;
-            mSkillLast[pick.si] = round;
-            mLastSkillRound = round;
+            if (round - last >= (s.cooldown || 3)) {
+              mSkill = s;
+              mSkillLast[si] = round;
+              mLastSkillRound = round;
+              mSkillNextIdx++;
+            }
+          } else if (Math.random() < 0.65) {
+            // 一般怪物：65% 機率從冷卻就緒的技能中隨機挑一招
+            const ready = [];
+            for (let si = 0; si < monster.skills.length; si++) {
+              const s = monster.skills[si];
+              const last = mSkillLast[si] ?? -999;
+              if (round - last >= (s.cooldown || 3)) ready.push({ s, si });
+            }
+            if (ready.length) {
+              const pick = ready[Math.floor(Math.random() * ready.length)];
+              mSkill = pick.s;
+              mSkillLast[pick.si] = round;
+              mLastSkillRound = round;
+            }
           }
         }
         // 防禦受 buff 影響
@@ -6638,23 +6655,37 @@
         }
         // 防禦受 buff 影響
         const effDef = (stats.def + (pBuff.def || 0)) * (1 + (pBuff.defPct || 0));
-        // 怪物技能挑選：每次 40% 機率，且距離自己上次技能 ≥ 2 回合（中間至少 1 次普攻）
+        // 怪物技能挑選
         let mSkill = null;
         const cdMap = mSkillLastByIdx[m.idx] = mSkillLastByIdx[m.idx] || {};
         const lastSkillR = cdMap.__lastSkillR ?? -999;
         const skillsAllowed = (round - lastSkillR) >= 1;
-        if (skillsAllowed && Array.isArray(m.skills) && m.skills.length && Math.random() < 0.65) {
-          const ready = [];
-          for (let si = 0; si < m.skills.length; si++) {
+        if (skillsAllowed && Array.isArray(m.skills) && m.skills.length) {
+          if (m.fixedSkillOrder) {
+            // ⭐ 固定出招順序：按陣列循環，等 CD 就緒才出招
+            cdMap.__nextIdx = cdMap.__nextIdx || 0;
+            const si = cdMap.__nextIdx % m.skills.length;
             const s = m.skills[si];
             const last = cdMap[si] ?? -999;
-            if (round - last >= (s.cooldown || 3)) ready.push({ s, si });
-          }
-          if (ready.length) {
-            const pick = ready[Math.floor(Math.random() * ready.length)];
-            mSkill = pick.s;
-            cdMap[pick.si] = round;
-            cdMap.__lastSkillR = round;
+            if (round - last >= (s.cooldown || 3)) {
+              mSkill = s;
+              cdMap[si] = round;
+              cdMap.__lastSkillR = round;
+              cdMap.__nextIdx++;
+            }
+          } else if (Math.random() < 0.65) {
+            const ready = [];
+            for (let si = 0; si < m.skills.length; si++) {
+              const s = m.skills[si];
+              const last = cdMap[si] ?? -999;
+              if (round - last >= (s.cooldown || 3)) ready.push({ s, si });
+            }
+            if (ready.length) {
+              const pick = ready[Math.floor(Math.random() * ready.length)];
+              mSkill = pick.s;
+              cdMap[pick.si] = round;
+              cdMap.__lastSkillR = round;
+            }
           }
         }
         // 反傷（受到傷害的 50%，最多 300）
