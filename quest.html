@@ -2381,6 +2381,7 @@
   //   WB9_TESTING_NO_REWARDS = true → 獎勵都不發（避免測試弄壞玩家進度）
   //   設為 false 後恢復正常結算
   const WB9_TESTING_NO_REWARDS = false;    // ⭐ 獎勵正式開放
+  const WB9_MAINTENANCE = true;            // 🔧 維護中 → true = 封閉世界王入口（改完再設 false）
   const WB9_MAX_XP_PER_FIGHT   = 500;      // ⭐ v9 單場最多 500 EXP（舊版 1000）
   // 擊殺結算獎勵（所有世界王通用）
   const WB9_KILL_REWARDS = {
@@ -2899,6 +2900,20 @@
   function wb9RenderImpl(me, r, cdRemain, onCd, myQueuedBossId) {
     const el = document.getElementById('worldBossBody');
     if (!el) return;
+    // 🔧 維護模式
+    if (WB9_MAINTENANCE) {
+      el.innerHTML = `
+        <div style="text-align:center; padding:40px 20px;">
+          <div style="font-size:48px; margin-bottom:12px;">🔧</div>
+          <div style="font-weight:800; font-size:18px; color:#7c3aed; margin-bottom:8px;">世界王系統維護中</div>
+          <div style="font-size:13px; color:#6b7280; line-height:1.7;">
+            伺服器冷卻防護升級中，請重新整理頁面取得最新版本。<br>
+            維護完成後將自動恢復，感謝耐心等候 🙏
+          </div>
+          <div style="margin-top:16px; font-size:11px; color:#d1d5db;">v${APP_VERSION}</div>
+        </div>`;
+      return;
+    }
     const cardsHtml = WB9_BOSSES.map(boss => {
       const state = wb9GetState(boss.id);
       const hpPct = Math.max(0, Math.min(100, (state.hp / boss.maxHp) * 100));
@@ -8886,7 +8901,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505f';
+  const APP_VERSION = '20260505g';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
@@ -13489,6 +13504,7 @@ ${b.text}
       <button class="btn btn-danger" onclick="adminClearWorldBossCloud()" style="margin-top:6px; background:linear-gradient(135deg,#fca5a5,#7f1d1d); box-shadow:0 4px 0 #450a0a;">🗑 清空雲端 worldBoss（v9 重寫前歸零）</button>
       <button class="btn btn-danger" onclick="adminResetBosses()" style="margin-top:6px; background:linear-gradient(135deg,#fdba74,#c2410c); box-shadow:0 4px 0 #7c2d12;">🗑 重置世界王紀錄（HP / 排隊 / 戰報 / 待領獎）</button>
       <button class="btn btn-danger" onclick="adminRevokeKillRewards()" style="margin-top:6px; background:linear-gradient(135deg,#f9a8d4,#be185d); box-shadow:0 4px 0 #9d174d;">🔄 回收擊殺獎勵（清全員 扭蛋幣 / 原石 / claimedKills）</button>
+      <button class="btn btn-danger" onclick="adminResetWb9Server()" style="margin-top:6px; background:linear-gradient(135deg,#818cf8,#4338ca); box-shadow:0 4px 0 #3730a3;">🔄 世界王伺服器重開（清隊列 / 冷卻 / 重置 HP）</button>
       <button class="btn btn-danger" onclick="adminResetLeaderboard()" style="margin-top:6px; background:linear-gradient(135deg,#fde047,#d97706); box-shadow:0 4px 0 #92400e; color:#7c2d12;">🏆 重置排行榜（所有玩家等級 / 鵝鵝幣 / 綠茶遭遇歸零）</button>
       <button class="btn btn-danger" onclick="adminWipeAll()" style="margin-top:6px; background:linear-gradient(135deg,#fca5a5,#7f1d1d); box-shadow:0 4px 0 #450a0a;">💀 全玩家洗白（伺服器 + 本地都重置）</button>
       <button class="btn btn-secondary" onclick="adminMigrateAccessoryToRing()" style="margin-top:6px; background:linear-gradient(135deg,#ddd6fe,#7c3aed); box-shadow:0 4px 0 #6d28d9; color:#fff;">💍 遷移：飾品槽戒指 → 戒指槽（所有玩家）</button>
@@ -13921,6 +13937,38 @@ ${b.text}
     }
   }
   window.adminRevokeKillRewards = adminRevokeKillRewards;
+
+  // ⭐ 世界王伺服器重開：清隊列、冷卻時間戳、重置 HP，保留 killCount / 戰報
+  async function adminResetWb9Server() {
+    const sure = confirm(
+      '🔄 重開世界王伺服器？\n\n會對所有王執行：\n• 隊列清空\n• 冷卻時間戳（attackCooldowns）歸零\n• HP 重置為滿血\n\n保留：killCount / 戰報 / damageLog\n\n確定？'
+    );
+    if (!sure) return;
+    if (!window.__firebaseSync?.wb9SaveBoss) { showToast('☁️ 尚未連線雲端'); return; }
+    try {
+      for (const boss of WB9_BOSSES) {
+        const cur = wb9GetState(boss.id);
+        const fresh = {
+          hp: boss.maxHp,
+          queue: [],
+          attackCooldowns: {},
+          damageLog: cur.damageLog || {},
+          killCount: cur.killCount || 0,
+          recentBattles: cur.recentBattles || [],
+          lastKill: cur.lastKill || null,
+          lastHitAt: cur.lastHitAt || null,
+        };
+        await window.__firebaseSync.wb9SaveBoss(boss.id, fresh);
+        wb9[boss.id] = fresh;
+      }
+      wb9Render({ force: true });
+      showToast('✅ 世界王伺服器已重開！隊列/冷卻已清空，HP 滿血');
+    } catch (e) {
+      showToast('❌ 重開失敗：' + (e?.message || e));
+      console.error('adminResetWb9Server', e);
+    }
+  }
+  window.adminResetWb9Server = adminResetWb9Server;
 
   // ⭐ 補滿所有世界王 HP（保留排隊 / 戰報 / 已殺次數）
   // ⭐ HP 平衡遷移：依 baseId 重建裝備（套新詞綴/稀有度/階層 mult）
