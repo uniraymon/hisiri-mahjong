@@ -10296,19 +10296,30 @@ ${b.text}
   }
   window.backToBackpack = backToBackpack;
 
+  // ⭐ 判斷某物品是否為戒指部位（slot 可能是舊值 'accessory'，故同時檢查 baseId / id）
+  const RING_ITEM_IDS = new Set(['c_ring','c_foot','c_ruby','c_heart','c_oracle']);
+  function isRingItem(item) {
+    if (!item) return false;
+    if (item.slot === 'ring') return true;
+    if (RING_ITEM_IDS.has(item.baseId)) return true;
+    if (RING_ITEM_IDS.has(item.id)) return true;
+    return false;
+  }
+
   function equipFromInvAndClose(idx) {
     const me = getMe(); if (!me) return;
     const r = getRpg(me);
-    const item = resolveItem(r.inventory[idx]);
-    if (item && item.slot === 'ring') {
-      // 戒指：先選槽位
+    const entry = r.inventory[idx];
+    const item = resolveItem(entry);
+    if (isRingItem(item)) {
+      // ⭐ 確保物件 instance 的 slot 已更新，避免後續 equipFromInv 放錯槽
+      if (typeof entry === 'object' && entry !== null) entry.slot = 'ring';
       hideModal();
       pickRingSlotAndEquip(idx);
       return;
     }
     hideModal();
     equipFromInv(idx);
-    // 回到裝備 modal 看結果
     if (typeof showEquipmentModal === 'function') showEquipmentModal();
   }
   window.equipFromInvAndClose = equipFromInvAndClose;
@@ -12428,6 +12439,9 @@ ${b.text}
         <button class="btn btn-secondary" onclick="adminAddExploreCoins(200)">+200</button>
       </div>
 
+      <div class="shop-section-title">🎁 給自己硬幣（選幣種）</div>
+      <button class="btn btn-secondary" onclick="adminShowSelfGrantModal()" style="width:100%; background:linear-gradient(135deg,#fde68a,#f59e0b); color:#7c2d12;">💰 選幣種 + 數量 → 給自己</button>
+
       <div class="shop-section-title">⭐ 經驗值（會自動升級）</div>
       <div class="debug-grid">
         <button class="btn btn-secondary" onclick="adminAddXp(100)">+100</button>
@@ -12494,6 +12508,50 @@ ${b.text}
     showToast(`🧭 +${amount} 探險幣（現有 ${r.exploreCoins}）`);
   }
   window.adminAddExploreCoins = adminAddExploreCoins;
+
+  // ⭐ 給自己硬幣（Debug 用）
+  function adminShowSelfGrantModal() {
+    const optionsHtml = GRANT_COIN_TYPES.map(c =>
+      `<option value="${c.id}">${c.label}</option>`
+    ).join('');
+    const html = `
+      <div style="font-size:13px;">
+        <div style="font-weight:700; color:#7c3aed; margin-bottom:10px;">選擇幣種</div>
+        <select id="selfCoinType" style="width:100%; padding:8px; border:2px solid #ddd6fe; border-radius:8px; font-family:inherit; font-size:13px; margin-bottom:12px;">
+          ${optionsHtml}
+        </select>
+        <div style="font-weight:700; color:#7c3aed; margin-bottom:6px;">數量</div>
+        <input id="selfCoinAmt" type="number" min="1" value="10"
+          style="width:100%; padding:8px; border:2px solid #ddd6fe; border-radius:8px; font-family:inherit; font-size:14px; text-align:center; margin-bottom:14px;">
+        <button class="btn btn-primary" style="width:100%;" onclick="adminSelfGrantCoin()">💰 給自己</button>
+        <button class="btn btn-secondary" style="width:100%; margin-top:6px;" onclick="showDebugModal()">← 返回</button>
+      </div>
+    `;
+    showModal('💰 給自己硬幣', html);
+  }
+  window.adminShowSelfGrantModal = adminShowSelfGrantModal;
+
+  async function adminSelfGrantCoin() {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const typeId = document.getElementById('selfCoinType')?.value;
+    const amt = Math.max(1, parseInt(document.getElementById('selfCoinAmt')?.value) || 1);
+    const coinDef = GRANT_COIN_TYPES.find(c => c.id === typeId);
+    if (!coinDef) return;
+    if (typeId.startsWith('bc_')) {
+      await addBossCoin(me.id, typeId, amt);
+    } else if (typeId === 'gooseCoins') {
+      me.coinsSpent = (me.coinsSpent || 0) - amt;
+      saveData();
+    } else if (typeId === 'exploreCoins') {
+      r.exploreCoins = (r.exploreCoins || 0) + amt;
+      saveData();
+    }
+    render();
+    showDebugModal();
+    showToast(`${coinDef.icon} +${amt} ${coinDef.label}`);
+  }
+  window.adminSelfGrantCoin = adminSelfGrantCoin;
 
   // ⭐ 遷移：飾品槽裡的戒指類物品 → 戒指 1 / 戒指 2
   const RING_BASE_IDS = ['c_ring','c_foot','c_ruby','c_heart','c_oracle'];
