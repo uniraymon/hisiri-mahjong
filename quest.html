@@ -2202,7 +2202,7 @@
 
   // ⭐ HOF 風格的特化怪物：每隻有獨特性格（紙鵝 / 鏡鵝 / 速鵝 / 鋼鵝 / 法鵝...）
     // 紙鵝 (paper goose)：永遠只扣 1 但血量超低（10），特殊「永遠 1 傷害」機制
-    { id: 'paper', tier: 1, name: '紙鵝',  icon: '📄', hpBase: 10, atkBase: 4, defBase: 0, spdBase: 5, goldBase: 8, xpBase: 25,
+    { id: 'paper', tier: 1, name: '紙鵝',  icon: '📄', hpBase: 10, fixedHp: 10, atkBase: 4, defBase: 0, spdBase: 5, goldBase: 8, xpBase: 25,
       verb: '輕飄飄碰一下', ability: { type: 'flatCapDmg', cap: 1 },
       dialogue: ['鵝鵝會被一拳就打飛...', '請別太用力...', '我是紙做的喔'],
       deathLine: ['啊...折成兩半了...', '謝謝你...沒有用力...', '化作蝴蝶飛走...'] },
@@ -5536,8 +5536,8 @@
         return {
           ...chest,
           level: lv,
-          hp: Math.round(chest.hpBase * monsterHPK(lv)),
-          maxHp: Math.round(chest.hpBase * monsterHPK(lv)),
+          hp: chest.fixedHp ?? Math.round(chest.hpBase * monsterHPK(lv)),
+          maxHp: chest.fixedHp ?? Math.round(chest.hpBase * monsterHPK(lv)),
           atk: Math.round(chest.atkBase * k * 1.0),
           def: Math.round(chest.defBase * monsterDEFK(lv) * 0.7),
           spd: Math.round(chest.spdBase + lv * 0.3),
@@ -5559,8 +5559,8 @@
         return {
           ...elite,
           level: lv,
-          hp: Math.round(elite.hpBase * monsterHPK(lv)),
-          maxHp: Math.round(elite.hpBase * monsterHPK(lv)),
+          hp: elite.fixedHp ?? Math.round(elite.hpBase * monsterHPK(lv)),
+          maxHp: elite.fixedHp ?? Math.round(elite.hpBase * monsterHPK(lv)),
           atk: Math.round(elite.atkBase * k * 1.3),
           def: Math.round(elite.defBase * monsterDEFK(lv) * 0.7),
           spd: Math.round(elite.spdBase + lv * 0.4),
@@ -5591,8 +5591,8 @@
     return {
       ...m,
       level: lv,
-      hp: Math.round(m.hpBase * monsterHPK(lv)),
-      maxHp: Math.round(m.hpBase * monsterHPK(lv)),
+      hp: m.fixedHp ?? Math.round(m.hpBase * monsterHPK(lv)),
+      maxHp: m.fixedHp ?? Math.round(m.hpBase * monsterHPK(lv)),
       // atk 倍率 1.5 → 1.3：因為 atkBase 已重新調高，總體 atk 仍變強
       atk: Math.round(m.atkBase * k * 1.3),
       def: Math.round(m.defBase * monsterDEFK(lv) * 0.7),
@@ -10090,8 +10090,8 @@ ${b.text}
       out.push({
         ...m,
         level: lv,
-        hp: Math.round(m.hpBase * monsterHPK(lv) * 0.6),
-        maxHp: Math.round(m.hpBase * monsterHPK(lv) * 0.6),
+        hp: m.fixedHp ?? Math.round(m.hpBase * monsterHPK(lv) * 0.6),
+        maxHp: m.fixedHp ?? Math.round(m.hpBase * monsterHPK(lv) * 0.6),
         atk: Math.round(m.atkBase * k * 0.9),
         def: Math.round(m.defBase * monsterDEFK(lv) * 0.6),
         spd: Math.round(m.spdBase + lv * 0.4),
