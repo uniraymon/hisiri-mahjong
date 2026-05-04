@@ -3427,19 +3427,19 @@
 
   // ⭐ 鵝王恩賜（金裝飾品，鵝王扭蛋專屬）
   //   全部同名「鵝王恩賜」，能力寫在「特殊詞條」（只有這裡會出現）
-  //   基底每件都 +5 ATK，特殊詞條額外加屬性
+  //   基底每件都 +5 ATK +5 MARK，特殊詞條額外加屬性
   const BOSS_GIFTS = [
-    { id: 'bg_crit',    name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 5, critChance: 0.04,
+    { id: 'bg_crit',    name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 5, mark: 5, critChance: 0.04,
       isBossGift: true, rarity: 'gold', affixDesc: '+4% 暴擊率（鵝王恩賜限定）' },
-    { id: 'bg_mp',      name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 5, mp: 10,
+    { id: 'bg_mp',      name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 5, mark: 5, mp: 10,
       isBossGift: true, rarity: 'gold', affixDesc: '+10 MP（鵝王恩賜限定）' },
-    { id: 'bg_atk',     name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 10,
+    { id: 'bg_atk',     name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 10, mark: 5,
       isBossGift: true, rarity: 'gold', affixDesc: '+5 ATK（疊在基底之上）' },
-    { id: 'bg_hp',      name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 5, hp: 50,
+    { id: 'bg_hp',      name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 5, mark: 5, hp: 50,
       isBossGift: true, rarity: 'gold', affixDesc: '+50 HP（鵝王恩賜限定）' },
-    { id: 'bg_critdmg', name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 5, critDmg: 0.10,
+    { id: 'bg_critdmg', name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 5, mark: 5, critDmg: 0.10,
       isBossGift: true, rarity: 'gold', affixDesc: '+10% 爆傷（鵝王恩賜限定）' },
-    { id: 'bg_mpregen', name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 5, mpRegen: 1,
+    { id: 'bg_mpregen', name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 5, mark: 5, mpRegen: 1,
       isBossGift: true, rarity: 'gold', affixDesc: '每回合 +1 MP（鵝王恩賜限定）' },
   ];
 
@@ -8882,7 +8882,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505d';
+  const APP_VERSION = '20260505e';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
