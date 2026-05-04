@@ -8262,41 +8262,117 @@
       </button>`;
     }).join('');
 
-    // ── 精魂背包 ──
-    const bagHtml = bag.length === 0
-      ? '<div style="font-size:12px; color:#9ca3af; padding:16px; text-align:center;">背包沒有精魂<br><span style="font-size:10px;">打王掉的精魂會放在這裡</span></div>'
-      : bag.map((sp, idx) => {
-          const affixLines = (sp.affixes || []).map(a =>
-            `<div style="color:#7c3aed; font-size:9px;">✦ ${escapeHtml(a.name)}（+${a.val} ${a.type.toUpperCase()}）</div>`
-          ).join('');
-          return `<button onclick="openSpiritActions(${idx})" style="background:linear-gradient(135deg,#fff,${sp.color}1a); border:2px solid ${sp.color}; border-radius:10px; padding:8px; cursor:pointer; font-family:inherit; text-align:left; width:100%;">
-            <div style="display:flex; gap:8px; align-items:flex-start;">
-              <div style="font-size:28px; flex-shrink:0;">${sp.icon}</div>
-              <div style="flex:1; min-width:0;">
-                <div style="font-size:11px; font-weight:700; color:${sp.color};">${escapeHtml(sp.name)}</div>
-                <div style="font-size:9px; color:#8b6f9b; margin-top:1px;">${escapeHtml(describeSpirit(sp))}</div>
-                ${affixLines}
-              </div>
-            </div>
-          </button>`;
-        }).join('');
+    // ── 精魂背包格子 ──
+    const selCount = __spiritSelected.size;
+    const toolbarHtml = `
+      <div class="inv-toolbar" style="margin-bottom:6px;">
+        <button class="it-btn ${__spiritBulkMode ? 'active' : ''}" onclick="toggleSpiritBulk()">
+          ${__spiritBulkMode ? '✓ 批量模式' : '☐ 批量拆解'}
+        </button>
+        ${__spiritBulkMode ? `
+          <button class="it-btn" onclick="selectAllSpiritBag()">全選</button>
+          <button class="it-btn" onclick="clearSpiritSelection()">取消選取</button>
+          <button class="it-btn danger" onclick="batchDisassembleSpirits()" ${selCount === 0 ? 'disabled' : ''}>
+            拆解（${selCount} 隻 → 💠×${selCount}）
+          </button>
+        ` : ''}
+        <span class="it-info">精魂 ${bag.length} 隻　💠 ${rpg.essenceFragments || 0} 片</span>
+      </div>`;
+
+    let bagGridHtml;
+    if (bag.length === 0) {
+      bagGridHtml = '<div style="font-size:12px; color:#9ca3af; padding:16px; text-align:center;">背包沒有精魂<br><span style="font-size:10px;">打王掉的精魂會放在這裡</span></div>';
+    } else {
+      const cells = bag.map((sp, idx) => {
+        const selected = __spiritSelected.has(idx);
+        const col = sp.color || '#a78bfa';
+        const shortName = escapeHtml(sp.name.replace('精魂', '').trim());
+        const tooltipText = sp.name + '\n' + describeSpirit(sp) + (sp.affixes || []).map(a => `\n✦ ${a.name} +${a.val}`).join('');
+        return `<button
+          class="inv-cell has-item ${__spiritBulkMode ? 'bulk-on' : ''} ${selected ? 'selected' : ''}"
+          style="border-color:${col}; background:linear-gradient(135deg,#2d1b69,${col}40);"
+          title="${escapeHtml(tooltipText)}"
+          onclick="onSpiritCellClick(${idx})">
+          <div class="ic-icon">${sp.icon}</div>
+          <div class="ic-name" style="${selected ? '' : `color:${col};`}">${shortName}</div>
+          ${__spiritBulkMode ? `<div class="ic-check">${selected ? '✓' : ''}</div>` : ''}
+        </button>`;
+      }).join('');
+      bagGridHtml = `<div class="inv-page-grid">${cells}</div>`;
+    }
 
     const html = `
       <div>
         <div style="font-size:11px; color:#5b3d62; padding:6px 10px; background:linear-gradient(135deg,#ede9fe,#ddd6fe); border-radius:8px; margin-bottom:10px; border:1px dashed #a78bfa;">
-          🌟 最多裝 5 個精魂　·　袋裡的精魂可裝備或拆解成 💠 精華碎片<br>
-          <b>精華碎片</b>：${rpg.essenceFragments || 0} 片（拆解精魂 1 隻 → 1 片）
+          🌟 最多裝 5 個精魂　·　袋裡的精魂可裝備或批量拆解成 💠 精華碎片
         </div>
         <div style="font-size:11px; color:#5b3d62; font-weight:700; margin-bottom:5px;">⚔️ 已裝備（${slots.filter(x=>x).length}/5）<span style="font-size:9px; font-weight:400; color:#9ca3af;">　點擊查看詳情 / 卸下</span></div>
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:5px; margin-bottom:12px;">${slotHtml}</div>
-        <div style="font-size:11px; color:#5b3d62; font-weight:700; margin-bottom:5px;">🎒 精魂背包（${bag.length}）<span style="font-size:9px; font-weight:400; color:#9ca3af;">　點擊裝備 / 拆解</span></div>
-        <div style="display:flex; flex-direction:column; gap:6px; max-height:38vh; overflow-y:auto;">${bagHtml}</div>
+        <div style="font-size:11px; color:#5b3d62; font-weight:700; margin-bottom:4px;">🎒 精魂背包（${bag.length}）<span style="font-size:9px; font-weight:400; color:#9ca3af;">　點擊查看 / 裝備；批量模式可多選拆解</span></div>
+        ${toolbarHtml}
+        <div style="max-height:42vh; overflow-y:auto;">${bagGridHtml}</div>
         <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:10px;">關閉</button>
       </div>
     `;
     showModal('🌟 精魂管理', html);
   }
   window.showSpiritsModal = showSpiritsModal;
+
+  // ── 精魂批量操作 ──
+  function toggleSpiritBulk() {
+    __spiritBulkMode = !__spiritBulkMode;
+    if (!__spiritBulkMode) __spiritSelected.clear();
+    showSpiritsModal();
+  }
+  window.toggleSpiritBulk = toggleSpiritBulk;
+
+  function selectAllSpiritBag() {
+    const me = getMe(); if (!me) return;
+    const bag = (getRpg(me).spiritBag || []);
+    __spiritSelected.clear();
+    bag.forEach((_, i) => __spiritSelected.add(i));
+    showSpiritsModal();
+  }
+  window.selectAllSpiritBag = selectAllSpiritBag;
+
+  function clearSpiritSelection() {
+    __spiritSelected.clear();
+    showSpiritsModal();
+  }
+  window.clearSpiritSelection = clearSpiritSelection;
+
+  function onSpiritCellClick(bagIdx) {
+    if (__spiritBulkMode) {
+      if (__spiritSelected.has(bagIdx)) __spiritSelected.delete(bagIdx);
+      else __spiritSelected.add(bagIdx);
+      showSpiritsModal();
+    } else {
+      openSpiritActions(bagIdx);
+    }
+  }
+  window.onSpiritCellClick = onSpiritCellClick;
+
+  function batchDisassembleSpirits() {
+    const me = getMe(); if (!me) return;
+    if (__spiritSelected.size === 0) return;
+    const rpg = getRpg(me);
+    const bag = rpg.spiritBag || [];
+    const count = __spiritSelected.size;
+    if (!confirm(`確定拆解選取的 ${count} 隻精魂？\n獲得 💠 精華碎片 ×${count}，無法還原。`)) return;
+    // 從高到低刪，避免 index 位移
+    const sorted = Array.from(__spiritSelected).sort((a, b) => b - a);
+    for (const idx of sorted) bag.splice(idx, 1);
+    rpg.spiritBag = bag;
+    rpg.essenceFragments = (rpg.essenceFragments || 0) + count;
+    __spiritSelected.clear();
+    __spiritBulkMode = false;
+    saveData();
+    renderCharCard();
+    renderCharQuickMenu();
+    showToast(`🔨 批量拆解 ${count} 隻！獲得 💠 精華碎片 ×${count}（共 ${rpg.essenceFragments} 片）`);
+    showSpiritsModal();
+  }
+  window.batchDisassembleSpirits = batchDisassembleSpirits;
 
   // ==========================================================================
   // 🎰 扭蛋系統（多機台 hub + 探險扭蛋）
@@ -9139,7 +9215,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505s';
+  const APP_VERSION = '20260505042052';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
@@ -10109,6 +10185,10 @@ ${b.text}
   let __invPage = 0;
   let __invBulkMode = false;
   let __invSelected = new Set();   // 內容是 inventory 的「全域 idx」
+
+  // ── 精魂背包批量模式 ──
+  let __spiritBulkMode = false;
+  let __spiritSelected = new Set(); // 內容是 spiritBag 的 idx
 
   function showEquipmentModal() {
     const me = getMe(); if (!me) return;
