@@ -5710,7 +5710,17 @@
     const SPD_BASE = 30;
     let pSpd = Math.max(1, SPD_BASE + effectiveSpd);   // 受 buff 影響，每回合會重算
     const mSpd = Math.max(1, SPD_BASE + monster.spd);
+    // ⭐ SPD 軟上限：行動比率 > 1.5:1 後急速遞減效益，接近 2:1 為實際極限
+    //   公式：effRatio = 1.5 + 0.5 × excess / (0.2 + excess)  [excess = rawRatio - 1.5]
+    //   excess=0.5 → effRatio≈1.86  /  excess=1.0 → effRatio≈1.92  /  excess→∞ → effRatio→2.0
+    const _capSpd = (rawP, refM) => {
+      const raw = rawP / refM;
+      if (raw <= 1.5) return rawP;
+      const excess = raw - 1.5;
+      return (1.5 + 0.5 * excess / (0.2 + excess)) * refM;
+    };
     // 雙方都從 0 開始填條，誰先達到 100 誰先出手（速度高自然先到）
+    let effPSpd = _capSpd(pSpd, mSpd);
     let pGauge = 0, mGauge = 0;
     // ⭐ 戰鬥 log 加上「ATB 進度」資訊：UI 可畫出 SPD 進度條
     //   為了避免每個 push 都手動加 gauge，直接 monkey-patch log.push：
@@ -5722,7 +5732,7 @@
           e.gauge = {
             p: Math.max(0, Math.min(100, pGauge)),
             m: Math.max(0, Math.min(100, mGauge)),
-            pSpd, mSpd,
+            pSpd: effPSpd, mSpd,
           };
         }
         return __origPush(e);
@@ -5739,7 +5749,7 @@
     let mSkillNextIdx = 0;
 
     log.push({ type: 'system', text: `═══ ⚔️ ${player.name} VS ${monster.icon} ${monster.name} Lv ${monster.level} ═══` });
-    log.push({ type: 'system', text: `🌬 速度：你 ${effectiveSpd} vs ${monster.name} ${monster.spd}（行動頻率比 ${(pSpd/mSpd).toFixed(2)} : 1）` });
+    log.push({ type: 'system', text: `🌬 速度：你 ${effectiveSpd} vs ${monster.name} ${monster.spd}（行動頻率比 ${(effPSpd/mSpd).toFixed(2)} : 1${effPSpd < pSpd ? '，速度軟上限啟動' : ''}）` });
     if (monster.dialogue && monster.dialogue.length) {
       const line = monster.dialogue[Math.floor(Math.random() * monster.dialogue.length)];
       log.push({ type: 'monster', text: `${monster.icon} ${monster.name}：「${line}」` });
@@ -5755,11 +5765,12 @@
       // 重算 pSpd（含 buff）
       const pBuff = getBuffBonus(playerObj);
       pSpd = Math.max(1, SPD_BASE + effectiveSpd + (pBuff.spd || 0));
+      effPSpd = _capSpd(pSpd, mSpd); // ⭐ 套用 SPD 軟上限
       // 推進時間：跳到下一個「條滿」的瞬間
       const pNeed = Math.max(0, ATB_THRESHOLD - pGauge);
       const mNeed = Math.max(0, ATB_THRESHOLD - mGauge);
-      const dt = Math.min(pNeed / pSpd, mNeed / mSpd);
-      pGauge += dt * pSpd;
+      const dt = Math.min(pNeed / effPSpd, mNeed / mSpd);
+      pGauge += dt * effPSpd;
       mGauge += dt * mSpd;
 
       // 決定誰先出手：若同時滿條，gauge 較大者先；否則只有滿條那邊出手
@@ -6406,6 +6417,19 @@
     const ATB_THRESHOLD = 100;
     const SPD_BASE = 30; // ⭐ 扁平化：每方加上基礎值，避免極端比例
     let pSpd = Math.max(1, SPD_BASE + effectiveSpd); // 受 buff 影響，每回合會重算
+    // 把怪物 gauge 速度也加 SPD_BASE
+    mList.forEach(m => { m._effSpd = Math.max(1, SPD_BASE + (m.spd || 0)); });
+    // ⭐ SPD 軟上限：以存活怪物的平均速度為基準，比率 > 1.5:1 後急速遞減，~2:1 為實際極限
+    const _capSpdM = (rawP) => {
+      const aliveM = mList.filter(m => m.alive);
+      if (!aliveM.length) return rawP;
+      const avgMSpd = aliveM.reduce((s, m) => s + m._effSpd, 0) / aliveM.length;
+      const raw = rawP / avgMSpd;
+      if (raw <= 1.5) return rawP;
+      const excess = raw - 1.5;
+      return (1.5 + 0.5 * excess / (0.2 + excess)) * avgMSpd;
+    };
+    let effPSpd = _capSpdM(pSpd);
     let pGauge = 0;
     // ⭐ 試煉戰場：log 加上 ATB 進度（玩家 + 最快的怪）
     {
@@ -6417,14 +6441,12 @@
           e.gauge = {
             p: Math.max(0, Math.min(100, pGauge)),
             m: Math.max(0, Math.min(100, topM)),
-            pSpd,
+            pSpd: effPSpd,
           };
         }
         return __origPush(e);
       };
     }
-    // 把怪物 gauge 速度也加 SPD_BASE
-    mList.forEach(m => { m._effSpd = Math.max(1, SPD_BASE + (m.spd || 0)); });
     // 怪物技能冷卻（每隻獨立）
     const mSkillLastByIdx = {}; // mSkillLastByIdx[mIdx][skillIdx] = round
 
@@ -6439,13 +6461,14 @@
       // 重算 pSpd（含 buff）
       const pBuff = getBuffBonus(playerObj);
       pSpd = Math.max(1, SPD_BASE + effectiveSpd + (pBuff.spd || 0));
+      effPSpd = _capSpdM(pSpd); // ⭐ 套用 SPD 軟上限（對存活怪物平均速度）
       // ATB 推進（用 _effSpd 已加 SPD_BASE）
       const aliveM = mList.filter(m => m.alive);
       const pNeed = Math.max(0, ATB_THRESHOLD - pGauge);
-      const pTime = pNeed / pSpd;
+      const pTime = pNeed / effPSpd;
       const mTimes = aliveM.map(m => Math.max(0, ATB_THRESHOLD - m.gauge) / Math.max(1, m._effSpd));
       const dt = Math.min(pTime, ...(mTimes.length ? mTimes : [Infinity]));
-      pGauge += dt * pSpd;
+      pGauge += dt * effPSpd;
       aliveM.forEach(m => m.gauge += dt * m._effSpd);
 
       // 決定動作者：所有 gauge ≥ 100 的中，最大者；同分玩家先
