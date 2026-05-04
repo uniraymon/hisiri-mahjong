@@ -12461,7 +12461,7 @@ ${b.text}
       <button class="btn btn-secondary" onclick="adminRefillAllStamina()" style="margin-top:6px; background:linear-gradient(135deg,#bfdbfe,#3b82f6); box-shadow:0 4px 0 #1d4ed8; color:#fff;">⚡ 全體補滿體力（所有玩家）</button>
       <button class="btn btn-secondary" onclick="adminEditBossStats()" style="margin-top:6px; background:linear-gradient(135deg,#fde68a,#f59e0b); box-shadow:0 4px 0 #b45309; color:#7c2d12;">🐉 編輯 Boss 能力（世界王 + 個人王）</button>
       <button class="btn btn-secondary" onclick="adminRefillBosses()" style="margin-top:6px; background:linear-gradient(135deg,#86efac,#16a34a); box-shadow:0 4px 0 #15803d; color:#fff;">💚 補滿世界王 HP（保留排隊 / 戰報）</button>
-      <button class="btn btn-secondary" onclick="adminGrantAllBossCoins(4)" style="margin-top:6px; background:linear-gradient(135deg,#fde047,#f59e0b); box-shadow:0 4px 0 #d97706; color:#7c2d12;">👑 全員 +4 鵝皇硬幣（鵝王扭蛋用）</button>
+      <button class="btn btn-secondary" onclick="adminShowGrantCoinsModal()" style="margin-top:6px; background:linear-gradient(135deg,#fde047,#f59e0b); box-shadow:0 4px 0 #d97706; color:#7c2d12;">🎁 全員發放硬幣（選幣種 + 數量）</button>
       <button class="btn btn-secondary" onclick="adminShowHpBreakdown()" style="margin-top:6px; background:linear-gradient(135deg,#fca5a5,#dc2626); box-shadow:0 4px 0 #991b1b; color:#fff;">🩸 全員血量明細（看誰 HP 偏高）</button>
       <button class="btn btn-secondary" onclick="adminApplyHpRebalanceAll()" style="margin-top:6px; background:linear-gradient(135deg,#a78bfa,#7c3aed); box-shadow:0 4px 0 #6d28d9; color:#fff;">🩸 全員 HP 平衡遷移（裝備 / 精魂套新公式）</button>
       <button class="btn btn-danger" onclick="adminClearWorldBossCloud()" style="margin-top:6px; background:linear-gradient(135deg,#fca5a5,#7f1d1d); box-shadow:0 4px 0 #450a0a;">🗑 清空雲端 worldBoss（v9 重寫前歸零）</button>
@@ -12927,28 +12927,72 @@ ${b.text}
   }
   window.adminApplyHpRebalanceAll = adminApplyHpRebalanceAll;
 
-  // ⭐ 全員送 N 顆鵝皇硬幣（用 atomic increment，per-player tx）
-  //    Phase A 後不再 forceWriteAllPlayers 全量覆蓋（會吃掉玩家剛拿到的裝備）
-  async function adminGrantAllBossCoins(qty) {
-    const n = Math.max(1, qty | 0);
-    if (!confirm(`👑 送給全員 ${n} 顆鵝皇硬幣（任何王扭蛋都可用）？\n用 atomic increment 寫入，不會覆蓋玩家剛拿到的裝備。`)) return;
-    let granted = 0;
-    let failed = 0;
+  // ⭐ 全員發放硬幣：選幣種 + 數量
+  const GRANT_COIN_TYPES = [
+    { id: 'gooseCoins',       label: '🪙 鵝鵝幣',       icon: '🪙' },
+    { id: 'exploreCoins',     label: '🧭 探險幣',       icon: '🧭' },
+    { id: 'bc_goose_king',    label: '👑 鵝皇硬幣',     icon: '👑' },
+    { id: 'bc_dragon_goose',  label: '🐲 古龍鵝硬幣',  icon: '🐲' },
+    { id: 'bc_pebble_goose',  label: '🪨 鵝卵石硬幣',  icon: '🪨' },
+  ];
+
+  function adminShowGrantCoinsModal() {
+    const optionsHtml = GRANT_COIN_TYPES.map(c =>
+      `<option value="${c.id}">${c.label}</option>`
+    ).join('');
+    const html = `
+      <div style="font-size:13px;">
+        <div style="font-weight:700; color:#7c3aed; margin-bottom:10px;">選擇幣種</div>
+        <select id="grantCoinType" style="width:100%; padding:8px; border:2px solid #ddd6fe; border-radius:8px; font-family:inherit; font-size:13px; margin-bottom:12px;">
+          ${optionsHtml}
+        </select>
+        <div style="font-weight:700; color:#7c3aed; margin-bottom:6px;">數量（每位玩家）</div>
+        <input id="grantCoinAmt" type="number" min="1" value="4"
+          style="width:100%; padding:8px; border:2px solid #ddd6fe; border-radius:8px; font-family:inherit; font-size:14px; text-align:center; margin-bottom:14px;">
+        <button class="btn btn-primary" style="width:100%;" onclick="adminGrantAllCoins()">🎁 發放給全員</button>
+        <button class="btn btn-secondary" style="width:100%; margin-top:6px;" onclick="showDebugModal()">← 返回</button>
+      </div>
+    `;
+    showModal('🎁 全員發放硬幣', html);
+  }
+  window.adminShowGrantCoinsModal = adminShowGrantCoinsModal;
+
+  async function adminGrantAllCoins() {
+    const typeId = document.getElementById('grantCoinType')?.value;
+    const amt = Math.max(1, parseInt(document.getElementById('grantCoinAmt')?.value) || 1);
+    const coinDef = GRANT_COIN_TYPES.find(c => c.id === typeId);
+    if (!coinDef) return;
+    if (!confirm(`${coinDef.icon} 發給全員各 ${amt} ${coinDef.label}？`)) return;
+
+    let granted = 0, failed = 0;
+    const isBossCoin = typeId.startsWith('bc_');
+
     for (const p of players) {
       if (!p || !p.id) continue;
       try {
-        await addBossCoin(p.id, 'bc_goose_king', n);
+        if (isBossCoin) {
+          // 用 atomic tx 寫入（不覆蓋其他資料）
+          await addBossCoin(p.id, typeId, amt);
+        } else if (typeId === 'gooseCoins') {
+          // 鵝鵝幣：調整 coinsSpent
+          p.coinsSpent = (p.coinsSpent || 0) - amt;
+        } else if (typeId === 'exploreCoins') {
+          p.rpg = p.rpg || {};
+          p.rpg.exploreCoins = (p.rpg.exploreCoins || 0) + amt;
+        }
         granted++;
       } catch (e) {
-        console.warn('grant boss coin failed for', p.id, e);
+        console.warn('grant coins failed for', p.id, e);
         failed++;
       }
     }
+    // 非 bossCoins 要手動寫回
+    if (!isBossCoin) saveData();
     render();
     hideModal();
-    showToast(`👑 已發給 ${granted} 位玩家 各 ${n} 顆鵝皇硬幣${failed ? `（${failed} 位失敗）` : ''}`);
+    showToast(`${coinDef.icon} 已發給 ${granted} 位玩家各 ${amt} ${coinDef.label}${failed ? `（${failed} 失敗）` : ''}`);
   }
-  window.adminGrantAllBossCoins = adminGrantAllBossCoins;
+  window.adminGrantAllCoins = adminGrantAllCoins;
 
   // ⭐ 顯示全員 HP 明細：基底 / 等級成長 / 技能 / 能力 / 裝備 / 套裝 / 寶物 / 精魂
   function adminShowHpBreakdown() {
