@@ -4671,16 +4671,30 @@
       if (lInv.length - rInv.length >= 2 && (Date.now() - localTs) < 60_000) return true;
     }
 
-    // Check 2：裝備回朔偵測 — item 在 local equipment 但出現在 remote inventory（pre-equip 快照）
+    // Check 2：裝備回朔偵測
+    // 2a：local equipmentLastChanged 比 remote 新 → local 裝備欄更新，不能被蓋掉（5 分鐘視窗）
+    const lEqTs = Number(local.rpg?.equipmentLastChanged) || 0;
+    const rEqTs = Number(remote.rpg?.equipmentLastChanged) || 0;
+    if (lEqTs > rEqTs && (Date.now() - lEqTs) < 300_000) return true;
+    // 2b：傳統檢查（item 在 local equipment 但出現在 remote inventory）
     if (win2m) {
       const lEq = local.rpg?.equipment;
       const rEq = remote.rpg?.equipment;
       if (lEq && typeof lEq === 'object') {
         const rInvArr = Array.isArray(rInv) ? rInv : [];
         const rEqSafe = (rEq && typeof rEq === 'object') ? rEq : {};
+        const resolveId = (x) => (x && typeof x === 'object') ? (x.id || null) : x;
         for (const slot of Object.keys(lEq)) {
           const localItem = lEq[slot];
-          if (localItem && !rEqSafe[slot] && rInvArr.includes(localItem)) return true;
+          if (!localItem || rEqSafe[slot]) continue;
+          const localId = resolveId(localItem);
+          // local 裝備某 slot 但 remote 沒裝 → 只要 remote inventory 有該 item → 保護
+          if (localId && rInvArr.some(r => resolveId(r) === localId)) return true;
+          // 或：local 裝備某 slot 但 remote 完全沒有（不在 inv 也不在 eq）→ local 可能是較新的精英裝備
+          if (localId && !rInvArr.some(r => resolveId(r) === localId) && !rEqSafe[slot]) {
+            // 只在 localTs 比 rEqTs 新且距今 2 分鐘內保護
+            if ((Date.now() - localTs) < 120_000 && localTs > rEqTs) return true;
+          }
         }
       }
     }
@@ -11701,6 +11715,7 @@ ${b.text}
     if (cur) rpg.inventory.push(cur);
     rpg.equipment[item.slot] = entry;
     rpg.inventory.splice(idx, 1);
+    rpg.equipmentLastChanged = Date.now();
     syncEquipped(me);
     saveData();
     renderCharCard();
@@ -11716,6 +11731,7 @@ ${b.text}
     if (!cur) return;
     rpg.inventory.push(cur);
     rpg.equipment[slot] = null;
+    rpg.equipmentLastChanged = Date.now();
     syncEquipped(me);
     saveData();
     renderCharCard();
