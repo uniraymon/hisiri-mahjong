@@ -2638,7 +2638,8 @@
       goldDrop: 0, xpDrop: 0,
     };
 
-    const result  = autoFight(me, monster);
+    const _wbPage = r.wbPatternPage?.[bossId];
+    const result  = autoFight(me, monster, typeof _wbPage === 'number' ? { patternPage: _wbPage } : undefined);
     const dmgRaw  = Math.round(Math.max(0, state.hp - result.mHpFinal) * 1.3); // ⭐ 世界王傷害 × 1.3
 
     // 戰鬥快照（給 recentBattles）
@@ -3030,6 +3031,20 @@
       } else {
         actionHtml = `<button class="btn btn-primary" onclick="wb9JoinQueue('${boss.id}')" style="background:linear-gradient(135deg,#f59e0b,#dc2626); box-shadow:0 4px 0 #991b1b;">📋 加入排隊${queueCount > 0 ? `（前面 ${queueCount} 人）` : ''}</button>`;
       }
+      // 規則頁選擇器（世界王）
+      const _wbPageIdx = r.wbPatternPage?.[boss.id] ?? r.activePatternPage ?? 0;
+      const _wpNames = r.patternPageNames || ['頁 1', '頁 2', '頁 3', '頁 4'];
+      const wbPagePickerHtml = me ? `
+        <div style="display:flex; align-items:center; gap:6px; margin:8px 0 4px; flex-wrap:wrap;">
+          <span style="font-size:10px; color:#c4b5fd;">📋 規則：</span>
+          <select onchange="setWbPatternPage('${boss.id}', this.value)"
+            style="font-size:11px; padding:2px 5px; border-radius:5px; background:#1e1b4b; color:#fff; border:1px solid #7c3aed; cursor:pointer;">
+            ${[0,1,2,3].map(i => {
+              const cnt = (r.actionPatterns?.[i]||[]).length;
+              return `<option value="${i}" ${_wbPageIdx === i ? 'selected' : ''}>${escapeHtml(_wpNames[i]||'頁 '+(i+1))} (${cnt}條)</option>`;
+            }).join('')}
+          </select>
+        </div>` : '';
       const killBanner        = wb9KillBannerHtml(state);
       const recentBattlesHtml = wb9RecentBattlesHtml(state, boss);
       const leaderboardHtml   = wb9DamageLeaderboardHtml(state);
@@ -3055,6 +3070,7 @@
             <div class="boss-hp-text">${state.hp.toLocaleString()} / ${boss.maxHp.toLocaleString()}　(${hpPct.toFixed(1)}%)</div>
           </div>
           ${leaderboardHtml}
+          ${wbPagePickerHtml}
           ${queueListHtml}
           ${actionHtml}
           ${recentBattlesHtml}
@@ -3929,6 +3945,15 @@
       default:
         return [{ judgeId: 1000, param: 0, skillId: 'basic' }];
     }
+  }
+
+  // ⭐ 取得指定頁（或當前作用頁）的行動規則（4 頁系統）
+  function getActivePattern(rpg, overridePage) {
+    const page = (typeof overridePage === 'number')
+      ? overridePage
+      : (rpg.activePatternPage ?? 0);
+    const pat = rpg.actionPatterns?.[page];
+    return (Array.isArray(pat) && pat.length) ? pat : getDefaultActionPattern(rpg.class);
   }
 
   // 把所有 set piece 加上 setId 標記，並建立 id → 件的查表
@@ -5190,6 +5215,18 @@
     if (!Array.isArray(player.rpg.actionPattern) || player.rpg.actionPattern.length === 0) {
       player.rpg.actionPattern = player.rpg.class ? getDefaultActionPattern(player.rpg.class) : [];
     }
+    // ⭐ 多頁行動規則遷移（4 頁）：把既有 actionPattern 搬進 actionPatterns[0]
+    if (!Array.isArray(player.rpg.actionPatterns)) {
+      player.rpg.actionPatterns = [
+        player.rpg.actionPattern && player.rpg.actionPattern.length
+          ? player.rpg.actionPattern.slice()
+          : [],
+        [], [], []
+      ];
+    }
+    if (typeof player.rpg.activePatternPage !== 'number') player.rpg.activePatternPage = 0;
+    if (!Array.isArray(player.rpg.patternPageNames)) player.rpg.patternPageNames = ['頁 1', '頁 2', '頁 3', '頁 4'];
+    if (!player.rpg.wbPatternPage || typeof player.rpg.wbPatternPage !== 'object') player.rpg.wbPatternPage = {};
     // ⭐ HP 平衡 v1 一次性遷移：套新詞綴 perLv / 稀有度 mult / 階層 mult；精魂 base HP × 0.7 + HP 詞綴 × 0.7
     if (!player.rpg._hpRebalV1 && typeof applyHpRebalanceToPlayer === 'function') {
       try {
@@ -5936,7 +5973,7 @@
   // ============================================================
   // 戰鬥邏輯
   // ============================================================
-  function autoFight(player, monster) {
+  function autoFight(player, monster, opts) {
     const log = [];
     const cls = CLASSES[player.rpg.class];
     const stats = computeStats(player);
@@ -5992,10 +6029,8 @@
     const nextActionForSkill = {};
     // 每條規則的本場使用次數（給 judge 1920「最多用 X 次」用）
     const ruleUseCount = {};
-    // ⭐ HOF 行動規則表：玩家自訂 / 預設值
-    const actionPattern = (player.rpg.actionPattern && player.rpg.actionPattern.length)
-      ? player.rpg.actionPattern
-      : getDefaultActionPattern(player.rpg.class);
+    // ⭐ HOF 行動規則表：多頁系統 — 由 opts.patternPage 或 rpg.activePatternPage 決定用哪頁
+    const actionPattern = getActivePattern(player.rpg, opts?.patternPage);
 
     // ATB（Active Time Battle）：每個單位的「行動條」依速度填滿
     // 條滿（達到 ATB_THRESHOLD）即出手；速度越快、填滿越快、出手越頻繁
@@ -6841,7 +6876,7 @@
   }
 
   // 多目標戰鬥（最多 N 隻怪物 vs 玩家），用在「試煉戰場」
-  function autoFightMulti(player, monsters) {
+  function autoFightMulti(player, monsters, opts) {
     const log = [];
     const cls = CLASSES[player.rpg.class];
     const stats = computeStats(player);
@@ -6873,9 +6908,7 @@
     const skillById = Object.fromEntries(skills.map((s, i) => [s.id, { skill: s, idx: i }]));
     const nextActionForSkill = {};
     const ruleUseCount = {};
-    const actionPattern = (player.rpg.actionPattern && player.rpg.actionPattern.length)
-      ? player.rpg.actionPattern
-      : getDefaultActionPattern(player.rpg.class);
+    const actionPattern = getActivePattern(player.rpg, opts?.patternPage);
 
     const ATB_THRESHOLD = 100;
     const SPD_BASE = 30; // ⭐ 扁平化：每方加上基礎值，避免極端比例
@@ -9215,7 +9248,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505042536';
+  const APP_VERSION = '20260505043407';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
@@ -9235,7 +9268,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260505c';
+  const NEWS_LATEST_ID = 'patch_20260505d';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -9255,6 +9288,22 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#1e3a5f,#1e40af); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">📋 行動規則 4 頁系統　<span style="font-size:11px; opacity:0.85;">2026-05-05</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#1d4ed8; margin:6px 0 4px;">📋 行動規則分頁（4 頁）</div>
+        <div>・規則表升級為 <b>4 個獨立頁</b>，可存放不同戰鬥策略</div>
+        <div>・每頁可自訂名稱（點「✏️ 改名」）</div>
+        <div>・「<b>✦ 設為打怪預設</b>」——設定一般探險使用哪頁</div>
+        <div>・<b>個人王</b>：每隻王可獨立選擇使用哪頁規則（王卡下方選單）</div>
+        <div>・<b>世界王</b>：每隻王可獨立選擇使用哪頁規則（王卡規則選單）</div>
+        <div style="font-size:11px; color:#6b7280; margin-top:2px;">→ 舊規則自動遷移到第 1 頁，其餘 3 頁為空（空頁出戰時套用預設）</div>
+
+        <div style="background:#eff6ff; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#1e40af;">
+          💡 例如：頁1 一般打怪 → 頁2 高輸出世界王 → 頁3 保守個人王 → 頁4 多目標深淵
+        </div>
 
         <div style="background:linear-gradient(135deg,#1e1b4b,#312e81); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">☠️ v11 深淵大改版 + 修復　<span style="font-size:11px; opacity:0.85;">2026-05-05</span></div>
@@ -9806,7 +9855,8 @@ ${b.text}
     if (!rpg.class) { host.innerHTML = ''; return; }
     const tCount = (rpg.treasures || []).length;
     const tMax = Object.keys(TREASURES).length;
-    const ruleCount = (rpg.actionPattern || []).length;
+    const _activePat = rpg.actionPatterns?.[rpg.activePatternPage ?? 0];
+    const ruleCount = (Array.isArray(_activePat) ? _activePat : (rpg.actionPattern || [])).length;
     const sp = rpg.skillPoints || 0;
     const invCount = (rpg.inventory || []).length;
     const spiritSlots = getSpiritSlots(rpg);
@@ -10330,21 +10380,23 @@ ${b.text}
   function setDexTab(slot) { __dexTab = slot; showItemDex(); }
   window.setDexTab = setDexTab;
 
+  let __apPage = 0; // 目前在規則 modal 中檢視的頁（0–3）
+
   // 用 modal 開行動規則編輯器（規則改完即時存）
-  function showActionPatternModal() {
+  function showActionPatternModal(startPage) {
     const me = getMe();
     if (!me) return;
+    if (typeof startPage === 'number') __apPage = startPage;
     const html = `
       <div id="actionPatternBody"></div>
       <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:10px;">關閉</button>
     `;
     showModal('📋 行動規則（HOF Gambit）', html);
-    // 模態打開後再 render（因為 #actionPatternBody 要先存在）
     renderActionPattern();
   }
   window.showActionPatternModal = showActionPatternModal;
 
-  // ⭐ HOF 行動規則編輯器
+  // ⭐ HOF 行動規則編輯器（4 頁分頁版）
   function renderActionPattern() {
     const me = getMe();
     if (!me) return;
@@ -10357,11 +10409,31 @@ ${b.text}
     }
     const cls = CLASSES[rpg.class];
     const skills = cls.skills || [];
-    const pattern = (rpg.actionPattern && rpg.actionPattern.length)
-      ? rpg.actionPattern
+    const names = rpg.patternPageNames || ['頁 1', '頁 2', '頁 3', '頁 4'];
+    const patterns = rpg.actionPatterns || [[], [], [], []];
+    // 確保 __apPage 合法
+    if (__apPage < 0 || __apPage > 3) __apPage = 0;
+    const pattern = (patterns[__apPage] && patterns[__apPage].length)
+      ? patterns[__apPage]
       : getDefaultActionPattern(rpg.class);
 
-    // 技能 dropdown 選項：basic + 各職業技能
+    // ── 頁籤列 ──
+    const tabsHtml = [0,1,2,3].map(i => {
+      const cnt = (patterns[i] || []).length;
+      const isActive = i === rpg.activePatternPage;
+      const isCur  = i === __apPage;
+      return `<button onclick="switchApPage(${i})"
+        style="flex:1; padding:6px 4px; border:2px solid ${isCur ? '#7c3aed' : '#e5e7eb'};
+          background:${isCur ? '#ede9fe' : '#fff'}; border-radius:8px; cursor:pointer;
+          font-family:inherit; font-size:11px; font-weight:700; color:${isCur ? '#5b21b6' : '#6b7280'};
+          position:relative;">
+        ${escapeHtml(names[i] || '頁 '+(i+1))}
+        <span style="font-size:9px; display:block; color:${isCur?'#7c3aed':'#9ca3af'};">${cnt} 條</span>
+        ${isActive ? '<span style="position:absolute;top:2px;right:3px;font-size:9px;color:#16a34a;" title="目前打怪使用此頁">✦</span>' : ''}
+      </button>`;
+    }).join('');
+
+    // ── 規則列 ──
     const skillOptions = (selectedId) => {
       let opts = `<option value="basic" ${selectedId === 'basic' ? 'selected' : ''}>${cls.attackVerb || '普攻'}（普攻）</option>`;
       for (const s of skills) {
@@ -10370,7 +10442,6 @@ ${b.text}
       }
       return opts;
     };
-    // judge dropdown 選項
     const judgeOptions = (selectedId) => {
       return Object.values(JUDGES).map(j =>
         `<option value="${j.id}" ${selectedId === j.id ? 'selected' : ''}>${j.label}</option>`
@@ -10398,7 +10469,18 @@ ${b.text}
       `;
     }).join('');
 
+    const isActivePage = __apPage === rpg.activePatternPage;
+    const pageName = escapeHtml(names[__apPage] || '頁 '+(__apPage+1));
+
     host.innerHTML = `
+      <div style="display:flex; gap:5px; margin-bottom:8px;">${tabsHtml}</div>
+      <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px; flex-wrap:wrap;">
+        <span style="font-size:12px; font-weight:700; color:#5b21b6;">📋 ${pageName}</span>
+        <button onclick="renameApPage(${__apPage})" style="font-size:10px; padding:2px 7px; border:1px solid #d1d5db; border-radius:5px; background:#f9fafb; cursor:pointer;">✏️ 改名</button>
+        ${!isActivePage
+          ? `<button onclick="setActivePatternPage(${__apPage})" style="font-size:10px; padding:2px 7px; border:1px solid #16a34a; border-radius:5px; background:#f0fdf4; color:#15803d; cursor:pointer; font-weight:700;">✦ 設為打怪預設</button>`
+          : `<span style="font-size:10px; color:#16a34a; font-weight:700;">✦ 目前打怪使用中</span>`}
+      </div>
       <div style="font-size:11px; color:#8b6f9b; padding:6px 10px; background:#fffaf0; border-radius:8px; margin-bottom:8px; border:1px dashed #fbbf24;">
         💡 從上到下檢查，第一條 <b>條件成立</b> 且 <b>技能可用</b>（MP/CD/等級）的就執行；都不成立會自動普攻。
       </div>
@@ -10411,11 +10493,19 @@ ${b.text}
   }
   window.renderActionPattern = renderActionPattern;
 
+  // ── 輔助：取得當前編輯頁的 pattern 陣列（確保陣列存在）
+  function _apCurrentPage(rpg) {
+    rpg.actionPatterns = rpg.actionPatterns || [[], [], [], []];
+    if (!Array.isArray(rpg.actionPatterns[__apPage])) rpg.actionPatterns[__apPage] = [];
+    return rpg.actionPatterns[__apPage];
+  }
+
   function updateActionRule(idx, field, value) {
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
-    if (!rpg.actionPattern || !rpg.actionPattern[idx]) return;
-    const r = rpg.actionPattern[idx];
+    const pat = _apCurrentPage(rpg);
+    if (!pat[idx]) return;
+    const r = pat[idx];
     if (field === 'judgeId') r.judgeId = Number(value) || 1000;
     else if (field === 'param') r.param = Math.max(0, Number(value) || 0);
     else if (field === 'skillId') r.skillId = String(value);
@@ -10427,8 +10517,8 @@ ${b.text}
   function addActionRule() {
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
-    rpg.actionPattern = rpg.actionPattern || [];
-    rpg.actionPattern.push({ judgeId: 1000, param: 0, skillId: 'basic' });
+    const pat = _apCurrentPage(rpg);
+    pat.push({ judgeId: 1000, param: 0, skillId: 'basic' });
     saveData();
     renderActionPattern();
   }
@@ -10437,11 +10527,11 @@ ${b.text}
   function deleteActionRule(idx) {
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
-    if (!rpg.actionPattern) return;
-    rpg.actionPattern.splice(idx, 1);
-    if (rpg.actionPattern.length === 0) {
-      // 空表退回預設，否則戰鬥沒招
-      rpg.actionPattern = getDefaultActionPattern(rpg.class);
+    const pat = _apCurrentPage(rpg);
+    pat.splice(idx, 1);
+    // 如果是作用頁且刪空了，補上預設（否則戰鬥沒招）
+    if (pat.length === 0 && __apPage === rpg.activePatternPage) {
+      rpg.actionPatterns[__apPage] = getDefaultActionPattern(rpg.class);
     }
     saveData();
     renderActionPattern();
@@ -10451,26 +10541,86 @@ ${b.text}
   function moveActionRule(idx, delta) {
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
-    if (!rpg.actionPattern) return;
+    const pat = _apCurrentPage(rpg);
     const j = idx + delta;
-    if (j < 0 || j >= rpg.actionPattern.length) return;
-    const tmp = rpg.actionPattern[idx];
-    rpg.actionPattern[idx] = rpg.actionPattern[j];
-    rpg.actionPattern[j] = tmp;
+    if (j < 0 || j >= pat.length) return;
+    const tmp = pat[idx];
+    pat[idx] = pat[j];
+    pat[j] = tmp;
     saveData();
     renderActionPattern();
   }
   window.moveActionRule = moveActionRule;
 
   function resetActionPattern() {
-    if (!confirm('確定重置為預設規則表？目前的設定會清掉。')) return;
+    if (!confirm(`確定重置「${(getRpg(getMe()).patternPageNames||[])[__apPage]||'頁 '+(__apPage+1)}」為預設規則表？目前的設定會清掉。`)) return;
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
-    rpg.actionPattern = getDefaultActionPattern(rpg.class);
+    rpg.actionPatterns = rpg.actionPatterns || [[], [], [], []];
+    rpg.actionPatterns[__apPage] = getDefaultActionPattern(rpg.class);
     saveData();
     renderActionPattern();
   }
   window.resetActionPattern = resetActionPattern;
+
+  // 切換 modal 內分頁
+  function switchApPage(idx) {
+    __apPage = idx;
+    renderActionPattern();
+  }
+  window.switchApPage = switchApPage;
+
+  // 改名當前頁
+  function renameApPage(idx) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    rpg.patternPageNames = rpg.patternPageNames || ['頁 1', '頁 2', '頁 3', '頁 4'];
+    const cur = rpg.patternPageNames[idx] || '頁 '+(idx+1);
+    const newName = prompt('規則頁名稱：', cur);
+    if (!newName || !newName.trim()) return;
+    rpg.patternPageNames[idx] = newName.trim().slice(0, 12);
+    saveData();
+    renderActionPattern();
+    renderCharQuickMenu();
+  }
+  window.renameApPage = renameApPage;
+
+  // 設定哪一頁是「一般打怪」預設頁
+  function setActivePatternPage(idx) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    rpg.activePatternPage = idx;
+    saveData();
+    renderActionPattern();
+    renderCharQuickMenu();
+    showToast(`✦ 已將「${(rpg.patternPageNames||[])[idx]||'頁 '+(idx+1)}」設為打怪預設`);
+  }
+  window.setActivePatternPage = setActivePatternPage;
+
+  // 設定個人王用哪頁規則
+  function setPersonalBossPatternPage(bossId, pageStr) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const page = parseInt(pageStr);
+    if (!rpg.personalBoss) rpg.personalBoss = {};
+    if (!rpg.personalBoss[bossId]) rpg.personalBoss[bossId] = { currentHp: 1, killCount: 0 };
+    rpg.personalBoss[bossId].patternPage = isNaN(page) ? undefined : page;
+    saveData();
+    renderPersonalBoss();
+  }
+  window.setPersonalBossPatternPage = setPersonalBossPatternPage;
+
+  // 設定世界王用哪頁規則
+  function setWbPatternPage(bossId, pageStr) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const page = parseInt(pageStr);
+    rpg.wbPatternPage = rpg.wbPatternPage || {};
+    rpg.wbPatternPage[bossId] = isNaN(page) ? undefined : page;
+    saveData();
+    renderWorldBoss();
+  }
+  window.setWbPatternPage = setWbPatternPage;
 
   // 技能樹現在只在 modal 裡渲染，舊頁面卡片已移除 → 這裡保留空殼以免有舊 call site
   function renderSkillTree() { /* moved to showSkillsModal */ }
@@ -12136,6 +12286,9 @@ ${b.text}
     rpg.abilityPoints = 5;
     rpg.abilities = { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0 };
     rpg.actionPattern = getDefaultActionPattern(classId);
+    rpg.actionPatterns = [getDefaultActionPattern(classId), [], [], []];
+    rpg.activePatternPage = 0;
+    rpg.patternPageNames = ['頁 1', '頁 2', '頁 3', '頁 4'];
     const stats = computeStats(me);
     rpg.hp = stats.maxHp;
     rpg.mp = stats.maxMp;
@@ -12681,6 +12834,21 @@ ${b.text}
     const onCd = cdRemain > 0;
     const m = Math.floor(cdRemain / 60000);
     const s = Math.ceil((cdRemain % 60000) / 1000);
+    // 規則頁選擇器
+    const pbPatPage = st.patternPage ?? (rpg.activePatternPage ?? 0);
+    const pnames = rpg.patternPageNames || ['頁 1', '頁 2', '頁 3', '頁 4'];
+    const pagePickerHtml = `
+      <div style="display:flex; align-items:center; gap:6px; margin-top:8px; flex-wrap:wrap;">
+        <span style="font-size:10px; opacity:0.8;">📋 使用規則：</span>
+        <select onchange="setPersonalBossPatternPage('${cur.id}', this.value)"
+          style="font-size:11px; padding:2px 5px; border-radius:5px; background:#1e1b4b; color:#fff; border:1px solid #7c3aed; cursor:pointer;">
+          ${[0,1,2,3].map(i => {
+            const cnt = (rpg.actionPatterns?.[i]||[]).length;
+            return `<option value="${i}" ${pbPatPage === i ? 'selected' : ''}>${escapeHtml(pnames[i]||'頁 '+(i+1))} (${cnt}條)</option>`;
+          }).join('')}
+        </select>
+        <button onclick="showActionPatternModal(${pbPatPage})" style="font-size:10px; padding:2px 7px; border:1px solid #7c3aed; border-radius:5px; background:#1e1b4b; color:#c4b5fd; cursor:pointer;">✏️ 編輯</button>
+      </div>`;
     host.innerHTML = `
       <div style="display:flex; gap:6px; margin-bottom:10px;">${tabsHtml}</div>
       <div style="background:linear-gradient(135deg,#1e1b4b,#4c1d95); color:#fff; padding:14px; border-radius:12px;">
@@ -12696,6 +12864,7 @@ ${b.text}
           <div style="height:100%; width:${hpPct}%; background:linear-gradient(90deg,#fca5a5,#dc2626); transition:width 0.4s;"></div>
           <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700;">${st.currentHp.toLocaleString()} / ${cur.hp.toLocaleString()} (${hpPct.toFixed(1)}%)</div>
         </div>
+        ${pagePickerHtml}
         <div style="margin-top:10px;">
           ${cur.isDummy
             ? (__personalBossInProgress
@@ -12754,7 +12923,8 @@ ${b.text}
       isElite: false, isPersonalBoss: true,
       maxRounds: def.maxRounds,
     };
-    const result = autoFight(me, monster);
+    const _pbPage = rpg.personalBoss?.[bossId]?.patternPage;
+    const result = autoFight(me, monster, typeof _pbPage === 'number' ? { patternPage: _pbPage } : undefined);
     const stats = computeStats(me);
 
     // 渲染戰鬥區（重用世界王 / 普通戰鬥的 arena）
