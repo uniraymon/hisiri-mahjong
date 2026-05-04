@@ -2379,7 +2379,7 @@
       id: 'goose_king',
       name: '🦢 鵝皇', icon: '🦢',
       maxHp: 90000,
-      atk: 180, def: 80, spd: 30,
+      atk: 180, def: 80, spd: 80,
       level: 30,
       verb: '皇者懲戒',
       ability: { type: 'multiHit', hits: 2 },
@@ -2399,7 +2399,7 @@
       id: 'dragon_goose',
       name: '🐉 古龍鵝', icon: '🐉',
       maxHp: 200000,
-      atk: 300, def: 120, spd: 35,
+      atk: 300, def: 120, spd: 120,
       level: 40,
       verb: '龍焰之息',
       ability: { type: 'physResist', resist: 0.25 },
@@ -2419,7 +2419,7 @@
       id: 'pebble_goose',
       name: '🪨 鵝卵石', icon: '🪨',
       maxHp: 5000000,
-      atk: 500, def: 500, spd: 25,
+      atk: 500, def: 500, spd: 50,
       level: 55,
       verb: '崩落巨石',
       ability: { type: 'physResist', resist: 0.30 },
@@ -2907,7 +2907,7 @@
     {
       id: 'breakfast_goose',
       name: '早餐鵝', icon: '🍳',
-      hp: 25000, atk: 300, def: 200, spd: 30, level: 30,
+      hp: 25000, atk: 300, def: 200, spd: 80, level: 30,
       verb: '塗果醬',
       fixedSkillOrder: true,
       skills: [
@@ -2922,7 +2922,7 @@
     {
       id: 'lunch_goose',
       name: '午餐鵝', icon: '🍱',
-      hp: 40000, atk: 400, def: 250, spd: 35, level: 30,
+      hp: 40000, atk: 400, def: 250, spd: 100, level: 30,
       verb: '便當蓋下擊',
       ability: { type: 'multiHit', hits: 2 },
       fixedSkillOrder: true,
@@ -2938,7 +2938,7 @@
     {
       id: 'dinner_goose',
       name: '晚餐鵝', icon: '🍷',
-      hp: 60000, atk: 500, def: 300, spd: 40, level: 30,
+      hp: 60000, atk: 500, def: 300, spd: 70, level: 30,
       verb: '紅酒甩擊',
       ability: { type: 'magicResist', resist: 0.3 },
       fixedSkillOrder: true,
@@ -5711,14 +5711,14 @@
     const SPD_BASE = 30;
     let pSpd = Math.max(1, SPD_BASE + effectiveSpd);   // 受 buff 影響，每回合會重算
     const mSpd = Math.max(1, SPD_BASE + monster.spd);
-    // ⭐ SPD 軟上限：行動比率 > 1.5:1 後急速遞減效益，接近 2:1 為實際極限
-    //   公式：effRatio = 1.5 + 0.5 × excess / (0.2 + excess)  [excess = rawRatio - 1.5]
-    //   excess=0.5 → effRatio≈1.86  /  excess=1.0 → effRatio≈1.92  /  excess→∞ → effRatio→2.0
+    // ⭐ SPD 軟上限：行動比率 > 1.5:1 後急速遞減效益，接近 2.5:1 為實際極限
+    //   公式：effRatio = 1.5 + 1.0 × excess / (0.2 + excess)  [excess = rawRatio - 1.5]
+    //   excess=0.5 → effRatio≈2.21  /  excess=1.0 → effRatio≈2.33  /  excess→∞ → effRatio→2.5
     const _capSpd = (rawP, refM) => {
       const raw = rawP / refM;
       if (raw <= 1.5) return rawP;
       const excess = raw - 1.5;
-      return (1.5 + 0.5 * excess / (0.2 + excess)) * refM;
+      return (1.5 + 1.0 * excess / (0.2 + excess)) * refM;
     };
     // 雙方都從 0 開始填條，誰先達到 100 誰先出手（速度高自然先到）
     let effPSpd = _capSpd(pSpd, mSpd);
@@ -6435,7 +6435,7 @@
     let pSpd = Math.max(1, SPD_BASE + effectiveSpd); // 受 buff 影響，每回合會重算
     // 把怪物 gauge 速度也加 SPD_BASE
     mList.forEach(m => { m._effSpd = Math.max(1, SPD_BASE + (m.spd || 0)); });
-    // ⭐ SPD 軟上限：以存活怪物的平均速度為基準，比率 > 1.5:1 後急速遞減，~2:1 為實際極限
+    // ⭐ SPD 軟上限：以存活怪物的平均速度為基準，比率 > 1.5:1 後急速遞減，~2.5:1 為實際極限
     const _capSpdM = (rawP) => {
       const aliveM = mList.filter(m => m.alive);
       if (!aliveM.length) return rawP;
@@ -6443,7 +6443,7 @@
       const raw = rawP / avgMSpd;
       if (raw <= 1.5) return rawP;
       const excess = raw - 1.5;
-      return (1.5 + 0.5 * excess / (0.2 + excess)) * avgMSpd;
+      return (1.5 + 1.0 * excess / (0.2 + excess)) * avgMSpd;
     };
     let effPSpd = _capSpdM(pSpd);
     let pGauge = 0;
