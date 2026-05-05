@@ -9974,7 +9974,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506032029';
+  const APP_VERSION = '20260506032402';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -12226,6 +12226,11 @@ ${b.text}
       const qtyBadge = (item.qty && item.qty > 1)
         ? `<div class="ic-qty">×${item.qty}</div>`
         : '';
+      // ⚗️ 印記合成標記
+      const fusedCount = (item.isBossGift && Array.isArray(item.fusedComponents)) ? item.fusedComponents.length : 0;
+      const fusionBadge = fusedCount > 0
+        ? `<div style="position:absolute;bottom:1px;left:1px;font-size:7px;background:#d97706;color:#fff;border-radius:3px;padding:0 3px;line-height:1.5;font-weight:700;">⚗️${fusedCount}</div>`
+        : '';
       cells.push(`<button
           class="inv-cell has-item ${__invBulkMode ? 'bulk-on' : ''} ${selected ? 'selected' : ''} ${isPinned ? 'is-pinned' : ''}"
           style="${bgStyle}"
@@ -12234,7 +12239,7 @@ ${b.text}
         <span class="ic-pin ${isPinned ? 'pinned' : ''}" onclick="toggleInvItemPin(${globalIdx}, event)" title="${isPinned ? '取消釘選' : '釘選（不會被批量賣掉）'}">${isPinned ? '⭐' : '☆'}</span>
         <div class="ic-icon">${item.icon}</div>
         <div class="ic-name" style="${rarColor && !selected ? `color:${rarColor};` : ''}">${escapeHtml(item.name)}</div>
-        ${qtyBadge}
+        ${qtyBadge}${fusionBadge}
         ${__invBulkMode ? `<div class="ic-check">${selected ? '✓' : ''}</div>` : ''}
       </button>`);
     }
@@ -12458,15 +12463,23 @@ ${b.text}
         ${affixHtml}
         ${compareHtml}
         ${setHtml}
-        ${item.isBossGift ? `
-        <div style="margin-top:10px; padding:8px 10px; background:linear-gradient(135deg,#fef9c3,#fde68a); border:1.5px solid #fbbf24; border-radius:10px; text-align:left;">
-          <div style="font-size:11px; font-weight:700; color:#92400e; margin-bottom:4px;">⚗️ 印記合成</div>
-          ${(item.fusedComponents && item.fusedComponents.length > 0)
-            ? item.fusedComponents.map(fc => `<div style="font-size:10px; color:#78350f;">✦ ${escapeHtml(fc.name || fc.baseId)} — ${escapeHtml(fc.affixDesc || '')}</div>`).join('')
-            : `<div style="font-size:10px; color:#b45309;">可合入古龍鵝恩賜 / 鵝卵石恩賜，疊加能力與效果</div>`
-          }
-          <button class="btn btn-primary" onclick="showFusionModal(${idx})" style="margin-top:6px; width:100%; background:linear-gradient(135deg,#d97706,#b45309); box-shadow:0 3px 0 #92400e; font-size:12px;">⚗️ 前往合成</button>
-        </div>` : ''}
+        ${item.isBossGift ? (() => {
+          const _isc = { king:'#f59e0b', dragon:'#06b6d4', pebble:'#94a3b8' };
+          const _isl = { king:'鵝王', dragon:'古龍', pebble:'鵝卵石' };
+          const _fused = item.fusedComponents || [];
+          const _baseRow = item.affixDesc
+            ? `<div style="display:flex;gap:6px;align-items:flex-start;padding:4px 7px;background:#fef9c3;border:1px solid #f59e0b;border-radius:6px;margin-bottom:3px;font-size:10px;color:#92400e;"><span style="flex-shrink:0;">${item.icon}</span><span><b>本體</b>　${escapeHtml(item.affixDesc)}</span></div>` : '';
+          const _fusedRows = _fused.map(fc => {
+            const s = _fusionSlotOf(fc);
+            return `<div style="display:flex;gap:6px;align-items:flex-start;padding:4px 7px;background:${_isc[s]||'#e5e7eb'}18;border:1px solid ${_isc[s]||'#e5e7eb'};border-radius:6px;margin-bottom:3px;font-size:10px;color:#1e293b;"><span style="flex-shrink:0;">${fc.icon||'👑'}</span><span><b style="color:${_isc[s]||'#6b7280'};">[${_isl[s]||s}]</b>　${escapeHtml(fc.affixDesc||fc.name)}</span></div>`;
+          }).join('');
+          return `<div style="margin-top:10px; padding:8px 10px; background:linear-gradient(135deg,#fef9c3,#fde68a); border:1.5px solid #fbbf24; border-radius:10px; text-align:left;">
+            <div style="font-size:11px; font-weight:700; color:#92400e; margin-bottom:5px;">⚗️ 印記效果</div>
+            ${_baseRow}${_fusedRows}
+            ${_fused.length === 0 ? `<div style="font-size:10px;color:#b45309;padding:2px 0;">可合入古龍鵝恩賜 / 鵝卵石恩賜，疊加屬性與效果</div>` : ''}
+            <button class="btn btn-primary" onclick="showFusionHub(${idx})" style="margin-top:6px; width:100%; background:linear-gradient(135deg,#d97706,#b45309); box-shadow:0 3px 0 #92400e; font-size:12px;">⚗️ 前往合成工作台</button>
+          </div>`;
+        })() : ''}
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:14px;">
           <button class="btn btn-primary" onclick="equipFromInvAndClose(${idx})" ${canEquip ? '' : 'disabled'}>裝備</button>
           <button class="btn btn-warning" onclick="sellInvItem(${idx})">賣掉（🪙 ${sellValue}）</button>
@@ -12866,6 +12879,32 @@ ${b.text}
       </div>`;
     }
 
+    // ⚗️ 印記效果區塊（boss gift 專用）
+    let fusionDetailHtml = '';
+    if (item.isBossGift) {
+      const _sc = { king: '#f59e0b', dragon: '#06b6d4', pebble: '#94a3b8' };
+      const _sl = { king: '鵝王', dragon: '古龍', pebble: '鵝卵石' };
+      const fused = item.fusedComponents || [];
+      const baseRow = item.affixDesc
+        ? `<div style="display:flex;gap:6px;align-items:flex-start;padding:5px 8px;background:#fef9c3;border:1px solid #f59e0b;border-radius:7px;margin-bottom:4px;">
+            <span style="font-size:14px;flex-shrink:0;">${item.icon}</span>
+            <div style="font-size:11px;color:#92400e;"><span style="font-weight:700;">本體</span>　${escapeHtml(item.affixDesc)}</div>
+          </div>` : '';
+      const fusedRows = fused.map(fc => {
+        const s = _fusionSlotOf(fc);
+        return `<div style="display:flex;gap:6px;align-items:flex-start;padding:5px 8px;background:${_sc[s] || '#e5e7eb'}18;border:1px solid ${_sc[s] || '#e5e7eb'};border-radius:7px;margin-bottom:4px;">
+          <span style="font-size:14px;flex-shrink:0;">${fc.icon || '👑'}</span>
+          <div style="font-size:11px;color:#1e293b;"><span style="font-weight:700;color:${_sc[s] || '#6b7280'};">[${_sl[s] || s}]</span>　${escapeHtml(fc.affixDesc || fc.name)}</div>
+        </div>`;
+      }).join('');
+      const emptyNote = fused.length === 0
+        ? `<div style="font-size:10px;color:#9ca3af;padding:3px 4px;">（尚未合成任何組件）</div>` : '';
+      fusionDetailHtml = `<div style="margin-top:8px;padding:8px 10px;background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #f59e0b;border-radius:10px;text-align:left;">
+        <div style="font-size:11px;font-weight:700;color:#92400e;margin-bottom:5px;">⚗️ 印記效果</div>
+        ${baseRow}${fusedRows}${emptyNote}
+      </div>`;
+    }
+
     const html = `
       <div style="text-align:center; padding:6px 0;">
         <div style="font-size:52px; margin-bottom:4px;">${item.icon}</div>
@@ -12873,6 +12912,7 @@ ${b.text}
         <div style="font-weight:700; font-size:16px; color:${rarColor};">${escapeHtml(item.name)}</div>
         <div style="font-size:12px; color:#8b6f9b; margin-top:4px;">${item.lv ? `Lv ${item.lv}　·　` : ''}${formatItemStats(item)}</div>
         ${affixHtml}
+        ${fusionDetailHtml}
         ${setHtml}
         ${gemSlotsHtml}
         <button class="btn btn-warning" onclick="unequipAndReturn('${slot}')" style="width:100%; margin-top:14px;">卸下裝備</button>
