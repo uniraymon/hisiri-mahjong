@@ -1712,6 +1712,29 @@
   .bug-snapshot summary { font-size: 11px; color: #8b6f9b; cursor: pointer; padding: 2px 0; }
   .bug-snap-body { background: #f9fafb; border-radius: 6px; padding: 6px 8px; margin-top: 4px; }
 
+  /* 存檔下載按鈕（右上角，公告左邊） */
+  .save-dl-btn {
+    position: fixed;
+    top: 10px;
+    right: 252px;
+    height: 36px;
+    min-width: 40px;
+    padding: 0 10px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #86efac, #16a34a);
+    color: #fff;
+    border: 2px solid rgba(255,255,255,0.7);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 990;
+    opacity: 0.85;
+    transition: opacity 0.2s, transform 0.2s;
+    font-family: inherit;
+    box-shadow: 0 2px 8px rgba(22, 163, 74, 0.4);
+  }
+  .save-dl-btn:hover { opacity: 1; transform: scale(1.05); }
+
   /* 公告按鈕（右上角，圖鑑左邊） */
   .news-btn {
     position: fixed;
@@ -1931,6 +1954,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<button class="save-dl-btn" id="saveDlBtn" onclick="playerDownloadSave()" title="下載角色存檔（方便回報問題）">💾</button>
 <button class="news-btn" id="newsBtn" onclick="showNewsModal()" title="最新公告">📢</button>
 <button class="dex-btn" id="dexBtn" onclick="showItemDex()" title="裝備圖鑑">📖</button>
 <button class="bug-btn" id="bugListBtn" onclick="showBugList()" title="BUG 列表">🐛</button>
@@ -9395,7 +9419,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505162019';
+  const APP_VERSION = '20260505162429';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -14957,6 +14981,42 @@ ${b.text}
     showToast('🔐 Debug 已鎖回');
   }
   window.adminLockDebug = adminLockDebug;
+
+  // ⭐ 玩家自助存檔下載（💾 右上角按鈕）
+  function playerDownloadSave() {
+    const me = getMe();
+    if (!me) { showToast('❌ 找不到你的角色，先選一個名字'); return; }
+    const dt = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const dateStr = `${dt.getFullYear()}${pad(dt.getMonth()+1)}${pad(dt.getDate())}_${pad(dt.getHours())}${pad(dt.getMinutes())}${pad(dt.getSeconds())}`;
+    const safeName = (me.name || 'unknown').replace(/[^\w一-鿿]/g, '_');
+    const fname = `角色_${safeName}_${dateStr}.json`;
+
+    const payload = {
+      exportedAt:    dt.toLocaleString('zh-TW'),
+      exportedAtTs:  Date.now(),
+      appVersion:    window.__APP_VERSION || '',
+      player: {
+        id:            me.id,
+        name:          me.name,
+        avatar:        me.avatar,
+        coinsSpent:    me.coinsSpent,
+        lastTouchedAt: me.lastTouchedAt,
+        rpg:           me.rpg,
+      },
+    };
+
+    const json = JSON.stringify(payload, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = fname;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { try { document.body.removeChild(a); URL.revokeObjectURL(url); } catch(e) {} }, 200);
+    const sizeKb = Math.round(json.length / 1024);
+    showToast(`💾 已下載 ${fname}（${sizeKb} KB）`);
+  }
+  window.playerDownloadSave = playerDownloadSave;
 
   // === 備份 / 還原 ===
   function adminDownloadBackup() {
