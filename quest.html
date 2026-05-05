@@ -6462,7 +6462,7 @@
               dmg = (skill.flat + (bonus.skillFlat || 0) + (abil.skillFlat || 0)) + (skill.perLv || 0) * (player.rpg.level || 1);
               if (!skill.ignoreDef) dmg -= Math.floor(monDef / 2);
             } else if (skill.usesBloodPool) {
-              // ⭐ 爆血：真傷 = 血池 × 2，不吃防禦
+              // ⭐ 爆血：血池 × 2，無視 DEF / 抗性，易傷 / 暴擊正常計算，無隨機變異
               dmg = bloodPool * 2;
               bloodPool = 0;
             } else {
@@ -6514,7 +6514,7 @@
             const hitLogs = [];
             let monsterDied = false;
             for (let h = 0; h < skillHits && !monsterDied; h++) {
-              let hitDmg = baseDmg * (0.9 + Math.random() * 0.2);
+              let hitDmg = skill.usesBloodPool ? baseDmg : baseDmg * (0.9 + Math.random() * 0.2);
               const hitCrit = skill.alwaysCrit || Math.random() < skillCrit;
               if (hitCrit) { hitDmg *= skillCritMult; critCount++; lastIsCrit = true; }
               // ⭐ 易傷（hit-based）：每段各消耗 1 層
@@ -7384,7 +7384,7 @@
               const skillCrit = baseCritChance + (skill.extraCritChance || 0) + (pBuff.critChance || 0);
               const skillCritMult = critMult + (skill.extraCritDmg || 0) + (pBuff.critDmg || 0);
               const isCrit = skill.alwaysCrit || Math.random() < skillCrit;
-              dmg *= (0.9 + Math.random() * 0.2);
+              if (!skill.usesBloodPool) dmg *= (0.9 + Math.random() * 0.2);
               if (isCrit) { dmg *= skillCritMult; critCount++; }
               dmg = Math.max(1, Math.round(dmg));
               if (tgt.ability?.type === 'flatCapDmg') dmg = Math.min(dmg, tgt.ability.cap || 1);
@@ -9570,7 +9570,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505220921';
+  const APP_VERSION = '20260505221728';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -10348,9 +10348,10 @@ ${b.text}
     if (eff.ignoreDef) buffPairs.push('🗡 無視防禦');
     if (skill.applyShield)   buffPairs.push('🛡 免疫一次傷害');
     if (skill.usesBloodPool) {
-      buffPairs.push('🩸 傷害 = 本場累積血池 × 2（真傷）');
+      buffPairs.push('🩸 傷害 = 血池 × 2（固定，無隨機變異）');
       buffPairs.push('🛡 無視敵人 DEF、物理抗性、魔法抗性');
-      buffPairs.push('💥 仍可觸發暴擊（暴擊率 / 爆傷正常計算）');
+      buffPairs.push('🎯 易傷正常計算（×1.5 per 層）');
+      buffPairs.push('💥 暴擊正常計算');
       buffPairs.push('🩸 血池來源：血祭斬 / 死戰之怒（扣10% maxHP）/ 嗜血怒嚎（扣20% 當前HP）');
       buffPairs.push('💀 施放後血池歸零，冷卻 1 回合');
     }
@@ -11011,7 +11012,7 @@ ${b.text}
 
   function formatSkillDesc(s) {
     if (s.usesBloodPool) {
-      return '🩸💥 消耗全部血池 × 2 = 真傷（無視防禦 / 物抗 / 魔抗）';
+      return '🩸💥 消耗全部血池 × 2 = 傷害（無視 DEF / 物抗 / 魔抗，易傷 / 暴擊正常計算）';
     }
     if (s.type === 'heal') {
       const parts = [];
