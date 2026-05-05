@@ -10112,7 +10112,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506065254';
+  const APP_VERSION = '20260506065534';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -16773,6 +16773,7 @@ ${b.text}
       <button class="btn btn-danger" onclick="adminResetLeaderboard()" style="margin-top:6px; background:linear-gradient(135deg,#fde047,#d97706); box-shadow:0 4px 0 #92400e; color:#7c2d12;">🏆 重置排行榜（所有玩家等級 / 鵝鵝幣 / 綠茶遭遇歸零）</button>
       <button class="btn btn-danger" onclick="adminWipeAll()" style="margin-top:6px; background:linear-gradient(135deg,#fca5a5,#7f1d1d); box-shadow:0 4px 0 #450a0a;">💀 全玩家洗白（伺服器 + 本地都重置）</button>
       <button class="btn btn-secondary" onclick="adminMigrateAccessoryToRing()" style="margin-top:6px; background:linear-gradient(135deg,#ddd6fe,#7c3aed); box-shadow:0 4px 0 #6d28d9; color:#fff;">💍 遷移：飾品槽戒指 → 戒指槽（所有玩家）</button>
+      <button class="btn btn-secondary" onclick="adminDownloadAllPlayersZip()" style="margin-top:6px; background:linear-gradient(135deg,#0f172a,#1e40af); box-shadow:0 4px 0 #1e3a8a; color:#93c5fd;">📦 一鍵下載所有玩家存檔（ZIP）</button>
       <button class="btn btn-secondary" onclick="adminLockDebug()" style="margin-top:6px;">🔐 鎖回 Debug</button>
 
       <div style="margin-top:10px; font-size:11px; color:#8b6f9b; text-align:center;">
@@ -17594,6 +17595,70 @@ ${b.text}
     showToast(`📦 已下載 ${fname}（${sizeKb} KB · ${players.length} 玩家 · ${history.length} 局）`);
   }
   window.adminDownloadBackup = adminDownloadBackup;
+
+  async function adminDownloadAllPlayersZip() {
+    if (!players || players.length === 0) { showToast('目前沒有玩家資料'); return; }
+    showToast('⏳ 準備中…');
+
+    // 動態載入 JSZip（只載一次）
+    if (!window.JSZip) {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('JSZip 載入失敗'));
+        document.head.appendChild(s);
+      }).catch(e => { showToast('❌ 無法載入 JSZip：' + e.message); throw e; });
+    }
+
+    const zip = new window.JSZip();
+    const dt = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const dateStr = `${dt.getFullYear()}${pad(dt.getMonth()+1)}${pad(dt.getDate())}_${pad(dt.getHours())}${pad(dt.getMinutes())}`;
+
+    // 每位玩家一個 JSON
+    players.forEach(player => {
+      const safeName = (player.name || 'unknown').replace(/[^a-zA-Z0-9一-鿿_-]/g, '_').slice(0, 30);
+      const safeId   = (player.id   || 'noid'   ).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 20);
+      const fname = `${safeName}_${safeId}.json`;
+      const snapshot = {
+        exportedAt:  dt.toISOString(),
+        id:          player.id,
+        name:        player.name,
+        avatar:      player.avatar,
+        coins:       getCoins(player.id),
+        rpg:         player.rpg    || null,
+        inventory:   player.inventory || [],
+        hand:        player.hand   || [],
+      };
+      zip.file(fname, JSON.stringify(snapshot, null, 2));
+    });
+
+    // 總覽 manifest
+    zip.file('_manifest.json', JSON.stringify({
+      exportedAt:  dt.toISOString(),
+      room:        localStorage.getItem('mahjong-room-id') || '?',
+      playerCount: players.length,
+      players: players.map(p => ({
+        id:    p.id,
+        name:  p.name,
+        level: p.rpg?.level || 0,
+        class: p.rpg?.class || null,
+        coins: getCoins(p.id),
+      })),
+    }, null, 2));
+
+    const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+    const url  = URL.createObjectURL(blob);
+    const fname = `mahjong-players-${dateStr}.zip`;
+    const a = document.createElement('a');
+    a.href = url; a.download = fname;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { try { document.body.removeChild(a); URL.revokeObjectURL(url); } catch(e) {} }, 300);
+    const sizeKb = Math.round(blob.size / 1024);
+    showToast(`📦 已下載 ${fname}（${players.length} 玩家 · ${sizeKb} KB）`);
+  }
+  window.adminDownloadAllPlayersZip = adminDownloadAllPlayersZip;
 
   function adminUploadBackup() {
     const inp = document.getElementById('adminRestoreInput');
