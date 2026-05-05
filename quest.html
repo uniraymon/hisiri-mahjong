@@ -9705,7 +9705,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506004541';
+  const APP_VERSION = '20260506010106';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -14490,7 +14490,7 @@ ${b.text}
     `;
     document.getElementById('fightResult').innerHTML = arenaHtml;
     const logEl = document.getElementById('battleLog');
-    let i = 0;
+    let i = 0; let _lastRound;
     const playStep = () => {
       if (i >= result.log.length) {
         // ⭐ try-finally 保證 __fightInProgress 一定被解鎖
@@ -14516,6 +14516,13 @@ ${b.text}
         return;
       }
       const entry = result.log[i++];
+      if (entry.round !== undefined && entry.round !== _lastRound) {
+        _lastRound = entry.round;
+        const _sep = document.createElement('div');
+        _sep.style.cssText = 'text-align:center;color:#475569;font-size:10px;padding:3px 0;border-top:1px solid #1e293b;margin:3px 0;';
+        _sep.textContent = `── 回合 ${entry.round} ──`;
+        logEl.appendChild(_sep);
+      }
       const cls = entry.type === 'crit-player' ? 'log-crit'
         : entry.type === 'player' ? 'log-player'
         : entry.type === 'monster' ? 'log-monster'
@@ -14557,7 +14564,7 @@ ${b.text}
       }
       const _nx = result.log[i];
       const _sr = _nx && entry.round !== undefined && entry.round === _nx.round;
-      setTimeout(playStep, _sr ? 80 : 480);
+      setTimeout(playStep, _sr ? 80 : 350);
     };
     playStep();
   }
