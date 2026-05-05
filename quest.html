@@ -4873,8 +4873,12 @@
     const meId = getMeId && getMeId();
     if (meId && Array.isArray(players)) {
       const meRec = players.find(p => p && p.id === meId);
-      if (meRec) meRec.lastTouchedAt = Date.now();
+      if (meRec) {
+        meRec.lastTouchedAt = Date.now();
+        if (meRec.rpg) meRec.rpg.saveVersion = (meRec.rpg.saveVersion || 0) + 1;
+      }
     }
+    __rotateBackup();
     const payload = { players, history, gifts, comments, pendingBets, betPool, worldBoss, wb9, baseMoney, basePoint, bossOverrides: _bossOverrides };
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch (e) {}
     if (!__isApplyingRemote && window.__firebaseSync && window.__firebaseSync.ready) {
@@ -4886,6 +4890,44 @@
   function __persistLocalSnapshot() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ players, history, gifts, comments, pendingBets, betPool, worldBoss, wb9, bugs, baseMoney, basePoint })); } catch (e) {}
   }
+
+  const BACKUP_KEY = 'mahjong-bk3';
+  function __rotateBackup() {
+    try {
+      const meId = getMeId?.();
+      if (!meId) return;
+      const me = players.find(p => p?.id === meId);
+      if (!me) return;
+      const raw = localStorage.getItem(BACKUP_KEY);
+      const slots = raw ? JSON.parse(raw) : [];
+      slots.unshift({ ts: Date.now(), player: JSON.parse(JSON.stringify(me)) });
+      if (slots.length > 3) slots.length = 3;
+      localStorage.setItem(BACKUP_KEY, JSON.stringify(slots));
+    } catch(e) {}
+  }
+  window.__rotateBackup = __rotateBackup;
+
+  // 從備份還原（slotIdx: 0=最新, 1=次新, 2=最舊）
+  window.__restoreFromBackup = function(slotIdx) {
+    try {
+      const raw = localStorage.getItem(BACKUP_KEY);
+      if (!raw) return alert('找不到備份資料');
+      const slots = JSON.parse(raw);
+      const slot = slots[slotIdx];
+      if (!slot) return alert('備份槽位不存在');
+      const meId = getMeId?.();
+      if (!meId) return;
+      const idx = players.findIndex(p => p?.id === meId);
+      if (idx === -1) return;
+      const ts = new Date(slot.ts).toLocaleString('zh-TW');
+      if (!confirm(`還原到備份 [${ts}]？\n（儲存版本 v${slot.player?.rpg?.saveVersion || 0}）\n\n這會覆蓋目前本地資料。`)) return;
+      players[idx] = JSON.parse(JSON.stringify(slot.player));
+      __persistLocalSnapshot();
+      saveData();
+      render();
+      alert('✅ 已從備份還原！');
+    } catch(e) { alert('還原失敗：' + e.message); }
+  };
 
   window.__getMeId = function() { return getMeId(); };
 
@@ -4946,18 +4988,30 @@
         if (!remote || !remote.id) return remote;
         const local = localById[remote.id];
         if (!local) return remote;
+        const localVer  = Number(local.rpg?.saveVersion)  || 0;
+        const remoteVer = Number(remote.rpg?.saveVersion) || 0;
+        if (localVer !== remoteVer) {
+          if (localVer > remoteVer) {
+            if (__localWouldDowngrade(local, remote)) {
+              forageTrace?.('sync: bulk keep remote (local would downgrade)', { pid: remote.id, localVer, remoteVer, lLv: local.rpg?.level, rLv: remote.rpg?.level });
+              needRepush = true; return remote;
+            }
+            needRepush = true; return local;
+          } else {
+            forageTrace?.('sync: bulk keep remote (higher saveVersion)', { pid: remote.id, localVer, remoteVer });
+            return remote;
+          }
+        }
+        // 版本號相同 → 回退 timestamp 邏輯（舊資料 / 跨裝置首次同步）
         const remoteTs = Number(remote.lastTouchedAt) || 0;
         const localTs  = Number(local.lastTouchedAt)  || 0;
         if (localTs > remoteTs) {
-          // ⭐ 反向保護：local ts 較新，但 remote 等級 / 累計金幣明顯更高 → 舊設備別蓋新進度
           if (__localWouldDowngrade(local, remote)) {
             forageTrace?.('sync: bulk keep remote (local would downgrade)', { pid: remote.id, localTs, remoteTs, lLv: local.rpg?.level, rLv: remote.rpg?.level });
-            needRepush = true; // ⭐ 重新推正確資料，取消任何 pending 的舊寫入
-            return remote;
+            needRepush = true; return remote;
           }
           needRepush = true; return local;
         }
-        // ⭐ 防呆：remote 太舊會弄丟剛拿到的裝備 → 保留 local
         if (__remoteWouldDataLossInventory(local, remote)) {
           needRepush = true;
           forageTrace?.('sync: bulk keep local (would lose inventory)', { pid: remote.id, localTs, remoteTs, localInv: local.rpg?.inventory?.length, remoteInv: remote.rpg?.inventory?.length });
@@ -5079,27 +5133,40 @@
         players.push(remote);
       } else {
         const local = players[idx];
-        const remoteTs = Number(remote.lastTouchedAt) || 0;
-        const localTs  = Number(local.lastTouchedAt)  || 0;
-        // 防呆：local 較新 → 保留（但若 local 是舊設備重置，讓 remote 贏）
-        if (localTs > remoteTs) {
-          if (__localWouldDowngrade(local, remote)) {
-            forageTrace?.('sync: keep remote (local would downgrade)', { pid: remote.id, localTs, remoteTs, lLv: local.rpg?.level, rLv: remote.rpg?.level });
-            players[idx] = remote;
-            needRepush = true; // ⭐ 立刻重新推，把 pending 的舊寫入清掉
+        const localVer  = Number(local.rpg?.saveVersion)  || 0;
+        const remoteVer = Number(remote.rpg?.saveVersion) || 0;
+        if (localVer !== remoteVer) {
+          if (localVer > remoteVer) {
+            if (__localWouldDowngrade(local, remote)) {
+              forageTrace?.('sync: keep remote (local would downgrade)', { pid: remote.id, localVer, remoteVer, lLv: local.rpg?.level, rLv: remote.rpg?.level });
+              players[idx] = remote; needRepush = true;
+            } else {
+              needRepush = true;
+              forageTrace?.('sync: keep local (higher saveVersion)', { pid: remote.id, localVer, remoteVer });
+            }
           } else {
-            needRepush = true;
-            forageTrace?.('sync: keep local (newer ts)', { pid: remote.id, localTs, remoteTs, localInv: local.rpg?.inventory?.length, remoteInv: remote.rpg?.inventory?.length });
+            forageTrace?.('sync: apply remote (higher saveVersion)', { pid: remote.id, localVer, remoteVer });
+            players[idx] = remote;
           }
-        }
-        // 防呆：remote 太舊會弄丟剛拿到的裝備 → 保留 local
-        else if (__remoteWouldDataLossInventory(local, remote)) {
-          needRepush = true;
-          forageTrace?.('sync: keep local (would lose inventory)', { pid: remote.id, localTs, remoteTs, localInv: local.rpg?.inventory?.length, remoteInv: remote.rpg?.inventory?.length, gap: local.rpg.inventory.length - remote.rpg.inventory.length });
-        }
-        else {
-          forageTrace?.('sync: apply remote', { pid: remote.id, localTs, remoteTs, localInv: local.rpg?.inventory?.length, remoteInv: remote.rpg?.inventory?.length });
-          players[idx] = remote;
+        } else {
+          // 版本號相同 → 回退 timestamp 邏輯
+          const remoteTs = Number(remote.lastTouchedAt) || 0;
+          const localTs  = Number(local.lastTouchedAt)  || 0;
+          if (localTs > remoteTs) {
+            if (__localWouldDowngrade(local, remote)) {
+              forageTrace?.('sync: keep remote (local would downgrade)', { pid: remote.id, localTs, remoteTs, lLv: local.rpg?.level, rLv: remote.rpg?.level });
+              players[idx] = remote; needRepush = true;
+            } else {
+              needRepush = true;
+              forageTrace?.('sync: keep local (newer ts)', { pid: remote.id, localTs, remoteTs });
+            }
+          } else if (__remoteWouldDataLossInventory(local, remote)) {
+            needRepush = true;
+            forageTrace?.('sync: keep local (would lose inventory)', { pid: remote.id, localTs, remoteTs, localInv: local.rpg?.inventory?.length, remoteInv: remote.rpg?.inventory?.length });
+          } else {
+            forageTrace?.('sync: apply remote', { pid: remote.id, localTs, remoteTs });
+            players[idx] = remote;
+          }
         }
       }
       __persistLocalSnapshot();
@@ -5323,6 +5390,7 @@
     if (!player) return null;
     if (!player.rpg) {
       player.rpg = {
+        saveVersion: 0,
         class: null,
         level: 1,
         xp: 0,
@@ -9570,7 +9638,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505223118';
+  const APP_VERSION = '20260505233654';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13250,6 +13318,7 @@ ${b.text}
   // === 個人 BOSS ===
   let __personalBossTab = 'breakfast_goose';
   let __personalBossInProgress = false;
+  let __stopDummyBattle = false;
   function getPersonalBossState(rpg, bossId) {
     if (!rpg.personalBoss) rpg.personalBoss = {};
     if (!rpg.personalBoss[bossId]) {
@@ -13325,7 +13394,7 @@ ${b.text}
         <div style="margin-top:10px;">
           ${cur.isDummy
             ? (__personalBossInProgress
-              ? `<button class="btn btn-primary" disabled>⚔️ 戰鬥中…</button>`
+              ? `<button onclick="stopDummyBattle()" style="background:linear-gradient(135deg,#ef4444,#b91c1c); color:#fff; border:none; padding:10px 24px; border-radius:8px; font-size:15px; cursor:pointer; box-shadow:0 4px 0 #7f1d1d; font-weight:700; font-family:inherit;">🛑 停止戰鬥</button>`
               : `<button class="btn btn-primary" onclick="attackPersonalBoss('${cur.id}')" style="background:linear-gradient(135deg,#64748b,#334155); box-shadow:0 4px 0 #1e293b;">🎯 開始測試</button>`)
             : (onCd
               ? `<button class="btn btn-primary" disabled style="background:#4b5563;">⏳ 共用冷卻 ${m}:${String(s).padStart(2,'0')}（3 隻王共用）</button>`
@@ -13360,6 +13429,7 @@ ${b.text}
       return;
     }
     __personalBossInProgress = true;
+    if (def.isDummy) renderPersonalBoss();
     if (!def.isDummy) {
       rpg.personalBossLastAt = Date.now();
       me.lastTouchedAt = Date.now();   // 🔒 防止 Firebase 同步回朔
@@ -13417,6 +13487,10 @@ ${b.text}
     const logEl = document.getElementById('battleLog');
     let i = 0;
     const playStep = () => {
+      if (__stopDummyBattle) {
+        __stopDummyBattle = false;
+        i = result.log.length;
+      }
       if (i >= result.log.length) {
         // 結算
         const dmgDealt = monster.hp - result.mHpFinal;
@@ -13584,6 +13658,9 @@ ${b.text}
     playStep();
   }
   window.attackPersonalBoss = attackPersonalBoss;
+
+  function stopDummyBattle() { __stopDummyBattle = true; }
+  window.stopDummyBattle = stopDummyBattle;
 
   // ⭐ commit 7：v8 舊 kill banner 已移除，v9 用 wb9KillBannerHtml 在 render 時顯示
   function checkBossKillBanners() { /* v9 uses wb9KillBannerHtml */ }
@@ -16679,7 +16756,17 @@ ${b.text}
           // ⭐ 1500ms debounce（緩解 Firestore write stream exhausted）
           playerSaveTimers[p.id] = setTimeout(async () => {
             try {
-              await setDoc(doc(playersCol, p.id), cleanP);
+              const pRef = doc(playersCol, p.id);
+              const localVer = Number(cleanP.rpg?.saveVersion) || 0;
+              await runTransaction(db, async (tx) => {
+                const snap = await tx.get(pRef);
+                const cloudVer = snap.exists() ? (Number(snap.data().rpg?.saveVersion) || 0) : -1;
+                if (localVer >= cloudVer) {
+                  tx.set(pRef, cleanP);
+                } else {
+                  console.warn(`[tx] skip write for ${p.id}: cloud v${cloudVer} > local v${localVer}`);
+                }
+              });
               seenPlayerIds.add(p.id);
             } catch (e) { window.__logSaveError?.('playerSave', e, { playerId: p.id, playerName: cleanP?.name }); }
           }, 1500);
