@@ -9271,7 +9271,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505133627';
+  const APP_VERSION = '20260505140532';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
@@ -14240,6 +14240,7 @@ ${b.text}
       <button class="btn btn-danger" onclick="adminRevokeKillRewards()" style="margin-top:6px; background:linear-gradient(135deg,#f9a8d4,#be185d); box-shadow:0 4px 0 #9d174d;">🔄 回收擊殺獎勵（清全員 扭蛋幣 / 原石 / claimedKills）</button>
       <button class="btn btn-danger" onclick="adminResetWb9Server()" style="margin-top:6px; background:linear-gradient(135deg,#818cf8,#4338ca); box-shadow:0 4px 0 #3730a3;">🔄 世界王伺服器重開（清隊列 / 冷卻 / 重置 HP）</button>
       <button class="btn btn-danger" onclick="adminPurgeBrokenGifts()" style="margin-top:6px; background:linear-gradient(135deg,#fda4af,#be185d); box-shadow:0 4px 0 #9d174d;">🗑 清除損壞的裝備禮物（無資料 / 無名稱）</button>
+      <button class="btn btn-secondary" onclick="adminRestoreXiaoMi()" style="margin-top:6px; background:linear-gradient(135deg,#fde68a,#f59e0b); box-shadow:0 4px 0 #b45309; color:#7c2d12;">🔧 修復小米帳號（Lv33・130萬・原石+20・神話劍）</button>
       <button class="btn btn-danger" onclick="adminResetLeaderboard()" style="margin-top:6px; background:linear-gradient(135deg,#fde047,#d97706); box-shadow:0 4px 0 #92400e; color:#7c2d12;">🏆 重置排行榜（所有玩家等級 / 鵝鵝幣 / 綠茶遭遇歸零）</button>
       <button class="btn btn-danger" onclick="adminWipeAll()" style="margin-top:6px; background:linear-gradient(135deg,#fca5a5,#7f1d1d); box-shadow:0 4px 0 #450a0a;">💀 全玩家洗白（伺服器 + 本地都重置）</button>
       <button class="btn btn-secondary" onclick="adminMigrateAccessoryToRing()" style="margin-top:6px; background:linear-gradient(135deg,#ddd6fe,#7c3aed); box-shadow:0 4px 0 #6d28d9; color:#fff;">💍 遷移：飾品槽戒指 → 戒指槽（所有玩家）</button>
@@ -14463,6 +14464,59 @@ ${b.text}
     showToast(`🛡 ${set.name} ×${set.pieces.length} 件已進背包`);
   }
   window.adminGiveSet = adminGiveSet;
+
+  // ⭐ 一鍵修復小米帳號（因手機覆蓋導致資料重置）
+  function adminRestoreXiaoMi() {
+    if (!confirm('⚠️ 修復小米帳號？\n\n將設定：\n• 等級 33\n• 鵝鵝幣 130 萬\n• 原石 +20\n• 神話劍（傳說・雙DEF+SPD）加入背包\n\n確定？')) return;
+    const xiaomi = players.find(p => p.name === '小米');
+    if (!xiaomi) { showToast('找不到「小米」'); return; }
+    const r = xiaomi.rpg;
+    if (!r) { showToast('小米沒有 RPG 資料'); return; }
+    const now = Date.now();
+    // 1. 等級 33（保留已花的技能 / 能力點）
+    const usedSk   = Object.values(r.skills       || {}).reduce((a, b) => a + (b || 0), 0);
+    const usedSkLv = Object.values(r.skillLevels  || {}).reduce((a, b) => a + (b || 0), 0);
+    const usedAb   = Object.values(r.abilities    || {}).reduce((a, b) => a + (b || 0), 0);
+    r.level = 33; r.xp = 0;
+    r.skillPoints   = Math.max(0, (33 - 1) * POINTS_PER_LEVEL.skill   - usedSk - usedSkLv);
+    r.abilityPoints = Math.max(0, 5 + (33 - 1) * POINTS_PER_LEVEL.ability - usedAb);
+    const s = computeStats(xiaomi);
+    r.hp = s.maxHp; r.mp = s.maxMp; r.deathAt = null;
+    // 2. 鵝鵝幣設為 130 萬
+    const earned = calcCoinsEarned(getPlayerMatchData(xiaomi.id));
+    xiaomi.coinsSpent = earned - 1300000;
+    // 3. 原石 +20
+    r.gemInventory = r.gemInventory || {};
+    r.gemInventory['gem_raw'] = (r.gemInventory['gem_raw'] || 0) + 20;
+    // 4. 傳說神話劍：雙DEF（堅固22＋鋼鐵19）＋迅速SPD16（Lv25・傳說乘數計算）
+    const restoreSword = {
+      id: 'drop_' + now.toString(36) + '_xmrestore',
+      baseId: 'w_myth',
+      rarity: 'legendary',
+      name: '堅固的 神話劍',
+      icon: '🌌',
+      slot: 'weapon',
+      lv: 25,
+      atk: 32,
+      def: 41,   // 22 + 19
+      spd: 16,
+      hp: 0,
+      mark: 0,
+      affixes: [
+        { type: 'def', name: '堅固', val: 22 },
+        { type: 'def', name: '鋼鐵', val: 19 },
+        { type: 'spd', name: '迅速', val: 16 },
+      ],
+    };
+    r.inventory = r.inventory || [];
+    r.inventory.push(restoreSword);
+    // bump ts 確保此版本在 sync 中勝出
+    xiaomi.lastTouchedAt = now;
+    syncEquipped(xiaomi);
+    saveData(); render();
+    showToast('✅ 小米已修復：Lv33・鵝幣130萬・原石+20・神話劍進背包');
+  }
+  window.adminRestoreXiaoMi = adminRestoreXiaoMi;
 
   function adminResetPoints() {
     const me = getMe(); if (!me) return;
