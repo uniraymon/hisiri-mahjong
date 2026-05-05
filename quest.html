@@ -7280,11 +7280,11 @@
     // 怪物技能冷卻（每隻獨立）
     const mSkillLastByIdx = {}; // mSkillLastByIdx[mIdx][skillIdx] = round
 
+    let round = 0, playerActions = 0, critCount = 0; // ⭐ 必須在 log.push 呼叫前初始化，否則 monkey-patch 讀 round 會 TDZ crash
+
     log.push({ type: 'system', text: `═══ ⚔️ 試煉戰場 ═══` });
     log.push({ type: 'system', text: `${player.name} VS ${monsters.map(m => m.icon + m.name).join(' / ')}` });
     log.push({ type: 'system', text: `🌬 你 SPD ${effectiveSpd}　·　${monsters.map(m => m.name + ' ' + m.spd).join(' / ')}` });
-
-    let round = 0, playerActions = 0, critCount = 0;
     const hpsSnapshot = () => ({ player: pHp, mp: pMp, monsters: mList.map(m => Math.max(0, m.hp)), bloodPool });
 
     while (pHp > 0 && mList.some(m => m.alive) && round < 100) {
@@ -9705,7 +9705,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506010835';
+  const APP_VERSION = '20260506012046';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13349,6 +13349,8 @@ ${b.text}
     const maxHp = ps.maxHp || 1;
     const maxMp = ps.maxMp || 1;
     const monsterMaxHp = ms.maxHp || 1;
+    // 檢查 log 是否有血池紀錄（判斷是否為劍士）
+    const _hasBloodPool = (snap.log || []).some(e => e.hp && e.hp.bloodPool > 0);
     const arenaHtml = `
       <div class="battle-arena" id="replayArena">
         <div class="combatant" id="replayPlayer">
@@ -13358,6 +13360,9 @@ ${b.text}
           <div class="combatant-hp-text" id="replayPHpText">${maxHp}/${maxHp}</div>
           <div class="combatant-hp-track" style="margin-top:2px;"><div class="combatant-hp-fill" id="replayPMpBar" style="width:100%; background:linear-gradient(90deg,#93c5fd,#3b82f6);"></div></div>
           <div class="combatant-hp-text" id="replayPMpText" style="color:#1e40af;">MP ${maxMp}/${maxMp}</div>
+          ${_hasBloodPool ? `
+          <div class="combatant-hp-track" style="margin-top:2px; background:#3f0000;"><div class="combatant-hp-fill" id="replayPBloodPoolBar" style="width:0%; background:linear-gradient(90deg,#ef4444,#991b1b);"></div></div>
+          <div class="combatant-hp-text" id="replayPBloodPoolText" style="color:#ef4444;">🩸 血池 0</div>` : ''}
           <div class="combatant-spd-track"><div class="combatant-spd-fill" id="replayPSpdBar" style="width:0%"></div></div>
           <div class="combatant-spd-text" id="replayPSpdText">⏱ 行動條 0%</div>
         </div>
@@ -13452,6 +13457,12 @@ ${b.text}
         const pMpText = document.getElementById('replayPMpText');
         if (pMpBar) pMpBar.style.width = (entry.hp.mp / st.maxMp * 100) + '%';
         if (pMpText) pMpText.textContent = `MP ${entry.hp.mp}/${st.maxMp}`;
+      }
+      if (entry.hp.bloodPool != null) {
+        const bpBar = document.getElementById('replayPBloodPoolBar');
+        const bpText = document.getElementById('replayPBloodPoolText');
+        if (bpBar) bpBar.style.width = Math.min(100, (entry.hp.bloodPool / Math.max(1, st.maxHp)) * 100) + '%';
+        if (bpText) bpText.textContent = `🩸 血池 ${entry.hp.bloodPool}`;
       }
     }
     if (entry.gauge && typeof updateSpdBar === 'function') {
