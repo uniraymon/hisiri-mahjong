@@ -3622,7 +3622,7 @@
     // ── 新版鵝王恩賜（效果型，可作為合成基底）────────────────────
     { id: 'bg2_conquer',  name: '征服者之印', icon: '👑', slot: 'accessory', lv: 1, atk: 8,  mark: 5,
       isBossGift: true, sourceBossId: 'goose_king', rarity: 'gold', fusionEffect: 'fx_conquer',
-      affixDesc: '普攻傷害 +12%（征服者之印）' },
+      affixDesc: '普攻傷害 +50%（征服者之印）' },
     { id: 'bg2_mage',     name: '秘法師之印', icon: '👑', slot: 'accessory', lv: 1, atk: 5,  mark: 8,  mp: 15,
       isBossGift: true, sourceBossId: 'goose_king', rarity: 'gold', fusionEffect: 'fx_mage',
       affixDesc: '技能 MP 消耗 -20%（秘法師之印）' },
@@ -6939,8 +6939,8 @@
               dmg *= (0.85 + Math.random() * 0.3);
               if (isCrit) { dmg *= critMult2; critCount++; if (_fx.has('fx_dg_crit') && !_nextForceCrit) _nextForceCrit = true; }
               if (isHs)   dmg *= 3;
-              // ⭐ 合成效果：fx_conquer（普攻傷害+12%）
-              if (_fx.has('fx_conquer')) dmg *= 1.12;
+              // ⭐ 合成效果：fx_conquer（普攻傷害+50%）
+              if (_fx.has('fx_conquer')) dmg *= 1.50;
               // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%）
               if (_fx.has('fx_pg_hp') && pHp < stats.maxHp * 0.3) dmg *= 1.5;
               if (_monPhysRes) dmg *= (1 - _monPhysRes);
@@ -6976,8 +6976,8 @@
             let dmg = Math.max(1, effAtk - Math.floor(monDef0 / 2));
             dmg *= (0.85 + Math.random() * 0.3);
             if (isCrit2) { dmg *= critMult2; critCount++; if (_fx.has('fx_dg_crit') && !_nextForceCrit) _nextForceCrit = true; }
-            // ⭐ 合成效果：fx_conquer（普攻傷害+12%）
-            if (_fx.has('fx_conquer')) dmg *= 1.12;
+            // ⭐ 合成效果：fx_conquer（普攻傷害+50%）
+            if (_fx.has('fx_conquer')) dmg *= 1.50;
             // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%）
             if (_fx.has('fx_pg_hp') && pHp < stats.maxHp * 0.3) dmg *= 1.5;
             if (_monPhysRes) dmg *= (1 - _monPhysRes);
@@ -7846,8 +7846,8 @@
               dmg *= (0.85 + Math.random() * 0.3);
               if (isCrit) { dmg *= critMult2; critCount++; if (_fx.has('fx_dg_crit') && !_nextForceCrit) _nextForceCrit = true; }
               if (isHs)   dmg *= 3;
-              // ⭐ 合成效果：fx_conquer（普攻傷害+12%）
-              if (_fx.has('fx_conquer')) dmg *= 1.12;
+              // ⭐ 合成效果：fx_conquer（普攻傷害+50%）
+              if (_fx.has('fx_conquer')) dmg *= 1.50;
               // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%）
               if (_fx.has('fx_pg_hp') && pHp < stats.maxHp * 0.3) dmg *= 1.5;
               if (tgt.physRes) dmg *= (1 - tgt.physRes);
@@ -7883,8 +7883,8 @@
             let dmg = Math.max(1, effAtk - Math.floor(_tgtDef2 / 2));
             dmg *= (0.85 + Math.random() * 0.3);
             if (isCrit) { dmg *= critMult2; critCount++; if (_fx.has('fx_dg_crit') && !_nextForceCrit) _nextForceCrit = true; }
-            // ⭐ 合成效果：fx_conquer（普攻傷害+12%）
-            if (_fx.has('fx_conquer')) dmg *= 1.12;
+            // ⭐ 合成效果：fx_conquer（普攻傷害+50%）
+            if (_fx.has('fx_conquer')) dmg *= 1.50;
             // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%）
             if (_fx.has('fx_pg_hp') && pHp < stats.maxHp * 0.3) dmg *= 1.5;
             if (tgt.physRes) dmg *= (1 - tgt.physRes);
@@ -9950,7 +9950,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506030237';
+  const APP_VERSION = '20260506030355';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
