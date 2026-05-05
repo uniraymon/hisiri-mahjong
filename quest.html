@@ -9950,7 +9950,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506030355';
+  const APP_VERSION = '20260506030653';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13870,6 +13870,17 @@ ${b.text}
   }
   window.replayBossFightFromState = replayBossFightFromState;
 
+  // 相對時間格式化（e.g. 剛才 / 3 分鐘前 / 2 小時前）
+  function formatRelativeTime(ts) {
+    if (!ts) return '';
+    const diff = Date.now() - ts;
+    if (diff < 60000)   return '剛才';
+    if (diff < 3600000) return Math.floor(diff / 60000) + ' 分鐘前';
+    if (diff < 86400000) return Math.floor(diff / 3600000) + ' 小時前';
+    return Math.floor(diff / 86400000) + ' 天前';
+  }
+  window.formatRelativeTime = formatRelativeTime;
+
   // ⭐ 探索 / 打怪：自己的最近 5 場
   function renderForageHistory() {
     const area = document.getElementById('forageHistoryArea');
@@ -13882,7 +13893,7 @@ ${b.text}
       <div class="boss-history" style="margin-top:12px;">
         <div class="boss-history-title">📜 我的探索戰報（${list.length}/5）　<span style="font-weight:500; opacity:0.75;">點 → 重播動畫</span></div>
         ${list.map(h => {
-          const time = formatRelativeTime ? formatRelativeTime(h.ts) : '';
+          const time = typeof formatRelativeTime === 'function' ? formatRelativeTime(h.ts) : '';
           const result = h.fled ? '🏃 逃跑' : (h.killed ? '🏆 勝' : '💀 敗');
           const resultColor = h.fled ? '#fbbf24' : (h.killed ? '#86efac' : '#fca5a5');
           const hasLog = h.id && Array.isArray(h.log) && h.log.length > 0;
