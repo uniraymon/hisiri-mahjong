@@ -9666,7 +9666,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506001006';
+  const APP_VERSION = '20260506001958';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -14915,6 +14915,7 @@ ${b.text}
         <button class="btn btn-secondary" onclick="adminGiveLegendary()">🌟 神話全套</button>
         <button class="btn btn-secondary" onclick="adminPickSet()" style="grid-column:1/-1; background:linear-gradient(135deg,#fef3c7,#f59e0b); color:#7c2d12;">🛡 直接拿整套套裝（選一套）</button>
         <button class="btn btn-secondary" onclick="adminPickEquipment()" style="grid-column:1/-1; background:linear-gradient(135deg,#ddd6fe,#7c3aed); color:#fff;">🎯 自選裝備 + 詞條（Debug）</button>
+        <button class="btn btn-secondary" onclick="adminPickSpirit()" style="grid-column:1/-1; background:linear-gradient(135deg,#fce7f3,#a21caf); color:#fff;">✨ 生成晶魂 + 加入袋中（Debug）</button>
       </div>
       <button class="btn btn-secondary" onclick="adminResetPoints()" style="background:linear-gradient(135deg,#a7f3d0,#10b981); color:#fff;">🔄 退回所有技能點 + 能力點</button>
 
@@ -15230,6 +15231,19 @@ ${b.text}
       }
     }
     if (entry.affixes.length > 0) entry.name = entry.affixes[0].name + '的 ' + base.name;
+    if (targetSlot === 'guide') {
+      if (toInv) {
+        rpg.inventory = rpg.inventory || [];
+        rpg.inventory.push(base.id);
+        saveData(); render(); hideModal();
+        showToast(`📦 ${base.icon} ${base.name} 已加入背包`);
+      } else {
+        rpg.equipment.guide = base.id;
+        saveData(); render(); hideModal();
+        showToast(`📖 ${base.icon} ${base.name} 已裝備`);
+      }
+      return;
+    }
     if (toInv) {
       rpg.inventory = rpg.inventory || [];
       rpg.inventory.push(entry);
@@ -15268,6 +15282,8 @@ ${b.text}
       { id: 'helmet', label: '🪖 頭盔' }, { id: 'gloves', label: '🧤 手套' },
       { id: 'boots',  label: '👟 鞋子' }, { id: 'cape',   label: '🧣 披風' },
       { id: 'ring1',  label: '💍 戒指1'},  { id: 'ring2',  label: '💍 戒指2'},
+      { id: 'guide',  label: '📖 指南書'}, { id: 'wings',  label: '🪶 翅膀'},
+      { id: 'pet',    label: '🐾 寵物'},
     ];
     const slotBtns = slotDefs.map(({ id, label }) => {
       const on = s.slot === id;
@@ -15285,7 +15301,7 @@ ${b.text}
           <div style="font-size:10px;color:#6b7280;">${st}</div>
         </div>
       </div>`;
-    }).join('') : `<div style="color:#9ca3af;text-align:center;padding:16px;font-size:12px;">← 請先選槽位</div>`;
+    }).join('') : s.slot ? `<div style="color:#9ca3af;text-align:center;padding:16px;font-size:12px;">此槽位無可選裝備（透過扭蛋取得）</div>` : `<div style="color:#9ca3af;text-align:center;padding:16px;font-size:12px;">← 請先選槽位</div>`;
     const rarBtns = Object.entries(RC).map(([r, c]) => {
       const on = s.rarity === r;
       return `<button onclick="adminEqRarity('${r}')" style="padding:4px 10px;margin:2px;border-radius:6px;border:2px solid ${on?c:'#e5e7eb'};background:${on?c+'22':'#fafafa'};color:${c};font-weight:bold;cursor:pointer;font-size:12px;">${RARITY[r].label}</button>`;
@@ -15344,6 +15360,57 @@ ${b.text}
     showModal('🎯 自選裝備', html);
   }
   window.adminRenderEquipPicker = adminRenderEquipPicker;
+
+  function adminPickSpirit() {
+    adminRenderSpiritPicker();
+  }
+  window.adminPickSpirit = adminPickSpirit;
+
+  function adminRenderSpiritPicker() {
+    const me = getMe(); if (!me) { showToast('請先選擇角色'); return; }
+    const rpg = getRpg(me);
+    const bag = rpg.spiritBag || [];
+    const spiritRows = SPIRIT_DEFS.map(def => {
+      const stats = [];
+      if (def.base.hp)         stats.push(`HP+${Math.round((def.base.hp||0)*0.7)}`);
+      if (def.base.atk)        stats.push(`ATK+${def.base.atk}`);
+      if (def.base.def)        stats.push(`DEF+${def.base.def}`);
+      if (def.base.spd)        stats.push(`SPD+${def.base.spd}`);
+      if (def.base.mark)       stats.push(`MARK+${def.base.mark}`);
+      if (def.base.critChance) stats.push(`暴擊+${Math.round(def.base.critChance*100)}%`);
+      if (def.base.critDmg)    stats.push(`爆傷+${Math.round(def.base.critDmg*100)}%`);
+      return `<div onclick="adminSpiritConfirm('${def.sourceBossId}')" style="padding:10px;margin:4px 0;border-radius:10px;border:2px solid ${def.color}44;background:${def.color}11;cursor:pointer;display:flex;align-items:center;gap:10px;">
+        <span style="font-size:26px;">${def.icon}</span>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:bold;color:${def.color};">${def.name}</div>
+          <div style="font-size:10px;color:#9ca3af;">${def.theme}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px;">${stats.join(' · ')} <span style="color:#a855f7;font-size:10px;">+2條隨機詞條</span></div>
+        </div>
+        <div style="font-size:11px;color:#a855f7;font-weight:bold;">生成 ▶</div>
+      </div>`;
+    }).join('');
+    const html = `
+      <div style="font-size:13px;">
+        <div style="color:#9ca3af;font-size:11px;margin-bottom:8px;">晶魂袋：${bag.length} 顆　點擊任一精魂隨機生成（2條詞條）並加入袋中</div>
+        ${spiritRows}
+        <button class="btn btn-secondary" onclick="showDebugModal()" style="width:100%;margin-top:8px;font-size:12px;">← 返回 Debug</button>
+      </div>`;
+    showModal('✨ 生成晶魂（Debug）', html);
+  }
+  window.adminRenderSpiritPicker = adminRenderSpiritPicker;
+
+  function adminSpiritConfirm(bossId) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    rpg.spiritBag = rpg.spiritBag || [];
+    const spirit = generateSpirit(bossId);
+    if (!spirit) { showToast('找不到精魂定義'); return; }
+    rpg.spiritBag.push(spirit);
+    saveData(); render();
+    showToast(`✨ ${spirit.icon} ${spirit.name} 已加入晶魂袋！`);
+    adminRenderSpiritPicker();
+  }
+  window.adminSpiritConfirm = adminSpiritConfirm;
 
   // ⭐ 存檔錯誤日誌 查看 / 清除
   function adminShowSaveErrors() {
