@@ -6405,6 +6405,10 @@
     // fx_dg_crit: 暴擊後必爆+爆頭+30%（不連鎖）；合入自身堆疊至 2 次
     const _dgCritCount = getFusionEffectCount(player, 'fx_dg_crit');
     let _nextForceCrit = 0; // 剩餘必爆次數
+    // 弓手普攻流疊加（本場累積，回合間持續）
+    let _aHit = 0;   // 命中數 → 普攻傷害 +1%/層
+    let _aCrit = 0;  // 暴擊數 → 爆傷 +3%/層
+    let _aHs = 0;    // 爆頭數 → 爆頭傷害 +10%/層（+0.3 headshot mult）
     // ⭐ 嗜血劍：裝備時攻擊流血目標 → 回血×2 + ATK+20%(3T)
     const _weaponItem = resolveItem(player.rpg?.equipment?.weapon);
     const weaponBloodEffect = !!_weaponItem?.onHitBleeding;
@@ -6956,8 +6960,14 @@
               const defVal = isHs ? 0 : Math.floor(monDef0 / 2 / totalHits); // 爆頭無視防禦；普攻防禦分攤各段
               let dmg = Math.max(1, effAtk * 0.30 - defVal);
               dmg *= (0.85 + Math.random() * 0.3);
-              if (isCrit) { dmg *= critMult2; critCount++; if (_dgCritCount > 0 && !_fcA) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount); }
-              if (isHs)   dmg *= (_fcA && _dgCritCount > 0) ? 3.9 : 3;
+              // ⭐ 弓手普攻流疊加：命中 +1%（使用上一箭累積的層數）
+              dmg *= (1 + _aHit * 0.01);
+              // ⭐ 弓手普攻流疊加：暴擊爆傷 +3%/層
+              const _hitCritMult = critMult2 + _aCrit * 0.03;
+              if (isCrit) { dmg *= _hitCritMult; critCount++; if (_dgCritCount > 0 && !_fcA) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount); }
+              // ⭐ 弓手普攻流疊加：爆頭傷害 +10%/層（基礎×3，每層+0.3）
+              const _hsBase = (_fcA && _dgCritCount > 0) ? 3.9 : 3;
+              if (isHs) dmg *= _hsBase + _aHs * 0.30;
               // ⭐ 合成效果：fx_conquer（普攻傷害+50%）
               if (_fx.has('fx_conquer')) dmg *= 1.50;
               // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%）
@@ -6969,10 +6979,15 @@
               dmg = monShield0(dmg);
               mHp -= dmg;
               lastDmg = dmg;
+              // ⭐ 弓手普攻流：本箭命中後疊層
+              _aHit++;
+              if (isCrit) _aCrit++;
+              if (isHs)   _aHs++;
+              const _stackHint = (_aHit > 1) ? ` [命${_aHit}暴${_aCrit}頭${_aHs}]` : '';
               const label = (isHs && isCrit) ? '🎯【爆頭+暴擊】' : isHs ? '🎯【爆頭】' : isCrit ? '【暴擊】' : '';
               log.push({
                 type: (isHs || isCrit) ? 'crit-player' : 'player',
-                text: `回合 ${round}（${hit}/${totalHits}）：${cls.attackVerb}${label} → ${monster.name} -${dmg} HP`,
+                text: `回合 ${round}（${hit}/${totalHits}）：${cls.attackVerb}${label}${_stackHint} → ${monster.name} -${dmg} HP`,
                 hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp }
               });
               if (mAbility?.type === 'reflect' && mAbility.resist) {
@@ -7371,6 +7386,10 @@
     // fx_dg_crit: 暴擊後必爆+爆頭+30%（不連鎖）；合入自身堆疊至 2 次
     const _dgCritCount = getFusionEffectCount(player, 'fx_dg_crit');
     let _nextForceCrit = 0;
+    // 弓手普攻流疊加（本場累積）
+    let _aHit = 0;
+    let _aCrit = 0;
+    let _aHs = 0;
     // ⭐ 嗜血劍：裝備時攻擊流血目標 → 回血×2 + ATK+20%(3T)
     const _weaponItemM = resolveItem(player.rpg?.equipment?.weapon);
     const weaponBloodEffect = !!_weaponItemM?.onHitBleeding;
@@ -7867,8 +7886,14 @@
               const defVal = isHs ? 0 : Math.floor(_tgtDef / 2 / totalHits);
               let dmg = Math.max(1, effAtk * 0.30 - defVal);
               dmg *= (0.85 + Math.random() * 0.3);
-              if (isCrit) { dmg *= critMult2; critCount++; if (_dgCritCount > 0 && !_fcAM) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount); }
-              if (isHs)   dmg *= (_fcAM && _dgCritCount > 0) ? 3.9 : 3;
+              // ⭐ 弓手普攻流疊加：命中 +1%
+              dmg *= (1 + _aHit * 0.01);
+              // ⭐ 弓手普攻流疊加：暴擊爆傷 +3%/層
+              const _hitCritMultM = critMult2 + _aCrit * 0.03;
+              if (isCrit) { dmg *= _hitCritMultM; critCount++; if (_dgCritCount > 0 && !_fcAM) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount); }
+              // ⭐ 弓手普攻流疊加：爆頭傷害 +10%/層
+              const _hsBaseM = (_fcAM && _dgCritCount > 0) ? 3.9 : 3;
+              if (isHs) dmg *= _hsBaseM + _aHs * 0.30;
               // ⭐ 合成效果：fx_conquer（普攻傷害+50%）
               if (_fx.has('fx_conquer')) dmg *= 1.50;
               // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%）
@@ -7880,10 +7905,15 @@
               tgt.hp = Math.max(0, tgt.hp - dmg);
               if (tgt.hp <= 0) tgt.alive = false;
               _lastDmgM = dmg;
+              // ⭐ 弓手普攻流：本箭命中後疊層
+              _aHit++;
+              if (isCrit) _aCrit++;
+              if (isHs)   _aHs++;
+              const _stackHintM = (_aHit > 1) ? ` [命${_aHit}暴${_aCrit}頭${_aHs}]` : '';
               const label = (isHs && isCrit) ? '🎯【爆頭+暴擊】' : isHs ? '🎯【爆頭】' : isCrit ? '【暴擊】' : '';
               log.push({
                 type: (isHs || isCrit) ? 'crit-player' : 'player',
-                text: `回合 ${round}（${hit}/${totalHits}）：${cls.attackVerb}${label} → ${tgt.icon}${tgt.name} -${dmg} HP`,
+                text: `回合 ${round}（${hit}/${totalHits}）：${cls.attackVerb}${label}${_stackHintM} → ${tgt.icon}${tgt.name} -${dmg} HP`,
                 hp: hpsSnapshot(),
               });
               if (tgt.ability?.type === 'reflect' && tgt.ability.resist) {
@@ -9974,7 +10004,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506033636';
+  const APP_VERSION = '20260506034203';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
