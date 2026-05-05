@@ -2058,9 +2058,9 @@
         { id: 'm_arcane_shield',  name: '魔力護盾',   icon: '🛡️', unlockLv: 5,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'dmgReducePct', amount: 0.50, turns: 4 }, cast: 10, maxLv: 1 },
         // ⭐ 絕對防禦：回血 50% + 抵擋下一次傷害（不能升級）
         { id: 'm_absolute_defense', name: '絕對防禦', icon: '🔰', unlockLv: 8,  cooldown: 0, mpCost: 55, type: 'heal', healPct: 0.5, applyShield: 1, maxLv: 1 },
-        { id: 'm_destruction',    name: '毀滅之怒',   icon: '💀', unlockLv: 12, cooldown: 0, mpCost: 65, type: 'damage', mult: 3, magic: true, useMark: true, ignoreDef: true, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 3, chance: 1 }, cast: 37, customLv: true },
+        { id: 'm_destruction',    name: '毀滅之怒',   icon: '💀', unlockLv: 12, cooldown: 0, mpCost: 65, type: 'damage', mult: 3, magic: true, useMark: true, ignoreDef: true, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 1, chance: 1 }, cast: 37, customLv: true },
         { id: 'm_firestorm',      name: '火焰風暴',   icon: '🌋', unlockLv: 7,  cooldown: 0, mpCost: 55, type: 'damage', flat: 150, markMult: 6, ignoreDef: true, targetCount: 'all', cast: 50 },
-        { id: 'm_thunder_storm',  name: '怒雷風暴',   icon: '⚡', unlockLv: 9,  cooldown: 0, mpCost: 45, type: 'damage', flat: 400, markMult: 8, magic: true, ignoreDef: true, cast: 25 },
+        { id: 'm_thunder_storm',  name: '怒雷風暴',   icon: '⚡', unlockLv: 9,  cooldown: 0, mpCost: 45, type: 'damage', flat: 360, markMult: 7, magic: true, ignoreDef: true, cast: 25 },
         { id: 'm_poison_cloud',   name: '毒霧',       icon: '☠️', unlockLv: 3,  cooldown: 0, mpCost: 30, type: 'damage', flat: 50, perLv: 3, ignoreDef: true, targetCount: 'all', maxLv: 5, applyStatus: { type: 'poison', charges: 4, chance: 0.85 } },
         { id: 'm_arcane_focus',   name: '元素灌注',   icon: '🌀', unlockLv: 2,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'markPct', amount: 0.30, turns: 4 } },
         // ⭐ 魔力虹吸：物理傷（MARK 計算）+ 回 10% maxMP
@@ -3870,7 +3870,7 @@
         if (level === 10) parts.push('🎯 易傷 +1 次（共 3 次）');
       } else if (skill.id === 'm_destruction') {
         if (level === 5)  parts.push('🌀 MARK 加傷 +1（本招）');
-        if (level === 10) parts.push('🌀 MARK 加傷 再 +1（共 +2）　🎯 易傷 +1 次（共 4 次）');
+        if (level === 10) parts.push('🌀 MARK 加傷 再 +1（共 +2）　🎯 易傷 +1 次（共 2 次）');
       }
     } else {
       if (level === 5)  parts.push(describeLv5Bonus(skill));
@@ -9271,7 +9271,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505132513';
+  const APP_VERSION = '20260505133503';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
