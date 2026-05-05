@@ -2084,13 +2084,13 @@
         { id: 'a_twin_shot',   name: '雙箭齊發', icon: '🏹', unlockLv: 2,  cooldown: 0, mpCost: 24, type: 'damage', mult: 1.5, targetCount: 2 },
         { id: 'a_poison_arrow',name: '毒箭',     icon: '🐍', unlockLv: 5,  cooldown: 0, mpCost: 26, type: 'damage', mult: 1.2, maxLv: 5, applyStatus: { type: 'poison', charges: 3, chance: 0.7 } },
         { id: 'a_quickstep',   name: '疾風步',   icon: '💨', unlockLv: 2,  cooldown: 0, mpCost: 16, type: 'buff', selfBuff: { stat: 'spd', amount: 8, turns: 4 } },
-        { id: 'a_eagle_eye',   name: '鷹眼',     icon: '🦅', unlockLv: 4,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'critChance', amount: 0.20, turns: 4 }, selfBuff2: { stat: 'critDmg', amount: 0.30, turns: 4 }, selfBuff3: { stat: 'atkPct', amount: 0.25, turns: 4 } },
+        { id: 'a_eagle_eye',   name: '鷹眼',     icon: '🦅', unlockLv: 4,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'critChance', amount: 0.20, turns: 4, playerTurnOnly: true }, selfBuff2: { stat: 'critDmg', amount: 0.30, turns: 4, playerTurnOnly: true }, selfBuff3: { stat: 'atkPct', amount: 0.25, turns: 4, playerTurnOnly: true } },
         { id: 'a_lifesteal_arrow', name: '吸血箭', icon: '🩸', unlockLv: 3,  cooldown: 0, mpCost: 14, type: 'damage', mult: 1.2, lifesteal: 0.40 },
         // 隱身重做：15 MP / 免疫一次傷害 + 下次攻擊必爆 / 每級 -1 MP / Lv 5 +1 回合 +20% 爆傷
         // ⭐ v1.1：新增即時回血 50% maxHp（弓手唯一回血手段）；不可升級
         { id: 'a_stealth',         name: '隱身',   icon: '🌫', unlockLv: 5,  cooldown: 0, mpCost: 15, type: 'buff', selfBuff: { stat: 'critChance', amount: 1.0, turns: 1 }, applyShield: 1, bonusHealPct: 0.50, maxLv: 1 },
-        // ⭐ 瘋鵝術：普攻段數+1（4連射）+ 爆頭率+2%，持續 10 回合（只算玩家回合），不可升級
-        { id: 'a_mad_goose',       name: '瘋鵝術', icon: '🪿', unlockLv: 6,  cooldown: 0, mpCost: 12, type: 'buff', selfBuff: { stat: 'extraHits', amount: 1, turns: 10 }, selfBuff2: { stat: 'headshotChance', amount: 0.02, turns: 10 }, maxLv: 1 },
+        // ⭐ 瘋鵝術：普攻段數+1（4連射）+ 爆頭率+2%，持續 10 玩家回合，不可升級
+        { id: 'a_mad_goose',       name: '瘋鵝術', icon: '🪿', unlockLv: 6,  cooldown: 0, mpCost: 12, type: 'buff', selfBuff: { stat: 'extraHits', amount: 1, turns: 10, playerTurnOnly: true }, selfBuff2: { stat: 'headshotChance', amount: 0.02, turns: 10, playerTurnOnly: true }, maxLv: 1 },
         { id: 'a_wind_song',       name: '風之歌', icon: '🎵', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true },
         { id: 'a_arrow_storm',     name: '箭雨',   icon: '🌧', unlockLv: 6,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.5, targetCount: 'all' },
         // 奪魂箭：0.8× ATK 傷害 + 回 2 MP（免費，每次攻擊都能補魔）
@@ -6547,7 +6547,7 @@
         // 玩家身上狀態 tick（中毒、buff 倒數）
         playerObj._curHp = pHp; // ⭐ 流血傷害需要當前 HP
         const _hadMaxHpPct = (playerObj.statuses || []).some(s => s.type === 'buff' && s.stat === 'maxHpPct');
-        const pevs = tickStatuses(playerObj, stats.maxHp);
+        const pevs = tickStatuses(playerObj, stats.maxHp, true); // 玩家回合
         for (const ev of pevs) {
           pHp = Math.max(0, pHp - ev.dmg);
           log.push({ type: 'monster', text: `回合 ${round}：${player.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${ev.dmg} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
@@ -6839,7 +6839,7 @@
           } else if (skill.type === 'buff' && (skill.selfBuff || skill.applyPartialShield)) {
             const extraNote = [];
             if (skill.selfBuff) {
-              applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff.stat, amount: skill.selfBuff.amount, turns: skill.selfBuff.turns });
+              applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff.stat, amount: skill.selfBuff.amount, turns: skill.selfBuff.turns, playerTurnOnly: !!skill.selfBuff.playerTurnOnly });
             }
             // ⭐ 魔坑：hit-based 減傷護盾
             if (skill.applyPartialShield) {
@@ -6848,12 +6848,12 @@
             }
             // ⭐ selfBuff2：第二個 buff（鷹眼：暴擊率 + 暴傷）
             if (skill.selfBuff2) {
-              applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff2.stat, amount: skill.selfBuff2.amount, turns: skill.selfBuff2.turns });
+              applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff2.stat, amount: skill.selfBuff2.amount, turns: skill.selfBuff2.turns, playerTurnOnly: !!skill.selfBuff2.playerTurnOnly });
               extraNote.push(describeBuff(skill.selfBuff2));
             }
             // ⭐ selfBuff3：第三個 buff（鷹眼：+25% ATK）
             if (skill.selfBuff3) {
-              applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff3.stat, amount: skill.selfBuff3.amount, turns: skill.selfBuff3.turns });
+              applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff3.stat, amount: skill.selfBuff3.amount, turns: skill.selfBuff3.turns, playerTurnOnly: !!skill.selfBuff3.playerTurnOnly });
               extraNote.push(describeBuff(skill.selfBuff3));
             }
             // ⭐ 隱身：另加 shield 狀態（吸收一次傷害）+ Lv 5 額外 +20% 爆傷 buff
@@ -7049,7 +7049,7 @@
         mGauge -= ATB_THRESHOLD;
         // 怪物身上狀態 tick（中毒、流血、麻痺）
         monster._curHp = mHp; // ⭐ 流血傷害需要當前 HP
-        const mevs = tickStatuses(monster, monster.maxHp);
+        const mevs = tickStatuses(monster, monster.maxHp, false); // 怪物回合
         for (const ev of mevs) {
           mHp = Math.max(0, mHp - ev.dmg);
           log.push({ type: 'player', text: `回合 ${round}：${monster.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${ev.dmg} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
@@ -7270,6 +7270,7 @@
         existing.turns = Math.max(existing.turns, status.turns);
         if (isBuff) existing.amount = Math.max(existing.amount || 0, status.amount || 0);
         else        existing.dmg    = Math.max(existing.dmg    || 0, status.dmg    || 0);
+        if (status.playerTurnOnly) existing.playerTurnOnly = true; // ⭐ 保留玩家回合限定標記
       }
     } else {
       target.statuses.push({ ...status });
@@ -7279,7 +7280,9 @@
   //   poison：每次行動觸發扣目標 3% maxHP（單次上限 1000），消耗 1 層
   //   paralyze：由 consumeParalyze() 負責消耗，tickStatuses 不處理
   //   maxHp 由呼叫端傳入（玩家 stats.maxHp / 怪物 monster.maxHp）
-  function tickStatuses(target, maxHp) {
+  // isPlayerTick = true → 玩家回合觸發；false → 怪物回合觸發
+  // playerTurnOnly 的 buff 只在玩家回合倒數，不受怪物回合消耗（鷹眼 / 瘋鵝術）
+  function tickStatuses(target, maxHp, isPlayerTick = true) {
     if (!target.statuses || target.statuses.length === 0) return [];
     const events = []; // [{type, dmg}]
     const safeMax = Math.max(1, maxHp || target.maxHp || 0);
@@ -7300,7 +7303,10 @@
       }
       // ⭐ 易傷/護盾/麻痺/中毒/流血/魔坑：全部 charge/hit-based，不計 turns
       if (s.type !== 'vulnerable' && s.type !== 'shield' && s.type !== 'paralyze' && s.type !== 'poison' && s.type !== 'partialShield' && s.type !== 'bleed') {
-        s.turns = (s.turns || 0) - 1;
+        // ⭐ playerTurnOnly buff（鷹眼/瘋鵝術）只在玩家回合倒數，怪物回合不消耗
+        if (!s.playerTurnOnly || isPlayerTick) {
+          s.turns = (s.turns || 0) - 1;
+        }
       }
     }
     target.statuses = target.statuses.filter(s => {
@@ -7507,7 +7513,7 @@
 
         // 自身狀態 tick（中毒等）
         const _hadMaxHpPct2 = (playerObj.statuses || []).some(s => s.type === 'buff' && s.stat === 'maxHpPct');
-        const evs = tickStatuses(playerObj, stats.maxHp);
+        const evs = tickStatuses(playerObj, stats.maxHp, true); // 玩家回合
         for (const ev of evs) {
           pHp = Math.max(0, pHp - ev.dmg);
           log.push({ type: 'monster', text: `回合 ${round}：${player.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${ev.dmg} HP`, hp: hpsSnapshot() });
@@ -7782,7 +7788,7 @@
           } else if (skill.type === 'buff' && (skill.selfBuff || skill.applyPartialShield)) {
             const extraNote = [];
             if (skill.selfBuff) {
-              applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff.stat, amount: skill.selfBuff.amount, turns: skill.selfBuff.turns });
+              applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff.stat, amount: skill.selfBuff.amount, turns: skill.selfBuff.turns, playerTurnOnly: !!skill.selfBuff.playerTurnOnly });
             }
             // ⭐ 魔坑：hit-based 減傷護盾
             if (skill.applyPartialShield) {
@@ -7791,12 +7797,12 @@
             }
             // ⭐ selfBuff2：第二個 buff（鷹眼：暴擊率 + 暴傷）
             if (skill.selfBuff2) {
-              applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff2.stat, amount: skill.selfBuff2.amount, turns: skill.selfBuff2.turns });
+              applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff2.stat, amount: skill.selfBuff2.amount, turns: skill.selfBuff2.turns, playerTurnOnly: !!skill.selfBuff2.playerTurnOnly });
               extraNote.push(describeBuff(skill.selfBuff2));
             }
             // ⭐ selfBuff3：第三個 buff（鷹眼：+25% ATK）
             if (skill.selfBuff3) {
-              applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff3.stat, amount: skill.selfBuff3.amount, turns: skill.selfBuff3.turns });
+              applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff3.stat, amount: skill.selfBuff3.amount, turns: skill.selfBuff3.turns, playerTurnOnly: !!skill.selfBuff3.playerTurnOnly });
               extraNote.push(describeBuff(skill.selfBuff3));
             }
             if (skill.applyShield) {
@@ -7979,7 +7985,7 @@
         const m = actor;
         m.gauge -= ATB_THRESHOLD;
         // 怪物中毒等狀態 tick
-        const evs = tickStatuses(m, m.maxHp);
+        const evs = tickStatuses(m, m.maxHp, false); // 怪物回合
         for (const ev of evs) {
           m.hp = Math.max(0, m.hp - ev.dmg);
           if (m.hp <= 0) m.alive = false;
@@ -10012,7 +10018,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506035727';
+  const APP_VERSION = '20260506040744';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
