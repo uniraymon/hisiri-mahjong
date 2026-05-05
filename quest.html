@@ -1964,9 +1964,10 @@
         { id: 'w_rage_flame',   name: '怒之炎',   icon: '☄️', unlockLv: 8,  cooldown: 0, mpCost: 50, type: 'damage', mult: 3.5, magic: true },
         { id: 'w_heavy_strike', name: '重擊',     icon: '⚡', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'damage', mult: 1.3, alwaysCrit: true },
         { id: 'w_rage_slash',   name: '狂怒斬',   icon: '🔥', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.8, hits: 2, cast: 32 },
-        { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 1,  cooldown: 0, mpCost: 0, hpCost: 0.15, type: 'damage', mult: 2.0, cast: 5, bleedBonus: 0.30 },
+        { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 1,  cooldown: 0, mpCost: 0, hpCost: 0.15, type: 'damage', mult: 2.0, cast: 5, bleedBonus: 1.0 },
         { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 6,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.0, lifesteal: 0.20, customLv: true, bleedLifestealBonus: 0.10 },
-        { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 50, hpCostFlat: 20, type: 'damage', mult: 4.5, cast: 50 },
+        // ⭐ 死戰之怒：施放後施加易傷 1 層；Lv10 +1 層（共 2 層）
+        { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 50, hpCostFlat: 20, type: 'damage', mult: 4.5, cast: 50, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 1, chance: 1 }, customLv: true },
         { id: 'w_war_cry',      name: '戰意呼喚', icon: '📢', unlockLv: 3,  cooldown: 0, mpCost: 0, type: 'heal', healPct: 0.15, isMpRegen: true },
         // ⭐ 改版：不耗 MP，改扣 20% 當前 HP；ATK +45% + 暴擊率 +20%；持續 5 回；cast 60；不可升級
         { id: 'w_bloodlust',    name: '嗜血怒嚎', icon: '🦁', unlockLv: 2,  cooldown: 0, mpCost: 0, hpCost: 0.20, type: 'buff', selfBuff: { stat: 'atkPct', amount: 0.45, turns: 5 }, selfBuff2: { stat: 'critChance', amount: 0.20, turns: 5 }, cast: 60, maxLv: 1 },
@@ -3723,11 +3724,11 @@
         chance: Math.min(1, (skill.applyStatus.chance || 1) * (1 + level * 0.05)),
         charges: (skill.applyStatus.charges || 1) + extraCharge,
       };
-    } else if ((skill.id === 'a_lethal_aim' || skill.id === 'p_holy_smite' || skill.id === 'm_destruction') && skill.applyStatus) {
-      // 致命瞄準 / 神聖懲戒 / 毀滅之怒：易傷 hit-based，僅 Lv 10 +1 次
+    } else if ((skill.id === 'a_lethal_aim' || skill.id === 'p_holy_smite' || skill.id === 'm_destruction' || skill.id === 'w_death_rage') && skill.applyStatus) {
+      // 致命瞄準 / 神聖懲戒 / 毀滅之怒 / 死戰之怒：易傷 hit-based，僅 Lv 10 +1 次
       eff.applyStatus = {
         ...skill.applyStatus,
-        hits: (skill.applyStatus.hits || 2) + (level >= 10 ? 1 : 0),
+        hits: (skill.applyStatus.hits || 1) + (level >= 10 ? 1 : 0),
       };
     } else if (skill.id === 'p_godfist' && skill.applyStatus) {
       // 神之拳：麻痺不隨等級縮放（固定 80%）
@@ -4430,6 +4431,8 @@
     { id: 'w_steel',  name: '精鋼劍',   icon: '🗡️', slot: 'weapon', atk: 9,  lv: 8 },
     { id: 'w_magic',  name: '魔劍',     icon: '✨', slot: 'weapon', atk: 14, lv: 13 },
     { id: 'w_holy',   name: '神劍',     icon: '🌟', slot: 'weapon', atk: 22, lv: 20 },
+    // ⭐ 嗜血劍：攻擊流血目標時回血×2 + ATK +20%（3 回合）
+    { id: 'bloodthirst_sword', name: '嗜血劍', icon: '🗡️', slot: 'weapon', atk: 15, lv: 12, onHitBleeding: { healMult: 2, atkPct: 0.20, turns: 3 } },
     // 防具
     { id: 'a_cloth',  name: '布衣',     icon: '👕', slot: 'armor', def: 2,  lv: 1 },
     { id: 'a_leather',name: '皮甲',     icon: '🦺', slot: 'armor', def: 5,  lv: 4 },
@@ -6111,6 +6114,9 @@
     const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0) + (setB.critChance || 0);
     const critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
     const regenPer = (cls.regenPer || 0) + (bonus.regen || 0);
+    // ⭐ 嗜血劍：裝備時攻擊流血目標 → 回血×2 + ATK+20%(3T)
+    const _weaponItem = resolveItem(rpg.equipment?.weapon);
+    const weaponBloodEffect = !!_weaponItem?.onHitBleeding;
     let pHp = stats.maxHp; // ⭐ 每場戰鬥 HP 自動回滿（HP 變成屬性，不是耗材）
     let pMp = stats.maxMp; // ⭐ 每場戰鬥 MP 自動回滿
     let mHp = monster.hp;
@@ -6405,7 +6411,7 @@
             // 怪物抗性（魔攻吃法抗，物攻吃物抗）
             if (isMagic && _monMagRes)  dmg *= (1 - _monMagRes);
             if (!isMagic && _monPhysRes) dmg *= (1 - _monPhysRes);
-            // ⭐ 流血加傷：血祭斬打流血目標 +30% 傷害
+            // ⭐ 流血加傷：血祭斬打流血目標傷害倍增（×2）
             if (skill.bleedBonus && hasStatus(monster, 'bleed')) {
               dmg *= (1 + skill.bleedBonus);
             }
@@ -6451,6 +6457,19 @@
               const before = pHp;
               pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + extraHeal));
               if (pHp - before > 0) extra += ` 🩸+${pHp - before} HP (流血吸血)`;
+            }
+            // ⭐ 嗜血劍：攻擊流血目標 → 回血×2 + ATK+20%(3T)
+            if (weaponBloodEffect && hasStatus(monster, 'bleed') && totalDmg > 0) {
+              // 回血效果倍增：把本次吸血再補一次
+              const bsHeal = (skill.lifesteal ? Math.max(1, Math.round(totalDmg * skill.lifesteal)) : 0)
+                           + (skill.bleedLifestealBonus ? Math.max(1, Math.round(totalDmg * skill.bleedLifestealBonus)) : 0);
+              if (bsHeal > 0) {
+                const before = pHp;
+                pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + bsHeal));
+                if (pHp - before > 0) extra += ` 🗡️+${pHp - before} HP (嗜血)`;
+              }
+              applyStatus(playerObj, { type: 'buff', stat: 'atkPct', amount: 0.20, turns: 3 });
+              extra += ` ⚔️嗜血`;
             }
             if (skill.healCaster) {
               const heal = Math.max(1, Math.round(stats.maxHp * skill.healCaster));
@@ -6654,6 +6673,11 @@
               log.push({ type: 'monster', text: `回合 ${round}：🪞 ${monster.name} 反射光芒 → ${player.name} -${r} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
             }
             if (mHp <= 0) { pushDeathLine(); break; }
+          }
+          // ⭐ 嗜血劍：普攻打流血目標 → ATK+20%(3T)（普攻無吸血，只觸發 ATK buff）
+          if (weaponBloodEffect && hasStatus(monster, 'bleed') && mHp > 0) {
+            applyStatus(playerObj, { type: 'buff', stat: 'atkPct', amount: 0.20, turns: 3 });
+            log.push({ type: 'system', text: `回合 ${round}：🗡️ 嗜血劍觸發 → ATK +20%（3 回合）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
           }
         }
       } else {
@@ -6987,6 +7011,9 @@
     const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0) + (setB.critChance || 0);
     const critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
     const regenPer = (cls.regenPer || 0) + (bonus.regen || 0);
+    // ⭐ 嗜血劍：裝備時攻擊流血目標 → 回血×2 + ATK+20%(3T)
+    const _weaponItemM = resolveItem(player.rpg?.equipment?.weapon);
+    const weaponBloodEffect = !!_weaponItemM?.onHitBleeding;
 
     let pHp = stats.maxHp; // ⭐ 每場戰鬥 HP 自動回滿（HP 變成屬性，不是耗材）
     let pMp = stats.maxMp; // ⭐ 每場戰鬥 MP 自動回滿
@@ -7240,7 +7267,7 @@
               if (isMagic && tgt.magRes) dmg *= (1 - tgt.magRes);
               if (!isMagic && tgt.physRes) dmg *= (1 - tgt.physRes);
               dmg *= consumeVulnerable(tgt); // ⭐ 易傷（hit-based）
-              // ⭐ 流血加傷：血祭斬打流血目標 +30% 傷害
+              // ⭐ 流血加傷：血祭斬打流血目標傷害倍增（×2）
               if (skill.bleedBonus && hasStatus(tgt, 'bleed')) {
                 dmg *= (1 + skill.bleedBonus);
               }
@@ -7283,6 +7310,22 @@
                 const before = pHp;
                 pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + extraHeal));
                 if (pHp - before > 0) extra += ` 🩸+${pHp - before} HP (流血吸血)`;
+              }
+            }
+            // ⭐ 嗜血劍：攻擊流血目標 → 回血×2 + ATK+20%(3T)
+            if (weaponBloodEffect && hits.length) {
+              const bleedHits = hits.filter(h => hasStatus(h.tgt, 'bleed'));
+              if (bleedHits.length) {
+                const bleedTotalDmg = bleedHits.reduce((s, h) => s + h.dmg, 0);
+                const bsHeal = (skill.lifesteal ? Math.max(1, Math.round(bleedTotalDmg * skill.lifesteal)) : 0)
+                             + (skill.bleedLifestealBonus ? Math.max(1, Math.round(bleedTotalDmg * skill.bleedLifestealBonus)) : 0);
+                if (bsHeal > 0) {
+                  const before = pHp;
+                  pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + bsHeal));
+                  if (pHp - before > 0) extra += ` 🗡️+${pHp - before} HP (嗜血)`;
+                }
+                applyStatus(playerObj, { type: 'buff', stat: 'atkPct', amount: 0.20, turns: 3 });
+                extra += ` ⚔️嗜血`;
               }
             }
             if (skill.healCaster) {
@@ -7464,6 +7507,11 @@
               text: `回合 ${round}：${cls.attackVerb}${isCrit ? '【暴擊】' : ''} → ${tgt.icon}${tgt.name} -${dmg} HP`,
               hp: hpsSnapshot(),
             });
+          }
+          // ⭐ 嗜血劍：普攻打流血目標 → ATK+20%(3T)
+          if (weaponBloodEffect && hasStatus(tgt, 'bleed') && tgt.hp > 0) {
+            applyStatus(playerObj, { type: 'buff', stat: 'atkPct', amount: 0.20, turns: 3 });
+            log.push({ type: 'system', text: `回合 ${round}：🗡️ 嗜血劍觸發 → ATK +20%（3 回合）`, hp: hpsSnapshot() });
           }
         }
       } else {
@@ -9347,7 +9395,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505152804';
+  const APP_VERSION = '20260505154301';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -9382,7 +9430,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260505d';
+  const NEWS_LATEST_ID = 'patch_20260505e';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -9402,6 +9450,22 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#7f1d1d,#dc2626); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">⚔️ 劍士改動 + 嗜血劍登場　<span style="font-size:11px; opacity:0.85;">2026-05-05</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#b91c1c; margin:6px 0 4px;">🩸 流血協同強化（攻擊流血敵人時）</div>
+        <div>・🆕 <b>嗜血劍</b> 🗡（Lv12 武器，ATK+15）：攻擊流血目標時<br>　　— <b>回血效果倍增</b>（吸血技能回血×2）<br>　　— <b>ATK +20%</b>（持續 3 回合）</div>
+        <div>・<b>血祭斬</b>：對流血目標傷害 <b>+30% → 倍增（×2）</b></div>
+
+        <div style="font-weight:700; color:#b91c1c; margin:10px 0 4px;">☠️ 死戰之怒強化</div>
+        <div>・新增效果：命中後施加敵人 <b>易傷 1 層</b>（受到傷害 +50%）</div>
+        <div>・<b>Lv10</b>：易傷疊加至 <b>2 層</b></div>
+
+        <div style="background:#fef2f2; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#991b1b;">
+          💡 嗜血劍可從怪物掉落，配合血鵝刀法→血祭斬循環輸出最大化
+        </div>
 
         <div style="background:linear-gradient(135deg,#1e3a5f,#1e40af); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">📋 行動規則 4 頁系統　<span style="font-size:11px; opacity:0.85;">2026-05-05</span></div>
@@ -9564,7 +9628,7 @@ ${b.text}
         <div>・流血：每次觸發扣敵人<b>當前 HP 的 0.5%</b>，消耗 1 層（charge-based）</div>
 
         <div style="font-weight:700; color:#dc2626; margin:10px 0 4px;">🩸 流血協同效果</div>
-        <div>・<b>血祭斬</b>：對流血目標 <b>+30% 傷害</b></div>
+        <div>・<b>血祭斬</b>：對流血目標<b>傷害倍增（×2）</b>（已從 +30% 強化）</div>
         <div>・<b>嗜血爆裂</b>：對流血目標<b>額外 +10% 吸血</b></div>
 
         <div style="font-weight:700; color:#dc2626; margin:10px 0 4px;">⚔️ 血祭斬 Lv10 調整</div>
