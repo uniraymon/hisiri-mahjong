@@ -9950,7 +9950,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506025446';
+  const APP_VERSION = '20260506030001';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -11111,7 +11111,10 @@ ${b.text}
           🎒 點裝備格 = 查看詳情 / 鑲嵌寶石；點背包物品 = 裝備 / 賣掉。
         </div>
         <div class="equip-row" id="equipRow"></div>
-        <button onclick="showGemModal()" style="width:100%; margin:8px 0 4px; padding:7px 0; background:linear-gradient(135deg,#7c3aed,#c026d3); color:#fff; font-weight:700; font-size:12px; border:none; border-radius:10px; cursor:pointer;">💎 寶石系統（轉蛋 / 合成 / 鑲嵌）</button>
+        <div style="display:flex; gap:6px; margin:8px 0 4px;">
+          <button onclick="showGemModal()" style="flex:1; padding:7px 0; background:linear-gradient(135deg,#7c3aed,#c026d3); color:#fff; font-weight:700; font-size:12px; border:none; border-radius:10px; cursor:pointer;">💎 寶石系統</button>
+          <button onclick="showFusionBaseSelector()" style="flex:1; padding:7px 0; background:linear-gradient(135deg,#d97706,#b45309); color:#fff; font-weight:700; font-size:12px; border:none; border-radius:10px; cursor:pointer;">⚗️ 印記合成</button>
+        </div>
         <div style="font-size:12px; color:#8b6f9b; margin:8px 0 6px; font-weight:600;">背包</div>
         <div id="invPageTabs" class="inv-page-tabs"></div>
         <div id="invToolbar" class="inv-toolbar"></div>
@@ -12456,6 +12459,57 @@ ${b.text}
   // ============================================================
   // ⚗️ 印記合成系統
   // ============================================================
+
+  // 從背包畫面直接進入合成選基底
+  function showFusionBaseSelector() {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const bases = (r.inventory || [])
+      .map((entry, i) => ({ item: resolveItem(entry), idx: i }))
+      .filter(({ item }) => item && item.isBossGift && item.slot === 'accessory');
+
+    if (bases.length === 0) {
+      showModal('⚗️ 印記合成', `
+        <div style="text-align:center; padding:20px 10px; color:#9ca3af; font-size:13px;">
+          背包中沒有可作為基底的印記首飾<br>
+          <span style="font-size:11px;">（需先從扭蛋機抽到鵝王恩賜 / 古龍鵝恩賜 / 鵝卵石恩賜）</span>
+        </div>
+        <button class="btn btn-secondary" onclick="showEquipmentModal()" style="margin-top:8px;">← 返回背包</button>
+      `);
+      return;
+    }
+
+    const slotColor = { king: '#fbbf24', dragon: '#22d3ee', pebble: '#a3a3a3' };
+    const slotLabel = { king: '鵝王', dragon: '古龍', pebble: '鵝卵石' };
+
+    const listHtml = bases.map(({ item, idx }) => {
+      const fused = item.fusedComponents || [];
+      const slots = ['king','dragon','pebble'].map(s => {
+        const filled = fused.some(fc => _fusionSlotOf(fc) === s);
+        return `<span style="font-size:10px; padding:1px 5px; border-radius:4px; background:${filled ? slotColor[s]+'55' : '#e5e7eb'}; color:${filled ? '#374151' : '#9ca3af'}; border:1px solid ${filled ? slotColor[s] : '#d1d5db'};">${slotLabel[s]}${filled ? '✓' : '○'}</span>`;
+      }).join(' ');
+      return `
+        <div onclick="showFusionModal(${idx})" style="display:flex; gap:10px; align-items:center; padding:8px 10px; background:#fffbeb; border:1.5px solid #fbbf24; border-radius:10px; margin-bottom:6px; cursor:pointer;" onmouseover="this.style.background='#fef3c7'" onmouseout="this.style.background='#fffbeb'">
+          <span style="font-size:26px;">${item.icon}</span>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:13px; font-weight:700; color:#92400e;">${escapeHtml(item.name)}</div>
+            <div style="font-size:10px; color:#b45309; margin:2px 0;">${escapeHtml(item.affixDesc || '')}</div>
+            <div style="display:flex; gap:3px; flex-wrap:wrap;">${slots}</div>
+          </div>
+          <span style="font-size:18px; color:#d97706;">›</span>
+        </div>`;
+    }).join('');
+
+    showModal('⚗️ 印記合成 — 選擇基底', `
+      <div style="font-size:11px; color:#78350f; background:#fef9c3; border:1px dashed #f59e0b; border-radius:8px; padding:6px 10px; margin-bottom:10px;">
+        選擇一件印記首飾作為基底，然後合入古龍鵝恩賜或鵝卵石恩賜，疊加屬性與效果。
+      </div>
+      ${listHtml}
+      <button class="btn btn-secondary" onclick="showEquipmentModal()" style="margin-top:6px; width:100%;">← 返回背包</button>
+    `);
+  }
+  window.showFusionBaseSelector = showFusionBaseSelector;
+
   // 判斷合成槽位（依 sourceBossId）
   function _fusionSlotOf(item) {
     if (!item) return null;
