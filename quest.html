@@ -5544,6 +5544,14 @@
         window.__pendingUpdateV11.add(player.id);
       }
     }
+    // ⭐ v12：戰士血池系統 / 爆血 / 釘選我的最愛 / 法師智慧改 MARK
+    if (!player.rpg.updateV12 && typeof getMeId === 'function' && player.id === getMeId()) {
+      player.rpg.updateV12 = true;
+      if (typeof window !== 'undefined') {
+        window.__pendingUpdateV12 = window.__pendingUpdateV12 || new Set();
+        window.__pendingUpdateV12.add(player.id);
+      }
+    }
     // skillPoints migration
     if (player.rpg.skillPoints == null) {
       const earned = Math.max(0, (player.rpg.level || 1) - 1) * POINTS_PER_LEVEL.skill;
@@ -7826,6 +7834,38 @@
   function maybeShowBetaCompModal() {
     const me = getMe();
     if (!me) return;
+    // ⭐ v12 優先（最新）：戰士血池系統 / 爆血 / 釘選我的最愛 / 法師智慧改 MARK
+    if (window.__pendingUpdateV12 && window.__pendingUpdateV12.has(me.id)) {
+      window.__pendingUpdateV12.delete(me.id);
+      const html = `
+        <div style="text-align:left; padding:6px 0;">
+          <div style="text-align:center; font-size:48px; margin-bottom:6px;">🩸⭐</div>
+          <div style="text-align:center; font-weight:800; font-size:17px; color:#dc2626; margin-bottom:8px;">v12 更新公告</div>
+          <div style="font-size:12px; color:#3b1a1a; line-height:1.8; padding:10px 14px; background:#fef2f2; border-radius:10px; border:2px dashed #fca5a5;">
+
+            <div style="font-weight:800; color:#dc2626; margin-bottom:4px;">🩸 戰士新系統：血池 &amp; 爆血</div>
+            • 使用 <b>血祭斬（−15% HP）</b>、<b>死戰之怒（−10% HP）</b>、<b>嗜血怒嚎（−20% HP）</b> 時，扣掉的 HP 會自動累積到「<b>血池</b>」<br>
+            • 戰鬥介面會顯示 🩸 <b>血池進度條</b>（紅色），即時更新<br>
+            • 🆕 新技能 <b>爆血</b>（Lv 8 解鎖，cooldown 1）：將整個血池以<b>真傷</b>打出（無視防禦、無視抗性），可暴擊<br>
+            • <b>死戰之怒</b> HP 代價改為 <b>−10% maxHp</b>（原 flat 20）<br>
+
+            <div style="font-weight:800; color:#f59e0b; margin:10px 0 4px;">⭐ 道具 / 精魂「我的最愛」釘選</div>
+            • 每個道具格 / 精魂格左上角新增 <b>☆ 按鈕</b>，點擊即可釘選<br>
+            • 已釘選物品顯示 ⭐ 金框，<b>不會被批量賣出 / 批量拆解</b>（雙重保護）<br>
+            • 全選功能也會自動跳過已釘選物品<br>
+
+            <div style="font-weight:800; color:#7c3aed; margin:10px 0 4px;">🧙 法師技能樹調整</div>
+            • <b>智慧</b>：+2 ATK → <b>+3 MARK</b>（每級，最多 5 級 = +15 MARK）<br>
+            • 修正：MARK 加成之前沒有被正確計算入屬性，現已修復<br>
+
+          </div>
+          <button class="btn btn-primary" onclick="hideModal()" style="margin-top:14px; width:100%; background:linear-gradient(135deg,#dc2626,#7c3aed);">🩸 了解！</button>
+        </div>
+      `;
+      showModal('🎉 v12 更新公告', html);
+      saveData();
+      return;
+    }
     // ⭐ v11 優先（最新）：深淵層 / 深淵 II / 神話裝備 / 弓手多段修復
     if (window.__pendingUpdateV11 && window.__pendingUpdateV11.has(me.id)) {
       window.__pendingUpdateV11.delete(me.id);
@@ -9505,7 +9545,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505191632';
+  const APP_VERSION = '20260505193159';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
