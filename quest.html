@@ -6530,7 +6530,7 @@
               if (forceHs) playerObj.statuses = playerObj.statuses.filter(s => s !== _stealthHsSt);
               const isHs   = forceHs || Math.random() < HEADSHOT_CHANCE;
               const isCrit = Math.random() < baseCrit2;
-              const defVal = isHs ? 0 : Math.floor(monDef0 / 2); // 爆頭無視防禦
+              const defVal = isHs ? 0 : Math.floor(monDef0 / 2 / totalHits); // 爆頭無視防禦；普攻防禦分攤各段
               let dmg = Math.max(1, effAtk * 0.30 - defVal);
               dmg *= (0.85 + Math.random() * 0.3);
               if (isCrit) { dmg *= critMult2; critCount++; }
@@ -7344,7 +7344,7 @@
               if (forceHs) playerObj.statuses = playerObj.statuses.filter(s => s !== _stealthHsSt);
               const isHs   = forceHs || Math.random() < HEADSHOT_CHANCE;
               const isCrit = Math.random() < baseCrit2;
-              const defVal = isHs ? 0 : Math.floor(tgt.def / 2); // 爆頭無視防禦
+              const defVal = isHs ? 0 : Math.floor(tgt.def / 2 / totalHits); // 爆頭無視防禦；普攻防禦分攤各段
               let dmg = Math.max(1, effAtk * 0.30 - defVal);
               dmg *= (0.85 + Math.random() * 0.3);
               if (isCrit) { dmg *= critMult2; critCount++; }
@@ -9271,7 +9271,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505133503';
+  const APP_VERSION = '20260505133627';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
