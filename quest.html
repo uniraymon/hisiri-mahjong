@@ -5860,9 +5860,9 @@
   }
   // ⭐ Lv 1-5 標準曲線；Lv 6+ 系數 ×0.8（升級需求降 20%，配合怪物 XP +20%，中後期成長變快）
   function xpForLevel(lv) {
-    // ⭐ Lv 15 以下經驗需求 -50%（加速新玩家追上）
+    // ⭐ Lv 30 以下經驗需求 -50%（加速新玩家追上；Lv 30+ 完全不變）
     const base = lv <= 5 ? lv * lv * 100 : lv * lv * 80;
-    return lv <= 15 ? Math.round(base * 0.5) : Math.round(base);
+    return lv < 30 ? Math.round(base * 0.5) : Math.round(base);
   }
   // 計算目前裝備的套裝件數，並回傳 { counts: {setId: n}, bonuses: {...合併} }
   function computeSetBonuses(player) {
@@ -9705,7 +9705,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506010405';
+  const APP_VERSION = '20260506010835';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
