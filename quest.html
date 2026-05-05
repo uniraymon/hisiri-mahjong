@@ -9705,7 +9705,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506012552';
+  const APP_VERSION = '20260506013122';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -9781,6 +9781,28 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#164e63,#0891b2); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🔹⚔️ 平衡調整 + 修復　<span style="font-size:11px; opacity:0.85;">2026-05-06</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#0e7490; margin:6px 0 4px;">🔹 魔力寶石削弱</div>
+        <div>・一階 魔力晶石：<b>+15 → +8 MP</b></div>
+        <div>・二階 魔力寶石：<b>+40 → +15 MP</b></div>
+        <div>・三階 魔力鑽石：<b>+80 → +30 MP</b></div>
+        <div style="font-size:11px; color:#6b7280;">→ 已有寶石自動套用新數值，無需重新鑲嵌</div>
+
+        <div style="font-weight:700; color:#059669; margin:10px 0 4px;">⭐ 升級加速（Lv 1–29）</div>
+        <div>・Lv 30 以下所有等級的升級經驗需求 <b>減半</b></div>
+        <div>・Lv 30 以上完全不變</div>
+
+        <div style="font-weight:700; color:#dc2626; margin:10px 0 4px;">🐛 修復</div>
+        <div>・<b>深淵 II / 下層 / 深層多怪戰</b>：戰鬥結束後按鈕永久鎖死的 bug 已修復</div>
+        <div>・<b>世界王 / 個人王回放</b>：劍士血池條現在正確顯示</div>
+
+        <div style="background:#ecfeff; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#164e63;">
+          💡 魔力寶石過強，三階單顆即可覆蓋大多數技能 MP 消耗，故調整為更合理的數值
+        </div>
 
         <div style="background:linear-gradient(135deg,#7f1d1d,#b91c1c); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">⚔️🩸 v13 平衡 &amp; 戰鬥更新　<span style="font-size:11px; opacity:0.85;">2026-05-06</span></div>
