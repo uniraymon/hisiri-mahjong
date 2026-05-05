@@ -2724,7 +2724,7 @@
       attackerAvatar: me.avatar || cls?.icon || '🎴',
       playerSnap: { name: me.name, avatar: cls?.icon || '🎴', level: r.level, maxHp: stats.maxHp, maxMp: stats.maxMp },
       monsterSnap: { name: monster.name, icon: monster.icon, level: monster.level, ability: monster.ability },
-      log: (result.log || []).slice(0, 500),
+      log: (result.log || []).slice(0, 1000),
     };
 
     // 送 TX
@@ -6376,7 +6376,7 @@
       }
     };
 
-    while (pHp > 0 && mHp > 0 && round < (monster.maxRounds || 80)) {
+    while (pHp > 0 && mHp > 0 && round < (monster.maxRounds || 100)) {
       // 重算 pSpd（含 buff / spdPct debuff）
       const pBuff = getBuffBonus(playerObj);
       pSpd = Math.max(1, (SPD_BASE + effectiveSpd + (pBuff.spd || 0)) * (1 + (pBuff.spdPct || 0)));
@@ -7279,7 +7279,7 @@
     let round = 0, playerActions = 0, critCount = 0;
     const hpsSnapshot = () => ({ player: pHp, mp: pMp, monsters: mList.map(m => Math.max(0, m.hp)), bloodPool });
 
-    while (pHp > 0 && mList.some(m => m.alive) && round < 120) {
+    while (pHp > 0 && mList.some(m => m.alive) && round < 100) {
       // 重算 pSpd（含 buff / spdPct debuff）
       const pBuff = getBuffBonus(playerObj);
       pSpd = Math.max(1, (SPD_BASE + effectiveSpd + (pBuff.spd || 0)) * (1 + (pBuff.spdPct || 0)));
@@ -9670,7 +9670,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506004207';
+  const APP_VERSION = '20260506004416';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13706,7 +13706,7 @@ ${b.text}
               killed,
               playerSnap: { name: me.name, avatar: CLASSES[rpg.class]?.icon || '🎴', level: rpg.level, maxHp: stats.maxHp, maxMp: stats.maxMp },
               monsterSnap: { name: def.name, icon: def.icon, level: def.level, maxHp: def.hp, ability: def.ability },
-              log: (result.log || []).slice(0, 500),
+              log: (result.log || []).slice(0, 1000),
             };
             rpg.personalBossHistory = Array.isArray(rpg.personalBossHistory) ? rpg.personalBossHistory : [];
             rpg.personalBossHistory.unshift(pbSnap);
@@ -14331,7 +14331,7 @@ ${b.text}
                 maxHp: monster.maxHp || monster.hp,
                 ability: monster.ability,
               },
-              log: (result.log || []).slice(0, 500),
+              log: (result.log || []).slice(0, 1000),
               zoneId, layerId,
               isForage: true,
             };
@@ -14619,7 +14619,7 @@ ${b.text}
         killed: !!result.won,
         playerSnap: { name: player.name, avatar: CLASSES[rpg.class]?.icon || '🎴', level: rpg.level, maxHp: stats.maxHp, maxMp: stats.maxMp },
         monsterSnap: { name: monsters.map(m => m.name).join(' + '), icon: monsters[0].icon, level: monsters[0].level, maxHp: monsters.reduce((s, m) => s + (m.maxHp || 0), 0) },
-        log: (result.log || []).slice(0, 500),
+        log: (result.log || []).slice(0, 1000),
         zoneId: ctx?.zoneId, layerId: ctx?.layerId,
         isForage: true,
       };
