@@ -2453,10 +2453,10 @@
   const WB9_MAX_XP_PER_FIGHT   = 500;      // ⭐ v9 單場最多 500 EXP（舊版 1000）
   // 擊殺結算獎勵（所有世界王通用）
   const WB9_KILL_REWARDS = {
-    top:         { gemRaw: 3, bossCoinQty: 5 },   // 傷害第一
-    second:      { gemRaw: 2, bossCoinQty: 4 },   // 傷害第二
-    participant: { gemRaw: 1, bossCoinQty: 2 },   // 其他參與者
-    killer:      { gemRaw: 2, bossCoinQty: 5 },   // 尾刀額外獎勵
+    top:         { gemRaw: 2, bossCoinQty: 3 },   // 傷害第一
+    second:      { gemRaw: 1, bossCoinQty: 2 },   // 傷害第二
+    participant: { gemRaw: 0, bossCoinQty: 0 },   // 其他參與者
+    killer:      { gemRaw: 1, bossCoinQty: 3 },   // 尾刀額外獎勵
   };
   const WB9_QUEUE_STALE_MS     = 60 * 1000;
   const WB9_COOLDOWN_MS        = 5 * 60 * 1000; // 5 分鐘冷卻
@@ -9271,7 +9271,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505050233';
+  const APP_VERSION = '20260505132513';
   (async () => {
     await new Promise(r => setTimeout(r, 5000)); // 等 5 秒再偵測，避免影響初始載入
     try {
@@ -9416,10 +9416,10 @@ ${b.text}
         </div>
 
         <div style="font-weight:700; color:#dc2626; margin:6px 0 4px;">⚔️ 世界王擊殺結算獎勵</div>
-        <div>・<b>傷害第一名</b>：🪨原石×3 ＋ 🎟扭蛋幣×5</div>
-        <div>・<b>傷害第二名</b>：🪨原石×2 ＋ 🎟扭蛋幣×4</div>
-        <div>・<b>其他參與者</b>：🪨原石×1 ＋ 🎟扭蛋幣×2</div>
-        <div>・<b>尾刀加碼</b>：再+🪨原石×2 ＋ 🎟扭蛋幣×5（可疊加排名獎勵）</div>
+        <div>・<b>傷害第一名</b>：🪨原石×2 ＋ 🎟扭蛋幣×3</div>
+        <div>・<b>傷害第二名</b>：🪨原石×1 ＋ 🎟扭蛋幣×2</div>
+        <div>・<b>其他參與者</b>：無獎勵</div>
+        <div>・<b>尾刀加碼</b>：再+🪨原石×1 ＋ 🎟扭蛋幣×3（可疊加排名獎勵）</div>
         <div style="font-size:11px; color:#6b7280; margin-top:2px;">→ 擊殺後自動發放，下線期間打死的獎勵在下次上線時自動領取</div>
 
         <div style="font-weight:700; color:#dc2626; margin:10px 0 4px;">🎟 扭蛋幣系統</div>
