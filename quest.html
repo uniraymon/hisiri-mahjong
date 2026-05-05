@@ -1991,7 +1991,9 @@
         { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 1,  cooldown: 0, mpCost: 0, hpCost: 0.15, type: 'damage', mult: 2.0, cast: 5, bleedBonus: 1.0 },
         { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 6,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.0, lifesteal: 0.20, customLv: true, bleedLifestealBonus: 0.10 },
         // ⭐ 死戰之怒：施放後施加易傷 1 層；Lv10 +1 層（共 2 層）
-        { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 50, hpCostFlat: 20, type: 'damage', mult: 4.5, cast: 50, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 1, chance: 1 }, customLv: true },
+        { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 50, hpCost: 0.10, type: 'damage', mult: 4.5, cast: 50, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 1, chance: 1 }, customLv: true },
+        // ⭐ 爆血：消耗血池（本場所有 HP 代價技能累積），以真傷形式打出（無視防禦與抗性）
+        { id: 'w_blood_explode', name: '爆血',   icon: '🩸💥', unlockLv: 8, cooldown: 1, mpCost: 0, type: 'damage', usesBloodPool: true, cast: 5 },
         { id: 'w_war_cry',      name: '戰意呼喚', icon: '📢', unlockLv: 3,  cooldown: 0, mpCost: 0, type: 'heal', healPct: 0.15, isMpRegen: true },
         // ⭐ 改版：不耗 MP，改扣 20% 當前 HP；ATK +45% + 暴擊率 +20%；持續 5 回；cast 60；不可升級
         { id: 'w_bloodlust',    name: '嗜血怒嚎', icon: '🦁', unlockLv: 2,  cooldown: 0, mpCost: 0, hpCost: 0.20, type: 'buff', selfBuff: { stat: 'atkPct', amount: 0.45, turns: 5 }, selfBuff2: { stat: 'critChance', amount: 0.20, turns: 5 }, cast: 60, maxLv: 1 },
@@ -6148,6 +6150,7 @@
     let playerActions = 0;
     let coinsStolen = 0;
     let critCount = 0;
+    let bloodPool = 0; // ⭐ 血池：累積所有 HP 代價技能扣的血，供「爆血」技能使用
     const mAbility = monster.ability;
     // ⭐ 物理/法術抗性：優先用 physRes/magRes 欄位，舊版 ability 格式仍向下相容
     const _monPhysRes = monster.physRes ?? (mAbility?.type === 'physResist' ? (mAbility.resist || 0) : 0);
@@ -6368,9 +6371,12 @@
           // ⭐ 硬值：施放完 pGauge 額外扣 cast（重技能下次行動更慢）
           pGauge -= getEffectiveCast(skill);
           // 成本說明字串（多種代價可能組合：MP / HP）
+          // ⭐ 血池累積：任何扣 HP 的技能（血祭斬 / 死戰之怒 / 嗜血怒嚎…）都加進血池
+          if (hpPaid > 0) bloodPool += hpPaid;
           const costParts = [];
           if (effMpCost > 0) costParts.push(`-${effMpCost} MP`);
           if (hpPaid > 0)    costParts.push(`-${hpPaid} HP`);
+          if (hpPaid > 0)    costParts.push(`🩸血池→${bloodPool}`);
           const costStr = costParts.length ? `（${costParts.join('，')}）` : '';
           if (skill.type === 'damage') {
             let dmg;
@@ -6403,26 +6409,32 @@
             } else if (isFlat) {
               dmg = (skill.flat + (bonus.skillFlat || 0) + (abil.skillFlat || 0)) + (skill.perLv || 0) * (player.rpg.level || 1);
               if (!skill.ignoreDef) dmg -= Math.floor(monDef / 2);
+            } else if (skill.usesBloodPool) {
+              // ⭐ 爆血：真傷 = 累積血池，不吃防禦
+              dmg = bloodPool;
+              bloodPool = 0;
             } else {
               // ⭐ useMark:true 的技能使用 MARK 而非 ATK（法師魔攻技）
               const dmgStat = skill.useMark ? effMark : effAtk;
               dmg = dmgStat * (skill.mult || 1) - Math.floor(monDef / 2);
             }
             // ⭐ markMult：flat 傷害後追加 MARK 加傷（火焰風暴：固定150 + 6*MARK）
-            if (skill.markMult) {
+            if (skill.markMult && !skill.usesBloodPool) {
               dmg = Math.max(0, dmg) + effMark * skill.markMult;
             }
             dmg *= perHitFactor;
             // 技能個別 % 加成（從技能樹點到的對應節點）— 只對前 3 個技能有效
-            const perSkillKey = `skill${useSkillIdx}Pct`;
-            dmg *= (1 + (bonus[perSkillKey] || 0));
-            // 通用 skillDmgPct（保留舊邏輯）
-            dmg *= (1 + (bonus.skillDmgPct || 0));
-            // 是否走「魔攻」邏輯：flat / maxHpMult / 顯式 magic flag / useMark
+            // 爆血（真傷）不吃技能加成與被動加成
             const isMagic = isFlat || skill.maxHpMult != null || skill.magic || skill.markMult;
-            // 職業被動：物理或法術加成
-            if (isMagic) dmg *= (1 + (passive.flatPct || 0));
-            else         dmg *= (1 + (passive.physPct || 0));
+            if (!skill.usesBloodPool) {
+              const perSkillKey = `skill${useSkillIdx}Pct`;
+              dmg *= (1 + (bonus[perSkillKey] || 0));
+              // 通用 skillDmgPct（保留舊邏輯）
+              dmg *= (1 + (bonus.skillDmgPct || 0));
+              // 職業被動：物理或法術加成
+              if (isMagic) dmg *= (1 + (passive.flatPct || 0));
+              else         dmg *= (1 + (passive.physPct || 0));
+            }
             // ⭐ 聖騎 bonusMaxHpPct：純加值（maxHp × X），不吃怪 DEF
             //    例：聖光斬 1.2× ATK + 5% maxHp → 200 maxHp 玩家額外 +10 傷害
             //    ATK 部分被高 DEF 壓到負值時，先 clamp 0 再加 maxHp，避免被 Math.max(1) 蓋掉
@@ -6432,9 +6444,11 @@
               __bonusMaxHpDmg = effMaxHp * skill.bonusMaxHpPct;
               dmg = Math.max(0, dmg) + __bonusMaxHpDmg;
             }
-            // 怪物抗性（魔攻吃法抗，物攻吃物抗）
-            if (isMagic && _monMagRes)  dmg *= (1 - _monMagRes);
-            if (!isMagic && _monPhysRes) dmg *= (1 - _monPhysRes);
+            // 怪物抗性（魔攻吃法抗，物攻吃物抗）— 爆血（真傷）無視所有抗性
+            if (!skill.usesBloodPool) {
+              if (isMagic && _monMagRes)  dmg *= (1 - _monMagRes);
+              if (!isMagic && _monPhysRes) dmg *= (1 - _monPhysRes);
+            }
             // ⭐ 流血加傷：血祭斬打流血目標傷害倍增（×2）
             if (skill.bleedBonus && hasStatus(monster, 'bleed')) {
               dmg *= (1 + skill.bleedBonus);
@@ -6525,7 +6539,7 @@
             log.push({
               type: 'crit-player',
               text: `回合 ${round}：${skill.icon} ${skill.name}${lastIsCrit ? '【暴擊】' : ''}${isMagic ? '【魔攻】' : ''}${skillHits > 1 ? `×${skillHits}` : ''} → ${monster.name} ${skillHits > 1 ? '共 ' + totalDmg + ' HP ' + dmgStr : dmgStr}${extra}${costStr}`,
-              hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp }
+              hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp, bloodPool }
             });
             if (mAbility?.type === 'reflect' && mAbility.resist) {
               log.push({ type: 'monster', text: `回合 ${round}：🪞 ${monster.name} 反射光芒（多段反彈）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
@@ -6590,7 +6604,7 @@
             log.push({
               type: 'player',
               text: `回合 ${round}：${skill.icon} ${skill.name} → ${mainDesc}${extraNote.length ? ' / ' + extraNote.join(' / ') : ''}${costStr}`,
-              hp: { player: pHp, monster: mHp, mp: pMp }
+              hp: { player: pHp, monster: mHp, mp: pMp, bloodPool }
             });
           } else if (skill.type === 'heal') {
             // 'heal' 類型：可同時帶 healPct（HP 補）+ mpFlat 或 mpPct（MP 補）
@@ -7041,6 +7055,7 @@
 
     let pHp = stats.maxHp; // ⭐ 每場戰鬥 HP 自動回滿（HP 變成屬性，不是耗材）
     let pMp = stats.maxMp; // ⭐ 每場戰鬥 MP 自動回滿
+    let bloodPool = 0; // ⭐ 血池：累積所有 HP 代價技能扣的血，供「爆血」技能使用
     const playerObj = { statuses: [] };
 
     // 怪物列表，每隻獨立 ATB gauge
@@ -7111,7 +7126,7 @@
     log.push({ type: 'system', text: `🌬 你 SPD ${effectiveSpd}　·　${monsters.map(m => m.name + ' ' + m.spd).join(' / ')}` });
 
     let round = 0, playerActions = 0, critCount = 0;
-    const hpsSnapshot = () => ({ player: pHp, mp: pMp, monsters: mList.map(m => Math.max(0, m.hp)) });
+    const hpsSnapshot = () => ({ player: pHp, mp: pMp, monsters: mList.map(m => Math.max(0, m.hp)), bloodPool });
 
     while (pHp > 0 && mList.some(m => m.alive) && round < 120) {
       // 重算 pSpd（含 buff / spdPct debuff）
@@ -7238,10 +7253,13 @@
             pHp = Math.max(1, pHp - hpPaid);
           }
           if (skill.hpCostFlat) { hpPaid += skill.hpCostFlat; pHp = Math.max(1, pHp - skill.hpCostFlat); }
+          // ⭐ 血池累積：任何扣 HP 的技能都加進血池
+          if (hpPaid > 0) bloodPool += hpPaid;
           nextActionForSkill[skill.id] = playerActions + skill.cooldown;
           const costParts = [];
           if (effMpCost > 0) costParts.push(`-${effMpCost} MP`);
           if (hpPaid > 0)    costParts.push(`-${hpPaid} HP`);
+          if (hpPaid > 0)    costParts.push(`🩸血池→${bloodPool}`);
           const costStr = costParts.length ? `（${costParts.join('，')}）` : '';
 
           if (skill.type === 'damage') {
@@ -7270,26 +7288,35 @@
               } else if (isFlat) {
                 dmg = (skill.flat + (bonus.skillFlat || 0) + (abil.skillFlat || 0)) + (skill.perLv || 0) * (player.rpg.level || 1);
                 if (!skill.ignoreDef) dmg -= Math.floor(tgtMonDef / 2);
+              } else if (skill.usesBloodPool) {
+                // ⭐ 爆血：真傷 = 累積血池（每個目標各打一次，但 targetCount = 1）
+                dmg = bloodPool;
               } else {
                 const dmgStat = skill.useMark ? effMark : effAtk;
                 dmg = dmgStat * (skill.mult || 1) - Math.floor(tgtMonDef / 2);
               }
               // ⭐ markMult：flat 傷害後追加 MARK 加傷（火焰風暴：固定150 + 6*MARK）
-              if (skill.markMult) {
+              if (skill.markMult && !skill.usesBloodPool) {
                 dmg = Math.max(0, dmg) + effMark * skill.markMult;
               }
-              const perSkillKey = `skill${useSkillIdx}Pct`;
-              dmg *= (1 + (bonus[perSkillKey] || 0));
-              dmg *= (1 + (bonus.skillDmgPct || 0));
-              if (isMagic) dmg *= (1 + (passive.flatPct || 0));
-              else         dmg *= (1 + (passive.physPct || 0));
+              // 爆血（真傷）不吃技能加成與被動加成
+              if (!skill.usesBloodPool) {
+                const perSkillKey = `skill${useSkillIdx}Pct`;
+                dmg *= (1 + (bonus[perSkillKey] || 0));
+                dmg *= (1 + (bonus.skillDmgPct || 0));
+                if (isMagic) dmg *= (1 + (passive.flatPct || 0));
+                else         dmg *= (1 + (passive.physPct || 0));
+              }
               // ⭐ 聖騎 bonusMaxHpPct：純加值，不吃怪 DEF（同單體 path）
               if (skill.bonusMaxHpPct) {
                 const effMaxHp = Math.round(stats.maxHp * (1 + (pBuff.maxHpPct || 0)));
                 dmg = Math.max(0, dmg) + effMaxHp * skill.bonusMaxHpPct;
               }
-              if (isMagic && tgt.magRes) dmg *= (1 - tgt.magRes);
-              if (!isMagic && tgt.physRes) dmg *= (1 - tgt.physRes);
+              // 爆血（真傷）無視所有抗性
+              if (!skill.usesBloodPool) {
+                if (isMagic && tgt.magRes) dmg *= (1 - tgt.magRes);
+                if (!isMagic && tgt.physRes) dmg *= (1 - tgt.physRes);
+              }
               dmg *= consumeVulnerable(tgt); // ⭐ 易傷（hit-based）
               // ⭐ 流血加傷：血祭斬打流血目標傷害倍增（×2）
               if (skill.bleedBonus && hasStatus(tgt, 'bleed')) {
@@ -7376,6 +7403,8 @@
               applyStatus(playerObj, { type: 'buff', stat: skill.postSelfBuff.stat, amount: skill.postSelfBuff.amount, turns: skill.postSelfBuff.turns });
               extra += ` ✨${describeBuff(skill.postSelfBuff)}`;
             }
+            // ⭐ 爆血：攻擊完畢後清空血池
+            if (skill.usesBloodPool) bloodPool = 0;
             const targetSummary = hits.map(h => `${h.tgt.icon}${h.tgt.name} -${h.dmg}${h.isCrit ? '【爆】' : ''}`).join(' / ');
             log.push({
               type: 'crit-player',
@@ -9419,7 +9448,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505162429';
+  const APP_VERSION = '20260505170539';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -12634,6 +12663,9 @@ ${b.text}
           <div class="t-hp-text" id="tpHpText">${stats.maxHp}/${stats.maxHp}</div>
           <div class="t-mp"><div class="t-mp-fill" id="tpMpFill" style="width:100%"></div></div>
           <div class="t-mp-text" id="tpMpText">MP ${stats.maxMp}/${stats.maxMp}</div>
+          ${rpg.class === 'warrior' ? `
+          <div class="t-hp" style="margin-top:2px; background:#3f0000;"><div class="t-hp-fill" id="tpBloodPoolFill" style="width:0%; background:linear-gradient(90deg,#ef4444,#991b1b);"></div></div>
+          <div class="t-hp-text" id="tpBloodPoolText" style="color:#ef4444;">🩸 血池 0</div>` : ''}
           <div class="combatant-spd-track"><div class="combatant-spd-fill" id="tpSpdBar" style="width:0%"></div></div>
           <div class="combatant-spd-text" id="tpSpdText">⏱ 行動條 0%</div>
         </div>
@@ -12704,6 +12736,12 @@ ${b.text}
             if (f) f.style.width = (mh / monsters[idx].maxHp * 100) + '%';
             if (t) t.textContent = `${mh}/${monsters[idx].maxHp}`;
           });
+        }
+        if (entry.hp.bloodPool != null) {
+          const bpFill = document.getElementById('tpBloodPoolFill');
+          const bpText = document.getElementById('tpBloodPoolText');
+          if (bpFill) bpFill.style.width = Math.min(100, (entry.hp.bloodPool / Math.max(1, stats.maxHp)) * 100) + '%';
+          if (bpText) bpText.textContent = `🩸 血池 ${entry.hp.bloodPool}`;
         }
       }
       // ⭐ 更新行動條（ATB / SPD 進度）
@@ -13181,6 +13219,9 @@ ${b.text}
           <div class="combatant-hp-text" id="pHpText">${stats.maxHp}/${stats.maxHp}</div>
           <div class="combatant-hp-track" style="margin-top:2px;"><div class="combatant-hp-fill" id="pMpBar" style="width:100%; background:linear-gradient(90deg,#93c5fd,#3b82f6);"></div></div>
           <div class="combatant-hp-text" id="pMpText" style="color:#1e40af;">MP ${stats.maxMp}/${stats.maxMp}</div>
+          ${rpg.class === 'warrior' ? `
+          <div class="combatant-hp-track" style="margin-top:2px; background:#3f0000;"><div class="combatant-hp-fill" id="bloodPoolBar" style="width:0%; background:linear-gradient(90deg,#ef4444,#991b1b);"></div></div>
+          <div class="combatant-hp-text" id="bloodPoolText" style="color:#ef4444;">🩸 血池 0</div>` : ''}
           <div class="combatant-spd-track"><div class="combatant-spd-fill" id="pSpdBar" style="width:0%"></div></div>
           <div class="combatant-spd-text" id="pSpdText">⏱ 行動條 0%</div>
         </div>
@@ -13350,6 +13391,12 @@ ${b.text}
           const pMpText = document.getElementById('pMpText');
           if (pMpBar) pMpBar.style.width = (entry.hp.mp / stats.maxMp * 100) + '%';
           if (pMpText) pMpText.textContent = `MP ${entry.hp.mp}/${stats.maxMp}`;
+        }
+        if (entry.hp.bloodPool != null) {
+          const bpBar = document.getElementById('bloodPoolBar');
+          const bpText = document.getElementById('bloodPoolText');
+          if (bpBar) bpBar.style.width = Math.min(100, (entry.hp.bloodPool / Math.max(1, stats.maxHp)) * 100) + '%';
+          if (bpText) bpText.textContent = `🩸 血池 ${entry.hp.bloodPool}`;
         }
       }
       // ⭐ 行動條（純視覺，跑得比實際戰鬥快）
@@ -13785,6 +13832,9 @@ ${b.text}
           <div class="combatant-hp-text" id="pHpText">${stats.maxHp}/${stats.maxHp}</div>
           <div class="combatant-hp-track" style="margin-top:2px;"><div class="combatant-hp-fill" id="pMpBar" style="width:100%; background:linear-gradient(90deg,#93c5fd,#3b82f6);"></div></div>
           <div class="combatant-hp-text" id="pMpText" style="color:#1e40af;">MP ${stats.maxMp}/${stats.maxMp}</div>
+          ${rpg.class === 'warrior' ? `
+          <div class="combatant-hp-track" style="margin-top:2px; background:#3f0000;"><div class="combatant-hp-fill" id="bloodPoolBar" style="width:0%; background:linear-gradient(90deg,#ef4444,#991b1b);"></div></div>
+          <div class="combatant-hp-text" id="bloodPoolText" style="color:#ef4444;">🩸 血池 0</div>` : ''}
           <div class="combatant-spd-track"><div class="combatant-spd-fill" id="pSpdBar" style="width:0%"></div></div>
           <div class="combatant-spd-text" id="pSpdText">⏱ 行動條 0%</div>
         </div>
@@ -13881,7 +13931,7 @@ ${b.text}
       div.textContent = entry.text;
       logEl.appendChild(div);
       logEl.scrollTop = logEl.scrollHeight;
-      // 更新 HP / MP 條
+      // 更新 HP / MP / 血池 條
       if (entry.hp) {
         document.getElementById('pHpBar').style.width = (entry.hp.player / stats.maxHp * 100) + '%';
         document.getElementById('pHpText').textContent = `${entry.hp.player}/${stats.maxHp}`;
@@ -13890,6 +13940,12 @@ ${b.text}
         if (entry.hp.mp != null) {
           document.getElementById('pMpBar').style.width = (entry.hp.mp / stats.maxMp * 100) + '%';
           document.getElementById('pMpText').textContent = `MP ${entry.hp.mp}/${stats.maxMp}`;
+        }
+        if (entry.hp.bloodPool != null) {
+          const bpBar = document.getElementById('bloodPoolBar');
+          const bpText = document.getElementById('bloodPoolText');
+          if (bpBar) bpBar.style.width = Math.min(100, (entry.hp.bloodPool / Math.max(1, stats.maxHp)) * 100) + '%';
+          if (bpText) bpText.textContent = `🩸 血池 ${entry.hp.bloodPool}`;
         }
         // shake 動畫
         if (entry.type === 'player' || entry.type === 'crit-player') {
@@ -13926,6 +13982,9 @@ ${b.text}
           <div class="t-hp-text" id="mfPHpText">${stats.maxHp}/${stats.maxHp}</div>
           <div class="t-mp"><div class="t-mp-fill" id="mfPMpFill" style="width:100%"></div></div>
           <div class="t-mp-text" id="mfPMpText">MP ${stats.maxMp}/${stats.maxMp}</div>
+          ${rpg.class === 'warrior' ? `
+          <div class="t-hp" style="margin-top:2px; background:#3f0000;"><div class="t-hp-fill" id="mfPBloodPoolFill" style="width:0%; background:linear-gradient(90deg,#ef4444,#991b1b);"></div></div>
+          <div class="t-hp-text" id="mfPBloodPoolText" style="color:#ef4444;">🩸 血池 0</div>` : ''}
           <div class="combatant-spd-track"><div class="combatant-spd-fill" id="mfPSpdBar" style="width:0%"></div></div>
           <div class="combatant-spd-text" id="mfPSpdText">⏱ 行動條 0%</div>
         </div>
@@ -14000,6 +14059,12 @@ ${b.text}
             if (f) f.style.width = (mh / monsters[idx].maxHp * 100) + '%';
             if (t) t.textContent = `${mh}/${monsters[idx].maxHp}`;
           });
+        }
+        if (entry.hp.bloodPool != null) {
+          const bpFill = document.getElementById('mfPBloodPoolFill');
+          const bpText = document.getElementById('mfPBloodPoolText');
+          if (bpFill) bpFill.style.width = Math.min(100, (entry.hp.bloodPool / Math.max(1, stats.maxHp)) * 100) + '%';
+          if (bpText) bpText.textContent = `🩸 血池 ${entry.hp.bloodPool}`;
         }
       }
       if (entry.gauge && typeof updateSpdBar === 'function') {
