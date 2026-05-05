@@ -3671,6 +3671,7 @@
     1900: { id: 1900, label: '我的第 X 次行動',           paramType: 'count' },
     1901: { id: 1901, label: '我已行動 ≥ X 次',           paramType: 'count' },
     1910: { id: 1910, label: '每 X 次行動觸發一次',       paramType: 'count' },
+    1911: { id: 1911, label: '每 X 回重覆（從上次觸發起算，含被吃掉）', paramType: 'count' },
     1920: { id: 1920, label: '本場最多用 X 次',           paramType: 'count' },
     1940: { id: 1940, label: 'X% 機率',                  paramType: 'percent' },
     // 自身 HP（延伸）
@@ -3678,7 +3679,7 @@
   };
 
   // 評估一條 judge 是否成立
-  // ctx = { pHp, maxHp, pMp, maxMp, mHp, maxMHp, playerActions, ruleUseCount }
+  // ctx = { pHp, maxHp, pMp, maxMp, mHp, maxMHp, playerActions, ruleUseCount, lastRuleFireAt }
   function evaluateJudge(judgeId, param, ctx, ruleIdx) {
     const v = Number(param) || 0;
     switch (judgeId) {
@@ -3708,6 +3709,10 @@
       case 1900: return ctx.playerActions === v;
       case 1901: return ctx.playerActions >= v;
       case 1910: return v > 0 && ctx.playerActions > 0 && (ctx.playerActions % v === 0); // ⭐ 每 X 次行動觸發一次
+      case 1911: { // ⭐ 每 X 行動後重覆（從上次此規則觸發起算）；playerActions 含麻痺回合故被吃掉不延遲
+        const last = ctx.lastRuleFireAt[ruleIdx];
+        return last === undefined || (v > 0 && (ctx.playerActions - last) >= v);
+      }
       case 1920: return (ctx.ruleUseCount[ruleIdx] || 0) < v;
       case 1940: return Math.random() < (v / 100);
       default:   return false;
@@ -6202,6 +6207,8 @@
     const nextActionForSkill = {};
     // 每條規則的本場使用次數（給 judge 1920「最多用 X 次」用）
     const ruleUseCount = {};
+    // 每條規則上次觸發時的 playerActions（給 judge 1911「每 X 回重覆」用）
+    const lastRuleFireAt = {};
     // ⭐ HOF 行動規則表：多頁系統 — 由 opts.patternPage 或 rpg.activePatternPage 決定用哪頁
     const actionPattern = getActivePattern(player.rpg, opts?.patternPage);
 
@@ -6344,6 +6351,7 @@
           mHp, maxMHp: monster.maxHp,
           playerActions,
           ruleUseCount,
+          lastRuleFireAt,
           // ⭐ 狀態判定
           selfPoisoned:    hasStatus(playerObj, 'poison'),
           selfParalyzed:   hasStatus(playerObj, 'paralyze'),
@@ -6386,9 +6394,12 @@
           usedRuleIdx = r;
           break;
         }
-        // 累積規則使用次數（給 1920「最多 X 次」用）
+        // 累積規則使用次數（給 1920「最多 X 次」用）；記錄觸發時機（給 1911「每 X 回重覆」用）
         if (usedRuleIdx >= 0) {
           ruleUseCount[usedRuleIdx] = (ruleUseCount[usedRuleIdx] || 0) + 1;
+          if (actionPattern[usedRuleIdx]?.judgeId === 1911) {
+            lastRuleFireAt[usedRuleIdx] = playerActions;
+          }
         }
 
         if (useSkill) {
@@ -7114,6 +7125,7 @@
     const skillById = Object.fromEntries(skills.map((s, i) => [s.id, { skill: s, idx: i }]));
     const nextActionForSkill = {};
     const ruleUseCount = {};
+    const lastRuleFireAt = {};
     const actionPattern = getActivePattern(player.rpg, opts?.patternPage);
 
     const ATB_THRESHOLD = 100;
@@ -7247,6 +7259,7 @@
           aliveCount: aliveM.length,
           playerActions,
           ruleUseCount,
+          lastRuleFireAt,
           // ⭐ 狀態判定
           selfPoisoned:    hasStatus(playerObj, 'poison'),
           selfParalyzed:   hasStatus(playerObj, 'paralyze'),
@@ -7275,7 +7288,12 @@
           if (s.hpCostFlat) { if (pHp <= s.hpCostFlat) continue; }
           useSkill = s; useSkillIdx = sInfo.idx; usedRuleIdx = r; break;
         }
-        if (usedRuleIdx >= 0) ruleUseCount[usedRuleIdx] = (ruleUseCount[usedRuleIdx] || 0) + 1;
+        if (usedRuleIdx >= 0) {
+          ruleUseCount[usedRuleIdx] = (ruleUseCount[usedRuleIdx] || 0) + 1;
+          if (actionPattern[usedRuleIdx]?.judgeId === 1911) {
+            lastRuleFireAt[usedRuleIdx] = playerActions;
+          }
+        }
 
         // 決定目標
         const targetCount = useSkill ? (useSkill.targetCount === 'all' ? aliveM.length : (useSkill.targetCount || 1)) : 1;
@@ -9552,7 +9570,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505213416';
+  const APP_VERSION = '20260505220921';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -14660,6 +14678,7 @@ ${b.text}
         <button class="btn btn-secondary" onclick="adminFullHeal()">💚 滿血滿體力</button>
         <button class="btn btn-secondary" onclick="adminGiveLegendary()">🌟 神話全套</button>
         <button class="btn btn-secondary" onclick="adminPickSet()" style="grid-column:1/-1; background:linear-gradient(135deg,#fef3c7,#f59e0b); color:#7c2d12;">🛡 直接拿整套套裝（選一套）</button>
+        <button class="btn btn-secondary" onclick="adminPickEquipment()" style="grid-column:1/-1; background:linear-gradient(135deg,#ddd6fe,#7c3aed); color:#fff;">🎯 自選裝備 + 詞條（Debug）</button>
       </div>
       <button class="btn btn-secondary" onclick="adminResetPoints()" style="background:linear-gradient(135deg,#a7f3d0,#10b981); color:#fff;">🔄 退回所有技能點 + 能力點</button>
 
@@ -14910,6 +14929,172 @@ ${b.text}
     showToast(`🛡 ${set.name} ×${set.pieces.length} 件已進背包`);
   }
   window.adminGiveSet = adminGiveSet;
+
+  // ⭐ Debug 自選裝備 + 詞條
+  function adminPickEquipment() {
+    window._dbs = { slot: null, baseId: null, rarity: 'legendary' };
+    adminRenderEquipPicker();
+  }
+  window.adminPickEquipment = adminPickEquipment;
+
+  function adminEqSlot(slot) {
+    window._dbs.slot = slot;
+    window._dbs.baseId = null;
+    adminRenderEquipPicker();
+  }
+  window.adminEqSlot = adminEqSlot;
+
+  function adminEqBase(baseId) {
+    window._dbs.baseId = baseId;
+    adminRenderEquipPicker();
+  }
+  window.adminEqBase = adminEqBase;
+
+  function adminEqRarity(rarity) {
+    window._dbs.rarity = rarity;
+    adminRenderEquipPicker();
+  }
+  window.adminEqRarity = adminEqRarity;
+
+  function adminEqConfirm(toInv) {
+    const s = window._dbs;
+    if (!s.baseId) { showToast('請先選裝備基底'); return; }
+    const base = ITEMS.find(i => i.id === s.baseId);
+    if (!base) return;
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const rarDef = RARITY[s.rarity];
+    const mult = rarDef?.mult || 1;
+    const targetSlot = (base.slot === 'ring') ? (s.slot || 'ring1') : base.slot;
+    const entry = {
+      id: 'drop_dbg' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+      baseId: base.id,
+      slot: targetSlot,
+      rarity: s.rarity,
+      name: base.name,
+      icon: base.icon,
+      lv: base.lv || 1,
+      atk:  Math.round((base.atk  || 0) * mult),
+      def:  Math.round((base.def  || 0) * mult),
+      spd:  base.spd  || 0,
+      hp:   Math.round((base.hp   || 0) * mult),
+      mark: Math.round((base.mark || 0) * mult),
+      affixes: [],
+    };
+    const affixCount = rarDef?.affixes || 0;
+    for (let i = 0; i < affixCount; i++) {
+      const selEl = document.getElementById(`dbgAffixSel${i}`);
+      const valEl = document.getElementById(`dbgAffixVal${i}`);
+      if (!selEl || !valEl) continue;
+      const a = AFFIXES[parseInt(selEl.value)];
+      const val = parseInt(valEl.value) || 0;
+      if (val > 0 && a) {
+        entry[a.type] = (entry[a.type] || 0) + val;
+        entry.affixes.push({ type: a.type, name: a.name, val });
+      }
+    }
+    if (entry.affixes.length > 0) entry.name = entry.affixes[0].name + '的 ' + base.name;
+    if (toInv) {
+      rpg.inventory = rpg.inventory || [];
+      rpg.inventory.push(entry);
+      saveData(); render(); hideModal();
+      showToast(`📦 ${entry.icon} ${entry.name} 已加入背包`);
+    } else {
+      const cur = rpg.equipment[targetSlot];
+      if (cur) { rpg.inventory = rpg.inventory || []; rpg.inventory.push(cur); }
+      rpg.equipment[targetSlot] = entry;
+      rpg.equipmentLastChanged = Date.now();
+      syncEquipped(me);
+      saveData(); render(); hideModal();
+      showToast(`🎯 ${entry.icon} ${entry.name} 已裝備`);
+    }
+  }
+  window.adminEqConfirm = adminEqConfirm;
+
+  function adminRenderEquipPicker() {
+    const s = window._dbs;
+    const RC = { common: '#9ca3af', magic: '#22c55e', rare: '#3b82f6', legendary: '#a855f7' };
+    const slotDefs = [
+      { id: 'weapon', label: '⚔️ 武器' }, { id: 'armor',  label: '🛡 防具' },
+      { id: 'helmet', label: '🪖 頭盔' }, { id: 'gloves', label: '🧤 手套' },
+      { id: 'boots',  label: '👟 鞋子' }, { id: 'cape',   label: '🧣 披風' },
+      { id: 'ring1',  label: '💍 戒指1'},  { id: 'ring2',  label: '💍 戒指2'},
+    ];
+    const slotBtns = slotDefs.map(({ id, label }) => {
+      const on = s.slot === id;
+      return `<button onclick="adminEqSlot('${id}')" style="padding:4px 7px; margin:2px; border-radius:6px; border:2px solid ${on?'#7c3aed':'#ddd6fe'}; background:${on?'#ede9fe':'#faf5ff'}; color:${on?'#6d28d9':'#555'}; cursor:pointer; font-size:12px; font-weight:${on?'bold':'normal'};">${label}</button>`;
+    }).join('');
+    const filterSlot = (s.slot === 'ring1' || s.slot === 'ring2') ? 'ring' : s.slot;
+    const filtered = filterSlot ? ITEMS.filter(i => i.slot === filterSlot) : [];
+    const itemList = filtered.length ? filtered.map(item => {
+      const st = [item.atk&&`ATK+${item.atk}`,item.def&&`DEF+${item.def}`,item.hp&&`HP+${item.hp}`,item.spd&&`SPD+${item.spd}`,item.mark&&`MARK+${item.mark}`].filter(Boolean).join(' ');
+      const on = s.baseId === item.id;
+      return `<div onclick="adminEqBase('${item.id}')" style="padding:5px 8px;margin:2px 0;border-radius:8px;border:2px solid ${on?'#7c3aed':'#e5e7eb'};background:${on?'#ede9fe':'#fafafa'};cursor:pointer;display:flex;align-items:center;gap:6px;">
+        <span style="font-size:18px;min-width:24px;">${item.icon}</span>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:${on?'bold':'normal'};">${item.name} <span style="color:#9ca3af;font-size:10px;">Lv${item.lv||1}</span></div>
+          <div style="font-size:10px;color:#6b7280;">${st}</div>
+        </div>
+      </div>`;
+    }).join('') : `<div style="color:#9ca3af;text-align:center;padding:16px;font-size:12px;">← 請先選槽位</div>`;
+    const rarBtns = Object.entries(RC).map(([r, c]) => {
+      const on = s.rarity === r;
+      return `<button onclick="adminEqRarity('${r}')" style="padding:4px 10px;margin:2px;border-radius:6px;border:2px solid ${on?c:'#e5e7eb'};background:${on?c+'22':'#fafafa'};color:${c};font-weight:bold;cursor:pointer;font-size:12px;">${RARITY[r].label}</button>`;
+    }).join('');
+    const base = s.baseId ? ITEMS.find(i => i.id === s.baseId) : null;
+    const lv = base?.lv || 1;
+    const layerMult = lv <= 5 ? 1.0 : lv <= 10 ? 1.1 : lv <= 15 ? 1.2 : lv <= 20 ? 1.35 : 1.5;
+    const affixCount = RARITY[s.rarity]?.affixes || 0;
+    const defAffixIdxs = [0, 4, 3]; // 鋒利、暴怒、健壯
+    const affixRows = affixCount > 0 ? `
+      <div style="font-weight:bold;margin:8px 0 4px;color:#7c3aed;font-size:12px;">4. 詞條（共 ${affixCount} 條）</div>
+      ${[0,1,2].slice(0,affixCount).map(i => {
+        const dai = defAffixIdxs[i] || 0;
+        const dv = Math.max(1, Math.round((1 + lv * AFFIXES[dai].perLv) * (RARITY[s.rarity]?.mult||1) * layerMult));
+        const opts = AFFIXES.map((a,ai) => `<option value="${ai}" ${ai===dai?'selected':''}>${a.name}（+${a.type.toUpperCase()}）</option>`).join('');
+        return `<div style="display:flex;gap:5px;align-items:center;margin:3px 0;">
+          <span style="font-size:11px;color:#9ca3af;min-width:38px;">詞條${i+1}</span>
+          <select id="dbgAffixSel${i}" style="flex:2;padding:3px 5px;border-radius:6px;border:1px solid #ddd6fe;font-size:12px;">${opts}</select>
+          <span style="font-size:11px;color:#9ca3af;">值</span>
+          <input id="dbgAffixVal${i}" type="number" min="1" max="9999" value="${dv}" style="width:60px;padding:3px;border-radius:6px;border:1px solid #ddd6fe;text-align:center;font-size:12px;">
+        </div>`;
+      }).join('')}
+    ` : '';
+    const preview = base ? (() => {
+      const mult = RARITY[s.rarity]?.mult || 1;
+      const ps = [
+        Math.round((base.atk||0)*mult) && `ATK ${Math.round((base.atk||0)*mult)}`,
+        Math.round((base.def||0)*mult) && `DEF ${Math.round((base.def||0)*mult)}`,
+        Math.round((base.hp ||0)*mult) && `HP ${Math.round((base.hp||0)*mult)}`,
+        (base.spd||0) && `SPD ${base.spd}`,
+        Math.round((base.mark||0)*mult) && `MARK ${Math.round((base.mark||0)*mult)}`,
+      ].filter(Boolean).join('　');
+      return `<div style="margin-top:8px;padding:8px 10px;background:#f5f3ff;border:1px solid #a855f7;border-radius:8px;font-size:12px;">
+        <div style="font-weight:bold;color:${RC[s.rarity]};">${base.icon} [詞條]的 ${base.name}　<span style="font-size:10px;opacity:0.7;">${RARITY[s.rarity].label}</span></div>
+        <div style="color:#6b7280;margin-top:2px;font-size:11px;">基底：${ps || '無主要能力值'}</div>
+        <div style="color:#9ca3af;font-size:10px;margin-top:2px;">詞條加值在確認時計入</div>
+      </div>`;
+    })() : '';
+    const dis = !s.baseId ? 'style="opacity:0.45;pointer-events:none;"' : '';
+    const html = `
+      <div style="font-size:13px;">
+        <div style="font-weight:bold;margin-bottom:4px;color:#7c3aed;font-size:12px;">1. 槽位</div>
+        <div style="margin-bottom:8px;line-height:2;">${slotBtns}</div>
+        <div style="font-weight:bold;margin-bottom:4px;color:#7c3aed;font-size:12px;">2. 裝備基底</div>
+        <div style="max-height:155px;overflow-y:auto;margin-bottom:8px;border:1px solid #e5e7eb;border-radius:8px;padding:4px;">${itemList}</div>
+        <div style="font-weight:bold;margin-bottom:4px;color:#7c3aed;font-size:12px;">3. 稀有度</div>
+        <div style="margin-bottom:4px;">${rarBtns}</div>
+        ${affixRows}
+        ${preview}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;">
+          <button class="btn btn-primary" onclick="adminEqConfirm(false)" ${dis}>⚔️ 直接裝備</button>
+          <button class="btn btn-secondary" onclick="adminEqConfirm(true)" ${dis}>📦 加入背包</button>
+        </div>
+        <button class="btn btn-secondary" onclick="showDebugModal()" style="width:100%;margin-top:6px;font-size:12px;">← 返回 Debug</button>
+      </div>`;
+    showModal('🎯 自選裝備', html);
+  }
+  window.adminRenderEquipPicker = adminRenderEquipPicker;
 
   // ⭐ 存檔錯誤日誌 查看 / 清除
   function adminShowSaveErrors() {
