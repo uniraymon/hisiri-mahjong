@@ -2722,7 +2722,7 @@
       bossId:  boss.id, bossName: boss.name, bossIcon: boss.icon, bossLevel: boss.level,
       attackerId: me.id, attackerName: me.name,
       attackerAvatar: me.avatar || cls?.icon || '🎴',
-      playerSnap: { name: me.name, avatar: cls?.icon || '🎴', level: r.level, maxHp: stats.maxHp, maxMp: stats.maxMp },
+      playerSnap: { name: me.name, avatar: cls?.icon || '🎴', level: r.level, maxHp: stats.maxHp, maxMp: stats.maxMp, class: r.class, baseCrit: result.archerStats?.baseCrit },
       monsterSnap: { name: monster.name, icon: monster.icon, level: monster.level, ability: monster.ability },
       log: (result.log || []).slice(0, 1000),
     };
@@ -6988,7 +6988,8 @@
               log.push({
                 type: (isHs || isCrit) ? 'crit-player' : 'player',
                 text: `回合 ${round}（${hit}/${totalHits}）：${cls.attackVerb}${label}${_stackHint} → ${monster.name} -${dmg} HP`,
-                hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp }
+                hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp },
+                stacks: { hit: _aHit, crit: _aCrit, hs: _aHs },
               });
               if (mAbility?.type === 'reflect' && mAbility.resist) {
                 const r = Math.min(300, Math.max(1, Math.round(dmg * mAbility.resist)));
@@ -7231,7 +7232,10 @@
       maxMp: stats.maxMp,
       coinsStolen,
       critCount,
-      log
+      log,
+      archerStats: player.rpg?.class === 'archer'
+        ? { baseCrit: baseCritChance, critMult, finalHit: _aHit, finalCrit: _aCrit, finalHs: _aHs }
+        : null,
     };
   }
 
@@ -7915,6 +7919,7 @@
                 type: (isHs || isCrit) ? 'crit-player' : 'player',
                 text: `回合 ${round}（${hit}/${totalHits}）：${cls.attackVerb}${label}${_stackHintM} → ${tgt.icon}${tgt.name} -${dmg} HP`,
                 hp: hpsSnapshot(),
+                stacks: { hit: _aHit, crit: _aCrit, hs: _aHs },
               });
               if (tgt.ability?.type === 'reflect' && tgt.ability.resist) {
                 const r = Math.min(300, Math.max(1, Math.round(dmg * tgt.ability.resist)));
@@ -8143,6 +8148,9 @@
       monsters: mList.map(m => ({ id: m.id, name: m.name, icon: m.icon, hp: Math.max(0, m.hp), maxHp: m.maxHp, alive: m.alive, level: m.level, xpDrop: m.xpDrop, goldDrop: m.goldDrop })),
       maxHp: stats.maxHp, maxMp: stats.maxMp,
       coinsStolen: 0, critCount, log,
+      archerStats: player.rpg?.class === 'archer'
+        ? { baseCrit: baseCritChance, critMult, finalHit: _aHit, finalCrit: _aCrit, finalHs: _aHs }
+        : null,
     };
   }
 
@@ -10004,7 +10012,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506034751';
+  const APP_VERSION = '20260506035727';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -14119,6 +14127,8 @@ ${b.text}
     const monsterMaxHp = ms.maxHp || 1;
     // 檢查 log 是否有血池紀錄（判斷是否為劍士）
     const _hasBloodPool = (snap.log || []).some(e => e.hp && e.hp.bloodPool > 0);
+    // 檢查是否為弓手（有疊層資料）
+    const _isArcher = ps.class === 'archer' || (snap.log || []).some(e => e.stacks);
     const arenaHtml = `
       <div class="battle-arena" id="replayArena">
         <div class="combatant" id="replayPlayer">
@@ -14148,6 +14158,16 @@ ${b.text}
         <button class="btn btn-secondary" id="replaySpeedBtn" style="padding:4px 10px; font-size:11px;" onclick="cycleReplaySpeed()">⚡ 速度 1×</button>
         <span id="replayProgress" style="margin-left:auto; font-weight:600;">0 / ${(snap.log || []).length}</span>
       </div>
+      ${_isArcher ? `
+      <div id="replayArcherPanel" style="background:#0f172a; border-radius:8px; padding:6px 12px; margin-bottom:6px; font-size:11px; font-family:monospace; display:flex; gap:0; flex-wrap:wrap; align-items:stretch; border:1px solid #1e3a5f;">
+        <div style="color:#7dd3fc; font-weight:800; padding:2px 10px 2px 0; border-right:1px solid #1e3a5f; margin-right:10px; display:flex; align-items:center;">🏹 弓手疊層</div>
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+          ${ps.baseCrit != null ? `<span style="color:#94a3b8;">暴擊率 <b style="color:#fde047;">${Math.round(ps.baseCrit * 100)}%</b></span>` : ''}
+          <span style="color:#94a3b8;">命中 <b id="raHitN" style="color:#93c5fd;">0</b>層 → 普攻 <b id="raHitBonus" style="color:#38bdf8;">+0%</b></span>
+          <span style="color:#94a3b8;">暴擊 <b id="raCritN" style="color:#fde047;">0</b>層 → 爆傷 <b id="raCritBonus" style="color:#fb923c;">+0%</b></span>
+          <span style="color:#94a3b8;">爆頭 <b id="raHsN" style="color:#86efac;">0</b>層 → 爆頭 <b id="raHsBonus" style="color:#4ade80;">+0%</b></span>
+        </div>
+      </div>` : ''}
       <div class="battle-log" id="replayLog" style="max-height:240px;"></div>
       <div style="display:flex; gap:6px; margin-top:8px;">
         <button class="btn btn-secondary" onclick="hideModal()" style="flex:1;">關閉</button>
@@ -14236,6 +14256,22 @@ ${b.text}
     if (entry.gauge && typeof updateSpdBar === 'function') {
       updateSpdBar('replayPSpdBar', 'replayPSpdText', entry.gauge.p, '我的行動條');
       updateSpdBar('replayMSpdBar', 'replayMSpdText', entry.gauge.m, '怪行動條');
+    }
+    // ⭐ 弓手疊層面板即時更新
+    if (entry.stacks) {
+      const s = entry.stacks;
+      const raHitN   = document.getElementById('raHitN');
+      const raHitB   = document.getElementById('raHitBonus');
+      const raCritN  = document.getElementById('raCritN');
+      const raCritB  = document.getElementById('raCritBonus');
+      const raHsN    = document.getElementById('raHsN');
+      const raHsB    = document.getElementById('raHsBonus');
+      if (raHitN)  raHitN.textContent  = s.hit;
+      if (raHitB)  raHitB.textContent  = `+${s.hit}%`;
+      if (raCritN) raCritN.textContent = s.crit;
+      if (raCritB) raCritB.textContent = `+${s.crit * 3}%`;
+      if (raHsN)   raHsN.textContent   = s.hs;
+      if (raHsB)   raHsB.textContent   = `+${s.hs * 10}%`;
     }
     const prog = document.getElementById('replayProgress');
     if (prog) prog.textContent = `${st.i} / ${st.log.length}`;
@@ -14540,7 +14576,7 @@ ${b.text}
               bossLevel: def.level,
               dmgDealt: monster.hp - result.mHpFinal,
               killed,
-              playerSnap: { name: me.name, avatar: CLASSES[rpg.class]?.icon || '🎴', level: rpg.level, maxHp: stats.maxHp, maxMp: stats.maxMp },
+              playerSnap: { name: me.name, avatar: CLASSES[rpg.class]?.icon || '🎴', level: rpg.level, maxHp: stats.maxHp, maxMp: stats.maxMp, class: rpg.class, baseCrit: result.archerStats?.baseCrit },
               monsterSnap: { name: def.name, icon: def.icon, level: def.level, maxHp: def.hp, ability: def.ability },
               log: (result.log || []).slice(0, 1000),
             };
@@ -15159,6 +15195,8 @@ ${b.text}
                 level: rpg.level,
                 maxHp: stats.maxHp,
                 maxMp: stats.maxMp,
+                class: rpg.class,
+                baseCrit: result.archerStats?.baseCrit,
               },
               monsterSnap: {
                 name: monster.name,
@@ -15460,7 +15498,7 @@ ${b.text}
           return s + Math.max(0, (m.maxHp || 0) - (sum?.hp || 0));
         }, 0),
         killed: !!result.won,
-        playerSnap: { name: player.name, avatar: CLASSES[rpg.class]?.icon || '🎴', level: rpg.level, maxHp: stats.maxHp, maxMp: stats.maxMp },
+        playerSnap: { name: player.name, avatar: CLASSES[rpg.class]?.icon || '🎴', level: rpg.level, maxHp: stats.maxHp, maxMp: stats.maxMp, class: rpg.class, baseCrit: result.archerStats?.baseCrit },
         monsterSnap: { name: monsters.map(m => m.name).join(' + '), icon: monsters[0].icon, level: monsters[0].level, maxHp: monsters.reduce((s, m) => s + (m.maxHp || 0), 0) },
         log: (result.log || []).slice(0, 1000),
         zoneId: ctx?.zoneId, layerId: ctx?.layerId,
