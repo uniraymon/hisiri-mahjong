@@ -1276,8 +1276,8 @@
     font-weight: 600;
   }
 
-  /* 試煉戰場（多怪戰鬥） */
-  .trial-arena {
+  /* 多怪戰鬥場（下層探索 multi-monster，原 trial-arena 樣式）*/
+  .multi-arena {
     background: linear-gradient(135deg, #f3e8ff, #e9d5ff);
     border: 2px solid #a78bfa;
     border-radius: 14px;
@@ -1288,29 +1288,123 @@
     gap: 8px;
     align-items: center;
   }
-  .trial-arena .t-player, .trial-arena .t-monster {
+  .multi-arena .t-player, .multi-arena .t-monster {
     background: rgba(255, 255, 255, 0.7);
     border-radius: 10px;
     padding: 6px;
     text-align: center;
   }
-  .trial-arena .t-monster { font-size: 11px; }
-  .trial-arena .t-monsters {
+  .multi-arena .t-monster { font-size: 11px; }
+  .multi-arena .t-monsters {
     display: grid;
     grid-template-columns: 1fr;
     gap: 4px;
   }
-  .trial-arena .t-vs { font-size: 22px; text-align: center; }
-  .trial-arena .t-icon { font-size: 32px; line-height: 1; }
-  .trial-arena .t-monster .t-icon { font-size: 24px; }
-  .trial-arena .t-name { font-size: 11px; font-weight: 700; color: #5b3d62; margin: 2px 0; }
-  .trial-arena .t-hp { height: 6px; background: #e9d5ff; border-radius: 3px; overflow: hidden; margin-top: 2px; }
-  .trial-arena .t-hp-fill { height: 100%; background: linear-gradient(90deg, #ef4444, #dc2626); transition: width 0.4s; }
-  .trial-arena .t-mfill { background: linear-gradient(90deg, #f87171, #b91c1c); }
-  .trial-arena .t-hp-text { font-size: 9px; color: #6b7280; margin-top: 1px; }
-  .trial-arena .t-mp { height: 4px; background: #dbeafe; border-radius: 2px; overflow: hidden; margin-top: 2px; }
-  .trial-arena .t-mp-fill { height: 100%; background: linear-gradient(90deg, #93c5fd, #3b82f6); }
-  .trial-arena .t-mp-text { font-size: 9px; color: #1e40af; margin-top: 1px; }
+  .multi-arena .t-vs { font-size: 22px; text-align: center; }
+  .multi-arena .t-icon { font-size: 32px; line-height: 1; }
+  .multi-arena .t-monster .t-icon { font-size: 24px; }
+  .multi-arena .t-name { font-size: 11px; font-weight: 700; color: #5b3d62; margin: 2px 0; }
+  .multi-arena .t-hp { height: 6px; background: #e9d5ff; border-radius: 3px; overflow: hidden; margin-top: 2px; }
+  .multi-arena .t-hp-fill { height: 100%; background: linear-gradient(90deg, #ef4444, #dc2626); transition: width 0.4s; }
+  .multi-arena .t-mfill { background: linear-gradient(90deg, #f87171, #b91c1c); }
+  .multi-arena .t-hp-text { font-size: 9px; color: #6b7280; margin-top: 1px; }
+  .multi-arena .t-mp { height: 4px; background: #dbeafe; border-radius: 2px; overflow: hidden; margin-top: 2px; }
+  .multi-arena .t-mp-fill { height: 100%; background: linear-gradient(90deg, #93c5fd, #3b82f6); }
+  .multi-arena .t-mp-text { font-size: 9px; color: #1e40af; margin-top: 1px; }
+
+  /* 組隊系統 Party System */
+  .party-arena {
+    background: linear-gradient(135deg, #0f172a, #1e1b4b);
+    border: 2px solid #6366f1;
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+  .party-arena-grid {
+    display: grid;
+    grid-template-columns: 2fr auto 1fr;
+    gap: 8px;
+    align-items: start;
+  }
+  .party-player-col {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .party-member-card {
+    background: rgba(99,102,241,0.15);
+    border: 1px solid #4338ca;
+    border-radius: 10px;
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+  .party-member-card.row-front { border-left: 3px solid #f59e0b; }
+  .party-member-card.row-back  { border-left: 3px solid #8b5cf6; }
+  .party-boss-col {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .party-boss-card {
+    background: rgba(220,38,38,0.15);
+    border: 1px solid #b91c1c;
+    border-radius: 10px;
+    padding: 6px 8px;
+    font-size: 11px;
+    text-align: center;
+  }
+  .party-vs { font-size: 22px; text-align: center; padding-top: 10px; }
+  .party-name { font-size: 12px; font-weight: 700; color: #c7d2fe; margin: 2px 0; }
+  .party-hp-bar { height: 6px; background: #1e293b; border-radius: 3px; overflow: hidden; margin-top: 2px; }
+  .party-hp-fill { height: 100%; background: linear-gradient(90deg, #22d3ee, #0ea5e9); transition: width 0.4s; }
+  .party-boss-hp { background: linear-gradient(90deg, #ef4444, #dc2626); }
+  .party-hp-text { font-size: 9px; color: #94a3b8; margin-top: 1px; }
+  .party-mp-bar { height: 4px; background: #1e293b; border-radius: 2px; overflow: hidden; margin-top: 2px; }
+  .party-mp-fill { height: 100%; background: linear-gradient(90deg, #818cf8, #6366f1); }
+  .party-icon { font-size: 28px; line-height: 1; }
+  .party-boss-icon { font-size: 36px; line-height: 1; }
+  .party-row-tag { font-size: 9px; padding: 1px 5px; border-radius: 4px; display: inline-block; margin-top: 2px; }
+  .party-row-tag.front { background: #78350f; color: #fde68a; }
+  .party-row-tag.back  { background: #2e1065; color: #d8b4fe; }
+  .party-queue-panel {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(99,102,241,0.4);
+    border-radius: 8px;
+    padding: 6px 10px;
+    margin-bottom: 8px;
+  }
+  .party-boss-select {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .party-boss-btn {
+    background: linear-gradient(135deg, #1e1b4b, #312e81);
+    border: 1px solid #4338ca;
+    border-radius: 10px;
+    padding: 8px 10px;
+    color: #c7d2fe;
+    font-size: 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.2s;
+  }
+  .party-boss-btn:hover, .party-boss-btn.selected { border-color: #818cf8; background: linear-gradient(135deg,#312e81,#4338ca); }
+  .party-row-select { display: flex; gap: 6px; margin-bottom: 8px; }
+  .party-row-btn {
+    flex: 1;
+    padding: 6px;
+    border-radius: 8px;
+    border: 1px solid #374151;
+    background: #1f2937;
+    color: #9ca3af;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .party-row-btn.active.front-btn { border-color: #f59e0b; background: #78350f; color: #fde68a; }
+  .party-row-btn.active.back-btn  { border-color: #8b5cf6; background: #2e1065; color: #d8b4fe; }
 
   /* Boss 排隊 */
   .boss-queue {
@@ -1959,11 +2053,10 @@
       <div id="personalBossHistoryArea"></div>
     </div>
 
-    <div class="card">
-      <h2><span>🌌 試煉戰場</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（最多 3 隻怪物同時上場、AOE / 多目標技能）</span></h2>
-      <div id="trialIntro"></div>
-      <button id="trialEnterBtn" class="btn btn-primary" onclick="onTrialFight()" style="background:linear-gradient(135deg,#c4b5fd,#7c3aed); box-shadow:0 4px 0 #5b21b6;">🌌 進入試煉</button>
-      <div id="trialResult"></div>
+    <div class="card" style="background:linear-gradient(135deg,#0f172a,#1e1b4b); border:1px solid #4338ca;">
+      <h2 style="color:#c7d2fe;"><span>⚔️ 組隊挑戰</span> <span style="font-size:11px; color:#818cf8; font-weight:500;">（2-3 人排隊、挑戰固定 BOSS）</span></h2>
+      <div id="partyBody"></div>
+      <div id="partyHistoryArea"></div>
     </div>
 
     <div class="card">
@@ -6397,7 +6490,7 @@
     // ⭐ 合成效果
     const _fx = getFusionEffects(player);
     const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0) + (setB.critChance || 0);
-    const critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
+    const critMult = 2.5 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
     // fx_guardian: 每回合 HP 回復最大值 3%
     const regenPer = (cls.regenPer || 0) + (bonus.regen || 0) + (_fx.has('fx_guardian') ? 0.03 : 0);
     // fx_mage: 技能 MP 消耗 -20%（加到 passive.mpDiscount 之上）
@@ -7388,7 +7481,7 @@
     // ⭐ 合成效果
     const _fx = getFusionEffects(player);
     const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0) + (setB.critChance || 0);
-    const critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
+    const critMult = 2.5 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
     // fx_guardian: 每回合 HP 回復最大值 3%
     const regenPer = (cls.regenPer || 0) + (bonus.regen || 0) + (_fx.has('fx_guardian') ? 0.03 : 0);
     // fx_mage: 技能 MP 消耗 -20%
@@ -8203,7 +8296,8 @@
     renderLeaderboard();
     renderZoneSelector();
     renderCharQuickMenu();
-    renderTrial();
+    renderPartyTab();
+    renderPartyHistory();
     renderForageHistory(); // ⭐ 自己最近 5 場打怪戰報
     renderPersonalBossHistory(); // ⭐ 個人王最近 15 場戰報
     maybeFlashHelp();
@@ -10018,7 +10112,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506041526';
+  const APP_VERSION = '20260506065254';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -10074,7 +10168,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260506_v2';
+  const NEWS_LATEST_ID = 'patch_20260506_v3';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -10094,6 +10188,28 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#1e1b4b,#4338ca); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">⚔️ 組隊挑戰 + 暴擊傷害強化　<span style="font-size:11px; opacity:0.85;">2026-05-06</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#4338ca; margin:6px 0 4px;">⚔️ 組隊挑戰系統（取代試煉戰場）</div>
+        <div>・新增 <b>3 隻固定挑戰王</b>，最多 3 人組隊討伐</div>
+        <div style="padding:4px 0 0 8px; font-size:12px;">
+          🌋 煉獄鵝皇（Lv35）・🗡️ 雙影刺客×2（Lv40）・⚱️ 遠古鵝神（Lv50，需滿 3 人）
+        </div>
+        <div style="margin-top:6px;">・可選擇 <b>前排（全傷 / 優先被打）</b> 或 <b>後排（AOE 傷害 ×60%、物理輸出 ×80%）</b></div>
+        <div>・獨立 <b>組隊技能順序</b>，與一般規則分開設定</div>
+        <div>・戰鬥結束後存入 <b>戰報歷史</b>（最多 10 筆），可重播</div>
+        <div style="font-size:11px; color:#6b7280; margin-top:2px;">→ 測試階段暫不發獎勵，正式上線後開放</div>
+
+        <div style="font-weight:700; color:#dc2626; margin:10px 0 4px;">💥 暴擊傷害基礎倍率大幅提升</div>
+        <div>・<b>1.7× → 2.5×</b>（所有職業、所有戰鬥模式）</div>
+        <div style="font-size:11px; color:#6b7280;">→ 爆傷裝備加成仍正常疊加於 2.5× 之上</div>
+
+        <div style="background:#ede9fe; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#4c1d95;">
+          💡 暴擊流在這次更新後大幅強化，搭配古龍暴擊連擊效果更驚人
+        </div>
 
         <div style="background:linear-gradient(135deg,#78350f,#d97706); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">⚗️ 合成台 UI 改版 + 弓手疊層 + 多項修復　<span style="font-size:11px; opacity:0.85;">2026-05-06</span></div>
@@ -13723,220 +13839,975 @@ ${b.text}
   window.pickClass = pickClass;
 
 
-  // ⭐ 試煉戰場：3 隻怪物同時打
-  const TRIAL_STAMINA = 0; // ⭐ 試煉戰場：免費試強度，但目前不發獎勵（之後再開放）
-  let __trialInProgress = false;
-  function generateTrialMonsters(playerLv) {
-    // 用目前所在地區的怪物池，但等級 = 玩家等級
-    const me = getMe();
-    const rpg = me ? getRpg(me) : null;
-    const zoneId = rpg?.currentZone || 'forest';
-    const zone = ZONES.find(z => z.id === zoneId) || ZONES[0];
-    const pool = MONSTERS.filter(m => zone.monsters.includes(m.id));
-    if (pool.length === 0) return [];
-    // 抽 1-3 隻
-    const count = 2 + Math.floor(Math.random() * 2); // 2-3 隻
-    const out = [];
-    for (let i = 0; i < count; i++) {
-      const m = pool[Math.floor(Math.random() * pool.length)];
-      const lv = Math.max(1, playerLv);
-      const k = monsterK(lv);
-      out.push({
-        ...m,
-        level: lv,
-        hp: m.fixedHp ?? Math.round(m.hpBase * monsterHPK(lv) * 0.6),
-        maxHp: m.fixedHp ?? Math.round(m.hpBase * monsterHPK(lv) * 0.6),
-        atk: Math.round(m.atkBase * k * 0.9),
-        def: Math.round(m.defBase * monsterDEFK(lv) * 0.6),
-        spd: Math.round(m.spdBase + lv * 0.4),
-        goldDrop: Math.round(coinDropByLevel(lv) * 0.5),
-        // ⭐ 試煉：基底依等級 + 0~20% 隨機 ×1.3（試煉場 EXP 略高於一般怪）
-        xpDrop: Math.round(rollMonsterXpVariance(lv) * 1.3),
+  // =========================================================
+  // ⭐ 組隊挑戰系統 Party System
+  // =========================================================
+
+  // --- PARTY_BOSSES: 3 fixed challenge bosses ---
+  const PARTY_BOSSES = [
+    {
+      id: 'pr_inferno', name: '煉獄鵝皇', icon: '🌋', level: 35,
+      maxHp: 1200000, atk: 320, def: 220, spd: 55, defPen: 0.1,
+      isTwoBosses: false,
+      skills: [
+        { id: 'aoe_fire', name: '烈焰衝擊', type: 'aoe', dmgMult: 1.2, mpCost: 0, judgeId: 2000, param: 0 },
+      ],
+      reward: { coins: 3000, xp: 8000 },
+      minParty: 2, maxParty: 3,
+      desc: '烈焰 AOE、高防禦、需 2-3 人',
+    },
+    {
+      id: 'pr_twins', name: '雙影刺客', icon: '🗡️', level: 40,
+      isTwoBosses: true,
+      bossPair: [
+        { id: 'pr_twins_a', name: '暗影甲', icon: '🗡️', maxHp: 450000, atk: 280, def: 160, spd: 75, defPen: 0.05 },
+        { id: 'pr_twins_b', name: '幻影乙', icon: '👤', maxHp: 380000, atk: 250, def: 130, spd: 90, defPen: 0.08 },
+      ],
+      skills: [],
+      reward: { coins: 4000, xp: 10000 },
+      minParty: 2, maxParty: 3,
+      desc: '兩隻高速刺客、AOE 能打雙目標',
+    },
+    {
+      id: 'pr_ancient', name: '遠古鵝神', icon: '⚱️', level: 50,
+      maxHp: 3000000, atk: 450, def: 350, spd: 45, defPen: 0.3,
+      isTwoBosses: false,
+      skills: [
+        { id: 'ancient_crush', name: '神聖衝擊', type: 'aoe', dmgMult: 1.5, mpCost: 0, judgeId: 2000, param: 0 },
+        { id: 'ancient_regen', name: '神聖回復', type: 'heal', healPct: 0.05, mpCost: 0, judgeId: 2100, param: 30 },
+      ],
+      reward: { coins: 8000, xp: 20000 },
+      minParty: 3, maxParty: 3,
+      desc: '超高血量、高防禦穿透、需滿 3 人',
+    },
+  ];
+
+  // --- PARTY_JUDGES: 2000-range, separate from HOF 1000-range ---
+  const PARTY_JUDGES = {
+    2000: { label: '永遠', paramType: 'none' },
+    2100: { label: '自身 HP ≤ X%', paramType: 'percent' },
+    2101: { label: '自身 HP ≥ X%', paramType: 'percent' },
+    2200: { label: '自身 MP ≤ X%', paramType: 'percent' },
+    2201: { label: '自身 MP ≥ X%', paramType: 'percent' },
+    2300: { label: '隊友任一 HP ≤ X%', paramType: 'percent' },
+    2301: { label: '我在前排', paramType: 'none' },
+    2302: { label: '我在後排', paramType: 'none' },
+    2400: { label: '目標 HP ≤ X%', paramType: 'percent' },
+    2401: { label: '敵方數量 ≥ 2', paramType: 'none' },
+    2500: { label: '每 X 次行動觸發', paramType: 'count' },
+    2510: { label: '每 X 次行動重覆（從上次）', paramType: 'count' },
+    2600: { label: 'X% 機率', paramType: 'percent' },
+  };
+
+  function evaluatePartyJudge(judgeId, param, ctx, ruleIdx) {
+    const v = Number(param) || 0;
+    switch (judgeId) {
+      case 2000: return true;
+      case 2100: return ctx.maxHp > 0 && (ctx.pHp / ctx.maxHp * 100) <= v;
+      case 2101: return ctx.maxHp > 0 && (ctx.pHp / ctx.maxHp * 100) >= v;
+      case 2200: return ctx.maxMp > 0 && (ctx.pMp / ctx.maxMp * 100) <= v;
+      case 2201: return ctx.maxMp > 0 && (ctx.pMp / ctx.maxMp * 100) >= v;
+      case 2300: return ctx.allyMinHpPct <= v;
+      case 2301: return ctx.row === 'front';
+      case 2302: return ctx.row === 'back';
+      case 2400: {
+        const t = ctx.primaryTarget;
+        return t && t.maxHp > 0 && (t.hp / t.maxHp * 100) <= v;
+      }
+      case 2401: return (ctx.bossCount || 1) >= 2;
+      case 2500: {
+        if (!ctx._ruleCounters) ctx._ruleCounters = {};
+        ctx._ruleCounters[ruleIdx] = (ctx._ruleCounters[ruleIdx] || 0) + 1;
+        return ctx._ruleCounters[ruleIdx] % Math.max(1, v) === 0;
+      }
+      case 2510: {
+        if (!ctx._ruleLastFired) ctx._ruleLastFired = {};
+        const since = ctx.actionCount - (ctx._ruleLastFired[ruleIdx] || 0);
+        if (since >= Math.max(1, v)) { ctx._ruleLastFired[ruleIdx] = ctx.actionCount; return true; }
+        return false;
+      }
+      case 2600: return Math.random() * 100 < v;
+      default: return false;
+    }
+  }
+
+  // --- Default party patterns per class ---
+  function getDefaultPartyPattern(cls) {
+    if (cls === 'warrior') return [{ judgeId: 2301, param: 0, skillId: 'w_heavy_strike' }, { judgeId: 2000, param: 0, skillId: null }];
+    if (cls === 'mage')    return [{ judgeId: 2000, param: 0, skillId: 'm_fireball' },      { judgeId: 2000, param: 0, skillId: null }];
+    if (cls === 'archer')  return [{ judgeId: 2000, param: 0, skillId: 'a_eagle_eye' },     { judgeId: 2000, param: 0, skillId: null }];
+    return [{ judgeId: 2000, param: 0, skillId: null }];
+  }
+
+  // =========================================================
+  // autoPartyFight — ATB multi-player vs 1-2 bosses
+  // partyMembers: [{player, row:'front'|'back', pattern:[{judgeId,param,skillId}]}]
+  // bossList: [bossObj] or [bossA, bossB]
+  // Returns: { won, log, memberResults, bossResults, critCount }
+  // =========================================================
+  function autoPartyFight(partyMembers, bossList, opts = {}) {
+    const MAX_ROUNDS = 400;
+    const ATB_THRESHOLD = 1000;
+    const log = [];
+    let critCount = 0;
+
+    // --- Build combatant objects ---
+    const members = partyMembers.map(({ player, row, pattern }) => {
+      const rpg = getRpg(player);
+      const stats = computeStats(player) || { maxHp: 3000, maxMp: 200, atk: 150, def: 80, spd: 50, critChance: 0.05, critDmg: 0 };
+      return {
+        pid: player.uid || player.name,
+        name: player.name,
+        icon: (CLASSES[rpg.class] || {}).icon || '🎴',
+        cls: rpg.class,
+        row: row || 'front',
+        pattern: pattern || getDefaultPartyPattern(rpg.class),
+        hp: stats.maxHp, maxHp: stats.maxHp,
+        mp: stats.maxMp, maxMp: stats.maxMp,
+        atk: stats.atk, def: stats.def, spd: stats.spd,
+        critChance: stats.critChance || 0.05,
+        critDmg: 2.5 + (stats.critDmg || 0),
+        statuses: [],
+        gauge: Math.random() * 200,
+        actionCount: 0,
+        _ruleCounters: {}, _ruleLastFired: {},
+        player, stats,
+      };
+    });
+
+    const bosses = bossList.map((b, idx) => ({
+      ...b,
+      id: b.id || `boss_${idx}`,
+      hp: b.maxHp, gauge: Math.random() * 150,
+      statuses: [],
+    }));
+
+    const allAlive = () =>
+      members.some(m => m.hp > 0) &&
+      bosses.some(b => b.hp > 0) &&
+      bosses.every(b => b.hp > 0); // all bosses must be dead to win
+
+    const aliveBosses = () => bosses.filter(b => b.hp > 0);
+    const aliveMembers = () => members.filter(m => m.hp > 0);
+
+    // --- Pick boss target for member attack ---
+    function pickBossTarget() {
+      const alive = aliveBosses();
+      if (alive.length === 0) return null;
+      // prefer lowest HP%
+      return alive.reduce((a, b) => (a.hp / a.maxHp < b.hp / b.maxHp ? a : b));
+    }
+
+    // --- Pick player target for boss attack ---
+    function pickPlayerTarget(isAoe) {
+      const alive = aliveMembers();
+      if (alive.length === 0) return [];
+      if (isAoe) return alive;
+      // prefer front row
+      const front = alive.filter(m => m.row === 'front');
+      const pool = front.length > 0 ? front : alive;
+      return [pool[Math.floor(Math.random() * pool.length)]];
+    }
+
+    // --- Deal damage from member to boss ---
+    function memberAttack(member, boss, skillMult, isAoe) {
+      const rowOut = (member.row === 'back') ? 0.8 : 1.0; // back row 80% physical
+      const rawAtk = member.atk * rowOut;
+      const defReduction = Math.max(0, boss.def * (1 - (boss.defPen || 0)));
+      let dmg = Math.max(1, Math.round((rawAtk - defReduction * 0.4) * (skillMult || 1.0)));
+      const isCrit = Math.random() < (member.critChance || 0.05);
+      if (isCrit) { dmg = Math.round(dmg * (member.critDmg || 2.5)); critCount++; }
+      boss.hp = Math.max(0, boss.hp - dmg);
+      return { dmg, isCrit };
+    }
+
+    // --- Deal damage from boss to member ---
+    function bossAttack(boss, targets, isAoe) {
+      targets.forEach(target => {
+        const rowReduce = isAoe && target.row === 'back' ? 0.6 : 1.0;
+        let dmg = Math.max(1, Math.round(boss.atk * rowReduce * (0.85 + Math.random() * 0.3)));
+        const defPen = boss.defPen || 0;
+        const netDef = Math.max(0, target.def * (1 - defPen));
+        dmg = Math.max(1, dmg - Math.round(netDef * 0.4));
+        target.hp = Math.max(0, target.hp - dmg);
       });
     }
-    return out;
+
+    // --- Evaluate party pattern and pick skill ---
+    function pickMemberSkill(member) {
+      if (!member.pattern || !member.cls) return null;
+      const cls = CLASSES[member.cls];
+      const skills = cls ? (cls.skills || []) : [];
+      const aliveAl = aliveMembers().filter(m => m !== member);
+      const allyMinHpPct = aliveAl.length > 0
+        ? Math.min(...aliveAl.map(m => m.maxHp > 0 ? m.hp / m.maxHp * 100 : 100))
+        : 100;
+      const primaryTarget = pickBossTarget();
+      const ctx = {
+        pHp: member.hp, maxHp: member.maxHp,
+        pMp: member.mp, maxMp: member.maxMp,
+        row: member.row,
+        allyMinHpPct,
+        primaryTarget,
+        bossCount: aliveBosses().length,
+        actionCount: member.actionCount,
+        _ruleCounters: member._ruleCounters,
+        _ruleLastFired: member._ruleLastFired,
+      };
+      for (let ri = 0; ri < member.pattern.length; ri++) {
+        const rule = member.pattern[ri];
+        if (!rule.skillId) continue;
+        const sk = skills.find(s => s.id === rule.skillId);
+        if (!sk) continue;
+        if (member.mp < (sk.mpCost || 0)) continue;
+        if (evaluatePartyJudge(rule.judgeId, rule.param, ctx, ri)) return sk;
+      }
+      return null; // normal attack
+    }
+
+    // --- Member takes a turn ---
+    function memberTurn(member) {
+      if (member.hp <= 0) return;
+      const target = pickBossTarget();
+      if (!target) return;
+      member.actionCount++;
+      const skill = pickMemberSkill(member);
+      let logText = '';
+      if (skill) {
+        member.mp = Math.max(0, member.mp - (skill.mpCost || 0));
+        const mult = skill.dmgMult || 1.0;
+        if (skill.type === 'aoe') {
+          const targets = aliveBosses();
+          targets.forEach(b => {
+            const r = memberAttack(member, b, mult, true);
+            logText += `${member.name}→${b.name} ${skill.name}${r.isCrit ? '💥' : ''} -${r.dmg} `;
+          });
+        } else {
+          const r = memberAttack(member, target, mult, false);
+          logText = `${member.name}→${target.name} ${skill.name}${r.isCrit ? '💥' : ''} -${r.dmg}`;
+        }
+      } else {
+        const r = memberAttack(member, target, 1.0, false);
+        logText = `${member.name}→${target.name} 普攻${r.isCrit ? '💥' : ''} -${r.dmg}`;
+      }
+      log.push({ type: 'player', text: logText, hp: snapshotHp() });
+    }
+
+    // --- Boss takes a turn ---
+    function bossTurn(boss) {
+      if (boss.hp <= 0) return;
+      const isAoe = boss.skills && boss.skills.length > 0
+        ? boss.skills[0].type === 'aoe'
+        : false;
+      const targets = pickPlayerTarget(isAoe);
+      if (targets.length === 0) return;
+      if (isAoe) {
+        bossAttack(boss, targets, true);
+        log.push({ type: 'monster', text: `${boss.name} 使用${boss.skills[0].name}！打全體！`, hp: snapshotHp() });
+      } else {
+        const t = targets[0];
+        let dmg = Math.max(1, Math.round(boss.atk * (0.85 + Math.random() * 0.3)));
+        const netDef = Math.max(0, t.def * (1 - (boss.defPen || 0)));
+        dmg = Math.max(1, dmg - Math.round(netDef * 0.4));
+        t.hp = Math.max(0, t.hp - dmg);
+        log.push({ type: 'monster', text: `${boss.name}→${t.name} 普攻 -${dmg}${t.hp <= 0 ? ' 💀' : ''}`, hp: snapshotHp() });
+      }
+    }
+
+    // --- HP snapshot for log ---
+    function snapshotHp() {
+      return {
+        members: members.map(m => ({ name: m.name, hp: m.hp, maxHp: m.maxHp })),
+        bosses: bosses.map(b => ({ name: b.name, hp: b.hp, maxHp: b.maxHp })),
+      };
+    }
+
+    // --- ATB loop ---
+    let round = 0;
+    log.push({ type: 'system', text: `⚔️ 組隊挑戰開始！${members.map(m=>m.name).join('、')} vs ${bosses.map(b=>b.name).join('、')}`, hp: snapshotHp() });
+
+    while (round < MAX_ROUNDS) {
+      round++;
+      // Tick gauges
+      const allCombatants = [...members, ...bosses];
+      // find minimum ticks to next action
+      const minToFull = Math.min(...allCombatants.filter(c => c.hp > 0).map(c => (ATB_THRESHOLD - c.gauge) / Math.max(1, c.spd)));
+      allCombatants.forEach(c => { if (c.hp > 0) c.gauge += c.spd * minToFull; });
+
+      // collect ready actors
+      const ready = allCombatants.filter(c => c.hp > 0 && c.gauge >= ATB_THRESHOLD);
+      // sort: higher speed goes first
+      ready.sort((a, b) => (b.spd - a.spd));
+
+      for (const actor of ready) {
+        if (actor.hp <= 0) continue;
+        actor.gauge -= ATB_THRESHOLD;
+        if (members.includes(actor)) {
+          memberTurn(actor);
+        } else {
+          bossTurn(actor);
+        }
+        // check win/lose after each action
+        if (aliveMembers().length === 0) break;
+        if (aliveBosses().length === 0) break;
+      }
+
+      if (aliveMembers().length === 0) break;
+      if (aliveBosses().length === 0) break;
+    }
+
+    const won = aliveBosses().length === 0 && aliveMembers().length > 0;
+    const memberResults = members.map(m => ({
+      pid: m.pid, name: m.name, hpFinal: m.hp, maxHp: m.maxHp, survived: m.hp > 0,
+    }));
+    const bossResults = bosses.map(b => ({ name: b.name, hpFinal: b.hp, maxHp: b.maxHp }));
+    return { won, log, memberResults, bossResults, critCount, rounds: round };
   }
-  function renderTrial() {
-    // ⚠️ 重要：只更新 intro 文字 + 按鈕，絕不能覆蓋 #trialResult（戰鬥畫面在裡面）
-    const intro = document.getElementById('trialIntro');
-    const btn = document.getElementById('trialEnterBtn');
-    if (!intro || !btn) return;
+
+  // =========================================================
+  // Party queue state (local, Firestore integration TBD)
+  // =========================================================
+  // _partyQueues: { [bossId]: { [pid]: memberData } }
+  const _partyQueues = {};
+
+  async function partyJoinTx(bossId, memberData) {
+    if (!_partyQueues[bossId]) _partyQueues[bossId] = {};
+    _partyQueues[bossId][memberData.pid] = { ...memberData, joinedAt: Date.now() };
+    return { ok: true };
+  }
+
+  async function partyLeaveTx(bossId, pid) {
+    if (_partyQueues[bossId]) delete _partyQueues[bossId][pid];
+  }
+
+  async function partyResultTx(bossId, resultData) {
+    // stub — will write to Firestore in future
+  }
+
+  // =========================================================
+  // Party UI
+  // =========================================================
+  let _partySelectedBoss = null;
+  let _partyRow = 'front';
+  let _partyInProgress = false;
+  let _partyListeners = [];
+
+  function renderPartyTab() {
+    const body = document.getElementById('partyBody');
+    if (!body) return;
     const me = getMe();
-    if (!me) { intro.innerHTML = ''; btn.disabled = true; btn.textContent = '🌌 進入試煉'; return; }
+    if (!me) { body.innerHTML = '<div style="color:#818cf8;padding:8px;font-size:12px;">請先登入</div>'; return; }
     const rpg = getRpg(me);
     if (!rpg.class) {
-      intro.innerHTML = '<div style="font-size:12px; color:#8b6f9b; padding:8px; text-align:center;">先選職業 ♡</div>';
-      btn.disabled = true;
+      body.innerHTML = '<div style="color:#818cf8;padding:8px;font-size:12px;text-align:center;">先選職業 ♡</div>';
       return;
     }
-    const state = tickRecovery(me);
-    const canEnter = !__trialInProgress && state.hp > 0;
-    intro.innerHTML = `
-      <div style="font-size:12px; color:#5b3d62; padding:6px 10px; background:#f3e8ff; border-radius:8px; margin-bottom:8px; border:1px dashed #c4b5fd;">
-        💡 一次面對 2-3 隻怪物（用目前地區怪物池）<br>
-        🆓 不耗體力 · 純練功 / 試強度用<br>
-        ⚠ <b>暫時不發獎勵</b>（XP / 鵝幣 / 套裝件，之後會開放）
+
+    const bossHtml = PARTY_BOSSES.map(b => `
+      <button class="party-boss-btn${_partySelectedBoss === b.id ? ' selected' : ''}"
+        onclick="partySelectBoss('${b.id}')">
+        <span style="font-size:20px;">${b.icon}</span>
+        <span style="font-weight:700; color:#e0e7ff;"> ${b.name}</span>
+        <span style="color:#6366f1; font-size:10px;"> Lv${b.level}</span><br>
+        <span style="font-size:10px; color:#94a3b8;">${b.desc}</span>
+        <span style="font-size:10px; color:#f59e0b; float:right;">👥 ${b.minParty}-${b.maxParty}人</span>
+      </button>
+    `).join('');
+
+    const rowHtml = `
+      <div class="party-row-select">
+        <button class="party-row-btn front-btn${_partyRow==='front'?' active':''}" onclick="partySetRow('front')">⚔️ 前排（全傷）</button>
+        <button class="party-row-btn back-btn${_partyRow==='back'?' active':''}" onclick="partySetRow('back')">🛡️ 後排（減傷）</button>
       </div>
     `;
-    btn.disabled = !canEnter;
-    btn.textContent = __trialInProgress ? '⚔️ 戰鬥中…' : `🌌 進入試煉（免費）`;
-  }
-  window.renderTrial = renderTrial;
 
-  async function onTrialFight() {
-    if (__trialInProgress) { showToast('⏳ 戰鬥進行中…'); return; }
+    body.innerHTML = `
+      <div style="font-size:11px; color:#818cf8; padding:4px 0 8px; line-height:1.6;">
+        💡 選擇目標王，設定站位，排隊等其他玩家加入後自動開戰<br>
+        ⚔️ 前排：滿傷輸出、優先被打　🛡️ 後排：AOE 受 60% 傷、物理輸出降 80%
+      </div>
+      <div style="font-size:12px; color:#c7d2fe; font-weight:700; margin-bottom:4px;">選擇 BOSS：</div>
+      <div class="party-boss-select">${bossHtml}</div>
+      <div style="font-size:12px; color:#c7d2fe; font-weight:700; margin-bottom:4px;">我的站位：</div>
+      ${rowHtml}
+      ${renderPartyPatternEditor()}
+      <div id="partyQueueArea"></div>
+      <div id="partyFightArea"></div>
+    `;
+    renderPartyQueue();
+  }
+  window.renderPartyTab = renderPartyTab;
+
+  function partySelectBoss(bossId) {
+    _partySelectedBoss = bossId;
+    renderPartyTab();
+  }
+  window.partySelectBoss = partySelectBoss;
+
+  function partySetRow(row) {
+    _partyRow = row;
+    renderPartyTab();
+  }
+  window.partySetRow = partySetRow;
+
+  function renderPartyQueue() {
+    const area = document.getElementById('partyQueueArea');
+    if (!area) return;
+    if (!_partySelectedBoss) {
+      area.innerHTML = '<div style="color:#475569; font-size:11px; padding:4px;">↑ 先選一個 BOSS</div>';
+      return;
+    }
+    const boss = PARTY_BOSSES.find(b => b.id === _partySelectedBoss);
+    if (!boss) return;
+    const me = getMe();
+    const rpg = me ? getRpg(me) : null;
+    const inQueue = !!rpg?.partyQueue?.[_partySelectedBoss];
+
+    area.innerHTML = `
+      <div class="party-queue-panel">
+        <div style="font-size:11px; color:#818cf8; margin-bottom:4px;">
+          📋 ${boss.name} 排隊室　<span style="color:#94a3b8;">需 ${boss.minParty}-${boss.maxParty} 人</span>
+        </div>
+        <div id="partyQueueList" style="font-size:11px; color:#c7d2fe; min-height:20px;">載入中…</div>
+        <div style="display:flex; gap:6px; margin-top:6px;">
+          ${!inQueue
+            ? `<button class="btn btn-primary" style="font-size:12px; padding:5px 12px; background:linear-gradient(135deg,#4338ca,#6366f1); box-shadow:0 3px 0 #312e81;" onclick="partyJoin()">⚔️ 加入排隊</button>`
+            : `<button class="btn btn-secondary" style="font-size:12px; padding:5px 12px;" onclick="partyLeave()">🚪 離開排隊</button>`
+          }
+          <button class="btn btn-primary" style="font-size:12px; padding:5px 12px; background:linear-gradient(135deg,#065f46,#059669); box-shadow:0 3px 0 #064e3b;" onclick="partyStartLocal()">🎲 本地測試開戰</button>
+        </div>
+      </div>
+    `;
+    _watchPartyQueue(_partySelectedBoss);
+  }
+
+  function _watchPartyQueue(bossId) {
+    // local-mode: just read _partyQueues directly
+    const members = _partyQueues[bossId] ? Object.values(_partyQueues[bossId]) : [];
+    const el = document.getElementById('partyQueueList');
+    if (!el) return;
+    if (members.length === 0) {
+      el.innerHTML = '<span style="color:#475569;">尚無人排隊（單人可直接本地測試）</span>';
+      return;
+    }
+    el.innerHTML = members.map(m => `
+      <span style="display:inline-flex; align-items:center; gap:4px; margin:2px 4px 2px 0; background:rgba(99,102,241,0.2); border-radius:6px; padding:2px 6px;">
+        ${m.icon || '🎴'} ${escapeHtml(m.name || '?')}
+        <span style="color:#64748b;">${m.row === 'front' ? '⚔️前' : '🛡️後'}</span>
+      </span>
+    `).join('');
+  }
+
+  async function partyJoin() {
+    if (!_partySelectedBoss) { showToast('先選一個 BOSS'); return; }
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
-    if (!rpg.class) return;
-    tickRecovery(me);
-    if (rpg.hp <= 0) { showToast('💀 HP 不足'); return; }
-    // ⭐ 不再扣體力（測試強度用）
-    __trialInProgress = true;
+    if (!rpg.class) { showToast('先選職業'); return; }
+    const memberData = {
+      pid: me.uid || me.name,
+      name: me.name,
+      icon: (CLASSES[rpg.class] || {}).icon || '🎴',
+      row: _partyRow,
+      cls: rpg.class,
+      level: rpg.level || 1,
+    };
+    if (!rpg.partyQueue) rpg.partyQueue = {};
+    rpg.partyQueue[_partySelectedBoss] = true;
+    saveData();
+    const r = await partyJoinTx(_partySelectedBoss, memberData);
+    if (r.ok) showToast('✅ 已加入排隊！');
+    else showToast('加入失敗：' + r.reason);
+    renderPartyTab();
+  }
+  window.partyJoin = partyJoin;
 
-    const monsters = generateTrialMonsters(rpg.level);
-    if (monsters.length === 0) { __trialInProgress = false; showToast('地區沒有怪物可抽'); return; }
+  async function partyLeave() {
+    if (!_partySelectedBoss) return;
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const pid = me.uid || me.name;
+    if (rpg.partyQueue) delete rpg.partyQueue[_partySelectedBoss];
+    saveData();
+    await partyLeaveTx(_partySelectedBoss, pid);
+    showToast('已離開排隊');
+    renderPartyTab();
+  }
+  window.partyLeave = partyLeave;
 
-    const stats = computeStats(me);
-    const result = autoFightMulti(me, monsters);
+  async function partyAutoStart(bossId, memberList, boss) {
+    // triggered by Firebase when enough members; only leader runs this
+    if (_partyInProgress) return;
+    _partyInProgress = true;
+    // build fake player objects from member list (online fight)
+    // In reality you'd use full player data from Firebase, but here we simulate
+    showToast(`⚔️ ${boss.name} 挑戰開始！`);
+    _partyInProgress = false;
+  }
 
-    // 渲染戰鬥場
-    const trialResult = document.getElementById('trialResult');
-    if (!trialResult) { __trialInProgress = false; return; }
-    const arenaHtml = `
-      <div class="trial-arena" id="trialArena">
-        <div class="t-player">
-          <div class="t-icon">${CLASSES[rpg.class].icon}</div>
-          <div class="t-name">${escapeHtml(me.name)} Lv${rpg.level}</div>
-          <div class="t-hp"><div class="t-hp-fill" id="tpHpFill" style="width:100%"></div></div>
-          <div class="t-hp-text" id="tpHpText">${stats.maxHp}/${stats.maxHp}</div>
-          <div class="t-mp"><div class="t-mp-fill" id="tpMpFill" style="width:100%"></div></div>
-          <div class="t-mp-text" id="tpMpText">MP ${stats.maxMp}/${stats.maxMp}</div>
-          ${rpg.class === 'warrior' ? `
-          <div class="t-hp" style="margin-top:2px; background:#3f0000;"><div class="t-hp-fill" id="tpBloodPoolFill" style="width:0%; background:linear-gradient(90deg,#ef4444,#991b1b);"></div></div>
-          <div class="t-hp-text" id="tpBloodPoolText" style="color:#ef4444;">🩸 血池 0</div>` : ''}
-          <div class="combatant-spd-track"><div class="combatant-spd-fill" id="tpSpdBar" style="width:0%"></div></div>
-          <div class="combatant-spd-text" id="tpSpdText">⏱ 行動條 0%</div>
-        </div>
-        <div class="t-vs">⚔️</div>
-        <div class="t-monsters">
-          ${monsters.map((m, i) => `
-            <div class="t-monster" id="tm${i}">
-              <div class="t-icon">${m.icon}</div>
-              <div class="t-name">${escapeHtml(m.name)} Lv${m.level}</div>
-              <div class="t-hp"><div class="t-hp-fill t-mfill" id="tmHpFill${i}" style="width:100%"></div></div>
-              <div class="t-hp-text" id="tmHpText${i}">${m.hp}/${m.maxHp}</div>
+  // Local solo test (simulates with bots)
+  function partyStartLocal() {
+    if (!_partySelectedBoss) { showToast('先選一個 BOSS'); return; }
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (!rpg.class) { showToast('先選職業'); return; }
+    const boss = PARTY_BOSSES.find(b => b.id === _partySelectedBoss);
+    if (!boss) return;
+
+    // build party: me + bot allies
+    const meStats = computeStats(me);
+    const meData = {
+      player: me,
+      row: _partyRow,
+      pattern: rpg.partyPattern || getDefaultPartyPattern(rpg.class),
+    };
+
+    // generate bot allies to fill min party size
+    const botAllies = [];
+    const botCount = Math.max(0, boss.minParty - 1);
+    for (let b2 = 0; b2 < botCount; b2++) {
+      const botLevel = rpg.level;
+      const baseAtk = Math.round(80 + botLevel * 6);
+      botAllies.push({
+        player: { name: `隊友Bot${b2+1}`, uid: `bot_${b2}`, rpg: { class: 'warrior', level: botLevel, hp: 5000, mp: 200, equipment: {}, skills: {}, abilities: { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0 }, statuses: [], stamina: 100, lastTickAt: Date.now(), currentZone: 'forest', zoneProgress: {} } },
+        row: b2 === 0 ? 'front' : 'back',
+        pattern: getDefaultPartyPattern('warrior'),
+      });
+    }
+
+    const partyMembers = [meData, ...botAllies];
+
+    // build boss list
+    let bossList;
+    if (boss.isTwoBosses && boss.bossPair) {
+      bossList = boss.bossPair.map(b2 => ({ ...b2, hp: b2.maxHp, skills: boss.skills || [] }));
+    } else {
+      bossList = [{ ...boss, hp: boss.maxHp }];
+    }
+
+    const result = autoPartyFight(partyMembers, bossList);
+    renderPartyFight(me, boss, partyMembers, bossList, result);
+  }
+  window.partyStartLocal = partyStartLocal;
+
+  function renderPartyFight(me, boss, partyMembers, bossList, result) {
+    const area = document.getElementById('partyFightArea');
+    if (!area) return;
+    const rpg = getRpg(me);
+
+    // build member cards HTML
+    const memberCardsHtml = partyMembers.map((pm, idx) => {
+      const pr = result.memberResults[idx] || {};
+      const isMe = pm.player.uid === (me.uid || me.name) || pm.player === me;
+      return `
+        <div class="party-member-card row-${pm.row}" id="pmc_${idx}">
+          <div style="display:flex; align-items:center; gap:4px;">
+            <span class="party-icon">${(CLASSES[(getRpg(pm.player)||{}).class||rpg.class]||{}).icon || '🎴'}</span>
+            <div>
+              <div class="party-name">${escapeHtml(pm.player.name)}${isMe ? ' <span style="color:#fde047;font-size:9px;">（我）</span>' : ''}</div>
+              <span class="party-row-tag ${pm.row}">${pm.row === 'front' ? '⚔️前排' : '🛡️後排'}</span>
             </div>
-          `).join('')}
-          <div class="combatant-spd-track" style="margin-top:6px;"><div class="combatant-spd-fill" id="tmSpdBar" style="width:0%; background:linear-gradient(90deg,#fda4af,#ef4444);"></div></div>
-          <div class="combatant-spd-text" id="tmSpdText">⏱ 怪物最快行動條 0%</div>
+          </div>
+          <div class="party-hp-bar" style="margin-top:4px;">
+            <div class="party-hp-fill" id="pmHpFill_${idx}" style="width:100%;"></div>
+          </div>
+          <div class="party-hp-text" id="pmHpText_${idx}">${pr.maxHp || 0}/${pr.maxHp || 0}</div>
+        </div>
+      `;
+    }).join('');
+
+    const bossCardsHtml = bossList.map((b, idx) => `
+      <div class="party-boss-card" id="pbc_${idx}">
+        <div class="party-boss-icon">${b.icon || boss.icon}</div>
+        <div class="party-name">${escapeHtml(b.name)}</div>
+        <div class="party-hp-bar" style="margin-top:4px;">
+          <div class="party-hp-fill party-boss-hp" id="pbHpFill_${idx}" style="width:100%;"></div>
+        </div>
+        <div class="party-hp-text" id="pbHpText_${idx}">${b.maxHp}/${b.maxHp}</div>
+      </div>
+    `).join('');
+
+    area.innerHTML = `
+      <div class="party-arena" style="margin-top:8px;">
+        <div class="party-arena-grid">
+          <div class="party-player-col">${memberCardsHtml}</div>
+          <div class="party-vs">⚔️</div>
+          <div class="party-boss-col">${bossCardsHtml}</div>
         </div>
       </div>
-      ${rpg.class === 'archer' ? `
-      <div id="trArcherPanel" style="background:#0f172a; border-radius:8px; padding:6px 12px; margin:4px 0; font-size:11px; font-family:monospace; display:flex; gap:0; flex-wrap:wrap; align-items:stretch; border:1px solid #1e3a5f;">
-        <div style="color:#7dd3fc; font-weight:800; padding:2px 10px 2px 0; border-right:1px solid #1e3a5f; margin-right:10px; display:flex; align-items:center;">🏹 弓手疊層</div>
-        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-          ${result.archerStats?.baseCrit != null ? `<span style="color:#94a3b8;">暴擊率 <b style="color:#fde047;">${Math.round(result.archerStats.baseCrit * 100)}%</b></span>` : ''}
-          <span style="color:#94a3b8;">命中 <b id="trHitN" style="color:#93c5fd;">0</b>層 → 普攻 <b id="trHitBonus" style="color:#38bdf8;">+0%</b></span>
-          <span style="color:#94a3b8;">暴擊 <b id="trCritN" style="color:#fde047;">0</b>層 → 爆傷 <b id="trCritBonus" style="color:#fb923c;">+0%</b></span>
-          <span style="color:#94a3b8;">爆頭 <b id="trHsN" style="color:#86efac;">0</b>層 → 爆頭 <b id="trHsBonus" style="color:#4ade80;">+0%</b></span>
-        </div>
-      </div>` : ''}
-      <div class="battle-log" id="trialLog"></div>
+      <div class="battle-log" id="partyLog"></div>
     `;
-    trialResult.innerHTML = arenaHtml;
 
-    const logEl = document.getElementById('trialLog');
-    let i = 0; let _lastRound;
+    // Playback
+    const logEl = document.getElementById('partyLog');
+    let i = 0;
+    const maxHps = partyMembers.map((pm, idx) => result.memberResults[idx]?.maxHp || 1);
+    const bossMaxHps = bossList.map(b => b.maxHp);
+
     const playStep = () => {
       if (i >= result.log.length) {
-        finalizeTrialFight(me, result, stats, monsters);
-        snapshotLastFight({ name: '試煉戰場', isElite: false }, result);
-        try {
-          const fr = document.getElementById('trialResult');
-          if (fr) {
-            const btn = document.createElement('button');
-            btn.className = 'btn btn-secondary';
-            btn.style.cssText = 'margin-top:8px; padding:6px 10px; font-size:12px; background:#fef2f2; color:#991b1b; border:1px dashed #f87171;';
-            btn.textContent = '🐛 這場有 BUG？回報一下';
-            btn.onclick = () => openBugReport(true);
-            fr.appendChild(btn);
-          }
-        } catch (e) {}
-        __trialInProgress = false;
-        renderTrial();
+        renderPartyFightResult(me, boss, partyMembers, bossList, result);
         return;
       }
       const entry = result.log[i++];
-      if (entry.round !== undefined && entry.round !== _lastRound) {
-        _lastRound = entry.round;
-        const _sep = document.createElement('div');
-        _sep.style.cssText = 'text-align:center;color:#475569;font-size:10px;padding:3px 0;border-top:1px solid #1e293b;margin:3px 0;';
-        _sep.textContent = `── 回合 ${entry.round} ──`;
-        logEl.appendChild(_sep);
-      }
-      const cls = entry.type === 'crit-player' ? 'log-crit'
-        : entry.type === 'player' ? 'log-player'
-        : entry.type === 'monster' ? 'log-monster' : 'log-system';
       const div = document.createElement('div');
-      div.className = `log-line ${cls}`;
+      div.className = `log-line ${entry.type === 'player' ? 'log-player' : entry.type === 'monster' ? 'log-monster' : 'log-system'}`;
       div.textContent = entry.text;
       logEl.appendChild(div);
       logEl.scrollTop = logEl.scrollHeight;
-      // 更新血條
+
       if (entry.hp) {
-        const tpFill = document.getElementById('tpHpFill');
-        const tpText = document.getElementById('tpHpText');
-        const tpMpF = document.getElementById('tpMpFill');
-        const tpMpT = document.getElementById('tpMpText');
-        if (tpFill) tpFill.style.width = (entry.hp.player / stats.maxHp * 100) + '%';
-        if (tpText) tpText.textContent = `${entry.hp.player}/${stats.maxHp}`;
-        if (entry.hp.mp != null && tpMpF) {
-          tpMpF.style.width = (entry.hp.mp / stats.maxMp * 100) + '%';
-          tpMpT.textContent = `MP ${entry.hp.mp}/${stats.maxMp}`;
-        }
-        if (Array.isArray(entry.hp.monsters)) {
-          entry.hp.monsters.forEach((mh, idx) => {
-            const f = document.getElementById('tmHpFill' + idx);
-            const t = document.getElementById('tmHpText' + idx);
-            if (f) f.style.width = (mh / monsters[idx].maxHp * 100) + '%';
-            if (t) t.textContent = `${mh}/${monsters[idx].maxHp}`;
-          });
-        }
-        if (entry.hp.bloodPool != null) {
-          const bpFill = document.getElementById('tpBloodPoolFill');
-          const bpText = document.getElementById('tpBloodPoolText');
-          if (bpFill) bpFill.style.width = Math.min(100, (entry.hp.bloodPool / Math.max(1, stats.maxHp)) * 100) + '%';
-          if (bpText) bpText.textContent = `🩸 血池 ${entry.hp.bloodPool}`;
-        }
+        // update member HP bars
+        (entry.hp.members || []).forEach((mh, idx) => {
+          const fill = document.getElementById(`pmHpFill_${idx}`);
+          const text = document.getElementById(`pmHpText_${idx}`);
+          const pct = Math.max(0, mh.hp / Math.max(1, mh.maxHp) * 100);
+          if (fill) fill.style.width = pct + '%';
+          if (text) text.textContent = `${mh.hp}/${mh.maxHp}`;
+        });
+        // update boss HP bars
+        (entry.hp.bosses || []).forEach((bh, idx) => {
+          const fill = document.getElementById(`pbHpFill_${idx}`);
+          const text = document.getElementById(`pbHpText_${idx}`);
+          const pct = Math.max(0, bh.hp / Math.max(1, bh.maxHp) * 100);
+          if (fill) fill.style.width = pct + '%';
+          if (text) text.textContent = `${bh.hp}/${bh.maxHp}`;
+        });
       }
-      // ⭐ 更新行動條（ATB / SPD 進度）
-      if (entry.gauge) {
-        updateSpdBar('tpSpdBar', 'tpSpdText', entry.gauge.p, '行動條');
-        updateSpdBar('tmSpdBar', 'tmSpdText', entry.gauge.m, '怪物最快行動條');
-      }
-      // ⭐ 弓手疊層面板即時更新
-      if (entry.stacks) {
-        const s = entry.stacks;
-        const trHitN   = document.getElementById('trHitN');
-        const trHitB   = document.getElementById('trHitBonus');
-        const trCritN  = document.getElementById('trCritN');
-        const trCritB  = document.getElementById('trCritBonus');
-        const trHsN    = document.getElementById('trHsN');
-        const trHsB    = document.getElementById('trHsBonus');
-        if (trHitN)  trHitN.textContent  = s.hit;
-        if (trHitB)  trHitB.textContent  = `+${s.hit}%`;
-        if (trCritN) trCritN.textContent = s.crit;
-        if (trCritB) trCritB.textContent = `+${s.crit * 3}%`;
-        if (trHsN)   trHsN.textContent   = s.hs;
-        if (trHsB)   trHsB.textContent   = `+${s.hs * 10}%`;
-      }
-      const _nx = result.log[i];
-      const _sr = _nx && entry.round !== undefined && entry.round === _nx.round;
-      setTimeout(playStep, _sr ? 80 : 450);
+      setTimeout(playStep, 120);
     };
     playStep();
   }
-  window.onTrialFight = onTrialFight;
+
+  function renderPartyFightResult(me, boss, partyMembers, bossList, result) {
+    const logEl = document.getElementById('partyLog');
+    if (!logEl) return;
+    const div = document.createElement('div');
+    div.className = 'reward-list';
+    if (result.won) {
+      div.style.cssText = 'background:linear-gradient(135deg,#312e81,#4338ca); border-color:#6366f1; margin-top:8px;';
+      div.innerHTML = `
+        <div class="rl-title" style="color:#e0e7ff;">⚔️ 組隊勝利！</div>
+        <div class="rl-item" style="color:#818cf8; font-size:11px;">💥 暴擊 ${result.critCount} 次　⏱ 共 ${result.rounds} 回合</div>
+        <div class="rl-item" style="color:#6366f1; font-size:10px; opacity:0.7;">※ 測試階段暫不發獎勵</div>
+      `;
+    } else {
+      div.style.cssText = 'background:#1f2937; border-color:#374151; margin-top:8px;';
+      div.innerHTML = `
+        <div class="rl-title" style="color:#f87171;">😭 討伐失敗</div>
+        <div class="rl-item" style="color:#9ca3af; font-size:11px;">💥 暴擊 ${result.critCount} 次　⏱ 共 ${result.rounds} 回合</div>
+      `;
+    }
+    logEl.parentNode.insertBefore(div, logEl.nextSibling);
+
+    // ⭐ 存入歷史戰報
+    const rpg = getRpg(me);
+    if (!Array.isArray(rpg.partyHistory)) rpg.partyHistory = [];
+    const snap = {
+      id: `ph_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      ts: Date.now(),
+      bossId: boss.id,
+      bossName: boss.name,
+      bossIcon: boss.icon,
+      won: result.won,
+      critCount: result.critCount,
+      rounds: result.rounds,
+      log: result.log,
+      memberSnaps: partyMembers.map((pm, idx) => ({
+        name: pm.player.name,
+        icon: (CLASSES[(getRpg(pm.player) || {}).class] || {}).icon || '🎴',
+        row: pm.row,
+        cls: (getRpg(pm.player) || {}).class,
+        maxHp: (result.memberResults[idx] || {}).maxHp || 0,
+      })),
+      bossSnaps: bossList.map(b => ({
+        name: b.name,
+        icon: b.icon || boss.icon,
+        maxHp: b.maxHp,
+      })),
+    };
+    rpg.partyHistory.unshift(snap);
+    if (rpg.partyHistory.length > 10) rpg.partyHistory.length = 10;
+    saveData();
+    renderPartyHistory();
+  }
+
+  // =========================================================
+  // Party History
+  // =========================================================
+  function renderPartyHistory() {
+    const area = document.getElementById('partyHistoryArea');
+    if (!area) return;
+    const me = getMe(); if (!me) { area.innerHTML = ''; return; }
+    const rpg = getRpg(me);
+    const list = Array.isArray(rpg.partyHistory) ? rpg.partyHistory : [];
+    if (list.length === 0) { area.innerHTML = ''; return; }
+
+    area.innerHTML = `
+      <div class="boss-history" style="margin-top:12px;">
+        <div class="boss-history-title">📜 組隊戰報（${list.length}/10）　<span style="font-weight:500; opacity:0.75; font-size:11px;">點 → 重播</span></div>
+        ${list.map(h => {
+          const time = typeof formatRelativeTime === 'function' ? formatRelativeTime(h.ts) : '';
+          const resultLabel = h.won ? '⚔️ 勝利' : '💀 失敗';
+          const resultColor = h.won ? '#86efac' : '#fca5a5';
+          const memberIcons = (h.memberSnaps || []).map(m =>
+            `<span title="${escapeHtml(m.name)} ${m.row==='front'?'前':'後'}">${m.icon}</span>`
+          ).join('');
+          return `
+            <button class="boss-history-row ${h.won ? 'is-kill' : ''}"
+                    style="width:100%; text-align:left;"
+                    onclick="replayPartyFight('${h.id}')">
+              <span class="bh-icon">${h.bossIcon || '⚔️'}</span>
+              <div class="bh-meta">
+                <div class="bh-line1">${escapeHtml(h.bossName || '???')} <span style="color:${resultColor}; font-weight:700; margin-left:6px;">${resultLabel}</span></div>
+                <div class="bh-line2">${memberIcons}　💥${h.critCount || 0}暴擊　⏱${h.rounds || 0}回合　·　${time}</div>
+              </div>
+              <span class="bh-play">▶</span>
+            </button>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+  window.renderPartyHistory = renderPartyHistory;
+
+  function replayPartyFight(historyId) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const list = Array.isArray(rpg.partyHistory) ? rpg.partyHistory : [];
+    const snap = list.find(h => h.id === historyId);
+    if (!snap) { showToast('找不到戰報'); return; }
+    _doPartyReplay(snap);
+  }
+  window.replayPartyFight = replayPartyFight;
+
+  function _doPartyReplay(snap) {
+    const members = snap.memberSnaps || [];
+    const bosses  = snap.bossSnaps  || [];
+
+    const memberCardsHtml = members.map((m, idx) => `
+      <div class="party-member-card row-${m.row}" style="margin-bottom:4px;">
+        <div style="display:flex; align-items:center; gap:4px;">
+          <span style="font-size:22px;">${m.icon}</span>
+          <div>
+            <div class="party-name">${escapeHtml(m.name)}</div>
+            <span class="party-row-tag ${m.row}">${m.row==='front'?'⚔️前排':'🛡️後排'}</span>
+          </div>
+        </div>
+        <div class="party-hp-bar" style="margin-top:4px;">
+          <div class="party-hp-fill" id="prPHpFill_${idx}" style="width:100%;"></div>
+        </div>
+        <div class="party-hp-text" id="prPHpText_${idx}">${m.maxHp}/${m.maxHp}</div>
+      </div>
+    `).join('');
+
+    const bossCardsHtml = bosses.map((b, idx) => `
+      <div class="party-boss-card" style="margin-bottom:4px;">
+        <div class="party-boss-icon">${b.icon}</div>
+        <div class="party-name">${escapeHtml(b.name)}</div>
+        <div class="party-hp-bar" style="margin-top:4px;">
+          <div class="party-hp-fill party-boss-hp" id="prBHpFill_${idx}" style="width:100%;"></div>
+        </div>
+        <div class="party-hp-text" id="prBHpText_${idx}">${(b.maxHp||0).toLocaleString()}/${(b.maxHp||0).toLocaleString()}</div>
+      </div>
+    `).join('');
+
+    const totalLog = (snap.log || []).length;
+    const arenaHtml = `
+      <div class="party-arena" style="margin-bottom:8px;">
+        <div class="party-arena-grid">
+          <div class="party-player-col">${memberCardsHtml}</div>
+          <div class="party-vs">⚔️</div>
+          <div class="party-boss-col">${bossCardsHtml}</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:6px; align-items:center; margin-bottom:6px; font-size:11px; color:#94a3b8;">
+        <button class="btn btn-secondary" id="prSpeedBtn" style="padding:4px 10px; font-size:11px;" onclick="cyclePartyReplaySpeed()">⚡ 速度 1×</button>
+        <span id="prProgress" style="margin-left:auto; font-weight:600; color:#818cf8;">0 / ${totalLog}</span>
+      </div>
+      <div class="battle-log" id="partyReplayLog" style="max-height:220px;"></div>
+      <div style="display:flex; gap:6px; margin-top:8px;">
+        <button class="btn btn-secondary" onclick="hideModal()" style="flex:1;">關閉</button>
+      </div>
+    `;
+
+    showModal(`📜 ${snap.bossIcon} ${escapeHtml(snap.bossName)} 組隊戰報`, arenaHtml);
+
+    // 清掉舊 replay
+    if (window.__partyReplayState && window.__partyReplayState.timer) {
+      try { clearTimeout(window.__partyReplayState.timer); } catch(e) {}
+    }
+    window.__partyReplayState = {
+      sessionId: Math.random().toString(36).slice(2),
+      i: 0,
+      log: snap.log || [],
+      memberSnaps: members,
+      bossSnaps: bosses,
+      speed: 1,
+      timer: null,
+    };
+    _runPartyReplayStep(window.__partyReplayState.sessionId);
+  }
+
+  function cyclePartyReplaySpeed() {
+    const st = window.__partyReplayState; if (!st) return;
+    const speeds = [1, 2, 4];
+    const idx = speeds.indexOf(st.speed);
+    st.speed = speeds[(idx + 1) % speeds.length];
+    const btn = document.getElementById('prSpeedBtn');
+    if (btn) btn.textContent = `⚡ 速度 ${st.speed}×`;
+  }
+  window.cyclePartyReplaySpeed = cyclePartyReplaySpeed;
+
+  function _runPartyReplayStep(sessionId) {
+    const st = window.__partyReplayState;
+    if (!st || st.sessionId !== sessionId) return;
+    const logEl = document.getElementById('partyReplayLog');
+    if (!logEl) { window.__partyReplayState = null; return; }
+
+    if (st.i >= st.log.length) {
+      const prog = document.getElementById('prProgress');
+      if (prog) prog.textContent = `${st.log.length} / ${st.log.length}（完）`;
+      return;
+    }
+
+    const entry = st.log[st.i++];
+
+    // round separator
+    if (entry.round !== undefined && entry.round !== st._lastRound) {
+      st._lastRound = entry.round;
+      const sep = document.createElement('div');
+      sep.style.cssText = 'text-align:center;color:#475569;font-size:10px;padding:3px 0;border-top:1px solid #1e293b;margin:3px 0;';
+      sep.textContent = `── 回合 ${entry.round} ──`;
+      logEl.appendChild(sep);
+    }
+
+    // log line
+    const cls = entry.type === 'player' ? 'log-player'
+      : entry.type === 'monster' ? 'log-monster' : 'log-system';
+    const div = document.createElement('div');
+    div.className = `log-line ${cls}`;
+    div.textContent = entry.text;
+    logEl.appendChild(div);
+    logEl.scrollTop = logEl.scrollHeight;
+
+    // update HP bars
+    if (entry.hp) {
+      (entry.hp.members || []).forEach((mh, idx) => {
+        const fill = document.getElementById(`prPHpFill_${idx}`);
+        const text = document.getElementById(`prPHpText_${idx}`);
+        const maxHp = (st.memberSnaps[idx] || {}).maxHp || 1;
+        if (fill) fill.style.width = Math.max(0, mh.hp / maxHp * 100) + '%';
+        if (text) text.textContent = `${mh.hp}/${maxHp}`;
+      });
+      (entry.hp.bosses || []).forEach((bh, idx) => {
+        const fill = document.getElementById(`prBHpFill_${idx}`);
+        const text = document.getElementById(`prBHpText_${idx}`);
+        const maxHp = (st.bossSnaps[idx] || {}).maxHp || 1;
+        if (fill) fill.style.width = Math.max(0, bh.hp / maxHp * 100) + '%';
+        if (text) text.textContent = `${bh.hp.toLocaleString()}/${maxHp.toLocaleString()}`;
+      });
+    }
+
+    // progress counter
+    const prog = document.getElementById('prProgress');
+    if (prog) prog.textContent = `${st.i} / ${st.log.length}`;
+
+    const BASE_DELAY = entry.type === 'system' ? 300 : 120;
+    st.timer = setTimeout(() => _runPartyReplayStep(sessionId), Math.round(BASE_DELAY / st.speed));
+  }
+
+  // =========================================================
+  // Party Pattern Editor
+  // =========================================================
+  function renderPartyPatternEditor() {
+    const me = getMe(); if (!me) return '';
+    const rpg = getRpg(me);
+    if (!rpg.class) return '';
+    const pattern = rpg.partyPattern || getDefaultPartyPattern(rpg.class);
+    rpg.partyPattern = pattern;
+
+    const cls = rpg.class ? CLASSES[rpg.class] : null;
+    const skills = cls ? (cls.skills || []) : [];
+    const judgeList = Object.entries(PARTY_JUDGES);
+
+    const rowsHtml = pattern.map((rule, ri) => {
+      const judgeOpts = judgeList.map(([id, j]) =>
+        `<option value="${id}"${rule.judgeId == id ? ' selected' : ''}>${j.label}</option>`
+      ).join('');
+      const skillOpts = `<option value="">（普攻）</option>` + skills.map(s =>
+        `<option value="${s.id}"${rule.skillId === s.id ? ' selected' : ''}>${s.icon || ''} ${s.name}</option>`
+      ).join('');
+      const judge = PARTY_JUDGES[rule.judgeId];
+      const needParam = judge && judge.paramType !== 'none';
+      return `
+        <div style="display:flex; gap:4px; align-items:center; margin-bottom:4px; flex-wrap:wrap;">
+          <span style="color:#818cf8; font-size:11px; min-width:20px;">${ri+1}.</span>
+          <select style="font-size:11px; background:#1e293b; color:#c7d2fe; border:1px solid #334155; border-radius:6px; padding:3px;" onchange="partyPatternSetJudge(${ri}, this.value)">${judgeOpts}</select>
+          ${needParam ? `<input type="number" value="${rule.param || 0}" min="0" max="100" style="width:50px; font-size:11px; background:#1e293b; color:#fde047; border:1px solid #334155; border-radius:6px; padding:3px; text-align:center;" onchange="partyPatternSetParam(${ri}, this.value)">` : ''}
+          <select style="font-size:11px; background:#1e293b; color:#c7d2fe; border:1px solid #334155; border-radius:6px; padding:3px;" onchange="partyPatternSetSkill(${ri}, this.value)">${skillOpts}</select>
+          <button onclick="partyPatternRemove(${ri})" style="font-size:11px; background:#7f1d1d; color:#fca5a5; border:none; border-radius:6px; padding:2px 6px; cursor:pointer;">✕</button>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:8px; margin-top:8px;">
+        <div style="font-size:12px; color:#818cf8; font-weight:700; margin-bottom:6px;">🎯 組隊技能順序</div>
+        ${rowsHtml}
+        <button onclick="partyPatternAdd()" style="font-size:11px; background:#1e3a5f; color:#93c5fd; border:1px solid #1e40af; border-radius:6px; padding:4px 10px; cursor:pointer; margin-top:2px;">＋ 加一條</button>
+        <div style="font-size:10px; color:#475569; margin-top:4px;">條件由上而下匹配，第一個符合的技能會被使用</div>
+      </div>
+    `;
+  }
+  window.renderPartyPatternEditor = renderPartyPatternEditor;
+
+  function partyPatternSetJudge(ri, val) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (!rpg.partyPattern) rpg.partyPattern = getDefaultPartyPattern(rpg.class);
+    rpg.partyPattern[ri].judgeId = Number(val);
+    saveData();
+    renderPartyTab();
+  }
+  window.partyPatternSetJudge = partyPatternSetJudge;
+
+  function partyPatternSetParam(ri, val) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (!rpg.partyPattern) rpg.partyPattern = getDefaultPartyPattern(rpg.class);
+    rpg.partyPattern[ri].param = Number(val);
+    saveData();
+  }
+  window.partyPatternSetParam = partyPatternSetParam;
+
+  function partyPatternSetSkill(ri, val) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (!rpg.partyPattern) rpg.partyPattern = getDefaultPartyPattern(rpg.class);
+    rpg.partyPattern[ri].skillId = val || null;
+    saveData();
+  }
+  window.partyPatternSetSkill = partyPatternSetSkill;
+
+  function partyPatternAdd() {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (!rpg.partyPattern) rpg.partyPattern = getDefaultPartyPattern(rpg.class);
+    rpg.partyPattern.push({ judgeId: 2000, param: 0, skillId: null });
+    saveData();
+    renderPartyTab();
+  }
+  window.partyPatternAdd = partyPatternAdd;
+
+  function partyPatternRemove(ri) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (!rpg.partyPattern) return;
+    rpg.partyPattern.splice(ri, 1);
+    saveData();
+    renderPartyTab();
+  }
+  window.partyPatternRemove = partyPatternRemove;
 
   // ⭐ 通用：更新單一 ATB 行動條（width = gauge%、滿條時加閃爍 .full）
   // 偵測「條突然下降」→ 那一方剛出手 → 快閃 100% 再掉到新值
@@ -13968,41 +14839,6 @@ ${b.text}
       if (v >= 99) bar.classList.add('full'); else bar.classList.remove('full');
       if (txt) txt.textContent = `⏱ ${label || '行動條'} ${Math.round(v)}%${v >= 99 ? ' 滿條！' : ''}`;
     }
-  }
-
-  function finalizeTrialFight(player, result, stats, monsters) {
-    const rpg = getRpg(player);
-    // ⭐ 試煉戰場是「試強度」用：HP/MP 也直接回滿，不影響真實戰鬥資源
-    const ns = computeStats(player);
-    rpg.hp = ns.maxHp;
-    rpg.mp = ns.maxMp;
-    rpg.deathAt = null;
-    // 不計戰績、不發獎、不掉裝
-    let rewardHtml = '';
-    if (result.won) {
-      rewardHtml = `
-        <div class="reward-list" style="background:linear-gradient(135deg,#fde68a,#fbbf24); border-color:#f59e0b;">
-          <div class="rl-title" style="color:#7c2d12;">🏆 試煉勝利！</div>
-          <div class="rl-item" style="font-size:12px; color:#7c2d12;">⚔️ 暴擊 ${result.critCount || 0} 次　·　剩餘 HP ${result.pHpFinal} / ${ns.maxHp}</div>
-          <div class="rl-item" style="font-size:11px; color:#7c2d12;">💪 強度測試完成 — HP / MP 已自動回滿</div>
-          <div class="rl-item" style="margin-top:6px; font-size:10px; color:#7c2d12; opacity:0.7;">※ 試煉戰場暫不發獎勵，純粹試強度。獎勵之後會開放。</div>
-        </div>
-      `;
-    } else {
-      rewardHtml = `
-        <div class="reward-list" style="background:#fef9c3; border-color:#fde047;">
-          <div class="rl-title" style="color:#a16207;">😭 試煉失敗</div>
-          <div class="rl-item" style="font-size:12px; color:#a16207;">💪 強度不足，繼續加油練裝吧～</div>
-          <div class="rl-item" style="font-size:11px; color:#a16207;">🍀 試煉場不會死人 — HP 已回滿</div>
-        </div>
-      `;
-    }
-    document.getElementById('trialResult').insertAdjacentHTML('beforeend', rewardHtml);
-    saveData();
-    renderCharCard();
-    renderEquipment();
-    renderRpgStats();
-    updateStaminaUI();
   }
 
   // === 以下為舊 v8 world boss 函式（已在 commit 7 移除） ===
@@ -15366,7 +16202,7 @@ ${b.text}
     const result = autoFightMulti(me, monsters);
     // 試煉場樣式 arena，但放 fightResult 區
     const arenaHtml = `
-      <div class="trial-arena" id="battleArena">
+      <div class="multi-arena" id="battleArena">
         <div class="t-player">
           <div class="t-icon">${CLASSES[rpg.class].icon}</div>
           <div class="t-name">${escapeHtml(me.name)} Lv${rpg.level}</div>
