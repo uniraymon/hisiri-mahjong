@@ -10018,7 +10018,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506040744';
+  const APP_VERSION = '20260506041526';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13831,6 +13831,16 @@ ${b.text}
           <div class="combatant-spd-text" id="tmSpdText">⏱ 怪物最快行動條 0%</div>
         </div>
       </div>
+      ${rpg.class === 'archer' ? `
+      <div id="trArcherPanel" style="background:#0f172a; border-radius:8px; padding:6px 12px; margin:4px 0; font-size:11px; font-family:monospace; display:flex; gap:0; flex-wrap:wrap; align-items:stretch; border:1px solid #1e3a5f;">
+        <div style="color:#7dd3fc; font-weight:800; padding:2px 10px 2px 0; border-right:1px solid #1e3a5f; margin-right:10px; display:flex; align-items:center;">🏹 弓手疊層</div>
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+          ${result.archerStats?.baseCrit != null ? `<span style="color:#94a3b8;">暴擊率 <b style="color:#fde047;">${Math.round(result.archerStats.baseCrit * 100)}%</b></span>` : ''}
+          <span style="color:#94a3b8;">命中 <b id="trHitN" style="color:#93c5fd;">0</b>層 → 普攻 <b id="trHitBonus" style="color:#38bdf8;">+0%</b></span>
+          <span style="color:#94a3b8;">暴擊 <b id="trCritN" style="color:#fde047;">0</b>層 → 爆傷 <b id="trCritBonus" style="color:#fb923c;">+0%</b></span>
+          <span style="color:#94a3b8;">爆頭 <b id="trHsN" style="color:#86efac;">0</b>層 → 爆頭 <b id="trHsBonus" style="color:#4ade80;">+0%</b></span>
+        </div>
+      </div>` : ''}
       <div class="battle-log" id="trialLog"></div>
     `;
     trialResult.innerHTML = arenaHtml;
@@ -13903,6 +13913,22 @@ ${b.text}
       if (entry.gauge) {
         updateSpdBar('tpSpdBar', 'tpSpdText', entry.gauge.p, '行動條');
         updateSpdBar('tmSpdBar', 'tmSpdText', entry.gauge.m, '怪物最快行動條');
+      }
+      // ⭐ 弓手疊層面板即時更新
+      if (entry.stacks) {
+        const s = entry.stacks;
+        const trHitN   = document.getElementById('trHitN');
+        const trHitB   = document.getElementById('trHitBonus');
+        const trCritN  = document.getElementById('trCritN');
+        const trCritB  = document.getElementById('trCritBonus');
+        const trHsN    = document.getElementById('trHsN');
+        const trHsB    = document.getElementById('trHsBonus');
+        if (trHitN)  trHitN.textContent  = s.hit;
+        if (trHitB)  trHitB.textContent  = `+${s.hit}%`;
+        if (trCritN) trCritN.textContent = s.crit;
+        if (trCritB) trCritB.textContent = `+${s.crit * 3}%`;
+        if (trHsN)   trHsN.textContent   = s.hs;
+        if (trHsB)   trHsB.textContent   = `+${s.hs * 10}%`;
       }
       const _nx = result.log[i];
       const _sr = _nx && entry.round !== undefined && entry.round === _nx.round;
@@ -14453,6 +14479,16 @@ ${b.text}
           <div class="combatant-spd-text" id="mSpdText">⏱ 行動條 0%</div>
         </div>
       </div>
+      ${rpg.class === 'archer' ? `
+      <div id="pbArcherPanel" style="background:#0f172a; border-radius:8px; padding:6px 12px; margin:4px 0; font-size:11px; font-family:monospace; display:flex; gap:0; flex-wrap:wrap; align-items:stretch; border:1px solid #1e3a5f;">
+        <div style="color:#7dd3fc; font-weight:800; padding:2px 10px 2px 0; border-right:1px solid #1e3a5f; margin-right:10px; display:flex; align-items:center;">🏹 弓手疊層</div>
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+          ${result.archerStats?.baseCrit != null ? `<span style="color:#94a3b8;">暴擊率 <b style="color:#fde047;">${Math.round(result.archerStats.baseCrit * 100)}%</b></span>` : ''}
+          <span style="color:#94a3b8;">命中 <b id="pbHitN" style="color:#93c5fd;">0</b>層 → 普攻 <b id="pbHitBonus" style="color:#38bdf8;">+0%</b></span>
+          <span style="color:#94a3b8;">暴擊 <b id="pbCritN" style="color:#fde047;">0</b>層 → 爆傷 <b id="pbCritBonus" style="color:#fb923c;">+0%</b></span>
+          <span style="color:#94a3b8;">爆頭 <b id="pbHsN" style="color:#86efac;">0</b>層 → 爆頭 <b id="pbHsBonus" style="color:#4ade80;">+0%</b></span>
+        </div>
+      </div>` : ''}
       <div class="battle-log" id="battleLog"></div>
     `;
     const resultHost = document.getElementById('personalBossResult');
@@ -14647,6 +14683,22 @@ ${b.text}
         updateSpdBar('pSpdBar', 'pSpdText', entry.gauge.p, '我的行動條');
         updateSpdBar('mSpdBar', 'mSpdText', entry.gauge.m, '怪行動條');
       }
+      // ⭐ 弓手疊層面板即時更新
+      if (entry.stacks) {
+        const s = entry.stacks;
+        const pbHitN   = document.getElementById('pbHitN');
+        const pbHitB   = document.getElementById('pbHitBonus');
+        const pbCritN  = document.getElementById('pbCritN');
+        const pbCritB  = document.getElementById('pbCritBonus');
+        const pbHsN    = document.getElementById('pbHsN');
+        const pbHsB    = document.getElementById('pbHsBonus');
+        if (pbHitN)  pbHitN.textContent  = s.hit;
+        if (pbHitB)  pbHitB.textContent  = `+${s.hit}%`;
+        if (pbCritN) pbCritN.textContent = s.crit;
+        if (pbCritB) pbCritB.textContent = `+${s.crit * 3}%`;
+        if (pbHsN)   pbHsN.textContent   = s.hs;
+        if (pbHsB)   pbHsB.textContent   = `+${s.hs * 10}%`;
+      }
       const _nx = result.log[i];
       const _sr = _nx && entry.round !== undefined && entry.round === _nx.round;
       setTimeout(playStep, _sr ? 80 : 350);
@@ -14682,6 +14734,11 @@ ${b.text}
     const bpText = document.getElementById('bloodPoolText');
     if (bpBar) bpBar.style.width = '0%';
     if (bpText) bpText.textContent = '🩸 血池 0';
+    // 重置弓手疊層面板
+    ['pbHitN','pbHitBonus','pbCritN','pbCritBonus','pbHsN','pbHsBonus'].forEach((id, k) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = ['0','+0%','0','+0%','0','+0%'][k];
+    });
     let i = 0; let _lastRound;
     const replayStep = () => {
       if (i >= result.log.length) return;
@@ -14719,6 +14776,12 @@ ${b.text}
       if (entry.gauge && typeof updateSpdBar === 'function') {
         updateSpdBar('pSpdBar', 'pSpdText', entry.gauge.p, '我的行動條');
         updateSpdBar('mSpdBar', 'mSpdText', entry.gauge.m, '怪行動條');
+      }
+      // ⭐ 弓手疊層面板即時更新（重播）
+      if (entry.stacks) {
+        const s = entry.stacks;
+        const _ids = [['pbHitN', s.hit], ['pbHitBonus', `+${s.hit}%`], ['pbCritN', s.crit], ['pbCritBonus', `+${s.crit * 3}%`], ['pbHsN', s.hs], ['pbHsBonus', `+${s.hs * 10}%`]];
+        _ids.forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.textContent = val; });
       }
       const _nx = result.log[i];
       const _sr = _nx && entry.round !== undefined && entry.round === _nx.round;
