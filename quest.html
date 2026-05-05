@@ -2097,7 +2097,7 @@
       ],
       skillTree: [
         { id: 'm_mp',    name: '法力深淵', icon: '💎', desc: '+5% 最大 MP',         maxLevel: 5, effect: 'mpPct',     per: 0.05 },
-        { id: 'm_atk',   name: '智慧',     icon: '📚', desc: '+2 ATK',              maxLevel: 5, effect: 'atk',       per: 2 },
+        { id: 'm_atk',   name: '智慧',     icon: '📚', desc: '+3 MARK',             maxLevel: 5, effect: 'mark',      per: 3 },
         { id: 'm_crit',  name: '暴擊精通', icon: '💥', desc: '+2% 暴擊率',         maxLevel: 5, effect: 'critChance', per: 0.02 },
         { id: 'm_hp',    name: '靈體強化', icon: '🪄', desc: '+5% 最大 HP',         maxLevel: 5, effect: 'hpPct',     per: 0.05 },
         { id: 'm_def',   name: '法力護甲', icon: '🛡', desc: '+1 DEF',              maxLevel: 5, effect: 'def',       per: 1 },
@@ -5758,7 +5758,7 @@
       atk:   Math.round(cls.atk + (lv - 1) * cls.atkPer) + b.atk + ab.atk,
       def:   Math.round(cls.def + (lv - 1) * cls.defPer) + b.def + ab.def,
       spd:   Math.round(cls.spd + (lv - 1) * cls.spdPer) + b.spd + ab.spd,
-      mark:  Math.round((cls.mark || 0) + (lv - 1) * (cls.markPer || 0)) + (ab.mark || 0),
+      mark:  Math.round((cls.mark || 0) + (lv - 1) * (cls.markPer || 0)) + (b.mark || 0) + (ab.mark || 0),
     };
     // 裝備加成（10 個槽）— 同時累積裝備本身的 critChance / critDmg / mpRegen
     let itemCritChance = 0;
@@ -9448,7 +9448,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505170539';
+  const APP_VERSION = '20260505191144';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
