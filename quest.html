@@ -2278,6 +2278,8 @@
         { id: 'p_aegis',         name: '反傷護盾', icon: '🪞', unlockLv: 8,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.50, turns: 3 } },
         // ⭐ 新增：神聖奪魂 — 0.8× ATK 傷害 + 回 4 MP（聖騎回魔多一倍）
         { id: 'p_mana_drain',    name: '神聖奪魂', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 0.8, mpRestore: 4 },
+        // ⭐ 聖母鵝招喚：召喚聖母鵝（持續 floor(round/5) 次行動）；計數器在召喚後凍結
+        { id: 'p_holy_mother',   name: '聖母鵝招喚', icon: '🕊️', unlockLv: 10, cooldown: 0, mpCost: 50, type: 'summon' },
       ],
       skillTree: [
         { id: 'p_def',   name: '聖光鎧甲', icon: '🛡',  desc: '+2 DEF',              maxLevel: 5, effect: 'def',          per: 2 },
@@ -6490,7 +6492,7 @@
     // ⭐ 合成效果
     const _fx = getFusionEffects(player);
     const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0) + (setB.critChance || 0);
-    const critMult = 2.5 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
+    const critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
     // fx_guardian: 每回合 HP 回復最大值 3%
     const regenPer = (cls.regenPer || 0) + (bonus.regen || 0) + (_fx.has('fx_guardian') ? 0.03 : 0);
     // fx_mage: 技能 MP 消耗 -20%（加到 passive.mpDiscount 之上）
@@ -6499,9 +6501,11 @@
     const _dgCritCount = getFusionEffectCount(player, 'fx_dg_crit');
     let _nextForceCrit = 0; // 剩餘必爆次數
     // 弓手普攻流疊加（本場累積，回合間持續）
-    let _aHit = 0;   // 命中數 → 普攻傷害 +1%/層
-    let _aCrit = 0;  // 暴擊數 → 爆傷 +3%/層
-    let _aHs = 0;    // 爆頭數 → 爆頭傷害 +10%/層（+0.3 headshot mult）
+    let _aHit = 0;       // 命中數 → 普攻傷害 +1%/層
+    let _aCrit = 0;      // 暴擊計數（用於 UI 顯示）
+    let _aHs = 0;        // 爆頭計數（用於 UI 顯示）
+    let _aCritBonus = 0; // ⭐ 暴擊爆傷累積（每次暴擊隨機 +1~4%）
+    let _aHsBonus   = 0; // ⭐ 爆頭傷害累積（每次爆頭隨機 +5~13%）
     // ⭐ 嗜血劍：裝備時攻擊流血目標 → 回血×2 + ATK+20%(3T)
     const _weaponItem = resolveItem(player.rpg?.equipment?.weapon);
     const weaponBloodEffect = !!_weaponItem?.onHitBleeding;
@@ -6513,6 +6517,15 @@
     let coinsStolen = 0;
     let critCount = 0;
     let bloodPool = 0; // ⭐ 血池：累積所有 HP 代價技能扣的血，供「爆血」技能使用
+    // ⭐ 聖母鵝（HMG）系統 — 聖騎專屬
+    const _isPaladin = player.rpg.class === 'paladin';
+    let _hmgActive = false;      // 是否已召喚
+    let _hmgActionsLeft = 0;     // 剩餘行動次數
+    let _hmgHitCount = 0;        // 玩家擊中敵方次數（含技能/普攻）
+    let _hmgTakenCount = 0;      // 玩家被擊中次數
+    let _hmgHealCount = 0;       // 玩家使用補血技能次數（不含每回再生）
+    let _hmgFrozen = false;      // 計數是否已凍結（召喚後停止增加）
+    let _hmgLastSkill = null;    // 上次 HMG 技能 id（不連放）
     const mAbility = monster.ability;
     // ⭐ 物理/法術抗性：優先用 physRes/magRes 欄位，舊版 ability 格式仍向下相容
     const _monPhysRes = monster.physRes ?? (mAbility?.type === 'physResist' ? (mAbility.resist || 0) : 0);
@@ -6779,8 +6792,8 @@
               dmg = (skill.flat + (bonus.skillFlat || 0) + (abil.skillFlat || 0)) + (skill.perLv || 0) * (player.rpg.level || 1);
               if (!skill.ignoreDef) dmg -= Math.floor(monDef / 2);
             } else if (skill.usesBloodPool) {
-              // ⭐ 爆血：血池 × 2，無視 DEF / 抗性，易傷 / 暴擊正常計算，無隨機變異
-              dmg = bloodPool * 2;
+              // ⭐ 爆血：血池 × 3，無視 DEF / 抗性，易傷 / 暴擊正常計算，無隨機變異
+              dmg = bloodPool * 3;
               bloodPool = 0;
             } else {
               // ⭐ useMark:true 的技能使用 MARK 而非 ATK（法師魔攻技）
@@ -6918,8 +6931,11 @@
             log.push({
               type: 'crit-player',
               text: `回合 ${round}：${skill.icon} ${skill.name}${lastIsCrit ? '【暴擊】' : ''}${isMagic ? '【魔攻】' : ''}${skillHits > 1 ? `×${skillHits}` : ''} → ${monster.name} ${skillHits > 1 ? '共 ' + totalDmg + ' HP ' + dmgStr : dmgStr}${extra}${costStr}`,
-              hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp, bloodPool }
+              hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp, bloodPool },
+              hmgCounters: _isPaladin ? { hit: _hmgHitCount + (_hmgFrozen ? 0 : 1), taken: _hmgTakenCount, heal: _hmgHealCount, active: _hmgActive, actionsLeft: _hmgActionsLeft } : undefined,
             });
+            // ⭐ 聖母鵝計數：玩家技能擊中
+            if (_isPaladin && !_hmgFrozen && totalDmg > 0) _hmgHitCount++;
             if (mAbility?.type === 'reflect' && mAbility.resist) {
               log.push({ type: 'monster', text: `回合 ${round}：🪞 ${monster.name} 反射光芒（多段反彈）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
             }
@@ -7008,11 +7024,31 @@
               gainedParts.push('🛡 免疫一次傷害');
             }
             const gainedStr = gainedParts.length ? gainedParts.join(' ') : '無效果';
+            // ⭐ 聖母鵝計數：補血技能（不含每回再生 isMpRegen）
+            if (_isPaladin && !_hmgFrozen && skill.healPct && !skill.isMpRegen) _hmgHealCount++;
             log.push({
               type: 'player',
               text: `回合 ${round}：${skill.icon} ${skill.name} ${gainedStr}${costStr}`,
-              hp: { player: pHp, monster: mHp, mp: pMp }
+              hp: { player: pHp, monster: mHp, mp: pMp },
+              hmgCounters: _isPaladin ? { hit: _hmgHitCount, taken: _hmgTakenCount, heal: _hmgHealCount, active: _hmgActive, actionsLeft: _hmgActionsLeft } : undefined,
             });
+          } else if (skill.type === 'summon') {
+            // ⭐ 聖母鵝招喚
+            if (_hmgActive) {
+              pMp += effMpCost; // 退回 MP（已在場）
+              log.push({ type: 'system', text: `回合 ${round}：🕊️ 聖母鵝已在場！（MP 退回）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+            } else {
+              _hmgActive = true;
+              _hmgFrozen = true;
+              _hmgActionsLeft = Math.floor(round / 5);
+              const _hmgDur = _hmgActionsLeft;
+              log.push({
+                type: 'crit-player',
+                text: `回合 ${round}：🕊️ 聖母鵝招喚！計數凍結 [回合:${round} | 擊中:${_hmgHitCount} | 被擊:${_hmgTakenCount} | 補血:${_hmgHealCount}] → 持續 ${_hmgDur} 次行動${costStr}`,
+                hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp },
+                hmgCounters: { hit: _hmgHitCount, taken: _hmgTakenCount, heal: _hmgHealCount, active: true, actionsLeft: _hmgActionsLeft },
+              });
+            }
           }
         } else {
           // 普攻
@@ -7055,12 +7091,12 @@
               dmg *= (0.85 + Math.random() * 0.3);
               // ⭐ 弓手普攻流疊加：命中 +1%（使用上一箭累積的層數）
               dmg *= (1 + _aHit * 0.01);
-              // ⭐ 弓手普攻流疊加：暴擊爆傷 +3%/層
-              const _hitCritMult = critMult2 + _aCrit * 0.03;
+              // ⭐ 弓手普攻流疊加：暴擊爆傷（隨機 +1~4%/層，累積）
+              const _hitCritMult = critMult2 + _aCritBonus;
               if (isCrit) { dmg *= _hitCritMult; critCount++; if (_dgCritCount > 0 && !_fcA) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount); }
-              // ⭐ 弓手普攻流疊加：爆頭傷害 +10%/層（基礎×3，每層+0.3）
+              // ⭐ 弓手普攻流疊加：爆頭傷害（隨機 +5~13%/層，累積）
               const _hsBase = (_fcA && _dgCritCount > 0) ? 3.9 : 3;
-              if (isHs) dmg *= _hsBase + _aHs * 0.30;
+              if (isHs) dmg *= _hsBase + _aHsBonus;
               // ⭐ 合成效果：fx_conquer（普攻傷害+50%）
               if (_fx.has('fx_conquer')) dmg *= 1.50;
               // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%）
@@ -7072,10 +7108,10 @@
               dmg = monShield0(dmg);
               mHp -= dmg;
               lastDmg = dmg;
-              // ⭐ 弓手普攻流：本箭命中後疊層
+              // ⭐ 弓手普攻流：本箭命中後疊層（計數 + 隨機累積bonus）
               _aHit++;
-              if (isCrit) _aCrit++;
-              if (isHs)   _aHs++;
+              if (isCrit) { _aCrit++; _aCritBonus += 0.01 + Math.random() * 0.03; }
+              if (isHs)   { _aHs++;   _aHsBonus   += 0.05 + Math.random() * 0.08; }
               const _stackHint = (_aHit > 1) ? ` [命${_aHit}暴${_aCrit}頭${_aHs}]` : '';
               const label = (isHs && isCrit) ? '🎯【爆頭+暴擊】' : isHs ? '🎯【爆頭】' : isCrit ? '【暴擊】' : '';
               log.push({
@@ -7096,6 +7132,8 @@
               const vampHeal = Math.max(1, Math.round(stats.atk * 0.03 * totalHits));
               pHp = Math.min(stats.maxHp, pHp + vampHeal);
             }
+            // ⭐ 聖母鵝計數：弓手普攻擊中（每回合計一次）
+            if (_isPaladin && !_hmgFrozen) _hmgHitCount++;
           } else {
             // 其他職業普攻（單擊）
             // ⭐ 合成效果：fx_dg_crit（必爆+30%傷害；合入×2下兩次）
@@ -7120,10 +7158,13 @@
               const vampHeal = Math.max(1, Math.round(stats.atk * 0.03));
               pHp = Math.min(stats.maxHp, pHp + vampHeal);
             }
+            // ⭐ 聖母鵝計數：普攻擊中
+            if (_isPaladin && !_hmgFrozen) _hmgHitCount++;
             log.push({
               type: isCrit2 ? 'crit-player' : 'player',
               text: `回合 ${round}：${cls.attackVerb}${isCrit2 ? '【暴擊】' : ''} → ${monster.name} -${dmg} HP`,
-              hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp }
+              hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp },
+              hmgCounters: _isPaladin ? { hit: _hmgHitCount, taken: _hmgTakenCount, heal: _hmgHealCount, active: _hmgActive, actionsLeft: _hmgActionsLeft } : undefined,
             });
             if (mAbility?.type === 'reflect' && mAbility.resist) {
               const r = Math.min(300, Math.max(1, Math.round(dmg * mAbility.resist)));
@@ -7137,6 +7178,69 @@
             applyStatus(playerObj, { type: 'buff', stat: 'atkPct', amount: 0.20, turns: 3 });
             log.push({ type: 'system', text: `回合 ${round}：🗡️ 嗜血劍觸發 → ATK +20%（3 回合）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
           }
+        }
+        // ⭐ 聖母鵝行動（每次玩家行動後觸發，不佔回合）
+        if (_isPaladin && _hmgActive && _hmgActionsLeft > 0 && mHp > 0) {
+          _hmgActionsLeft--;
+          const _HMG_DLG = {
+            '慈悲':     ['媽媽保護你！💖', '母愛是最強的盾！', '聖母鵝賜予庇護！✨', '孩子，讓我守護你！'],
+            '吻':       ['壞壞的怪物，罰你！💋', '吃我一個聖母之吻！', '讓你嘗嘗我的吻！💋', '你怎麼可以欺負我孩子！'],
+            '激動亂舞': ['看我的舞步！！🪶', '鵝鵝激動跳舞啦！！！', '拍翅膀超級攻擊！！', '我的舞蹈是武器！🪶'],
+            '獻身':     ['我把一切都給你！🔥', '媽媽的最後力量！', '為了你，我燃燒自己！✨', '此刻，我的靈魂與你同在！'],
+          };
+          // 技能池（排除上次）
+          const _hmgPool = [
+            { id: '慈悲',     w: 30 },
+            { id: '吻',       w: 30 },
+            { id: '激動亂舞', w: 30 },
+            { id: '獻身',     w: 10 },
+          ].filter(x => x.id !== _hmgLastSkill);
+          const _hmgTW = _hmgPool.reduce((s, x) => s + x.w, 0);
+          let _hmgR = Math.random() * _hmgTW;
+          let _hmgChosen = _hmgPool[_hmgPool.length - 1].id;
+          for (const _hp of _hmgPool) { _hmgR -= _hp.w; if (_hmgR <= 0) { _hmgChosen = _hp.id; break; } }
+          _hmgLastSkill = _hmgChosen;
+          // 計算 HMG 使用的玩家屬性（含 buff）
+          const _hmgPBuff = getBuffBonus(playerObj);
+          const _hmgAtk  = stats.atk  * (1 + (_hmgPBuff.atkPct  || 0));
+          const _hmgMark = stats.mark * (1 + (_hmgPBuff.atkPct  || 0) + (_hmgPBuff.markPct || 0));
+          const _hmgDef  = (stats.def + (_hmgPBuff.def || 0)) * (1 + (_hmgPBuff.defPct || 0));
+          const _hmgMonDef = monster.def + (getBuffBonus(monster).def || 0);
+          const _hTurns  = Math.max(1, _hmgHealCount);
+          const _dlg = _HMG_DLG[_hmgChosen][Math.floor(Math.random() * _HMG_DLG[_hmgChosen].length)];
+          let _hmgLogText = '', _hmgIsCrit = false;
+          if (_hmgChosen === '慈悲') {
+            const buffAmt = Math.max(0.01, _hmgHitCount / 100);
+            applyStatus(playerObj, { type: 'buff', stat: 'defPct', amount: buffAmt, turns: _hTurns });
+            _hmgLogText = `DEF +${_hmgHitCount}%（${_hTurns} 回合）`;
+          } else if (_hmgChosen === '吻') {
+            if (_hmgHitCount > 0)  applyStatus(monster, { type: 'buff', stat: 'defPct', amount: -_hmgHitCount  / 100, turns: _hTurns });
+            if (_hmgTakenCount > 0) applyStatus(monster, { type: 'buff', stat: 'atkPct', amount: -_hmgTakenCount / 100, turns: _hTurns });
+            _hmgLogText = `${monster.name} DEF -${_hmgHitCount}% / ATK -${_hmgTakenCount}%（${_hTurns} 回合）`;
+          } else if (_hmgChosen === '激動亂舞') {
+            const physDmg = Math.max(0, _hmgAtk  * (1 + _hmgHitCount  / 10) - Math.floor(_hmgMonDef / 2));
+            const magDmg  = Math.max(0, _hmgMark * (1 + _hmgTakenCount / 10) - Math.floor(_hmgMonDef / 2));
+            const _dCrit  = Math.random() < Math.min(0.95, _hmgHealCount * 0.1);
+            let _hmgDmg   = Math.max(1, Math.round((physDmg + magDmg) * (_dCrit ? critMult : 1)));
+            if (_dCrit) { _hmgIsCrit = true; critCount++; }
+            mHp -= _hmgDmg;
+            _hmgLogText = `${monster.name} -${_hmgDmg} HP${_dCrit ? '【暴擊】' : ''}（物理 ${Math.round(physDmg)} + 魔法 ${Math.round(magDmg)}）`;
+          } else { // 獻身
+            const _turnsUsed = _hmgActionsLeft + 1; // 含本次（已 -- 過）
+            const _devBase = (_hmgAtk + _hmgMark + _hmgDef) * (1 + _hmgHitCount / 10 + _hmgTakenCount / 10) * _turnsUsed;
+            const _devDmg  = Math.max(1, Math.round(_devBase * critMult));
+            _hmgIsCrit = true; critCount++;
+            mHp -= _devDmg;
+            _hmgActive = false; _hmgActionsLeft = 0;
+            _hmgLogText = `${monster.name} -${_devDmg} HP【必殺暴擊】✨ 聖母鵝消失`;
+          }
+          log.push({
+            type: _hmgIsCrit ? 'crit-player' : 'player',
+            text: `回合 ${round}（🕊️ 聖母鵝之${_hmgChosen}）：${_hmgLogText}　「${_dlg}」`,
+            hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp },
+            hmgCounters: { hit: _hmgHitCount, taken: _hmgTakenCount, heal: _hmgHealCount, active: _hmgActive, actionsLeft: _hmgActionsLeft },
+          });
+          if (mHp <= 0) { pushDeathLine(); break; }
         }
       } else {
         mGauge -= ATB_THRESHOLD;
@@ -7253,6 +7357,8 @@
             if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg);
             pHp = Math.max(0, pHp - dmg);
             if (dmg > 0) {
+              // ⭐ 聖母鵝計數：被怪物技能擊中
+              if (_isPaladin && !_hmgFrozen) _hmgTakenCount++;
               log.push({
                 type: 'monster',
                 text: `回合 ${round}：${monster.icon}${monster.name} ✨${mSkill.verb || '技能'} → ${player.name} -${dmg} HP`,
@@ -7290,6 +7396,8 @@
             if (player.rpg.class === 'warrior') bloodPool += Math.min(Math.max(0, pHp), dmg);
             pHp -= dmg;
             if (dmg > 0) {
+              // ⭐ 聖母鵝計數：被怪物普攻擊中
+              if (_isPaladin && !_hmgFrozen) _hmgTakenCount++;
               log.push({
                 type: 'monster',
                 text: `回合 ${round}：${monster.name} ${monster.verb}${hits > 1 ? `（${h+1}/${hits}）` : ''} → ${player.name} -${dmg} HP`,
@@ -7481,7 +7589,7 @@
     // ⭐ 合成效果
     const _fx = getFusionEffects(player);
     const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0) + (setB.critChance || 0);
-    const critMult = 2.5 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
+    const critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
     // fx_guardian: 每回合 HP 回復最大值 3%
     const regenPer = (cls.regenPer || 0) + (bonus.regen || 0) + (_fx.has('fx_guardian') ? 0.03 : 0);
     // fx_mage: 技能 MP 消耗 -20%
@@ -7491,8 +7599,10 @@
     let _nextForceCrit = 0;
     // 弓手普攻流疊加（本場累積）
     let _aHit = 0;
-    let _aCrit = 0;
-    let _aHs = 0;
+    let _aCrit = 0;      // 暴擊計數（UI 顯示）
+    let _aHs = 0;        // 爆頭計數（UI 顯示）
+    let _aCritBonus = 0; // ⭐ 暴擊爆傷累積（每次暴擊隨機 +1~4%）
+    let _aHsBonus   = 0; // ⭐ 爆頭傷害累積（每次爆頭隨機 +5~13%）
     // ⭐ 嗜血劍：裝備時攻擊流血目標 → 回血×2 + ATK+20%(3T)
     const _weaponItemM = resolveItem(player.rpg?.equipment?.weapon);
     const weaponBloodEffect = !!_weaponItemM?.onHitBleeding;
@@ -7501,6 +7611,15 @@
     let pMp = stats.maxMp; // ⭐ 每場戰鬥 MP 自動回滿
     let bloodPool = 0; // ⭐ 血池：累積所有 HP 代價技能扣的血，供「爆血」技能使用
     const playerObj = { statuses: [] };
+    // ⭐ 聖母鵝（HMG）系統 — 聖騎專屬
+    const _isPaladinM = player.rpg.class === 'paladin';
+    let _hmgActiveM = false;
+    let _hmgActionsLeftM = 0;
+    let _hmgHitCountM = 0;
+    let _hmgTakenCountM = 0;
+    let _hmgHealCountM = 0;
+    let _hmgFrozenM = false;
+    let _hmgLastSkillM = null;
 
     // 怪物列表，每隻獨立 ATB gauge
     const mList = monsters.map((m, i) => ({
@@ -7740,8 +7859,8 @@
                 dmg = (skill.flat + (bonus.skillFlat || 0) + (abil.skillFlat || 0)) + (skill.perLv || 0) * (player.rpg.level || 1);
                 if (!skill.ignoreDef) dmg -= Math.floor(tgtMonDef / 2);
               } else if (skill.usesBloodPool) {
-                // ⭐ 爆血：真傷 = 血池 × 2（每個目標各打一次，但 targetCount = 1）
-                dmg = bloodPool * 2;
+                // ⭐ 爆血：真傷 = 血池 × 3（每個目標各打一次，但 targetCount = 1）
+                dmg = bloodPool * 3;
               } else {
                 const dmgStat = skill.useMark ? effMark : effAtk;
                 dmg = dmgStat * (skill.mult || 1) - Math.floor(tgtMonDef / 2);
@@ -7866,6 +7985,8 @@
             // ⭐ 爆血：攻擊完畢後清空血池
             if (skill.usesBloodPool) bloodPool = 0;
             const targetSummary = hits.map(h => `${h.tgt.icon}${h.tgt.name} -${h.dmg}${h.isCrit ? '【爆】' : ''}`).join(' / ');
+            // ⭐ 聖母鵝計數：技能擊中
+            if (_isPaladinM && !_hmgFrozenM && hits.some(h => h.dmg > 0)) _hmgHitCountM++;
             log.push({
               type: 'crit-player',
               text: `回合 ${round}：${skill.icon} ${skill.name}${isMagic ? '【魔攻】' : ''} → ${targetSummary}${extra}${costStr}`,
@@ -7954,11 +8075,28 @@
               applyStatus(playerObj, { type: 'shield', charges: skill.applyShield, turns: 99 });
               gainedParts.push('🛡 免疫一次傷害');
             }
+            // ⭐ 聖母鵝計數：補血技能
+            if (_isPaladinM && !_hmgFrozenM && skill.healPct && !skill.isMpRegen) _hmgHealCountM++;
             log.push({
               type: 'player',
               text: `回合 ${round}：${skill.icon} ${skill.name} ${gainedParts.join(' ') || '無效果'}${costStr}`,
               hp: hpsSnapshot(),
             });
+          } else if (skill.type === 'summon') {
+            // ⭐ 聖母鵝招喚（試煉場）
+            if (_hmgActiveM) {
+              pMp += effMpCost;
+              log.push({ type: 'system', text: `回合 ${round}：🕊️ 聖母鵝已在場！（MP 退回）`, hp: hpsSnapshot() });
+            } else {
+              _hmgActiveM = true;
+              _hmgFrozenM = true;
+              _hmgActionsLeftM = Math.floor(round / 5);
+              log.push({
+                type: 'crit-player',
+                text: `回合 ${round}：🕊️ 聖母鵝招喚！[回:${round} | 擊:${_hmgHitCountM} | 被:${_hmgTakenCountM} | 治:${_hmgHealCountM}] → 持續 ${_hmgActionsLeftM} 次${costStr}`,
+                hp: hpsSnapshot(),
+              });
+            }
           }
         } else {
           // 普攻：打 lowHp 那隻
@@ -7991,12 +8129,12 @@
               dmg *= (0.85 + Math.random() * 0.3);
               // ⭐ 弓手普攻流疊加：命中 +1%
               dmg *= (1 + _aHit * 0.01);
-              // ⭐ 弓手普攻流疊加：暴擊爆傷 +3%/層
-              const _hitCritMultM = critMult2 + _aCrit * 0.03;
+              // ⭐ 弓手普攻流疊加：暴擊爆傷（隨機 +1~4%/層，累積）
+              const _hitCritMultM = critMult2 + _aCritBonus;
               if (isCrit) { dmg *= _hitCritMultM; critCount++; if (_dgCritCount > 0 && !_fcAM) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount); }
-              // ⭐ 弓手普攻流疊加：爆頭傷害 +10%/層
+              // ⭐ 弓手普攻流疊加：爆頭傷害（隨機 +5~13%/層，累積）
               const _hsBaseM = (_fcAM && _dgCritCount > 0) ? 3.9 : 3;
-              if (isHs) dmg *= _hsBaseM + _aHs * 0.30;
+              if (isHs) dmg *= _hsBaseM + _aHsBonus;
               // ⭐ 合成效果：fx_conquer（普攻傷害+50%）
               if (_fx.has('fx_conquer')) dmg *= 1.50;
               // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%）
@@ -8008,10 +8146,10 @@
               tgt.hp = Math.max(0, tgt.hp - dmg);
               if (tgt.hp <= 0) tgt.alive = false;
               _lastDmgM = dmg;
-              // ⭐ 弓手普攻流：本箭命中後疊層
+              // ⭐ 弓手普攻流：本箭命中後疊層（計數 + 隨機累積bonus）
               _aHit++;
-              if (isCrit) _aCrit++;
-              if (isHs)   _aHs++;
+              if (isCrit) { _aCrit++; _aCritBonus += 0.01 + Math.random() * 0.03; }
+              if (isHs)   { _aHs++;   _aHsBonus   += 0.05 + Math.random() * 0.08; }
               const _stackHintM = (_aHit > 1) ? ` [命${_aHit}暴${_aCrit}頭${_aHs}]` : '';
               const label = (isHs && isCrit) ? '🎯【爆頭+暴擊】' : isHs ? '🎯【爆頭】' : isCrit ? '【暴擊】' : '';
               log.push({
@@ -8031,6 +8169,8 @@
               const vampHeal = Math.max(1, Math.round(stats.atk * 0.03 * totalHits));
               pHp = Math.min(stats.maxHp, pHp + vampHeal);
             }
+            // ⭐ 聖母鵝計數
+            if (_isPaladinM && !_hmgFrozenM) _hmgHitCountM++;
           } else {
             // ⭐ 合成效果：fx_dg_def（攻擊無視 DEF 15%）
             const _tgtDef2 = tgt.def * (_fx.has('fx_dg_def') ? 0.85 : 1.0);
@@ -8061,6 +8201,8 @@
               const r = Math.min(300, Math.max(1, Math.round(dmg * tgt.ability.resist)));
               pHp = Math.max(0, pHp - r);
             }
+            // ⭐ 聖母鵝計數
+            if (_isPaladinM && !_hmgFrozenM) _hmgHitCountM++;
             log.push({
               type: isCrit ? 'crit-player' : 'player',
               text: `回合 ${round}：${cls.attackVerb}${isCrit ? '【暴擊】' : ''} → ${tgt.icon}${tgt.name} -${dmg} HP`,
@@ -8072,6 +8214,70 @@
             applyStatus(playerObj, { type: 'buff', stat: 'atkPct', amount: 0.20, turns: 3 });
             log.push({ type: 'system', text: `回合 ${round}：🗡️ 嗜血劍觸發 → ATK +20%（3 回合）`, hp: hpsSnapshot() });
           }
+        }
+        // ⭐ 聖母鵝行動（試煉場）
+        if (_isPaladinM && _hmgActiveM && _hmgActionsLeftM > 0 && mList.some(m => m.alive)) {
+          _hmgActionsLeftM--;
+          const _HMG_DLG_M = {
+            '慈悲':['媽媽保護你！💖','母愛是最強的盾！','聖母鵝賜予庇護！✨','孩子，讓我守護你！'],
+            '吻':['壞壞的怪物，罰你！💋','吃我一個聖母之吻！','讓你嘗嘗我的吻！💋','你怎麼可以欺負我孩子！'],
+            '激動亂舞':['看我的舞步！！🪶','鵝鵝激動跳舞啦！！！','拍翅膀超級攻擊！！','我的舞蹈是武器！🪶'],
+            '獻身':['我把一切都給你！🔥','媽媽的最後力量！','為了你，我燃燒自己！✨','此刻，我的靈魂與你同在！'],
+          };
+          const _hmgPoolM = [{ id: '慈悲', w: 30 }, { id: '吻', w: 30 }, { id: '激動亂舞', w: 30 }, { id: '獻身', w: 10 }].filter(x => x.id !== _hmgLastSkillM);
+          const _hmgTWM = _hmgPoolM.reduce((s, x) => s + x.w, 0);
+          let _hmgRM = Math.random() * _hmgTWM;
+          let _hmgChosenM = _hmgPoolM[_hmgPoolM.length - 1].id;
+          for (const _hpM of _hmgPoolM) { _hmgRM -= _hpM.w; if (_hmgRM <= 0) { _hmgChosenM = _hpM.id; break; } }
+          _hmgLastSkillM = _hmgChosenM;
+          const _hmgPBuffM = getBuffBonus(playerObj);
+          const _hmgAtkM  = stats.atk  * (1 + (_hmgPBuffM.atkPct  || 0));
+          const _hmgMarkM = stats.mark * (1 + (_hmgPBuffM.atkPct  || 0) + (_hmgPBuffM.markPct || 0));
+          const _hmgDefM  = (stats.def + (_hmgPBuffM.def || 0)) * (1 + (_hmgPBuffM.defPct || 0));
+          const _aliveTargets = mList.filter(m => m.alive);
+          const _hmgTgt = _aliveTargets.length ? _aliveTargets.sort((a, b) => a.hp - b.hp)[0] : null;
+          const _hmgTgtDef = _hmgTgt ? (_hmgTgt.def + (getBuffBonus(_hmgTgt).def || 0)) : 0;
+          const _hTurnsM  = Math.max(1, _hmgHealCountM);
+          const _dlgM = _HMG_DLG_M[_hmgChosenM][Math.floor(Math.random() * _HMG_DLG_M[_hmgChosenM].length)];
+          let _hmgLogTextM = '', _hmgIsCritM = false;
+          if (_hmgChosenM === '慈悲') {
+            applyStatus(playerObj, { type: 'buff', stat: 'defPct', amount: Math.max(0.01, _hmgHitCountM / 100), turns: _hTurnsM });
+            _hmgLogTextM = `DEF +${_hmgHitCountM}%（${_hTurnsM} 回合）`;
+          } else if (_hmgChosenM === '吻') {
+            if (_hmgTgt) {
+              if (_hmgHitCountM  > 0) applyStatus(_hmgTgt, { type: 'buff', stat: 'defPct', amount: -_hmgHitCountM  / 100, turns: _hTurnsM });
+              if (_hmgTakenCountM > 0) applyStatus(_hmgTgt, { type: 'buff', stat: 'atkPct', amount: -_hmgTakenCountM / 100, turns: _hTurnsM });
+            }
+            _hmgLogTextM = `${_hmgTgt ? _hmgTgt.name : '?'} DEF -${_hmgHitCountM}% / ATK -${_hmgTakenCountM}%（${_hTurnsM} 回合）`;
+          } else if (_hmgChosenM === '激動亂舞') {
+            if (_hmgTgt) {
+              const physDmgM = Math.max(0, _hmgAtkM  * (1 + _hmgHitCountM  / 10) - Math.floor(_hmgTgtDef / 2));
+              const magDmgM  = Math.max(0, _hmgMarkM * (1 + _hmgTakenCountM / 10) - Math.floor(_hmgTgtDef / 2));
+              const _dCritM  = Math.random() < Math.min(0.95, _hmgHealCountM * 0.1);
+              let _hmgDmgM   = Math.max(1, Math.round((physDmgM + magDmgM) * (_dCritM ? critMult : 1)));
+              if (_dCritM) { _hmgIsCritM = true; critCount++; }
+              _hmgTgt.hp = Math.max(0, _hmgTgt.hp - _hmgDmgM);
+              if (_hmgTgt.hp <= 0) _hmgTgt.alive = false;
+              _hmgLogTextM = `${_hmgTgt.icon}${_hmgTgt.name} -${_hmgDmgM} HP${_dCritM ? '【暴擊】' : ''}`;
+            }
+          } else { // 獻身
+            if (_hmgTgt) {
+              const _turnsUsedM = _hmgActionsLeftM + 1;
+              const _devBaseM = (_hmgAtkM + _hmgMarkM + _hmgDefM) * (1 + _hmgHitCountM / 10 + _hmgTakenCountM / 10) * _turnsUsedM;
+              const _devDmgM  = Math.max(1, Math.round(_devBaseM * critMult));
+              _hmgIsCritM = true; critCount++;
+              _hmgTgt.hp = Math.max(0, _hmgTgt.hp - _devDmgM);
+              if (_hmgTgt.hp <= 0) _hmgTgt.alive = false;
+              _hmgLogTextM = `${_hmgTgt.icon}${_hmgTgt.name} -${_devDmgM} HP【必殺暴擊】✨`;
+            }
+            _hmgActiveM = false; _hmgActionsLeftM = 0;
+            _hmgLogTextM += ' 聖母鵝消失';
+          }
+          log.push({
+            type: _hmgIsCritM ? 'crit-player' : 'player',
+            text: `回合 ${round}（🕊️ 聖母鵝之${_hmgChosenM}）：${_hmgLogTextM}　「${_dlgM}」`,
+            hp: hpsSnapshot(),
+          });
         }
       } else {
         // 怪物的回合
@@ -8191,6 +8397,8 @@
             if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg);
             pHp = Math.max(0, pHp - dmg);
             if (dmg > 0) {
+              // ⭐ 聖母鵝計數：被怪物技能擊中
+              if (_isPaladinM && !_hmgFrozenM) _hmgTakenCountM++;
               log.push({
                 type: 'monster',
                 text: `回合 ${round}：${m.icon}${m.name} ✨${mSkill.verb || '技能'} → ${player.name} -${dmg} HP`,
@@ -8225,6 +8433,8 @@
             if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg);
             pHp = Math.max(0, pHp - dmg);
             if (dmg > 0) {
+              // ⭐ 聖母鵝計數：被怪物普攻擊中
+              if (_isPaladinM && !_hmgFrozenM) _hmgTakenCountM++;
               log.push({
                 type: 'monster',
                 text: `回合 ${round}：${m.icon}${m.name} ${m.verb || '攻擊'}${hits > 1 ? ` (${h+1}/${hits})` : ''} → ${player.name} -${dmg} HP`,
@@ -10112,7 +10322,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506065534';
+  const APP_VERSION = '20260506074915';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -10189,8 +10399,33 @@ ${b.text}
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
 
+        <div style="background:linear-gradient(135deg,#064e3b,#059669); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🏹⚔️🩸 弓手 / 劍士 / 組隊規則 大更新　<span style="font-size:11px; opacity:0.85;">2026-05-06</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#065f46; margin:6px 0 4px;">🏹 弓手普攻流疊層優化</div>
+        <div>・每次暴擊：爆傷倍率 <b>隨機 +1~4%</b>（原固定 +3%，更具隨機性）</div>
+        <div>・每次爆頭：爆頭傷害 <b>隨機 +5~13%</b>（原固定 +10%，高峰更驚人）</div>
+
+        <div style="font-weight:700; color:#065f46; margin:10px 0 4px;">🩸 劍士爆血強化</div>
+        <div>・爆血傷害基礎倍率：<b>血池 × 2 → 血池 × 3</b></div>
+        <div style="font-size:11px; color:#6b7280;">→ 被打越多、蓄力越強，爆發力大幅提升</div>
+
+        <div style="font-weight:700; color:#065f46; margin:10px 0 4px;">⚔️ 組隊技能規則全面升級</div>
+        <div>・規則選項與<b>單人模式完全一致</b>：HP / MP / 敵方HP / 行動次數 / 機率 / 異常狀態…等</div>
+        <div>・新增<b>多頁設計</b>（每頁 5 條），規則再多也輕鬆管理</div>
+        <div>・支援「本場最多用 X 次」與「每 X 次行動重覆」等進階條件</div>
+        <div>・加入「組隊特有」條件：隊友 HP 警戒、前排 / 後排判斷</div>
+
+        <div style="font-weight:700; color:#065f46; margin:10px 0 4px;">💥 暴擊倍率恢復</div>
+        <div>・基礎爆傷恢復至 <b>1.7×</b>（上次誤調，已修正）</div>
+
+        <div style="background:#d1fae5; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#065f46;">
+          💡 弓手長戰表現更不可預測、劍士爆發更痛快、組隊策略更靈活！
+        </div>
+
         <div style="background:linear-gradient(135deg,#1e1b4b,#4338ca); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
-          <div style="font-size:15px; font-weight:800; color:#fff;">⚔️ 組隊挑戰 + 暴擊傷害強化　<span style="font-size:11px; opacity:0.85;">2026-05-06</span></div>
+          <div style="font-size:15px; font-weight:800; color:#fff;">⚔️ 組隊挑戰　<span style="font-size:11px; opacity:0.85;">2026-05-06</span></div>
         </div>
 
         <div style="font-weight:700; color:#4338ca; margin:6px 0 4px;">⚔️ 組隊挑戰系統（取代試煉戰場）</div>
@@ -10199,16 +10434,12 @@ ${b.text}
           🌋 煉獄鵝皇（Lv35）・🗡️ 雙影刺客×2（Lv40）・⚱️ 遠古鵝神（Lv50，需滿 3 人）
         </div>
         <div style="margin-top:6px;">・可選擇 <b>前排（全傷 / 優先被打）</b> 或 <b>後排（AOE 傷害 ×60%、物理輸出 ×80%）</b></div>
-        <div>・獨立 <b>組隊技能順序</b>，與一般規則分開設定</div>
+        <div>・<b>組隊技能規則</b>全面升級：支援與單人相同的所有條件（HP / MP / 敵方 HP / 行動次數 / 機率 / 異常狀態）+ 多頁設計</div>
         <div>・戰鬥結束後存入 <b>戰報歷史</b>（最多 10 筆），可重播</div>
         <div style="font-size:11px; color:#6b7280; margin-top:2px;">→ 測試階段暫不發獎勵，正式上線後開放</div>
 
-        <div style="font-weight:700; color:#dc2626; margin:10px 0 4px;">💥 暴擊傷害基礎倍率大幅提升</div>
-        <div>・<b>1.7× → 2.5×</b>（所有職業、所有戰鬥模式）</div>
-        <div style="font-size:11px; color:#6b7280;">→ 爆傷裝備加成仍正常疊加於 2.5× 之上</div>
-
         <div style="background:#ede9fe; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#4c1d95;">
-          💡 暴擊流在這次更新後大幅強化，搭配古龍暴擊連擊效果更驚人
+          💡 組隊規則現在跟單人一樣靈活，可精準設定每個人的技能優先序
         </div>
 
         <div style="background:linear-gradient(135deg,#78350f,#d97706); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
@@ -10311,7 +10542,7 @@ ${b.text}
         <div>・深淵 II 多怪戰鬥動畫不再卡住（延遲從 480ms 降至 350ms）</div>
 
         <div style="background:#fef2f2; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#991b1b;">
-          💡 爆血機制：血池 × 2 傷害（易傷 / 暴擊可再乘），被打越多蓄力越強
+          💡 爆血機制：血池 × 3 傷害（易傷 / 暴擊可再乘），被打越多蓄力越強
         </div>
 
         <div style="background:linear-gradient(135deg,#064e3b,#059669); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
@@ -10326,7 +10557,7 @@ ${b.text}
         <div>・被吃掉的回合也照常計入間隔，不延遲下次觸發</div>
 
         <div style="font-weight:700; color:#065f46; margin:10px 0 4px;">🩸 爆血傷害修正</div>
-        <div>・傷害改為精確 <b>血池 × 2</b>，不再有 ±10% 隨機變異</div>
+        <div>・傷害改為精確 <b>血池 × 3</b>，不再有 ±10% 隨機變異</div>
         <div>・易傷與暴擊仍正常計算（血池 3000 + 易傷 → 確定扣 9000）</div>
 
         <div style="font-weight:700; color:#065f46; margin:10px 0 4px;">☁️ 帳號資料穩定性大幅改善</div>
@@ -11065,7 +11296,7 @@ ${b.text}
     if (eff.ignoreDef) buffPairs.push('🗡 無視防禦');
     if (skill.applyShield)   buffPairs.push('🛡 免疫一次傷害');
     if (skill.usesBloodPool) {
-      buffPairs.push('🩸 傷害 = 血池 × 2（固定，無隨機變異）');
+      buffPairs.push('🩸 傷害 = 血池 × 3（固定，無隨機變異）');
       buffPairs.push('🛡 無視敵人 DEF、物理抗性、魔法抗性');
       buffPairs.push('🎯 易傷正常計算（×1.5 per 層）');
       buffPairs.push('💥 暴擊正常計算');
@@ -11732,7 +11963,7 @@ ${b.text}
 
   function formatSkillDesc(s) {
     if (s.usesBloodPool) {
-      return '🩸💥 消耗全部血池 × 2 = 傷害（無視 DEF / 物抗 / 魔抗，易傷 / 暴擊正常計算）';
+      return '🩸💥 消耗全部血池 × 3 = 傷害（無視 DEF / 物抗 / 魔抗，易傷 / 暴擊正常計算）';
     }
     if (s.type === 'heal') {
       const parts = [];
@@ -11760,6 +11991,10 @@ ${b.text}
       const shieldStr = `🛡 受傷 -${Math.round(s.applyPartialShield.reducePct * 100)}%（${s.applyPartialShield.hits} 次）`;
       const bonusHealStr = s.bonusHealPct ? `　+　💚 即時回血 ${Math.round(s.bonusHealPct * 100)}% maxHp` : '';
       return shieldStr + bonusHealStr;
+    }
+    // ⭐ 聖母鵝招喚
+    if (s.type === 'summon') {
+      return '🕊️ 召喚聖母鵝！計數凍結後連續施放技能（擊中／被擊／補血 計數器決定強度，持續 ⌊當前回合÷5⌋ 次行動）';
     }
     const hitsStr = (s.hits && s.hits > 1) ? ` ×${s.hits} 段` : '';
     if (s.defMult != null)   return `${s.defMult}× DEF 傷害${hitsStr}`;
@@ -13882,39 +14117,102 @@ ${b.text}
     },
   ];
 
-  // --- PARTY_JUDGES: 2000-range, separate from HOF 1000-range ---
+  // --- PARTY_JUDGES: 合并單人規則（1000-range）+ 組隊特有（2000-range） ---
   const PARTY_JUDGES = {
-    2000: { label: '永遠', paramType: 'none' },
-    2100: { label: '自身 HP ≤ X%', paramType: 'percent' },
-    2101: { label: '自身 HP ≥ X%', paramType: 'percent' },
-    2200: { label: '自身 MP ≤ X%', paramType: 'percent' },
-    2201: { label: '自身 MP ≥ X%', paramType: 'percent' },
-    2300: { label: '隊友任一 HP ≤ X%', paramType: 'percent' },
-    2301: { label: '我在前排', paramType: 'none' },
-    2302: { label: '我在後排', paramType: 'none' },
-    2400: { label: '目標 HP ≤ X%', paramType: 'percent' },
-    2401: { label: '敵方數量 ≥ 2', paramType: 'none' },
-    2500: { label: '每 X 次行動觸發', paramType: 'count' },
-    2510: { label: '每 X 次行動重覆（從上次）', paramType: 'count' },
-    2600: { label: 'X% 機率', paramType: 'percent' },
+    // ── 通用 ──
+    1000: { label: '必定（一定觸發）',           paramType: 'none',    group: '通用' },
+    1940: { label: 'X% 機率',                    paramType: 'percent', group: '通用' },
+    // ── 自身 HP ──
+    1100: { label: '自身 HP ≥ X%',               paramType: 'percent', group: '自身 HP/MP' },
+    1101: { label: '自身 HP ≤ X%',               paramType: 'percent', group: '自身 HP/MP' },
+    1200: { label: '自身 MP ≥ X%',               paramType: 'percent', group: '自身 HP/MP' },
+    1201: { label: '自身 MP ≤ X%',               paramType: 'percent', group: '自身 HP/MP' },
+    1205: { label: '自身 MP ≥ X（絕對）',        paramType: 'absolute', group: '自身 HP/MP' },
+    // ── 敵方 ──
+    1300: { label: '目標 HP ≤ X%',               paramType: 'percent', group: '敵方' },
+    1301: { label: '目標 HP ≥ X%',               paramType: 'percent', group: '敵方' },
+    1450: { label: '敵方數量 ≥ X',               paramType: 'count',   group: '敵方' },
+    1451: { label: '敵方數量 ≤ X',               paramType: 'count',   group: '敵方' },
+    // ── 行動次數 ──
+    1900: { label: '我的第 X 次行動',             paramType: 'count',   group: '行動次數' },
+    1901: { label: '我已行動 ≥ X 次',             paramType: 'count',   group: '行動次數' },
+    1910: { label: '每 X 次行動觸發一次',          paramType: 'count',   group: '行動次數' },
+    1911: { label: '每 X 次行動重覆（從上次）',    paramType: 'count',   group: '行動次數' },
+    1920: { label: '本場最多用 X 次',             paramType: 'count',   group: '行動次數' },
+    // ── 異常狀態 ──
+    1600: { label: '自身中毒',                   paramType: 'none',    group: '異常狀態' },
+    1601: { label: '自身麻痺',                   paramType: 'none',    group: '異常狀態' },
+    1610: { label: '敵方有人中毒',               paramType: 'none',    group: '異常狀態' },
+    1611: { label: '敵方有人麻痺',               paramType: 'none',    group: '異常狀態' },
+    1612: { label: '敵方有人流血',               paramType: 'none',    group: '異常狀態' },
+    1620: { label: '敵方全部中毒',               paramType: 'none',    group: '異常狀態' },
+    // ── 組隊特有 ──
+    2300: { label: '隊友任一 HP ≤ X%',           paramType: 'percent', group: '組隊特有' },
+    2301: { label: '我在前排',                   paramType: 'none',    group: '組隊特有' },
+    2302: { label: '我在後排',                   paramType: 'none',    group: '組隊特有' },
+    2401: { label: '敵方數量 ≥ 2',               paramType: 'none',    group: '組隊特有' },
+    // ── 舊版相容（隱藏但仍可執行） ──
+    2000: { label: '永遠',                       paramType: 'none',    group: '_hidden' },
+    2100: { label: '自身 HP ≤ X%（舊）',          paramType: 'percent', group: '_hidden' },
+    2101: { label: '自身 HP ≥ X%（舊）',          paramType: 'percent', group: '_hidden' },
+    2200: { label: '自身 MP ≤ X%（舊）',          paramType: 'percent', group: '_hidden' },
+    2201: { label: '自身 MP ≥ X%（舊）',          paramType: 'percent', group: '_hidden' },
+    2400: { label: '目標 HP ≤ X%（舊）',          paramType: 'percent', group: '_hidden' },
+    2500: { label: '每 X 次行動觸發（舊）',       paramType: 'count',   group: '_hidden' },
+    2510: { label: '每 X 次行動重覆（舊）',       paramType: 'count',   group: '_hidden' },
+    2600: { label: 'X% 機率（舊）',               paramType: 'percent', group: '_hidden' },
   };
 
   function evaluatePartyJudge(judgeId, param, ctx, ruleIdx) {
     const v = Number(param) || 0;
+    const t = ctx.primaryTarget;
     switch (judgeId) {
+      // ── 通用 ──
+      case 1000: return true;
+      case 1940: return Math.random() * 100 < v;
+      // ── 自身 HP/MP ──
+      case 1100: return ctx.maxHp > 0 && (ctx.pHp / ctx.maxHp * 100) >= v;
+      case 1101: return ctx.maxHp > 0 && (ctx.pHp / ctx.maxHp * 100) <= v;
+      case 1200: return ctx.maxMp > 0 && (ctx.pMp / ctx.maxMp * 100) >= v;
+      case 1201: return ctx.maxMp > 0 && (ctx.pMp / ctx.maxMp * 100) <= v;
+      case 1205: return ctx.pMp >= v;
+      // ── 敵方 HP ──
+      case 1300: return t && t.maxHp > 0 && (t.hp / t.maxHp * 100) <= v;
+      case 1301: return t && t.maxHp > 0 && (t.hp / t.maxHp * 100) >= v;
+      case 1450: return (ctx.bossCount || 1) >= v;
+      case 1451: return (ctx.bossCount || 1) <= v;
+      // ── 行動次數 ──
+      case 1900: return ctx.actionCount === v;
+      case 1901: return ctx.actionCount >= v;
+      case 1910: return v > 0 && ctx.actionCount > 0 && (ctx.actionCount % v === 0);
+      case 1911: {
+        const last = (ctx._ruleLastFired || {})[ruleIdx];
+        if (last === undefined || (v > 0 && (ctx.actionCount - last) >= v)) {
+          ctx._ruleLastFired[ruleIdx] = ctx.actionCount;
+          return true;
+        }
+        return false;
+      }
+      case 1920: return ((ctx._ruleUseCount || {})[ruleIdx] || 0) < v;
+      // ── 異常狀態 ──
+      case 1600: return !!(ctx.selfPoisoned);
+      case 1601: return !!(ctx.selfParalyzed);
+      case 1610: return !!(ctx.anyEnemyPoisoned);
+      case 1611: return !!(ctx.anyEnemyParalyzed);
+      case 1612: return !!(ctx.anyEnemyBled);
+      case 1620: return !!(ctx.allEnemyPoisoned);
+      // ── 組隊特有 ──
+      case 2300: return ctx.allyMinHpPct <= v;
+      case 2301: return ctx.row === 'front';
+      case 2302: return ctx.row === 'back';
+      case 2401: return (ctx.bossCount || 1) >= 2;
+      // ── 舊版相容 ──
       case 2000: return true;
       case 2100: return ctx.maxHp > 0 && (ctx.pHp / ctx.maxHp * 100) <= v;
       case 2101: return ctx.maxHp > 0 && (ctx.pHp / ctx.maxHp * 100) >= v;
       case 2200: return ctx.maxMp > 0 && (ctx.pMp / ctx.maxMp * 100) <= v;
       case 2201: return ctx.maxMp > 0 && (ctx.pMp / ctx.maxMp * 100) >= v;
-      case 2300: return ctx.allyMinHpPct <= v;
-      case 2301: return ctx.row === 'front';
-      case 2302: return ctx.row === 'back';
-      case 2400: {
-        const t = ctx.primaryTarget;
-        return t && t.maxHp > 0 && (t.hp / t.maxHp * 100) <= v;
-      }
-      case 2401: return (ctx.bossCount || 1) >= 2;
+      case 2400: return t && t.maxHp > 0 && (t.hp / t.maxHp * 100) <= v;
       case 2500: {
         if (!ctx._ruleCounters) ctx._ruleCounters = {};
         ctx._ruleCounters[ruleIdx] = (ctx._ruleCounters[ruleIdx] || 0) + 1;
@@ -13966,11 +14264,11 @@ ${b.text}
         mp: stats.maxMp, maxMp: stats.maxMp,
         atk: stats.atk, def: stats.def, spd: stats.spd,
         critChance: stats.critChance || 0.05,
-        critDmg: 2.5 + (stats.critDmg || 0),
+        critDmg: 1.7 + (stats.critDmg || 0),
         statuses: [],
         gauge: Math.random() * 200,
         actionCount: 0,
-        _ruleCounters: {}, _ruleLastFired: {},
+        _ruleCounters: {}, _ruleLastFired: {}, _ruleUseCount: {},
         player, stats,
       };
     });
@@ -14034,8 +14332,9 @@ ${b.text}
     }
 
     // --- Evaluate party pattern and pick skill ---
+    // Returns { skill, ruleIdx } or { skill: null, ruleIdx: -1 }
     function pickMemberSkill(member) {
-      if (!member.pattern || !member.cls) return null;
+      if (!member.pattern || !member.cls) return { skill: null, ruleIdx: -1 };
       const cls = CLASSES[member.cls];
       const skills = cls ? (cls.skills || []) : [];
       const aliveAl = aliveMembers().filter(m => m !== member);
@@ -14043,16 +14342,28 @@ ${b.text}
         ? Math.min(...aliveAl.map(m => m.maxHp > 0 ? m.hp / m.maxHp * 100 : 100))
         : 100;
       const primaryTarget = pickBossTarget();
+      const alive = aliveBosses();
+      // ── 異常狀態判斷（for 1600-range judges）──
+      const selfSt = member.statuses || [];
+      const selfPoisoned  = selfSt.some(s => s.type === 'poison');
+      const selfParalyzed = selfSt.some(s => s.type === 'paralyze');
+      const anyEnemyPoisoned  = alive.some(b => (b.statuses || []).some(s => s.type === 'poison'));
+      const anyEnemyParalyzed = alive.some(b => (b.statuses || []).some(s => s.type === 'paralyze'));
+      const anyEnemyBled      = alive.some(b => (b.statuses || []).some(s => s.type === 'bleed'));
+      const allEnemyPoisoned  = alive.length > 0 && alive.every(b => (b.statuses || []).some(s => s.type === 'poison'));
       const ctx = {
         pHp: member.hp, maxHp: member.maxHp,
         pMp: member.mp, maxMp: member.maxMp,
         row: member.row,
         allyMinHpPct,
         primaryTarget,
-        bossCount: aliveBosses().length,
+        bossCount: alive.length,
         actionCount: member.actionCount,
         _ruleCounters: member._ruleCounters,
         _ruleLastFired: member._ruleLastFired,
+        _ruleUseCount:  member._ruleUseCount,
+        selfPoisoned, selfParalyzed,
+        anyEnemyPoisoned, anyEnemyParalyzed, anyEnemyBled, allEnemyPoisoned,
       };
       for (let ri = 0; ri < member.pattern.length; ri++) {
         const rule = member.pattern[ri];
@@ -14060,9 +14371,9 @@ ${b.text}
         const sk = skills.find(s => s.id === rule.skillId);
         if (!sk) continue;
         if (member.mp < (sk.mpCost || 0)) continue;
-        if (evaluatePartyJudge(rule.judgeId, rule.param, ctx, ri)) return sk;
+        if (evaluatePartyJudge(rule.judgeId, rule.param, ctx, ri)) return { skill: sk, ruleIdx: ri };
       }
-      return null; // normal attack
+      return { skill: null, ruleIdx: -1 };
     }
 
     // --- Member takes a turn ---
@@ -14071,7 +14382,9 @@ ${b.text}
       const target = pickBossTarget();
       if (!target) return;
       member.actionCount++;
-      const skill = pickMemberSkill(member);
+      const { skill, ruleIdx } = pickMemberSkill(member);
+      // ⭐ 1920「本場最多用 X 次」計數
+      if (ruleIdx >= 0) member._ruleUseCount[ruleIdx] = (member._ruleUseCount[ruleIdx] || 0) + 1;
       let logText = '';
       if (skill) {
         member.mp = Math.max(0, member.mp - (skill.mpCost || 0));
@@ -14190,6 +14503,7 @@ ${b.text}
   let _partySelectedBoss = null;
   let _partyRow = 'front';
   let _partyInProgress = false;
+  let _partyPatternPage = 0; // 技能規則分頁（每頁 5 條）
   let _partyListeners = [];
 
   function renderPartyTab() {
@@ -14717,8 +15031,35 @@ ${b.text}
   }
 
   // =========================================================
-  // Party Pattern Editor
+  // Party Pattern Editor（多頁，每頁 5 條）
   // =========================================================
+  const _PARTY_PAGE_SIZE = 5;
+
+  function _buildJudgeOptgroups(selectedId) {
+    // 按 group 分組，_hidden 組不顯示（但若舊存檔選了舊id，顯示在選項裡不報錯）
+    const groups = {};
+    for (const [id, j] of Object.entries(PARTY_JUDGES)) {
+      if (j.group === '_hidden') continue;
+      if (!groups[j.group]) groups[j.group] = [];
+      groups[j.group].push({ id, label: j.label });
+    }
+    const groupOrder = ['通用', '自身 HP/MP', '敵方', '行動次數', '異常狀態', '組隊特有'];
+    let html = '';
+    for (const g of groupOrder) {
+      if (!groups[g]) continue;
+      html += `<optgroup label="── ${g} ──">`;
+      for (const { id, label } of groups[g]) {
+        html += `<option value="${id}"${selectedId == id ? ' selected' : ''}>${label}</option>`;
+      }
+      html += `</optgroup>`;
+    }
+    // 若 selectedId 是舊版 _hidden ID，加一個隱藏選項讓它不顯示錯誤
+    if (PARTY_JUDGES[selectedId] && PARTY_JUDGES[selectedId].group === '_hidden') {
+      html += `<option value="${selectedId}" selected style="display:none">${PARTY_JUDGES[selectedId].label}</option>`;
+    }
+    return html;
+  }
+
   function renderPartyPatternEditor() {
     const me = getMe(); if (!me) return '';
     const rpg = getRpg(me);
@@ -14728,38 +15069,68 @@ ${b.text}
 
     const cls = rpg.class ? CLASSES[rpg.class] : null;
     const skills = cls ? (cls.skills || []) : [];
-    const judgeList = Object.entries(PARTY_JUDGES);
 
-    const rowsHtml = pattern.map((rule, ri) => {
-      const judgeOpts = judgeList.map(([id, j]) =>
-        `<option value="${id}"${rule.judgeId == id ? ' selected' : ''}>${j.label}</option>`
-      ).join('');
+    const totalPages = Math.max(1, Math.ceil(pattern.length / _PARTY_PAGE_SIZE));
+    // 確保當前頁不超界
+    if (_partyPatternPage >= totalPages) _partyPatternPage = totalPages - 1;
+    if (_partyPatternPage < 0) _partyPatternPage = 0;
+    const pageStart = _partyPatternPage * _PARTY_PAGE_SIZE;
+    const pageEnd   = Math.min(pageStart + _PARTY_PAGE_SIZE, pattern.length);
+    const pageSlice = pattern.slice(pageStart, pageEnd);
+
+    const rowsHtml = pageSlice.map((rule, pi) => {
+      const ri = pageStart + pi; // 真實 index
+      const judgeOpts = _buildJudgeOptgroups(rule.judgeId);
       const skillOpts = `<option value="">（普攻）</option>` + skills.map(s =>
         `<option value="${s.id}"${rule.skillId === s.id ? ' selected' : ''}>${s.icon || ''} ${s.name}</option>`
       ).join('');
       const judge = PARTY_JUDGES[rule.judgeId];
       const needParam = judge && judge.paramType !== 'none';
+      const paramMax = (judge && judge.paramType === 'count') ? 999 : 100;
       return `
-        <div style="display:flex; gap:4px; align-items:center; margin-bottom:4px; flex-wrap:wrap;">
-          <span style="color:#818cf8; font-size:11px; min-width:20px;">${ri+1}.</span>
-          <select style="font-size:11px; background:#1e293b; color:#c7d2fe; border:1px solid #334155; border-radius:6px; padding:3px;" onchange="partyPatternSetJudge(${ri}, this.value)">${judgeOpts}</select>
-          ${needParam ? `<input type="number" value="${rule.param || 0}" min="0" max="100" style="width:50px; font-size:11px; background:#1e293b; color:#fde047; border:1px solid #334155; border-radius:6px; padding:3px; text-align:center;" onchange="partyPatternSetParam(${ri}, this.value)">` : ''}
-          <select style="font-size:11px; background:#1e293b; color:#c7d2fe; border:1px solid #334155; border-radius:6px; padding:3px;" onchange="partyPatternSetSkill(${ri}, this.value)">${skillOpts}</select>
-          <button onclick="partyPatternRemove(${ri})" style="font-size:11px; background:#7f1d1d; color:#fca5a5; border:none; border-radius:6px; padding:2px 6px; cursor:pointer;">✕</button>
+        <div style="display:flex; gap:4px; align-items:center; margin-bottom:4px; flex-wrap:wrap; background:#1e293b; border-radius:6px; padding:4px 6px;">
+          <span style="color:#818cf8; font-size:11px; min-width:22px; font-weight:700;">${ri+1}.</span>
+          <select style="font-size:11px; background:#0f172a; color:#c7d2fe; border:1px solid #334155; border-radius:6px; padding:3px; max-width:160px;" onchange="partyPatternSetJudge(${ri}, this.value)">${judgeOpts}</select>
+          ${needParam ? `<input type="number" value="${rule.param || 0}" min="0" max="${paramMax}" style="width:52px; font-size:11px; background:#0f172a; color:#fde047; border:1px solid #334155; border-radius:6px; padding:3px; text-align:center;" onchange="partyPatternSetParam(${ri}, this.value)">` : ''}
+          <select style="font-size:11px; background:#0f172a; color:#c7d2fe; border:1px solid #334155; border-radius:6px; padding:3px; flex:1; min-width:80px;" onchange="partyPatternSetSkill(${ri}, this.value)">${skillOpts}</select>
+          <button onclick="partyPatternRemove(${ri})" style="font-size:11px; background:#7f1d1d; color:#fca5a5; border:none; border-radius:6px; padding:2px 7px; cursor:pointer;">✕</button>
         </div>
       `;
     }).join('');
 
+    // 分頁導航
+    const prevBtn = _partyPatternPage > 0
+      ? `<button onclick="partyPatternGoPage(${_partyPatternPage - 1})" style="font-size:11px; background:#1e293b; color:#93c5fd; border:1px solid #334155; border-radius:6px; padding:2px 8px; cursor:pointer;">◀ 上頁</button>`
+      : `<button disabled style="font-size:11px; background:#0f172a; color:#475569; border:1px solid #1e293b; border-radius:6px; padding:2px 8px;">◀ 上頁</button>`;
+    const nextBtn = _partyPatternPage < totalPages - 1
+      ? `<button onclick="partyPatternGoPage(${_partyPatternPage + 1})" style="font-size:11px; background:#1e293b; color:#93c5fd; border:1px solid #334155; border-radius:6px; padding:2px 8px; cursor:pointer;">下頁 ▶</button>`
+      : `<button disabled style="font-size:11px; background:#0f172a; color:#475569; border:1px solid #1e293b; border-radius:6px; padding:2px 8px;">下頁 ▶</button>`;
+    const pageInfo = totalPages > 1
+      ? `<span style="font-size:11px; color:#94a3b8;">第 ${_partyPatternPage+1} / ${totalPages} 頁（共 ${pattern.length} 條）</span>`
+      : `<span style="font-size:11px; color:#94a3b8;">共 ${pattern.length} 條規則</span>`;
+    const pageNav = totalPages > 1 || pattern.length > _PARTY_PAGE_SIZE
+      ? `<div style="display:flex; gap:6px; align-items:center; margin-top:4px;">${prevBtn}${pageInfo}${nextBtn}</div>`
+      : '';
+
     return `
       <div style="background:#0f172a; border:1px solid #334155; border-radius:10px; padding:8px; margin-top:8px;">
-        <div style="font-size:12px; color:#818cf8; font-weight:700; margin-bottom:6px;">🎯 組隊技能順序</div>
-        ${rowsHtml}
-        <button onclick="partyPatternAdd()" style="font-size:11px; background:#1e3a5f; color:#93c5fd; border:1px solid #1e40af; border-radius:6px; padding:4px 10px; cursor:pointer; margin-top:2px;">＋ 加一條</button>
-        <div style="font-size:10px; color:#475569; margin-top:4px;">條件由上而下匹配，第一個符合的技能會被使用</div>
+        <div style="font-size:12px; color:#818cf8; font-weight:700; margin-bottom:6px;">🎯 組隊技能規則</div>
+        ${rowsHtml || '<div style="color:#475569; font-size:11px; padding:4px;">（無規則，將一直普攻）</div>'}
+        ${pageNav}
+        <div style="display:flex; gap:6px; margin-top:6px; align-items:center;">
+          <button onclick="partyPatternAdd()" style="font-size:11px; background:#1e3a5f; color:#93c5fd; border:1px solid #1e40af; border-radius:6px; padding:4px 10px; cursor:pointer;">＋ 加一條</button>
+          <span style="font-size:10px; color:#475569;">條件由上而下匹配，第一個符合的技能即執行</span>
+        </div>
       </div>
     `;
   }
   window.renderPartyPatternEditor = renderPartyPatternEditor;
+
+  function partyPatternGoPage(page) {
+    _partyPatternPage = page;
+    renderPartyTab();
+  }
+  window.partyPatternGoPage = partyPatternGoPage;
 
   function partyPatternSetJudge(ri, val) {
     const me = getMe(); if (!me) return;
@@ -14793,8 +15164,10 @@ ${b.text}
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
     if (!rpg.partyPattern) rpg.partyPattern = getDefaultPartyPattern(rpg.class);
-    rpg.partyPattern.push({ judgeId: 2000, param: 0, skillId: null });
+    rpg.partyPattern.push({ judgeId: 1000, param: 0, skillId: null });
     saveData();
+    // 跳到最後一頁顯示新增條
+    _partyPatternPage = Math.max(0, Math.ceil(rpg.partyPattern.length / _PARTY_PAGE_SIZE) - 1);
     renderPartyTab();
   }
   window.partyPatternAdd = partyPatternAdd;
@@ -14996,7 +15369,9 @@ ${b.text}
     // 檢查 log 是否有血池紀錄（判斷是否為劍士）
     const _hasBloodPool = (snap.log || []).some(e => e.hp && e.hp.bloodPool > 0);
     // 檢查是否為弓手（有疊層資料）
-    const _isArcher = ps.class === 'archer' || (snap.log || []).some(e => e.stacks);
+    const _isArcher  = ps.class === 'archer'  || (snap.log || []).some(e => e.stacks);
+    // 檢查是否為聖騎（有 HMG 計數資料）
+    const _isPaladinR = ps.class === 'paladin' || (snap.log || []).some(e => e.hmgCounters);
     const arenaHtml = `
       <div class="battle-arena" id="replayArena">
         <div class="combatant" id="replayPlayer">
@@ -15034,6 +15409,16 @@ ${b.text}
           <span style="color:#94a3b8;">命中 <b id="raHitN" style="color:#93c5fd;">0</b>層 → 普攻 <b id="raHitBonus" style="color:#38bdf8;">+0%</b></span>
           <span style="color:#94a3b8;">暴擊 <b id="raCritN" style="color:#fde047;">0</b>層 → 爆傷 <b id="raCritBonus" style="color:#fb923c;">+0%</b></span>
           <span style="color:#94a3b8;">爆頭 <b id="raHsN" style="color:#86efac;">0</b>層 → 爆頭 <b id="raHsBonus" style="color:#4ade80;">+0%</b></span>
+        </div>
+      </div>` : ''}
+      ${_isPaladinR ? `
+      <div id="replayHmgPanel" style="background:#1a0533; border-radius:8px; padding:6px 12px; margin-bottom:6px; font-size:11px; font-family:monospace; display:flex; gap:0; flex-wrap:wrap; align-items:stretch; border:1px solid #7e22ce;">
+        <div style="color:#c084fc; font-weight:800; padding:2px 10px 2px 0; border-right:1px solid #7e22ce; margin-right:10px; display:flex; align-items:center;">🕊️ 聖母鵝</div>
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+          <span style="color:#94a3b8;">擊中 <b id="raHmgHit" style="color:#93c5fd;">0</b></span>
+          <span style="color:#94a3b8;">被擊 <b id="raHmgTaken" style="color:#fca5a5;">0</b></span>
+          <span style="color:#94a3b8;">補血 <b id="raHmgHeal" style="color:#86efac;">0</b></span>
+          <span id="raHmgStatus" style="color:#6b7280; border-left:1px solid #7e22ce; padding-left:10px; font-style:italic;">未召喚</span>
         </div>
       </div>` : ''}
       <div class="battle-log" id="replayLog" style="max-height:240px;"></div>
@@ -15140,6 +15525,18 @@ ${b.text}
       if (raCritB) raCritB.textContent = `+${s.crit * 3}%`;
       if (raHsN)   raHsN.textContent   = s.hs;
       if (raHsB)   raHsB.textContent   = `+${s.hs * 10}%`;
+    }
+    // ⭐ 聖母鵝計數面板即時更新（回放）
+    if (entry.hmgCounters) {
+      const hc = entry.hmgCounters;
+      [['raHmgHit', hc.hit], ['raHmgTaken', hc.taken], ['raHmgHeal', hc.heal]].forEach(([id, v]) => {
+        const el = document.getElementById(id); if (el) el.textContent = v;
+      });
+      const raHmgSt = document.getElementById('raHmgStatus');
+      if (raHmgSt) {
+        raHmgSt.textContent = hc.active ? `🕊️ 在場（剩 ${hc.actionsLeft} 次）` : (hc.hit > 0 ? '✨ 已消失' : '未召喚');
+        raHmgSt.style.color = hc.active ? '#c084fc' : '#6b7280';
+      }
     }
     const prog = document.getElementById('replayProgress');
     if (prog) prog.textContent = `${st.i} / ${st.log.length}`;
@@ -15323,6 +15720,16 @@ ${b.text}
           <span style="color:#94a3b8;">命中 <b id="pbHitN" style="color:#93c5fd;">0</b>層 → 普攻 <b id="pbHitBonus" style="color:#38bdf8;">+0%</b></span>
           <span style="color:#94a3b8;">暴擊 <b id="pbCritN" style="color:#fde047;">0</b>層 → 爆傷 <b id="pbCritBonus" style="color:#fb923c;">+0%</b></span>
           <span style="color:#94a3b8;">爆頭 <b id="pbHsN" style="color:#86efac;">0</b>層 → 爆頭 <b id="pbHsBonus" style="color:#4ade80;">+0%</b></span>
+        </div>
+      </div>` : ''}
+      ${rpg.class === 'paladin' ? `
+      <div id="pbHmgPanel" style="background:#1a0533; border-radius:8px; padding:6px 12px; margin:4px 0; font-size:11px; font-family:monospace; display:flex; gap:0; flex-wrap:wrap; align-items:stretch; border:1px solid #7e22ce;">
+        <div style="color:#c084fc; font-weight:800; padding:2px 10px 2px 0; border-right:1px solid #7e22ce; margin-right:10px; display:flex; align-items:center;">🕊️ 聖母鵝</div>
+        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+          <span style="color:#94a3b8;">擊中 <b id="pbHmgHit" style="color:#93c5fd;">0</b></span>
+          <span style="color:#94a3b8;">被擊 <b id="pbHmgTaken" style="color:#fca5a5;">0</b></span>
+          <span style="color:#94a3b8;">補血 <b id="pbHmgHeal" style="color:#86efac;">0</b></span>
+          <span id="pbHmgStatus" style="color:#6b7280; border-left:1px solid #7e22ce; padding-left:10px; font-style:italic;">未召喚</span>
         </div>
       </div>` : ''}
       <div class="battle-log" id="battleLog"></div>
@@ -15535,6 +15942,21 @@ ${b.text}
         if (pbHsN)   pbHsN.textContent   = s.hs;
         if (pbHsB)   pbHsB.textContent   = `+${s.hs * 10}%`;
       }
+      // ⭐ 聖母鵝計數面板即時更新
+      if (entry.hmgCounters) {
+        const hc = entry.hmgCounters;
+        const pbHmgHit    = document.getElementById('pbHmgHit');
+        const pbHmgTaken  = document.getElementById('pbHmgTaken');
+        const pbHmgHeal   = document.getElementById('pbHmgHeal');
+        const pbHmgStatus = document.getElementById('pbHmgStatus');
+        if (pbHmgHit)    pbHmgHit.textContent    = hc.hit;
+        if (pbHmgTaken)  pbHmgTaken.textContent  = hc.taken;
+        if (pbHmgHeal)   pbHmgHeal.textContent   = hc.heal;
+        if (pbHmgStatus) pbHmgStatus.textContent = hc.active
+          ? `🕊️ 在場（剩 ${hc.actionsLeft} 次）`
+          : (hc.hit > 0 ? '✨ 已消失' : '未召喚');
+        if (pbHmgStatus) pbHmgStatus.style.color = hc.active ? '#c084fc' : '#6b7280';
+      }
       const _nx = result.log[i];
       const _sr = _nx && entry.round !== undefined && entry.round === _nx.round;
       setTimeout(playStep, _sr ? 80 : 350);
@@ -15618,6 +16040,21 @@ ${b.text}
         const s = entry.stacks;
         const _ids = [['pbHitN', s.hit], ['pbHitBonus', `+${s.hit}%`], ['pbCritN', s.crit], ['pbCritBonus', `+${s.crit * 3}%`], ['pbHsN', s.hs], ['pbHsBonus', `+${s.hs * 10}%`]];
         _ids.forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.textContent = val; });
+      }
+      // ⭐ 聖母鵝計數面板即時更新（重播）
+      if (entry.hmgCounters) {
+        const hc = entry.hmgCounters;
+        const _hmgIds = [
+          ['pbHmgHit',    hc.hit],
+          ['pbHmgTaken',  hc.taken],
+          ['pbHmgHeal',   hc.heal],
+        ];
+        _hmgIds.forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.textContent = val; });
+        const pbHmgStatus = document.getElementById('pbHmgStatus');
+        if (pbHmgStatus) {
+          pbHmgStatus.textContent = hc.active ? `🕊️ 在場（剩 ${hc.actionsLeft} 次）` : (hc.hit > 0 ? '✨ 已消失' : '未召喚');
+          pbHmgStatus.style.color = hc.active ? '#c084fc' : '#6b7280';
+        }
       }
       const _nx = result.log[i];
       const _sr = _nx && entry.round !== undefined && entry.round === _nx.round;
