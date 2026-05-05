@@ -9664,7 +9664,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505234853';
+  const APP_VERSION = '20260506000225';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13649,10 +13649,24 @@ ${b.text}
         if (rpg.critCount == null) rpg.critCount = 0;
         rpg.critCount += (result.critCount || 0);
 
-        // ⭐ 用 innerHTML 取代（非 insertAdjacentHTML），把舊的 arena 元素（pHpBar / mHpBar / battleLog 等共用 ID）
-        // 一併清掉，避免與下一場「行動」小怪戰的 #fightResult 產生重複 ID 卡住按鈕
-        const _pbRes = document.getElementById('personalBossResult');
-        if (_pbRes) _pbRes.innerHTML = rewardHtml;
+        // ⭐ 假人：把結算摘要 + 重播按鈕附加在 battleLog 底部，保留 arena 與戰鬥記錄
+        // 非假人：用 innerHTML 取代（清掉舊 arena 元素，防重複 ID 卡住按鈕）
+        if (def.isDummy) {
+          window.__lastDummyFight = { result, stats, monster };
+          const _dLog = document.getElementById('battleLog');
+          if (_dLog) {
+            const _summary = document.createElement('div');
+            _summary.innerHTML = rewardHtml + `
+              <div style="text-align:center; margin:8px 0 4px;">
+                <button onclick="replayDummyFight()" style="background:linear-gradient(135deg,#1e3a5f,#2563eb); color:#fff; border:none; padding:8px 22px; border-radius:8px; font-size:13px; cursor:pointer; font-family:inherit; font-weight:700; box-shadow:0 3px 0 #1e40af;">▶ 重播戰鬥記錄</button>
+              </div>`;
+            _dLog.appendChild(_summary);
+            _dLog.scrollTop = _dLog.scrollHeight;
+          }
+        } else {
+          const _pbRes = document.getElementById('personalBossResult');
+          if (_pbRes) _pbRes.innerHTML = rewardHtml;
+        }
         snapshotLastFight(monster, result);
         // ⭐ 個人王戰報 history（最多 15 筆，假人不記錄）
         if (!def.isDummy) {
@@ -13732,6 +13746,67 @@ ${b.text}
 
   function stopDummyBattle() { __stopDummyBattle = true; }
   window.stopDummyBattle = stopDummyBattle;
+
+  function replayDummyFight() {
+    const saved = window.__lastDummyFight;
+    if (!saved) return;
+    const { result, stats, monster } = saved;
+    const logEl = document.getElementById('battleLog');
+    if (!logEl) return;
+    logEl.innerHTML = '';
+    // 重置血條到戰鬥開始狀態
+    const pHpEl = document.getElementById('pHpBar');
+    const mHpEl = document.getElementById('mHpBar');
+    const pHpText = document.getElementById('pHpText');
+    const mHpText = document.getElementById('mHpText');
+    if (pHpEl) pHpEl.style.width = '100%';
+    if (mHpEl) mHpEl.style.width = (monster.hp / monster.maxHp * 100) + '%';
+    if (pHpText) pHpText.textContent = `${stats.maxHp}/${stats.maxHp}`;
+    if (mHpText) mHpText.textContent = `${monster.hp}/${monster.maxHp}`;
+    const pMpBar = document.getElementById('pMpBar');
+    const pMpText = document.getElementById('pMpText');
+    if (pMpBar) pMpBar.style.width = '100%';
+    if (pMpText) pMpText.textContent = `MP ${stats.maxMp}/${stats.maxMp}`;
+    const bpBar = document.getElementById('bloodPoolBar');
+    const bpText = document.getElementById('bloodPoolText');
+    if (bpBar) bpBar.style.width = '0%';
+    if (bpText) bpText.textContent = '🩸 血池 0';
+    let i = 0;
+    const replayStep = () => {
+      if (i >= result.log.length) return;
+      const entry = result.log[i++];
+      const cls = entry.type === 'crit-player' ? 'log-crit'
+        : entry.type === 'player' ? 'log-player'
+        : entry.type === 'monster' ? 'log-monster'
+        : 'log-system';
+      const div = document.createElement('div');
+      div.className = `log-line ${cls}`;
+      div.textContent = entry.text;
+      logEl.appendChild(div);
+      logEl.scrollTop = logEl.scrollHeight;
+      if (entry.hp) {
+        if (pHpEl) pHpEl.style.width = (entry.hp.player / stats.maxHp * 100) + '%';
+        if (mHpEl) mHpEl.style.width = (entry.hp.monster / monster.maxHp * 100) + '%';
+        if (pHpText) pHpText.textContent = `${entry.hp.player}/${stats.maxHp}`;
+        if (mHpText) mHpText.textContent = `${entry.hp.monster}/${monster.maxHp}`;
+        if (entry.hp.mp != null && pMpBar && pMpText) {
+          pMpBar.style.width = (entry.hp.mp / stats.maxMp * 100) + '%';
+          pMpText.textContent = `MP ${entry.hp.mp}/${stats.maxMp}`;
+        }
+        if (entry.hp.bloodPool != null && bpBar && bpText) {
+          bpBar.style.width = Math.min(100, (entry.hp.bloodPool / Math.max(1, stats.maxHp)) * 100) + '%';
+          bpText.textContent = `🩸 血池 ${entry.hp.bloodPool}`;
+        }
+      }
+      if (entry.gauge && typeof updateSpdBar === 'function') {
+        updateSpdBar('pSpdBar', 'pSpdText', entry.gauge.p, '我的行動條');
+        updateSpdBar('mSpdBar', 'mSpdText', entry.gauge.m, '怪行動條');
+      }
+      setTimeout(replayStep, 350);
+    };
+    replayStep();
+  }
+  window.replayDummyFight = replayDummyFight;
 
   // ⭐ commit 7：v8 舊 kill banner 已移除，v9 用 wb9KillBannerHtml 在 render 時顯示
   function checkBossKillBanners() { /* v9 uses wb9KillBannerHtml */ }
