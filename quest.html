@@ -9638,7 +9638,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505233654';
+  const APP_VERSION = '20260505234251';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -9693,6 +9693,30 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#064e3b,#059669); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🛡 系統穩定性更新 + 新功能　<span style="font-size:11px; opacity:0.85;">2026-05-05</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#065f46; margin:6px 0 4px;">🛑 訓練假人新增「停止戰鬥」按鈕</div>
+        <div>・假人測試戰鬥中可隨時按 <b>🛑 停止戰鬥</b> 跳至結算，不必等 200 回合跑完</div>
+
+        <div style="font-weight:700; color:#065f46; margin:10px 0 4px;">📋 新戰鬥規則：每 X 回重覆</div>
+        <div>・新增判斷條件 <b>「每 X 回重覆（從上次觸發起算）」</b></div>
+        <div>・被吃掉的回合也照常計入間隔，不延遲下次觸發</div>
+
+        <div style="font-weight:700; color:#065f46; margin:10px 0 4px;">🩸 爆血傷害修正</div>
+        <div>・傷害改為精確 <b>血池 × 2</b>，不再有 ±10% 隨機變異</div>
+        <div>・易傷與暴擊仍正常計算（血池 3000 + 易傷 → 確定扣 9000）</div>
+
+        <div style="font-weight:700; color:#065f46; margin:10px 0 4px;">☁️ 帳號資料穩定性大幅改善</div>
+        <div>・<b>版本號鎖</b>：每次存檔自動累加版本號，同步時以版本號為準，不再受時鐘偏差影響</div>
+        <div>・<b>本地備份輪轉</b>：自動保留最近 3 份存檔快照，帳號異常時可還原</div>
+        <div>・<b>寫入 Transaction</b>：雲端寫入前先確認版本，防止多分頁互相覆蓋</div>
+
+        <div style="background:#ecfdf5; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#065f46;">
+          💡 帳號不見 / 回朔的問題應大幅改善。如仍遇到請截圖回報 🐛
+        </div>
 
         <div style="background:linear-gradient(135deg,#7f1d1d,#dc2626); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">⚔️ 劍士改動 + 嗜血劍登場　<span style="font-size:11px; opacity:0.85;">2026-05-05</span></div>
