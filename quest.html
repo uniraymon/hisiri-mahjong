@@ -9314,7 +9314,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505143109';
+  const APP_VERSION = '20260505143202';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -14299,6 +14299,7 @@ ${b.text}
       <button class="btn btn-danger" onclick="adminResetWb9Server()" style="margin-top:6px; background:linear-gradient(135deg,#818cf8,#4338ca); box-shadow:0 4px 0 #3730a3;">🔄 世界王伺服器重開（清隊列 / 冷卻 / 重置 HP）</button>
       <button class="btn btn-danger" onclick="adminPurgeBrokenGifts()" style="margin-top:6px; background:linear-gradient(135deg,#fda4af,#be185d); box-shadow:0 4px 0 #9d174d;">🗑 清除損壞的裝備禮物（無資料 / 無名稱）</button>
       <button class="btn btn-secondary" onclick="adminShowBackups()" style="margin-top:6px; background:linear-gradient(135deg,#a5f3fc,#0891b2); box-shadow:0 4px 0 #0e7490; color:#fff;">📦 Firebase 備份管理（每小時快照）</button>
+      <button class="btn btn-secondary" onclick="adminForcePlayerLevelModal()" style="margin-top:6px; background:linear-gradient(135deg,#bbf7d0,#16a34a); box-shadow:0 4px 0 #15803d; color:#fff;">🛠 強制設任意玩家等級（修復回朔）</button>
       <button class="btn btn-secondary" onclick="adminRestoreXiaoMi()" style="margin-top:6px; background:linear-gradient(135deg,#fde68a,#f59e0b); box-shadow:0 4px 0 #b45309; color:#7c2d12;">🔧 修復小米帳號（Lv33・130萬・原石+20・神話劍）</button>
       <button class="btn btn-danger" onclick="adminResetLeaderboard()" style="margin-top:6px; background:linear-gradient(135deg,#fde047,#d97706); box-shadow:0 4px 0 #92400e; color:#7c2d12;">🏆 重置排行榜（所有玩家等級 / 鵝鵝幣 / 綠茶遭遇歸零）</button>
       <button class="btn btn-danger" onclick="adminWipeAll()" style="margin-top:6px; background:linear-gradient(135deg,#fca5a5,#7f1d1d); box-shadow:0 4px 0 #450a0a;">💀 全玩家洗白（伺服器 + 本地都重置）</button>
@@ -14596,6 +14597,64 @@ ${b.text}
     } catch(e) { showToast('❌ 還原失敗：' + e.message); }
   }
   window.adminRestoreFromBackup = adminRestoreFromBackup;
+
+  // ⭐ 通用：強制設任意玩家等級並推送 Firebase（修復資料回朔）
+  function adminForcePlayerLevelModal() {
+    const nameOpts = players.filter(p => p && p.name && p.rpg).map(p =>
+      `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}（現 Lv ${p.rpg.level || 1}）</option>`
+    ).join('');
+    showModal('🛠 強制設玩家等級', `
+      <div style="font-size:13px;">
+        <div style="font-size:11px;color:#dc2626;padding:8px;background:#fef2f2;border-radius:8px;margin-bottom:12px;">
+          ⚠️ 會直接覆蓋 Firebase 該玩家文件，其他設備下次同步時會收到正確等級。
+        </div>
+        <div style="font-weight:700;color:#7c3aed;margin-bottom:6px;">玩家</div>
+        <select id="fplName" style="width:100%;padding:8px;border:2px solid #ddd6fe;border-radius:8px;font-family:inherit;font-size:13px;margin-bottom:12px;">${nameOpts}</select>
+        <div style="font-weight:700;color:#7c3aed;margin-bottom:6px;">目標等級</div>
+        <input id="fplLevel" type="number" min="1" max="50" value="30"
+               style="width:100%;padding:8px;border:2px solid #ddd6fe;border-radius:8px;font-family:inherit;font-size:14px;text-align:center;margin-bottom:16px;">
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-primary" style="flex:1;" onclick="adminForcePlayerLevel(document.getElementById('fplName').value, document.getElementById('fplLevel').value)">✅ 確認設定並推雲端</button>
+          <button class="btn btn-secondary" style="flex:1;" onclick="hideModal()">取消</button>
+        </div>
+      </div>
+    `);
+  }
+  window.adminForcePlayerLevelModal = adminForcePlayerLevelModal;
+
+  async function adminForcePlayerLevel(playerName, levelStr) {
+    const target = players.find(p => p.name === playerName);
+    if (!target) { showToast('找不到玩家：' + playerName); return; }
+    if (!target.rpg) { showToast('該玩家沒有 RPG 資料'); return; }
+    const lv = Math.max(1, Math.min(50, parseInt(levelStr) || 1));
+    if (!confirm(`確定把「${playerName}」設為 Lv ${lv} 並強制寫入 Firebase？`)) return;
+    const now = Date.now();
+    const r = target.rpg;
+    const usedSk   = Object.values(r.skills      || {}).reduce((a, b) => a + (b || 0), 0);
+    const usedSkLv = Object.values(r.skillLevels || {}).reduce((a, b) => a + (b || 0), 0);
+    const usedAb   = Object.values(r.abilities   || {}).reduce((a, b) => a + (b || 0), 0);
+    r.level = lv; r.xp = 0;
+    r.skillPoints   = Math.max(0, (lv - 1) * POINTS_PER_LEVEL.skill   - usedSk - usedSkLv);
+    r.abilityPoints = Math.max(0, 5 + (lv - 1) * POINTS_PER_LEVEL.ability - usedAb);
+    const s = computeStats(target);
+    r.hp = s.maxHp; r.mp = s.maxMp; r.deathAt = null;
+    // ⭐ bump ts 到未來 60 秒，確保對所有設備的 lastTouchedAt 比較都勝出（包含任何 pending write）
+    target.lastTouchedAt = now + 60_000;
+    syncEquipped(target);
+    if (!window.__firebaseSync?.forceWriteAllPlayers) {
+      showToast('⚠️ 雲端未連線，本地已更新但未推送');
+      __persistLocalSnapshot(); render(); hideModal(); return;
+    }
+    showToast('⏳ 推送中…');
+    try {
+      await window.__firebaseSync.forceWriteAllPlayers([target]);
+      __persistLocalSnapshot(); render(); hideModal();
+      showToast(`✅ ${playerName} 已設為 Lv ${lv} 並同步雲端`);
+    } catch(e) {
+      showToast('❌ 雲端寫入失敗：' + e.message);
+    }
+  }
+  window.adminForcePlayerLevel = adminForcePlayerLevel;
 
   // ⭐ 一鍵修復小米帳號（因手機覆蓋導致資料重置）
   function adminRestoreXiaoMi() {
