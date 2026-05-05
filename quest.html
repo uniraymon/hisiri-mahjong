@@ -9950,7 +9950,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506030001';
+  const APP_VERSION = '20260506030237';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -10769,6 +10769,11 @@ ${b.text}
         <span class="cqm-icon">📬</span>
         <span class="cqm-label">信箱</span>
         <span class="cqm-badge" ${unclaimedN > 0 ? 'style="background:#ef4444; color:#fff; animation:wb9KillFlash 1s ease infinite;"' : ''}>${unclaimedN > 0 ? unclaimedN + ' 件' : '空'}</span>
+      </button>
+      <button class="cqm-btn" onclick="showFusionHub()" title="印記合成">
+        <span class="cqm-icon">⚗️</span>
+        <span class="cqm-label">合成</span>
+        <span class="cqm-badge">印記</span>
       </button>
     `;
   }
@@ -12460,55 +12465,161 @@ ${b.text}
   // ⚗️ 印記合成系統
   // ============================================================
 
-  // 從背包畫面直接進入合成選基底
-  function showFusionBaseSelector() {
+  // 從背包畫面直接進入合成選基底（舊入口，保留相容）
+  function showFusionBaseSelector() { showFusionHub(); }
+  window.showFusionBaseSelector = showFusionBaseSelector;
+
+  // ── 印記合成工作台 ──────────────────────────────────────────
+  let __fusionBaseIdx = null; // 目前選中的基底 invIdx
+
+  function showFusionHub(baseIdx) {
     const me = getMe(); if (!me) return;
     const r = getRpg(me);
-    const bases = (r.inventory || [])
+
+    // 收集所有背包中的恩賜首飾
+    const allGifts = (r.inventory || [])
       .map((entry, i) => ({ item: resolveItem(entry), idx: i }))
       .filter(({ item }) => item && item.isBossGift && item.slot === 'accessory');
 
-    if (bases.length === 0) {
-      showModal('⚗️ 印記合成', `
-        <div style="text-align:center; padding:20px 10px; color:#9ca3af; font-size:13px;">
-          背包中沒有可作為基底的印記首飾<br>
-          <span style="font-size:11px;">（需先從扭蛋機抽到鵝王恩賜 / 古龍鵝恩賜 / 鵝卵石恩賜）</span>
+    // 決定基底 idx
+    if (baseIdx === undefined || baseIdx === null) {
+      if (__fusionBaseIdx !== null && allGifts.some(g => g.idx === __fusionBaseIdx)) {
+        baseIdx = __fusionBaseIdx;
+      } else {
+        baseIdx = allGifts.length > 0 ? allGifts[0].idx : null;
+      }
+    }
+    __fusionBaseIdx = baseIdx;
+
+    const slotColor = { king: '#f59e0b', dragon: '#06b6d4', pebble: '#94a3b8' };
+    const slotBg    = { king: '#fef9c3', dragon: '#ecfeff', pebble: '#f1f5f9' };
+    const slotIcon  = { king: '👑', dragon: '🐉', pebble: '🪨' };
+    const slotLabel = { king: '鵝王槽', dragon: '古龍槽', pebble: '鵝卵石槽' };
+
+    // ── 左欄：基底選擇 tabs ──
+    const baseTabs = allGifts.length === 0
+      ? `<div style="color:#9ca3af; font-size:12px; text-align:center; padding:16px 8px;">背包無印記首飾<br><span style="font-size:10px;">從扭蛋機獲得恩賜後再來</span></div>`
+      : allGifts.map(({ item, idx }) => {
+          const isActive = idx === baseIdx;
+          const fused = item.fusedComponents || [];
+          const filled = ['king','dragon','pebble'].filter(s => fused.some(fc => _fusionSlotOf(fc) === s)).length;
+          return `<div onclick="showFusionHub(${idx})" style="display:flex; align-items:center; gap:8px; padding:7px 9px; border-radius:9px; margin-bottom:4px; cursor:pointer; border:2px solid ${isActive ? '#d97706' : '#e5e7eb'}; background:${isActive ? '#fef3c7' : '#fff'};">
+            <span style="font-size:20px; flex-shrink:0;">${item.icon}</span>
+            <div style="flex:1; min-width:0; overflow:hidden;">
+              <div style="font-size:11px; font-weight:700; color:${isActive ? '#92400e' : '#374151'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(item.name)}</div>
+              <div style="font-size:10px; color:#6b7280;">${filled}/3 槽已合成</div>
+            </div>
+          </div>`;
+        }).join('');
+
+    // ── 右欄：工作台（有基底時才顯示）──
+    let workbenchHtml = '';
+    if (baseIdx !== null && allGifts.some(g => g.idx === baseIdx)) {
+      const baseItem = resolveItem(r.inventory[baseIdx]);
+      const fused = baseItem.fusedComponents || [];
+
+      // 基底資訊列
+      const statParts = [];
+      if (baseItem.atk)  statParts.push(`ATK+${baseItem.atk}`);
+      if (baseItem.mark) statParts.push(`MARK+${baseItem.mark}`);
+      if (baseItem.hp)   statParts.push(`HP+${baseItem.hp}`);
+      if (baseItem.mp)   statParts.push(`MP+${baseItem.mp}`);
+      if (baseItem.critChance) statParts.push(`暴擊+${Math.round(baseItem.critChance*100)}%`);
+      if (baseItem.critDmg)    statParts.push(`爆傷+${Math.round(baseItem.critDmg*100)}%`);
+      if (baseItem.mpRegen)    statParts.push(`MP回復+${baseItem.mpRegen}`);
+
+      // 3 槽格子
+      const slotsHtml = ['king','dragon','pebble'].map(s => {
+        const fc = fused.find(f => _fusionSlotOf(f) === s);
+        // 找背包中屬於這個槽的可用材料（排除基底自身）
+        const mats = allGifts.filter(({ item, idx: i }) => i !== baseIdx && _fusionSlotOf(item) === s);
+        if (fc) {
+          // 已合入
+          const fcStats = [];
+          if (fc.atk)  fcStats.push(`ATK+${fc.atk}`);
+          if (fc.mark) fcStats.push(`MARK+${fc.mark}`);
+          if (fc.hp)   fcStats.push(`HP+${fc.hp}`);
+          if (fc.mp)   fcStats.push(`MP+${fc.mp}`);
+          if (fc.critChance) fcStats.push(`暴擊+${Math.round(fc.critChance*100)}%`);
+          if (fc.critDmg)    fcStats.push(`爆傷+${Math.round(fc.critDmg*100)}%`);
+          if (fc.mpRegen)    fcStats.push(`MP回復+${fc.mpRegen}`);
+          return `<div style="background:${slotBg[s]}; border:2px solid ${slotColor[s]}; border-radius:10px; padding:8px 10px; margin-bottom:6px;">
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+              <span style="font-size:16px;">${slotIcon[s]}</span>
+              <span style="font-size:10px; font-weight:700; color:${slotColor[s]};">${slotLabel[s]}</span>
+              <span style="margin-left:auto; font-size:10px; color:#16a34a; font-weight:700;">✓ 已合入</span>
+            </div>
+            <div style="font-size:12px; font-weight:700; color:#1e293b;">${escapeHtml(fc.icon||'')} ${escapeHtml(fc.name)}</div>
+            <div style="font-size:10px; color:#b45309; margin:2px 0;">${escapeHtml(fc.affixDesc||'')}</div>
+            ${fcStats.length ? `<div style="font-size:10px; color:#64748b;">${fcStats.join('・')}</div>` : ''}
+          </div>`;
+        } else {
+          // 空槽 + 可用材料
+          const matsHtml = mats.length === 0
+            ? `<div style="font-size:10px; color:#9ca3af; padding:4px 0;">背包中無此槽材料</div>`
+            : mats.map(({ item: mat, idx: matIdx }) => {
+                const ms = [];
+                if (mat.atk)  ms.push(`ATK+${mat.atk}`);
+                if (mat.mark) ms.push(`MARK+${mat.mark}`);
+                if (mat.hp)   ms.push(`HP+${mat.hp}`);
+                if (mat.mp)   ms.push(`MP+${mat.mp}`);
+                if (mat.critChance) ms.push(`暴擊+${Math.round(mat.critChance*100)}%`);
+                if (mat.critDmg)    ms.push(`爆傷+${Math.round(mat.critDmg*100)}%`);
+                if (mat.mpRegen)    ms.push(`MP回復+${mat.mpRegen}`);
+                return `<div style="display:flex; align-items:center; gap:6px; padding:5px 7px; background:#fff; border:1px solid #e5e7eb; border-radius:7px; margin-bottom:4px;">
+                  <span style="font-size:16px;">${mat.icon}</span>
+                  <div style="flex:1; min-width:0;">
+                    <div style="font-size:11px; font-weight:700; color:#1e293b;">${escapeHtml(mat.name)}</div>
+                    <div style="font-size:10px; color:#6b7280; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(mat.affixDesc||'')}</div>
+                    ${ms.length ? `<div style="font-size:10px; color:#94a3b8;">${ms.join('・')}</div>` : ''}
+                  </div>
+                  <button onclick="doFusion(${baseIdx},${matIdx})" style="flex-shrink:0; padding:4px 9px; background:linear-gradient(135deg,#d97706,#b45309); color:#fff; border:none; border-radius:7px; font-size:11px; font-weight:700; cursor:pointer;">合入</button>
+                </div>`;
+              }).join('');
+          return `<div style="background:#f9fafb; border:2px dashed ${slotColor[s]}55; border-radius:10px; padding:8px 10px; margin-bottom:6px;">
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+              <span style="font-size:16px;">${slotIcon[s]}</span>
+              <span style="font-size:10px; font-weight:700; color:${slotColor[s]};">${slotLabel[s]}</span>
+              <span style="margin-left:auto; font-size:10px; color:#9ca3af;">空槽</span>
+            </div>
+            ${matsHtml}
+          </div>`;
+        }
+      }).join('');
+
+      workbenchHtml = `
+        <div style="background:linear-gradient(135deg,#fef9c3,#fde68a); border:2px solid #fbbf24; border-radius:10px; padding:8px 10px; margin-bottom:8px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:28px;">${baseItem.icon}</span>
+            <div>
+              <div style="font-size:13px; font-weight:800; color:#92400e;">${escapeHtml(baseItem.name)}</div>
+              <div style="font-size:10px; color:#b45309;">${escapeHtml(baseItem.affixDesc||'')}</div>
+              ${statParts.length ? `<div style="font-size:10px; color:#78350f;">${statParts.join('・')}</div>` : ''}
+            </div>
+          </div>
         </div>
-        <button class="btn btn-secondary" onclick="showEquipmentModal()" style="margin-top:8px;">← 返回背包</button>
-      `);
-      return;
+        ${slotsHtml}
+        <div style="font-size:10px; color:#9ca3af; background:#f9fafb; border-radius:6px; padding:5px 8px; margin-top:2px;">⚠ 合入後材料從背包移除，無法還原</div>`;
+    } else {
+      workbenchHtml = `<div style="color:#9ca3af; font-size:12px; text-align:center; padding:24px 8px;">← 先選擇一件基底印記</div>`;
     }
 
-    const slotColor = { king: '#fbbf24', dragon: '#22d3ee', pebble: '#a3a3a3' };
-    const slotLabel = { king: '鵝王', dragon: '古龍', pebble: '鵝卵石' };
-
-    const listHtml = bases.map(({ item, idx }) => {
-      const fused = item.fusedComponents || [];
-      const slots = ['king','dragon','pebble'].map(s => {
-        const filled = fused.some(fc => _fusionSlotOf(fc) === s);
-        return `<span style="font-size:10px; padding:1px 5px; border-radius:4px; background:${filled ? slotColor[s]+'55' : '#e5e7eb'}; color:${filled ? '#374151' : '#9ca3af'}; border:1px solid ${filled ? slotColor[s] : '#d1d5db'};">${slotLabel[s]}${filled ? '✓' : '○'}</span>`;
-      }).join(' ');
-      return `
-        <div onclick="showFusionModal(${idx})" style="display:flex; gap:10px; align-items:center; padding:8px 10px; background:#fffbeb; border:1.5px solid #fbbf24; border-radius:10px; margin-bottom:6px; cursor:pointer;" onmouseover="this.style.background='#fef3c7'" onmouseout="this.style.background='#fffbeb'">
-          <span style="font-size:26px;">${item.icon}</span>
-          <div style="flex:1; min-width:0;">
-            <div style="font-size:13px; font-weight:700; color:#92400e;">${escapeHtml(item.name)}</div>
-            <div style="font-size:10px; color:#b45309; margin:2px 0;">${escapeHtml(item.affixDesc || '')}</div>
-            <div style="display:flex; gap:3px; flex-wrap:wrap;">${slots}</div>
-          </div>
-          <span style="font-size:18px; color:#d97706;">›</span>
-        </div>`;
-    }).join('');
-
-    showModal('⚗️ 印記合成 — 選擇基底', `
-      <div style="font-size:11px; color:#78350f; background:#fef9c3; border:1px dashed #f59e0b; border-radius:8px; padding:6px 10px; margin-bottom:10px;">
-        選擇一件印記首飾作為基底，然後合入古龍鵝恩賜或鵝卵石恩賜，疊加屬性與效果。
+    // ── 組裝 modal ──
+    const html = `
+      <div style="display:flex; gap:10px; align-items:flex-start;">
+        <div style="width:108px; flex-shrink:0;">
+          <div style="font-size:11px; font-weight:700; color:#374151; margin-bottom:5px;">基底選擇</div>
+          ${baseTabs}
+        </div>
+        <div style="flex:1; min-width:0;">
+          ${workbenchHtml}
+        </div>
       </div>
-      ${listHtml}
-      <button class="btn btn-secondary" onclick="showEquipmentModal()" style="margin-top:6px; width:100%;">← 返回背包</button>
-    `);
+      <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:10px; width:100%;">關閉</button>
+    `;
+    showModal('⚗️ 印記合成工作台', html);
   }
-  window.showFusionBaseSelector = showFusionBaseSelector;
+  window.showFusionHub = showFusionHub;
 
   // 判斷合成槽位（依 sourceBossId）
   function _fusionSlotOf(item) {
@@ -12660,9 +12771,9 @@ ${b.text}
     saveData();
     if (typeof renderCharCard === 'function') renderCharCard();
     showToast(`✅ ${matItem.name} 合入成功！`);
-    // Re-open fusion modal with updated index (matInvIdx removed means baseInvIdx might shift)
+    // Re-open hub with updated index (matInvIdx removed means baseInvIdx might shift)
     const newBaseIdx = matInvIdx < baseInvIdx ? baseInvIdx - 1 : baseInvIdx;
-    showFusionModal(newBaseIdx);
+    showFusionHub(newBaseIdx);
   }
   window.doFusion = doFusion;
 
