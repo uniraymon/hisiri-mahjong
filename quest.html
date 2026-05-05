@@ -4691,9 +4691,17 @@
       if (!banner) {
         banner = document.createElement('div');
         banner.id = '__tabDemotedBanner';
-        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#dc2626;color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:700;letter-spacing:.5px;box-shadow:0 2px 8px #0005;';
-        banner.innerHTML = '⚠️ 已開啟新的鵝霸天下頁面，此頁面已停止儲存。請切換到新分頁。';
+        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#dc2626;color:#fff;text-align:center;padding:10px 16px;font-size:14px;font-weight:700;letter-spacing:.5px;box-shadow:0 2px 8px #0005;cursor:pointer;';
+        banner.innerHTML = '⚠️ 已開啟新的鵝霸天下頁面，此頁面已停止儲存。請切換到新分頁。<br><span style="font-size:11px;font-weight:400;opacity:0.85;">點此橫幅可重新整理本頁</span>';
+        banner.onclick = () => location.reload();
         document.body.appendChild(banner);
+        // ⭐ 全頁遮罩：阻止所有按鈕 / 互動（只有橫幅可點）
+        const overlay = document.createElement('div');
+        overlay.id = '__tabDemotedOverlay';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,0.45);cursor:not-allowed;';
+        overlay.addEventListener('click',  e => e.stopPropagation());
+        overlay.addEventListener('touchstart', e => e.stopPropagation());
+        document.body.appendChild(overlay);
       }
     }
   });
@@ -4796,12 +4804,6 @@
         if (data.basePoint) basePoint = data.basePoint;
       }
     } catch (e) { console.error(e); }
-    // ⭐ 每次打開頁面：把本地所有玩家的 lastTouchedAt 清零
-    //    確保 Firebase 在第一次同步時永遠勝出 → 防止舊設備用過時快照覆蓋雲端新進度
-    //    Firebase 的資料取回後 lastTouchedAt 會由雲端值填入，正常操作繼續
-    if (Array.isArray(players)) {
-      players.forEach(p => { if (p) p.lastTouchedAt = 0; });
-    }
   }
   function saveData() {
     // ⭐ Tab Leader：非主分頁不推 Firebase，防多 tab race condition
@@ -9312,7 +9314,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505142843';
+  const APP_VERSION = '20260505143109';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
