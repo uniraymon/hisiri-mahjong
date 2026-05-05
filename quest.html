@@ -5282,12 +5282,23 @@
     }
     // ⭐ 多頁行動規則遷移（4 頁）：把既有 actionPattern 搬進 actionPatterns[0]
     if (!Array.isArray(player.rpg.actionPatterns)) {
-      player.rpg.actionPatterns = [
-        player.rpg.actionPattern && player.rpg.actionPattern.length
-          ? player.rpg.actionPattern.slice()
-          : [],
-        [], [], []
-      ];
+      const ap = player.rpg.actionPatterns;
+      if (ap && typeof ap === 'object' && ('0' in ap || '1' in ap || '2' in ap || '3' in ap)) {
+        // Firestore 把巢狀陣列轉成 object {"0":[],"1":[],...} → 還原回陣列
+        player.rpg.actionPatterns = [
+          Array.isArray(ap['0']) ? ap['0'] : [],
+          Array.isArray(ap['1']) ? ap['1'] : [],
+          Array.isArray(ap['2']) ? ap['2'] : [],
+          Array.isArray(ap['3']) ? ap['3'] : [],
+        ];
+      } else {
+        player.rpg.actionPatterns = [
+          player.rpg.actionPattern && player.rpg.actionPattern.length
+            ? player.rpg.actionPattern.slice()
+            : [],
+          [], [], []
+        ];
+      }
     }
     if (typeof player.rpg.activePatternPage !== 'number') player.rpg.activePatternPage = 0;
     if (!Array.isArray(player.rpg.patternPageNames)) player.rpg.patternPageNames = ['頁 1', '頁 2', '頁 3', '頁 4'];
@@ -9314,7 +9325,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505143202';
+  const APP_VERSION = '20260505145348';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -15549,9 +15560,20 @@ ${b.text}
       }
     }
 
-    // ⭐ Phase A 共用：深度去除 undefined（Firestore 不接受）
+    // ⭐ Phase A 共用：深度去除 undefined + 巢狀陣列（Firestore 均不接受）
+    //   巢狀陣列（array of arrays）→ 轉成 object { "0": [...], "1": [...] }
+    //   讀回時由 ensureRpg 偵測並轉回 array（例：actionPatterns）
     const _prune = (v) => {
-      if (Array.isArray(v)) return v.map(_prune).filter(x => x !== undefined);
+      if (Array.isArray(v)) {
+        const mapped = v.map(_prune).filter(x => x !== undefined);
+        if (mapped.some(x => Array.isArray(x))) {
+          // 巢狀陣列 → object，讓 Firestore 接受
+          const obj = {};
+          mapped.forEach((item, i) => { obj[String(i)] = item; });
+          return obj;
+        }
+        return mapped;
+      }
       if (v !== null && typeof v === 'object') {
         const out = {};
         for (const k of Object.keys(v)) {
@@ -15817,7 +15839,13 @@ ${b.text}
       // ⭐ 強制立即寫入 gifts 到 Firebase（不受 leader 限制、不 debounce）
       forceSaveGifts: async (giftsArr) => {
         const pruneUndef = (v) => {
-          if (Array.isArray(v)) return v.map(pruneUndef).filter(x => x !== undefined);
+          if (Array.isArray(v)) {
+            const mapped = v.map(pruneUndef).filter(x => x !== undefined);
+            if (mapped.some(x => Array.isArray(x))) {
+              const obj = {}; mapped.forEach((item, i) => { obj[String(i)] = item; }); return obj;
+            }
+            return mapped;
+          }
           if (v !== null && typeof v === 'object') {
             const out = {};
             for (const k of Object.keys(v)) { const x = pruneUndef(v[k]); if (x !== undefined) out[k] = x; }
@@ -15831,7 +15859,13 @@ ${b.text}
       },
       forceWriteAllPlayers: async (allPlayers) => {
         const _prune = (v) => {
-          if (Array.isArray(v)) return v.map(_prune).filter(x => x !== undefined);
+          if (Array.isArray(v)) {
+            const mapped = v.map(_prune).filter(x => x !== undefined);
+            if (mapped.some(x => Array.isArray(x))) {
+              const obj = {}; mapped.forEach((item, i) => { obj[String(i)] = item; }); return obj;
+            }
+            return mapped;
+          }
           if (v !== null && typeof v === 'object') {
             const out = {};
             for (const k of Object.keys(v)) {
@@ -15854,9 +15888,15 @@ ${b.text}
       save: (payload) => {
         const meId = window.__getMeId?.();
 
-        // Firestore 不接受 undefined。深度遞迴遞掉 undefined（陣列/物件）
+        // Firestore 不接受 undefined 或巢狀陣列。深度遞迴處理（巢狀陣列→object）
         const pruneUndef = (v) => {
-          if (Array.isArray(v)) return v.map(pruneUndef).filter(x => x !== undefined);
+          if (Array.isArray(v)) {
+            const mapped = v.map(pruneUndef).filter(x => x !== undefined);
+            if (mapped.some(x => Array.isArray(x))) {
+              const obj = {}; mapped.forEach((item, i) => { obj[String(i)] = item; }); return obj;
+            }
+            return mapped;
+          }
           if (v !== null && typeof v === 'object') {
             const out = {};
             for (const k of Object.keys(v)) {
