@@ -9325,7 +9325,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505150219';
+  const APP_VERSION = '20260505151558';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -11066,24 +11066,47 @@ ${b.text}
   // 📬 裝備信箱（index.html 送禮 → gifts[] → quest.html 領取）
   // ============================================================
   function getUnclaimedGiftCount(pid) {
-    return (gifts || []).filter(g => g.to === pid && g.type === 'equip' && !g.claimed).length;
+    return (gifts || []).filter(g => g.to === pid && (g.type === 'equip' || g.type === 'stamina') && !g.claimed).length;
   }
 
   function showMailbox() {
     const me = getMe(); if (!me) return;
-    const pending = (gifts || []).filter(g => g.to === me.id && g.type === 'equip' && !g.claimed);
+    const pending = (gifts || []).filter(g => g.to === me.id && (g.type === 'equip' || g.type === 'stamina') && !g.claimed);
     if (pending.length === 0) {
-      showModal('📬 裝備信箱', `<div style="text-align:center; padding:30px 16px; color:#9ca3af;">
+      showModal('📬 信箱', `<div style="text-align:center; padding:30px 16px; color:#9ca3af;">
         <div style="font-size:40px; margin-bottom:8px;">📭</div>
-        <div style="font-size:14px;">沒有待領的裝備</div>
+        <div style="font-size:14px;">沒有待領的禮物</div>
         <div style="font-size:11px; margin-top:4px;">朋友在麻將頁面可以送裝備給你</div>
       </div>`);
       return;
     }
     const rows = pending.map(g => {
-      const item = g.itemData || {};
       const sender = (players || []).find(p => p.id === g.from);
-      const senderStr = sender ? `${sender.avatar || ''} ${escapeHtml(sender.name)}` : '？';
+      const senderStr = g.from === 'admin' ? '🛠 管理員' : (sender ? `${sender.avatar || ''} ${escapeHtml(sender.name)}` : '？');
+
+      // ── 體力瓶卡片
+      if (g.type === 'stamina') {
+        return `
+          <div class="mailbox-gift-card" style="border-color:#10b981;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-size:30px; line-height:1;">⚡</span>
+              <div style="flex:1; min-width:0;">
+                <div style="font-weight:800; font-size:13px; color:#059669;">體力瓶 ×${g.bottles || 1}</div>
+                <div style="font-size:12px; color:#065f46; margin-top:2px;">⚡ +${g.amount} 體力（可超過上限）</div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px; gap:6px;">
+              <div style="font-size:11px; color:#9ca3af;">來自 ${senderStr} · ${new Date(g.ts).toLocaleDateString('zh-TW')}</div>
+              <div style="display:flex; gap:5px;">
+                <button onclick="deleteGift('${g.id}')" style="padding:5px 10px; background:#f3f4f6; color:#6b7280; border:1px solid #d1d5db; border-radius:8px; font-size:12px; cursor:pointer;">🗑 刪除</button>
+                <button onclick="claimGift('${g.id}')" style="padding:5px 14px; background:linear-gradient(135deg,#34d399,#059669); color:#fff; border:none; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; box-shadow:0 2px 0 #047857;">收下 ✨</button>
+              </div>
+            </div>
+          </div>`;
+      }
+
+      // ── 裝備卡片
+      const item = g.itemData || {};
       const statParts = [];
       if (item.atk)        statParts.push(`ATK+${item.atk}`);
       if (item.def)        statParts.push(`DEF+${item.def}`);
@@ -11116,8 +11139,15 @@ ${b.text}
         </div>`;
     }).join('');
 
-    showModal('📬 裝備信箱', `
-      <div style="font-size:12px; color:#7c3aed; font-weight:700; margin-bottom:10px;">📦 ${pending.length} 件裝備等你領取</div>
+    const equipCount  = pending.filter(g => g.type === 'equip').length;
+    const staminaCount = pending.filter(g => g.type === 'stamina').length;
+    const summary = [
+      equipCount   ? `📦 ${equipCount} 件裝備` : '',
+      staminaCount ? `⚡ ${staminaCount} 瓶體力` : '',
+    ].filter(Boolean).join('　');
+
+    showModal('📬 信箱', `
+      <div style="font-size:12px; color:#7c3aed; font-weight:700; margin-bottom:10px;">${summary} 等你領取</div>
       <div style="max-height:420px; overflow-y:auto; padding-right:2px;">${rows}</div>
     `);
   }
@@ -11129,12 +11159,23 @@ ${b.text}
     const gift = gifts[idx];
     if (gift.to !== me.id) { showToast('這不是你的禮物'); return; }
     if (gift.claimed) { showToast('已經領取過了'); return; }
-    const item = gift.itemData;
-    if (!item) { showToast('裝備資料遺失'); return; }
-    // 推進背包
+
     const rpg = getRpg(me);
-    rpg.inventory = rpg.inventory || [];
-    rpg.inventory.push(item);
+    let toastMsg = '';
+
+    if (gift.type === 'stamina') {
+      // ⭐ 體力瓶：直接加體力，可超過上限，無上限
+      rpg.stamina = (rpg.stamina || 0) + (gift.amount || 200);
+      toastMsg = `⚡ +${gift.amount} 體力！（現有 ${rpg.stamina}）`;
+    } else {
+      // 裝備
+      const item = gift.itemData;
+      if (!item) { showToast('裝備資料遺失'); return; }
+      rpg.inventory = rpg.inventory || [];
+      rpg.inventory.push(item);
+      toastMsg = `✨ 收下 ${item.icon || '📦'} ${escapeHtml(item.name || '裝備')}！已放入背包`;
+    }
+
     // 標記已領
     gifts[idx] = { ...gift, claimed: true, claimedAt: new Date().toISOString() };
     me.lastTouchedAt = Date.now();
@@ -11145,12 +11186,13 @@ ${b.text}
     if (window.__firebaseSync?.forceSaveGifts) {
       window.__firebaseSync.forceSaveGifts(gifts).catch(() => {});
     }
-    showToast(`✨ 收下 ${item.icon || '📦'} ${escapeHtml(item.name || '裝備')}！已放入背包`);
+    showToast(toastMsg);
     // 刷新信箱 or 關閉
-    const remaining = (gifts || []).filter(g => g.to === me.id && g.type === 'equip' && !g.claimed);
+    const remaining = (gifts || []).filter(g => g.to === me.id && (g.type === 'equip' || g.type === 'stamina') && !g.claimed);
     if (remaining.length === 0) hideModal();
     else showMailbox();
     renderCharCard();
+    updateStaminaUI();
   }
   async function deleteGift(giftId) {
     const me = getMe(); if (!me) return;
@@ -11166,7 +11208,7 @@ ${b.text}
       window.__firebaseSync.forceSaveGifts(gifts).catch(() => {});
     }
     showToast('🗑 已刪除');
-    const remaining = (gifts || []).filter(g => g.to === me.id && g.type === 'equip' && !g.claimed);
+    const remaining = (gifts || []).filter(g => g.to === me.id && (g.type === 'equip' || g.type === 'stamina') && !g.claimed);
     if (remaining.length === 0) hideModal();
     else showMailbox();
     renderCharCard();
@@ -14299,6 +14341,7 @@ ${b.text}
 
       <button class="btn btn-danger" onclick="adminResetRpg()" style="margin-top:6px;">⚠️ 重置 RPG 角色（保留幣）</button>
       <button class="btn btn-secondary" onclick="adminRefillAllStamina()" style="margin-top:6px; background:linear-gradient(135deg,#bfdbfe,#3b82f6); box-shadow:0 4px 0 #1d4ed8; color:#fff;">⚡ 全體補滿體力（所有玩家）</button>
+      <button class="btn btn-secondary" onclick="adminShowSendStaminaModal()" style="margin-top:6px; background:linear-gradient(135deg,#bbf7d0,#10b981); box-shadow:0 4px 0 #047857; color:#fff;">💌 全體送體力瓶（送到信箱）</button>
       <button class="btn btn-secondary" onclick="adminEditBossStats()" style="margin-top:6px; background:linear-gradient(135deg,#fde68a,#f59e0b); box-shadow:0 4px 0 #b45309; color:#7c2d12;">🐉 編輯 Boss 能力（世界王 + 個人王）</button>
       <button class="btn btn-secondary" onclick="adminRefillBosses()" style="margin-top:6px; background:linear-gradient(135deg,#86efac,#16a34a); box-shadow:0 4px 0 #15803d; color:#fff;">💚 補滿世界王 HP（保留排隊 / 戰報）</button>
       <button class="btn btn-secondary" onclick="adminShowGrantCoinsModal()" style="margin-top:6px; background:linear-gradient(135deg,#fde047,#f59e0b); box-shadow:0 4px 0 #d97706; color:#7c2d12;">🎁 全員發放硬幣（選幣種 + 數量）</button>
@@ -15318,6 +15361,62 @@ ${b.text}
     showDebugModal();
   }
   window.adminRefillAllStamina = adminRefillAllStamina;
+
+  // ⭐ 全體送體力瓶到信箱（每瓶 +200，可超過上限，無上限）
+  function adminShowSendStaminaModal() {
+    showModal('💌 全體送體力瓶', `
+      <div style="font-size:13px;">
+        <div style="color:#065f46; font-weight:700; margin-bottom:10px;">1 瓶 = ⚡ 200 體力（可超過上限，無上限）</div>
+        <div style="font-weight:700; color:#047857; margin-bottom:6px;">瓶數（每位玩家）</div>
+        <input id="staminaBottleAmt" type="number" min="1" max="99" value="1"
+          style="width:100%; padding:8px; border:2px solid #6ee7b7; border-radius:8px; font-family:inherit; font-size:18px; text-align:center; margin-bottom:8px;">
+        <div style="font-size:11px; color:#6b7280; margin-bottom:14px; text-align:center;">
+          1 瓶 → +200 體力　2 瓶 → +400 體力　5 瓶 → +1000 體力
+        </div>
+        <button class="btn btn-primary" style="width:100%; background:linear-gradient(135deg,#34d399,#059669); box-shadow:0 4px 0 #047857;" onclick="adminSendStaminaToAll()">💌 發送到全員信箱</button>
+        <button class="btn btn-secondary" style="width:100%; margin-top:6px;" onclick="showDebugModal()">← 返回</button>
+      </div>
+    `);
+  }
+  window.adminShowSendStaminaModal = adminShowSendStaminaModal;
+
+  async function adminSendStaminaToAll() {
+    const bottles = Math.max(1, parseInt(document.getElementById('staminaBottleAmt')?.value) || 1);
+    const amount = bottles * 200;
+    if (!confirm(`💌 送 ${bottles} 瓶體力（+${amount} 體力）到全員信箱？`)) return;
+
+    const now = Date.now();
+    let sent = 0;
+    for (const p of (players || [])) {
+      if (!p || !p.id) continue;
+      gifts.push({
+        id: `stam_${p.id}_${now}_${Math.random().toString(36).slice(2,7)}`,
+        type: 'stamina',
+        to: p.id,
+        from: 'admin',
+        bottles,
+        amount,
+        ts: now,
+        claimed: false,
+      });
+      sent++;
+    }
+    _giftsLocalTs = Date.now();
+    __persistLocalSnapshot();
+    saveData();
+    if (window.__firebaseSync?.forceSaveGifts) {
+      try {
+        await window.__firebaseSync.forceSaveGifts(gifts);
+        showToast(`💌 已送 ${bottles} 瓶體力（+${amount}）到 ${sent} 位玩家信箱`);
+      } catch (e) {
+        showToast(`⚠️ 本地已記錄，雲端寫入失敗：${e.message}`);
+      }
+    } else {
+      showToast(`💌 已送 ${bottles} 瓶體力到 ${sent} 位玩家信箱（本地）`);
+    }
+    hideModal();
+  }
+  window.adminSendStaminaToAll = adminSendStaminaToAll;
 
   // ⭐ DEBUG：編輯 Boss 能力（世界王 + 個人王）
   // ⭐ Boss 覆寫：從 Firestore 讀到的數值套用到 WB9_BOSSES / PERSONAL_BOSSES
