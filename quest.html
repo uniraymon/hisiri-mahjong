@@ -9705,7 +9705,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506010106';
+  const APP_VERSION = '20260506010405';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -9781,6 +9781,28 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#7f1d1d,#b91c1c); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">⚔️🩸 v13 平衡 &amp; 戰鬥更新　<span style="font-size:11px; opacity:0.85;">2026-05-06</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#b91c1c; margin:6px 0 4px;">☠️ 死戰之怒 強化</div>
+        <div>・MP 消耗：<b>50 → 30</b>（扣 HP 代價不變，更容易使用）</div>
+
+        <div style="font-weight:700; color:#b91c1c; margin:10px 0 4px;">🩸 爆血新機制：受擊累積血池</div>
+        <div>・<b>被怪物攻擊扣掉的 HP 也會自動累積進血池</b></div>
+        <div>・越挨打、血池越大、爆血越痛 → 高風險高回報打法成為可能</div>
+        <div style="font-size:11px; color:#6b7280;">（原本只有技能扣 HP / hpCost 才會累積）</div>
+
+        <div style="font-weight:700; color:#1d4ed8; margin:10px 0 4px;">⚔️ 戰鬥系統改善</div>
+        <div>・最大戰鬥回合：<b>80 → 100 回合</b></div>
+        <div>・戰報重播新增 <b>── 回合 N ──</b> 分隔線（含深淵 II 多怪戰）</div>
+        <div>・戰報快照日誌上限：<b>500 → 1000 筆</b>，不再截斷完整記錄</div>
+        <div>・深淵 II 多怪戰鬥動畫不再卡住（延遲從 480ms 降至 350ms）</div>
+
+        <div style="background:#fef2f2; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#991b1b;">
+          💡 爆血機制：血池 × 2 傷害（易傷 / 暴擊可再乘），被打越多蓄力越強
+        </div>
 
         <div style="background:linear-gradient(135deg,#064e3b,#059669); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🛡 系統穩定性更新 + 新功能　<span style="font-size:11px; opacity:0.85;">2026-05-05</span></div>
