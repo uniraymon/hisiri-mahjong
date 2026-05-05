@@ -5071,6 +5071,28 @@
   };
 
   // ============================================================
+  // ⭐ 存檔錯誤日誌（localStorage，max 200 筆，FIFO）
+  // ============================================================
+  const __SAVE_ERR_KEY = 'mahjong-save-errors';
+  const __SAVE_ERR_MAX = 200;
+  window.__logSaveError = function(fn, err, extra) {
+    try {
+      const log = JSON.parse(localStorage.getItem(__SAVE_ERR_KEY) || '[]');
+      log.push({
+        ts:    Date.now(),
+        fn,
+        msg:   err?.message || String(err),
+        code:  err?.code   || '',
+        extra: extra || {},
+      });
+      if (log.length > __SAVE_ERR_MAX) log.splice(0, log.length - __SAVE_ERR_MAX);
+      localStorage.setItem(__SAVE_ERR_KEY, JSON.stringify(log));
+    } catch (_) {}
+    // 同時 console.error 讓開發者工具也看得到
+    console.error(`[SaveError] ${fn}`, err, extra || '');
+  };
+
+  // ============================================================
   // 角色資料 helpers
   // ============================================================
   function findItem(id) {
@@ -9325,7 +9347,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260505151558';
+  const APP_VERSION = '20260505152804';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -14353,6 +14375,7 @@ ${b.text}
       <button class="btn btn-danger" onclick="adminResetWb9Server()" style="margin-top:6px; background:linear-gradient(135deg,#818cf8,#4338ca); box-shadow:0 4px 0 #3730a3;">🔄 世界王伺服器重開（清隊列 / 冷卻 / 重置 HP）</button>
       <button class="btn btn-danger" onclick="adminPurgeBrokenGifts()" style="margin-top:6px; background:linear-gradient(135deg,#fda4af,#be185d); box-shadow:0 4px 0 #9d174d;">🗑 清除損壞的裝備禮物（無資料 / 無名稱）</button>
       <button class="btn btn-secondary" onclick="adminShowBackups()" style="margin-top:6px; background:linear-gradient(135deg,#a5f3fc,#0891b2); box-shadow:0 4px 0 #0e7490; color:#fff;">📦 Firebase 備份管理（每小時快照）</button>
+      <button class="btn btn-secondary" onclick="adminShowSaveErrors()" style="margin-top:6px; background:linear-gradient(135deg,#fecaca,#dc2626); box-shadow:0 4px 0 #991b1b; color:#fff;">🪲 存檔錯誤日誌（查回朔原因）</button>
       <button class="btn btn-secondary" onclick="adminForcePlayerLevelModal()" style="margin-top:6px; background:linear-gradient(135deg,#bbf7d0,#16a34a); box-shadow:0 4px 0 #15803d; color:#fff;">🛠 強制設任意玩家等級（修復回朔）</button>
       <button class="btn btn-secondary" onclick="adminRestoreXiaoMi()" style="margin-top:6px; background:linear-gradient(135deg,#fde68a,#f59e0b); box-shadow:0 4px 0 #b45309; color:#7c2d12;">🔧 修復小米帳號（Lv33・130萬・原石+20・神話劍）</button>
       <button class="btn btn-danger" onclick="adminResetLeaderboard()" style="margin-top:6px; background:linear-gradient(135deg,#fde047,#d97706); box-shadow:0 4px 0 #92400e; color:#7c2d12;">🏆 重置排行榜（所有玩家等級 / 鵝鵝幣 / 綠茶遭遇歸零）</button>
@@ -14578,6 +14601,66 @@ ${b.text}
     showToast(`🛡 ${set.name} ×${set.pieces.length} 件已進背包`);
   }
   window.adminGiveSet = adminGiveSet;
+
+  // ⭐ 存檔錯誤日誌 查看 / 清除
+  function adminShowSaveErrors() {
+    const log = JSON.parse(localStorage.getItem(__SAVE_ERR_KEY || 'mahjong-save-errors') || '[]').slice().reverse(); // 最新在上
+    if (log.length === 0) {
+      showModal('🪲 存檔錯誤日誌', `
+        <div style="text-align:center; padding:30px 16px; color:#9ca3af;">
+          <div style="font-size:36px; margin-bottom:8px;">🎉</div>
+          <div style="font-size:14px; font-weight:700; color:#15803d;">沒有存檔錯誤記錄</div>
+          <div style="font-size:11px; margin-top:4px;">所有存檔都正常同步到雲端</div>
+        </div>
+        <button class="btn btn-secondary" style="width:100%; margin-top:10px;" onclick="showDebugModal()">← 返回</button>
+      `);
+      return;
+    }
+    const FN_COLOR = {
+      playerSave:          '#dc2626',
+      metaSave:            '#ea580c',
+      forceWriteAllPlayers:'#b91c1c',
+      forceSaveGifts:      '#7c3aed',
+      takeBackup:          '#0891b2',
+    };
+    const rows = log.map(e => {
+      const d = new Date(e.ts).toLocaleString('zh-TW', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit' });
+      const extra = e.extra && Object.keys(e.extra).length ? Object.entries(e.extra).map(([k,v]) => `${k}: ${v}`).join('  ') : '';
+      const codeStr = e.code ? ` <span style="background:#fee2e2;padding:1px 4px;border-radius:3px;font-size:10px;">${escapeHtml(e.code)}</span>` : '';
+      const color = FN_COLOR[e.fn] || '#6b7280';
+      return `<div style="border-left:3px solid ${color}; padding:6px 8px; margin-bottom:6px; background:#fafafa; border-radius:0 6px 6px 0;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+          <span style="font-size:12px; font-weight:700; color:${color};">${escapeHtml(e.fn)}${codeStr}</span>
+          <span style="font-size:10px; color:#9ca3af;">${d}</span>
+        </div>
+        <div style="font-size:11px; color:#374151; word-break:break-all;">${escapeHtml(e.msg)}</div>
+        ${extra ? `<div style="font-size:10px; color:#8b6f9b; margin-top:2px;">${escapeHtml(extra)}</div>` : ''}
+      </div>`;
+    }).join('');
+
+    showModal('🪲 存檔錯誤日誌', `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div style="font-size:12px; color:#dc2626; font-weight:700;">⚠️ ${log.length} 筆錯誤（最新在上）</div>
+        <button onclick="adminClearSaveErrors()" style="padding:4px 10px; background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;">🗑 清除全部</button>
+      </div>
+      <div style="max-height:440px; overflow-y:auto; padding-right:2px;">${rows}</div>
+      <button class="btn btn-secondary" style="width:100%; margin-top:10px;" onclick="showDebugModal()">← 返回</button>
+    `);
+  }
+  window.adminShowSaveErrors = adminShowSaveErrors;
+
+  function adminClearSaveErrors() {
+    localStorage.removeItem('mahjong-save-errors');
+    showToast('🗑 存檔錯誤日誌已清除');
+    showModal('🪲 存檔錯誤日誌', `
+      <div style="text-align:center; padding:30px 16px; color:#9ca3af;">
+        <div style="font-size:36px; margin-bottom:8px;">🎉</div>
+        <div style="font-size:14px; font-weight:700; color:#15803d;">日誌已清除</div>
+      </div>
+      <button class="btn btn-secondary" style="width:100%; margin-top:10px;" onclick="showDebugModal()">← 返回</button>
+    `);
+  }
+  window.adminClearSaveErrors = adminClearSaveErrors;
 
   // ⭐ Firebase 備份管理
   async function adminShowBackups() {
@@ -15917,7 +16000,7 @@ ${b.text}
           });
           await setDoc(doc(backupsCol, slotId), payload);
           console.log('[backup] slot:', slotId, '玩家數:', local.players.length);
-        } catch (e) { console.error('[backup] takeBackup failed:', e); }
+        } catch (e) { window.__logSaveError?.('takeBackup', e); }
       },
       listBackups: async () => {
         const snap = await getDocs(backupsCol);
@@ -15954,7 +16037,7 @@ ${b.text}
         };
         try {
           await setDoc(metaRef, { gifts: pruneUndef(giftsArr) }, { merge: true });
-        } catch (e) { console.error('forceSaveGifts failed:', e); }
+        } catch (e) { window.__logSaveError?.('forceSaveGifts', e); }
       },
       forceWriteAllPlayers: async (allPlayers) => {
         const _prune = (v) => {
@@ -15982,7 +16065,7 @@ ${b.text}
         }
         try {
           await Promise.all(tasks);
-        } catch (e) { console.error('forceWriteAllPlayers failed:', e); throw e; }
+        } catch (e) { window.__logSaveError?.('forceWriteAllPlayers', e); throw e; }
       },
       save: (payload) => {
         const meId = window.__getMeId?.();
@@ -16031,7 +16114,7 @@ ${b.text}
             await setDoc(metaRef, meta, { merge: true });
             window.__updateSyncStatus?.('☁️ 已同步', 'ok');
           } catch (e) {
-            console.error('Meta save failed:', e);
+            window.__logSaveError?.('metaSave', e);
             window.__updateSyncStatus?.('☁️ 同步失敗', 'err');
           }
         }, 1500);
@@ -16054,7 +16137,7 @@ ${b.text}
             try {
               await setDoc(doc(playersCol, p.id), cleanP);
               seenPlayerIds.add(p.id);
-            } catch (e) { console.error('Player ' + p.id + ' save failed:', e); }
+            } catch (e) { window.__logSaveError?.('playerSave', e, { playerId: p.id, playerName: cleanP?.name }); }
           }, 1500);
         }
       },
