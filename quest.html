@@ -2532,7 +2532,7 @@
     killer:      { gemRaw: 1, bossCoinQty: 3 },   // 尾刀額外獎勵
   };
   const WB9_QUEUE_STALE_MS     = 60 * 1000;
-  const WB9_COOLDOWN_MS        = 5 * 60 * 1000; // 5 分鐘冷卻
+  const WB9_COOLDOWN_MS        = 2.5 * 60 * 1000; // 2.5 分鐘冷卻（原 5 分鐘，減半）
   const WB9_CD_LS_PREFIX       = '__wb9cd_';    // localStorage key 前綴（不依賴 Firebase 同步）
 
   const WB9_BOSSES = [
@@ -3605,18 +3605,61 @@
   //   全部同名「鵝王恩賜」，能力寫在「特殊詞條」（只有這裡會出現）
   //   基底每件都 +5 ATK +5 MARK，特殊詞條額外加屬性
   const BOSS_GIFTS = [
+    // ── 舊版鵝王恩賜（保留相容性）─────────────────────────────────
     { id: 'bg_crit',    name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 5, mark: 5, critChance: 0.04,
-      isBossGift: true, rarity: 'gold', affixDesc: '+4% 暴擊率（鵝王恩賜限定）' },
+      isBossGift: true, sourceBossId: 'goose_king', rarity: 'gold', affixDesc: '+4% 暴擊率（鵝王恩賜限定）' },
     { id: 'bg_mp',      name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 5, mark: 5, mp: 10,
-      isBossGift: true, rarity: 'gold', affixDesc: '+10 MP（鵝王恩賜限定）' },
+      isBossGift: true, sourceBossId: 'goose_king', rarity: 'gold', affixDesc: '+10 MP（鵝王恩賜限定）' },
     { id: 'bg_atk',     name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 10, mark: 5,
-      isBossGift: true, rarity: 'gold', affixDesc: '+5 ATK（疊在基底之上）' },
+      isBossGift: true, sourceBossId: 'goose_king', rarity: 'gold', affixDesc: '+5 ATK（疊在基底之上）' },
     { id: 'bg_hp',      name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 5, mark: 5, hp: 50,
-      isBossGift: true, rarity: 'gold', affixDesc: '+50 HP（鵝王恩賜限定）' },
+      isBossGift: true, sourceBossId: 'goose_king', rarity: 'gold', affixDesc: '+50 HP（鵝王恩賜限定）' },
     { id: 'bg_critdmg', name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 5, mark: 5, critDmg: 0.10,
-      isBossGift: true, rarity: 'gold', affixDesc: '+10% 爆傷（鵝王恩賜限定）' },
+      isBossGift: true, sourceBossId: 'goose_king', rarity: 'gold', affixDesc: '+10% 爆傷（鵝王恩賜限定）' },
     { id: 'bg_mpregen', name: '鵝王恩賜', icon: '👑', slot: 'accessory', lv: 1, atk: 5, mark: 5, mpRegen: 1,
-      isBossGift: true, rarity: 'gold', affixDesc: '每回合 +1 MP（鵝王恩賜限定）' },
+      isBossGift: true, sourceBossId: 'goose_king', rarity: 'gold', affixDesc: '每回合 +1 MP（鵝王恩賜限定）' },
+
+    // ── 新版鵝王恩賜（效果型，可作為合成基底）────────────────────
+    { id: 'bg2_conquer',  name: '征服者之印', icon: '👑', slot: 'accessory', lv: 1, atk: 8,  mark: 5,
+      isBossGift: true, sourceBossId: 'goose_king', rarity: 'gold', fusionEffect: 'fx_conquer',
+      affixDesc: '普攻傷害 +12%（征服者之印）' },
+    { id: 'bg2_mage',     name: '秘法師之印', icon: '👑', slot: 'accessory', lv: 1, atk: 5,  mark: 8,  mp: 15,
+      isBossGift: true, sourceBossId: 'goose_king', rarity: 'gold', fusionEffect: 'fx_mage',
+      affixDesc: '技能 MP 消耗 -20%（秘法師之印）' },
+    { id: 'bg2_vamp',     name: '吸血者之印', icon: '👑', slot: 'accessory', lv: 1, atk: 7,  mark: 5,  hp: 40,
+      isBossGift: true, sourceBossId: 'goose_king', rarity: 'gold', fusionEffect: 'fx_vamp',
+      affixDesc: '普攻回血 ATK×3%（吸血者之印）' },
+    { id: 'bg2_berserk',  name: '狂戰者之印', icon: '👑', slot: 'accessory', lv: 1, atk: 6,  mark: 6,  critDmg: 0.15,
+      isBossGift: true, sourceBossId: 'goose_king', rarity: 'gold',
+      affixDesc: '爆傷 +15%（狂戰者之印）' },
+    { id: 'bg2_hunter',   name: '獵殺者之印', icon: '👑', slot: 'accessory', lv: 1, atk: 7,  mark: 7,
+      isBossGift: true, sourceBossId: 'goose_king', rarity: 'gold', fusionEffect: 'fx_hunter',
+      affixDesc: '目標 HP<50% 時 ATK +15%（獵殺者之印）' },
+    { id: 'bg2_guardian', name: '守護者之印', icon: '👑', slot: 'accessory', lv: 1, atk: 5,  mark: 5,  hp: 60,
+      isBossGift: true, sourceBossId: 'goose_king', rarity: 'gold', fusionEffect: 'fx_guardian',
+      affixDesc: '每回合 HP 回復最大值 3%（守護者之印）' },
+
+    // ── 古龍鵝恩賜（古龍扭蛋獎勵，合成用）─────────────────────────
+    { id: 'bg_dg_crit',   name: '古龍鵝恩賜', icon: '🐉', slot: 'accessory', lv: 1, atk: 8,  mark: 8,  critChance: 0.03,
+      isBossGift: true, sourceBossId: 'dragon_goose', rarity: 'gold', fusionEffect: 'fx_dg_crit',
+      affixDesc: '暴擊後下 1 次必爆（不連鎖）（古龍鵝恩賜）' },
+    { id: 'bg_dg_mp',     name: '古龍鵝恩賜', icon: '🐉', slot: 'accessory', lv: 1, atk: 6,  mark: 10, mp: 12,
+      isBossGift: true, sourceBossId: 'dragon_goose', rarity: 'gold', fusionEffect: 'fx_dg_mp',
+      affixDesc: 'MP≥90% 時技能傷害 +25%（古龍鵝恩賜）' },
+    { id: 'bg_dg_def',    name: '古龍鵝恩賜', icon: '🐉', slot: 'accessory', lv: 1, atk: 10, mark: 8,
+      isBossGift: true, sourceBossId: 'dragon_goose', rarity: 'gold', fusionEffect: 'fx_dg_def',
+      affixDesc: '攻擊無視 DEF 15%（古龍鵝恩賜）' },
+
+    // ── 鵝卵石恩賜（鵝卵石扭蛋獎勵，合成用）──────────────────────
+    { id: 'bg_pg_hp',      name: '鵝卵石恩賜', icon: '🪨', slot: 'accessory', lv: 1, atk: 10, mark: 10, hp: 100,
+      isBossGift: true, sourceBossId: 'pebble_goose', rarity: 'gold', fusionEffect: 'fx_pg_hp',
+      affixDesc: '背水：HP<30% 時所有傷害 +50%（鵝卵石恩賜）' },
+    { id: 'bg_pg_critdmg', name: '鵝卵石恩賜', icon: '🪨', slot: 'accessory', lv: 1, atk: 10, mark: 10, critDmg: 0.12,
+      isBossGift: true, sourceBossId: 'pebble_goose', rarity: 'gold', fusionEffect: 'fx_pg_critdmg',
+      affixDesc: '目標 HP<25% 時爆傷 +30%（鵝卵石恩賜）' },
+    { id: 'bg_pg_mp',      name: '鵝卵石恩賜', icon: '🪨', slot: 'accessory', lv: 1, atk: 10, mark: 10, mp: 15, mpRegen: 3,
+      isBossGift: true, sourceBossId: 'pebble_goose', rarity: 'gold', fusionEffect: 'fx_pg_mp',
+      affixDesc: '每回合 MP+3（鵝卵石恩賜）' },
   ];
 
   // ============================================================
@@ -4486,6 +4529,23 @@
   }
 
   // 消耗 N 顆王硬幣（任意組合，按 qty 大優先扣）
+  // ⭐ 消耗特定王硬幣（古龍扭蛋 / 鵝卵石扭蛋專用）
+  async function consumeSpecificBossCoinsAtomic(pid, coinId, qty) {
+    if (!window.__firebaseSync || !window.__firebaseSync.consumeSpecificBossCoinsTx) {
+      throw new Error('cloud-not-ready');
+    }
+    await window.__firebaseSync.consumeSpecificBossCoinsTx(pid, coinId, qty);
+    // 樂觀本地更新
+    const player = getPlayer(pid);
+    if (player && player.rpg && player.rpg.bossCoins) {
+      const have = Number(player.rpg.bossCoins[coinId] || 0);
+      if (have < qty) throw new Error('insufficient-specific-coins');
+      player.rpg.bossCoins[coinId] = have - qty;
+      player.lastTouchedAt = Date.now();
+      __persistLocalSnapshot();
+    }
+  }
+
   async function consumeBossCoinsAtomic(pid, totalQty) {
     if (!window.__firebaseSync || !window.__firebaseSync.consumeBossCoinsTx) {
       throw new Error('cloud-not-ready');
@@ -5926,6 +5986,20 @@
           if (item.critChance) itemCritChance += item.critChance;
           if (item.critDmg)    itemCritDmg    += item.critDmg;
           if (item.mpRegen)    itemMpRegen    += item.mpRegen;
+          // ⭐ 合成組件加成：fusedComponents 的屬性疊加（各 slot 最多 1 個）
+          if (item.isBossGift && Array.isArray(item.fusedComponents)) {
+            for (const fc of item.fusedComponents) {
+              if (fc.atk)        stats.atk   += fc.atk;
+              if (fc.def)        stats.def   += fc.def;
+              if (fc.spd)        stats.spd   += fc.spd;
+              if (fc.hp)         stats.maxHp += fc.hp;
+              if (fc.mp)         stats.maxMp += fc.mp;
+              if (fc.mark)       stats.mark  += fc.mark;
+              if (fc.critChance) itemCritChance += fc.critChance;
+              if (fc.critDmg)    itemCritDmg    += fc.critDmg;
+              if (fc.mpRegen)    itemMpRegen    += fc.mpRegen;
+            }
+          }
         }
       }
     }
@@ -6000,6 +6074,25 @@
     // ⭐ 每回合 MP 自動恢復（鵝王恩賜首飾、之後其他來源都加在這裡）
     stats.mpRegen = itemMpRegen;
     return stats;
+  }
+
+  // ⭐ 合成效果讀取：回傳玩家裝備的首飾上所有激活的 fusionEffect（含 fusedComponents）
+  // 回傳值：Set<string>，e.g. new Set(['fx_conquer','fx_dg_crit'])
+  function getFusionEffects(player) {
+    const effects = new Set();
+    const rpg = player?.rpg;
+    if (!rpg) return effects;
+    const accId = rpg.equipment?.accessory;
+    if (!accId) return effects;
+    const item = resolveItem(accId);
+    if (!item || !item.isBossGift) return effects;
+    if (item.fusionEffect) effects.add(item.fusionEffect);
+    if (Array.isArray(item.fusedComponents)) {
+      for (const fc of item.fusedComponents) {
+        if (fc.fusionEffect) effects.add(fc.fusionEffect);
+      }
+    }
+    return effects;
   }
 
   // ============================================================
@@ -6285,9 +6378,16 @@
     // 被動 spd 加成已套到 stats 之外（先給門檻型，autoFight 用即時 spd）
     const effectiveSpd = stats.spd + (passive.spd || 0);
     const setB = stats.setBonuses || {};
+    // ⭐ 合成效果
+    const _fx = getFusionEffects(player);
     const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0) + (setB.critChance || 0);
     const critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
-    const regenPer = (cls.regenPer || 0) + (bonus.regen || 0);
+    // fx_guardian: 每回合 HP 回復最大值 3%
+    const regenPer = (cls.regenPer || 0) + (bonus.regen || 0) + (_fx.has('fx_guardian') ? 0.03 : 0);
+    // fx_mage: 技能 MP 消耗 -20%（加到 passive.mpDiscount 之上）
+    const _fusionMpDiscount = _fx.has('fx_mage') ? 0.20 : 0;
+    // fx_dg_crit: 暴擊後下 1 次必爆（不連鎖）
+    let _nextForceCrit = false;
     // ⭐ 嗜血劍：裝備時攻擊流血目標 → 回血×2 + ATK+20%(3T)
     const _weaponItem = resolveItem(player.rpg?.equipment?.weapon);
     const weaponBloodEffect = !!_weaponItem?.onHitBleeding;
@@ -6481,7 +6581,7 @@
           if ((s.unlockLv || 1) > (player.rpg.level || 1)) continue;
           // ⭐ 玩家技能 CD 取消（用 MP 跟硬值控制節奏）
           // if (playerActions < (nextActionForSkill[s.id] || 0)) continue;
-          const effMpCost = Math.round((s.mpCost || 0) * (1 - (passive.mpDiscount || 0)));
+          const effMpCost = Math.round((s.mpCost || 0) * (1 - Math.min(0.80, (passive.mpDiscount || 0) + _fusionMpDiscount)));
           if (pMp < effMpCost) continue;
           // HP 代價技能：必須有「比成本多」的 HP（防自爆）
           if (s.hpCost) {
@@ -6510,7 +6610,7 @@
           const __skillLv = (player.rpg.skillLevels && player.rpg.skillLevels[useSkill.id]) || 0;
           const skill = getSkillEffectiveStats(useSkill, __skillLv);
           // Lv 5 治療系：mpCostMult 進一步打折
-          const effMpCost = Math.round((skill.mpCost || 0) * (skill.mpCostMult || 1) * (1 - (passive.mpDiscount || 0)));
+          const effMpCost = Math.round((skill.mpCost || 0) * (skill.mpCostMult || 1) * (1 - Math.min(0.80, (passive.mpDiscount || 0) + _fusionMpDiscount)));
           pMp -= effMpCost;
           // ⭐ HP 代價（戰士血祭系列）：施法時扣自身 HP（最少留 1）
           let hpPaid = 0;
@@ -6608,8 +6708,15 @@
             if (skill.bleedBonus && hasStatus(monster, 'bleed')) {
               dmg *= (1 + skill.bleedBonus);
             }
+            // ⭐ 合成效果：fx_dg_mp（MP≥90%時技能傷害+25%）
+            if (_fx.has('fx_dg_mp') && pMp >= stats.maxMp * 0.9) dmg *= 1.25;
+            // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%）
+            if (_fx.has('fx_pg_hp') && pHp < stats.maxHp * 0.3) dmg *= 1.5;
+            // ⭐ 合成效果：fx_dg_def（攻擊無視 DEF 15%，修正 DEF 折算）— 已在 dmg 計算中套用
             const skillCrit = baseCritChance + (skill.extraCritChance || 0) + (pBuff.critChance || 0);
-            const skillCritMult = critMult + (skill.extraCritDmg || 0) + (pBuff.critDmg || 0);
+            // ⭐ 合成效果：fx_pg_critdmg（目標 HP<25% 時爆傷+30%）
+            const _pgCritBonus = (_fx.has('fx_pg_critdmg') && mHp <= monster.hp * 0.25) ? 0.30 : 0;
+            const skillCritMult = critMult + (skill.extraCritDmg || 0) + (pBuff.critDmg || 0) + _pgCritBonus;
             const baseDmg = dmg;
             // ⭐ 多段：每段獨立 roll 暴擊 + 變異 + 易傷（hit-based，每段各消耗 1 層）
             let totalDmg = 0;
@@ -6618,8 +6725,10 @@
             let monsterDied = false;
             for (let h = 0; h < skillHits && !monsterDied; h++) {
               let hitDmg = skill.usesBloodPool ? baseDmg : baseDmg * (0.9 + Math.random() * 0.2);
-              const hitCrit = skill.alwaysCrit || Math.random() < skillCrit;
-              if (hitCrit) { hitDmg *= skillCritMult; critCount++; lastIsCrit = true; }
+              // ⭐ 合成效果：fx_dg_crit（暴擊後下 1 次必爆）
+              const hitCrit = skill.alwaysCrit || _nextForceCrit || Math.random() < skillCrit;
+              if (_nextForceCrit) _nextForceCrit = false;
+              if (hitCrit) { hitDmg *= skillCritMult; critCount++; lastIsCrit = true; if (_fx.has('fx_dg_crit') && !_nextForceCrit) _nextForceCrit = true; }
               // ⭐ 易傷（hit-based）：每段各消耗 1 層
               hitDmg *= consumeVulnerable(monster);
               hitDmg = Math.max(1, Math.round(hitDmg));
@@ -6793,7 +6902,8 @@
         } else {
           // 普攻
           const monDefBuff0 = getBuffBonus(monster).def || 0;
-          const monDef0 = monster.def + monDefBuff0;
+          // ⭐ 合成效果：fx_dg_def（攻擊無視 DEF 15%）
+          const monDef0 = (monster.def + monDefBuff0) * (_fx.has('fx_dg_def') ? 0.85 : 1.0);
           const monShield0 = (d) => {
             const sh = (monster.statuses || []).find(x => x.type === 'shield' && (x.charges || 0) > 0);
             if (!sh || d <= 0) return d;
@@ -6802,9 +6912,13 @@
             log.push({ type: 'system', text: `回合 ${round}：🫙 ${monster.name} 護盾抵擋此次傷害！（剩 ${sh.charges} 層）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
             return 0;
           };
-          const effAtk  = stats.atk * (1 + (pBuff.atkPct || 0));
+          // ⭐ 合成效果：fx_hunter（目標 HP<50% 時 ATK +15%）
+          const _hunterBonus = (_fx.has('fx_hunter') && mHp <= monster.hp * 0.5) ? 1.15 : 1.0;
+          const effAtk  = stats.atk * (1 + (pBuff.atkPct || 0)) * _hunterBonus;
           const baseCrit2 = baseCritChance + (pBuff.critChance || 0);
-          const critMult2 = critMult + (pBuff.critDmg || 0);
+          // ⭐ 合成效果：fx_pg_critdmg（目標 HP<25% 時爆傷+30%）
+          const _pgCritBonus2 = (_fx.has('fx_pg_critdmg') && mHp <= monster.hp * 0.25) ? 0.30 : 0;
+          const critMult2 = critMult + (pBuff.critDmg || 0) + _pgCritBonus2;
 
           if (player.rpg.class === 'archer') {
             // ⭐ 弓手三連射：每發 0.30×ATK，獨立爆擊，爆頭率 5%+爆擊率×20%（無視防禦×3傷，可疊爆擊）
@@ -6817,12 +6931,18 @@
               const forceHs = (hit === 1 && _stealthHsSt);
               if (forceHs) playerObj.statuses = playerObj.statuses.filter(s => s !== _stealthHsSt);
               const isHs   = forceHs || Math.random() < HEADSHOT_CHANCE;
-              const isCrit = Math.random() < baseCrit2;
+              // ⭐ 合成效果：fx_dg_crit（暴擊後下 1 次必爆）
+              const isCrit = _nextForceCrit || Math.random() < baseCrit2;
+              if (_nextForceCrit) _nextForceCrit = false;
               const defVal = isHs ? 0 : Math.floor(monDef0 / 2 / totalHits); // 爆頭無視防禦；普攻防禦分攤各段
               let dmg = Math.max(1, effAtk * 0.30 - defVal);
               dmg *= (0.85 + Math.random() * 0.3);
-              if (isCrit) { dmg *= critMult2; critCount++; }
+              if (isCrit) { dmg *= critMult2; critCount++; if (_fx.has('fx_dg_crit') && !_nextForceCrit) _nextForceCrit = true; }
               if (isHs)   dmg *= 3;
+              // ⭐ 合成效果：fx_conquer（普攻傷害+12%）
+              if (_fx.has('fx_conquer')) dmg *= 1.12;
+              // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%）
+              if (_fx.has('fx_pg_hp') && pHp < stats.maxHp * 0.3) dmg *= 1.5;
               if (_monPhysRes) dmg *= (1 - _monPhysRes);
               dmg *= consumeVulnerable(monster);
               dmg = Math.max(1, Math.round(dmg));
@@ -6843,18 +6963,34 @@
               }
               if (mHp <= 0) { pushDeathLine(); break; }
             }
+            // ⭐ 合成效果：fx_vamp（普攻回血 ATK×3%）
+            if (_fx.has('fx_vamp') && lastDmg > 0 && mHp > 0) {
+              const vampHeal = Math.max(1, Math.round(stats.atk * 0.03 * totalHits));
+              pHp = Math.min(stats.maxHp, pHp + vampHeal);
+            }
           } else {
             // 其他職業普攻（單擊）
-            const isCrit2 = Math.random() < baseCrit2;
+            // ⭐ 合成效果：fx_dg_crit（暴擊後下 1 次必爆）
+            const isCrit2 = _nextForceCrit || Math.random() < baseCrit2;
+            if (_nextForceCrit) _nextForceCrit = false;
             let dmg = Math.max(1, effAtk - Math.floor(monDef0 / 2));
             dmg *= (0.85 + Math.random() * 0.3);
-            if (isCrit2) { dmg *= critMult2; critCount++; }
+            if (isCrit2) { dmg *= critMult2; critCount++; if (_fx.has('fx_dg_crit') && !_nextForceCrit) _nextForceCrit = true; }
+            // ⭐ 合成效果：fx_conquer（普攻傷害+12%）
+            if (_fx.has('fx_conquer')) dmg *= 1.12;
+            // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%）
+            if (_fx.has('fx_pg_hp') && pHp < stats.maxHp * 0.3) dmg *= 1.5;
             if (_monPhysRes) dmg *= (1 - _monPhysRes);
             dmg *= consumeVulnerable(monster);
             dmg = Math.max(1, Math.round(dmg));
             if (mAbility?.type === 'flatCapDmg') dmg = Math.min(dmg, mAbility.cap || 1);
             dmg = monShield0(dmg);
             mHp -= dmg;
+            // ⭐ 合成效果：fx_vamp（普攻回血 ATK×3%）
+            if (_fx.has('fx_vamp') && dmg > 0 && mHp > 0) {
+              const vampHeal = Math.max(1, Math.round(stats.atk * 0.03));
+              pHp = Math.min(stats.maxHp, pHp + vampHeal);
+            }
             log.push({
               type: isCrit2 ? 'crit-player' : 'player',
               text: `回合 ${round}：${cls.attackVerb}${isCrit2 ? '【暴擊】' : ''} → ${monster.name} -${dmg} HP`,
@@ -7204,9 +7340,16 @@
     const passive = computePassiveBonuses(player);
     const effectiveSpd = stats.spd + (passive.spd || 0);
     const setB = stats.setBonuses || {};
+    // ⭐ 合成效果
+    const _fx = getFusionEffects(player);
     const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0) + (setB.critChance || 0);
     const critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
-    const regenPer = (cls.regenPer || 0) + (bonus.regen || 0);
+    // fx_guardian: 每回合 HP 回復最大值 3%
+    const regenPer = (cls.regenPer || 0) + (bonus.regen || 0) + (_fx.has('fx_guardian') ? 0.03 : 0);
+    // fx_mage: 技能 MP 消耗 -20%
+    const _fusionMpDiscount = _fx.has('fx_mage') ? 0.20 : 0;
+    // fx_dg_crit: 暴擊後下 1 次必爆（不連鎖）
+    let _nextForceCrit = false;
     // ⭐ 嗜血劍：裝備時攻擊流血目標 → 回血×2 + ATK+20%(3T)
     const _weaponItemM = resolveItem(player.rpg?.equipment?.weapon);
     const weaponBloodEffect = !!_weaponItemM?.onHitBleeding;
@@ -7385,7 +7528,7 @@
           if ((s.unlockLv || 1) > (player.rpg.level || 1)) continue;
           // ⭐ 玩家技能 CD 取消（用 MP 跟硬值控制節奏）
           // if (playerActions < (nextActionForSkill[s.id] || 0)) continue;
-          const effMpCost = Math.round((s.mpCost || 0) * (1 - (passive.mpDiscount || 0)));
+          const effMpCost = Math.round((s.mpCost || 0) * (1 - Math.min(0.80, (passive.mpDiscount || 0) + _fusionMpDiscount)));
           if (pMp < effMpCost) continue;
           if (s.hpCost) {
             const need = Math.max(1, Math.round(stats.maxHp * s.hpCost));
@@ -7410,7 +7553,7 @@
           const __skillLv = (player.rpg.skillLevels && player.rpg.skillLevels[useSkill.id]) || 0;
           const skill = getSkillEffectiveStats(useSkill, __skillLv);
           // Lv 5 治療系：mpCostMult 進一步打折
-          const effMpCost = Math.round((skill.mpCost || 0) * (skill.mpCostMult || 1) * (1 - (passive.mpDiscount || 0)));
+          const effMpCost = Math.round((skill.mpCost || 0) * (skill.mpCostMult || 1) * (1 - Math.min(0.80, (passive.mpDiscount || 0) + _fusionMpDiscount)));
           pMp -= effMpCost;
           let hpPaid = 0;
           if (skill.hpCost) {
@@ -7487,11 +7630,19 @@
               if (skill.bleedBonus && hasStatus(tgt, 'bleed')) {
                 dmg *= (1 + skill.bleedBonus);
               }
+              // ⭐ 合成效果：fx_dg_mp（MP≥90%時技能傷害+25%）
+              if (_fx.has('fx_dg_mp') && pMp >= stats.maxMp * 0.9) dmg *= 1.25;
+              // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%）
+              if (_fx.has('fx_pg_hp') && pHp < stats.maxHp * 0.3) dmg *= 1.5;
               const skillCrit = baseCritChance + (skill.extraCritChance || 0) + (pBuff.critChance || 0);
-              const skillCritMult = critMult + (skill.extraCritDmg || 0) + (pBuff.critDmg || 0);
-              const isCrit = skill.alwaysCrit || Math.random() < skillCrit;
+              // ⭐ 合成效果：fx_pg_critdmg（目標 HP<25% 時爆傷+30%）
+              const _pgCritBonusM = (_fx.has('fx_pg_critdmg') && tgt.hp <= tgt.maxHp * 0.25) ? 0.30 : 0;
+              const skillCritMult = critMult + (skill.extraCritDmg || 0) + (pBuff.critDmg || 0) + _pgCritBonusM;
+              // ⭐ 合成效果：fx_dg_crit（暴擊後下 1 次必爆）
+              const isCrit = skill.alwaysCrit || _nextForceCrit || Math.random() < skillCrit;
+              if (_nextForceCrit) _nextForceCrit = false;
               if (!skill.usesBloodPool) dmg *= (0.9 + Math.random() * 0.2);
-              if (isCrit) { dmg *= skillCritMult; critCount++; }
+              if (isCrit) { dmg *= skillCritMult; critCount++; if (_fx.has('fx_dg_crit') && !_nextForceCrit) _nextForceCrit = true; }
               dmg = Math.max(1, Math.round(dmg));
               if (tgt.ability?.type === 'flatCapDmg') dmg = Math.min(dmg, tgt.ability.cap || 1);
               dmg = consumeMonsterShield2(tgt, dmg);
@@ -7668,30 +7819,44 @@
         } else {
           // 普攻：打 lowHp 那隻
           const tgt = targets[0];
-          const effAtk = stats.atk * (1 + (pBuff.atkPct || 0));
+          // ⭐ 合成效果：fx_hunter（目標 HP<50% 時 ATK +15%）
+          const _hunterBonusM = (_fx.has('fx_hunter') && tgt.hp <= tgt.maxHp * 0.5) ? 1.15 : 1.0;
+          const effAtk = stats.atk * (1 + (pBuff.atkPct || 0)) * _hunterBonusM;
           const baseCrit2 = baseCritChance + (pBuff.critChance || 0);
-          const critMult2 = critMult + (pBuff.critDmg || 0);
+          // ⭐ 合成效果：fx_pg_critdmg（目標 HP<25% 時爆傷+30%）
+          const _pgCritBonusM2 = (_fx.has('fx_pg_critdmg') && tgt.hp <= tgt.maxHp * 0.25) ? 0.30 : 0;
+          const critMult2 = critMult + (pBuff.critDmg || 0) + _pgCritBonusM2;
           if (player.rpg.class === 'archer') {
             // ⭐ 弓手三連射：每發 0.30×ATK，獨立爆擊，爆頭率 5%+爆擊率×20%（無視防禦×3傷，可疊爆擊）
             const HEADSHOT_CHANCE = 0.05 + baseCrit2 * 0.2 + (pBuff.headshotChance || 0);
             const totalHits = 3 + Math.round(pBuff.extraHits || 0);
             const _stealthHsSt = (playerObj.statuses || []).find(s => s.type === 'stealthHeadshot');
+            // ⭐ 合成效果：fx_dg_def（攻擊無視 DEF 15%）
+            const _tgtDef = tgt.def * (_fx.has('fx_dg_def') ? 0.85 : 1.0);
+            let _lastDmgM = 0;
             for (let hit = 1; hit <= totalHits; hit++) {
               const forceHs = (hit === 1 && _stealthHsSt);
               if (forceHs) playerObj.statuses = playerObj.statuses.filter(s => s !== _stealthHsSt);
               const isHs   = forceHs || Math.random() < HEADSHOT_CHANCE;
-              const isCrit = Math.random() < baseCrit2;
-              const defVal = isHs ? 0 : Math.floor(tgt.def / 2 / totalHits); // 爆頭無視防禦；普攻防禦分攤各段
+              // ⭐ 合成效果：fx_dg_crit（暴擊後下 1 次必爆）
+              const isCrit = _nextForceCrit || Math.random() < baseCrit2;
+              if (_nextForceCrit) _nextForceCrit = false;
+              const defVal = isHs ? 0 : Math.floor(_tgtDef / 2 / totalHits);
               let dmg = Math.max(1, effAtk * 0.30 - defVal);
               dmg *= (0.85 + Math.random() * 0.3);
-              if (isCrit) { dmg *= critMult2; critCount++; }
+              if (isCrit) { dmg *= critMult2; critCount++; if (_fx.has('fx_dg_crit') && !_nextForceCrit) _nextForceCrit = true; }
               if (isHs)   dmg *= 3;
+              // ⭐ 合成效果：fx_conquer（普攻傷害+12%）
+              if (_fx.has('fx_conquer')) dmg *= 1.12;
+              // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%）
+              if (_fx.has('fx_pg_hp') && pHp < stats.maxHp * 0.3) dmg *= 1.5;
               if (tgt.physRes) dmg *= (1 - tgt.physRes);
               dmg *= consumeVulnerable(tgt);
               dmg = Math.max(1, Math.round(dmg));
               if (tgt.ability?.type === 'flatCapDmg') dmg = Math.min(dmg, tgt.ability.cap || 1);
               tgt.hp = Math.max(0, tgt.hp - dmg);
               if (tgt.hp <= 0) tgt.alive = false;
+              _lastDmgM = dmg;
               const label = (isHs && isCrit) ? '🎯【爆頭+暴擊】' : isHs ? '🎯【爆頭】' : isCrit ? '【暴擊】' : '';
               log.push({
                 type: (isHs || isCrit) ? 'crit-player' : 'player',
@@ -7704,17 +7869,35 @@
               }
               if (tgt.hp <= 0) break;
             }
+            // ⭐ 合成效果：fx_vamp（普攻回血 ATK×3%）
+            if (_fx.has('fx_vamp') && _lastDmgM > 0 && tgt.hp > 0) {
+              const vampHeal = Math.max(1, Math.round(stats.atk * 0.03 * totalHits));
+              pHp = Math.min(stats.maxHp, pHp + vampHeal);
+            }
           } else {
-            const isCrit = Math.random() < baseCrit2;
-            let dmg = Math.max(1, effAtk - Math.floor(tgt.def / 2));
+            // ⭐ 合成效果：fx_dg_def（攻擊無視 DEF 15%）
+            const _tgtDef2 = tgt.def * (_fx.has('fx_dg_def') ? 0.85 : 1.0);
+            // ⭐ 合成效果：fx_dg_crit（暴擊後下 1 次必爆）
+            const isCrit = _nextForceCrit || Math.random() < baseCrit2;
+            if (_nextForceCrit) _nextForceCrit = false;
+            let dmg = Math.max(1, effAtk - Math.floor(_tgtDef2 / 2));
             dmg *= (0.85 + Math.random() * 0.3);
-            if (isCrit) { dmg *= critMult2; critCount++; }
+            if (isCrit) { dmg *= critMult2; critCount++; if (_fx.has('fx_dg_crit') && !_nextForceCrit) _nextForceCrit = true; }
+            // ⭐ 合成效果：fx_conquer（普攻傷害+12%）
+            if (_fx.has('fx_conquer')) dmg *= 1.12;
+            // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%）
+            if (_fx.has('fx_pg_hp') && pHp < stats.maxHp * 0.3) dmg *= 1.5;
             if (tgt.physRes) dmg *= (1 - tgt.physRes);
             dmg *= consumeVulnerable(tgt); // ⭐ 易傷（hit-based）
             dmg = Math.max(1, Math.round(dmg));
             if (tgt.ability?.type === 'flatCapDmg') dmg = Math.min(dmg, tgt.ability.cap || 1);
             tgt.hp = Math.max(0, tgt.hp - dmg);
             if (tgt.hp <= 0) tgt.alive = false;
+            // ⭐ 合成效果：fx_vamp（普攻回血 ATK×3%）
+            if (_fx.has('fx_vamp') && dmg > 0 && tgt.hp > 0) {
+              const vampHeal = Math.max(1, Math.round(stats.atk * 0.03));
+              pHp = Math.min(stats.maxHp, pHp + vampHeal);
+            }
             if (tgt.ability?.type === 'reflect' && tgt.ability.resist) {
               // 反傷：受到傷害的 50%，最多 300
               const r = Math.min(300, Math.max(1, Math.round(dmg * tgt.ability.resist)));
@@ -8891,24 +9074,62 @@
     },
     {
       id: 'boss_king', icon: '👑', name: '鵝王扭蛋',
-      desc: '消耗 3 顆王硬幣（任意組合）抽鵝王恩賜（金裝飾品）/ 體力 / 鵝鵝幣 / EXP',
+      desc: '消耗 3 顆鵝王硬幣抽新版印記（效果型金裝飾品）/ 體力 / 鵝鵝幣 / EXP',
       cost: 3,
-      isBossCoin: true,             // 特殊：用 inventory 中的王硬幣抽
+      isBossCoin: true,
+      coinFilter: 'bc_goose_king',  // ⭐ 只使用鵝王硬幣
       currencyIcon: '👑',
-      currencyName: '王硬幣',
+      currencyName: '鵝王硬幣',
       status: 'open',
-      // 複合獎池：每項自帶 weight；總和 100
       pool: [
-        { type: 'item', id: 'bg_crit',    weight: 4  },
-        { type: 'item', id: 'bg_mp',      weight: 4  },
-        { type: 'item', id: 'bg_atk',     weight: 4  },
-        { type: 'item', id: 'bg_hp',      weight: 4  },
-        { type: 'item', id: 'bg_critdmg', weight: 2  },
-        { type: 'item', id: 'bg_mpregen', weight: 2  },
-        { type: 'stamina', amount: 50,  weight: 30, label: '體力 +50',                 icon: '⚡' },
-        { type: 'stamina', amount: 100, weight: 15, label: '體力 +100（可超過上限）', icon: '⚡' },
+        { type: 'item', id: 'bg2_conquer',  weight: 5  },
+        { type: 'item', id: 'bg2_mage',     weight: 5  },
+        { type: 'item', id: 'bg2_vamp',     weight: 5  },
+        { type: 'item', id: 'bg2_berserk',  weight: 5  },
+        { type: 'item', id: 'bg2_hunter',   weight: 4  },
+        { type: 'item', id: 'bg2_guardian', weight: 4  },
+        { type: 'stamina', amount: 50,  weight: 25, label: '體力 +50',                 icon: '⚡' },
+        { type: 'stamina', amount: 100, weight: 12, label: '體力 +100（可超過上限）', icon: '⚡' },
         { type: 'coins',   amount: 1500,weight: 20, label: '鵝鵝幣 +1500',             icon: '🪙' },
         { type: 'xp',      amount: 500, weight: 15, label: 'EXP +500',                 icon: '✨' },
+      ],
+    },
+    {
+      id: 'boss_dragon', icon: '🐉', name: '古龍扭蛋',
+      desc: '消耗 3 顆古龍鵝硬幣抽古龍鵝恩賜（合成材料）/ 體力 / EXP',
+      cost: 3,
+      isBossCoin: true,
+      coinFilter: 'bc_dragon_goose',  // ⭐ 只使用古龍鵝硬幣
+      currencyIcon: '🐲',
+      currencyName: '古龍鵝硬幣',
+      status: 'open',
+      pool: [
+        { type: 'item', id: 'bg_dg_crit',  weight: 15 },
+        { type: 'item', id: 'bg_dg_mp',    weight: 15 },
+        { type: 'item', id: 'bg_dg_def',   weight: 15 },
+        { type: 'stamina', amount: 80,  weight: 25, label: '體力 +80',     icon: '⚡' },
+        { type: 'stamina', amount: 150, weight: 10, label: '體力 +150',    icon: '⚡' },
+        { type: 'coins',   amount: 3000,weight: 10, label: '鵝鵝幣 +3000', icon: '🪙' },
+        { type: 'xp',      amount: 1000,weight: 10, label: 'EXP +1000',    icon: '✨' },
+      ],
+    },
+    {
+      id: 'boss_pebble', icon: '🪨', name: '鵝卵石扭蛋',
+      desc: '消耗 3 顆鵝卵石硬幣抽鵝卵石恩賜（合成材料）/ 體力 / EXP',
+      cost: 3,
+      isBossCoin: true,
+      coinFilter: 'bc_pebble_goose',  // ⭐ 只使用鵝卵石硬幣
+      currencyIcon: '🪨',
+      currencyName: '鵝卵石硬幣',
+      status: 'open',
+      pool: [
+        { type: 'item', id: 'bg_pg_hp',      weight: 15 },
+        { type: 'item', id: 'bg_pg_critdmg', weight: 15 },
+        { type: 'item', id: 'bg_pg_mp',      weight: 15 },
+        { type: 'stamina', amount: 100, weight: 20, label: '體力 +100',    icon: '⚡' },
+        { type: 'stamina', amount: 200, weight: 10, label: '體力 +200',    icon: '⚡' },
+        { type: 'coins',   amount: 5000,weight: 10, label: '鵝鵝幣 +5000', icon: '🪙' },
+        { type: 'xp',      amount: 1500,weight: 15, label: 'EXP +1500',    icon: '✨' },
       ],
     },
     {
@@ -8921,6 +9142,11 @@
   function totalBossCoinsInInventory(rpg) {
     if (!rpg || !rpg.bossCoins) return 0;
     return Object.values(rpg.bossCoins).reduce((a, b) => a + (Number(b) || 0), 0);
+  }
+  // ⭐ 特定王硬幣數量（coinFilter 機器用）
+  function totalSpecificBossCoins(rpg, coinId) {
+    if (!rpg || !rpg.bossCoins || !coinId) return 0;
+    return Number(rpg.bossCoins[coinId] || 0);
   }
   // ⭐ 取代舊的本地版 consumeBossCoins — 改用 atomic tx
   //    舊呼叫 sites 改成 await consumeBossCoinsAtomic(pid, n)
@@ -8980,7 +9206,7 @@
             return `${icon} ${escapeHtml(name)} ×${qty}`;
           }).join('　·　')}
         </div>
-        <div style="font-size:10px; color:#a16207; margin-top:4px;">鵝王扭蛋用任何王硬幣都可以抽</div>
+        <div style="font-size:10px; color:#a16207; margin-top:4px;">各扭蛋機只接受對應王的硬幣（鵝王用👑 / 古龍用🐲 / 鵝卵石用🪨）</div>
       </div>
     ` : '';
     showModal('🎰 扭蛋', `
@@ -9002,7 +9228,9 @@
     if (m.status !== 'open') { showToast('機台尚未開放'); return; }
     const me = getMe(); if (!me) return;
     const r = getRpg(me);
-    const myCoins = m.isBossCoin ? totalBossCoinsInInventory(r) : (m.currency ? (r[m.currency] || 0) : 0);
+    const myCoins = m.isBossCoin
+      ? (m.coinFilter ? totalSpecificBossCoins(r, m.coinFilter) : totalBossCoinsInInventory(r))
+      : (m.currency ? (r[m.currency] || 0) : 0);
     // 預覽獎池：支援兩種格式（pool 是 [id...] + weights，或 pool 是 [{type,...}...]）
     const isComplexPool = Array.isArray(m.pool) && m.pool.length > 0 && typeof m.pool[0] === 'object';
     let poolHtml = '';
@@ -9092,15 +9320,28 @@
     const totalCost = m.cost * count;
     // 扣費（兩種模式）
     if (m.isBossCoin) {
-      if (totalBossCoinsInInventory(r) < totalCost) { showToast('王硬幣不夠'); return; }
-      // ⭐ Phase A：用 atomic tx 扣（雲端先確認夠才扣，避免並發問題）
-      try {
-        await consumeBossCoinsAtomic(me.id, totalCost);
-      } catch (e) {
-        const msg = String(e?.message || e);
-        if (msg.startsWith('insufficient-coins')) showToast('☁️ 雲端王硬幣不足');
-        else { console.warn('consumeBossCoinsAtomic failed:', e); showToast('☁️ 扣費失敗'); }
-        return;
+      if (m.coinFilter) {
+        // ⭐ 特定王硬幣機台（古龍扭蛋 / 鵝卵石扭蛋）
+        if (totalSpecificBossCoins(r, m.coinFilter) < totalCost) { showToast(`${m.currencyName}不夠`); return; }
+        try {
+          await consumeSpecificBossCoinsAtomic(me.id, m.coinFilter, totalCost);
+        } catch (e) {
+          const msg = String(e?.message || e);
+          if (msg.startsWith('insufficient-coins')) showToast(`☁️ 雲端${m.currencyName}不足`);
+          else { console.warn('consumeSpecificBossCoinsAtomic failed:', e); showToast('☁️ 扣費失敗'); }
+          return;
+        }
+      } else {
+        if (totalBossCoinsInInventory(r) < totalCost) { showToast('王硬幣不夠'); return; }
+        // ⭐ Phase A：用 atomic tx 扣（雲端先確認夠才扣，避免並發問題）
+        try {
+          await consumeBossCoinsAtomic(me.id, totalCost);
+        } catch (e) {
+          const msg = String(e?.message || e);
+          if (msg.startsWith('insufficient-coins')) showToast('☁️ 雲端王硬幣不足');
+          else { console.warn('consumeBossCoinsAtomic failed:', e); showToast('☁️ 扣費失敗'); }
+          return;
+        }
       }
     } else {
       if ((r[m.currency] || 0) < totalCost) { showToast('幣不夠'); return; }
@@ -9241,10 +9482,14 @@
       spd: base.spd || 0,
       hp:  base.hp  || 0,
       mp:  base.mp  || 0,
+      mark: base.mark || 0,
       mpRegen: base.mpRegen || 0,
       critChance: base.critChance || 0,
       critDmg:    base.critDmg    || 0,
       isBossGift: true,
+      sourceBossId: base.sourceBossId || null,  // ⭐ 來源王ID（合成系統用）
+      fusionEffect: base.fusionEffect || null,   // ⭐ 戰鬥效果ID（合成系統用）
+      fusedComponents: [],                       // ⭐ 已合成的子組件（最多 3 個：king/dragon/pebble 各1）
       affixDesc: base.affixDesc,
       affixes: [], // 不洗
     };
@@ -9705,7 +9950,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506013122';
+  const APP_VERSION = '20260506025446';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -9761,7 +10006,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260505e';
+  const NEWS_LATEST_ID = 'patch_20260506_fusion';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -9781,6 +10026,34 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#4c1d95,#7c3aed); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">⚗️ 印記合成系統 + 世界王加速　<span style="font-size:11px; opacity:0.85;">2026-05-06</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:6px 0 4px;">⚗️ 印記合成系統</div>
+        <div>・<b>6 種新版鵝王恩賜</b>（效果型印記）可從 <b>鵝王扭蛋</b> 抽出：</div>
+        <div style="font-size:11px; color:#374151; padding:4px 0 0 8px;">
+          征服者之印（普攻+12%）・秘法師之印（MP消耗-20%）・吸血者之印（普攻吸血）<br>
+          狂戰者之印（爆傷+15%）・獵殺者之印（目標HP&lt;50%攻擊+15%）・守護者之印（每回合回HP）
+        </div>
+        <div style="margin-top:6px;">・<b>古龍扭蛋</b>（古龍鵝硬幣 ×3）抽古龍鵝恩賜（3種）</div>
+        <div style="font-size:11px; color:#374151; padding:4px 0 0 8px;">
+          暴擊連擊（暴擊後必爆）・古龍智慧（MP&ge;90%技能+25%）・龍威（無視DEF 15%）
+        </div>
+        <div style="margin-top:6px;">・<b>鵝卵石扭蛋</b>（鵝卵石硬幣 ×3）抽鵝卵石恩賜（3種）</div>
+        <div style="font-size:11px; color:#374151; padding:4px 0 0 8px;">
+          背水一戰（HP&lt;30%傷害+50%）・斬殺印（目標HP&lt;25%爆傷+30%）・魔力湧動（每回合MP+3）
+        </div>
+        <div style="margin-top:6px;">・每件印記可合入 <b>古龍槽（×1）+ 鵝卵石槽（×1）+ 同王槽（×1）</b>，屬性 + 效果全部疊加</div>
+        <div style="font-size:11px; color:#6b7280;">→ 在背包選印記 → 「⚗️ 前往合成」鈕 → 選材料合入（消耗材料，不可逆）</div>
+
+        <div style="font-weight:700; color:#b45309; margin:10px 0 4px;">⏱️ 世界王冷卻減半</div>
+        <div>・攻打世界王的冷卻時間：<b>5 分鐘 → 2.5 分鐘</b></div>
+
+        <div style="background:#f3e8ff; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#4c1d95;">
+          💡 舊版鵝王恩賜仍可用，也可作為同王槽合成材料
+        </div>
 
         <div style="background:linear-gradient(135deg,#164e63,#0891b2); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🔹⚔️ 平衡調整 + 修復　<span style="font-size:11px; opacity:0.85;">2026-05-06</span></div>
@@ -12153,6 +12426,15 @@ ${b.text}
         ${affixHtml}
         ${compareHtml}
         ${setHtml}
+        ${item.isBossGift ? `
+        <div style="margin-top:10px; padding:8px 10px; background:linear-gradient(135deg,#fef9c3,#fde68a); border:1.5px solid #fbbf24; border-radius:10px; text-align:left;">
+          <div style="font-size:11px; font-weight:700; color:#92400e; margin-bottom:4px;">⚗️ 印記合成</div>
+          ${(item.fusedComponents && item.fusedComponents.length > 0)
+            ? item.fusedComponents.map(fc => `<div style="font-size:10px; color:#78350f;">✦ ${escapeHtml(fc.name || fc.baseId)} — ${escapeHtml(fc.affixDesc || '')}</div>`).join('')
+            : `<div style="font-size:10px; color:#b45309;">可合入古龍鵝恩賜 / 鵝卵石恩賜，疊加能力與效果</div>`
+          }
+          <button class="btn btn-primary" onclick="showFusionModal(${idx})" style="margin-top:6px; width:100%; background:linear-gradient(135deg,#d97706,#b45309); box-shadow:0 3px 0 #92400e; font-size:12px;">⚗️ 前往合成</button>
+        </div>` : ''}
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:14px;">
           <button class="btn btn-primary" onclick="equipFromInvAndClose(${idx})" ${canEquip ? '' : 'disabled'}>裝備</button>
           <button class="btn btn-warning" onclick="sellInvItem(${idx})">賣掉（🪙 ${sellValue}）</button>
@@ -12170,6 +12452,165 @@ ${b.text}
     if (typeof showEquipmentModal === 'function') showEquipmentModal();
   }
   window.backToBackpack = backToBackpack;
+
+  // ============================================================
+  // ⚗️ 印記合成系統
+  // ============================================================
+  // 判斷合成槽位（依 sourceBossId）
+  function _fusionSlotOf(item) {
+    if (!item) return null;
+    const s = item.sourceBossId;
+    if (s === 'dragon_goose') return 'dragon';
+    if (s === 'pebble_goose') return 'pebble';
+    if (s === 'goose_king') return 'king';
+    // fallback by baseId prefix（舊物件可能沒有 sourceBossId）
+    if ((item.baseId || '').startsWith('bg_dg')) return 'dragon';
+    if ((item.baseId || '').startsWith('bg_pg')) return 'pebble';
+    if ((item.id || '').startsWith('bg_dg')) return 'dragon';
+    if ((item.id || '').startsWith('bg_pg')) return 'pebble';
+    return 'king';
+  }
+
+  function showFusionModal(baseInvIdx) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const baseEntry = r.inventory[baseInvIdx];
+    const baseItem = resolveItem(baseEntry);
+    if (!baseItem || !baseItem.isBossGift) { showToast('非印記裝備'); return; }
+
+    const fusedComponents = baseItem.fusedComponents || [];
+    const hasKing   = fusedComponents.some(fc => _fusionSlotOf(fc) === 'king');
+    const hasDragon = fusedComponents.some(fc => _fusionSlotOf(fc) === 'dragon');
+    const hasPebble = fusedComponents.some(fc => _fusionSlotOf(fc) === 'pebble');
+
+    // 找出背包中可合入的材料（排除自身、排除已滿的槽）
+    const available = r.inventory
+      .map((entry, i) => ({ item: resolveItem(entry), idx: i }))
+      .filter(({ item, idx }) => {
+        if (!item || !item.isBossGift) return false;
+        if (idx === baseInvIdx) return false;
+        const slot = _fusionSlotOf(item);
+        if (slot === 'king'   && hasKing)   return false;
+        if (slot === 'dragon' && hasDragon) return false;
+        if (slot === 'pebble' && hasPebble) return false;
+        return true;
+      });
+
+    const slotLabel = { king: '鵝王槽', dragon: '古龍槽', pebble: '鵝卵石槽' };
+    const slotColor = { king: '#fbbf24', dragon: '#22d3ee', pebble: '#a3a3a3' };
+
+    const currentFusedHtml = fusedComponents.length > 0
+      ? fusedComponents.map(fc => {
+          const sl = _fusionSlotOf(fc);
+          return `<div style="font-size:11px; padding:4px 8px; background:${slotColor[sl] || '#e5e7eb'}22; border:1px solid ${slotColor[sl] || '#e5e7eb'}; border-radius:6px; margin-bottom:3px;">
+            <span style="font-size:10px; font-weight:700; color:${slotColor[sl] || '#6b7280'};">[${slotLabel[sl] || sl}]</span>
+            ${escapeHtml(fc.icon || '👑')} ${escapeHtml(fc.name || fc.baseId)}
+            <span style="color:#6b7280; font-size:10px;"> — ${escapeHtml(fc.affixDesc || '')}</span>
+          </div>`;
+        }).join('')
+      : '<div style="font-size:11px; color:#9ca3af; padding:4px 0;">（尚未合入任何組件）</div>';
+
+    const availableHtml = available.length > 0
+      ? available.map(({ item: mat, idx: matIdx }) => {
+          const sl = _fusionSlotOf(mat);
+          return `<div style="display:flex; gap:8px; align-items:center; padding:6px 8px; background:#fffbeb; border:1.5px solid #fbbf24; border-radius:8px; margin-bottom:5px;">
+            <span style="font-size:22px;">${mat.icon}</span>
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:11px; font-weight:700; color:#92400e;">${escapeHtml(mat.name)}</div>
+              <div style="font-size:10px; color:#b45309;">${escapeHtml(mat.affixDesc || '')}</div>
+              <div style="font-size:10px; color:#6b7280;">槽位：<b>${slotLabel[sl] || sl}</b></div>
+            </div>
+            <button class="btn btn-primary" onclick="doFusion(${baseInvIdx}, ${matIdx})" style="font-size:11px; padding:4px 8px; white-space:nowrap;">⚗️ 合入</button>
+          </div>`;
+        }).join('')
+      : '<div style="font-size:12px; color:#9ca3af; text-align:center; padding:8px;">沒有可用的合成材料<br><span style="font-size:11px;">（需古龍鵝恩賜 或 鵝卵石恩賜，且各槽最多合 1 次）</span></div>';
+
+    const html = `
+      <div style="padding:4px 0;">
+        <div style="text-align:center; margin-bottom:10px;">
+          <div style="font-size:36px;">${baseItem.icon}</div>
+          <div style="font-weight:800; font-size:14px; color:#fbbf24;">${escapeHtml(baseItem.name)}</div>
+          <div style="font-size:11px; color:#6b7280;">${escapeHtml(baseItem.affixDesc || '')}</div>
+        </div>
+        <div style="padding:8px 10px; background:#fef3c7; border:1px dashed #f59e0b; border-radius:8px; margin-bottom:10px;">
+          <div style="font-size:11px; font-weight:700; color:#92400e; margin-bottom:4px;">已合成組件</div>
+          ${currentFusedHtml}
+        </div>
+        <div style="font-size:11px; font-weight:700; color:#374151; margin-bottom:6px;">可合入材料</div>
+        ${availableHtml}
+        <div style="font-size:10px; color:#9ca3af; margin-top:8px; padding:6px; background:#f9fafb; border-radius:6px;">
+          ⚠ 合入後材料從背包移除，無法還原。合成後能力疊加，效果在戰鬥中激活。
+        </div>
+        <button class="btn btn-secondary" onclick="openInvItemActions(${baseInvIdx})" style="margin-top:10px; width:100%;">← 返回</button>
+      </div>
+    `;
+    showModal('⚗️ 印記合成', html);
+  }
+  window.showFusionModal = showFusionModal;
+
+  function doFusion(baseInvIdx, matInvIdx) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const baseEntry = r.inventory[baseInvIdx];
+    const baseItem = resolveItem(baseEntry);
+    if (!baseItem || !baseItem.isBossGift) { showToast('基底無效'); return; }
+
+    const matEntry = r.inventory[matInvIdx];
+    const matItem = resolveItem(matEntry);
+    if (!matItem || !matItem.isBossGift) { showToast('材料無效'); return; }
+
+    const slot = _fusionSlotOf(matItem);
+    const fusedComponents = baseItem.fusedComponents || [];
+
+    // 確認槽位未被佔用
+    if (fusedComponents.some(fc => _fusionSlotOf(fc) === slot)) {
+      showToast('該槽位已合入過一次'); return;
+    }
+
+    // 確認基底和材料不是同一個物件
+    if (baseInvIdx === matInvIdx) { showToast('不能合入自身'); return; }
+
+    // 建立合成組件記錄（保存材料的所有屬性）
+    const component = {
+      baseId:       matItem.baseId     || matItem.id,
+      name:         matItem.name,
+      icon:         matItem.icon,
+      sourceBossId: matItem.sourceBossId || null,
+      fusionEffect: matItem.fusionEffect || null,
+      affixDesc:    matItem.affixDesc || '',
+      atk:         matItem.atk     || 0,
+      def:         matItem.def     || 0,
+      spd:         matItem.spd     || 0,
+      hp:          matItem.hp      || 0,
+      mp:          matItem.mp      || 0,
+      mark:        matItem.mark    || 0,
+      mpRegen:     matItem.mpRegen || 0,
+      critChance:  matItem.critChance || 0,
+      critDmg:     matItem.critDmg    || 0,
+    };
+    fusedComponents.push(component);
+
+    // 把更新寫回到 inventory item（direct mutation is OK here since resolveItem returned the entry object）
+    if (typeof baseEntry === 'object' && baseEntry.isBossGift) {
+      baseEntry.fusedComponents = fusedComponents;
+    }
+    // 如果 baseEntry 是 wrapper（{id,pinned}），我們需要找到實際的物件
+    // 但 boss gift items are always stored as full objects, so this should always work.
+
+    // 移除材料
+    // matInvIdx might shift after baseItem modification, but baseInvIdx < matInvIdx or vice versa
+    // Safe removal: use the original indices
+    const removeIdx = matInvIdx > baseInvIdx ? matInvIdx : matInvIdx;
+    r.inventory.splice(removeIdx, 1);
+
+    saveData();
+    if (typeof renderCharCard === 'function') renderCharCard();
+    showToast(`✅ ${matItem.name} 合入成功！`);
+    // Re-open fusion modal with updated index (matInvIdx removed means baseInvIdx might shift)
+    const newBaseIdx = matInvIdx < baseInvIdx ? baseInvIdx - 1 : baseInvIdx;
+    showFusionModal(newBaseIdx);
+  }
+  window.doFusion = doFusion;
 
   // ============================================================
   // 💎 已裝備裝備詳情 + 寶石孔管理
@@ -16802,6 +17243,23 @@ ${b.text}
           lastTouchedAt: Date.now(),
         });
       },
+      consumeSpecificBossCoinsTx: async (pid, coinId, qty) => {
+        // 消耗特定王硬幣（古龍扭蛋 / 鵝卵石扭蛋用）
+        return await runTransaction(db, async (tx) => {
+          const ref = doc(playersCol, pid);
+          const snap = await tx.get(ref);
+          if (!snap.exists()) throw new Error('player-not-found');
+          const data = snap.data();
+          data.rpg = data.rpg || {};
+          data.rpg.bossCoins = data.rpg.bossCoins || {};
+          const have = Number(data.rpg.bossCoins[coinId] || 0);
+          if (have < qty) throw new Error('insufficient-coins:' + have);
+          data.rpg.bossCoins[coinId] = have - qty;
+          data.lastTouchedAt = Date.now();
+          tx.set(ref, _prune(data));
+          return { remaining: have - qty };
+        });
+      },
       consumeBossCoinsTx: async (pid, totalQty) => {
         // 跨王硬幣消耗 N 顆（鵝王扭蛋用任何王硬幣抽）
         // 因為要按 qty 大的優先扣，無法用單一 increment，必須 tx
@@ -16853,7 +17311,7 @@ ${b.text}
             const cds = s.data().attackCooldowns || {};
             _lastAttackTs = Math.max(_lastAttackTs, cds[attackerId] || 0);
           }
-          if (Date.now() - _lastAttackTs < 5 * 60 * 1000) throw new Error('cooldown');
+          if (Date.now() - _lastAttackTs < 2.5 * 60 * 1000) throw new Error('cooldown');
           // 取得 / 初始化目標王 state
           const bossRef = doc(wb9Col, bossId);
           const bossSnap = snaps[allIds.indexOf(bossId)];
