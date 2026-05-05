@@ -2037,7 +2037,7 @@
         { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 1,  cooldown: 0, mpCost: 0, hpCost: 0.15, type: 'damage', mult: 2.0, cast: 5, bleedBonus: 1.0 },
         { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 6,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.0, lifesteal: 0.20, customLv: true, bleedLifestealBonus: 0.10 },
         // ⭐ 死戰之怒：施放後施加易傷 1 層；Lv10 +1 層（共 2 層）
-        { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 50, hpCost: 0.10, type: 'damage', mult: 4.5, cast: 50, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 1, chance: 1 }, customLv: true },
+        { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 30, hpCost: 0.10, type: 'damage', mult: 4.5, cast: 50, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 1, chance: 1 }, customLv: true },
         // ⭐ 爆血：消耗血池（本場所有 HP 代價技能累積），以真傷形式打出（無視防禦與抗性）
         { id: 'w_blood_explode', name: '爆血',   icon: '🩸💥', unlockLv: 8, cooldown: 1, mpCost: 0, type: 'damage', usesBloodPool: true, cast: 5, maxLv: 1 },
         { id: 'w_war_cry',      name: '戰意呼喚', icon: '📢', unlockLv: 3,  cooldown: 0, mpCost: 0, type: 'heal', healPct: 0.15, isMpRegen: true },
@@ -6977,6 +6977,7 @@
             dmg = Math.max(1, Math.round(dmg));
             dmg = consumeShield(dmg);
             dmg = consumePartialShield(dmg);
+            if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg);
             pHp = Math.max(0, pHp - dmg);
             if (dmg > 0) {
               log.push({
@@ -7013,6 +7014,7 @@
             dmg = Math.max(1, Math.round(dmg));
             dmg = consumeShield(dmg);
             dmg = consumePartialShield(dmg);
+            if (player.rpg.class === 'warrior') bloodPool += Math.min(Math.max(0, pHp), dmg);
             pHp -= dmg;
             if (dmg > 0) {
               log.push({
@@ -7837,6 +7839,7 @@
             dmg = Math.max(1, Math.round(dmg));
             dmg = consumeShield2(dmg);
             dmg = consumePartialShield2(dmg);
+            if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg);
             pHp = Math.max(0, pHp - dmg);
             if (dmg > 0) {
               log.push({
@@ -7870,6 +7873,7 @@
             dmg = Math.max(1, Math.round(dmg));
             dmg = consumeShield2(dmg);
             dmg = consumePartialShield2(dmg);
+            if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg);
             pHp = Math.max(0, pHp - dmg);
             if (dmg > 0) {
               log.push({
@@ -9666,7 +9670,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506003348';
+  const APP_VERSION = '20260506003912';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
