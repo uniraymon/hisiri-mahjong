@@ -9841,12 +9841,51 @@
             拆解（${selCount} 隻 → 💠×${selCount}）
           </button>
         ` : ''}
+        <button class="it-btn" onclick="toggleSpiritListMode()" title="切換格子/列表檢視" style="${__spiritListMode ? 'background:#7c3aed;color:#fff;border-color:#7c3aed;' : ''}">
+          ${__spiritListMode ? '⊞ 格子' : '≡ 列表'}
+        </button>
         <span class="it-info">精魂 ${bag.length} 隻　💠 ${rpg.essenceFragments || 0} 片</span>
       </div>`;
 
     let bagGridHtml;
     if (bag.length === 0) {
       bagGridHtml = '<div style="font-size:12px; color:#9ca3af; padding:16px; text-align:center;">背包沒有精魂<br><span style="font-size:10px;">打王掉的精魂會放在這裡</span></div>';
+    } else if (__spiritListMode) {
+      // ── 列表模式：每行顯示完整能力 ──
+      const STAT_COLOR = { atk:'#ef4444', mark:'#a855f7', def:'#3b82f6', spd:'#ca8a04', hp:'#f43f5e', critChance:'#f97316', critDmg:'#f97316', mp:'#0ea5e9' };
+      const STAT_LABEL = { atk:'ATK', mark:'MARK', def:'DEF', spd:'SPD', hp:'HP', critChance:'暴擊率', critDmg:'爆傷', mp:'MP' };
+      const rows = bag.map((sp, idx) => {
+        const selected = __spiritSelected.has(idx);
+        const isPinned = !!sp.pinned;
+        const col = sp.color || '#a78bfa';
+        // build stat tags from affixes (+ base stats fallback)
+        const statTags = (sp.affixes || []).map(a => {
+          const c = STAT_COLOR[a.type] || '#a78bfa';
+          const lbl = STAT_LABEL[a.type] || a.type;
+          return `<span style="display:inline-block; padding:1px 5px; border-radius:4px; font-size:9px; font-weight:700; background:${c}22; color:${c}; border:1px solid ${c}55; margin-right:2px;">${lbl}+${a.val}</span>`;
+        }).join('');
+        // engraving indicator
+        const engTag = sp.engraving?.done
+          ? `<span style="display:inline-block; padding:1px 5px; border-radius:4px; font-size:9px; font-weight:700; background:#7c3aed22; color:#7c3aed; border:1px solid #7c3aed55; margin-right:2px;">⚗️刻印</span>` : '';
+        // special ability indicator
+        const specTag = sp.special
+          ? `<span style="display:inline-block; padding:1px 5px; border-radius:4px; font-size:9px; font-weight:700; background:#06b6d422; color:#06b6d4; border:1px solid #06b6d455; margin-right:2px;">✨${escapeHtml(sp.special)}</span>` : '';
+        const rowBg = selected ? 'background:linear-gradient(135deg,#fde047,#f59e0b); border-color:#d97706;'
+          : isPinned ? `background:linear-gradient(135deg,#2d1b69,${col}30); border-color:#fbbf24;`
+          : `background:linear-gradient(135deg,#2d1b69,${col}25); border-color:${col}88;`;
+        return `<button
+          onclick="onSpiritCellClick(${idx})"
+          style="display:flex; align-items:center; gap:7px; width:100%; text-align:left; padding:6px 8px; border-radius:8px; border:1.5px solid; cursor:pointer; font-family:inherit; margin-bottom:3px; ${rowBg}">
+          ${__spiritBulkMode ? `<div style="flex-shrink:0; width:16px; height:16px; border-radius:3px; border:1.5px solid ${selected?'#4c1d95':'#7c3aed'}; background:${selected?'#7c3aed':'#fff'}; display:flex; align-items:center; justify-content:center; font-size:11px; color:#fff; font-weight:900;">${selected?'✓':''}</div>` : ''}
+          <div style="font-size:22px; flex-shrink:0; line-height:1;">${sp.icon}</div>
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:11px; font-weight:700; color:${selected?'#7c2d12':col}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(sp.name)}</div>
+            <div style="margin-top:2px; line-height:1.4;">${statTags}${engTag}${specTag}</div>
+          </div>
+          <span onclick="toggleSpiritPin(${idx},event)" style="flex-shrink:0; font-size:14px; padding:2px; opacity:${isPinned?1:0.4};" title="${isPinned?'取消釘選':'釘選'}">${isPinned?'⭐':'☆'}</span>
+        </button>`;
+      }).join('');
+      bagGridHtml = `<div style="padding:2px;">${rows}</div>`;
     } else {
       const cells = bag.map((sp, idx) => {
         const selected = __spiritSelected.has(idx);
@@ -9910,6 +9949,12 @@
     showSpiritsModal();
   }
   window.clearSpiritSelection = clearSpiritSelection;
+
+  function toggleSpiritListMode() {
+    __spiritListMode = !__spiritListMode;
+    showSpiritsModal();
+  }
+  window.toggleSpiritListMode = toggleSpiritListMode;
 
   function onSpiritCellClick(bagIdx) {
     if (__spiritBulkMode) {
@@ -11179,7 +11224,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506220014';
+  const APP_VERSION = '20260506220422';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -12484,6 +12529,7 @@ ${b.text}
 
   // ── 精魂背包批量模式 ──
   let __spiritBulkMode = false;
+  let __spiritListMode = false;   // 列表 / 格子 切換
   let __spiritSelected = new Set(); // 內容是 spiritBag 的 idx
 
   function showEquipmentModal() {
