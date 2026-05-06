@@ -2160,9 +2160,9 @@
         { id: 'w_heavy_strike', name: '重擊',     icon: '⚡', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'damage', mult: 1.3, alwaysCrit: true },
         { id: 'w_rage_slash',   name: '狂怒斬',   icon: '🔥', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.8, hits: 2, cast: 32 },
         { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 1,  cooldown: 0, mpCost: 0, hpCost: 0.15, type: 'damage', mult: 2.0, cast: 5, bleedBonus: 1.0 },
-        { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 6,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.0, lifesteal: 0.20, customLv: true, bleedLifestealBonus: 0.10 },
+        { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 6,  cooldown: 0, mpCost: 15, type: 'damage', mult: 1.0, lifesteal: 0.20, customLv: true, bleedLifestealBonus: 0.10 },
         // ⭐ 死戰之怒：施放後施加易傷 1 層；Lv10 +1 層（共 2 層）
-        { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 30, hpCost: 0.10, type: 'damage', mult: 4.5, cast: 50, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 1, chance: 1 }, customLv: true },
+        { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 25, hpCost: 0.13, type: 'damage', mult: 4.5, cast: 50, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 1, chance: 1 }, customLv: true },
         // ⭐ 爆血：消耗血池（本場所有 HP 代價技能累積），以真傷形式打出（無視防禦與抗性）
         { id: 'w_blood_explode', name: '爆血',   icon: '🩸💥', unlockLv: 8, cooldown: 1, mpCost: 0, type: 'damage', usesBloodPool: true, cast: 5, maxLv: 1 },
         { id: 'w_war_cry',      name: '戰意呼喚', icon: '📢', unlockLv: 3,  cooldown: 0, mpCost: 0, type: 'heal', healPct: 0.15, isMpRegen: true },
@@ -2171,7 +2171,7 @@
         // ⭐ 新增：魔吸斬 — 0.8× ATK 傷害 + 回 2 MP（戰術用，低 MP 時穩定恢復）
         { id: 'w_mana_strike',  name: '魔吸斬',   icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0, type: 'damage', mult: 0.8, mpRestore: 2 },
         // ⭐ 新增：底氣 — 回血 70% + DEF +30（1 回合）；硬值 150；不可升級
-        { id: 'w_guts',         name: '底氣',     icon: '💪', unlockLv: 4,  cooldown: 0, mpCost: 25, type: 'buff', applyPartialShield: { reducePct: 0.20, hits: 3 }, bonusHealPct: 0.50, cast: 75, maxLv: 1 },
+        { id: 'w_guts',         name: '底氣',     icon: '💪', unlockLv: 4,  cooldown: 0, mpCost: 15, type: 'buff', applyPartialShield: { reducePct: 0.20, hits: 3 }, bonusHealPct: 0.50, cast: 75, maxLv: 1 },
         // ⭐ 新增：血鵝刀法 — 傷害 + 讓敵人流血 3 次（每次 0.5% 當前 HP）
         { id: 'w_bleed_sword',  name: '血鵝刀法', icon: '🗡', unlockLv: 3,  cooldown: 0, mpCost: 18, type: 'damage', mult: 1.0, applyStatus: { type: 'bleed', charges: 3, chance: 1.0 } },
       ],
@@ -11389,7 +11389,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507010055';
+  const APP_VERSION = '20260507011937';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -17486,6 +17486,7 @@ ${b.text}
   // 顯示分支事件：讓玩家做選擇
   function showForageQuest(quest) {
     const me = getMe();
+    const r = me ? getRpg(me) : null;
     const myCoins = me ? getCoins(me.id) : 0;
     const choicesHtml = quest.choices.map((c, i) => {
       const need = c.requiresCoins || 0;
@@ -17497,11 +17498,20 @@ ${b.text}
         </button>
       `;
     }).join('');
+    // ⭐ 寶物新品率保底顯示
+    const _pity = (r && r.foragePity) || 0;
+    const _pityPct = Math.min(_pity * 20, 100);
+    const pityHtml = _pityPct > 0
+      ? `<div style="text-align:center; font-size:11px; background:#f3e8ff; border:1px solid #c4b5fd; border-radius:7px; padding:5px 10px; margin-bottom:10px; color:#6d28d9;">
+           ✨ 寶物新品率加成 <b>+${_pityPct}%</b>（已連重複 ${_pity} 次）
+         </div>`
+      : '';
     const html = `
       <div style="text-align:center; padding:6px 0 12px;">
         <div style="font-size:54px; margin-bottom:6px;">${quest.icon}</div>
         <div style="font-size:13px; color:#5b3d62; padding:10px 12px; background:#fff8fb; border-radius:10px; border:2px dashed #ffd6e0; line-height:1.7;">${escapeHtml(quest.intro)}</div>
       </div>
+      ${pityHtml}
       <div class="forage-choices">${choicesHtml}</div>
     `;
     showModal('🎣 探險中…', html);
@@ -17537,22 +17547,27 @@ ${b.text}
         if (amt > 0) refundCoins(me.id, amt);
         else if (amt < 0) spendCoins(me.id, -amt);
       }
-      // 直接掉一個寶物（重複 → +1000 XP）
+      // 直接掉一個寶物（重複 → XP）
       r.treasures = r.treasures || [];
       const allIds = Object.keys(TREASURES);
-      const tid = allIds[Math.floor(Math.random() * allIds.length)];
+      // ⭐ 寶物保底：連重複 N 次，新品率加 N×20%
+      const _pitiedIds = allIds.filter(t => !r.treasures.includes(t));
+      const _pitied = _pitiedIds.length > 0 && Math.random() < Math.min((r.foragePity || 0) * 0.20, 1.0);
+      const tid = _pitied
+        ? _pitiedIds[Math.floor(Math.random() * _pitiedIds.length)]
+        : allIds[Math.floor(Math.random() * allIds.length)];
       const treasure = TREASURES[tid];
       let isDup = r.treasures.includes(tid);
       let dupXpGained = 0;
       let leveledFromDup = 0;
       if (isDup) {
         // ⭐ 重複寶物 EXP：依等級縮放，上限為「當層怪物 EXP × 1.5」
-        //   保留「重複比較有獎」的感覺，但不再固定給 1000 XP（Lv 1 直接升 5 級的 bug）
+        r.foragePity = (r.foragePity || 0) + 1;  // ⭐ 保底計數 +1
         const lvCap = Math.round(getMonsterBaseXp(r.level || 1) * 1.5);
         const dupXp = Math.max(20, Math.min(TREASURE_DUP_XP, lvCap));
         r.xp = (r.xp || 0) + dupXp;
         dupXpGained = dupXp;
-        forageTrace('forage-treasure DUP', { tid, name: treasure?.name, dupXp, ownedCount: r.treasures.length });
+        forageTrace('forage-treasure DUP', { tid, name: treasure?.name, dupXp, foragePity: r.foragePity, ownedCount: r.treasures.length });
         while (r.xp >= xpForLevel(r.level)) {
           r.xp -= xpForLevel(r.level);
           r.level += 1;
@@ -17565,6 +17580,7 @@ ${b.text}
           r.hp = ns.maxHp; r.mp = ns.maxMp; r.deathAt = null;
         }
       } else {
+        r.foragePity = 0;  // ⭐ 抽到新品 → 保底重置
         r.treasures.push(tid);
         forageTrace('forage-treasure NEW', { tid, name: treasure?.name, ownedCount: r.treasures.length });
       }
@@ -17580,6 +17596,11 @@ ${b.text}
           : `+${treasure.value}`;
         effectStr = `${fmtVal} ${map[treasure.stat] || treasure.stat}`;
       }
+      // ⭐ 保底狀態顯示
+      const _afterPityPct = Math.min((r.foragePity || 0) * 20, 100);
+      const _pityNote = isDup
+        ? `<div class="rl-item" style="font-size:11px; color:#6d28d9; margin-top:4px;">✨ 下次寶物新品率加成 <b>+${_afterPityPct}%</b>（已累積 ${r.foragePity} 次重複）</div>`
+        : `<div class="rl-item" style="font-size:11px; color:#16a34a; margin-top:4px;">🎉 新品！保底計數重置</div>`;
       document.getElementById('dailyResult').innerHTML = `
         <div class="reward-list" style="background:linear-gradient(135deg,#fef3c7,#fde047); border-color:#f59e0b;">
           <div class="rl-title" style="color:#92400e;">${isDup ? '✨ 找到寶物（已收藏）' : '🎁 找到寶物！'}</div>
@@ -17590,6 +17611,7 @@ ${b.text}
           ${isDup
             ? `<div class="rl-item" style="font-size:11px; color:#7c3aed;">已擁有 → +${dupXpGained} XP${leveledFromDup ? `（升 ${leveledFromDup} 級！）` : ''}</div>`
             : '<div class="rl-item" style="font-size:11px; color:#16a34a;">永久加入寶物庫！</div>'}
+          ${_pityNote}
         </div>
       `;
       renderCharCard();
@@ -17701,14 +17723,22 @@ ${b.text}
     if (Math.random() < _treasureChance) {
       r.treasures = r.treasures || [];
       const allTids = Object.keys(TREASURES);
-      const tid = allTids[Math.floor(Math.random() * allTids.length)];
+      // ⭐ 保底：連重複 N 次，新品率加 N×20%
+      const _ptUnowned = allTids.filter(t => !r.treasures.includes(t));
+      const _ptForceNew = _ptUnowned.length > 0 && Math.random() < Math.min((r.foragePity || 0) * 0.20, 1.0);
+      const tid = _ptForceNew
+        ? _ptUnowned[Math.floor(Math.random() * _ptUnowned.length)]
+        : allTids[Math.floor(Math.random() * allTids.length)];
       const treasure = TREASURES[tid];
       const isDup = r.treasures.includes(tid);
       if (isDup) {
-        // 重複寶物 → +2 探險幣
+        // 重複寶物 → +2 探險幣 + 保底 +1
+        r.foragePity = (r.foragePity || 0) + 1;
         r.exploreCoins = (r.exploreCoins || 0) + 2;
-        parts.push(`<span style="color:#0ea5e9; font-weight:700;">🎁 ${treasure?.icon || '🎁'} ${escapeHtml(treasure?.name || '寶物')}（重複）→ 🧭 +2 探險幣</span>`);
+        const _pitNow = Math.min(r.foragePity * 20, 100);
+        parts.push(`<span style="color:#0ea5e9; font-weight:700;">🎁 ${treasure?.icon || '🎁'} ${escapeHtml(treasure?.name || '寶物')}（重複）→ 🧭 +2 探險幣</span><span style="color:#7c3aed; font-size:11px;"> ✨新品率+${_pitNow}%</span>`);
       } else {
+        r.foragePity = 0;  // 抽到新品 → 重置
         r.treasures.push(tid);
         let effStr = '';
         if (treasure?.ability) effStr = `+${treasure.value} ${treasure.ability.toUpperCase()}`;
@@ -17716,7 +17746,7 @@ ${b.text}
           const statMap = { hp:'HP', mp:'MP', atk:'ATK', def:'DEF', spd:'SPD', critChance:'暴擊率', critDmg:'爆傷' };
           effStr = `+${treasure.value} ${statMap[treasure.stat] || treasure.stat}`;
         }
-        parts.push(`<span style="color:#a16207; font-weight:700;">🎁 獲得寶物 ${treasure?.icon || '🎁'} <b>${escapeHtml(treasure?.name || '寶物')}</b>（${effStr}）！</span>`);
+        parts.push(`<span style="color:#a16207; font-weight:700;">🎁 獲得寶物 ${treasure?.icon || '🎁'} <b>${escapeHtml(treasure?.name || '寶物')}</b>（${effStr}）！</span><span style="color:#16a34a; font-size:11px;"> 🎉保底重置</span>`);
       }
     }
     if (Math.random() < _exploreChance) {
