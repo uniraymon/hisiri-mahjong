@@ -4237,7 +4237,7 @@
       case 'paladin':
         return [
           { judgeId: 1101, param: 60, skillId: 'p_holy_heal' },
-          { judgeId: 1912, param: 4,  skillId: 'p_aegis' },           // 每4行動用一次反傷護盾（優先於神聖祝福）
+          { judgeId: 1910, param: 4,  skillId: 'p_aegis' },           // 每4回合用一次反傷護盾（含麻痺，優先於神聖祝福）
           { judgeId: 1000, param: 0,  skillId: 'p_blessing' },        // 神聖祝福（DEF +40% + 最大HP +20% buff）
           { judgeId: 1201, param: 25, skillId: 'p_pray' },
           { judgeId: 1450, param: 2,  skillId: 'p_judgment' },        // 多隻怪 → 審判（魔傷 2× ATK 全體）
@@ -5946,7 +5946,7 @@
     }
     // ⭐ v16 migration：修正聖騎 p_aegis 在行動規則表中永遠被 p_blessing 搶先的問題
     //   舊規則表：p_blessing（judge 1000）在前，p_aegis（judge 1000）在後 → p_aegis 永不觸發
-    //   新規則表：p_aegis 改用 judge 1912（每4行動），移到 p_blessing 之前
+    //   新規則表：p_aegis 改用 judge 1910（每4回合，含麻痺），移到 p_blessing 之前
     if (player.rpg.class === 'paladin' && Array.isArray(player.rpg.actionPatterns)) {
       for (const page of player.rpg.actionPatterns) {
         if (!Array.isArray(page)) continue;
@@ -5954,9 +5954,9 @@
         const blessingIdx = page.findIndex(r => r && r.skillId === 'p_blessing');
         if (aegisIdx < 0) continue; // 沒有 p_aegis 這條，跳過
         const aegisRule = page[aegisIdx];
-        // 只修正 judgeId 還是 1000 的舊版（若玩家已自訂過則保留）
-        if (aegisRule.judgeId === 1000) {
-          aegisRule.judgeId = 1912;
+        // 只修正 judgeId 還是 1000 或 1912 的舊版（若玩家已手動換成其他 judge 則保留）
+        if (aegisRule.judgeId === 1000 || aegisRule.judgeId === 1912) {
+          aegisRule.judgeId = 1910;
           aegisRule.param   = 4;
         }
         // 若 p_aegis 在 p_blessing 之後 → 把它移到 p_blessing 之前
@@ -10600,7 +10600,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506144016';
+  const APP_VERSION = '20260506160627';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
