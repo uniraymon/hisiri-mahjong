@@ -5848,6 +5848,14 @@
         window.__pendingUpdateV14.add(player.id);
       }
     }
+    // ⭐ v15：吸血者之印修復 / 弓手疊層 UI 修復
+    if (!player.rpg.updateV15 && typeof getMeId === 'function' && player.id === getMeId()) {
+      player.rpg.updateV15 = true;
+      if (typeof window !== 'undefined') {
+        window.__pendingUpdateV15 = window.__pendingUpdateV15 || new Set();
+        window.__pendingUpdateV15.add(player.id);
+      }
+    }
     // skillPoints migration
     if (player.rpg.skillPoints == null) {
       const earned = Math.max(0, (player.rpg.level || 1) - 1) * POINTS_PER_LEVEL.skill;
@@ -8597,6 +8605,33 @@
   function maybeShowBetaCompModal() {
     const me = getMe();
     if (!me) return;
+    // ⭐ v15 優先（最新）：吸血者之印修復 / 弓手疊層 UI 修復
+    if (window.__pendingUpdateV15 && window.__pendingUpdateV15.has(me.id)) {
+      window.__pendingUpdateV15.delete(me.id);
+      const html = `
+        <div style="text-align:left; padding:6px 0;">
+          <div style="text-align:center; font-size:48px; margin-bottom:6px;">🩸🏹🛠️</div>
+          <div style="text-align:center; font-weight:800; font-size:17px; color:#b91c1c; margin-bottom:8px;">v15 修復更新</div>
+          <div style="font-size:12px; color:#2d1b4e; line-height:1.9; padding:10px 14px; background:#fdf4ff; border-radius:10px; border:2px dashed #d8b4fe;">
+
+            <div style="font-weight:800; color:#b91c1c; margin-bottom:4px;">🩸 吸血者之印修復</div>
+            • <b>普攻吸血</b>公式修正：原本錯誤使用 <b>ATK×3%</b>，現已改為正確的 <b>傷害×3%</b><br>
+            • 每次吸血現在會在戰報顯示 <b>🩸 吸血 +N HP</b>，可確認吸血是否生效<br>
+            • 弓手多段箭矢吸血已修正：現累計所有箭矢傷害後統一計算<br>
+
+            <div style="font-weight:800; color:#b45309; margin:10px 0 4px;">🏹 弓手疊層顯示修復</div>
+            • 爆傷 / 爆頭疊層面板現在顯示<b>實際隨機累積值</b><br>
+            &nbsp;&nbsp;→ 原本 UI 顯示固定的 3% / 10%，與實際隨機值不符<br>
+            &nbsp;&nbsp;→ 現已正確反映每次疊層的真實增幅<br>
+
+          </div>
+          <button class="btn btn-primary" onclick="hideModal()" style="margin-top:14px; width:100%; background:linear-gradient(135deg,#b91c1c,#7c3aed);">✨ 了解！</button>
+        </div>
+      `;
+      showModal('🛠️ v15 修復公告', html);
+      saveData();
+      return;
+    }
     // ⭐ v14 優先（最新）：聖母鵝強化 / 弓手爆傷隨機化 / 爆血×3
     if (window.__pendingUpdateV14 && window.__pendingUpdateV14.has(me.id)) {
       window.__pendingUpdateV14.delete(me.id);
@@ -10435,7 +10470,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506104248';
+  const APP_VERSION = '20260506104910';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
