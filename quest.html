@@ -7157,7 +7157,7 @@
                 type: (isHs || isCrit) ? 'crit-player' : 'player',
                 text: `回合 ${round}（${hit}/${totalHits}）：${cls.attackVerb}${label}${_stackHint} → ${monster.name} -${dmg} HP`,
                 hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp },
-                stacks: { hit: _aHit, crit: _aCrit, hs: _aHs },
+                stacks: { hit: _aHit, crit: _aCrit, hs: _aHs, critBonus: _aCritBonus, hsBonus: _aHsBonus },
               });
               if (mAbility?.type === 'reflect' && mAbility.resist) {
                 const r = Math.min(300, Math.max(1, Math.round(dmg * mAbility.resist)));
@@ -8213,7 +8213,7 @@
                 type: (isHs || isCrit) ? 'crit-player' : 'player',
                 text: `回合 ${round}（${hit}/${totalHits}）：${cls.attackVerb}${label}${_stackHintM} → ${tgt.icon}${tgt.name} -${dmg} HP`,
                 hp: hpsSnapshot(),
-                stacks: { hit: _aHit, crit: _aCrit, hs: _aHs },
+                stacks: { hit: _aHit, crit: _aCrit, hs: _aHs, critBonus: _aCritBonus, hsBonus: _aHsBonus },
               });
               if (tgt.ability?.type === 'reflect' && tgt.ability.resist) {
                 const r = Math.min(300, Math.max(1, Math.round(dmg * tgt.ability.resist)));
@@ -10423,7 +10423,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506102944';
+  const APP_VERSION = '20260506103418';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -15683,9 +15683,9 @@ ${b.text}
       if (raHitN)  raHitN.textContent  = s.hit;
       if (raHitB)  raHitB.textContent  = `+${s.hit}%`;
       if (raCritN) raCritN.textContent = s.crit;
-      if (raCritB) raCritB.textContent = `+${s.crit * 3}%`;
+      if (raCritB) raCritB.textContent = `+${Math.round((s.critBonus ?? s.crit * 0.03) * 100)}%`;
       if (raHsN)   raHsN.textContent   = s.hs;
-      if (raHsB)   raHsB.textContent   = `+${s.hs * 10}%`;
+      if (raHsB)   raHsB.textContent   = `+${Math.round((s.hsBonus ?? s.hs * 0.10) * 100)}%`;
     }
     // ⭐ 聖母鵝計數面板即時更新（回放）
     if (entry.hmgCounters) {
@@ -16099,9 +16099,9 @@ ${b.text}
         if (pbHitN)  pbHitN.textContent  = s.hit;
         if (pbHitB)  pbHitB.textContent  = `+${s.hit}%`;
         if (pbCritN) pbCritN.textContent = s.crit;
-        if (pbCritB) pbCritB.textContent = `+${s.crit * 3}%`;
+        if (pbCritB) pbCritB.textContent = `+${Math.round((s.critBonus ?? s.crit * 0.03) * 100)}%`;
         if (pbHsN)   pbHsN.textContent   = s.hs;
-        if (pbHsB)   pbHsB.textContent   = `+${s.hs * 10}%`;
+        if (pbHsB)   pbHsB.textContent   = `+${Math.round((s.hsBonus ?? s.hs * 0.10) * 100)}%`;
       }
       // ⭐ 聖母鵝計數面板即時更新
       if (entry.hmgCounters) {
@@ -16199,7 +16199,7 @@ ${b.text}
       // ⭐ 弓手疊層面板即時更新（重播）
       if (entry.stacks) {
         const s = entry.stacks;
-        const _ids = [['pbHitN', s.hit], ['pbHitBonus', `+${s.hit}%`], ['pbCritN', s.crit], ['pbCritBonus', `+${s.crit * 3}%`], ['pbHsN', s.hs], ['pbHsBonus', `+${s.hs * 10}%`]];
+        const _ids = [['pbHitN', s.hit], ['pbHitBonus', `+${s.hit}%`], ['pbCritN', s.crit], ['pbCritBonus', `+${Math.round((s.critBonus ?? s.crit * 0.03) * 100)}%`], ['pbHsN', s.hs], ['pbHsBonus', `+${Math.round((s.hsBonus ?? s.hs * 0.10) * 100)}%`]];
         _ids.forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.textContent = val; });
       }
       // ⭐ 聖母鵝計數面板即時更新（重播）
