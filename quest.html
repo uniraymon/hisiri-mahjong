@@ -8942,22 +8942,26 @@
           <div style="text-align:center; font-weight:800; font-size:17px; color:#7c3aed; margin-bottom:8px;">v17 精魂刻印系統</div>
           <div style="font-size:12px; color:#2d1b4e; line-height:1.9; padding:10px 14px; background:#fdf4ff; border-radius:10px; border:2px dashed #d8b4fe;">
 
-            <div style="font-weight:800; color:#7c3aed; margin-bottom:4px;">⚗️ 刻印石強化系統</div>
+            <div style="font-weight:800; color:#7c3aed; margin-bottom:4px;">⚗️ 基本規則</div>
             • 三餐精魂（🍳早餐 / 🍱午餐 / 🍷晚餐）可進行<b>刻印強化</b><br>
-            • 每條刻印有 <b>2 條軌道 × 7 格</b>（成功＋失敗都填格）<br>
-            • 初始成功率 <b>65%</b>；成功 → 成功率 −10%，失敗 → +10%（範圍 25%–75%）<br>
+            • <b>3 條軌道 × 7 格</b>（A、B 強化；C 懲罰），成功＋失敗都填格<br>
+            • 初始成功率 <b>65%</b>；成功 → −10%，失敗 → +10%（上下限 25%–75%）<br>
             • 每格消耗 <b>💠 精華碎片 ×1</b>，中途可存進度，可刪除重來<br>
-            • 刻印中 = 無法裝備；刻印完成後才能裝入⚗️刻印槽<br>
+            • 刻印中 = 無法裝備；全部填完才算完成，完成後裝入⚗️刻印槽（第 6 槽）<br>
 
-            <div style="font-weight:800; color:#7c3aed; margin:8px 0 4px;">🎁 各精魂刻印效果</div>
-            • 🍳 早餐鵝：SPD+2/格（A）/ 暴擊率+2%/格（B）/ <b>特效：先機（戰鬥開場先手一擊）</b><br>
-            • 🍱 午餐鵝：HP+24/格（A）/ DEF+2/格（B）/ <b>特效：不屈（首次致死 → 以 1 HP 存活）</b><br>
-            • 🍷 晚餐鵝：暴擊率+2%/格（A）/ 爆傷+2%/格（B）/ <b>特效：完美節拍（連爆疊層最多 +32% 爆傷）</b><br>
-            • 兩條軌道合計成功 ≥ 10 格 → 解鎖特殊效果！<br>
+            <div style="font-weight:800; color:#10b981; margin:8px 0 4px;">✅ A 軌 / B 軌（強化）</div>
+            • 根據精魂的<b>隨機詞條</b>自動決定加什麼屬性<br>
+            • 每格成功 = 詞條值 × 20%（例：詞條 +10 ATK → 每格 +2 ATK）<br>
+            • <b>AB 合計成功 ≥ 10 格 → 解鎖特殊效果</b><br>
 
-            <div style="font-weight:800; color:#7c3aed; margin:8px 0 4px;">🔖 刻印槽（第 6 槽）</div>
-            • 刻印完成的精魂<b>只能裝入第 6 槽（刻印槽）</b><br>
-            • 普通精魂放槽 1-5，刻印精魂放槽 6，互不干擾<br>
+            <div style="font-weight:800; color:#dc2626; margin:8px 0 4px;">⚠️ C 軌（懲罰）</div>
+            • 開始刻印時<b>隨機抽取</b>一種屬性（優先不同於 A/B 的類型）<br>
+            • 每格成功會<b>扣除</b>對應屬性（比例與 A/B 相同）<br>
+
+            <div style="font-weight:800; color:#7c3aed; margin:8px 0 4px;">✨ 各精魂特殊效果（AB合計10格解鎖）</div>
+            • 🍳 早餐鵝 <b>先機</b>：戰鬥開場先手一擊（可暴擊）<br>
+            • 🍱 午餐鵝 <b>不屈</b>：每場首次致死 → 以 1 HP 存活<br>
+            • 🍷 晚餐鵝 <b>完美節拍</b>：連續暴擊疊層，最多 +32% 爆傷；非暴擊普攻重置<br>
 
           </div>
           <button class="btn btn-primary" onclick="hideModal()" style="margin-top:14px; width:100%; background:linear-gradient(135deg,#7c3aed,#db2777);">⚗️ 去刻印！</button>
@@ -11181,7 +11185,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506214358';
+  const APP_VERSION = '20260506214817';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
