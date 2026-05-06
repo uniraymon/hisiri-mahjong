@@ -301,6 +301,24 @@
   }
   .tv-summary-row { display: flex; justify-content: space-between; padding: 1px 0; }
   .tv-summary-row b { color: #5b21b6; }
+  /* ⭐ 精魂刻印 UI */
+  .eng-track { margin-bottom: 10px; }
+  .eng-track-label { font-size: 11px; font-weight: 700; color: #5b3d62; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+  .eng-slots { display: flex; gap: 5px; flex-wrap: wrap; }
+  .eng-slot { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #c4b5fd; background: #f5f3ff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; flex-shrink: 0; }
+  .eng-slot:hover:not(.eng-slot-filled) { transform: scale(1.1); box-shadow: 0 2px 6px #a78bfa55; }
+  .eng-slot.eng-slot-success { background: linear-gradient(135deg, #d1fae5, #6ee7b7); border-color: #10b981; color: #065f46; box-shadow: 0 2px 0 #059669; }
+  .eng-slot.eng-slot-fail    { background: linear-gradient(135deg, #fee2e2, #fca5a5); border-color: #ef4444; color: #991b1b; box-shadow: 0 2px 0 #dc2626; }
+  .eng-slot.eng-slot-filled  { cursor: default; }
+  .eng-slot.eng-slot-next    { border-color: #a78bfa; background: #ede9fe; animation: eng-pulse 1s infinite alternate; }
+  @keyframes eng-pulse { from { box-shadow: 0 0 0 0 #a78bfa44; } to { box-shadow: 0 0 0 5px #a78bfa00; } }
+  .eng-rate { font-size: 10px; color: #6d28d9; font-weight: 600; background: #ede9fe; border-radius: 99px; padding: 2px 7px; }
+  .eng-special-box { background: linear-gradient(135deg, #fef9c3, #fde68a); border: 1.5px solid #f59e0b; border-radius: 10px; padding: 8px 10px; margin-top: 8px; }
+  .eng-special-box.unlocked { background: linear-gradient(135deg, #d1fae5, #a7f3d0); border-color: #10b981; }
+  .eng-special-name { font-size: 12px; font-weight: 800; color: #92400e; }
+  .eng-special-box.unlocked .eng-special-name { color: #065f46; }
+  .eng-special-desc { font-size: 10px; color: #78350f; margin-top: 2px; }
+  .eng-special-box.unlocked .eng-special-desc { color: #047857; }
   .cp-collection .cc-item {
     font-size: 16px;
     line-height: 1;
@@ -3395,13 +3413,28 @@
   const SPIRIT_DEFS = [
     { id: 'sp_breakfast', sourceBossId: 'breakfast_goose', name: '早餐鵝精魂',  icon: '🍳', color: '#fbbf24',
       theme: '迅捷（速度+暴擊率）',
-      base: { spd: 5, critChance: 0.04, atk: 2 } },
+      base: { spd: 5, critChance: 0.04, atk: 2 },
+      engravingDef: {
+        trackA: { stat: 'spd',       perSuccess: 2,    label: 'SPD',   isPct: false },
+        trackB: { stat: 'critChance',perSuccess: 0.02, label: '暴擊率', isPct: true  },
+        special: { id: 'vanguard', name: '先機', desc: '戰鬥開場先手一擊（以當前 ATK 計算，可暴擊）' },
+      } },
     { id: 'sp_lunch',     sourceBossId: 'lunch_goose',     name: '午餐鵝精魂',  icon: '🍱', color: '#f59e0b',
       theme: '扎實（生存+防禦）',
-      base: { hp: 60, def: 5 } },
+      base: { hp: 60, def: 5 },
+      engravingDef: {
+        trackA: { stat: 'hp',  perSuccess: 24, label: 'HP',  isPct: false },
+        trackB: { stat: 'def', perSuccess: 2,  label: 'DEF', isPct: false },
+        special: { id: 'tenacious', name: '不屈', desc: '每場戰鬥，首次致死傷害改為以 1 HP 存活（每場限一次）' },
+      } },
     { id: 'sp_dinner',    sourceBossId: 'dinner_goose',    name: '晚餐鵝精魂',  icon: '🍷', color: '#dc2626',
       theme: '華麗（暴擊+爆傷）',
-      base: { critChance: 0.05, critDmg: 0.12, atk: 3, mark: 15 } },
+      base: { critChance: 0.05, critDmg: 0.12, atk: 3, mark: 15 },
+      engravingDef: {
+        trackA: { stat: 'critChance', perSuccess: 0.02, label: '暴擊率', isPct: true },
+        trackB: { stat: 'critDmg',   perSuccess: 0.02, label: '爆傷',   isPct: true },
+        special: { id: 'perfect_tempo', name: '完美節拍', desc: '連續暴擊時每次爆傷 +8%（最多 4 層 = +32%），非暴擊普攻重置' },
+      } },
     // 世界王精魂（傳說級）
     { id: 'sp_goose_king',  sourceBossId: 'goose_king',  name: '鵝皇精魂',   icon: '🦢', color: '#fde047',
       theme: '霸氣（純輸出）',
@@ -3462,10 +3495,43 @@
     if (s.critDmg)    parts.push(`爆傷+${Math.round(s.critDmg * 100)}%`);
     return parts.join(' · ');
   }
+
+  // ⭐ 精魂刻印：從精魂實例計算刻印加成（僅 done=true 時生效）
+  function getSpiritEngravingBonus(sp) {
+    const out = { spd: 0, critChance: 0, hp: 0, def: 0, critDmg: 0 };
+    if (!sp?.engraving?.done) return out;
+    const def = SPIRIT_BY_BOSS[sp.sourceBossId];
+    const ed = def?.engravingDef;
+    if (!ed) return out;
+    const aSucc = (sp.engraving.trackA?.slots || []).filter(Boolean).length;
+    const bSucc = (sp.engraving.trackB?.slots || []).filter(Boolean).length;
+    out[ed.trackA.stat] = (out[ed.trackA.stat] || 0) + aSucc * ed.trackA.perSuccess;
+    out[ed.trackB.stat] = (out[ed.trackB.stat] || 0) + bSucc * ed.trackB.perSuccess;
+    return out;
+  }
+
+  // ⭐ 精魂刻印：取得玩家所有裝備精魂中已激活的特殊效果 Set
+  // 條件：engraving.done=true 且 A+B 合計成功格 ≥ 10
+  function getSpiritSpecials(player) {
+    const specials = new Set();
+    const rpg = player?.rpg;
+    if (!rpg) return specials;
+    for (const sp of getSpiritSlots(rpg)) {
+      if (!sp?.engraving?.done) continue;
+      const def = SPIRIT_BY_BOSS[sp.sourceBossId];
+      const ed = def?.engravingDef;
+      if (!ed?.special) continue;
+      const aSucc = (sp.engraving.trackA?.slots || []).filter(Boolean).length;
+      const bSucc = (sp.engraving.trackB?.slots || []).filter(Boolean).length;
+      if (aSucc + bSucc >= 10) specials.add(ed.special.id);
+    }
+    return specials;
+  }
+
   function getSpiritSlots(rpg) {
-    if (!Array.isArray(rpg.spirits)) rpg.spirits = [null, null, null, null, null];
-    while (rpg.spirits.length < 5) rpg.spirits.push(null);
-    if (rpg.spirits.length > 5) rpg.spirits.length = 5;
+    if (!Array.isArray(rpg.spirits)) rpg.spirits = [null, null, null, null, null, null];
+    while (rpg.spirits.length < 6) rpg.spirits.push(null);
+    if (rpg.spirits.length > 6) rpg.spirits.length = 6;
     return rpg.spirits;
   }
 
@@ -3756,6 +3822,25 @@
     t_crit_2: { id: 't_crit_2', name: '完美節奏', icon: '🎼', stat: 'critChance', value: 0.04, desc: '掌握攻擊時機的小工具' },
     t_critdmg_1: { id: 't_critdmg_1', name: '碎心鵝牙', icon: '💎', stat: 'critDmg', value: 0.08, desc: '一咬下去就刻骨銘心' },
     t_critdmg_2: { id: 't_critdmg_2', name: '滅世印記', icon: '🌑', stat: 'critDmg', value: 0.15, desc: '黑暗低語：「再用力一點」' },
+    // ⭐⭐ 第四階 / 補完階 — 稀有傳說寶物 ⭐⭐
+    // 能力類第四階（+4）
+    t_str_4: { id: 't_str_4', name: '鵝霸戰斧',   icon: '🪓', ability: 'str', value: 4, desc: '傳說中鵝霸天下親揮的戰斧碎片' },
+    t_vit_4: { id: 't_vit_4', name: '神鵝不滅鱗', icon: '🐲', ability: 'vit', value: 4, desc: '神龍鵝身上脫落的古老鱗片，生命力爆棚' },
+    t_agi_4: { id: 't_agi_4', name: '瞬影殘羽',   icon: '🌪️', ability: 'agi', value: 4, desc: '快到肉眼看不見、只留下殘影的羽毛' },
+    t_dex_4: { id: 't_dex_4', name: '天眼鵝珠',   icon: '🌀', ability: 'dex', value: 4, desc: '能看穿一切破綻的神秘水晶球' },
+    t_int_4: { id: 't_int_4', name: '混沌典籍',   icon: '🧿', ability: 'int', value: 4, desc: '記載著宇宙誕生之謎的神秘珠串' },
+    t_luk_4: { id: 't_luk_4', name: '鵝神眷顧符', icon: '✨', ability: 'luk', value: 4, desc: '據說拿著它連廢牌都能叫成和' },
+    // 直接屬性第四階
+    t_hp_4:  { id: 't_hp_4',  name: '永生鵝血',   icon: '💓', stat: 'hp',  value: 100, desc: '傳說中不老不死的鵝鵝血液' },
+    t_mp_4:  { id: 't_mp_4',  name: '靈力之源',   icon: '💠', stat: 'mp',  value: 13,  desc: '取之不盡的魔法能量核心' },
+    t_atk_4: { id: 't_atk_4', name: '滅世利刃',   icon: '⚔️', stat: 'atk', value: 6,   desc: '斬遍天下無敵手的傳說刃片' },
+    t_def_4: { id: 't_def_4', name: '天地盾芯',   icon: '🗿', stat: 'def', value: 6,   desc: '曾擋下萬年攻擊的古老盾芯' },
+    // SPD / 暴擊補完至第三階
+    t_spd_3:     { id: 't_spd_3',     name: '光速鵝足', icon: '🏃', stat: 'spd',       value: 3,    desc: '比光還快的傳說鵝腳印' },
+    t_crit_3:    { id: 't_crit_3',    name: '奪命直覺', icon: '💫', stat: 'critChance', value: 0.06, desc: '本能找到致命弱點的神秘直覺' },
+    t_critdmg_3: { id: 't_critdmg_3', name: '末日之鑿', icon: '☄️', stat: 'critDmg',   value: 0.25, desc: '一擊即粉碎一切的末日武器碎片' },
+    // ⭐ MP 回復（新系列：每回合 +N MP）
+    t_mpregen_1: { id: 't_mpregen_1', name: '回魔泉水', icon: '🌊', stat: 'mpRegen', value: 1, desc: '慢慢喝慢慢回，鵝法師的秘密補給' },
   };
   const TREASURE_DUP_XP = 1000;
 
@@ -5944,6 +6029,14 @@
         window.__pendingUpdateV16.add(player.id);
       }
     }
+    // ⭐ v17：精魂刻印系統 + 刻印槽（第 6 槽）
+    if (!player.rpg.updateV17 && typeof getMeId === 'function' && player.id === getMeId()) {
+      player.rpg.updateV17 = true;
+      if (typeof window !== 'undefined') {
+        window.__pendingUpdateV17 = window.__pendingUpdateV17 || new Set();
+        window.__pendingUpdateV17.add(player.id);
+      }
+    }
     // ⭐ v16 migration：修正聖騎 p_aegis 在行動規則表中永遠被 p_blessing 搶先的問題
     //   舊規則表：p_blessing（judge 1000）在前，p_aegis（judge 1000）在後 → p_aegis 永不觸發
     //   新規則表：p_aegis 改用 judge 1910（每4回合，含麻痺），移到 p_blessing 之前
@@ -5987,7 +6080,7 @@
   // 寶物庫帶來的永久能力加成（彙總成 { str, vit, agi, dex, int, luk }）
   function computeTreasureBonuses(rpg) {
     const out = { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0,
-                  hp: 0, mp: 0, atk: 0, def: 0, spd: 0, critChance: 0, critDmg: 0 };
+                  hp: 0, mp: 0, atk: 0, def: 0, spd: 0, critChance: 0, critDmg: 0, mpRegen: 0 };
     const owned = (rpg && rpg.treasures) || [];
     for (const tid of owned) {
       const t = TREASURES[tid];
@@ -6273,6 +6366,13 @@
       stats.mark  += sp.mark || 0;
       spiritCritChance += sp.critChance || 0;
       spiritCritDmg    += sp.critDmg    || 0;
+      // ⭐ 精魂刻印加成（done=true 才生效）
+      const _eb = getSpiritEngravingBonus(sp);
+      stats.maxHp += _eb.hp   || 0;
+      stats.def   += _eb.def  || 0;
+      stats.spd   += _eb.spd  || 0;
+      spiritCritChance += _eb.critChance || 0;
+      spiritCritDmg    += _eb.critDmg   || 0;
     }
     // ⭐ 寶石加成
     let gemCritChance = 0;
@@ -6312,8 +6412,8 @@
       + (cAbil.critDmgBonus || 0)
       + (cPass.critDmg || 0)
       + (mergedBonuses.critDmg || 0);
-    // ⭐ 每回合 MP 自動恢復（鵝王恩賜首飾、之後其他來源都加在這裡）
-    stats.mpRegen = itemMpRegen;
+    // ⭐ 每回合 MP 自動恢復（鵝王恩賜首飾 + 寶物 mpRegen、之後其他來源都加在這裡）
+    stats.mpRegen = itemMpRegen + (treasure.mpRegen || 0);
     return stats;
   }
 
@@ -6655,6 +6755,10 @@
     // ⭐ 嗜血劍：裝備時攻擊流血目標 → 回血×2 + ATK+20%(3T)
     const _weaponItem = resolveItem(player.rpg?.equipment?.weapon);
     const weaponBloodEffect = !!_weaponItem?.onHitBleeding;
+    // ⭐ 精魂刻印特殊效果
+    const _spiritSpecials = getSpiritSpecials(player);
+    let _tenaciousUsed = false;           // 不屈：每場限一次
+    let _perfectTempoStreak = 0;          // 完美節拍：連續暴擊層數 0-4
     let pHp = stats.maxHp; // ⭐ 每場戰鬥 HP 自動回滿（HP 變成屬性，不是耗材）
     let pMp = stats.maxMp; // ⭐ 每場戰鬥 MP 自動回滿
     let mHp = monster.hp;
@@ -6760,6 +6864,20 @@
       }
     };
 
+    // ⭐ 先機（早餐鵝精魂刻印特殊）：戰鬥開場先手一擊
+    if (_spiritSpecials.has('vanguard') && mHp > 0) {
+      const _vAtk = stats.atk;
+      const _vDef = monster.def;
+      let _vDmg = Math.max(1, _vAtk - Math.floor(_vDef / 2));
+      _vDmg *= (0.9 + Math.random() * 0.2);
+      const _vCrit = Math.random() < (0.08 + (computeAbilityBonuses(player).critChance || 0));
+      if (_vCrit) _vDmg *= critMult;
+      _vDmg = Math.max(1, Math.round(_vDmg));
+      mHp = Math.max(0, mHp - _vDmg);
+      log.push({ type: 'player', text: `⚡ 先機先手：${player.name} 出擊 → ${monster.icon}${monster.name} -${_vDmg} HP${_vCrit ? '【爆】' : ''}！`, hp: { player: pHp, monster: mHp, mp: pMp } });
+      if (mHp <= 0) pushDeathLine();
+    }
+
     while (pHp > 0 && mHp > 0 && round < (monster.maxRounds || 100)) {
       // 重算 pSpd（含 buff / spdPct debuff）
       const pBuff = getBuffBonus(playerObj);
@@ -6821,6 +6939,7 @@
         }
         // ⭐ 實際行動計數（judge 1912 用）：麻痺後 continue，此行不執行，故不含被吃掉回合
         behaviorCount++;
+        const _ptCritCountBefore = critCount; // 完美節拍用：本回合行動前的暴擊數
         // ⭐ HOF：依玩家的 actionPattern 規則表決定動作
         // 從上到下評估每條規則，第一條 judge 成立 + 技能可用就放；都不成立 → 普攻
         let useSkill = null;
@@ -6999,7 +7118,9 @@
             const skillCrit = baseCritChance + (skill.extraCritChance || 0) + (pBuff.critChance || 0);
             // ⭐ 合成效果：fx_pg_critdmg（目標 HP<25% 時爆傷+30%）
             const _pgCritBonus = (_fx.has('fx_pg_critdmg') && mHp <= monster.hp * 0.25) ? 0.30 : 0;
-            const skillCritMult = critMult + (skill.extraCritDmg || 0) + (pBuff.critDmg || 0) + _pgCritBonus;
+            // ⭐ 完美節拍（晚餐鵝精魂刻印特殊）：連爆時爆傷疊加（技能也吃）
+            const _ptBonus = _spiritSpecials.has('perfect_tempo') ? _perfectTempoStreak * 0.08 : 0;
+            const skillCritMult = critMult + (skill.extraCritDmg || 0) + (pBuff.critDmg || 0) + _pgCritBonus + _ptBonus;
             const baseDmg = dmg;
             // ⭐ 多段：每段獨立 roll 暴擊 + 變異 + 易傷（hit-based，每段各消耗 1 層）
             let totalDmg = 0;
@@ -7227,7 +7348,9 @@
           const baseCrit2 = baseCritChance + (pBuff.critChance || 0);
           // ⭐ 合成效果：fx_pg_critdmg（目標 HP<25% 時爆傷+30%）
           const _pgCritBonus2 = (_fx.has('fx_pg_critdmg') && mHp <= monster.hp * 0.25) ? 0.30 : 0;
-          const critMult2 = critMult + (pBuff.critDmg || 0) + _pgCritBonus2;
+          // ⭐ 完美節拍：普攻也吃當前層數爆傷
+          const _ptBonus2 = _spiritSpecials.has('perfect_tempo') ? _perfectTempoStreak * 0.08 : 0;
+          const critMult2 = critMult + (pBuff.critDmg || 0) + _pgCritBonus2 + _ptBonus2;
 
           if (player.rpg.class === 'archer') {
             // ⭐ 弓手三連射：每發 0.30×ATK，獨立爆擊，爆頭率 5%+爆擊率×20%（無視防禦×3傷，可疊爆擊）
@@ -7339,6 +7462,24 @@
           if (weaponBloodEffect && hasStatus(monster, 'bleed') && mHp > 0) {
             applyStatus(playerObj, { type: 'buff', stat: 'atkPct', amount: 0.20, turns: 3 });
             log.push({ type: 'system', text: `回合 ${round}：🗡️ 嗜血劍觸發 → ATK +20%（3 回合）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+          }
+        }
+        // ⭐ 完美節拍（晚餐鵝精魂刻印特殊）：追蹤連爆計數
+        if (_spiritSpecials.has('perfect_tempo') && mHp > 0) {
+          const _turnCritted = critCount > _ptCritCountBefore;
+          if (useSkill === null) {
+            // 普攻：暴擊疊層，不暴擊重置
+            if (_turnCritted) {
+              _perfectTempoStreak = Math.min(4, _perfectTempoStreak + 1);
+              log.push({ type: 'system', text: `🎼 完美節拍 ${_perfectTempoStreak} 層！爆傷 +${_perfectTempoStreak * 8}%`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+            } else if (_perfectTempoStreak > 0) {
+              _perfectTempoStreak = 0;
+              log.push({ type: 'system', text: `🎼 完美節拍重置（未暴擊）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+            }
+          } else if (_turnCritted) {
+            // 技能：暴擊疊層，不暴擊不重置
+            _perfectTempoStreak = Math.min(4, _perfectTempoStreak + 1);
+            log.push({ type: 'system', text: `🎼 完美節拍 ${_perfectTempoStreak} 層！爆傷 +${_perfectTempoStreak * 8}%`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
           }
         }
         // ⭐ 聖母鵝行動（每次玩家行動後觸發，不佔回合）
@@ -7534,6 +7675,11 @@
               });
               applyReflect(dmg);
             }
+            // ⭐ 不屈（午餐鵝精魂刻印特殊）：首次致死改為以 1 HP 存活
+            if (pHp <= 0 && _spiritSpecials.has('tenacious') && !_tenaciousUsed) {
+              _tenaciousUsed = true; pHp = 1;
+              log.push({ type: 'system', text: `🛡 不屈發動！${player.name} 以 1 HP 撐過致命一擊！`, hp: { player: pHp, monster: mHp, mp: pMp } });
+            }
             if (pHp <= 0) { dead = true; }
             if (mHp <= 0) { pushDeathLine(); break; }
             // 對玩家上狀態
@@ -7574,6 +7720,11 @@
               applyReflect(dmg);
             }
             if (mHp <= 0) { pushDeathLine(); dead = true; break; }
+            // ⭐ 不屈：普攻多段致死防護
+            if (pHp <= 0 && _spiritSpecials.has('tenacious') && !_tenaciousUsed) {
+              _tenaciousUsed = true; pHp = 1;
+              log.push({ type: 'system', text: `🛡 不屈發動！${player.name} 以 1 HP 撐過致命一擊！`, hp: { player: pHp, monster: mHp, mp: pMp } });
+            }
             if (pHp <= 0) { dead = true; break; }
           }
         }
@@ -7774,6 +7925,10 @@
     // ⭐ 嗜血劍：裝備時攻擊流血目標 → 回血×2 + ATK+20%(3T)
     const _weaponItemM = resolveItem(player.rpg?.equipment?.weapon);
     const weaponBloodEffect = !!_weaponItemM?.onHitBleeding;
+    // ⭐ 精魂刻印特殊效果
+    const _spiritSpecials = getSpiritSpecials(player);
+    let _tenaciousUsed = false;
+    let _perfectTempoStreak = 0;
 
     let pHp = stats.maxHp; // ⭐ 每場戰鬥 HP 自動回滿（HP 變成屬性，不是耗材）
     let pMp = stats.maxMp; // ⭐ 每場戰鬥 MP 自動回滿
@@ -7863,6 +8018,22 @@
     log.push({ type: 'system', text: `🌬 你 SPD ${effectiveSpd}　·　${monsters.map(m => m.name + ' ' + m.spd).join(' / ')}` });
     const hpsSnapshot = () => ({ player: pHp, mp: pMp, monsters: mList.map(m => Math.max(0, m.hp)), bloodPool });
 
+    // ⭐ 先機：戰鬥開場先手一擊（打第一隻存活怪）
+    if (_spiritSpecials.has('vanguard') && mList.some(m => m.alive)) {
+      const _vTarget = mList.find(m => m.alive);
+      if (_vTarget) {
+        const _vAtk = stats.atk;
+        let _vDmg = Math.max(1, _vAtk - Math.floor((_vTarget.def || 0) / 2));
+        _vDmg *= (0.9 + Math.random() * 0.2);
+        const _vCrit = Math.random() < (0.08 + (computeAbilityBonuses(player).critChance || 0));
+        if (_vCrit) _vDmg *= critMult;
+        _vDmg = Math.max(1, Math.round(_vDmg));
+        _vTarget.hp = Math.max(0, _vTarget.hp - _vDmg);
+        if (_vTarget.hp <= 0) _vTarget.alive = false;
+        log.push({ type: 'player', text: `⚡ 先機先手：${player.name} → ${_vTarget.icon || ''}${_vTarget.name} -${_vDmg} HP${_vCrit ? '【爆】' : ''}！`, hp: hpsSnapshot() });
+      }
+    }
+
     while (pHp > 0 && mList.some(m => m.alive) && round < 100) {
       // 重算 pSpd（含 buff / spdPct debuff）
       const pBuff = getBuffBonus(playerObj);
@@ -7916,6 +8087,7 @@
         }
         // ⭐ 實際行動計數（judge 1912 用）：麻痺後 continue，此行不執行
         behaviorCountM++;
+        const _ptCritCountBefore = critCount; // 完美節拍用：本回合行動前的暴擊數
         // 自癒
         if (regenPer > 0 && pHp < stats.maxHp) {
           const heal = Math.max(1, Math.round(stats.maxHp * regenPer));
@@ -8077,7 +8249,9 @@
               const skillCrit = baseCritChance + (skill.extraCritChance || 0) + (pBuff.critChance || 0);
               // ⭐ 合成效果：fx_pg_critdmg（目標 HP<25% 時爆傷+30%）
               const _pgCritBonusM = (_fx.has('fx_pg_critdmg') && tgt.hp <= tgt.maxHp * 0.25) ? 0.30 : 0;
-              const skillCritMult = critMult + (skill.extraCritDmg || 0) + (pBuff.critDmg || 0) + _pgCritBonusM;
+              // ⭐ 完美節拍
+              const _ptBonusM = _spiritSpecials.has('perfect_tempo') ? _perfectTempoStreak * 0.08 : 0;
+              const skillCritMult = critMult + (skill.extraCritDmg || 0) + (pBuff.critDmg || 0) + _pgCritBonusM + _ptBonusM;
               // ⭐ 合成效果：fx_dg_crit（必爆+30%傷害；合入×2下兩次）
               const _fcSM = _nextForceCrit > 0;
               const isCrit = skill.alwaysCrit || _fcSM || Math.random() < skillCrit;
@@ -8287,7 +8461,9 @@
           const baseCrit2 = baseCritChance + (pBuff.critChance || 0);
           // ⭐ 合成效果：fx_pg_critdmg（目標 HP<25% 時爆傷+30%）
           const _pgCritBonusM2 = (_fx.has('fx_pg_critdmg') && tgt.hp <= tgt.maxHp * 0.25) ? 0.30 : 0;
-          const critMult2 = critMult + (pBuff.critDmg || 0) + _pgCritBonusM2;
+          // ⭐ 完美節拍：普攻也吃層數
+          const _ptBonusM2 = _spiritSpecials.has('perfect_tempo') ? _perfectTempoStreak * 0.08 : 0;
+          const critMult2 = critMult + (pBuff.critDmg || 0) + _pgCritBonusM2 + _ptBonusM2;
           if (player.rpg.class === 'archer') {
             // ⭐ 弓手三連射：每發 0.30×ATK，獨立爆擊，爆頭率 5%+爆擊率×20%（無視防禦×3傷，可疊爆擊）
             const HEADSHOT_CHANCE = 0.05 + baseCrit2 * 0.2 + (pBuff.headshotChance || 0);
@@ -8469,6 +8645,22 @@
             hp: hpsSnapshot(),
           });
         }
+        // ⭐ 完美節拍（晚餐鵝精魂刻印特殊）：追蹤連爆計數
+        if (_spiritSpecials.has('perfect_tempo') && mList.some(m => m.alive)) {
+          const _turnCrittedM = critCount > _ptCritCountBefore;
+          if (useSkill === null) {
+            if (_turnCrittedM) {
+              _perfectTempoStreak = Math.min(4, _perfectTempoStreak + 1);
+              log.push({ type: 'system', text: `🎼 完美節拍 ${_perfectTempoStreak} 層！爆傷 +${_perfectTempoStreak * 8}%`, hp: hpsSnapshot() });
+            } else if (_perfectTempoStreak > 0) {
+              _perfectTempoStreak = 0;
+              log.push({ type: 'system', text: `🎼 完美節拍重置（未暴擊）`, hp: hpsSnapshot() });
+            }
+          } else if (_turnCrittedM) {
+            _perfectTempoStreak = Math.min(4, _perfectTempoStreak + 1);
+            log.push({ type: 'system', text: `🎼 完美節拍 ${_perfectTempoStreak} 層！爆傷 +${_perfectTempoStreak * 8}%`, hp: hpsSnapshot() });
+          }
+        }
       } else {
         // 怪物的回合
         const m = actor;
@@ -8586,6 +8778,11 @@
             dmg = consumePartialShield2(dmg);
             if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg);
             pHp = Math.max(0, pHp - dmg);
+            // ⭐ 不屈：首次致死改為 1 HP 存活
+            if (pHp <= 0 && _spiritSpecials.has('tenacious') && !_tenaciousUsed) {
+              _tenaciousUsed = true; pHp = 1;
+              log.push({ type: 'system', text: `🛡 不屈發動！${player.name} 以 1 HP 存活！`, hp: hpsSnapshot() });
+            }
             if (dmg > 0) {
               // ⭐ 聖母鵝計數：被怪物技能擊中
               if (_isPaladinM && !_hmgFrozenM) _hmgTakenCountM++;
@@ -8622,6 +8819,11 @@
             dmg = consumePartialShield2(dmg);
             if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg);
             pHp = Math.max(0, pHp - dmg);
+            // ⭐ 不屈：首次致死改為 1 HP 存活
+            if (pHp <= 0 && _spiritSpecials.has('tenacious') && !_tenaciousUsed) {
+              _tenaciousUsed = true; pHp = 1;
+              log.push({ type: 'system', text: `🛡 不屈發動！${player.name} 以 1 HP 存活！`, hp: hpsSnapshot() });
+            }
             if (dmg > 0) {
               // ⭐ 聖母鵝計數：被怪物普攻擊中
               if (_isPaladinM && !_hmgFrozenM) _hmgTakenCountM++;
@@ -8712,6 +8914,40 @@
   function maybeShowBetaCompModal() {
     const me = getMe();
     if (!me) return;
+    // ⭐ v17 優先（最新）：精魂刻印系統 + 刻印槽
+    if (window.__pendingUpdateV17 && window.__pendingUpdateV17.has(me.id)) {
+      window.__pendingUpdateV17.delete(me.id);
+      const html = `
+        <div style="text-align:left; padding:6px 0;">
+          <div style="text-align:center; font-size:48px; margin-bottom:6px;">⚗️🍳🍱🍷</div>
+          <div style="text-align:center; font-weight:800; font-size:17px; color:#7c3aed; margin-bottom:8px;">v17 精魂刻印系統</div>
+          <div style="font-size:12px; color:#2d1b4e; line-height:1.9; padding:10px 14px; background:#fdf4ff; border-radius:10px; border:2px dashed #d8b4fe;">
+
+            <div style="font-weight:800; color:#7c3aed; margin-bottom:4px;">⚗️ 刻印石強化系統</div>
+            • 三餐精魂（🍳早餐 / 🍱午餐 / 🍷晚餐）可進行<b>刻印強化</b><br>
+            • 每條刻印有 <b>2 條軌道 × 7 格</b>（成功＋失敗都填格）<br>
+            • 初始成功率 <b>65%</b>；成功 → 成功率 −10%，失敗 → +10%（範圍 25%–75%）<br>
+            • 每格消耗 <b>💠 精華碎片 ×1</b>，中途可存進度，可刪除重來<br>
+            • 刻印中 = 無法裝備；刻印完成後才能裝入⚗️刻印槽<br>
+
+            <div style="font-weight:800; color:#7c3aed; margin:8px 0 4px;">🎁 各精魂刻印效果</div>
+            • 🍳 早餐鵝：SPD+2/格（A）/ 暴擊率+2%/格（B）/ <b>特效：先機（戰鬥開場先手一擊）</b><br>
+            • 🍱 午餐鵝：HP+24/格（A）/ DEF+2/格（B）/ <b>特效：不屈（首次致死 → 以 1 HP 存活）</b><br>
+            • 🍷 晚餐鵝：暴擊率+2%/格（A）/ 爆傷+2%/格（B）/ <b>特效：完美節拍（連爆疊層最多 +32% 爆傷）</b><br>
+            • 兩條軌道合計成功 ≥ 10 格 → 解鎖特殊效果！<br>
+
+            <div style="font-weight:800; color:#7c3aed; margin:8px 0 4px;">🔖 刻印槽（第 6 槽）</div>
+            • 刻印完成的精魂<b>只能裝入第 6 槽（刻印槽）</b><br>
+            • 普通精魂放槽 1-5，刻印精魂放槽 6，互不干擾<br>
+
+          </div>
+          <button class="btn btn-primary" onclick="hideModal()" style="margin-top:14px; width:100%; background:linear-gradient(135deg,#7c3aed,#db2777);">⚗️ 去刻印！</button>
+        </div>
+      `;
+      showModal('⚗️ v17 精魂刻印系統', html);
+      saveData();
+      return;
+    }
     // ⭐ v16 優先（最新）：聖騎反傷護盾行動規則修復
     if (window.__pendingUpdateV16 && window.__pendingUpdateV16.has(me.id)) {
       window.__pendingUpdateV16.delete(me.id);
@@ -9458,11 +9694,11 @@
     const owned = new Set(rpg.treasures || []);
     const tBonus = computeTreasureBonuses(rpg);
     const abilityKeys = ['str','vit','agi','dex','int','luk'];
-    const statKeys    = ['hp','mp','atk','def','spd','critChance','critDmg'];
+    const statKeys    = ['hp','mp','atk','def','spd','critChance','critDmg','mpRegen'];
     const labels = {
       str: '💪 力量', vit: '🛡 體力', agi: '🦅 敏捷', dex: '🎯 技巧', int: '🧠 智慧', luk: '🍀 幸運',
       hp: '❤️ HP', mp: '💙 MP', atk: '⚔️ ATK', def: '🛡 DEF', spd: '💨 SPD',
-      critChance: '🎯 暴擊率', critDmg: '💥 爆傷',
+      critChance: '🎯 暴擊率', critDmg: '💥 爆傷', mpRegen: '🌊 MP回復',
     };
     const fmtBonus = (key, val) => {
       if (key === 'critChance' || key === 'critDmg') return `+${Math.round(val * 100)}%`;
@@ -9538,8 +9774,8 @@
     const slots = getSpiritSlots(rpg);
     const bag = rpg.spiritBag || [];
 
-    // ── 已裝備槽 ──
-    const slotHtml = slots.map((sp, idx) => {
+    // ── 已裝備槽（1-5） ──
+    const slotHtml = slots.slice(0, 5).map((sp, idx) => {
       if (!sp) {
         return `<div style="background:#f3e8ff; border:2px dashed #c4b5fd; border-radius:10px; padding:10px 6px; min-height:88px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:inherit;">
           <div style="font-size:22px; opacity:0.35;">➕</div>
@@ -9553,6 +9789,20 @@
         <div style="font-size:8px; color:#a78bfa; margin-top:2px; text-align:center;">點擊查看 / 卸下</div>
       </button>`;
     }).join('');
+    // ── 刻印槽（第 6 槽） ──
+    const _engSp = slots[5];
+    const engSlotHtml = _engSp
+      ? `<button onclick="openEquippedSpiritDetail(5)" style="background:linear-gradient(135deg,#fdf4ff,${_engSp.color}1a); border:2px solid ${_engSp.color}; border-radius:10px; padding:6px; cursor:pointer; font-family:inherit; min-height:80px; text-align:left; width:100%; position:relative;">
+          <div style="font-size:8px; font-weight:700; color:#7c3aed; margin-bottom:2px;">⚗️ 刻印槽</div>
+          <div style="font-size:20px; text-align:center;">${_engSp.icon}</div>
+          <div style="font-size:10px; font-weight:700; color:${_engSp.color}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;">${escapeHtml(_engSp.name)}</div>
+          <div style="font-size:8px; color:#a78bfa; margin-top:2px; text-align:center;">點擊查看 / 卸下</div>
+        </button>`
+      : `<div style="background:linear-gradient(135deg,#f5f0ff,#ede9fe); border:2px dashed #7c3aed; border-radius:10px; padding:10px 6px; min-height:80px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+          <div style="font-size:24px; opacity:0.40;">⚗️</div>
+          <div style="font-size:10px; color:#7c3aed; font-weight:700; margin-top:2px;">刻印槽（空）</div>
+          <div style="font-size:9px; color:#c4b5fd; margin-top:2px; text-align:center;">刻印完成的精魂才能裝備</div>
+        </div>`;
 
     // ── 精魂背包格子 ──
     const selCount = __spiritSelected.size;
@@ -9598,10 +9848,12 @@
     const html = `
       <div>
         <div style="font-size:11px; color:#5b3d62; padding:6px 10px; background:linear-gradient(135deg,#ede9fe,#ddd6fe); border-radius:8px; margin-bottom:10px; border:1px dashed #a78bfa;">
-          🌟 最多裝 5 個精魂　·　袋裡的精魂可裝備或批量拆解成 💠 精華碎片
+          🌟 最多裝 5 個精魂 + 1 個⚗️刻印槽　·　袋裡的精魂可裝備或批量拆解成 💠 精華碎片
         </div>
-        <div style="font-size:11px; color:#5b3d62; font-weight:700; margin-bottom:5px;">⚔️ 已裝備（${slots.filter(x=>x).length}/5）<span style="font-size:9px; font-weight:400; color:#9ca3af;">　點擊查看詳情 / 卸下</span></div>
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:5px; margin-bottom:12px;">${slotHtml}</div>
+        <div style="font-size:11px; color:#5b3d62; font-weight:700; margin-bottom:5px;">⚔️ 已裝備（${slots.slice(0,5).filter(x=>x).length}/5）<span style="font-size:9px; font-weight:400; color:#9ca3af;">　點擊查看詳情 / 卸下</span></div>
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:5px; margin-bottom:10px;">${slotHtml}</div>
+        <div style="font-size:11px; color:#5b3d62; font-weight:700; margin-bottom:5px;">⚗️ 刻印槽（槽 6）<span style="font-size:9px; font-weight:400; color:#9ca3af;">　僅限刻印完成的精魂裝備</span></div>
+        <div style="margin-bottom:12px;">${engSlotHtml}</div>
         <div style="font-size:11px; color:#5b3d62; font-weight:700; margin-bottom:4px;">🎒 精魂背包（${bag.length}）<span style="font-size:9px; font-weight:400; color:#9ca3af;">　點擊查看 / 裝備；批量模式可多選拆解</span></div>
         ${toolbarHtml}
         <div style="max-height:42vh; overflow-y:auto;">${bagGridHtml}</div>
@@ -10215,8 +10467,31 @@
     const bag = rpg.spiritBag || [];
     const sp = bag[bagIdx];
     if (!sp) return;
+    // ⭐ 刻印未完成不能裝備
+    if (sp.engraving && !sp.engraving.done) {
+      showToast('⚗️ 刻印尚未完成，無法裝備！完成刻印或刪除刻印後再試。');
+      return;
+    }
+    const isEngraved = !!(sp.engraving?.done);
     const slots = getSpiritSlots(rpg);
-    const emptyIdx = slots.findIndex(x => !x);
+    if (isEngraved) {
+      // ⭐ 刻印精魂只能裝在第 6 槽（刻印槽）
+      if (slots[5]) {
+        if (!confirm(`⚗️ 刻印槽已有 ${slots[5].icon} ${slots[5].name}，要替換嗎？`)) return;
+        bag.push(slots[5]);
+      }
+      slots[5] = sp;
+      const myEngIdx = bag.indexOf(sp);
+      if (myEngIdx >= 0) bag.splice(myEngIdx, 1);
+      saveData();
+      showSpiritsModal();
+      renderCharCard();
+      renderCharQuickMenu();
+      showToast(`⚗️ 刻印精魂 ${sp.icon} ${sp.name} 裝入刻印槽！`);
+      return;
+    }
+    // 普通精魂只能裝在 1-5 槽（不能裝刻印槽）
+    const emptyIdx = slots.slice(0, 5).findIndex(x => !x);
     if (emptyIdx >= 0) {
       slots[emptyIdx] = sp;
       bag.splice(bagIdx, 1);
@@ -10227,14 +10502,13 @@
       showToast(`✨ 裝備 ${sp.icon} ${sp.name}（槽 ${emptyIdx + 1}）`);
       return;
     }
-    // 滿了 — 問要替換哪一槽
-    const choice = prompt(`5 個槽都裝滿了。要替換第幾槽？(1-5，輸入 0 取消)\n目前槽：\n${slots.map((s, i) => `${i+1}. ${s ? s.icon + ' ' + s.name : '空'}`).join('\n')}`);
+    // 1-5 槽滿了 — 問要替換哪一槽
+    const choice = prompt(`槽 1-5 都裝滿了。要替換第幾槽？(1-5，輸入 0 取消)\n目前槽：\n${slots.slice(0, 5).map((s, i) => `${i+1}. ${s ? s.icon + ' ' + s.name : '空'}`).join('\n')}`);
     const n = parseInt(choice, 10);
     if (!n || n < 1 || n > 5) return;
     const targetIdx = n - 1;
     if (slots[targetIdx]) bag.push(slots[targetIdx]);
     slots[targetIdx] = sp;
-    // 從 bag 移除剛拿的（注意 push 會影響 idx，所以先計算）
     // 找回 bagIdx 對應 sp（剛才可能因為 push 多了一筆）
     const myIdx = bag.indexOf(sp);
     if (myIdx >= 0) bag.splice(myIdx, 1);
@@ -10331,8 +10605,9 @@
           <div style="font-size:10px; font-weight:700; color:#7c3aed; margin-bottom:4px;">✦ 隨機詞條</div>
           ${affixHtml}
         </div>
+        ${buildEngravingPreviewHtml(sp, bagIdx)}
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px;">
-          <button class="btn btn-primary" onclick="equipSpiritFromBagIdx(${bagIdx})">✨ 裝備</button>
+          <button class="btn btn-primary" onclick="equipSpiritFromBagIdx(${bagIdx})"${sp.engraving && !sp.engraving.done ? ' disabled style="opacity:0.4;cursor:not-allowed;"' : ''}>✨ 裝備</button>
           <button class="btn btn-warning" onclick="disassembleSpirit(${bagIdx})" style="background:linear-gradient(135deg,#7c3aed,#5b21b6); box-shadow:0 4px 0 #4c1d95; color:#fff;">🔨 拆解 → 💠×1</button>
         </div>
         <button class="btn btn-secondary" onclick="showSpiritsModal()" style="width:100%; margin-top:6px;">← 返回精魂</button>
@@ -10353,6 +10628,29 @@
         <span style="color:#6b7280;">${label}</span>
         <span style="color:#374151; font-weight:700;">${val}</span>
       </div>`);
+    }
+    // ⭐ 刻印加成
+    if (sp.engraving?.done) {
+      const eb = getSpiritEngravingBonus(sp);
+      const isPctMap = { critChance: true, critDmg: true };
+      for (const [k, v] of Object.entries(eb)) {
+        if (!v) continue;
+        const label = { hp:'HP', def:'DEF', spd:'SPD', critChance:'暴擊率', critDmg:'爆傷' }[k] || k;
+        const valStr = isPctMap[k] ? `+${Math.round(v*100)}%` : `+${v}`;
+        rows.push(`<div style="display:flex; justify-content:space-between; font-size:11px; padding:2px 0;">
+          <span style="color:#6d28d9;">⚗️ ${label}（刻印）</span>
+          <span style="color:#5b21b6; font-weight:700;">${valStr}</span>
+        </div>`);
+      }
+      const def2 = SPIRIT_BY_BOSS[sp.sourceBossId];
+      const ed = def2?.engravingDef;
+      if (ed) {
+        const aS = (sp.engraving.trackA?.slots || []).filter(Boolean).length;
+        const bS = (sp.engraving.trackB?.slots || []).filter(Boolean).length;
+        if (aS + bS >= 10) {
+          rows.push(`<div style="font-size:10px; padding:2px 0; color:#059669; font-weight:700;">✨ ${ed.special.name} 已激活</div>`);
+        }
+      }
     }
     return rows.join('') || '<div style="font-size:11px; color:#9ca3af;">無屬性</div>';
   }
@@ -10384,6 +10682,212 @@
     showSpiritsModal();
   }
   window.disassembleSpirit = disassembleSpirit;
+
+  // ============================================================
+  // ⚗️ 精魂刻印系統
+  // ============================================================
+
+  // 刻印 UI 預覽（嵌入 openSpiritActions 底部）
+  function buildEngravingPreviewHtml(sp, bagIdx) {
+    const def = SPIRIT_BY_BOSS[sp.sourceBossId];
+    const ed = def?.engravingDef;
+    if (!ed) return ''; // 世界王精魂：無刻印
+    const hasEngraving = !!sp.engraving;
+    const isDone = sp.engraving?.done;
+    if (!hasEngraving) {
+      const me = getMe();
+      const frags = getRpg(me)?.essenceFragments || 0;
+      return `
+        <div style="border:1.5px dashed #a78bfa; border-radius:10px; padding:8px 10px; margin-top:10px; background:#faf5ff;">
+          <div style="font-size:11px; font-weight:700; color:#6d28d9; margin-bottom:4px;">⚗️ 精魂刻印</div>
+          <div style="font-size:10px; color:#7c3aed; margin-bottom:6px;">
+            軌道 A：每格成功 +${ed.trackA.isPct ? Math.round(ed.trackA.perSuccess*100)+'% ' : ed.trackA.perSuccess+' '}${ed.trackA.label}
+            軌道 B：每格成功 +${ed.trackB.isPct ? Math.round(ed.trackB.perSuccess*100)+'% ' : ed.trackB.perSuccess+' '}${ed.trackB.label}<br>
+            特殊（10格）：✨ ${ed.special.name}
+          </div>
+          <button class="btn btn-primary" onclick="startSpiritEngraving(${bagIdx})" style="width:100%; font-size:12px;" ${frags < 1 ? 'disabled style="opacity:0.5;"' : ''}>
+            ⚗️ 開始刻印（需 💠 晶魂碎片）
+          </button>
+        </div>`;
+    }
+    if (!isDone) {
+      const aSucc = (sp.engraving.trackA.slots || []).filter(Boolean).length;
+      const bSucc = (sp.engraving.trackB.slots || []).filter(Boolean).length;
+      const aFill = sp.engraving.trackA.slots.length;
+      const bFill = sp.engraving.trackB.slots.length;
+      return `
+        <div style="border:1.5px solid #f59e0b; border-radius:10px; padding:8px 10px; margin-top:10px; background:#fffbeb;">
+          <div style="font-size:11px; font-weight:700; color:#92400e; margin-bottom:4px;">⚗️ 刻印進行中…</div>
+          <div style="font-size:10px; color:#78350f;">A軌：${aSucc}成功 / ${aFill}格　B軌：${bSucc}成功 / ${bFill}格　合計成功：${aSucc+bSucc}/10</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:6px;">
+            <button class="btn btn-primary" onclick="showSpiritEngraving(${bagIdx})" style="font-size:11px;">⚗️ 繼續刻印</button>
+            <button class="btn btn-secondary" onclick="confirmDeleteEngraving(${bagIdx})" style="font-size:11px; background:#fef2f2; color:#dc2626; border-color:#fca5a5;">🗑 刪除進度</button>
+          </div>
+        </div>`;
+    }
+    // done
+    const aSucc = (sp.engraving.trackA.slots || []).filter(Boolean).length;
+    const bSucc = (sp.engraving.trackB.slots || []).filter(Boolean).length;
+    const hasSpecial = aSucc + bSucc >= 10;
+    return `
+      <div style="border:1.5px solid #10b981; border-radius:10px; padding:8px 10px; margin-top:10px; background:#f0fdf4;">
+        <div style="font-size:11px; font-weight:700; color:#065f46; margin-bottom:2px;">✅ 刻印完成！</div>
+        <div style="font-size:10px; color:#047857;">
+          A軌 +${aSucc * (ed.trackA.isPct ? Math.round(ed.trackA.perSuccess*100) : ed.trackA.perSuccess)}${ed.trackA.isPct ? '%' : ''} ${ed.trackA.label}
+          B軌 +${bSucc * (ed.trackB.isPct ? Math.round(ed.trackB.perSuccess*100) : ed.trackB.perSuccess)}${ed.trackB.isPct ? '%' : ''} ${ed.trackB.label}
+          ${hasSpecial ? `<br>✨ <b>${ed.special.name}</b> 已激活！` : `<br>（合計 ${aSucc+bSucc}/10，特殊未達成）`}
+        </div>
+      </div>`;
+  }
+  window.buildEngravingPreviewHtml = buildEngravingPreviewHtml;
+
+  function startSpiritEngraving(bagIdx) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const bag = rpg.spiritBag || [];
+    const sp = bag[bagIdx];
+    if (!sp || sp.engraving) return;
+    const def = SPIRIT_BY_BOSS[sp.sourceBossId];
+    if (!def?.engravingDef) { showToast('此精魂不支援刻印'); return; }
+    sp.engraving = {
+      trackA: { slots: [], rate: 0.65 },
+      trackB: { slots: [], rate: 0.65 },
+      done: false,
+    };
+    saveData();
+    showSpiritEngraving(bagIdx);
+  }
+  window.startSpiritEngraving = startSpiritEngraving;
+
+  function showSpiritEngraving(bagIdx) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const bag = rpg.spiritBag || [];
+    const sp = bag[bagIdx];
+    if (!sp?.engraving) return;
+    const def = SPIRIT_BY_BOSS[sp.sourceBossId];
+    const ed = def.engravingDef;
+    const frags = rpg.essenceFragments || 0;
+
+    const renderTrack = (trackKey, trackDef) => {
+      const track = sp.engraving[trackKey];
+      const slots = track.slots || [];
+      const filled = slots.length;
+      const successes = slots.filter(Boolean).length;
+      const rateLabel = Math.round(track.rate * 100) + '%';
+      const canClick = filled < 7 && !sp.engraving.done;
+      const dotHtml = Array.from({ length: 7 }, (_, i) => {
+        if (i < filled) {
+          const ok = slots[i];
+          return `<div class="eng-slot eng-slot-filled ${ok ? 'eng-slot-success' : 'eng-slot-fail'}">${ok ? '✓' : '✗'}</div>`;
+        }
+        if (i === filled && canClick) {
+          return `<div class="eng-slot eng-slot-next" onclick="doSpiritEngraveClick(${bagIdx},'${trackKey}')" title="點擊刻印（消耗 1 💠）">⚡</div>`;
+        }
+        return `<div class="eng-slot" style="opacity:0.3;">○</div>`;
+      }).join('');
+      const bonus = successes * (trackDef.isPct ? Math.round(trackDef.perSuccess * 100) : trackDef.perSuccess);
+      const bonusStr = `+${bonus}${trackDef.isPct ? '%' : ''} ${trackDef.label}`;
+      return `
+        <div class="eng-track">
+          <div class="eng-track-label">
+            <span>${trackKey === 'trackA' ? 'A' : 'B'} 軌：${trackDef.label} <span style="color:#10b981; font-weight:700;">${bonusStr}</span></span>
+            <span class="eng-rate">成功率 ${rateLabel}</span>
+          </div>
+          <div class="eng-slots">${dotHtml}</div>
+        </div>`;
+    };
+
+    const aSucc = (sp.engraving.trackA.slots || []).filter(Boolean).length;
+    const bSucc = (sp.engraving.trackB.slots || []).filter(Boolean).length;
+    const totalSucc = aSucc + bSucc;
+    const hasSpecial = totalSucc >= 10;
+    const specialBoxClass = hasSpecial ? 'eng-special-box unlocked' : 'eng-special-box';
+    const specialIcon = hasSpecial ? '✨' : '🔒';
+
+    const html = `
+      <div style="padding:4px 0; font-size:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <span style="font-size:18px;">${sp.icon} <b style="color:${sp.color};">${escapeHtml(sp.name)}</b></span>
+          <span style="font-size:12px; color:#6d28d9; font-weight:700;">💠 ${frags} 片</span>
+        </div>
+        ${renderTrack('trackA', ed.trackA)}
+        ${renderTrack('trackB', ed.trackB)}
+        <div style="font-size:10px; color:#6b7280; text-align:center; margin:4px 0 8px;">
+          合計成功 <b style="color:${totalSucc >= 10 ? '#10b981' : '#374151'};">${totalSucc}</b> / 10　${sp.engraving.done ? '✅ 刻印完成' : '點擊 ⚡ 格子刻印，每次消耗 💠×1'}
+        </div>
+        <div class="${specialBoxClass}">
+          <div class="eng-special-name">${specialIcon} ${ed.special.name}（合計10格解鎖）</div>
+          <div class="eng-special-desc">${ed.special.desc}</div>
+        </div>
+        ${!sp.engraving.done ? `
+        <div style="margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <button class="btn btn-secondary" onclick="openSpiritActions(${bagIdx})" style="font-size:11px;">← 返回</button>
+          <button class="btn btn-secondary" onclick="confirmDeleteEngraving(${bagIdx})" style="font-size:11px; background:#fef2f2; color:#dc2626; border-color:#fca5a5;">🗑 刪除進度</button>
+        </div>` : `
+        <button class="btn btn-secondary" onclick="openSpiritActions(${bagIdx})" style="width:100%; margin-top:8px; font-size:11px;">← 返回</button>`}
+      </div>`;
+    showModal(`⚗️ 精魂刻印 — ${sp.icon}${sp.name}`, html);
+  }
+  window.showSpiritEngraving = showSpiritEngraving;
+
+  function doSpiritEngraveClick(bagIdx, trackKey) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const bag = rpg.spiritBag || [];
+    const sp = bag[bagIdx];
+    if (!sp?.engraving || sp.engraving.done) return;
+    if ((rpg.essenceFragments || 0) < 1) { showToast('💠 晶魂碎片不足！'); return; }
+    const track = sp.engraving[trackKey];
+    if (!track || track.slots.length >= 7) return;
+
+    // 消耗碎片
+    rpg.essenceFragments = (rpg.essenceFragments || 0) - 1;
+
+    // 骰成敗
+    const success = Math.random() < track.rate;
+    track.slots.push(success);
+
+    // 更新成功率
+    track.rate = success
+      ? Math.max(0.25, track.rate - 0.10)
+      : Math.min(0.75, track.rate + 0.10);
+
+    // 檢查完成：兩條軌道都滿 7 格
+    const aDone = (sp.engraving.trackA.slots.length >= 7);
+    const bDone = (sp.engraving.trackB.slots.length >= 7);
+    if (aDone && bDone) {
+      sp.engraving.done = true;
+      const aS = sp.engraving.trackA.slots.filter(Boolean).length;
+      const bS = sp.engraving.trackB.slots.filter(Boolean).length;
+      const gotSpecial = (aS + bS) >= 10;
+      saveData();
+      renderCharCard();
+      showToast(`✅ 刻印完成！成功 ${aS+bS}/14 格${gotSpecial ? '　✨ 特殊解鎖！' : ''}`);
+    } else {
+      saveData();
+    }
+
+    const emoji = success ? '✅ 成功！' : '❌ 失敗';
+    showToast(`${emoji}　剩餘 💠 ${rpg.essenceFragments}`);
+    showSpiritEngraving(bagIdx);
+  }
+  window.doSpiritEngraveClick = doSpiritEngraveClick;
+
+  function confirmDeleteEngraving(bagIdx) {
+    if (!confirm('確定刪除刻印進度？\n已花費的晶魂碎片不會退還，精魂可恢復裝備。')) return;
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const bag = rpg.spiritBag || [];
+    const sp = bag[bagIdx];
+    if (!sp?.engraving) return;
+    delete sp.engraving;
+    saveData();
+    hideModal();
+    showToast('🗑 已刪除刻印進度，精魂可重新裝備');
+    showSpiritsModal();
+  }
+  window.confirmDeleteEngraving = confirmDeleteEngraving;
 
   // ⭐ 資源頁（探險幣 / 精華碎片 / 王硬幣）
   function showResourcesModal() {
@@ -10600,7 +11104,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506160627';
+  const APP_VERSION = '20260506212442';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -16587,7 +17091,7 @@ ${b.text}
       let effectStr = '';
       if (treasure?.ability) effectStr = `+${treasure.value} ${(treasure.ability || '').toUpperCase()}`;
       else if (treasure?.stat) {
-        const map = { hp: 'HP', mp: 'MP', atk: 'ATK', def: 'DEF', spd: 'SPD', critChance: '暴擊率', critDmg: '爆傷' };
+        const map = { hp: 'HP', mp: 'MP', atk: 'ATK', def: 'DEF', spd: 'SPD', critChance: '暴擊率', critDmg: '爆傷', mpRegen: 'MP回復' };
         const fmtVal = (treasure.stat === 'critChance' || treasure.stat === 'critDmg')
           ? `+${Math.round(treasure.value * 100)}%`
           : `+${treasure.value}`;
