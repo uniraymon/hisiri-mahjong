@@ -4014,8 +4014,13 @@
         hits: (skill.applyStatus.hits || 1) + (level >= 10 ? 1 : 0),
       };
     } else if (skill.id === 'p_godfist' && skill.applyStatus) {
-      // 神之拳：麻痺不隨等級縮放（固定 80%）
-      eff.applyStatus = { ...skill.applyStatus };
+      // 神之拳：麻痺機率固定 80%（不隨等級縮放），但層數正常升級
+      // Lv 1-4: 2層、Lv 5-9: 3層、Lv 10: 4層
+      const _gfExtra = level >= 10 ? 2 : level >= 5 ? 1 : 0;
+      eff.applyStatus = {
+        ...skill.applyStatus,
+        charges: (skill.applyStatus.charges || 1) + _gfExtra,
+      };
     } else if (level >= 3 && skill.applyStatus) {
       // ⭐ charge-based：麻痺等技能每級升次數不升回合
       eff.applyStatus = {
@@ -4135,6 +4140,15 @@
       if (level === 5)  parts.push('🎯 暴擊率 +20%（本招）');
       if (level === 10) parts.push('🌟 傷害 ×1.5（額外 +50%）');
       return parts.join('、');
+    }
+    // ⭐ 神之拳：麻痺機率固定 80%，層數 Lv 5 +1 / Lv 10 +1（共 +2，總 4 層）
+    if (skill.id === 'p_godfist') {
+      const charges = (skill.applyStatus?.charges || 2) + (level >= 10 ? 2 : level >= 5 ? 1 : 0);
+      const parts2 = [`效果 +${Math.round((Math.min(level, 5) * 10 + Math.max(0, level - 5) * 5))}%`];
+      parts2.push(`⚡ 麻痺 ${charges} 層（機率固定 80%）`);
+      if (level === 5)  parts2.push('🌟 麻痺 +1 層（共 3 層）');
+      if (level === 10) parts2.push('🌟 麻痺 再 +1 層（共 4 層）');
+      return parts2.join('、');
     }
     const totalPct = Math.round((Math.min(level, 5) * 10 + Math.max(0, level - 5) * 5));
     const parts = [`效果 +${totalPct}%`];
@@ -10586,7 +10600,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506132923';
+  const APP_VERSION = '20260506144016';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
