@@ -11461,7 +11461,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507021912';
+  const APP_VERSION = '20260507023113';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -17882,10 +17882,14 @@ ${b.text}
 
   function confirmPickHellMessenger() {
     const me = getMe(); if (!me) return;
-    // 清空 RPG（delete 讓 getRpg 重建完整結構，避免 equipment 為 undefined）
+    // ⭐ 先記住舊版本號，新版設成 +100，確保比 Firebase 上的舊資料更高
+    // （若 saveVersion 重置為 0，重開頁面 Firebase remoteVer 更高 → 舊職業覆蓋回來）
+    const _oldVer = (me.rpg?.saveVersion || 0);
     delete me.rpg;
     me.coinsSpent = 0;
-    const rpg = getRpg(me); // 重建完整 rpg 物件
+    me.lastTouchedAt = Date.now();
+    const rpg = getRpg(me);
+    rpg.saveVersion = _oldVer + 100; // 強制高於 Firebase 舊快照
     rpg.class = 'hellmessenger';
     rpg.stamina = 200;
     rpg.lastTickAt = Date.now();
