@@ -529,12 +529,6 @@
     font-size: 22px;
     line-height: 1.1;
   }
-  .zone-tab-name {
-    font-size: 11px;
-    font-weight: 700;
-    color: #5b3d62;
-    margin-top: 2px;
-  }
   .zone-info {
     background: linear-gradient(135deg, #fffaf0, #fef3c7);
     border: 2px solid #f59e0b;
@@ -558,6 +552,9 @@
     font-size: 11px;
     color: #8b6f9b;
     margin-bottom: 6px;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    min-width: 0;
   }
   .floor-row {
     display: flex;
@@ -566,21 +563,22 @@
     margin-bottom: 4px;
   }
   .floor-btn {
-    flex: 0 0 auto;
-    width: 30px;
-    height: 30px;
     border-radius: 8px;
     border: 2px solid #e9d5e3;
     background: #fff;
     color: #5b3d62;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 2px 0 #e9d5e3;
     transition: transform 0.1s;
-    padding: 0;
+    padding: 6px 4px;
+    text-align: center;
+    width: 100%;
+    line-height: 1.25;
+    overflow: hidden;
   }
-  .floor-btn:hover:not(.locked):not(.active) {
+  .floor-btn:hover:not([disabled]):not(.active) {
     transform: translateY(-1px);
     background: #fef9ff;
   }
@@ -590,7 +588,7 @@
     border-color: #d97706;
     box-shadow: 0 2px 0 #b45309;
   }
-  .floor-btn.locked {
+  .floor-btn[disabled] {
     opacity: 0.5;
     cursor: not-allowed;
     background: #f3f4f6;
@@ -598,8 +596,24 @@
   .floor-meta {
     font-size: 11px;
     color: #8b6f9b;
-    text-align: right;
     font-weight: 600;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+  .zone-tab-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: #5b3d62;
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .zone-layer-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin: 8px 0 6px;
   }
 
   /* 戰鬥場 */
@@ -10322,7 +10336,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506074915';
+  const APP_VERSION = '20260506080718';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -10398,6 +10412,33 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#4a044e,#9d174d); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🕊️ 聖母鵝招喚 技能詳解 + UI修復　<span style="font-size:11px; opacity:0.85;">2026-05-06</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#831843; margin:6px 0 4px;">🕊️ 聖母鵝招喚（聖騎 Lv 10，不可升級）</div>
+        <div>・召喚後每次玩家行動後<b>自動出招 1 次</b>（不佔回合，同一招不連放）</div>
+        <div>・<b>持續次數</b> = ⌊召喚時回合數 ÷ 5⌋（e.g. 第20回合召喚 → 4次）</div>
+        <div>・召喚後計數器<b>立即凍結</b>，不再增加</div>
+        <div style="margin-top:6px; font-weight:700; color:#831843;">📊 4個計數器（凍結前累積）：</div>
+        <div style="padding:0 0 0 8px; font-size:12px;">① 回合數　② 擊中數（技能/普攻命中）　③ 被擊數　④ 補血數（不含每回再生）</div>
+        <div style="margin-top:6px; font-weight:700; color:#831843;">✨ 4招技能：</div>
+        <div style="padding:0 0 0 8px; font-size:12px;">
+          🌸 <b>慈悲（30%）</b>：玩家 DEF +擊中數%，持續 max(1,補血數) 回合<br>
+          💋 <b>吻（30%）</b>：敵 DEF -擊中數%、ATK -被擊數%，同樣持續時間<br>
+          🪶 <b>激動亂舞（30%）</b>：(ATK×(1+擊中÷10) + MARK×(1+被擊÷10))，暴擊率=補血×10%<br>
+          🔥 <b>獻身（10%）</b>：(ATK+MARK+DEF)×(1+擊中÷10+被擊÷10)×剩餘次數 × critMult，必暴，聖母鵝消失
+        </div>
+        <div style="font-size:11px; color:#6b7280; margin-top:4px;">→ 技能詳情面板中已加入完整公式說明</div>
+
+        <div style="font-weight:700; color:#831843; margin:10px 0 4px;">🛠 UI 修復</div>
+        <div>・打怪層數選擇介面重排：6個層級按鈕改為 <b>3列2行網格</b>，不再換行亂排</div>
+        <div>・長文字（詞條/掉落說明）加入自動換行，不再穿框</div>
+
+        <div style="background:#fdf2f8; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#831843;">
+          💡 聖母鵝招喚越早召喚次數越少，越晚召喚每次更強——請善用計數器！
+        </div>
 
         <div style="background:linear-gradient(135deg,#064e3b,#059669); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🏹⚔️🩸 弓手 / 劍士 / 組隊規則 大更新　<span style="font-size:11px; opacity:0.85;">2026-05-06</span></div>
@@ -11303,6 +11344,29 @@ ${b.text}
       buffPairs.push('🩸 血池來源：血祭斬 / 死戰之怒（扣10% maxHP）/ 嗜血怒嚎（扣20% 當前HP）');
       buffPairs.push('💀 施放後血池歸零，冷卻 1 回合');
     }
+    if (skill.type === 'summon') {
+      buffPairs.push('─────────────');
+      buffPairs.push('🕊️ 召喚後，每次玩家行動後聖母鵝自動施放 1 招（不佔回合）');
+      buffPairs.push('🔒 召喚後計數器立即凍結，不再增加');
+      buffPairs.push('⏱ 持續次數 = ⌊召喚時回合數 ÷ 5⌋');
+      buffPairs.push('─────────────');
+      buffPairs.push('📊 計數器（凍結前記錄）：');
+      buffPairs.push('　① 回合數（召喚時當前）');
+      buffPairs.push('　② 擊中數（玩家對敵技能 / 普攻命中）');
+      buffPairs.push('　③ 被擊數（被怪物技能 / 普攻打中）');
+      buffPairs.push('　④ 補血數（治療技能使用次數，不含每回再生）');
+      buffPairs.push('─────────────');
+      buffPairs.push('🌸 聖母鵝之慈悲（30%）');
+      buffPairs.push('　玩家 DEF +擊中數%，持續 max(1,補血數) 回合');
+      buffPairs.push('💋 聖母鵝之吻（30%）');
+      buffPairs.push('　敵 DEF -擊中數%、ATK -被擊數%，持續同上');
+      buffPairs.push('🪶 聖母鵝之激動亂舞（30%）');
+      buffPairs.push('　物理傷 = ATK×(1+擊中數÷10) - 敵DEF÷2');
+      buffPairs.push('　魔法傷 = MARK×(1+被擊數÷10) - 敵DEF÷2');
+      buffPairs.push('　暴擊率 = min(95%, 補血數×10%)，暴擊則乘 critMult');
+      buffPairs.push('🔥 聖母鵝的獻身（10%）— 立即結束聖母鵝');
+      buffPairs.push('　傷害 = (ATK+MARK+DEF)×(1+擊中數÷10+被擊數÷10)×剩餘次數 × critMult（必暴）');
+    }
 
     const html = `
       <div style="text-align:center; padding:4px 0;">
@@ -11992,9 +12056,9 @@ ${b.text}
       const bonusHealStr = s.bonusHealPct ? `　+　💚 即時回血 ${Math.round(s.bonusHealPct * 100)}% maxHp` : '';
       return shieldStr + bonusHealStr;
     }
-    // ⭐ 聖母鵝招喚
+    // ⭐ 聖母鵝招喚（不可升級，公式詳見下方）
     if (s.type === 'summon') {
-      return '🕊️ 召喚聖母鵝！計數凍結後連續施放技能（擊中／被擊／補血 計數器決定強度，持續 ⌊當前回合÷5⌋ 次行動）';
+      return '🕊️ 召喚聖母鵝！每次玩家行動後自動施放1招（4技：慈悲30% / 吻30% / 激動亂舞30% / 獻身10%）不佔回合，持續 ⌊召喚回合÷5⌋ 次';
     }
     const hitsStr = (s.hits && s.hits > 1) ? ` ×${s.hits} 段` : '';
     if (s.defMult != null)   return `${s.defMult}× DEF 傷害${hitsStr}`;
@@ -13935,10 +13999,10 @@ ${b.text}
       const lockMark = locked ? `<div style="font-size:9px; opacity:0.95;">🔒 需 Lv ${l.unlockLv}</div>` : '';
       const onclick = locked ? '' : `onclick="selectLayer('${l.id}')"`;
       const dim = locked ? 'opacity:0.45; cursor:not-allowed; filter:grayscale(0.5);' : '';
-      return `<button class="floor-btn${active ? ' active' : ''}" ${onclick} title="${locked ? `🔒 需要 Lv ${l.unlockLv}` : `Lv ${l.minLv}-${l.maxLv}`}" style="padding:8px 10px; min-width:64px; ${dim}">
-        <div style="font-size:13px; font-weight:700;">${l.icon} ${l.name}</div>
-        <div style="font-size:10px; opacity:0.85; margin-top:2px;">${locked ? '🔒' : ''}Lv ${l.minLv}-${l.maxLv}</div>
-        ${lockMark}
+      return `<button class="floor-btn${active ? ' active' : ''}" ${locked ? 'disabled' : ''} ${onclick} title="${locked ? `🔒 需要 Lv ${l.unlockLv}` : `Lv ${l.minLv}-${l.maxLv}`}">
+        <div style="font-size:12px; font-weight:700;">${l.icon} ${l.name}</div>
+        <div style="font-size:10px; opacity:0.85; margin-top:1px;">Lv ${l.minLv}-${l.maxLv}</div>
+        ${locked ? `<div style="font-size:9px; opacity:0.9;">🔒Lv${l.unlockLv}</div>` : ''}
       </button>`;
     }).join('');
     // 自動把鎖定的層切回最高解鎖層（防舊存檔卡在 deep 但等級不足）
@@ -13964,10 +14028,10 @@ ${b.text}
               return `<span style="background:${cur.color}20; color:${cur.color}; padding:2px 8px; border-radius:8px; font-weight:600;">${icon} ${label}</span>`;
             }).join('')}
           </div>
-          <span style="opacity:0.7;">詞條：白 0 · 綠 1 · 藍 2 · 紫 3　·　階層 ×1.0/1.15/1.35/1.6</span>
+          <span style="opacity:0.7; word-break:break-word;">詞條：白0 綠1 藍2 紫3　｜　階層×1.0/1.15/1.35/1.6</span>
         </div>
-        <div style="display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 6px;">${layerTabsHtml}</div>
-        <div class="floor-meta">${cur.icon} ${cur.name} · ${curLayer.icon} ${curLayer.name}　·　每場隨機 Lv <b>${curLayer.minLv}–${curLayer.maxLv}</b> 怪物</div>
+        <div class="zone-layer-grid">${layerTabsHtml}</div>
+        <div class="floor-meta">📍 ${curLayer.icon} ${curLayer.name}　Lv <b>${curLayer.minLv}–${curLayer.maxLv}</b> 怪物</div>
       </div>
     `;
   }
