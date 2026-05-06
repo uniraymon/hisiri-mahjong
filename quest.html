@@ -3850,6 +3850,7 @@
     1901: { id: 1901, label: '我已行動 ≥ X 次',           paramType: 'count' },
     1910: { id: 1910, label: '每 X 次行動觸發一次',       paramType: 'count' },
     1911: { id: 1911, label: '每 X 回重覆（從上次觸發起算，含被吃掉）', paramType: 'count' },
+    1912: { id: 1912, label: '每 X 次自己的行動（從觸發起，不含麻痺）', paramType: 'count' },
     1920: { id: 1920, label: '本場最多用 X 次',           paramType: 'count' },
     1940: { id: 1940, label: 'X% 機率',                  paramType: 'percent' },
     // 自身 HP（延伸）
@@ -3890,6 +3891,10 @@
       case 1911: { // ⭐ 每 X 行動後重覆（從上次此規則觸發起算）；playerActions 含麻痺回合故被吃掉不延遲
         const last = ctx.lastRuleFireAt[ruleIdx];
         return last === undefined || (v > 0 && (ctx.playerActions - last) >= v);
+      }
+      case 1912: { // ⭐ 每 X 次自己的實際行動（不含被麻痺吃掉的回合）
+        const last12 = ctx.lastBehaviorFireAt[ruleIdx];
+        return last12 === undefined || (v > 0 && (ctx.behaviorCount - last12) >= v);
       }
       case 1920: return (ctx.ruleUseCount[ruleIdx] || 0) < v;
       case 1940: return Math.random() < (v / 100);
@@ -6560,6 +6565,9 @@
     const ruleUseCount = {};
     // 每條規則上次觸發時的 playerActions（給 judge 1911「每 X 回重覆」用）
     const lastRuleFireAt = {};
+    // ⭐ 實際行動次數（不含麻痺被吃掉的回合）及上次觸發記錄（給 judge 1912 用）
+    let behaviorCount = 0;
+    const lastBehaviorFireAt = {};
     // ⭐ HOF 行動規則表：多頁系統 — 由 opts.patternPage 或 rpg.activePatternPage 決定用哪頁
     const actionPattern = getActivePattern(player.rpg, opts?.patternPage);
 
@@ -6692,6 +6700,8 @@
           log.push({ type: 'system', text: `回合 ${round}：${player.name} ⚡麻痺，無法行動！`, hp: { player: pHp, monster: mHp, mp: pMp } });
           continue;
         }
+        // ⭐ 實際行動計數（judge 1912 用）：麻痺後 continue，此行不執行，故不含被吃掉回合
+        behaviorCount++;
         // ⭐ HOF：依玩家的 actionPattern 規則表決定動作
         // 從上到下評估每條規則，第一條 judge 成立 + 技能可用就放；都不成立 → 普攻
         let useSkill = null;
@@ -6702,8 +6712,10 @@
           pMp, maxMp: stats.maxMp,
           mHp, maxMHp: monster.maxHp,
           playerActions,
+          behaviorCount,
           ruleUseCount,
           lastRuleFireAt,
+          lastBehaviorFireAt,
           // ⭐ 狀態判定
           selfPoisoned:    hasStatus(playerObj, 'poison'),
           selfParalyzed:   hasStatus(playerObj, 'paralyze'),
@@ -6746,11 +6758,14 @@
           usedRuleIdx = r;
           break;
         }
-        // 累積規則使用次數（給 1920「最多 X 次」用）；記錄觸發時機（給 1911「每 X 回重覆」用）
+        // 累積規則使用次數（給 1920「最多 X 次」用）；記錄觸發時機（給 1911/1912 用）
         if (usedRuleIdx >= 0) {
           ruleUseCount[usedRuleIdx] = (ruleUseCount[usedRuleIdx] || 0) + 1;
           if (actionPattern[usedRuleIdx]?.judgeId === 1911) {
             lastRuleFireAt[usedRuleIdx] = playerActions;
+          }
+          if (actionPattern[usedRuleIdx]?.judgeId === 1912) {
+            lastBehaviorFireAt[usedRuleIdx] = behaviorCount;
           }
         }
 
@@ -7667,6 +7682,9 @@
     const nextActionForSkill = {};
     const ruleUseCount = {};
     const lastRuleFireAt = {};
+    // ⭐ 實際行動次數（不含麻痺）及上次觸發記錄（給 judge 1912 用）
+    let behaviorCountM = 0;
+    const lastBehaviorFireAtM = {};
     const actionPattern = getActivePattern(player.rpg, opts?.patternPage);
 
     const ATB_THRESHOLD = 100;
@@ -7773,6 +7791,8 @@
           log.push({ type: 'system', text: `回合 ${round}：${player.name} ⚡麻痺，無法行動！`, hp: hpsSnapshot() });
           continue;
         }
+        // ⭐ 實際行動計數（judge 1912 用）：麻痺後 continue，此行不執行
+        behaviorCountM++;
         // 自癒
         if (regenPer > 0 && pHp < stats.maxHp) {
           const heal = Math.max(1, Math.round(stats.maxHp * regenPer));
@@ -7799,8 +7819,10 @@
           mHp: lowHpM ? lowHpM.hp : 0, maxMHp: lowHpM ? lowHpM.maxHp : 1,
           aliveCount: aliveM.length,
           playerActions,
+          behaviorCount: behaviorCountM,
           ruleUseCount,
           lastRuleFireAt,
+          lastBehaviorFireAt: lastBehaviorFireAtM,
           // ⭐ 狀態判定
           selfPoisoned:    hasStatus(playerObj, 'poison'),
           selfParalyzed:   hasStatus(playerObj, 'paralyze'),
@@ -7833,6 +7855,9 @@
           ruleUseCount[usedRuleIdx] = (ruleUseCount[usedRuleIdx] || 0) + 1;
           if (actionPattern[usedRuleIdx]?.judgeId === 1911) {
             lastRuleFireAt[usedRuleIdx] = playerActions;
+          }
+          if (actionPattern[usedRuleIdx]?.judgeId === 1912) {
+            lastBehaviorFireAtM[usedRuleIdx] = behaviorCountM;
           }
         }
 
@@ -8584,6 +8609,11 @@
 
             <div style="font-weight:800; color:#b91c1c; margin:10px 0 4px;">⚔️ 劍士血池強化</div>
             • <b>爆血</b>傷害倍率：<b>血池 × 2 → 血池 × 3</b>（大幅提升爆發力）<br>
+
+            <div style="font-weight:800; color:#065f46; margin:10px 0 4px;">📋 戰術規則新選項</div>
+            • 新增條件：<b>「每 X 次自己的行動（從觸發起）」</b><br>
+            &nbsp;&nbsp;→ 只計算玩家實際行動次數，<b>麻痺被吃掉的回合不計入</b><br>
+            &nbsp;&nbsp;→ 單人 / 試煉場 / 組隊戰均支援<br>
 
           </div>
           <button class="btn btn-primary" onclick="hideModal()" style="margin-top:14px; width:100%; background:linear-gradient(135deg,#7c3aed,#b91c1c);">✨ 了解！</button>
@@ -10393,7 +10423,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506102142';
+  const APP_VERSION = '20260506102944';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -14260,6 +14290,7 @@ ${b.text}
     1901: { label: '我已行動 ≥ X 次',             paramType: 'count',   group: '行動次數' },
     1910: { label: '每 X 次行動觸發一次',          paramType: 'count',   group: '行動次數' },
     1911: { label: '每 X 次行動重覆（從上次）',    paramType: 'count',   group: '行動次數' },
+    1912: { label: '每 X 次自己的行動（從觸發起）', paramType: 'count',  group: '行動次數' },
     1920: { label: '本場最多用 X 次',             paramType: 'count',   group: '行動次數' },
     // ── 異常狀態 ──
     1600: { label: '自身中毒',                   paramType: 'none',    group: '異常狀態' },
@@ -14311,6 +14342,14 @@ ${b.text}
         const last = (ctx._ruleLastFired || {})[ruleIdx];
         if (last === undefined || (v > 0 && (ctx.actionCount - last) >= v)) {
           ctx._ruleLastFired[ruleIdx] = ctx.actionCount;
+          return true;
+        }
+        return false;
+      }
+      case 1912: { // ⭐ 每 X 次自己的行動（從觸發起算，組隊戰無麻痺故與1911相同）
+        const last12 = (ctx._ruleLastFired || {})[ruleIdx + '_b'];
+        if (last12 === undefined || (v > 0 && (ctx.actionCount - last12) >= v)) {
+          ctx._ruleLastFired[ruleIdx + '_b'] = ctx.actionCount;
           return true;
         }
         return false;
