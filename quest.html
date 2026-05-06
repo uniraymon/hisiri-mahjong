@@ -3497,14 +3497,31 @@
   }
 
   // ⭐ 精魂刻印：從精魂實例計算刻印加成（僅 done=true 時生效）
+  // 新格式：track defs 內嵌在 engraving 物件（trackA.def / trackB.def / trackC.def）
+  // 舊格式 fallback：從 SPIRIT_DEFS.engravingDef 讀（向前相容）
   function getSpiritEngravingBonus(sp) {
-    const out = { spd: 0, critChance: 0, hp: 0, def: 0, critDmg: 0 };
+    const out = { spd: 0, critChance: 0, hp: 0, def: 0, critDmg: 0, atk: 0, mark: 0 };
     if (!sp?.engraving?.done) return out;
+    const eng = sp.engraving;
+    if (eng.trackA?.def || eng.trackB?.def) {
+      // ⭐ 新格式
+      const apply = (track, penalty) => {
+        if (!track?.def?.stat) return;
+        const succ = (track.slots || []).filter(Boolean).length;
+        const gain = succ * (track.def.perSuccess || 0);
+        out[track.def.stat] = (out[track.def.stat] || 0) + (penalty ? -gain : gain);
+      };
+      apply(eng.trackA, false);
+      apply(eng.trackB, false);
+      apply(eng.trackC, true); // 懲罰軌：成功扣屬性
+      return out;
+    }
+    // ⭐ 舊格式 fallback
     const def = SPIRIT_BY_BOSS[sp.sourceBossId];
     const ed = def?.engravingDef;
     if (!ed) return out;
-    const aSucc = (sp.engraving.trackA?.slots || []).filter(Boolean).length;
-    const bSucc = (sp.engraving.trackB?.slots || []).filter(Boolean).length;
+    const aSucc = (eng.trackA?.slots || []).filter(Boolean).length;
+    const bSucc = (eng.trackB?.slots || []).filter(Boolean).length;
     out[ed.trackA.stat] = (out[ed.trackA.stat] || 0) + aSucc * ed.trackA.perSuccess;
     out[ed.trackB.stat] = (out[ed.trackB.stat] || 0) + bSucc * ed.trackB.perSuccess;
     return out;
@@ -6366,11 +6383,13 @@
       stats.mark  += sp.mark || 0;
       spiritCritChance += sp.critChance || 0;
       spiritCritDmg    += sp.critDmg    || 0;
-      // ⭐ 精魂刻印加成（done=true 才生效）
+      // ⭐ 精魂刻印加成（done=true 才生效；可為負值—懲罰軌）
       const _eb = getSpiritEngravingBonus(sp);
       stats.maxHp += _eb.hp   || 0;
+      stats.atk   += _eb.atk  || 0;
       stats.def   += _eb.def  || 0;
       stats.spd   += _eb.spd  || 0;
+      stats.mark  += _eb.mark || 0;
       spiritCritChance += _eb.critChance || 0;
       spiritCritDmg    += _eb.critDmg   || 0;
     }
@@ -10629,17 +10648,23 @@
         <span style="color:#374151; font-weight:700;">${val}</span>
       </div>`);
     }
-    // ⭐ 刻印加成
+    // ⭐ 刻印加成（負值為懲罰軌）
     if (sp.engraving?.done) {
       const eb = getSpiritEngravingBonus(sp);
       const isPctMap = { critChance: true, critDmg: true };
+      const lblMap = { hp:'HP', def:'DEF', spd:'SPD', atk:'ATK', mark:'MARK', critChance:'暴擊率', critDmg:'爆傷' };
       for (const [k, v] of Object.entries(eb)) {
         if (!v) continue;
-        const label = { hp:'HP', def:'DEF', spd:'SPD', critChance:'暴擊率', critDmg:'爆傷' }[k] || k;
-        const valStr = isPctMap[k] ? `+${Math.round(v*100)}%` : `+${v}`;
+        const label = lblMap[k] || k;
+        const isNeg = v < 0;
+        const valStr = isPctMap[k]
+          ? (isNeg ? `−${Math.round(Math.abs(v)*100)}%` : `+${Math.round(v*100)}%`)
+          : (isNeg ? `${Math.round(v)}` : `+${Math.round(v)}`);
+        const col = isNeg ? '#dc2626' : '#5b21b6';
+        const badge = isNeg ? '⚗️ 懲罰' : '⚗️';
         rows.push(`<div style="display:flex; justify-content:space-between; font-size:11px; padding:2px 0;">
-          <span style="color:#6d28d9;">⚗️ ${label}（刻印）</span>
-          <span style="color:#5b21b6; font-weight:700;">${valStr}</span>
+          <span style="color:${isNeg ? '#dc2626' : '#6d28d9'};">${badge} ${label}（刻印）</span>
+          <span style="color:${col}; font-weight:700;">${valStr}</span>
         </div>`);
       }
       const def2 = SPIRIT_BY_BOSS[sp.sourceBossId];
@@ -10695,17 +10720,26 @@
     const hasEngraving = !!sp.engraving;
     const isDone = sp.engraving?.done;
     if (!hasEngraving) {
+      // ⭐ 預覽 Track A/B（從精魂現有詞條計算），Track C 開始後揭曉
       const me = getMe();
       const frags = getRpg(me)?.essenceFragments || 0;
+      const SLBL = { atk:'ATK', def:'DEF', spd:'SPD', hp:'HP', mark:'MARK', critChance:'暴擊率', critDmg:'爆傷' };
+      const affixes = sp.affixes || [];
+      const aff0 = affixes[0], aff1 = affixes[1] || affixes[0];
+      const aPerS = aff0 ? Math.max(1, Math.round(aff0.val * 0.2)) : 1;
+      const bPerS = aff1 ? Math.max(1, Math.round(aff1.val * 0.2)) : 1;
+      const aLbl = aff0 ? (SLBL[aff0.type] || aff0.type) : 'ATK';
+      const bLbl = aff1 ? (SLBL[aff1.type] || aff1.type) : 'ATK';
       return `
         <div style="border:1.5px dashed #a78bfa; border-radius:10px; padding:8px 10px; margin-top:10px; background:#faf5ff;">
           <div style="font-size:11px; font-weight:700; color:#6d28d9; margin-bottom:4px;">⚗️ 精魂刻印</div>
-          <div style="font-size:10px; color:#7c3aed; margin-bottom:6px;">
-            軌道 A：每格成功 +${ed.trackA.isPct ? Math.round(ed.trackA.perSuccess*100)+'% ' : ed.trackA.perSuccess+' '}${ed.trackA.label}
-            軌道 B：每格成功 +${ed.trackB.isPct ? Math.round(ed.trackB.perSuccess*100)+'% ' : ed.trackB.perSuccess+' '}${ed.trackB.label}<br>
-            特殊（10格）：✨ ${ed.special.name}
+          <div style="font-size:10px; color:#7c3aed; line-height:1.7; margin-bottom:6px;">
+            A 軌（強化）：每格成功 <b>+${aPerS} ${aLbl}</b><br>
+            B 軌（強化）：每格成功 <b>+${bPerS} ${bLbl}</b><br>
+            C 軌（懲罰）：<span style="color:#dc2626;">🎲 隨機，開始後揭曉</span><br>
+            特殊（AB 合 10 格）：✨ <b>${ed.special.name}</b>
           </div>
-          <button class="btn btn-primary" onclick="startSpiritEngraving(${bagIdx})" style="width:100%; font-size:12px;" ${frags < 1 ? 'disabled style="opacity:0.5;"' : ''}>
+          <button class="btn btn-primary" onclick="startSpiritEngraving(${bagIdx})" style="width:100%; font-size:12px;" ${frags < 1 ? 'disabled' : ''}>
             ⚗️ 開始刻印（需 💠 晶魂碎片）
           </button>
         </div>`;
@@ -10713,12 +10747,17 @@
     if (!isDone) {
       const aSucc = (sp.engraving.trackA.slots || []).filter(Boolean).length;
       const bSucc = (sp.engraving.trackB.slots || []).filter(Boolean).length;
+      const cSucc = (sp.engraving.trackC?.slots || []).filter(Boolean).length;
       const aFill = sp.engraving.trackA.slots.length;
       const bFill = sp.engraving.trackB.slots.length;
+      const cFill = sp.engraving.trackC?.slots?.length || 0;
       return `
         <div style="border:1.5px solid #f59e0b; border-radius:10px; padding:8px 10px; margin-top:10px; background:#fffbeb;">
           <div style="font-size:11px; font-weight:700; color:#92400e; margin-bottom:4px;">⚗️ 刻印進行中…</div>
-          <div style="font-size:10px; color:#78350f;">A軌：${aSucc}成功 / ${aFill}格　B軌：${bSucc}成功 / ${bFill}格　合計成功：${aSucc+bSucc}/10</div>
+          <div style="font-size:10px; color:#78350f; line-height:1.7;">
+            A軌：${aSucc}/${aFill}格　B軌：${bSucc}/${bFill}格　C軌（懲罰）：${cSucc}/${cFill}格<br>
+            AB 合計成功：<b style="color:${aSucc+bSucc>=10?'#10b981':'#374151'}">${aSucc+bSucc}</b>/10
+          </div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:6px;">
             <button class="btn btn-primary" onclick="showSpiritEngraving(${bagIdx})" style="font-size:11px;">⚗️ 繼續刻印</button>
             <button class="btn btn-secondary" onclick="confirmDeleteEngraving(${bagIdx})" style="font-size:11px; background:#fef2f2; color:#dc2626; border-color:#fca5a5;">🗑 刪除進度</button>
@@ -10726,16 +10765,24 @@
         </div>`;
     }
     // done
-    const aSucc = (sp.engraving.trackA.slots || []).filter(Boolean).length;
-    const bSucc = (sp.engraving.trackB.slots || []).filter(Boolean).length;
+    const eng = sp.engraving;
+    const aSucc = (eng.trackA.slots || []).filter(Boolean).length;
+    const bSucc = (eng.trackB.slots || []).filter(Boolean).length;
+    const cSucc = (eng.trackC?.slots || []).filter(Boolean).length;
     const hasSpecial = aSucc + bSucc >= 10;
+    const tdA = eng.trackA.def || (ed?.trackA);
+    const tdB = eng.trackB.def || (ed?.trackB);
+    const tdC = eng.trackC?.def;
+    const aBonus = tdA ? `+${aSucc * tdA.perSuccess} ${tdA.label}` : '';
+    const bBonus = tdB ? `+${bSucc * tdB.perSuccess} ${tdB.label}` : '';
+    const cPenalty = tdC ? `-${cSucc * tdC.perSuccess} ${tdC.label}` : '';
     return `
       <div style="border:1.5px solid #10b981; border-radius:10px; padding:8px 10px; margin-top:10px; background:#f0fdf4;">
         <div style="font-size:11px; font-weight:700; color:#065f46; margin-bottom:2px;">✅ 刻印完成！</div>
-        <div style="font-size:10px; color:#047857;">
-          A軌 +${aSucc * (ed.trackA.isPct ? Math.round(ed.trackA.perSuccess*100) : ed.trackA.perSuccess)}${ed.trackA.isPct ? '%' : ''} ${ed.trackA.label}
-          B軌 +${bSucc * (ed.trackB.isPct ? Math.round(ed.trackB.perSuccess*100) : ed.trackB.perSuccess)}${ed.trackB.isPct ? '%' : ''} ${ed.trackB.label}
-          ${hasSpecial ? `<br>✨ <b>${ed.special.name}</b> 已激活！` : `<br>（合計 ${aSucc+bSucc}/10，特殊未達成）`}
+        <div style="font-size:10px; color:#047857; line-height:1.7;">
+          A軌 <b>${aBonus}</b>　B軌 <b>${bBonus}</b>
+          ${tdC ? `　C軌（懲罰）<b style="color:#dc2626;">${cPenalty}</b>` : ''}
+          ${hasSpecial ? `<br>✨ <b>${ed.special.name}</b> 已激活！` : `<br>（AB合計 ${aSucc+bSucc}/10，特殊未達成）`}
         </div>
       </div>`;
   }
@@ -10749,9 +10796,25 @@
     if (!sp || sp.engraving) return;
     const def = SPIRIT_BY_BOSS[sp.sourceBossId];
     if (!def?.engravingDef) { showToast('此精魂不支援刻印'); return; }
+    const STAT_LABEL = { atk:'ATK', def:'DEF', spd:'SPD', hp:'HP', mark:'MARK', critChance:'暴擊率', critDmg:'爆傷' };
+    // ⭐ Track A/B：根據精魂詞條生成（每格成功 = 詞條值 × 20%）
+    const affixes = sp.affixes || [];
+    const makeDef = (aff) => {
+      if (!aff) return { stat: 'atk', perSuccess: 1, label: 'ATK' };
+      return { stat: aff.type, perSuccess: Math.max(1, Math.round(aff.val * 0.2)), label: STAT_LABEL[aff.type] || aff.type };
+    };
+    // ⭐ Track C：隨機抽取懲罰軌（優先從 A/B 未用的詞條類型抽）
+    const usedTypes = new Set([affixes[0]?.type, affixes[1]?.type].filter(Boolean));
+    const penaltyPool = AFFIXES.filter(a => !usedTypes.has(a.type));
+    const srcPool = penaltyPool.length > 0 ? penaltyPool : AFFIXES;
+    const penaltyBase = srcPool[Math.floor(Math.random() * srcPool.length)];
+    let penaltyVal = Math.max(1, Math.round(1 + 30 * penaltyBase.perLv));
+    if (penaltyBase.type === 'hp') penaltyVal = Math.max(1, Math.round(penaltyVal * 0.7));
+    const trackCDef = { stat: penaltyBase.type, perSuccess: Math.max(1, Math.round(penaltyVal * 0.2)), label: STAT_LABEL[penaltyBase.type] || penaltyBase.type };
     sp.engraving = {
-      trackA: { slots: [], rate: 0.65 },
-      trackB: { slots: [], rate: 0.65 },
+      trackA: { def: makeDef(affixes[0]), slots: [], rate: 0.65 },
+      trackB: { def: makeDef(affixes[1] || affixes[0] || null), slots: [], rate: 0.65 },
+      trackC: { def: trackCDef, isPenalty: true, slots: [], rate: 0.65 },
       done: false,
     };
     saveData();
@@ -10768,14 +10831,21 @@
     const def = SPIRIT_BY_BOSS[sp.sourceBossId];
     const ed = def.engravingDef;
     const frags = rpg.essenceFragments || 0;
+    const eng = sp.engraving;
 
-    const renderTrack = (trackKey, trackDef) => {
-      const track = sp.engraving[trackKey];
+    // trackDef 優先讀 inline def，fallback 舊格式
+    const getTDef = (key, fallback) => eng[key]?.def || fallback;
+
+    const renderTrack = (trackKey, fallbackDef) => {
+      const track = eng[trackKey];
+      if (!track) return '';
+      const td = getTDef(trackKey, fallbackDef);
+      const isPenalty = !!track.isPenalty;
       const slots = track.slots || [];
       const filled = slots.length;
       const successes = slots.filter(Boolean).length;
       const rateLabel = Math.round(track.rate * 100) + '%';
-      const canClick = filled < 7 && !sp.engraving.done;
+      const canClick = filled < 7 && !eng.done;
       const dotHtml = Array.from({ length: 7 }, (_, i) => {
         if (i < filled) {
           const ok = slots[i];
@@ -10786,22 +10856,26 @@
         }
         return `<div class="eng-slot" style="opacity:0.3;">○</div>`;
       }).join('');
-      const bonus = successes * (trackDef.isPct ? Math.round(trackDef.perSuccess * 100) : trackDef.perSuccess);
-      const bonusStr = `+${bonus}${trackDef.isPct ? '%' : ''} ${trackDef.label}`;
+      const bonus = successes * (td?.perSuccess || 0);
+      const bonusStr = isPenalty
+        ? `<span style="color:#ef4444; font-weight:700;">−${bonus} ${td?.label || '?'}</span>`
+        : `<span style="color:#10b981; font-weight:700;">+${bonus} ${td?.label || '?'}</span>`;
+      const keyLabel = { trackA: 'A', trackB: 'B', trackC: 'C' }[trackKey] || trackKey;
+      const penaltyBadge = isPenalty ? ' <span style="font-size:9px; background:#fee2e2; color:#dc2626; padding:1px 4px; border-radius:4px; font-weight:700;">⚠懲罰</span>' : '';
       return `
-        <div class="eng-track">
+        <div class="eng-track" style="${isPenalty ? 'border-color:#fca5a5; background:#fff5f5;' : ''}">
           <div class="eng-track-label">
-            <span>${trackKey === 'trackA' ? 'A' : 'B'} 軌：${trackDef.label} <span style="color:#10b981; font-weight:700;">${bonusStr}</span></span>
+            <span>${keyLabel} 軌：${td?.label || '?'}${penaltyBadge} ${bonusStr}</span>
             <span class="eng-rate">成功率 ${rateLabel}</span>
           </div>
           <div class="eng-slots">${dotHtml}</div>
         </div>`;
     };
 
-    const aSucc = (sp.engraving.trackA.slots || []).filter(Boolean).length;
-    const bSucc = (sp.engraving.trackB.slots || []).filter(Boolean).length;
-    const totalSucc = aSucc + bSucc;
-    const hasSpecial = totalSucc >= 10;
+    const aSucc = (eng.trackA.slots || []).filter(Boolean).length;
+    const bSucc = (eng.trackB.slots || []).filter(Boolean).length;
+    const abSucc = aSucc + bSucc;
+    const hasSpecial = abSucc >= 10;
     const specialBoxClass = hasSpecial ? 'eng-special-box unlocked' : 'eng-special-box';
     const specialIcon = hasSpecial ? '✨' : '🔒';
 
@@ -10811,16 +10885,17 @@
           <span style="font-size:18px;">${sp.icon} <b style="color:${sp.color};">${escapeHtml(sp.name)}</b></span>
           <span style="font-size:12px; color:#6d28d9; font-weight:700;">💠 ${frags} 片</span>
         </div>
-        ${renderTrack('trackA', ed.trackA)}
-        ${renderTrack('trackB', ed.trackB)}
+        ${renderTrack('trackA', ed?.trackA)}
+        ${renderTrack('trackB', ed?.trackB)}
+        ${renderTrack('trackC', null)}
         <div style="font-size:10px; color:#6b7280; text-align:center; margin:4px 0 8px;">
-          合計成功 <b style="color:${totalSucc >= 10 ? '#10b981' : '#374151'};">${totalSucc}</b> / 10　${sp.engraving.done ? '✅ 刻印完成' : '點擊 ⚡ 格子刻印，每次消耗 💠×1'}
+          AB 合計成功 <b style="color:${abSucc >= 10 ? '#10b981' : '#374151'};">${abSucc}</b> / 10　${eng.done ? '✅ 刻印完成' : '點擊 ⚡ 格子刻印，每次消耗 💠×1'}
         </div>
         <div class="${specialBoxClass}">
-          <div class="eng-special-name">${specialIcon} ${ed.special.name}（合計10格解鎖）</div>
+          <div class="eng-special-name">${specialIcon} ${ed.special.name}（AB合計10格解鎖）</div>
           <div class="eng-special-desc">${ed.special.desc}</div>
         </div>
-        ${!sp.engraving.done ? `
+        ${!eng.done ? `
         <div style="margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
           <button class="btn btn-secondary" onclick="openSpiritActions(${bagIdx})" style="font-size:11px;">← 返回</button>
           <button class="btn btn-secondary" onclick="confirmDeleteEngraving(${bagIdx})" style="font-size:11px; background:#fef2f2; color:#dc2626; border-color:#fca5a5;">🗑 刪除進度</button>
@@ -10853,17 +10928,19 @@
       ? Math.max(0.25, track.rate - 0.10)
       : Math.min(0.75, track.rate + 0.10);
 
-    // 檢查完成：兩條軌道都滿 7 格
+    // 檢查完成：三條軌道都滿 7 格
     const aDone = (sp.engraving.trackA.slots.length >= 7);
     const bDone = (sp.engraving.trackB.slots.length >= 7);
-    if (aDone && bDone) {
+    const cDone = !sp.engraving.trackC || (sp.engraving.trackC.slots.length >= 7);
+    if (aDone && bDone && cDone) {
       sp.engraving.done = true;
       const aS = sp.engraving.trackA.slots.filter(Boolean).length;
       const bS = sp.engraving.trackB.slots.filter(Boolean).length;
+      const cS = sp.engraving.trackC?.slots?.filter(Boolean).length || 0;
       const gotSpecial = (aS + bS) >= 10;
       saveData();
       renderCharCard();
-      showToast(`✅ 刻印完成！成功 ${aS+bS}/14 格${gotSpecial ? '　✨ 特殊解鎖！' : ''}`);
+      showToast(`✅ 刻印完成！AB成功 ${aS+bS}/14${gotSpecial ? ' ✨特殊解鎖！' : ''}　懲罰格 ${cS}/7`);
     } else {
       saveData();
     }
@@ -11104,7 +11181,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506212442';
+  const APP_VERSION = '20260506214358';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
