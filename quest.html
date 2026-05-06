@@ -3528,7 +3528,7 @@
   }
 
   // ⭐ 精魂刻印：取得玩家所有裝備精魂中已激活的特殊效果 Set
-  // 條件：engraving.done=true 且 A+B 合計成功格 ≥ 10
+  // 條件：engraving.done=true 且 A+B 合計成功格 ≥ 40
   function getSpiritSpecials(player) {
     const specials = new Set();
     const rpg = player?.rpg;
@@ -3540,7 +3540,7 @@
       if (!ed?.special) continue;
       const aSucc = (sp.engraving.trackA?.slots || []).filter(Boolean).length;
       const bSucc = (sp.engraving.trackB?.slots || []).filter(Boolean).length;
-      if (aSucc + bSucc >= 10) specials.add(ed.special.id);
+      if (aSucc + bSucc >= 40) specials.add(ed.special.id);
     }
     return specials;
   }
@@ -9034,13 +9034,13 @@
             <div style="font-weight:800; color:#10b981; margin:8px 0 4px;">✅ A 軌 / B 軌（強化）</div>
             • 根據精魂的<b>隨機詞條</b>自動決定加什麼屬性<br>
             • 每格成功 = 詞條值 × 20%（例：詞條 +10 ATK → 每格 +2 ATK）<br>
-            • <b>AB 合計成功 ≥ 10 格 → 解鎖特殊效果</b><br>
+            • <b>AB 合計成功 ≥ 40 格 → 解鎖特殊效果</b><br>
 
             <div style="font-weight:800; color:#dc2626; margin:8px 0 4px;">⚠️ C 軌（懲罰）</div>
             • 開始刻印時<b>隨機抽取</b>一種屬性（優先不同於 A/B 的類型）<br>
             • 每格成功會<b>扣除</b>對應屬性（比例與 A/B 相同）<br>
 
-            <div style="font-weight:800; color:#7c3aed; margin:8px 0 4px;">✨ 各精魂特殊效果（AB合計10格解鎖）</div>
+            <div style="font-weight:800; color:#7c3aed; margin:8px 0 4px;">✨ 各精魂特殊效果（AB合計40格解鎖）</div>
             • 🍳 早餐鵝 <b>先機</b>：戰鬥開場先手一擊（可暴擊）<br>
             • 🍱 午餐鵝 <b>不屈</b>：每場首次致死 → 以 1 HP 存活<br>
             • 🍷 晚餐鵝 <b>完美節拍</b>：連續暴擊疊層，最多 +32% 爆傷；非暴擊普攻重置<br>
@@ -10828,7 +10828,7 @@
       if (ed) {
         const aS = (sp.engraving.trackA?.slots || []).filter(Boolean).length;
         const bS = (sp.engraving.trackB?.slots || []).filter(Boolean).length;
-        if (aS + bS >= 10) {
+        if (aS + bS >= 40) {
           rows.push(`<div style="font-size:10px; padding:2px 0; color:#059669; font-weight:700;">✨ ${ed.special.name} 已激活</div>`);
         }
       }
@@ -10893,7 +10893,7 @@
             A 軌（強化）：每格成功 <b>+${aPerS} ${aLbl}</b><br>
             B 軌（強化）：每格成功 <b>+${bPerS} ${bLbl}</b><br>
             C 軌（懲罰）：<span style="color:#dc2626;">🎲 隨機，開始後揭曉</span><br>
-            特殊（AB 合 10 格）：✨ <b>${ed.special.name}</b><br>
+            特殊（AB 合 40 格）：✨ <b>${ed.special.name}</b><br>
             <span style="color:#7c3aed; margin-left:1em;">→ ${ed.special.desc}</span>
           </div>
           <button class="btn btn-primary" onclick="startSpiritEngraving(${bagIdx})" style="width:100%; font-size:12px;" ${frags < 1 ? 'disabled' : ''}>
@@ -10913,7 +10913,7 @@
           <div style="font-size:11px; font-weight:700; color:#92400e; margin-bottom:4px;">⚗️ 刻印進行中…</div>
           <div style="font-size:10px; color:#78350f; line-height:1.7;">
             A軌：${aSucc}/${aFill}格　B軌：${bSucc}/${bFill}格　C軌（懲罰）：${cSucc}/${cFill}格<br>
-            AB 合計成功：<b style="color:${aSucc+bSucc>=10?'#10b981':'#374151'}">${aSucc+bSucc}</b>/10
+            AB 合計成功：<b style="color:${aSucc+bSucc>=40?'#10b981':'#374151'}">${aSucc+bSucc}</b>/40
           </div>
           <div style="margin-top:6px;">
             <button class="btn btn-primary" onclick="showSpiritEngraving(${bagIdx})" style="font-size:11px; width:100%;">⚗️ 繼續刻印</button>
@@ -10938,7 +10938,7 @@
         <div style="font-size:10px; color:#047857; line-height:1.7;">
           A軌 <b>${aBonus}</b>　B軌 <b>${bBonus}</b>
           ${tdC ? `　C軌（懲罰）<b style="color:#dc2626;">${cPenalty}</b>` : ''}
-          ${hasSpecial ? `<br>✨ <b>${ed.special.name}</b> 已激活！<br><span style="font-size:9px; color:#059669;">${ed.special.desc}</span>` : `<br>（AB合計 ${aSucc+bSucc}/10，特殊未達成）`}
+          ${hasSpecial ? `<br>✨ <b>${ed.special.name}</b> 已激活！<br><span style="font-size:9px; color:#059669;">${ed.special.desc}</span>` : `<br>（AB合計 ${aSucc+bSucc}/40，特殊未達成）`}
         </div>
       </div>`;
   }
@@ -10968,9 +10968,10 @@
     if (penaltyBase.type === 'hp') penaltyVal = Math.max(1, Math.round(penaltyVal * 0.7));
     const trackCDef = { stat: penaltyBase.type, perSuccess: Math.max(1, Math.round(penaltyVal * 0.2)), label: STAT_LABEL[penaltyBase.type] || penaltyBase.type };
     sp.engraving = {
-      trackA: { def: makeDef(affixes[0]), slots: [], rate: 0.65 },
-      trackB: { def: makeDef(affixes[1] || affixes[0] || null), slots: [], rate: 0.65 },
-      trackC: { def: trackCDef, isPenalty: true, slots: [], rate: 0.65 },
+      rate: 0.75, // ⭐ 共用成功率（LOSTARK 風格：三軌共享，成功-10%，失敗+10%）
+      trackA: { def: makeDef(affixes[0]), slots: [] },
+      trackB: { def: makeDef(affixes[1] || affixes[0] || null), slots: [] },
+      trackC: { def: trackCDef, isPenalty: true, slots: [] },
       done: false,
     };
     saveData();
@@ -11000,9 +11001,10 @@
       const slots = track.slots || [];
       const filled = slots.length;
       const successes = slots.filter(Boolean).length;
-      const rateLabel = Math.round(track.rate * 100) + '%';
-      const canClick = filled < 7 && !eng.done;
-      const dotHtml = Array.from({ length: 7 }, (_, i) => {
+      const sharedRate = eng.rate ?? track.rate ?? 0.65; // 共用成功率（舊資料 fallback 用 track.rate）
+      const rateLabel = Math.round(sharedRate * 100) + '%';
+      const canClick = filled < 20 && !eng.done;
+      const dotHtml = Array.from({ length: 20 }, (_, i) => {
         if (i < filled) {
           const ok = slots[i];
           return `<div class="eng-slot eng-slot-filled ${ok ? 'eng-slot-success' : 'eng-slot-fail'}">${ok ? '✓' : '✗'}</div>`;
@@ -11031,7 +11033,7 @@
     const aSucc = (eng.trackA.slots || []).filter(Boolean).length;
     const bSucc = (eng.trackB.slots || []).filter(Boolean).length;
     const abSucc = aSucc + bSucc;
-    const hasSpecial = abSucc >= 10;
+    const hasSpecial = abSucc >= 40;
     const specialBoxClass = hasSpecial ? 'eng-special-box unlocked' : 'eng-special-box';
     const specialIcon = hasSpecial ? '✨' : '🔒';
 
@@ -11045,10 +11047,10 @@
         ${renderTrack('trackB', ed?.trackB)}
         ${renderTrack('trackC', null)}
         <div style="font-size:10px; color:#6b7280; text-align:center; margin:4px 0 8px;">
-          AB 合計成功 <b style="color:${abSucc >= 10 ? '#10b981' : '#374151'};">${abSucc}</b> / 10　${eng.done ? '✅ 刻印完成' : '點擊 ⚡ 格子刻印，每次消耗 💠×1'}
+          AB 合計成功 <b style="color:${abSucc >= 40 ? '#10b981' : '#374151'};">${abSucc}</b> / 40　${eng.done ? '✅ 刻印完成' : '點擊 ⚡ 格子刻印，每次消耗 💠×1'}
         </div>
         <div class="${specialBoxClass}">
-          <div class="eng-special-name">${specialIcon} ${ed.special.name}（AB合計10格解鎖）</div>
+          <div class="eng-special-name">${specialIcon} ${ed.special.name}（AB合計40格解鎖）</div>
           <div class="eng-special-desc">${ed.special.desc}</div>
         </div>
         <button class="btn btn-secondary" onclick="openSpiritActions(${bagIdx})" style="width:100%; margin-top:10px; font-size:11px;">← 返回</button>
@@ -11065,33 +11067,35 @@
     if (!sp?.engraving || sp.engraving.done) return;
     if ((rpg.essenceFragments || 0) < 1) { showToast('💠 晶魂碎片不足！'); return; }
     const track = sp.engraving[trackKey];
-    if (!track || track.slots.length >= 7) return;
+    if (!track || track.slots.length >= 20) return;
 
     // 消耗碎片
     rpg.essenceFragments = (rpg.essenceFragments || 0) - 1;
 
-    // 骰成敗
-    const success = Math.random() < track.rate;
+    // ⭐ 共用成功率（LOSTARK 風格）：三軌共用同一個 rate
+    const eng = sp.engraving;
+    if (eng.rate == null) eng.rate = track.rate ?? 0.65; // 舊資料遷移
+    const success = Math.random() < eng.rate;
     track.slots.push(success);
 
-    // 更新成功率
-    track.rate = success
-      ? Math.max(0.25, track.rate - 0.10)
-      : Math.min(0.75, track.rate + 0.10);
+    // 成功→ -10%，失敗→ +10%，上限 75%，下限 25%
+    eng.rate = success
+      ? Math.max(0.25, eng.rate - 0.10)
+      : Math.min(0.75, eng.rate + 0.10);
 
-    // 檢查完成：三條軌道都滿 7 格
-    const aDone = (sp.engraving.trackA.slots.length >= 7);
-    const bDone = (sp.engraving.trackB.slots.length >= 7);
-    const cDone = !sp.engraving.trackC || (sp.engraving.trackC.slots.length >= 7);
+    // 檢查完成：三條軌道都滿 20 格
+    const aDone = (sp.engraving.trackA.slots.length >= 20);
+    const bDone = (sp.engraving.trackB.slots.length >= 20);
+    const cDone = !sp.engraving.trackC || (sp.engraving.trackC.slots.length >= 20);
     if (aDone && bDone && cDone) {
       sp.engraving.done = true;
       const aS = sp.engraving.trackA.slots.filter(Boolean).length;
       const bS = sp.engraving.trackB.slots.filter(Boolean).length;
       const cS = sp.engraving.trackC?.slots?.filter(Boolean).length || 0;
-      const gotSpecial = (aS + bS) >= 10;
+      const gotSpecial = (aS + bS) >= 40;
       saveData();
       renderCharCard();
-      showToast(`✅ 刻印完成！AB成功 ${aS+bS}/14${gotSpecial ? ' ✨特殊解鎖！' : ''}　懲罰格 ${cS}/7`);
+      showToast(`✅ 刻印完成！AB成功 ${aS+bS}/40${gotSpecial ? ' ✨特殊解鎖！' : ''}　懲罰格 ${cS}/20`);
     } else {
       saveData();
     }
@@ -11332,7 +11336,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506235731';
+  const APP_VERSION = '20260507001521';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -11506,7 +11510,7 @@ ${b.text}
         </div>
 
         <div style="margin-top:8px; font-weight:700; color:#5b21b6;">✨ 特殊效果觸發：</div>
-        <div>・軌跡 A + B <b>合計成功格數 ≥ 10</b> → 觸發精魂特殊效果（依各精魂而異）</div>
+        <div>・軌跡 A + B <b>合計成功格數 ≥ 40</b> → 觸發精魂特殊效果（依各精魂而異）</div>
         <div>・軌跡 C <b>不計入</b>特殊效果門檻</div>
 
         <div style="margin-top:8px; font-weight:700; color:#5b21b6;">🏆 完成條件：</div>
