@@ -5856,6 +5856,23 @@
         window.__pendingUpdateV15.add(player.id);
       }
     }
+    // ⭐ vamp affixDesc migration：修正舊存檔裡的吸血者之印描述文字（存檔複製了舊文字，需逐一修正）
+    {
+      const _vd = '普攻吸血 傷害×3%（吸血者之印）';
+      function _patchVampDesc(item) {
+        if (!item || typeof item !== 'object') return;
+        if (item.fusionEffect === 'fx_vamp' && item.affixDesc !== _vd) item.affixDesc = _vd;
+        if (Array.isArray(item.fusedComponents)) {
+          for (const fc of item.fusedComponents) {
+            if (fc && fc.fusionEffect === 'fx_vamp' && fc.affixDesc !== _vd) fc.affixDesc = _vd;
+          }
+        }
+      }
+      if (Array.isArray(player.rpg.inventory)) player.rpg.inventory.forEach(_patchVampDesc);
+      if (player.rpg.equipment && typeof player.rpg.equipment === 'object') {
+        Object.values(player.rpg.equipment).forEach(_patchVampDesc);
+      }
+    }
     // skillPoints migration
     if (player.rpg.skillPoints == null) {
       const earned = Math.max(0, (player.rpg.level || 1) - 1) * POINTS_PER_LEVEL.skill;
@@ -10470,7 +10487,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506104910';
+  const APP_VERSION = '20260506110013';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
