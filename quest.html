@@ -3737,7 +3737,7 @@
       affixDesc: '技能 MP 消耗 -20%（秘法師之印）' },
     { id: 'bg2_vamp',     name: '吸血者之印', icon: '👑', slot: 'accessory', lv: 1, atk: 7,  mark: 5,  hp: 40,
       isBossGift: true, sourceBossId: 'goose_king', rarity: 'gold', fusionEffect: 'fx_vamp',
-      affixDesc: '普攻回血 ATK×3%（吸血者之印）' },
+      affixDesc: '普攻吸血 傷害×3%（吸血者之印）' },
     { id: 'bg2_berserk',  name: '狂戰者之印', icon: '👑', slot: 'accessory', lv: 1, atk: 6,  mark: 6,  critDmg: 0.15,
       isBossGift: true, sourceBossId: 'goose_king', rarity: 'gold',
       affixDesc: '爆傷 +15%（狂戰者之印）' },
@@ -7117,6 +7117,7 @@
             // 隱身爆頭保證：消耗後第一箭必中爆頭
             const _stealthHsSt = (playerObj.statuses || []).find(s => s.type === 'stealthHeadshot');
             let lastDmg = 0;
+            let _totalArrowDmg = 0; // ⭐ fx_vamp 吸血用（全箭總傷）
             for (let hit = 1; hit <= totalHits; hit++) {
               const forceHs = (hit === 1 && _stealthHsSt);
               if (forceHs) playerObj.statuses = playerObj.statuses.filter(s => s !== _stealthHsSt);
@@ -7147,6 +7148,7 @@
               dmg = monShield0(dmg);
               mHp -= dmg;
               lastDmg = dmg;
+              _totalArrowDmg += dmg;
               // ⭐ 弓手普攻流：本箭命中後疊層（計數 + 隨機累積bonus）
               _aHit++;
               if (isCrit) { _aCrit++; _aCritBonus += 0.01 + Math.random() * 0.03; }
@@ -7166,10 +7168,12 @@
               }
               if (mHp <= 0) { pushDeathLine(); break; }
             }
-            // ⭐ 合成效果：fx_vamp（普攻回血 ATK×3%）
-            if (_fx.has('fx_vamp') && lastDmg > 0 && mHp > 0) {
-              const vampHeal = Math.max(1, Math.round(stats.atk * 0.03 * totalHits));
+            // ⭐ 合成效果：fx_vamp（普攻吸血：傷害×3%）
+            if (_fx.has('fx_vamp') && _totalArrowDmg > 0) {
+              const vampHeal = Math.max(1, Math.round(_totalArrowDmg * 0.03));
+              const before = pHp;
               pHp = Math.min(stats.maxHp, pHp + vampHeal);
+              if (pHp - before > 0) log.push({ type: 'player', text: `回合 ${round}：🩸 吸血 +${pHp - before} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
             }
             // ⭐ 聖母鵝計數：弓手普攻擊中（按箭數計段）
             if (_isPaladin && !_hmgFrozen) _hmgHitCount += totalHits;
@@ -7192,10 +7196,12 @@
             if (mAbility?.type === 'flatCapDmg') dmg = Math.min(dmg, mAbility.cap || 1);
             dmg = monShield0(dmg);
             mHp -= dmg;
-            // ⭐ 合成效果：fx_vamp（普攻回血 ATK×3%）
-            if (_fx.has('fx_vamp') && dmg > 0 && mHp > 0) {
-              const vampHeal = Math.max(1, Math.round(stats.atk * 0.03));
+            // ⭐ 合成效果：fx_vamp（普攻吸血：傷害×3%）
+            if (_fx.has('fx_vamp') && dmg > 0) {
+              const vampHeal = Math.max(1, Math.round(dmg * 0.03));
+              const _vbefore = pHp;
               pHp = Math.min(stats.maxHp, pHp + vampHeal);
+              if (pHp - _vbefore > 0) log.push({ type: 'player', text: `回合 ${round}：🩸 吸血 +${pHp - _vbefore} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
             }
             // ⭐ 聖母鵝計數：普攻擊中
             if (_isPaladin && !_hmgFrozen) _hmgHitCount++;
@@ -8173,6 +8179,7 @@
             // ⭐ 合成效果：fx_dg_def（攻擊無視 DEF 15%）
             const _tgtDef = tgt.def * (_fx.has('fx_dg_def') ? 0.85 : 1.0);
             let _lastDmgM = 0;
+            let _totalArrowDmgM = 0; // ⭐ fx_vamp 吸血用（全箭總傷）
             for (let hit = 1; hit <= totalHits; hit++) {
               const forceHs = (hit === 1 && _stealthHsSt);
               if (forceHs) playerObj.statuses = playerObj.statuses.filter(s => s !== _stealthHsSt);
@@ -8203,6 +8210,7 @@
               tgt.hp = Math.max(0, tgt.hp - dmg);
               if (tgt.hp <= 0) tgt.alive = false;
               _lastDmgM = dmg;
+              _totalArrowDmgM += dmg;
               // ⭐ 弓手普攻流：本箭命中後疊層（計數 + 隨機累積bonus）
               _aHit++;
               if (isCrit) { _aCrit++; _aCritBonus += 0.01 + Math.random() * 0.03; }
@@ -8221,10 +8229,12 @@
               }
               if (tgt.hp <= 0) break;
             }
-            // ⭐ 合成效果：fx_vamp（普攻回血 ATK×3%）
-            if (_fx.has('fx_vamp') && _lastDmgM > 0 && tgt.hp > 0) {
-              const vampHeal = Math.max(1, Math.round(stats.atk * 0.03 * totalHits));
+            // ⭐ 合成效果：fx_vamp（普攻吸血：傷害×3%）
+            if (_fx.has('fx_vamp') && _totalArrowDmgM > 0) {
+              const vampHeal = Math.max(1, Math.round(_totalArrowDmgM * 0.03));
+              const _vbefore = pHp;
               pHp = Math.min(stats.maxHp, pHp + vampHeal);
+              if (pHp - _vbefore > 0) log.push({ type: 'player', text: `回合 ${round}：🩸 吸血 +${pHp - _vbefore} HP`, hp: hpsSnapshot() });
             }
             // ⭐ 聖母鵝計數：弓手普攻擊中（按箭數計段）
             if (_isPaladinM && !_hmgFrozenM) _hmgHitCountM += totalHits;
@@ -8248,10 +8258,12 @@
             if (tgt.ability?.type === 'flatCapDmg') dmg = Math.min(dmg, tgt.ability.cap || 1);
             tgt.hp = Math.max(0, tgt.hp - dmg);
             if (tgt.hp <= 0) tgt.alive = false;
-            // ⭐ 合成效果：fx_vamp（普攻回血 ATK×3%）
-            if (_fx.has('fx_vamp') && dmg > 0 && tgt.hp > 0) {
-              const vampHeal = Math.max(1, Math.round(stats.atk * 0.03));
+            // ⭐ 合成效果：fx_vamp（普攻吸血：傷害×3%）
+            if (_fx.has('fx_vamp') && dmg > 0) {
+              const vampHeal = Math.max(1, Math.round(dmg * 0.03));
+              const _vbefore = pHp;
               pHp = Math.min(stats.maxHp, pHp + vampHeal);
+              if (pHp - _vbefore > 0) log.push({ type: 'player', text: `回合 ${round}：🩸 吸血 +${pHp - _vbefore} HP`, hp: hpsSnapshot() });
             }
             if (tgt.ability?.type === 'reflect' && tgt.ability.resist) {
               // 反傷：受到傷害的 50%，最多 300
@@ -10423,7 +10435,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506103418';
+  const APP_VERSION = '20260506104248';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -10583,8 +10595,8 @@ ${b.text}
 
         <div style="font-weight:700; color:#b45309; margin:10px 0 4px;">🏹 弓手普攻流疊層系統</div>
         <div>・<b>每命中一箭</b>：普攻傷害 <b>+1%</b>（全場累積，不重置）</div>
-        <div>・<b>每次暴擊</b>：爆傷倍率 <b>+3%</b></div>
-        <div>・<b>每次爆頭</b>：爆頭傷害 <b>+10%</b>（每層 +0.3 爆頭倍率）</div>
+        <div>・<b>每次暴擊</b>：爆傷倍率 <b>隨機 +1~4%</b>（累積）</div>
+        <div>・<b>每次爆頭</b>：爆頭傷害 <b>隨機 +5~13%</b>（累積）</div>
         <div style="font-size:11px; color:#6b7280;">→ 戰報顯示 [命X暴X頭X] 即時疊層數</div>
 
         <div style="font-weight:700; color:#b45309; margin:10px 0 4px;">💥 古龍暴擊連擊（fx_dg_crit）升級</div>
