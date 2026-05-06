@@ -3920,6 +3920,20 @@
     { id: 'bg_pg_mp',      name: '鵝卵石恩賜', icon: '🪨', slot: 'accessory', lv: 1, atk: 10, mark: 10, mp: 15, mpRegen: 3,
       isBossGift: true, sourceBossId: 'pebble_goose', rarity: 'gold', fusionEffect: 'fx_pg_mp',
       affixDesc: '每回合 MP+3（鵝卵石恩賜）' },
+
+    // ── 風中殘鵝恩賜（風中殘鵝扭蛋獎勵，防禦型）─────────────────
+    { id: 'bg_sg_physshield', name: '風鵝護符', icon: '⚡', slot: 'accessory', lv: 1, def: 10, hp: 40,
+      isBossGift: true, sourceBossId: 'storm_goose', rarity: 'gold', fusionEffect: 'fx_sg_physshield',
+      affixDesc: '受到物理傷害 -20%（風鵝護符）' },
+    { id: 'bg_sg_magshield',  name: '風鵝護符', icon: '⚡', slot: 'accessory', lv: 1, def: 10, mp: 15,
+      isBossGift: true, sourceBossId: 'storm_goose', rarity: 'gold', fusionEffect: 'fx_sg_magshield',
+      affixDesc: '受到魔法傷害 -20%（風鵝護符）' },
+    { id: 'bg_sg_statusres',  name: '風鵝護符', icon: '⚡', slot: 'accessory', lv: 1, def: 8, hp: 60,
+      isBossGift: true, sourceBossId: 'storm_goose', rarity: 'gold', fusionEffect: 'fx_sg_statusres',
+      affixDesc: '異常狀態被施加機率 -25%（風鵝護符）' },
+    { id: 'bg_sg_earlydef',   name: '風鵝護符', icon: '⚡', slot: 'accessory', lv: 1, def: 15,
+      isBossGift: true, sourceBossId: 'storm_goose', rarity: 'gold', fusionEffect: 'fx_sg_earlydef',
+      affixDesc: '前 20 回合 DEF +50%（疊裝延長至 40 回合；風鵝護符）' },
   ];
 
   // ============================================================
@@ -6764,6 +6778,9 @@
     const _fusionMpDiscount = _fx.has('fx_mage') ? 0.20 : 0;
     // fx_dg_crit: 暴擊後必爆+爆頭+30%（不連鎖）；合入自身堆疊至 2 次
     const _dgCritCount = getFusionEffectCount(player, 'fx_dg_crit');
+    // ⭐ 風鵝護符效果
+    const _earlyDefStacks = getFusionEffectCount(player, 'fx_sg_earlydef'); // 疊裝延長回合
+    const _statusResist   = _fx.has('fx_sg_statusres') ? 0.25 : 0;          // 異常狀態抵抗
     let _nextForceCrit = 0; // 剩餘必爆次數
     // 弓手普攻流疊加（本場累積，回合間持續）
     let _aHit = 0;       // 命中數 → 普攻傷害 +1%/層
@@ -7641,8 +7658,9 @@
             }
           }
         }
-        // 防禦受 buff 影響
-        const effDef = (stats.def + (pBuff.def || 0)) * (1 + (pBuff.defPct || 0));
+        // 防禦受 buff 影響（⭐ 風鵝護符：前 20×stacks 回合 DEF +50%）
+        const _earlyDefPct = (_earlyDefStacks > 0 && round <= 20 * _earlyDefStacks) ? 0.50 : 0;
+        const effDef = (stats.def + (pBuff.def || 0)) * (1 + (pBuff.defPct || 0) + _earlyDefPct);
         // 反傷：玩家身上有 reflectPct 時，怪打到我會被反彈一部分（受到傷害的 50%，最多 300）
         const applyReflect = (incomingDmg) => {
           if (!pBuff.reflectPct || incomingDmg <= 0 || mHp <= 0) return;
@@ -7706,6 +7724,9 @@
             dmg = Math.max(1, Math.round(dmg));
             dmg = consumeShield(dmg);
             dmg = consumePartialShield(dmg);
+            // ⭐ 風鵝護符：物理/魔法傷害減免（ignoreDef=魔法，其餘=物理）
+            if (mSkill.ignoreDef && _fx.has('fx_sg_magshield'))   dmg = Math.max(1, Math.round(dmg * 0.80));
+            if (!mSkill.ignoreDef && _fx.has('fx_sg_physshield')) dmg = Math.max(1, Math.round(dmg * 0.80));
             if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1);
             pHp = Math.max(0, pHp - dmg);
             if (dmg > 0) {
@@ -7725,8 +7746,8 @@
             }
             if (pHp <= 0) { dead = true; }
             if (mHp <= 0) { pushDeathLine(); break; }
-            // 對玩家上狀態
-            if (!dead && mSkill.applyStatus && Math.random() < (mSkill.applyStatus.chance || 1)) {
+            // 對玩家上狀態（⭐ 風鵝護符：異常狀態抵抗 -25%）
+            if (!dead && mSkill.applyStatus && Math.random() < (mSkill.applyStatus.chance || 1) * (1 - _statusResist)) {
               applyStatus(playerObj, mSkill.applyStatus);
               log.push({ type: 'system', text: `回合 ${round}：${player.name} 進入 ${statusEmoji(mSkill.applyStatus.type)}${statusLabel(mSkill.applyStatus.type)} 狀態`, hp: { player: pHp, monster: mHp, mp: pMp } });
             }
@@ -7750,6 +7771,8 @@
             dmg = Math.max(1, Math.round(dmg));
             dmg = consumeShield(dmg);
             dmg = consumePartialShield(dmg);
+            // ⭐ 風鵝護符：普攻為物理傷害
+            if (_fx.has('fx_sg_physshield')) dmg = Math.max(1, Math.round(dmg * 0.80));
             if (player.rpg.class === 'warrior') bloodPool += Math.min(Math.max(0, pHp), dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1);
             pHp -= dmg;
             if (dmg > 0) {
@@ -7959,6 +7982,9 @@
     // fx_dg_crit: 暴擊後必爆+爆頭+30%（不連鎖）；合入自身堆疊至 2 次
     const _dgCritCount = getFusionEffectCount(player, 'fx_dg_crit');
     let _nextForceCrit = 0;
+    // ⭐ 風鵝護符效果
+    const _earlyDefStacksM = getFusionEffectCount(player, 'fx_sg_earlydef');
+    const _statusResistM   = _fx.has('fx_sg_statusres') ? 0.25 : 0;
     // 弓手普攻流疊加（本場累積）
     let _aHit = 0;
     let _aCrit = 0;      // 暴擊計數（UI 顯示）
@@ -8746,8 +8772,9 @@
           log.push({ type: 'system', text: `回合 ${round}：${m.icon}${m.name} ⚡麻痺，行動被取消`, hp: hpsSnapshot() });
           continue;
         }
-        // 防禦受 buff 影響
-        const effDef = (stats.def + (pBuff.def || 0)) * (1 + (pBuff.defPct || 0));
+        // 防禦受 buff 影響（⭐ 風鵝護符：前 20×stacks 回合 DEF +50%）
+        const _earlyDefPctM = (_earlyDefStacksM > 0 && round <= 20 * _earlyDefStacksM) ? 0.50 : 0;
+        const effDef = (stats.def + (pBuff.def || 0)) * (1 + (pBuff.defPct || 0) + _earlyDefPctM);
         // 怪物技能挑選
         let mSkill = null;
         const cdMap = mSkillLastByIdx[m.idx] = mSkillLastByIdx[m.idx] || {};
@@ -8844,6 +8871,9 @@
             dmg = Math.max(1, Math.round(dmg));
             dmg = consumeShield2(dmg);
             dmg = consumePartialShield2(dmg);
+            // ⭐ 風鵝護符：物理/魔法傷害減免（ignoreDef=魔法，其餘=物理）
+            if (mSkill.ignoreDef && _fx.has('fx_sg_magshield'))   dmg = Math.max(1, Math.round(dmg * 0.80));
+            if (!mSkill.ignoreDef && _fx.has('fx_sg_physshield')) dmg = Math.max(1, Math.round(dmg * 0.80));
             if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1);
             pHp = Math.max(0, pHp - dmg);
             // ⭐ 不屈：首次致死改為 1 HP 存活
@@ -8861,7 +8891,8 @@
               });
               applyReflect2(dmg);
             }
-            if (pHp > 0 && mSkill.applyStatus && Math.random() < (mSkill.applyStatus.chance || 1)) {
+            // ⭐ 風鵝護符：異常狀態抵抗 -25%
+            if (pHp > 0 && mSkill.applyStatus && Math.random() < (mSkill.applyStatus.chance || 1) * (1 - _statusResistM)) {
               applyStatus(playerObj, mSkill.applyStatus);
               log.push({ type: 'system', text: `回合 ${round}：${player.name} 進入 ${statusEmoji(mSkill.applyStatus.type)}${statusLabel(mSkill.applyStatus.type)} 狀態`, hp: hpsSnapshot() });
             }
@@ -8885,6 +8916,8 @@
             dmg = Math.max(1, Math.round(dmg));
             dmg = consumeShield2(dmg);
             dmg = consumePartialShield2(dmg);
+            // ⭐ 風鵝護符：普攻為物理傷害
+            if (_fx.has('fx_sg_physshield')) dmg = Math.max(1, Math.round(dmg * 0.80));
             if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1);
             pHp = Math.max(0, pHp - dmg);
             // ⭐ 不屈：首次致死改為 1 HP 存活
@@ -10114,6 +10147,25 @@
       ],
     },
     {
+      id: 'boss_storm', icon: '⚡', name: '風中殘鵝扭蛋',
+      desc: '消耗 3 顆風中殘鵝硬幣抽風鵝護符（防禦型效果飾品）/ 體力 / 鵝鵝幣',
+      cost: 3,
+      isBossCoin: true,
+      coinFilter: 'bc_storm_goose',
+      currencyIcon: '⚡',
+      currencyName: '風中殘鵝硬幣',
+      status: 'open',
+      pool: [
+        { type: 'item', id: 'bg_sg_physshield', weight: 15 },
+        { type: 'item', id: 'bg_sg_magshield',  weight: 15 },
+        { type: 'item', id: 'bg_sg_statusres',  weight: 15 },
+        { type: 'item', id: 'bg_sg_earlydef',   weight: 15 },
+        { type: 'stamina', amount: 80,  weight: 20, label: '體力 +80',     icon: '⚡' },
+        { type: 'stamina', amount: 150, weight: 10, label: '體力 +150',    icon: '⚡' },
+        { type: 'coins',   amount: 3000,weight: 10, label: '鵝鵝幣 +3000', icon: '🪙' },
+      ],
+    },
+    {
       id: 'boss_dragon', icon: '🐉', name: '古龍扭蛋',
       desc: '消耗 3 顆古龍鵝硬幣抽古龍鵝恩賜（合成材料）/ 體力 / EXP',
       cost: 3,
@@ -11273,7 +11325,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506221521';
+  const APP_VERSION = '20260506222612';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -11349,6 +11401,27 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#1c1917,#ca8a04); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">⚡ 風中殘鵝扭蛋 開放！飾品 4 種　<span style="font-size:11px; opacity:0.85;">2026-05-06</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#ca8a04; margin:6px 0 4px;">⚡ 風鵝護符（消耗風中殘鵝硬幣扭蛋）</div>
+        <div>・硬幣入口：扭蛋機台 → <b>風中殘鵝扭蛋</b>，每次消耗 3 顆硬幣</div>
+        <div style="margin-top:8px; font-size:12px;">
+          <div style="display:flex; flex-wrap:wrap; gap:6px; padding:4px 0;">
+            <div style="background:#fef9c3; border:1px solid #ca8a04; border-radius:7px; padding:5px 9px;">🛡 <b>物坑護符</b><br><span style="color:#6b7280;">受物理傷害 −20%</span></div>
+            <div style="background:#eff6ff; border:1px solid #3b82f6; border-radius:7px; padding:5px 9px;">🔮 <b>魔坑護符</b><br><span style="color:#6b7280;">受魔法傷害 −20%</span></div>
+            <div style="background:#f0fdf4; border:1px solid #16a34a; border-radius:7px; padding:5px 9px;">💊 <b>抗狀護符</b><br><span style="color:#6b7280;">異常狀態被施加 −25%</span></div>
+            <div style="background:#fdf4ff; border:1px solid #a855f7; border-radius:7px; padding:5px 9px;">🏰 <b>早防護符</b><br><span style="color:#6b7280;">前 20 回合 DEF +50%<br>疊裝延長至 40 回合</span></div>
+          </div>
+        </div>
+        <div style="font-size:11px; color:#6b7280; margin-top:4px;">・物理 = 普攻 / 非貫穿技能；魔法 = ignoreDef（無視防禦）技能</div>
+        <div style="font-size:11px; color:#6b7280;">・多件護符可合成疊加效果</div>
+
+        <div style="background:#fef9c3; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#78350f;">
+          💡 早防護符對高防角色（劍士/聖騎）前期效果更驚人；抗狀護符可大幅降低電磁麻痺命中！
+        </div>
 
         <div style="background:linear-gradient(135deg,#7f1d1d,#dc2626); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🩸 戰士血池三技強化　<span style="font-size:11px; opacity:0.85;">2026-05-06</span></div>
