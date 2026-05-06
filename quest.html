@@ -1151,6 +1151,18 @@
   .boss-leaderboard .bl-dmg { color: #fca5a5; font-weight: 700; }
   .boss-card .btn { margin-top: 0; }
   .boss-card .btn:disabled { background: #4b5563; box-shadow: none; }
+  @keyframes hellBannerSlide {
+    from { transform: translateY(-100%); opacity: 0; }
+    to   { transform: translateY(0);     opacity: 1; }
+  }
+  @keyframes hellBannerFadeOut {
+    from { opacity: 1; }
+    to   { opacity: 0; transform: translateY(-20px); }
+  }
+  @keyframes hellPulse {
+    0%,100% { box-shadow: 0 0 18px rgba(220,38,38,0.6); }
+    50%     { box-shadow: 0 0 35px rgba(239,68,68,0.9); }
+  }
   @keyframes wb9KillFlash {
     0%   { transform: scale(1.02); box-shadow: 0 0 0 3px #f59e0b; }
     50%  { transform: scale(1.01); box-shadow: 0 0 0 6px #fde68a; }
@@ -2056,6 +2068,20 @@
     <div class="class-grid" id="classGrid"></div>
   </div>
 
+  <!-- Stage D: 地獄使者專屬介面 -->
+  <div id="stageHell" class="hidden"></div>
+
+  <!-- 地獄使者全服公告橫幅 -->
+  <div id="hellBanner" style="
+    display:none; position:fixed; top:0; left:0; right:0; z-index:9999;
+    background:linear-gradient(135deg,#1a0000,#7f1d1d,#1a0000);
+    color:#fca5a5; font-size:14px; font-weight:700; text-align:center;
+    padding:10px 16px; letter-spacing:0.5px;
+    box-shadow:0 4px 20px rgba(220,38,38,0.7);
+    border-bottom:2px solid #dc2626;
+    animation:hellBannerSlide 0.4s ease-out;
+  "></div>
+
   <!-- Stage C: 主畫面 -->
   <div id="stageGame" class="hidden">
     <div class="char-with-menu">
@@ -2326,6 +2352,17 @@
         { id: 'p_p2', name: '神聖治療', icon: '✨', stat: 'int', threshold: 25, desc: 'INT ≥ 25：治療效果 +30%',          effect: 'healPct',      per: 0.30 },
         { id: 'p_p3', name: '神威',     icon: '⚖️', stat: 'str', threshold: 30, desc: 'STR ≥ 30：暴擊傷害 +30%',          effect: 'critDmg',      per: 0.30 },
       ],
+    },
+    // ⭐ 地獄使者 — DEBUG 限定特殊職業，完全不同介面
+    hellmessenger: {
+      icon: '💀', name: '地獄使者',
+      desc: '黑暗使者，以靈力施懲於眾生',
+      isHellSpecial: true,
+      hp: 1, atk: 0, def: 0, spd: 0, mark: 0,
+      mp: 0, mpPer: 0,
+      hpPer: 0, atkPer: 0, defPer: 0, spdPer: 0, markPer: 0,
+      regenPer: 0, attackVerb: '詛咒',
+      skills: [], skillTree: [], passives: [],
     },
   };
 
@@ -5066,6 +5103,7 @@
   // 狀態
   // ============================================================
   let players = [];
+  let hellAnnouncements = []; // ⭐ 地獄使者全服公告
   let history = [];
   let gifts = [];
   let _giftsLocalTs = 0; // ⭐ 上次本地修改 gifts 的時間戳，防 Firebase 快照回朔
@@ -5266,7 +5304,7 @@
       }
     }
     __rotateBackup();
-    const payload = { players, history, gifts, comments, pendingBets, betPool, worldBoss, wb9, baseMoney, basePoint, bossOverrides: _bossOverrides };
+    const payload = { players, history, gifts, comments, pendingBets, betPool, worldBoss, wb9, baseMoney, basePoint, bossOverrides: _bossOverrides, hellAnnouncements };
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch (e) {}
     if (!__isApplyingRemote && window.__firebaseSync && window.__firebaseSync.ready) {
       window.__firebaseSync.save(payload);
@@ -5336,6 +5374,12 @@
       if (data.bossOverrides && typeof data.bossOverrides === 'object') {
         _bossOverrides = data.bossOverrides;
         applyBossOverrides(_bossOverrides);
+      }
+      // ⭐ 地獄使者全服公告
+      if (Array.isArray(data.hellAnnouncements)) {
+        const prevIds = new Set(hellAnnouncements.map(a => a.id));
+        hellAnnouncements = data.hellAnnouncements;
+        hellAnnouncements.filter(a => !prevIds.has(a.id)).forEach(a => showHellBanner(a));
       }
       __persistLocalSnapshot();
       render();
@@ -9030,11 +9074,21 @@
     if (!rpg.class) {
       document.getElementById('stageClassPick').classList.remove('hidden');
       document.getElementById('stageGame').classList.add('hidden');
+      document.getElementById('stageHell').classList.add('hidden');
       renderClassPicker();
+      return;
+    }
+    // ⭐ 地獄使者：完全不同介面
+    if (rpg.class === 'hellmessenger') {
+      document.getElementById('stageClassPick').classList.add('hidden');
+      document.getElementById('stageGame').classList.add('hidden');
+      document.getElementById('stageHell').classList.remove('hidden');
+      renderHellMessenger();
       return;
     }
     document.getElementById('stageClassPick').classList.add('hidden');
     document.getElementById('stageGame').classList.remove('hidden');
+    document.getElementById('stageHell').classList.add('hidden');
 
     // 驗證所有玩家的技能點 / 能力點，少了補回去（雲端來的舊資料可能有 bug）
     let anyCorrected = false;
@@ -11389,7 +11443,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507012047';
+  const APP_VERSION = '20260507014050';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -17773,6 +17827,243 @@ ${b.text}
   }
   window.resolveForageChoice = resolveForageChoice;
 
+  // ============================================================
+  // ⭐⭐⭐  地獄使者系統  ⭐⭐⭐
+  // ============================================================
+
+  const HELL_STAMINA_COST = { stealStamina: 10, plunder: 20 };
+  const HELL_STEAL_STAMINA_AMOUNT = [10, 20]; // [min, max]
+  const HELL_PLUNDER_AMOUNT = 50000;
+
+  // --- 建立地獄使者角色（DEBUG 限定）---
+  function pickHellMessenger() {
+    const me = getMe(); if (!me) return;
+    showModal('💀 成為地獄使者', `
+      <div style="text-align:center; padding:8px 0 16px;">
+        <div style="font-size:48px; margin-bottom:8px;">💀</div>
+        <div style="background:#1a0000; border:2px solid #dc2626; border-radius:10px; padding:12px; color:#fca5a5; font-size:13px; line-height:1.8; margin-bottom:16px;">
+          ⚠️ 此操作將<b>清空本角色所有資料</b><br>
+          等級、裝備、技能、鵝鵝幣全部歸零<br>
+          <b>無法還原</b>，請確認後再繼續
+        </div>
+        <button onclick="confirmPickHellMessenger()" style="
+          width:100%; padding:12px; border:none; border-radius:10px; cursor:pointer;
+          background:linear-gradient(135deg,#7f1d1d,#dc2626); color:#fff;
+          font-size:14px; font-weight:800; letter-spacing:1px;
+          box-shadow:0 4px 0 #991b1b;">
+          💀 確認成為地獄使者
+        </button>
+        <button onclick="hideModal()" style="
+          margin-top:8px; width:100%; padding:10px; border:1px solid #ccc; border-radius:10px;
+          background:#f3f4f6; cursor:pointer; font-size:13px;">取消</button>
+      </div>
+    `);
+  }
+  window.pickHellMessenger = pickHellMessenger;
+
+  function confirmPickHellMessenger() {
+    const me = getMe(); if (!me) return;
+    // 清空所有 RPG 資料
+    me.rpg = {};
+    me.coinsSpent = 0;
+    const rpg = getRpg(me);
+    rpg.class = 'hellmessenger';
+    rpg.stamina = 200;
+    rpg.lastTickAt = Date.now();
+    rpg.hellDeeds = [];    // 惡行記錄
+    saveData();
+    hideModal();
+    render();
+    showToast('💀 地獄使者誕生！');
+  }
+  window.confirmPickHellMessenger = confirmPickHellMessenger;
+
+  // --- 全服公告橫幅 ---
+  function showHellBanner(a) {
+    const banner = document.getElementById('hellBanner');
+    if (!banner) return;
+    banner.style.display = 'block';
+    banner.style.animation = 'none';
+    banner.offsetHeight; // reflow
+    banner.style.animation = 'hellBannerSlide 0.4s ease-out, hellPulse 1s ease-in-out infinite';
+    banner.innerHTML = `${a.icon || '💀'} ${a.text}`;
+    clearTimeout(banner._hideTimer);
+    banner._hideTimer = setTimeout(() => {
+      banner.style.animation = 'hellBannerFadeOut 0.5s ease-in forwards';
+      setTimeout(() => { banner.style.display = 'none'; }, 500);
+    }, 5000);
+  }
+  window.showHellBanner = showHellBanner;
+
+  function broadcastHellAction(icon, text) {
+    const me = getMe();
+    const fromName = me?.name || '地獄使者';
+    hellAnnouncements = hellAnnouncements || [];
+    const entry = { id: `${Date.now()}_${Math.random().toString(36).slice(2)}`, ts: Date.now(), icon, text, fromName };
+    hellAnnouncements.unshift(entry);
+    if (hellAnnouncements.length > 30) hellAnnouncements = hellAnnouncements.slice(0, 30);
+    saveData();
+    showHellBanner(entry); // 自己也看到
+  }
+
+  // --- 動作：奪取體力 ---
+  function hellStealStamina(targetId) {
+    const me = getMe(); if (!me) return;
+    const myRpg = getRpg(me);
+    if ((myRpg.stamina || 0) < HELL_STAMINA_COST.stealStamina) { showToast(`⚡ 靈力不足（需 ${HELL_STAMINA_COST.stealStamina}）`); return; }
+    const target = players.find(p => p && p.id === targetId);
+    if (!target) { showToast('找不到目標'); return; }
+    const targetRpg = getRpg(target);
+    const [sMin, sMax] = HELL_STEAL_STAMINA_AMOUNT;
+    const stolen = sMin + Math.floor(Math.random() * (sMax - sMin + 1));
+    const actualStolen = Math.min(stolen, targetRpg.stamina || 0);
+    // 扣目標體力
+    targetRpg.stamina = Math.max(0, (targetRpg.stamina || 0) - actualStolen);
+    targetRpg.saveVersion = (targetRpg.saveVersion || 0) + 1;
+    target.lastTouchedAt = Date.now() - 1; // 略早於我，確保遠端接受
+    // 補自己靈力
+    myRpg.stamina = Math.min(200, (myRpg.stamina || 0) - HELL_STAMINA_COST.stealStamina + actualStolen);
+    // 記錄
+    const deed = { ts: Date.now(), type: 'stealStamina', targetName: target.name || targetId, amount: actualStolen };
+    myRpg.hellDeeds = [deed, ...(myRpg.hellDeeds || [])].slice(0, 10);
+    broadcastHellAction('⚡', `地獄使者 【${escapeHtml(me.name || '???')}】 奪走了 ${escapeHtml(target.name || '???')} 的 ${actualStolen} 點體力！`);
+    renderHellMessenger();
+  }
+  window.hellStealStamina = hellStealStamina;
+
+  // --- 動作：洗劫 ---
+  function hellPlunder(targetId) {
+    const me = getMe(); if (!me) return;
+    const myRpg = getRpg(me);
+    if ((myRpg.stamina || 0) < HELL_STAMINA_COST.plunder) { showToast(`⚡ 靈力不足（需 ${HELL_STAMINA_COST.plunder}）`); return; }
+    const target = players.find(p => p && p.id === targetId);
+    if (!target) { showToast('找不到目標'); return; }
+    const targetCoins = getCoins(target.id);
+    if (targetCoins <= 0) { showToast('目標身無分文'); return; }
+    const stolen = Math.min(HELL_PLUNDER_AMOUNT, targetCoins);
+    // 扣目標鵝鵝幣（增加其 coinsSpent）
+    target.coinsSpent = (target.coinsSpent || 0) + stolen;
+    target.lastTouchedAt = Date.now() - 1;
+    if (target.rpg) { target.rpg.saveVersion = (target.rpg.saveVersion || 0) + 1; }
+    // 補回自己（減少自己的 coinsSpent）
+    me.coinsSpent = (me.coinsSpent || 0) - stolen;
+    myRpg.stamina = Math.max(0, (myRpg.stamina || 0) - HELL_STAMINA_COST.plunder);
+    // 記錄
+    const deed = { ts: Date.now(), type: 'plunder', targetName: target.name || targetId, amount: stolen };
+    myRpg.hellDeeds = [deed, ...(myRpg.hellDeeds || [])].slice(0, 10);
+    broadcastHellAction('💰', `地獄使者 【${escapeHtml(me.name || '???')}】 洗劫了 ${escapeHtml(target.name || '???')} 的 ${stolen.toLocaleString()} 鵝鵝幣！`);
+    renderHellMessenger();
+  }
+  window.hellPlunder = hellPlunder;
+
+  // --- 渲染地獄使者介面 ---
+  function renderHellMessenger() {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const stamina = rpg.stamina || 0;
+    const myCoins = getCoins(me.id);
+    const stage = document.getElementById('stageHell');
+    if (!stage) return;
+    tickRecovery(me);
+
+    // 可選目標：其他有 RPG 職業的玩家（排除自己與地獄使者）
+    const targets = (players || []).filter(p =>
+      p && p.id !== me.id && p.rpg && p.rpg.class && p.rpg.class !== 'hellmessenger'
+    );
+
+    const targetOptions = targets.length === 0
+      ? `<div style="color:#6b7280; font-size:12px; text-align:center; padding:10px;">目前沒有其他玩家可作為目標</div>`
+      : targets.map(t => {
+          const tRpg = getRpg(t);
+          const cls = CLASSES[tRpg.class] || {};
+          const tCoins = getCoins(t.id);
+          return `
+            <div style="background:#1a0000; border:1px solid #7f1d1d; border-radius:10px; padding:10px 12px; margin-bottom:8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <div style="font-weight:700; color:#fca5a5;">${escapeHtml(cls.icon || '?')} ${escapeHtml(t.name || t.id)} <span style="font-size:11px; color:#9ca3af;">Lv${tRpg.level || 1} ${escapeHtml(cls.name || '')}</span></div>
+                <div style="font-size:11px; color:#6b7280;">⚡${tRpg.stamina || 0}　💰${tCoins >= 10000 ? Math.floor(tCoins/10000)+'萬' : tCoins}</div>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                <button onclick="hellStealStamina('${t.id}')" style="
+                  padding:8px 4px; border:none; border-radius:8px; cursor:pointer; font-size:12px; font-weight:700;
+                  background:linear-gradient(135deg,#1e3a8a,#3b82f6); color:#fff;
+                  ${stamina < HELL_STAMINA_COST.stealStamina ? 'opacity:0.4; pointer-events:none;' : ''}">
+                  ⚡ 奪取體力<br><span style="font-size:10px; opacity:0.8;">消耗 ${HELL_STAMINA_COST.stealStamina} 靈力</span>
+                </button>
+                <button onclick="hellPlunder('${t.id}')" style="
+                  padding:8px 4px; border:none; border-radius:8px; cursor:pointer; font-size:12px; font-weight:700;
+                  background:linear-gradient(135deg,#78350f,#f59e0b); color:#1a0000;
+                  ${stamina < HELL_STAMINA_COST.plunder || tCoins <= 0 ? 'opacity:0.4; pointer-events:none;' : ''}">
+                  💰 洗劫<br><span style="font-size:10px; opacity:0.7;">消耗 ${HELL_STAMINA_COST.plunder} 靈力</span>
+                </button>
+              </div>
+            </div>`;
+        }).join('');
+
+    // 最近惡行
+    const deeds = (rpg.hellDeeds || []);
+    const deedsHtml = deeds.length === 0
+      ? `<div style="color:#6b7280; font-size:12px; text-align:center; padding:8px;">尚無惡行記錄</div>`
+      : deeds.map(d => {
+          const t = new Date(d.ts).toLocaleTimeString('zh-TW', { hour:'2-digit', minute:'2-digit' });
+          const icon = d.type === 'stealStamina' ? '⚡' : '💰';
+          const desc = d.type === 'stealStamina'
+            ? `奪走 ${escapeHtml(d.targetName)} 的 ${d.amount} 體力`
+            : `洗劫 ${escapeHtml(d.targetName)} ${d.amount.toLocaleString()} 幣`;
+          return `<div style="font-size:11px; color:#fca5a5; padding:3px 0; border-bottom:1px solid #3f0000;">${icon} ${t}　${desc}</div>`;
+        }).join('');
+
+    // 最近全服公告
+    const recentAnnounce = (hellAnnouncements || []).slice(0, 5);
+    const announceHtml = recentAnnounce.length === 0
+      ? `<div style="color:#6b7280; font-size:12px; text-align:center; padding:8px;">尚無公告</div>`
+      : recentAnnounce.map(a => {
+          const t = new Date(a.ts).toLocaleTimeString('zh-TW', { hour:'2-digit', minute:'2-digit' });
+          return `<div style="font-size:11px; color:#fca5a5; padding:3px 0; border-bottom:1px solid #3f0000;">${a.icon || '💀'} ${t}　${a.text}</div>`;
+        }).join('');
+
+    const staminaPct = Math.round((stamina / 200) * 100);
+    stage.innerHTML = `
+      <div style="background:linear-gradient(180deg,#0d0000,#1a0000); min-height:100vh; padding:12px; color:#fca5a5;">
+
+        <!-- 頭部 -->
+        <div style="background:linear-gradient(135deg,#1a0000,#7f1d1d); border:2px solid #dc2626; border-radius:14px; padding:14px 16px; margin-bottom:14px; animation:hellPulse 2s ease-in-out infinite;">
+          <div style="font-size:20px; font-weight:900; letter-spacing:2px; color:#f87171; text-shadow:0 0 10px rgba(239,68,68,0.8);">💀 地獄使者</div>
+          <div style="font-size:13px; color:#fca5a5; margin-top:4px;">${escapeHtml(me.name || '???')}</div>
+          <div style="margin-top:10px;">
+            <div style="font-size:11px; color:#9ca3af; margin-bottom:3px;">⚡ 靈力 ${stamina} / 200</div>
+            <div style="background:#3f0000; border-radius:6px; height:10px; overflow:hidden;">
+              <div style="height:100%; width:${staminaPct}%; background:linear-gradient(90deg,#dc2626,#f87171); border-radius:6px;"></div>
+            </div>
+          </div>
+          <div style="margin-top:8px; font-size:12px; color:#fde68a;">💰 ${myCoins.toLocaleString()} 鵝鵝幣</div>
+        </div>
+
+        <!-- 目標選擇 -->
+        <div style="font-size:13px; font-weight:800; color:#f87171; margin-bottom:8px; letter-spacing:1px;">🎯 選擇目標</div>
+        ${targetOptions}
+
+        <!-- 惡行記錄 -->
+        <div style="background:#0d0000; border:1px solid #3f0000; border-radius:10px; padding:10px 12px; margin-top:12px; margin-bottom:12px;">
+          <div style="font-size:12px; font-weight:700; color:#f87171; margin-bottom:6px;">📜 我的惡行</div>
+          ${deedsHtml}
+        </div>
+
+        <!-- 全服公告 -->
+        <div style="background:#0d0000; border:1px solid #3f0000; border-radius:10px; padding:10px 12px; margin-bottom:12px;">
+          <div style="font-size:12px; font-weight:700; color:#f87171; margin-bottom:6px;">📢 最近全服通報</div>
+          ${announceHtml}
+        </div>
+
+        <!-- 說明 -->
+        <div style="font-size:10px; color:#4b0000; text-align:center;">地獄使者的一切行動都會向所有玩家廣播　·　靈力每分鐘自動回復 ${STAMINA_PER_TICK} 點</div>
+      </div>
+    `;
+  }
+  window.renderHellMessenger = renderHellMessenger;
+
+  // ============================================================
+
   let __fightInProgress = false;
   function onFight(opts) {
     if (__fightInProgress) { showToast('⏳ 戰鬥進行中…請稍候'); return; }
@@ -18570,6 +18861,7 @@ ${b.text}
       <input type="file" id="adminRestoreInput" accept="application/json" style="display:none" onchange="adminApplyRestoreFile(event)">
 
       <button class="btn btn-danger" onclick="adminResetRpg()" style="margin-top:6px;">⚠️ 重置 RPG 角色（保留幣）</button>
+      <button onclick="pickHellMessenger()" style="margin-top:6px; width:100%; padding:11px; border:none; border-radius:10px; cursor:pointer; background:linear-gradient(135deg,#1a0000,#7f1d1d,#dc2626); color:#fca5a5; font-size:13px; font-weight:800; letter-spacing:1px; box-shadow:0 4px 0 #450a0a;">💀 成為地獄使者（清空角色）</button>
       <button class="btn btn-secondary" onclick="adminRefillAllStamina()" style="margin-top:6px; background:linear-gradient(135deg,#bfdbfe,#3b82f6); box-shadow:0 4px 0 #1d4ed8; color:#fff;">⚡ 全體補滿體力（所有玩家）</button>
       <button class="btn btn-secondary" onclick="adminShowSendStaminaModal()" style="margin-top:6px; background:linear-gradient(135deg,#bbf7d0,#10b981); box-shadow:0 4px 0 #047857; color:#fff;">💌 全體送體力瓶（送到信箱）</button>
       <button class="btn btn-secondary" onclick="adminEditBossStats()" style="margin-top:6px; background:linear-gradient(135deg,#fde68a,#f59e0b); box-shadow:0 4px 0 #b45309; color:#7c2d12;">🐉 編輯 Boss 能力（世界王 + 個人王）</button>
