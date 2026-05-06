@@ -7048,7 +7048,8 @@
           pGauge -= getEffectiveCast(skill);
           // 成本說明字串（多種代價可能組合：MP / HP）
           // ⭐ 血池累積：任何扣 HP 的技能（血祭斬 / 死戰之怒 / 嗜血怒嚎…）都加進血池
-          if (hpPaid > 0) bloodPool += hpPaid;
+          // ⭐ 嗜血怒嚎 期間：血池增量×2
+          if (hpPaid > 0) bloodPool += hpPaid * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1);
           const costParts = [];
           if (effMpCost > 0) costParts.push(`-${effMpCost} MP`);
           if (hpPaid > 0)    costParts.push(`-${hpPaid} HP`);
@@ -7169,13 +7170,29 @@
               if (mHp <= 0) { monsterDied = true; }
             }
             const dmgStr = skillHits > 1 ? `(${hitLogs.join(' / ')})` : `-${totalDmg} HP`;
+            // ⭐ 血祭斬：最後追加 血池÷10 固定真實傷（不受暴擊，不消耗血池）
+            if (skill.id === 'w_blood_slash' && bloodPool > 0) {
+              const _bpTrueDmg = Math.floor(bloodPool / 10);
+              if (_bpTrueDmg > 0) {
+                mHp -= _bpTrueDmg;
+                totalDmg += _bpTrueDmg;
+                if (mHp <= 0 && !monsterDied) monsterDied = true;
+              }
+            }
             // 吸血 / 自癒：用總傷害計
             let extra = '';
+            // ⭐ 血祭斬 真傷補正顯示（放在 extra 最前面）
+            if (skill.id === 'w_blood_slash' && bloodPool > 0) {
+              const _btd = Math.floor(bloodPool / 10);
+              if (_btd > 0) extra += ` 🩸真傷+${_btd}（血池÷10）`;
+            }
             if (skill.lifesteal) {
               const heal = Math.max(1, Math.round(totalDmg * skill.lifesteal));
               const before = pHp;
               pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + heal));  // 不下調（神聖祝福可讓 HP 超過 maxHp，後續補血不應拉低）
               if (pHp - before > 0) extra += ` 🩸+${pHp - before} HP (吸血)`;
+              // ⭐ 嗜血爆裂：吸血量也加入血池
+              if (skill.id === 'w_blood_burst') bloodPool += heal;
             }
             // ⭐ 流血吸血（嗜血爆裂）：打流血目標額外 +10% 吸血
             if (skill.bleedLifestealBonus && hasStatus(monster, 'bleed')) {
@@ -7183,6 +7200,8 @@
               const before = pHp;
               pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + extraHeal));
               if (pHp - before > 0) extra += ` 🩸+${pHp - before} HP (流血吸血)`;
+              // ⭐ 嗜血爆裂：流血吸血也加入血池
+              if (skill.id === 'w_blood_burst') bloodPool += extraHeal;
             }
             // ⭐ 嗜血劍：攻擊流血目標 → 回血×2 + ATK+20%(3T)
             if (weaponBloodEffect && hasStatus(monster, 'bleed') && totalDmg > 0) {
@@ -7260,6 +7279,11 @@
             if (skill.selfBuff3) {
               applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff3.stat, amount: skill.selfBuff3.amount, turns: skill.selfBuff3.turns, playerTurnOnly: !!skill.selfBuff3.playerTurnOnly });
               extraNote.push(describeBuff(skill.selfBuff3));
+            }
+            // ⭐ 嗜血怒嚎：期間血池增量 ×2（追加 bloodlust_pool 狀態追蹤）
+            if (skill.id === 'w_bloodlust') {
+              applyStatus(playerObj, { type: 'bloodlust_pool', turns: skill.selfBuff.turns });
+              extraNote.push('🩸 血池加倍');
             }
             // ⭐ 隱身：另加 shield 狀態（吸收一次傷害）+ Lv 5 額外 +20% 爆傷 buff
             if (skill.applyShield) {
@@ -7682,7 +7706,7 @@
             dmg = Math.max(1, Math.round(dmg));
             dmg = consumeShield(dmg);
             dmg = consumePartialShield(dmg);
-            if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg);
+            if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1);
             pHp = Math.max(0, pHp - dmg);
             if (dmg > 0) {
               // ⭐ 聖母鵝計數：被怪物技能擊中
@@ -7726,7 +7750,7 @@
             dmg = Math.max(1, Math.round(dmg));
             dmg = consumeShield(dmg);
             dmg = consumePartialShield(dmg);
-            if (player.rpg.class === 'warrior') bloodPool += Math.min(Math.max(0, pHp), dmg);
+            if (player.rpg.class === 'warrior') bloodPool += Math.min(Math.max(0, pHp), dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1);
             pHp -= dmg;
             if (dmg > 0) {
               // ⭐ 聖母鵝計數：被怪物普攻擊中
@@ -8192,8 +8216,8 @@
             pHp = Math.max(1, pHp - hpPaid);
           }
           if (skill.hpCostFlat) { hpPaid += skill.hpCostFlat; pHp = Math.max(1, pHp - skill.hpCostFlat); }
-          // ⭐ 血池累積：任何扣 HP 的技能都加進血池
-          if (hpPaid > 0) bloodPool += hpPaid;
+          // ⭐ 血池累積：任何扣 HP 的技能都加進血池（嗜血怒嚎期間×2）
+          if (hpPaid > 0) bloodPool += hpPaid * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1);
           nextActionForSkill[skill.id] = playerActions + skill.cooldown;
           const costParts = [];
           if (effMpCost > 0) costParts.push(`-${effMpCost} MP`);
@@ -8292,8 +8316,24 @@
                 applyStatus(tgt, skill.applyStatus);
               }
             }
+            // ⭐ 血祭斬：最後追加 血池÷10 固定真實傷（不受暴擊，不消耗血池）
+            if (skill.id === 'w_blood_slash' && bloodPool > 0) {
+              const _bpTrueDmg = Math.floor(bloodPool / 10);
+              if (_bpTrueDmg > 0) {
+                for (const h of hits) {
+                  h.tgt.hp = Math.max(0, h.tgt.hp - _bpTrueDmg);
+                  if (h.tgt.hp <= 0) h.tgt.alive = false;
+                  h.dmg += _bpTrueDmg;
+                }
+              }
+            }
             // 吸血（總和）
             let extra = '';
+            // ⭐ 血祭斬 真傷補正顯示
+            if (skill.id === 'w_blood_slash' && bloodPool > 0) {
+              const _btd = Math.floor(bloodPool / 10);
+              if (_btd > 0) extra += ` 🩸真傷+${_btd}×${hits.length}（血池÷10）`;
+            }
             if (skill.lifesteal && hits.length) {
               const totalDmg = hits.reduce((s, h) => s + h.dmg, 0);
               const heal = Math.max(1, Math.round(totalDmg * skill.lifesteal));
@@ -8301,6 +8341,8 @@
               pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + heal));  // 不下調（神聖祝福可讓 HP 超過 maxHp，後續補血不應拉低）
               const gained = pHp - before;
               if (gained > 0) extra += ` 🩸+${gained} HP`;
+              // ⭐ 嗜血爆裂：吸血量也加入血池
+              if (skill.id === 'w_blood_burst') bloodPool += heal;
             }
             // ⭐ 流血吸血（嗜血爆裂）：打流血目標額外 +10% 吸血
             if (skill.bleedLifestealBonus && hits.length) {
@@ -8311,6 +8353,8 @@
                 const before = pHp;
                 pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + extraHeal));
                 if (pHp - before > 0) extra += ` 🩸+${pHp - before} HP (流血吸血)`;
+                // ⭐ 嗜血爆裂：流血吸血也加入血池
+                if (skill.id === 'w_blood_burst') bloodPool += extraHeal;
               }
             }
             // ⭐ 嗜血劍：攻擊流血目標 → 回血×2 + ATK+20%(3T)
@@ -8389,6 +8433,11 @@
             if (skill.selfBuff3) {
               applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff3.stat, amount: skill.selfBuff3.amount, turns: skill.selfBuff3.turns, playerTurnOnly: !!skill.selfBuff3.playerTurnOnly });
               extraNote.push(describeBuff(skill.selfBuff3));
+            }
+            // ⭐ 嗜血怒嚎：期間血池增量 ×2（multi-fight）
+            if (skill.id === 'w_bloodlust') {
+              applyStatus(playerObj, { type: 'bloodlust_pool', turns: skill.selfBuff.turns });
+              extraNote.push('🩸 血池加倍');
             }
             if (skill.applyShield) {
               applyStatus(playerObj, { type: 'shield', charges: skill.applyShield, turns: 99 });
@@ -8795,7 +8844,7 @@
             dmg = Math.max(1, Math.round(dmg));
             dmg = consumeShield2(dmg);
             dmg = consumePartialShield2(dmg);
-            if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg);
+            if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1);
             pHp = Math.max(0, pHp - dmg);
             // ⭐ 不屈：首次致死改為 1 HP 存活
             if (pHp <= 0 && _spiritSpecials.has('tenacious') && !_tenaciousUsed) {
@@ -8836,7 +8885,7 @@
             dmg = Math.max(1, Math.round(dmg));
             dmg = consumeShield2(dmg);
             dmg = consumePartialShield2(dmg);
-            if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg);
+            if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1);
             pHp = Math.max(0, pHp - dmg);
             // ⭐ 不屈：首次致死改為 1 HP 存活
             if (pHp <= 0 && _spiritSpecials.has('tenacious') && !_tenaciousUsed) {
@@ -11224,7 +11273,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506220422';
+  const APP_VERSION = '20260506221521';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -11300,6 +11349,27 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#7f1d1d,#dc2626); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🩸 戰士血池三技強化　<span style="font-size:11px; opacity:0.85;">2026-05-06</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#dc2626; margin:6px 0 4px;">🦁 嗜血怒嚎 強化</div>
+        <div>・<b>嗜血怒嚎</b>期間受到的一切傷害，累積血池的量<b>×2</b></div>
+        <div style="font-size:11px; color:#6b7280;">→ 主動挨打蓄池效率翻倍；嗜血怒嚎 = 衝進去挨打的信號</div>
+
+        <div style="font-weight:700; color:#dc2626; margin:10px 0 4px;">💥 嗜血爆裂 強化</div>
+        <div>・<b>嗜血爆裂</b>吸到的血量（基礎吸血 + 流血額外吸血）同步加入血池</div>
+        <div style="font-size:11px; color:#6b7280;">→ 打流血目標用爆裂，邊補血邊積池，雙向蓄力</div>
+
+        <div style="font-weight:700; color:#dc2626; margin:10px 0 4px;">🩸 血祭斬 強化</div>
+        <div>・<b>血祭斬</b>每次傷害後額外追加 <b>血池 ÷ 10</b> 的固定真實傷害</div>
+        <div>・此真實傷<b>不受暴擊影響</b>，血池數值不消耗</div>
+        <div style="font-size:11px; color:#6b7280;">→ 血池越大，每刀附帶的真傷越恐怖；與爆裂/怒嚎形成完整循環</div>
+
+        <div style="background:#fee2e2; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#7f1d1d;">
+          💡 建議循環：嗜血怒嚎（開倍增）→ 大量受傷/爆裂蓄池 → 血祭斬收割真傷 🩸
+        </div>
 
         <div style="background:linear-gradient(135deg,#1a1a2e,#6d28d9); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">⚗️ 精魂刻印系統 全面重設計　<span style="font-size:11px; opacity:0.85;">2026-05-06</span></div>
