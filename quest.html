@@ -4223,10 +4223,10 @@
       case 'paladin':
         return [
           { judgeId: 1101, param: 60, skillId: 'p_holy_heal' },
+          { judgeId: 1912, param: 4,  skillId: 'p_aegis' },           // 每4行動用一次反傷護盾（優先於神聖祝福）
           { judgeId: 1000, param: 0,  skillId: 'p_blessing' },        // 神聖祝福（DEF +40% + 最大HP +20% buff）
           { judgeId: 1201, param: 25, skillId: 'p_pray' },
           { judgeId: 1450, param: 2,  skillId: 'p_judgment' },        // 多隻怪 → 審判（魔傷 2× ATK 全體）
-          { judgeId: 1000, param: 0,  skillId: 'p_aegis' },           // 反傷護盾（50% reflect）
           { judgeId: 1000, param: 0,  skillId: 'p_shield_charge' },   // 護盾衝鋒（6× DEF + DEF +10 buff）
           { judgeId: 1000, param: 0,  skillId: 'p_godfist' },         // 神之拳（2 目標 + 麻痺）
           { judgeId: 1000, param: 0,  skillId: 'p_holy_smite' },      // 神聖懲戒（2.5× ATK + 10% maxHp + 易傷）
@@ -5920,6 +5920,37 @@
       if (Array.isArray(player.rpg.inventory)) player.rpg.inventory.forEach(_patchVampDesc);
       if (player.rpg.equipment && typeof player.rpg.equipment === 'object') {
         Object.values(player.rpg.equipment).forEach(_patchVampDesc);
+      }
+    }
+    // ⭐ v16：聖騎反傷護盾行動規則修復
+    if (!player.rpg.updateV16 && typeof getMeId === 'function' && player.id === getMeId()) {
+      player.rpg.updateV16 = true;
+      if (typeof window !== 'undefined') {
+        window.__pendingUpdateV16 = window.__pendingUpdateV16 || new Set();
+        window.__pendingUpdateV16.add(player.id);
+      }
+    }
+    // ⭐ v16 migration：修正聖騎 p_aegis 在行動規則表中永遠被 p_blessing 搶先的問題
+    //   舊規則表：p_blessing（judge 1000）在前，p_aegis（judge 1000）在後 → p_aegis 永不觸發
+    //   新規則表：p_aegis 改用 judge 1912（每4行動），移到 p_blessing 之前
+    if (player.rpg.class === 'paladin' && Array.isArray(player.rpg.actionPatterns)) {
+      for (const page of player.rpg.actionPatterns) {
+        if (!Array.isArray(page)) continue;
+        const aegisIdx    = page.findIndex(r => r && r.skillId === 'p_aegis');
+        const blessingIdx = page.findIndex(r => r && r.skillId === 'p_blessing');
+        if (aegisIdx < 0) continue; // 沒有 p_aegis 這條，跳過
+        const aegisRule = page[aegisIdx];
+        // 只修正 judgeId 還是 1000 的舊版（若玩家已自訂過則保留）
+        if (aegisRule.judgeId === 1000) {
+          aegisRule.judgeId = 1912;
+          aegisRule.param   = 4;
+        }
+        // 若 p_aegis 在 p_blessing 之後 → 把它移到 p_blessing 之前
+        if (blessingIdx >= 0 && aegisIdx > blessingIdx) {
+          page.splice(aegisIdx, 1); // 先移除
+          const newBlessingIdx = page.findIndex(r => r && r.skillId === 'p_blessing');
+          page.splice(newBlessingIdx, 0, aegisRule); // 插到 blessing 前
+        }
       }
     }
     // skillPoints migration
@@ -8667,7 +8698,30 @@
   function maybeShowBetaCompModal() {
     const me = getMe();
     if (!me) return;
-    // ⭐ v15 優先（最新）：吸血者之印修復 / 弓手疊層 UI 修復
+    // ⭐ v16 優先（最新）：聖騎反傷護盾行動規則修復
+    if (window.__pendingUpdateV16 && window.__pendingUpdateV16.has(me.id)) {
+      window.__pendingUpdateV16.delete(me.id);
+      const html = `
+        <div style="text-align:left; padding:6px 0;">
+          <div style="text-align:center; font-size:48px; margin-bottom:6px;">🪞🛠️⚡</div>
+          <div style="text-align:center; font-weight:800; font-size:17px; color:#b91c1c; margin-bottom:8px;">v16 修復更新</div>
+          <div style="font-size:12px; color:#2d1b4e; line-height:1.9; padding:10px 14px; background:#fdf4ff; border-radius:10px; border:2px dashed #d8b4fe;">
+
+            <div style="font-weight:800; color:#b91c1c; margin-bottom:4px;">🪞 聖騎反傷護盾（p_aegis）修復</div>
+            • <b>根本原因</b>：行動規則表中，<b>神聖祝福🙌</b>（judge 永遠）排在<b>反傷護盾🪞</b>之前，導致反傷永遠搶不到出手機會<br>
+            • <b>修復方式</b>：反傷護盾改為 <b>每 4 行動觸發一次</b>，並移到神聖祝福前面<br>
+            • 效果：反傷護盾第 1 / 5 / 9 / 13… 行動觸發，期間神聖祝福補滿其他回合，兩個 buff <b>基本上永遠都在</b>！<br>
+            • ⚡ 第4世界王「<b>風中殘鵝</b>」同步上線！反射抗性 + 霹靂技能，挑戰極限！<br>
+
+          </div>
+          <button class="btn btn-primary" onclick="hideModal()" style="margin-top:14px; width:100%; background:linear-gradient(135deg,#b91c1c,#7c3aed);">✨ 了解！</button>
+        </div>
+      `;
+      showModal('🛠️ v16 修復公告', html);
+      saveData();
+      return;
+    }
+    // ⭐ v15：吸血者之印修復 / 弓手疊層 UI 修復
     if (window.__pendingUpdateV15 && window.__pendingUpdateV15.has(me.id)) {
       window.__pendingUpdateV15.delete(me.id);
       const html = `
@@ -10532,7 +10586,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506125650';
+  const APP_VERSION = '20260506132923';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
