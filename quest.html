@@ -2304,7 +2304,7 @@
         { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 6,  cooldown: 0, mpCost: 35, type: 'damage', mult: 2.5, bonusMaxHpPct: 0.10, cast: 30, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 2, chance: 1 }, customLv: true },
         { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 7,  cooldown: 0, mpCost: 35, type: 'damage', mult: 1.7, targetCount: 2, applyStatus: { type: 'paralyze', charges: 2, chance: 0.8 }, cast: 15 },
         // ⭐ 神聖祝福：DEF +40%（3 回合）+ 臨時最大HP +20%（僅戰鬥中有效）
-        { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.25, turns: 3 }, buffMaxHpPct: 0.20 },
+        { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.25, turns: 5 }, buffMaxHpPct: 0.20 },
         // ⭐ 護盾衝鋒：6× DEF；攻擊完後 +10 DEF（持續 3 回合）硬值 40
         { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 45, type: 'damage', defMult: 5.1, postSelfBuff: { stat: 'def', amount: 10, turns: 3 }, cast: 35 },
         { id: 'p_aegis',         name: '反傷護盾', icon: '🪞', unlockLv: 8,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.50, turns: 3 } },
@@ -7585,16 +7585,21 @@
           const _dlg = _HMG_DLG[_hmgChosen][Math.floor(Math.random() * _HMG_DLG[_hmgChosen].length)];
           let _hmgLogText = '', _hmgIsCrit = false;
           if (_hmgChosen === '慈悲') {
-            const buffAmt = Math.max(0.01, _hmgHitCount / 100);
+            // ⭐ 慈悲：DEF +擊中數×2%，持續 1+補血數 回合（與神聖祝福獨立疊加）
+            const buffAmt = Math.max(0.01, _hmgHitCount * 2 / 100);
             applyStatus(playerObj, { type: 'buff', stat: 'defPct', amount: buffAmt, turns: _hTurns });
-            _hmgLogText = `DEF +${_hmgHitCount}%（${_hTurns} 回合）`;
+            _hmgLogText = `DEF +${_hmgHitCount * 2}%（${_hTurns} 回合）`;
           } else if (_hmgChosen === '吻') {
+            // ⭐ 吻：DEF/ATK 削減 + 易傷（持續 補血數÷2 次）
             if (_hmgHitCount > 0)  applyStatus(monster, { type: 'buff', stat: 'defPct', amount: -_hmgHitCount  / 100, turns: _hTurns });
             if (_hmgTakenCount > 0) applyStatus(monster, { type: 'buff', stat: 'atkPct', amount: -_hmgTakenCount / 100, turns: _hTurns });
-            _hmgLogText = `${monster.name} DEF -${_hmgHitCount}% / ATK -${_hmgTakenCount}%（${_hTurns} 回合）`;
+            const _kissVulnHits = Math.max(1, Math.floor(_hmgHealCount / 2));
+            applyStatus(monster, { type: 'vulnerable', amount: 0.5, hits: _kissVulnHits });
+            _hmgLogText = `${monster.name} DEF -${_hmgHitCount}% / ATK -${_hmgTakenCount}%（${_hTurns} 回合）+ 易傷×${_kissVulnHits}次`;
           } else if (_hmgChosen === '激動亂舞') {
-            const physDmg = Math.max(0, (_hmgAtk + _hmgDef) * (1 + _hmgHitCount / 10) - Math.floor(_hmgMonDef / 2));
-            const magDmg  = Math.max(0, (_hmgMark + _hmgDef) * (1 + _hmgHitCount / 10) - Math.floor(_hmgMonDef / 2));
+            // ⭐ 激動亂舞：(ATK+DEF)×(1+擊中÷5) - 敵DEF÷2 / (MARK+DEF)×(1+擊中÷5) - 敵DEF÷2，各自獨立暴擊
+            const physDmg = Math.max(1, (_hmgAtk + _hmgDef) * (1 + _hmgHitCount / 5) - Math.floor(_hmgMonDef / 2));
+            const magDmg  = Math.max(1, (_hmgMark + _hmgDef) * (1 + _hmgHitCount / 5) - Math.floor(_hmgMonDef / 2));
             const _critChance = Math.min(0.95, _hmgHealCount * 0.1);
             const _pCrit = Math.random() < _critChance;
             const _mCrit = Math.random() < _critChance;
@@ -8719,18 +8724,23 @@
           const _dlgM = _HMG_DLG_M[_hmgChosenM][Math.floor(Math.random() * _HMG_DLG_M[_hmgChosenM].length)];
           let _hmgLogTextM = '', _hmgIsCritM = false;
           if (_hmgChosenM === '慈悲') {
-            applyStatus(playerObj, { type: 'buff', stat: 'defPct', amount: Math.max(0.01, _hmgHitCountM / 100), turns: _hTurnsM });
-            _hmgLogTextM = `DEF +${_hmgHitCountM}%（${_hTurnsM} 回合）`;
+            // ⭐ 慈悲：DEF +擊中數×2%，持續 1+補血數 回合（與神聖祝福獨立疊加）
+            applyStatus(playerObj, { type: 'buff', stat: 'defPct', amount: Math.max(0.01, _hmgHitCountM * 2 / 100), turns: _hTurnsM });
+            _hmgLogTextM = `DEF +${_hmgHitCountM * 2}%（${_hTurnsM} 回合）`;
           } else if (_hmgChosenM === '吻') {
+            // ⭐ 吻：DEF/ATK 削減 + 易傷（持續 補血數÷2 次）
+            const _kissVulnHitsM = Math.max(1, Math.floor(_hmgHealCountM / 2));
             if (_hmgTgt) {
               if (_hmgHitCountM  > 0) applyStatus(_hmgTgt, { type: 'buff', stat: 'defPct', amount: -_hmgHitCountM  / 100, turns: _hTurnsM });
               if (_hmgTakenCountM > 0) applyStatus(_hmgTgt, { type: 'buff', stat: 'atkPct', amount: -_hmgTakenCountM / 100, turns: _hTurnsM });
+              applyStatus(_hmgTgt, { type: 'vulnerable', amount: 0.5, hits: _kissVulnHitsM });
             }
-            _hmgLogTextM = `${_hmgTgt ? _hmgTgt.name : '?'} DEF -${_hmgHitCountM}% / ATK -${_hmgTakenCountM}%（${_hTurnsM} 回合）`;
+            _hmgLogTextM = `${_hmgTgt ? _hmgTgt.name : '?'} DEF -${_hmgHitCountM}% / ATK -${_hmgTakenCountM}%（${_hTurnsM} 回合）+ 易傷×${_kissVulnHitsM}次`;
           } else if (_hmgChosenM === '激動亂舞') {
             if (_hmgTgt) {
-              const physDmgM = Math.max(0, (_hmgAtkM + _hmgDefM) * (1 + _hmgHitCountM / 10) - Math.floor(_hmgTgtDef / 2));
-              const magDmgM  = Math.max(0, (_hmgMarkM + _hmgDefM) * (1 + _hmgHitCountM / 10) - Math.floor(_hmgTgtDef / 2));
+              // ⭐ 激動亂舞：(ATK+DEF)×(1+擊中÷5) - 敵DEF÷2 / (MARK+DEF)×(1+擊中÷5) - 敵DEF÷2，各自獨立暴擊
+              const physDmgM = Math.max(1, (_hmgAtkM + _hmgDefM) * (1 + _hmgHitCountM / 5) - Math.floor(_hmgTgtDef / 2));
+              const magDmgM  = Math.max(1, (_hmgMarkM + _hmgDefM) * (1 + _hmgHitCountM / 5) - Math.floor(_hmgTgtDef / 2));
               const _critChanceM = Math.min(0.95, _hmgHealCountM * 0.1);
               const _pCritM = Math.random() < _critChanceM;
               const _mCritM = Math.random() < _critChanceM;
@@ -11360,7 +11370,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507004022';
+  const APP_VERSION = '20260507004305';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -11416,7 +11426,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260506_v4';
+  const NEWS_LATEST_ID = 'patch_20260506_v5';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -11436,6 +11446,30 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#4a044e,#9d174d); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🕊️ 聖母鵝技能全面強化　<span style="font-size:11px; opacity:0.85;">2026-05-06</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#9d174d; margin:6px 0 4px;">🙌 神聖祝福 持續延長</div>
+        <div>・DEF +25% / 最大HP +20% 效果從 3 回合延長至 <b>5 回合（玩家自身行動）</b></div>
+
+        <div style="font-weight:700; color:#9d174d; margin:10px 0 4px;">🌸 慈悲 強化</div>
+        <div>・DEF 加成：擊中數% → <b>擊中數×2%</b>（翻倍），持續 1+補血數 回合（與神聖祝福獨立疊加）</div>
+
+        <div style="font-weight:700; color:#9d174d; margin:10px 0 4px;">💋 吻 新增易傷</div>
+        <div>・削減敵 DEF/ATK 同時，追加 <b>易傷 ×max(1, 補血數÷2) 次</b>（每次觸發 ×1.5 傷害）</div>
+
+        <div style="font-weight:700; color:#9d174d; margin:10px 0 4px;">🪶 激動亂舞 公式強化</div>
+        <div>・傷害乘數：(1 + 擊中數÷10) → <b>(1 + 擊中數÷5)</b>（雙倍爆發力）</div>
+        <div style="font-size:12px; color:#374151; padding:4px 0 0 8px;">
+          物理傷 = (ATK+DEF)×(1+擊中數÷5) − 敵DEF÷2<br>
+          魔法傷 = (MARK+DEF)×(1+擊中數÷5) − 敵DEF÷2
+        </div>
+
+        <div style="background:#fdf2f8; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#831843;">
+          💡 聖母鵝越晚召喚計數器越多，加成也越大。配合大量命中積累擊中數，亂舞傷害可以非常恐怖！
+        </div>
 
         <div style="background:linear-gradient(135deg,#7f1d1d,#b91c1c); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">⚗️ 印記合成效果全面支援疊加　<span style="font-size:11px; opacity:0.85;">2026-05-06</span></div>
@@ -12516,12 +12550,13 @@ ${b.text}
       buffPairs.push('　④ 補血數：治療技（含祈禱🙏 / 神聖祝福🙌）每次使用 +1');
       buffPairs.push('─────────────');
       buffPairs.push('🌸 聖母鵝之慈悲（30%）');
-      buffPairs.push('　玩家 DEF +擊中數%，持續 1+補血數 回合');
+      buffPairs.push('　玩家 DEF +擊中數×2%，持續 1+補血數 回合（與神聖祝福獨立疊加）');
       buffPairs.push('💋 聖母鵝之吻（30%）');
       buffPairs.push('　敵 DEF -擊中數%、ATK -被擊數%，持續 1+補血數 回合');
+      buffPairs.push('　＋ 易傷 ×max(1,補血數÷2) 次（傷害×1.5/次）');
       buffPairs.push('🪶 聖母鵝之激動亂舞（30%）');
-      buffPairs.push('　物理傷 = (ATK+DEF)×(1+擊中數÷10) - 敵DEF÷2');
-      buffPairs.push('　魔法傷 = (MARK+DEF)×(1+擊中數÷10) - 敵DEF÷2');
+      buffPairs.push('　物理傷 = (ATK+DEF)×(1+擊中數÷5) - 敵DEF÷2');
+      buffPairs.push('　魔法傷 = (MARK+DEF)×(1+擊中數÷5) - 敵DEF÷2');
       buffPairs.push('　物理 / 魔法各自獨立暴擊，暴擊率 = min(95%, 補血數×10%)');
       buffPairs.push('　暴擊則各自乘 critMult（可能雙暴）');
       buffPairs.push('🔥 聖母鵝的獻身（10%）— 立即結束聖母鵝');
