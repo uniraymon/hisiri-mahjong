@@ -2705,6 +2705,29 @@
       rewardThird:  { coins: 2000 },
       rewardParticipant: { coins: 500 },
     },
+    {
+      id: 'storm_goose',
+      name: '⚡ 風中殘鵝', icon: '⚡',
+      maxHp: 10000000,
+      atk: 490, def: 170, spd: 120, defPen: 0.40,
+      level: 70,
+      verb: '閃電連擊',
+      ability: { type: 'reflect', resist: 0.20, cap: 600 },
+      skills: [
+        { verb: '暴雷轟炸',   mult: 2.4, cooldown: 3 },
+        { verb: '電磁麻痺',   mult: 1.5, applyStatus: { type: 'paralyze', charges: 3, chance: 0.65 }, cooldown: 4 },
+        { verb: '雷霆終焉',   mult: 4.2, ignoreDef: true, cooldown: 7 },
+      ],
+      bossCoin: { id: 'bc_storm_goose', name: '風中殘鵝硬幣', icon: '⚡' },
+      // per-boss 獎勵（覆蓋全域 _kr）
+      killRewards: {
+        top:         { bossCoinQty: 10, gem3Qty: 1, gooseCoins: 100000 },
+        second:      { bossCoinQty:  8, gem2Qty: 3, gooseCoins:  80000 },
+        third:       { bossCoinQty:  6, gem2Qty: 2, gooseCoins:  60000 },
+        participant: { bossCoinQty:  4, gem2Qty: 1, gooseCoins:  40000 },
+        killer:      { bossCoinQty:  5, gooseCoins:  50000 },  // 尾刀額外
+      },
+    },
   ];
 
   // ⭐ Phase B：雲端 state 改用 rooms/{ROOM_ID}/wb9/{bossId}（每王一份獨立 doc）
@@ -2841,7 +2864,7 @@
     try {
       txOut = await window.__firebaseSync.wb9AttackTx(
         bossId, me.id, dmgRaw,
-        { maxHp: boss.maxHp, staleMs: WB9_QUEUE_STALE_MS, bossCoinId: boss.bossCoin?.id },
+        { maxHp: boss.maxHp, staleMs: WB9_QUEUE_STALE_MS, bossCoinId: boss.bossCoin?.id, killRewards: boss.killRewards || null },
         snap_
       );
     } catch (e) {
@@ -2931,7 +2954,23 @@
     if (!myEntry) return;
     // 發獎勵
     r.gemInventory = r.gemInventory || {};
+    // 舊版：gem_raw（原石合成材料）
     if (myEntry.gemRaw > 0) r.gemInventory['gem_raw'] = (r.gemInventory['gem_raw'] || 0) + myEntry.gemRaw;
+    // 新版：2等寶石（隨機）
+    const _gem2Ids = Object.keys(GEMS).filter(id => GEMS[id].grade === 2);
+    for (let _gi = 0; _gi < (myEntry.gem2Qty || 0); _gi++) {
+      const _gid = _gem2Ids[Math.floor(Math.random() * _gem2Ids.length)];
+      r.gemInventory[_gid] = (r.gemInventory[_gid] || 0) + 1;
+    }
+    // 新版：3等寶石（隨機）
+    const _gem3Ids = Object.keys(GEMS).filter(id => GEMS[id].grade === 3);
+    for (let _gi = 0; _gi < (myEntry.gem3Qty || 0); _gi++) {
+      const _gid = _gem3Ids[Math.floor(Math.random() * _gem3Ids.length)];
+      r.gemInventory[_gid] = (r.gemInventory[_gid] || 0) + 1;
+    }
+    // 新版：鵝鵝幣（refundCoins = 減少 coinsSpent）
+    if (myEntry.gooseCoins > 0) refundCoins(me.id, myEntry.gooseCoins);
+    // 王硬幣
     if (myEntry.bossCoinQty > 0 && myEntry.bossCoinId) {
       addBossCoin(me.id, myEntry.bossCoinId, myEntry.bossCoinQty);
     }
@@ -2945,11 +2984,14 @@
     const bossName = boss ? boss.name : bossId;
     const coinName = boss?.bossCoin?.name || '王硬幣';
     const coinIcon = boss?.bossCoin?.icon || '🪙';
-    const rankLabel = myEntry.rank === 1 ? '🥇第一' : myEntry.rank === 2 ? '🥈第二' : '👤參與';
+    const rankLabel = myEntry.rank === 1 ? '🥇第一' : myEntry.rank === 2 ? '🥈第二' : myEntry.rank === 3 ? '🥉第三' : '👤參與';
     const killerLabel = myEntry.isKiller ? '⚔️尾刀 ' : '';
     const parts = [];
-    if (myEntry.gemRaw > 0)      parts.push(`🪨原石×${myEntry.gemRaw}`);
+    if (myEntry.gemRaw    > 0) parts.push(`🪨原石×${myEntry.gemRaw}`);
+    if (myEntry.gem3Qty   > 0) parts.push(`💎3等寶石×${myEntry.gem3Qty}`);
+    if (myEntry.gem2Qty   > 0) parts.push(`💠2等寶石×${myEntry.gem2Qty}`);
     if (myEntry.bossCoinQty > 0) parts.push(`${coinIcon}${coinName}×${myEntry.bossCoinQty}`);
+    if (myEntry.gooseCoins  > 0) parts.push(`🪙鵝鵝幣 ${(myEntry.gooseCoins/10000).toFixed(0)}萬`);
     showToast(`🏆 ${bossName} 擊殺獎勵（${killerLabel}${rankLabel}）：${parts.join('、')}`);
   }
   window.wb9ClaimKillReward = wb9ClaimKillReward;
@@ -3109,9 +3151,16 @@
       const p = getPlayer(s.pid);
       const name = p ? (p.avatar || '🎴') + ' ' + escapeHtml(p.name) : '?';
       const medal = ['🥇','🥈','🥉'][s.rank - 1] || '👤';
+      const _bc = s.bossCoinId ? (WB9_BOSSES.find(b=>b.bossCoin?.id===s.bossCoinId)?.bossCoin?.icon||'🪙') : null;
+      const _rParts = [];
+      if (s.gemRaw    > 0) _rParts.push(`🪨×${s.gemRaw}`);
+      if (s.gem3Qty   > 0) _rParts.push(`💎×${s.gem3Qty}`);
+      if (s.gem2Qty   > 0) _rParts.push(`💠×${s.gem2Qty}`);
+      if (s.bossCoinQty > 0 && _bc) _rParts.push(`${_bc}×${s.bossCoinQty}`);
+      if (s.gooseCoins  > 0) _rParts.push(`🪙${(s.gooseCoins/10000).toFixed(0)}萬`);
       return `<div style="display:flex; justify-content:space-between; align-items:center; padding:1px 0; font-size:11px;">
         <span>${medal} ${name}${s.isKiller ? ' <span style="color:#ef4444;">⚔️</span>' : ''}</span>
-        <span style="color:#92400e; font-weight:700;">🪨×${s.gemRaw} ${s.bossCoinId ? (WB9_BOSSES.find(b=>b.bossCoin?.id===s.bossCoinId)?.bossCoin?.icon||'🪙')+'×'+s.bossCoinQty : ''}</span>
+        <span style="color:#92400e; font-weight:700;">${_rParts.join(' ')}</span>
       </div>`;
     }).join('');
     return `
@@ -6928,8 +6977,8 @@
               totalDmg += hitDmg;
               hitLogs.push(`${hitDmg}${hitCrit ? '【爆】' : ''}`);
               if (mAbility?.type === 'reflect' && mAbility.resist) {
-                // 反傷：受到傷害的 50%，最多 300
-                const r = Math.min(300, Math.max(1, Math.round(hitDmg * mAbility.resist)));
+                // 反傷：受到傷害的 N%，上限由 cap 設定（預設 300）
+                const r = Math.min(mAbility.cap || 300, Math.max(1, Math.round(hitDmg * mAbility.resist)));
                 pHp = Math.max(0, pHp - r);
               }
               if (mHp <= 0) { monsterDied = true; }
@@ -7187,7 +7236,7 @@
                 stacks: { hit: _aHit, crit: _aCrit, hs: _aHs, critBonus: _aCritBonus, hsBonus: _aHsBonus },
               });
               if (mAbility?.type === 'reflect' && mAbility.resist) {
-                const r = Math.min(300, Math.max(1, Math.round(dmg * mAbility.resist)));
+                const r = Math.min(mAbility.cap || 300, Math.max(1, Math.round(dmg * mAbility.resist)));
                 pHp = Math.max(0, pHp - r);
                 log.push({ type: 'monster', text: `回合 ${round}：🪞 ${monster.name} 反射光芒 → ${player.name} -${r} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
               }
@@ -7237,7 +7286,7 @@
               hmgCounters: _isPaladin ? { hit: _hmgHitCount, taken: _hmgTakenCount, heal: _hmgHealCount, active: _hmgActive, actionsLeft: _hmgActionsLeft } : undefined,
             });
             if (mAbility?.type === 'reflect' && mAbility.resist) {
-              const r = Math.min(300, Math.max(1, Math.round(dmg * mAbility.resist)));
+              const r = Math.min(mAbility.cap || 300, Math.max(1, Math.round(dmg * mAbility.resist)));
               pHp = Math.max(0, pHp - r);
               log.push({ type: 'monster', text: `回合 ${round}：🪞 ${monster.name} 反射光芒 → ${player.name} -${r} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
             }
@@ -8000,7 +8049,7 @@
               hits.push({ tgt, dmg, isCrit });
               // 鏡鵝反傷（受到傷害的 50%，最多 300）
               if (tgt.ability?.type === 'reflect' && tgt.ability.resist) {
-                pHp = Math.max(0, pHp - Math.min(300, Math.max(1, Math.round(dmg * tgt.ability.resist))));
+                pHp = Math.max(0, pHp - Math.min(tgt.ability.cap || 300, Math.max(1, Math.round(dmg * tgt.ability.resist))));
               }
               // 套用狀態
               if (skill.applyStatus && Math.random() < (skill.applyStatus.chance || 1)) {
@@ -8249,7 +8298,7 @@
                 stacks: { hit: _aHit, crit: _aCrit, hs: _aHs, critBonus: _aCritBonus, hsBonus: _aHsBonus },
               });
               if (tgt.ability?.type === 'reflect' && tgt.ability.resist) {
-                const r = Math.min(300, Math.max(1, Math.round(dmg * tgt.ability.resist)));
+                const r = Math.min(tgt.ability.cap || 300, Math.max(1, Math.round(dmg * tgt.ability.resist)));
                 pHp = Math.max(0, pHp - r);
               }
               if (tgt.hp <= 0) break;
@@ -8291,8 +8340,8 @@
               if (pHp - _vbefore > 0) log.push({ type: 'player', text: `回合 ${round}：🩸 吸血 +${pHp - _vbefore} HP`, hp: hpsSnapshot() });
             }
             if (tgt.ability?.type === 'reflect' && tgt.ability.resist) {
-              // 反傷：受到傷害的 50%，最多 300
-              const r = Math.min(300, Math.max(1, Math.round(dmg * tgt.ability.resist)));
+              // 反傷：受到傷害的 N%，上限由 cap 設定（預設 300）
+              const r = Math.min(tgt.ability.cap || 300, Math.max(1, Math.round(dmg * tgt.ability.resist)));
               pHp = Math.max(0, pHp - r);
             }
             // ⭐ 聖母鵝計數
@@ -10487,7 +10536,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506110013';
+  const APP_VERSION = '20260506123507';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -19369,8 +19418,9 @@ ${b.text}
           // 尾刀：重置王、清隊列、記錄
           if (killed) {
             state.killCount = (state.killCount || 0) + 1;
-            // 建立擊殺結算（傷害排名 → 原石 + 扭蛋幣）
-            const _kr = {
+            // 建立擊殺結算（傷害排名 → 寶石 + 鵝幣 + 王硬幣）
+            // 優先用 bossDef.killRewards（per-boss 設定），否則用全域預設
+            const _kr = (bossDef && bossDef.killRewards) || {
               top:         { gemRaw: 3, bossCoinQty: 5 },
               second:      { gemRaw: 2, bossCoinQty: 4 },
               participant: { gemRaw: 1, bossCoinQty: 2 },
@@ -19380,14 +19430,20 @@ ${b.text}
             const _sortedDmg = Object.entries(state.damageLog)
               .map(([pid, dmg]) => ({ pid, dmg: Number(dmg) || 0 }))
               .sort((a, b) => b.dmg - a.dmg);
+            const _zeroBonus = { gemRaw: 0, bossCoinQty: 0, gem2Qty: 0, gem3Qty: 0, gooseCoins: 0 };
             const _settlement = _sortedDmg.map((entry, i) => {
               const rank = i + 1;
-              const rankKey = rank === 1 ? 'top' : rank === 2 ? 'second' : 'participant';
-              const base  = _kr[rankKey];
+              const rankKey = rank === 1 ? 'top' : rank === 2 ? 'second' : (rank === 3 && _kr.third) ? 'third' : 'participant';
+              const base  = _kr[rankKey] || _kr.participant || {};
               const isKiller = entry.pid === attackerId;
-              const bonus = isKiller ? _kr.killer : { gemRaw: 0, bossCoinQty: 0 };
+              const bonus = isKiller ? (_kr.killer || _zeroBonus) : _zeroBonus;
               return { pid: entry.pid, rank, dmg: entry.dmg, isKiller, bossCoinId: _bossCoinId,
-                gemRaw: base.gemRaw + bonus.gemRaw, bossCoinQty: base.bossCoinQty + bonus.bossCoinQty };
+                gemRaw:     (base.gemRaw     || 0) + (bonus.gemRaw     || 0),
+                bossCoinQty:(base.bossCoinQty|| 0) + (bonus.bossCoinQty|| 0),
+                gem2Qty:    (base.gem2Qty    || 0) + (bonus.gem2Qty    || 0),
+                gem3Qty:    (base.gem3Qty    || 0) + (bonus.gem3Qty    || 0),
+                gooseCoins: (base.gooseCoins || 0) + (bonus.gooseCoins || 0),
+              };
             });
             state.lastKill = { pid: attackerId, ts: Date.now(), killCount: state.killCount,
               damageLog: { ...state.damageLog }, settlement: _settlement };
