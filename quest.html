@@ -2302,11 +2302,11 @@
         { id: 'p_pray',      name: '祈禱',     icon: '🙏', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true, isMpRegenStrong: true },
         // ⭐ 神聖懲戒：2.5× ATK + 10% maxHp；Lv 5 +5% maxHp / Lv 10 易傷 +1 次
         { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 6,  cooldown: 0, mpCost: 35, type: 'damage', mult: 2.5, bonusMaxHpPct: 0.10, cast: 30, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 2, chance: 1 }, customLv: true },
-        { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 7,  cooldown: 0, mpCost: 35, type: 'damage', mult: 1.7, targetCount: 2, applyStatus: { type: 'paralyze', charges: 2, chance: 0.8 }, cast: 15 },
+        { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 7,  cooldown: 0, mpCost: 35, type: 'damage', mult: 1.7, targetCount: 2, applyStatus: { type: 'paralyze', charges: 2, chance: 1.0 }, cast: 15 },
         // ⭐ 神聖祝福：DEF +40%（3 回合）+ 臨時最大HP +20%（僅戰鬥中有效）
         { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.25, turns: 3 }, buffMaxHpPct: 0.20 },
-        // ⭐ 護盾衝鋒：6× DEF；攻擊完後 +10 DEF（持續 3 回合）硬值 40
-        { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 45, type: 'damage', defMult: 5.1, postSelfBuff: { stat: 'def', amount: 10, turns: 3 }, cast: 35 },
+        // ⭐ 護盾衝鋒：6× DEF；攻擊完後 DEF +10%（持續 3 回合）硬值 40
+        { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 45, type: 'damage', defMult: 5.1, postSelfBuff: { stat: 'defPct', amount: 0.10, turns: 3 }, cast: 35 },
         { id: 'p_aegis',         name: '反傷護盾', icon: '🪞', unlockLv: 8,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.50, turns: 3 } },
         // ⭐ 新增：神聖奪魂 — 0.8× ATK 傷害 + 回 4 MP（聖騎回魔多一倍）
         { id: 'p_mana_drain',    name: '神聖奪魂', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 0.8, mpRestore: 4 },
@@ -4130,7 +4130,7 @@
         hits: (skill.applyStatus.hits || 1) + (level >= 10 ? 1 : 0),
       };
     } else if (skill.id === 'p_godfist' && skill.applyStatus) {
-      // 神之拳：麻痺機率固定 80%（不隨等級縮放），但層數正常升級
+      // 神之拳：麻痺機率固定 100%（不隨等級縮放），但層數正常升級
       // Lv 1-4: 2層、Lv 5-9: 3層、Lv 10: 4層
       const _gfExtra = level >= 10 ? 2 : level >= 5 ? 1 : 0;
       eff.applyStatus = {
@@ -4257,11 +4257,11 @@
       if (level === 10) parts.push('🌟 傷害 ×1.5（額外 +50%）');
       return parts.join('、');
     }
-    // ⭐ 神之拳：麻痺機率固定 80%，層數 Lv 5 +1 / Lv 10 +1（共 +2，總 4 層）
+    // ⭐ 神之拳：麻痺機率固定 100%，層數 Lv 5 +1 / Lv 10 +1（共 +2，總 4 層）
     if (skill.id === 'p_godfist') {
       const charges = (skill.applyStatus?.charges || 2) + (level >= 10 ? 2 : level >= 5 ? 1 : 0);
       const parts2 = [`效果 +${Math.round((Math.min(level, 5) * 10 + Math.max(0, level - 5) * 5))}%`];
-      parts2.push(`⚡ 麻痺 ${charges} 層（機率固定 80%）`);
+      parts2.push(`⚡ 麻痺 ${charges} 層（100% 命中）`);
       if (level === 5)  parts2.push('🌟 麻痺 +1 層（共 3 層）');
       if (level === 10) parts2.push('🌟 麻痺 再 +1 層（共 4 層）');
       return parts2.join('、');
@@ -4357,7 +4357,7 @@
           { judgeId: 1000, param: 0,  skillId: 'p_blessing' },        // 神聖祝福（DEF +40% + 最大HP +20% buff）
           { judgeId: 1201, param: 25, skillId: 'p_pray' },
           { judgeId: 1450, param: 2,  skillId: 'p_judgment' },        // 多隻怪 → 審判（魔傷 2× ATK 全體）
-          { judgeId: 1000, param: 0,  skillId: 'p_shield_charge' },   // 護盾衝鋒（6× DEF + DEF +10 buff）
+          { judgeId: 1000, param: 0,  skillId: 'p_shield_charge' },   // 護盾衝鋒（6× DEF + DEF +10% buff）
           { judgeId: 1000, param: 0,  skillId: 'p_godfist' },         // 神之拳（2 目標 + 麻痺）
           { judgeId: 1000, param: 0,  skillId: 'p_holy_smite' },      // 神聖懲戒（2.5× ATK + 10% maxHp + 易傷）
           { judgeId: 1000, param: 0,  skillId: 'p_holy_slash' },      // 聖光斬（1.2× ATK + 5% maxHp）
@@ -11370,7 +11370,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507005112';
+  const APP_VERSION = '20260507005246';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
