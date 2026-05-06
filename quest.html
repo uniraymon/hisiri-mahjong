@@ -11332,7 +11332,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506234258';
+  const APP_VERSION = '20260506234524';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -18320,6 +18320,22 @@ ${b.text}
         <button class="btn btn-secondary" onclick="adminAddEggCoins(200)">+200</button>
       </div>
 
+      <div class="shop-section-title">👑 王硬幣（快捷）</div>
+      ${[
+        { id:'bc_goose_king',   icon:'👑', name:'鵝皇'   },
+        { id:'bc_dragon_goose', icon:'🐲', name:'古龍鵝' },
+        { id:'bc_pebble_goose', icon:'🪨', name:'鵝卵石' },
+        { id:'bc_storm_goose',  icon:'⚡', name:'風中殘鵝' },
+      ].map(c => {
+        const have = (r.bossCoins || {})[c.id] || 0;
+        return `<div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+          <span style="font-size:13px; min-width:80px;">${c.icon} ${c.name} <b style="color:#92400e;">${have}</b></span>
+          <button class="btn btn-secondary" style="flex:1; padding:5px 0; font-size:12px;" onclick="adminAddBossCoins('${c.id}',1)">+1</button>
+          <button class="btn btn-secondary" style="flex:1; padding:5px 0; font-size:12px;" onclick="adminAddBossCoins('${c.id}',3)">+3</button>
+          <button class="btn btn-secondary" style="flex:1; padding:5px 0; font-size:12px;" onclick="adminAddBossCoins('${c.id}',10)">+10</button>
+        </div>`;
+      }).join('')}
+
       <div class="shop-section-title">🎁 給自己硬幣（選幣種）</div>
       <button class="btn btn-secondary" onclick="adminShowSelfGrantModal()" style="width:100%; background:linear-gradient(135deg,#fde68a,#f59e0b); color:#7c2d12;">💰 選幣種 + 數量 → 給自己</button>
 
@@ -18408,6 +18424,16 @@ ${b.text}
     showToast(`🥚 +${amount} 鵝蛋幣（現有 ${me.eggCoins}）`);
   }
   window.adminAddEggCoins = adminAddEggCoins;
+
+  async function adminAddBossCoins(coinId, amount) {
+    const me = getMe(); if (!me) return;
+    await addBossCoin(me.id, coinId, amount);
+    const icon = { bc_goose_king:'👑', bc_dragon_goose:'🐲', bc_pebble_goose:'🪨', bc_storm_goose:'⚡' }[coinId] || '🪙';
+    const name = { bc_goose_king:'鵝皇硬幣', bc_dragon_goose:'古龍鵝硬幣', bc_pebble_goose:'鵝卵石硬幣', bc_storm_goose:'風中殘鵝硬幣' }[coinId] || coinId;
+    showToast(`${icon} +${amount} ${name}`);
+    showDebugModal();
+  }
+  window.adminAddBossCoins = adminAddBossCoins;
 
   // ⭐ 給自己硬幣（Debug 用）
   function adminShowSelfGrantModal() {
