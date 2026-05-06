@@ -7191,7 +7191,6 @@
             // 隱身爆頭保證：消耗後第一箭必中爆頭
             const _stealthHsSt = (playerObj.statuses || []).find(s => s.type === 'stealthHeadshot');
             let lastDmg = 0;
-            let _totalArrowDmg = 0; // ⭐ fx_vamp 吸血用（全箭總傷）
             for (let hit = 1; hit <= totalHits; hit++) {
               const forceHs = (hit === 1 && _stealthHsSt);
               if (forceHs) playerObj.statuses = playerObj.statuses.filter(s => s !== _stealthHsSt);
@@ -7222,7 +7221,6 @@
               dmg = monShield0(dmg);
               mHp -= dmg;
               lastDmg = dmg;
-              _totalArrowDmg += dmg;
               // ⭐ 弓手普攻流：本箭命中後疊層（計數 + 隨機累積bonus）
               _aHit++;
               if (isCrit) { _aCrit++; _aCritBonus += 0.01 + Math.random() * 0.03; }
@@ -7235,19 +7233,19 @@
                 hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp },
                 stacks: { hit: _aHit, crit: _aCrit, hs: _aHs, critBonus: _aCritBonus, hsBonus: _aHsBonus },
               });
+              // ⭐ 合成效果：fx_vamp（普攻吸血：傷害×3%，每箭各自吸）
+              if (_fx.has('fx_vamp') && dmg > 0) {
+                const vampHeal = Math.max(1, Math.round(dmg * 0.03));
+                const _vbefore = pHp;
+                pHp = Math.min(stats.maxHp, pHp + vampHeal);
+                if (pHp - _vbefore > 0) log.push({ type: 'player', text: `回合 ${round}（${hit}/${totalHits}）：🩸 吸血 +${pHp - _vbefore} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+              }
               if (mAbility?.type === 'reflect' && mAbility.resist) {
                 const r = Math.min(mAbility.cap || 300, Math.max(1, Math.round(dmg * mAbility.resist)));
                 pHp = Math.max(0, pHp - r);
                 log.push({ type: 'monster', text: `回合 ${round}：🪞 ${monster.name} 反射光芒 → ${player.name} -${r} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
               }
               if (mHp <= 0) { pushDeathLine(); break; }
-            }
-            // ⭐ 合成效果：fx_vamp（普攻吸血：傷害×3%）
-            if (_fx.has('fx_vamp') && _totalArrowDmg > 0) {
-              const vampHeal = Math.max(1, Math.round(_totalArrowDmg * 0.03));
-              const before = pHp;
-              pHp = Math.min(stats.maxHp, pHp + vampHeal);
-              if (pHp - before > 0) log.push({ type: 'player', text: `回合 ${round}：🩸 吸血 +${pHp - before} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
             }
             // ⭐ 聖母鵝計數：弓手普攻擊中（按箭數計段）
             if (_isPaladin && !_hmgFrozen) _hmgHitCount += totalHits;
@@ -8253,7 +8251,6 @@
             // ⭐ 合成效果：fx_dg_def（攻擊無視 DEF 15%）
             const _tgtDef = tgt.def * (_fx.has('fx_dg_def') ? 0.85 : 1.0);
             let _lastDmgM = 0;
-            let _totalArrowDmgM = 0; // ⭐ fx_vamp 吸血用（全箭總傷）
             for (let hit = 1; hit <= totalHits; hit++) {
               const forceHs = (hit === 1 && _stealthHsSt);
               if (forceHs) playerObj.statuses = playerObj.statuses.filter(s => s !== _stealthHsSt);
@@ -8284,7 +8281,6 @@
               tgt.hp = Math.max(0, tgt.hp - dmg);
               if (tgt.hp <= 0) tgt.alive = false;
               _lastDmgM = dmg;
-              _totalArrowDmgM += dmg;
               // ⭐ 弓手普攻流：本箭命中後疊層（計數 + 隨機累積bonus）
               _aHit++;
               if (isCrit) { _aCrit++; _aCritBonus += 0.01 + Math.random() * 0.03; }
@@ -8297,18 +8293,18 @@
                 hp: hpsSnapshot(),
                 stacks: { hit: _aHit, crit: _aCrit, hs: _aHs, critBonus: _aCritBonus, hsBonus: _aHsBonus },
               });
+              // ⭐ 合成效果：fx_vamp（普攻吸血：傷害×3%，每箭各自吸）
+              if (_fx.has('fx_vamp') && dmg > 0) {
+                const vampHeal = Math.max(1, Math.round(dmg * 0.03));
+                const _vbefore = pHp;
+                pHp = Math.min(stats.maxHp, pHp + vampHeal);
+                if (pHp - _vbefore > 0) log.push({ type: 'player', text: `回合 ${round}（${hit}/${totalHits}）：🩸 吸血 +${pHp - _vbefore} HP`, hp: hpsSnapshot() });
+              }
               if (tgt.ability?.type === 'reflect' && tgt.ability.resist) {
                 const r = Math.min(tgt.ability.cap || 300, Math.max(1, Math.round(dmg * tgt.ability.resist)));
                 pHp = Math.max(0, pHp - r);
               }
               if (tgt.hp <= 0) break;
-            }
-            // ⭐ 合成效果：fx_vamp（普攻吸血：傷害×3%）
-            if (_fx.has('fx_vamp') && _totalArrowDmgM > 0) {
-              const vampHeal = Math.max(1, Math.round(_totalArrowDmgM * 0.03));
-              const _vbefore = pHp;
-              pHp = Math.min(stats.maxHp, pHp + vampHeal);
-              if (pHp - _vbefore > 0) log.push({ type: 'player', text: `回合 ${round}：🩸 吸血 +${pHp - _vbefore} HP`, hp: hpsSnapshot() });
             }
             // ⭐ 聖母鵝計數：弓手普攻擊中（按箭數計段）
             if (_isPaladinM && !_hmgFrozenM) _hmgHitCountM += totalHits;
@@ -10536,7 +10532,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506123507';
+  const APP_VERSION = '20260506125650';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
