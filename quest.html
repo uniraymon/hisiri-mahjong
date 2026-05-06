@@ -10280,9 +10280,15 @@
         <div style="font-size:10px; color:#a16207; margin-top:4px;">各扭蛋機只接受對應王的硬幣（鵝王用👑 / 古龍用🐲 / 鵝卵石用🪨）</div>
       </div>
     ` : '';
+    const myEggCoins = me.eggCoins || 0;
+    const eggHtml = myEggCoins > 0 ? `
+      <div style="font-size:12px; color:#78350f; padding:6px 10px; background:linear-gradient(135deg,#fef9c3,#fde68a); border:1px dashed #f59e0b; border-radius:8px; margin-bottom:8px;">
+        🥚 <b>鵝蛋幣：${myEggCoins}</b>
+      </div>
+    ` : '';
     showModal('🎰 扭蛋', `
       <div style="text-align:left;">
-        ${bcHtml}
+        ${bcHtml}${eggHtml}
         <div style="font-size:11px; color:#5b3d62; padding:6px 10px; background:#f3e8ff; border:1px dashed #c4b5fd; border-radius:8px; margin-bottom:10px;">
           選一台扭蛋機 → 進去抽獎。不同機台用不同貨幣。
         </div>
@@ -10887,7 +10893,8 @@
             A 軌（強化）：每格成功 <b>+${aPerS} ${aLbl}</b><br>
             B 軌（強化）：每格成功 <b>+${bPerS} ${bLbl}</b><br>
             C 軌（懲罰）：<span style="color:#dc2626;">🎲 隨機，開始後揭曉</span><br>
-            特殊（AB 合 10 格）：✨ <b>${ed.special.name}</b>
+            特殊（AB 合 10 格）：✨ <b>${ed.special.name}</b><br>
+            <span style="color:#7c3aed; margin-left:1em;">→ ${ed.special.desc}</span>
           </div>
           <button class="btn btn-primary" onclick="startSpiritEngraving(${bagIdx})" style="width:100%; font-size:12px;" ${frags < 1 ? 'disabled' : ''}>
             ⚗️ 開始刻印（需 💠 晶魂碎片）
@@ -10931,7 +10938,7 @@
         <div style="font-size:10px; color:#047857; line-height:1.7;">
           A軌 <b>${aBonus}</b>　B軌 <b>${bBonus}</b>
           ${tdC ? `　C軌（懲罰）<b style="color:#dc2626;">${cPenalty}</b>` : ''}
-          ${hasSpecial ? `<br>✨ <b>${ed.special.name}</b> 已激活！` : `<br>（AB合計 ${aSucc+bSucc}/10，特殊未達成）`}
+          ${hasSpecial ? `<br>✨ <b>${ed.special.name}</b> 已激活！<br><span style="font-size:9px; color:#059669;">${ed.special.desc}</span>` : `<br>（AB合計 ${aSucc+bSucc}/10，特殊未達成）`}
         </div>
       </div>`;
   }
@@ -11325,7 +11332,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506232632';
+  const APP_VERSION = '20260506234258';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13633,7 +13640,7 @@ ${b.text}
       <div class="char-info">
         <div class="char-name">${escapeHtml(me.name)}</div>
         <div class="char-class">${cls.name} · Lv ${rpg.level}</div>
-        <div class="char-coins">🪙 ${coins} 鵝鵝幣　·　🧭 ${rpg.exploreCoins || 0} 探險幣</div>
+        <div class="char-coins">🪙 ${coins} 鵝鵝幣　·　🧭 ${rpg.exploreCoins || 0} 探險幣　·　🥚 ${me.eggCoins || 0} 鵝蛋幣</div>
         <div class="stat-bar">
           <div class="stat-bar-label"><span>❤️ HP</span><span>${rpg.hp} / ${stats.maxHp}</span></div>
           <div class="stat-bar-track"><div class="stat-bar-fill hp-fill" style="width:${hpPercent}%"></div></div>
@@ -18305,6 +18312,14 @@ ${b.text}
         <button class="btn btn-secondary" onclick="adminAddExploreCoins(200)">+200</button>
       </div>
 
+      <div class="shop-section-title">🥚 鵝蛋幣</div>
+      <div style="font-size:11px; color:#6b7280; margin-bottom:6px;">現有：<b>${me.eggCoins || 0}</b> 顆</div>
+      <div class="debug-grid">
+        <button class="btn btn-secondary" onclick="adminAddEggCoins(10)">+10</button>
+        <button class="btn btn-secondary" onclick="adminAddEggCoins(50)">+50</button>
+        <button class="btn btn-secondary" onclick="adminAddEggCoins(200)">+200</button>
+      </div>
+
       <div class="shop-section-title">🎁 給自己硬幣（選幣種）</div>
       <button class="btn btn-secondary" onclick="adminShowSelfGrantModal()" style="width:100%; background:linear-gradient(135deg,#fde68a,#f59e0b); color:#7c2d12;">💰 選幣種 + 數量 → 給自己</button>
 
@@ -18386,6 +18401,14 @@ ${b.text}
   }
   window.adminAddExploreCoins = adminAddExploreCoins;
 
+  function adminAddEggCoins(amount) {
+    const me = getMe(); if (!me) return;
+    me.eggCoins = (me.eggCoins || 0) + amount;
+    saveData(); showDebugModal();
+    showToast(`🥚 +${amount} 鵝蛋幣（現有 ${me.eggCoins}）`);
+  }
+  window.adminAddEggCoins = adminAddEggCoins;
+
   // ⭐ 給自己硬幣（Debug 用）
   function adminShowSelfGrantModal() {
     const optionsHtml = GRANT_COIN_TYPES.map(c =>
@@ -18422,6 +18445,9 @@ ${b.text}
       saveData();
     } else if (typeId === 'exploreCoins') {
       r.exploreCoins = (r.exploreCoins || 0) + amt;
+      saveData();
+    } else if (typeId === 'eggCoins') {
+      me.eggCoins = (me.eggCoins || 0) + amt;
       saveData();
     }
     render();
@@ -19546,11 +19572,13 @@ ${b.text}
 
   // ⭐ 全員發放硬幣：選幣種 + 數量
   const GRANT_COIN_TYPES = [
-    { id: 'gooseCoins',       label: '🪙 鵝鵝幣',       icon: '🪙' },
-    { id: 'exploreCoins',     label: '🧭 探險幣',       icon: '🧭' },
-    { id: 'bc_goose_king',    label: '👑 鵝皇硬幣',     icon: '👑' },
-    { id: 'bc_dragon_goose',  label: '🐲 古龍鵝硬幣',  icon: '🐲' },
-    { id: 'bc_pebble_goose',  label: '🪨 鵝卵石硬幣',  icon: '🪨' },
+    { id: 'gooseCoins',       label: '🪙 鵝鵝幣',         icon: '🪙' },
+    { id: 'exploreCoins',     label: '🧭 探險幣',         icon: '🧭' },
+    { id: 'eggCoins',         label: '🥚 鵝蛋幣',         icon: '🥚' },
+    { id: 'bc_goose_king',    label: '👑 鵝皇硬幣',       icon: '👑' },
+    { id: 'bc_dragon_goose',  label: '🐲 古龍鵝硬幣',    icon: '🐲' },
+    { id: 'bc_pebble_goose',  label: '🪨 鵝卵石硬幣',    icon: '🪨' },
+    { id: 'bc_storm_goose',   label: '⚡ 風中殘鵝硬幣',  icon: '⚡' },
   ];
 
   function adminShowGrantCoinsModal() {
@@ -19596,6 +19624,8 @@ ${b.text}
         } else if (typeId === 'exploreCoins') {
           p.rpg = p.rpg || {};
           p.rpg.exploreCoins = (p.rpg.exploreCoins || 0) + amt;
+        } else if (typeId === 'eggCoins') {
+          p.eggCoins = (p.eggCoins || 0) + amt;
         }
         granted++;
       } catch (e) {
