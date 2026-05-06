@@ -11469,7 +11469,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507024429';
+  const APP_VERSION = '20260507031307';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13890,6 +13890,19 @@ ${b.text}
         <div class="char-name">${escapeHtml(me.name)}</div>
         <div class="char-class">${cls.name} · Lv ${rpg.level}</div>
         ${rpg.hellCurse ? `<div style="background:#7f1d1d; color:#fca5a5; font-size:11px; font-weight:700; padding:4px 8px; border-radius:6px; margin-top:4px; border:1px solid #dc2626;">😱 地獄詛咒 — 下場戰鬥 DEF -${Math.round((rpg.hellCurse.defPct||0.30)*100)}%（${escapeHtml(rpg.hellCurse.applier)} 施加）</div>` : ''}
+        ${rpg.hellSeal && Date.now() < rpg.hellSeal.endAt ? `<div style="background:#1c1c00; color:#fef08a; font-size:11px; font-weight:700; padding:4px 8px; border-radius:6px; margin-top:4px; border:1px solid #ca8a04;">🔒 地獄封印 — 剩餘 ${Math.ceil((rpg.hellSeal.endAt-Date.now())/60000)} 分鐘無法探險/戰鬥（${escapeHtml(rpg.hellSeal.applier)} 施加）</div>` : ''}
+        ${rpg.hellProtect && Date.now() < rpg.hellProtect.endAt ? `<div style="background:#001a00; color:#86efac; font-size:11px; font-weight:700; padding:4px 8px; border-radius:6px; margin-top:4px; border:1px solid #16a34a;">🛡️ 防護符生效中 — 剩餘 ${Math.ceil((rpg.hellProtect.endAt-Date.now())/60000)} 分鐘</div>` : ''}
+        ${(() => {
+          const hellExists = players.some(p => p && p.rpg && p.rpg.class === 'hellmessenger');
+          if (!hellExists || rpg.class === 'hellmessenger') return '';
+          const hasActiveEffect = (rpg.hellCurse) || (rpg.hellSeal && Date.now() < rpg.hellSeal.endAt);
+          const hasProtect = rpg.hellProtect && Date.now() < rpg.hellProtect.endAt;
+          return `<div style="display:flex; gap:5px; flex-wrap:wrap; margin-top:5px;">
+            ${hasActiveEffect ? `<button onclick="hellCounterAttack()" style="padding:4px 8px; border:none; border-radius:6px; cursor:pointer; font-size:11px; font-weight:700; background:linear-gradient(135deg,#3f0000,#dc2626); color:#fff;">🗡️ 反擊（-10體力）</button>` : ''}
+            ${hasActiveEffect ? `<button onclick="hellCryForHelp()" style="padding:4px 8px; border:none; border-radius:6px; cursor:pointer; font-size:11px; font-weight:700; background:#1f2937; color:#d1d5db;">🆘 求援廣播</button>` : ''}
+            ${!hasProtect ? `<button onclick="hellBuyProtect()" style="padding:4px 8px; border:none; border-radius:6px; cursor:pointer; font-size:11px; font-weight:700; background:linear-gradient(135deg,#001a00,#16a34a); color:#fff;">🛡️ 防護符 5000幣</button>` : ''}
+          </div>`;
+        })()}
         <div class="char-coins">🪙 ${coins} 鵝鵝幣　·　🧭 ${rpg.exploreCoins || 0} 探險幣　·　🥚 ${me.eggCoins || 0} 鵝蛋幣</div>
         <div class="stat-bar">
           <div class="stat-bar-label"><span>❤️ HP</span><span>${rpg.hp} / ${stats.maxHp}</span></div>
@@ -17601,6 +17614,13 @@ ${b.text}
   function resolveForageChoice(questId, choiceIdx) {
     const me = getMe(); if (!me) return;
     const r = getRpg(me);
+    // ⭐ 地獄封印檢查
+    if (r.hellSeal && Date.now() < r.hellSeal.endAt) {
+      const rem = Math.ceil((r.hellSeal.endAt - Date.now()) / 60000);
+      showToast(`🔒 被地獄封印！剩餘 ${rem} 分鐘（${escapeHtml(r.hellSeal.applier)} 施加）`);
+      hideModal(); return;
+    }
+    if (r.hellSeal) delete r.hellSeal; // 已過期清除
     const quest = FORAGE_QUESTS.find(q => q.id === questId);
     if (!quest) { hideModal(); return; }
     const choice = quest.choices[choiceIdx];
@@ -17858,9 +17878,16 @@ ${b.text}
   // ⭐⭐⭐  地獄使者系統  ⭐⭐⭐
   // ============================================================
 
-  const HELL_STAMINA_COST = { stealStamina: 10, plunder: 20, duel: 15, curse: 25 };
+  const HELL_STAMINA_COST = { stealStamina: 10, plunder: 20, duel: 15, curse: 25, seal: 30, drainXp: 20 };
   const HELL_STEAL_STAMINA_AMOUNT = [10, 20]; // [min, max]
   const HELL_PLUNDER_AMOUNT = 50000;
+  // ⭐ 地獄黑市品項
+  const HELL_SHOP_ITEMS = [
+    { id: 'restoreStamina', icon: '🩸', label: '血魄恢復',   desc: '消耗 5萬鵝幣 → 靈力 +50',         costType: 'coins',   cost: 50000 },
+    { id: 'upgradeCurse',  icon: '💀', label: '強化詛咒',   desc: '消耗 40 靈力 → 下次詛咒 DEF -50%', costType: 'stamina', cost: 40 },
+    { id: 'evilShield',    icon: '🛡️', label: '邪靈護盾',   desc: '消耗 30 靈力 → 下次反擊傷害減半',  costType: 'stamina', cost: 30 },
+    { id: 'freeAction',    icon: '⚡', label: '業障之書',   desc: '消耗 50 靈力 → 下一個行動免耗靈力', costType: 'stamina', cost: 50 },
+  ];
 
   // --- 建立地獄使者角色（DEBUG 限定）---
   function pickHellMessenger() {
@@ -17945,18 +17972,25 @@ ${b.text}
     const target = players.find(p => p && p.id === targetId);
     if (!target) { showToast('找不到目標'); return; }
     const targetRpg = getRpg(target);
+    if (targetRpg.hellProtect && Date.now() < targetRpg.hellProtect.endAt) { showToast(`🛡️ ${escapeHtml(target.name)} 持有防護符！`); return; }
+    if (targetRpg.hellProtect) delete targetRpg.hellProtect; // 已過期
     const [sMin, sMax] = HELL_STEAL_STAMINA_AMOUNT;
+    const _freeAction = myRpg.hellFreeAction; if (_freeAction) delete myRpg.hellFreeAction;
     const stolen = sMin + Math.floor(Math.random() * (sMax - sMin + 1));
     const actualStolen = Math.min(stolen, targetRpg.stamina || 0);
     // 扣目標體力
     targetRpg.stamina = Math.max(0, (targetRpg.stamina || 0) - actualStolen);
     targetRpg.saveVersion = (targetRpg.saveVersion || 0) + 1;
     target.lastTouchedAt = Date.now() - 1; // 略早於我，確保遠端接受
-    // 補自己靈力
-    myRpg.stamina = Math.min(200, (myRpg.stamina || 0) - HELL_STAMINA_COST.stealStamina + actualStolen);
-    // 記錄
+    // 補自己靈力（業障之書免耗）
+    const _stealCost = _freeAction ? 0 : HELL_STAMINA_COST.stealStamina;
+    myRpg.stamina = Math.min(200, (myRpg.stamina || 0) - _stealCost + actualStolen);
+    // 記錄 + 業績統計
     const deed = { ts: Date.now(), type: 'stealStamina', targetName: target.name || targetId, amount: actualStolen };
     myRpg.hellDeeds = [deed, ...(myRpg.hellDeeds || [])].slice(0, 10);
+    myRpg.hellStats = myRpg.hellStats || {};
+    myRpg.hellStats.stealCount = (myRpg.hellStats.stealCount || 0) + 1;
+    myRpg.hellStats.stealTotal = (myRpg.hellStats.stealTotal || 0) + actualStolen;
     broadcastHellAction('⚡', `地獄使者 【${escapeHtml(me.name || '???')}】 奪走了 ${escapeHtml(target.name || '???')} 的 ${actualStolen} 點體力！`);
     // ⭐ 強制寫入目標玩家（save() 只寫自己，seenPlayerIds 會跳過其他人）
     window.__firebaseSync?.forceWriteAllPlayers?.([target]).catch(() => {});
@@ -17971,8 +18005,12 @@ ${b.text}
     if ((myRpg.stamina || 0) < HELL_STAMINA_COST.plunder) { showToast(`⚡ 靈力不足（需 ${HELL_STAMINA_COST.plunder}）`); return; }
     const target = players.find(p => p && p.id === targetId);
     if (!target) { showToast('找不到目標'); return; }
+    const targetRpgP = getRpg(target);
+    if (targetRpgP.hellProtect && Date.now() < targetRpgP.hellProtect.endAt) { showToast(`🛡️ ${escapeHtml(target.name)} 持有防護符！`); return; }
+    if (targetRpgP.hellProtect) delete targetRpgP.hellProtect;
     const targetCoins = getCoins(target.id);
     if (targetCoins <= 0) { showToast('目標身無分文'); return; }
+    const _freeActionP = myRpg.hellFreeAction; if (_freeActionP) delete myRpg.hellFreeAction;
     const stolen = Math.min(HELL_PLUNDER_AMOUNT, targetCoins);
     // 扣目標鵝鵝幣（增加其 coinsSpent）
     target.coinsSpent = (target.coinsSpent || 0) + stolen;
@@ -17980,10 +18018,13 @@ ${b.text}
     if (target.rpg) { target.rpg.saveVersion = (target.rpg.saveVersion || 0) + 1; }
     // 補回自己（減少自己的 coinsSpent）
     me.coinsSpent = (me.coinsSpent || 0) - stolen;
-    myRpg.stamina = Math.max(0, (myRpg.stamina || 0) - HELL_STAMINA_COST.plunder);
-    // 記錄
+    myRpg.stamina = Math.max(0, (myRpg.stamina || 0) - (_freeActionP ? 0 : HELL_STAMINA_COST.plunder));
+    // 記錄 + 業績統計
     const deed = { ts: Date.now(), type: 'plunder', targetName: target.name || targetId, amount: stolen };
     myRpg.hellDeeds = [deed, ...(myRpg.hellDeeds || [])].slice(0, 10);
+    myRpg.hellStats = myRpg.hellStats || {};
+    myRpg.hellStats.plunderCount = (myRpg.hellStats.plunderCount || 0) + 1;
+    myRpg.hellStats.plunderTotal = (myRpg.hellStats.plunderTotal || 0) + stolen;
     broadcastHellAction('💰', `地獄使者 【${escapeHtml(me.name || '???')}】 洗劫了 ${escapeHtml(target.name || '???')} 的 ${stolen.toLocaleString()} 鵝鵝幣！`);
     // ⭐ 強制寫入目標玩家
     window.__firebaseSync?.forceWriteAllPlayers?.([target]).catch(() => {});
@@ -17999,13 +18040,18 @@ ${b.text}
     const target = players.find(p => p && p.id === targetId);
     if (!target) { showToast('找不到目標'); return; }
     const targetRpg = getRpg(target);
+    if (targetRpg.hellProtect && Date.now() < targetRpg.hellProtect.endAt) { showToast(`🛡️ ${escapeHtml(target.name)} 持有防護符！`); return; }
+    if (targetRpg.hellProtect) delete targetRpg.hellProtect;
     if (targetRpg.hellDuelRequest?.status === 'pending') { showToast('對方已有決鬥邀請中'); return; }
+    const _freeActionD = myRpg.hellFreeAction; if (_freeActionD) delete myRpg.hellFreeAction;
     targetRpg.hellDuelRequest = { fromId: me.id, fromName: me.name || '地獄使者', ts: Date.now(), status: 'pending' };
     targetRpg.saveVersion = (targetRpg.saveVersion || 0) + 1;
     target.lastTouchedAt = Date.now() - 1;
-    myRpg.stamina = Math.max(0, (myRpg.stamina || 0) - HELL_STAMINA_COST.duel);
+    myRpg.stamina = Math.max(0, (myRpg.stamina || 0) - (_freeActionD ? 0 : HELL_STAMINA_COST.duel));
     const deed = { ts: Date.now(), type: 'duel', targetName: target.name || targetId };
     myRpg.hellDeeds = [deed, ...(myRpg.hellDeeds || [])].slice(0, 10);
+    myRpg.hellStats = myRpg.hellStats || {};
+    myRpg.hellStats.duelCount = (myRpg.hellStats.duelCount || 0) + 1;
     broadcastHellAction('⚔️', `地獄使者 【${escapeHtml(me.name || '???')}】 向 ${escapeHtml(target.name || '???')} 發出決鬥邀請！勇敢接受還是怯懦逃跑？`);
     // ⭐ 強制寫入目標玩家
     window.__firebaseSync?.forceWriteAllPlayers?.([target]).catch(() => {});
@@ -18021,19 +18067,170 @@ ${b.text}
     const target = players.find(p => p && p.id === targetId);
     if (!target) { showToast('找不到目標'); return; }
     const targetRpg = getRpg(target);
+    if (targetRpg.hellProtect && Date.now() < targetRpg.hellProtect.endAt) { showToast(`🛡️ ${escapeHtml(target.name)} 持有防護符！`); return; }
+    if (targetRpg.hellProtect) delete targetRpg.hellProtect;
     if (targetRpg.hellCurse) { showToast('對方已被詛咒中'); return; }
-    targetRpg.hellCurse = { applier: me.name || '地獄使者', ts: Date.now(), defPct: 0.30 };
+    const _freeActionC = myRpg.hellFreeAction; if (_freeActionC) delete myRpg.hellFreeAction;
+    const _upgraded = myRpg.hellCurseUpgrade; if (_upgraded) delete myRpg.hellCurseUpgrade;
+    const _defPct = _upgraded ? 0.50 : 0.30;
+    targetRpg.hellCurse = { applier: me.name || '地獄使者', ts: Date.now(), defPct: _defPct };
     targetRpg.saveVersion = (targetRpg.saveVersion || 0) + 1;
     target.lastTouchedAt = Date.now() - 1;
-    myRpg.stamina = Math.max(0, (myRpg.stamina || 0) - HELL_STAMINA_COST.curse);
+    myRpg.stamina = Math.max(0, (myRpg.stamina || 0) - (_freeActionC ? 0 : HELL_STAMINA_COST.curse));
     const deed = { ts: Date.now(), type: 'curse', targetName: target.name || targetId };
     myRpg.hellDeeds = [deed, ...(myRpg.hellDeeds || [])].slice(0, 10);
+    myRpg.hellStats = myRpg.hellStats || {};
+    myRpg.hellStats.curseCount = (myRpg.hellStats.curseCount || 0) + 1;
     broadcastHellAction('😱', `地獄使者 【${escapeHtml(me.name || '???')}】 對 ${escapeHtml(target.name || '???')} 施加了死亡詛咒！下一場戰鬥 DEF −30%！`);
     // ⭐ 強制寫入目標玩家
     window.__firebaseSync?.forceWriteAllPlayers?.([target]).catch(() => {});
     renderHellMessenger();
   }
   window.hellCurse = hellCurse;
+
+  // --- 動作：封印 ---
+  function hellSealTarget(targetId) {
+    const me = getMe(); if (!me) return;
+    const myRpg = getRpg(me);
+    const _freeAction = myRpg.hellFreeAction;
+    if (!_freeAction && (myRpg.stamina || 0) < HELL_STAMINA_COST.seal) { showToast(`⚡ 靈力不足（需 ${HELL_STAMINA_COST.seal}）`); return; }
+    const target = players.find(p => p && p.id === targetId);
+    if (!target) { showToast('找不到目標'); return; }
+    const targetRpg = getRpg(target);
+    if (targetRpg.hellProtect && Date.now() < targetRpg.hellProtect.endAt) { showToast(`🛡️ ${escapeHtml(target.name)} 持有防護符！`); return; }
+    if (targetRpg.hellProtect) delete targetRpg.hellProtect;
+    if (targetRpg.hellSeal && Date.now() < targetRpg.hellSeal.endAt) { showToast('對方已被封印中'); return; }
+    if (_freeAction) delete myRpg.hellFreeAction;
+    const duration = 15 * 60 * 1000; // 15 分鐘
+    targetRpg.hellSeal = { applier: me.name || '地獄使者', ts: Date.now(), endAt: Date.now() + duration };
+    targetRpg.saveVersion = (targetRpg.saveVersion || 0) + 1;
+    target.lastTouchedAt = Date.now() - 1;
+    myRpg.stamina = Math.max(0, (myRpg.stamina || 0) - (_freeAction ? 0 : HELL_STAMINA_COST.seal));
+    const deed = { ts: Date.now(), type: 'seal', targetName: target.name || targetId };
+    myRpg.hellDeeds = [deed, ...(myRpg.hellDeeds || [])].slice(0, 10);
+    myRpg.hellStats = myRpg.hellStats || {};
+    myRpg.hellStats.sealCount = (myRpg.hellStats.sealCount || 0) + 1;
+    broadcastHellAction('🔒', `地獄使者 【${escapeHtml(me.name || '???')}】 封印了 ${escapeHtml(target.name || '???')}！15分鐘內無法探險或戰鬥！`);
+    window.__firebaseSync?.forceWriteAllPlayers?.([target]).catch(() => {});
+    renderHellMessenger();
+  }
+  window.hellSealTarget = hellSealTarget;
+
+  // --- 動作：奪魂（吸走 EXP）---
+  function hellDrainXp(targetId) {
+    const me = getMe(); if (!me) return;
+    const myRpg = getRpg(me);
+    const _freeAction = myRpg.hellFreeAction;
+    if (!_freeAction && (myRpg.stamina || 0) < HELL_STAMINA_COST.drainXp) { showToast(`⚡ 靈力不足（需 ${HELL_STAMINA_COST.drainXp}）`); return; }
+    const target = players.find(p => p && p.id === targetId);
+    if (!target) { showToast('找不到目標'); return; }
+    const targetRpg = getRpg(target);
+    if (targetRpg.hellProtect && Date.now() < targetRpg.hellProtect.endAt) { showToast(`🛡️ ${escapeHtml(target.name)} 持有防護符！`); return; }
+    if (targetRpg.hellProtect) delete targetRpg.hellProtect;
+    const xpHave = targetRpg.xp || 0;
+    if (xpHave <= 0) { showToast('目標沒有 EXP 可以奪取'); return; }
+    if (_freeAction) delete myRpg.hellFreeAction;
+    const drainAmt = Math.min(50 + Math.floor(Math.random() * 101), xpHave); // 50~150 XP
+    targetRpg.xp = Math.max(0, xpHave - drainAmt);
+    targetRpg.saveVersion = (targetRpg.saveVersion || 0) + 1;
+    target.lastTouchedAt = Date.now() - 1;
+    myRpg.stamina = Math.max(0, (myRpg.stamina || 0) - (_freeAction ? 0 : HELL_STAMINA_COST.drainXp));
+    const deed = { ts: Date.now(), type: 'drainXp', targetName: target.name || targetId, amount: drainAmt };
+    myRpg.hellDeeds = [deed, ...(myRpg.hellDeeds || [])].slice(0, 10);
+    myRpg.hellStats = myRpg.hellStats || {};
+    myRpg.hellStats.drainXpCount = (myRpg.hellStats.drainXpCount || 0) + 1;
+    myRpg.hellStats.drainXpTotal = (myRpg.hellStats.drainXpTotal || 0) + drainAmt;
+    broadcastHellAction('💜', `地獄使者 【${escapeHtml(me.name || '???')}】 吸走了 ${escapeHtml(target.name || '???')} 的 ${drainAmt} EXP！靈魂漸弱！`);
+    window.__firebaseSync?.forceWriteAllPlayers?.([target]).catch(() => {});
+    renderHellMessenger();
+  }
+  window.hellDrainXp = hellDrainXp;
+
+  // --- 動作：地獄黑市購買 ---
+  function hellShopBuy(itemId) {
+    const me = getMe(); if (!me) return;
+    const myRpg = getRpg(me);
+    if (itemId === 'restoreStamina') {
+      const cost = 50000;
+      if (getCoins(me.id) < cost) { showToast('鵝鵝幣不足（需 5 萬）'); return; }
+      me.coinsSpent = (me.coinsSpent || 0) + cost;
+      myRpg.stamina = Math.min(200, (myRpg.stamina || 0) + 50);
+      showToast('🩸 血魄恢復！靈力 +50');
+    } else if (itemId === 'upgradeCurse') {
+      if ((myRpg.stamina || 0) < 40) { showToast('靈力不足（需 40）'); return; }
+      if (myRpg.hellCurseUpgrade) { showToast('強化詛咒已準備好了'); return; }
+      myRpg.stamina = Math.max(0, (myRpg.stamina || 0) - 40);
+      myRpg.hellCurseUpgrade = true;
+      showToast('💀 詛咒已強化！下次詛咒 DEF -50%');
+    } else if (itemId === 'evilShield') {
+      if ((myRpg.stamina || 0) < 30) { showToast('靈力不足（需 30）'); return; }
+      if (myRpg.hellShield && Date.now() < myRpg.hellShield.endAt) { showToast('護盾已啟動中'); return; }
+      myRpg.stamina = Math.max(0, (myRpg.stamina || 0) - 30);
+      myRpg.hellShield = { endAt: Date.now() + 30 * 60 * 1000 };
+      showToast('🛡️ 邪靈護盾啟動！30分鐘內反擊傷害減半');
+    } else if (itemId === 'freeAction') {
+      if ((myRpg.stamina || 0) < 50) { showToast('靈力不足（需 50）'); return; }
+      if (myRpg.hellFreeAction) { showToast('業障之書已備用中'); return; }
+      myRpg.stamina = Math.max(0, (myRpg.stamina || 0) - 50);
+      myRpg.hellFreeAction = true;
+      showToast('⚡ 業障之書已準備！下一個行動免耗靈力');
+    }
+    saveData();
+    renderHellMessenger();
+  }
+  window.hellShopBuy = hellShopBuy;
+
+  // --- 玩家反擊（非地獄使者可用）---
+  function hellCounterAttack() {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (rpg.class === 'hellmessenger') return;
+    tickRecovery(me);
+    if ((rpg.stamina || 0) < 10) { showToast('體力不足（需 10）'); return; }
+    const hellPlayer = players.find(p => p && p.rpg && p.rpg.class === 'hellmessenger');
+    if (!hellPlayer) { showToast('找不到地獄使者'); return; }
+    const hellRpg = getRpg(hellPlayer);
+    rpg.stamina = Math.max(0, (rpg.stamina || 0) - 10);
+    const baseDmg = 5 + Math.floor(Math.random() * 11); // 5~15
+    const hasShield = hellRpg.hellShield && Date.now() < hellRpg.hellShield.endAt;
+    const actualDmg = hasShield ? Math.ceil(baseDmg / 2) : baseDmg;
+    if (hasShield) delete hellRpg.hellShield;
+    hellRpg.stamina = Math.max(0, (hellRpg.stamina || 0) - actualDmg);
+    hellRpg.saveVersion = (hellRpg.saveVersion || 0) + 1;
+    hellPlayer.lastTouchedAt = Date.now() - 1;
+    broadcastHellAction('🗡️', `${escapeHtml(me.name)} 奮勇反擊地獄使者 【${escapeHtml(hellPlayer.name || '???')}】！消耗其 ${actualDmg} 靈力${hasShield ? '（護盾抵消半數）' : ''}！`);
+    window.__firebaseSync?.forceWriteAllPlayers?.([hellPlayer]).catch(() => {});
+    saveData();
+    renderCharCard();
+    showToast(`🗡️ 反擊！地獄使者 -${actualDmg} 靈力`);
+  }
+  window.hellCounterAttack = hellCounterAttack;
+
+  // --- 玩家購買防護符 ---
+  function hellBuyProtect() {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (rpg.class === 'hellmessenger') return;
+    if (rpg.hellProtect && Date.now() < rpg.hellProtect.endAt) { showToast('防護符仍在生效中'); return; }
+    const cost = 5000;
+    if (getCoins(me.id) < cost) { showToast('鵝幣不足（需 5000）'); return; }
+    me.coinsSpent = (me.coinsSpent || 0) + cost;
+    rpg.hellProtect = { ts: Date.now(), endAt: Date.now() + 30 * 60 * 1000 };
+    saveData();
+    renderCharCard();
+    showToast('🛡️ 防護符已啟動！30分鐘內免受地獄使者侵害');
+  }
+  window.hellBuyProtect = hellBuyProtect;
+
+  // --- 玩家求援廣播 ---
+  function hellCryForHelp() {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (rpg.class === 'hellmessenger') return;
+    broadcastHellAction('🆘', `【${escapeHtml(me.name)}】 正在被地獄使者欺負！請大家幫忙反擊！`);
+    showToast('🆘 求援廣播已發出！');
+  }
+  window.hellCryForHelp = hellCryForHelp;
 
   // --- 決鬥通知彈窗（目標收到邀請時顯示）---
   let _hellDuelModalShown = false;
@@ -18152,35 +18349,93 @@ ${b.text}
                 <div style="font-weight:700; color:#fca5a5;">${escapeHtml(cls.icon || '?')} ${escapeHtml(t.name || t.id)} <span style="font-size:11px; color:#9ca3af;">Lv${tRpg.level || 1} ${escapeHtml(cls.name || '')}</span></div>
                 <div style="font-size:11px; color:#6b7280;">⚡${tRpg.stamina || 0}　💰${tCoins >= 10000 ? Math.floor(tCoins/10000)+'萬' : tCoins}</div>
               </div>
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+              ${tRpg.hellSeal && Date.now() < tRpg.hellSeal.endAt ? `<div style="font-size:10px; color:#fde047; background:#1a1a00; border-radius:5px; padding:3px 6px; margin-bottom:4px;">🔒 封印中 ${Math.ceil((tRpg.hellSeal.endAt - Date.now())/60000)}分鐘</div>` : ''}
+              ${tRpg.hellProtect && Date.now() < tRpg.hellProtect.endAt ? `<div style="font-size:10px; color:#86efac; background:#001a00; border-radius:5px; padding:3px 6px; margin-bottom:4px;">🛡️ 防護符中 ${Math.ceil((tRpg.hellProtect.endAt - Date.now())/60000)}分鐘</div>` : ''}
+              <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px;">
                 <button onclick="hellStealStamina('${t.id}')" style="
-                  padding:8px 4px; border:none; border-radius:8px; cursor:pointer; font-size:12px; font-weight:700;
+                  padding:7px 2px; border:none; border-radius:8px; cursor:pointer; font-size:11px; font-weight:700;
                   background:linear-gradient(135deg,#1e3a8a,#3b82f6); color:#fff;
                   ${stamina < HELL_STAMINA_COST.stealStamina ? 'opacity:0.4; pointer-events:none;' : ''}">
-                  ⚡ 奪取體力<br><span style="font-size:10px; opacity:0.8;">消耗 ${HELL_STAMINA_COST.stealStamina} 靈力</span>
+                  ⚡ 奪體力<br><span style="font-size:9px; opacity:0.8;">${HELL_STAMINA_COST.stealStamina} 靈力</span>
                 </button>
                 <button onclick="hellPlunder('${t.id}')" style="
-                  padding:8px 4px; border:none; border-radius:8px; cursor:pointer; font-size:12px; font-weight:700;
+                  padding:7px 2px; border:none; border-radius:8px; cursor:pointer; font-size:11px; font-weight:700;
                   background:linear-gradient(135deg,#78350f,#f59e0b); color:#1a0000;
                   ${stamina < HELL_STAMINA_COST.plunder || tCoins <= 0 ? 'opacity:0.4; pointer-events:none;' : ''}">
-                  💰 洗劫<br><span style="font-size:10px; opacity:0.7;">消耗 ${HELL_STAMINA_COST.plunder} 靈力</span>
+                  💰 洗劫<br><span style="font-size:9px; opacity:0.7;">${HELL_STAMINA_COST.plunder} 靈力</span>
                 </button>
                 <button onclick="hellSendDuel('${t.id}')" style="
-                  padding:8px 4px; border:none; border-radius:8px; cursor:pointer; font-size:12px; font-weight:700;
+                  padding:7px 2px; border:none; border-radius:8px; cursor:pointer; font-size:11px; font-weight:700;
                   background:linear-gradient(135deg,#3f0000,#dc2626); color:#fff;
                   ${stamina < HELL_STAMINA_COST.duel ? 'opacity:0.4; pointer-events:none;' : ''}
                   ${tRpg.hellDuelRequest?.status === 'pending' ? 'opacity:0.4; pointer-events:none;' : ''}">
-                  ⚔️ 決鬥邀請<br><span style="font-size:10px; opacity:0.8;">消耗 ${HELL_STAMINA_COST.duel} 靈力</span>
+                  ⚔️ 決鬥<br><span style="font-size:9px; opacity:0.8;">${HELL_STAMINA_COST.duel} 靈力</span>
                 </button>
                 <button onclick="hellCurse('${t.id}')" style="
-                  padding:8px 4px; border:none; border-radius:8px; cursor:pointer; font-size:12px; font-weight:700;
+                  padding:7px 2px; border:none; border-radius:8px; cursor:pointer; font-size:11px; font-weight:700;
                   background:linear-gradient(135deg,#1a0030,#7c3aed); color:#e9d5ff;
                   ${stamina < HELL_STAMINA_COST.curse || tRpg.hellCurse ? 'opacity:0.4; pointer-events:none;' : ''}">
-                  😱 詛咒<br><span style="font-size:10px; opacity:0.8;">消耗 ${HELL_STAMINA_COST.curse} 靈力</span>
+                  😱 詛咒<br><span style="font-size:9px; opacity:0.8;">${HELL_STAMINA_COST.curse} 靈力</span>
+                </button>
+                <button onclick="hellSealTarget('${t.id}')" style="
+                  padding:7px 2px; border:none; border-radius:8px; cursor:pointer; font-size:11px; font-weight:700;
+                  background:linear-gradient(135deg,#1c1c00,#ca8a04); color:#fef08a;
+                  ${stamina < HELL_STAMINA_COST.seal || (tRpg.hellSeal && Date.now() < tRpg.hellSeal.endAt) ? 'opacity:0.4; pointer-events:none;' : ''}">
+                  🔒 封印<br><span style="font-size:9px; opacity:0.8;">${HELL_STAMINA_COST.seal} 靈力</span>
+                </button>
+                <button onclick="hellDrainXp('${t.id}')" style="
+                  padding:7px 2px; border:none; border-radius:8px; cursor:pointer; font-size:11px; font-weight:700;
+                  background:linear-gradient(135deg,#2d0040,#a855f7); color:#f3e8ff;
+                  ${stamina < HELL_STAMINA_COST.drainXp || (tRpg.xp || 0) <= 0 ? 'opacity:0.4; pointer-events:none;' : ''}">
+                  💜 奪魂<br><span style="font-size:9px; opacity:0.8;">${HELL_STAMINA_COST.drainXp} 靈力</span>
                 </button>
               </div>
             </div>`;
         }).join('');
+
+    // ⭐ 業績統計
+    const hs = rpg.hellStats || {};
+    const hellScore = (hs.stealCount||0)*2 + Math.floor((hs.stealTotal||0)/5)
+      + (hs.plunderCount||0)*5 + Math.floor((hs.plunderTotal||0)/5000)
+      + (hs.curseCount||0)*6 + (hs.duelCount||0)*4
+      + (hs.sealCount||0)*5 + (hs.drainXpCount||0)*3 + Math.floor((hs.drainXpTotal||0)/20);
+    const statsHtml = `
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; font-size:11px;">
+        <div style="color:#fca5a5;">⚡ 奪體力 <b>${hs.stealCount||0}</b>次 / <b>${hs.stealTotal||0}</b>點</div>
+        <div style="color:#fde68a;">💰 洗劫 <b>${hs.plunderCount||0}</b>次 / <b>${((hs.plunderTotal||0)/10000).toFixed(1)}</b>萬</div>
+        <div style="color:#e9d5ff;">😱 詛咒 <b>${hs.curseCount||0}</b>次</div>
+        <div style="color:#fcd34d;">⚔️ 決鬥 <b>${hs.duelCount||0}</b>次</div>
+        <div style="color:#fef08a;">🔒 封印 <b>${hs.sealCount||0}</b>次</div>
+        <div style="color:#d8b4fe;">💜 奪魂 <b>${hs.drainXpCount||0}</b>次 / <b>${hs.drainXpTotal||0}</b> EXP</div>
+      </div>
+      <div style="margin-top:6px; font-size:13px; font-weight:800; color:#f87171; text-align:center;">
+        🩸 業績分：${hellScore} 分
+      </div>`;
+
+    // ⭐ 黑市狀態指示
+    const shopStatusHtml = [
+      rpg.hellCurseUpgrade ? `<span style="background:#3f0040; color:#e9d5ff; font-size:10px; padding:2px 6px; border-radius:4px; margin-right:4px;">💀強化詛咒備用</span>` : '',
+      rpg.hellFreeAction   ? `<span style="background:#1a1a00; color:#fef08a; font-size:10px; padding:2px 6px; border-radius:4px; margin-right:4px;">⚡業障之書備用</span>` : '',
+      rpg.hellShield && Date.now() < rpg.hellShield.endAt ? `<span style="background:#001a1a; color:#5eead4; font-size:10px; padding:2px 6px; border-radius:4px;">🛡️護盾${Math.ceil((rpg.hellShield.endAt-Date.now())/60000)}分鐘</span>` : '',
+    ].filter(Boolean).join('');
+
+    // ⭐ 黑市品項
+    const shopItemsHtml = HELL_SHOP_ITEMS.map(item => {
+      const canAfford = item.costType === 'coins' ? getCoins(me.id) >= item.cost : (myRpg.stamina || 0) >= item.cost;
+      return `<div style="display:flex; align-items:center; gap:8px; padding:7px 10px; background:#0d0000; border:1px solid #3f0000; border-radius:8px; margin-bottom:5px;">
+        <span style="font-size:20px;">${item.icon}</span>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:12px; font-weight:700; color:#fca5a5;">${item.label}</div>
+          <div style="font-size:10px; color:#6b7280;">${item.desc}</div>
+        </div>
+        <button onclick="hellShopBuy('${item.id}')" style="
+          padding:5px 10px; border:none; border-radius:6px; cursor:pointer; font-size:11px; font-weight:700;
+          background:${canAfford ? 'linear-gradient(135deg,#7f1d1d,#dc2626)' : '#374151'}; color:#fff;
+          ${canAfford ? '' : 'opacity:0.5; pointer-events:none;'}">
+          ${item.costType === 'coins' ? `💰 ${(item.cost/10000).toFixed(0)}萬` : `⚡ ${item.cost}`}
+        </button>
+      </div>`;
+    }).join('');
 
     // 最近惡行
     const deeds = (rpg.hellDeeds || []);
@@ -18188,11 +18443,13 @@ ${b.text}
       ? `<div style="color:#6b7280; font-size:12px; text-align:center; padding:8px;">尚無惡行記錄</div>`
       : deeds.map(d => {
           const t = new Date(d.ts).toLocaleTimeString('zh-TW', { hour:'2-digit', minute:'2-digit' });
-          const icon = { stealStamina:'⚡', plunder:'💰', duel:'⚔️', curse:'😱' }[d.type] || '💀';
+          const icon = { stealStamina:'⚡', plunder:'💰', duel:'⚔️', curse:'😱', seal:'🔒', drainXp:'💜' }[d.type] || '💀';
           const desc = d.type === 'stealStamina' ? `奪走 ${escapeHtml(d.targetName)} 的 ${d.amount} 體力`
-            : d.type === 'plunder' ? `洗劫 ${escapeHtml(d.targetName)} ${(d.amount||0).toLocaleString()} 幣`
-            : d.type === 'duel'    ? `向 ${escapeHtml(d.targetName)} 發出決鬥邀請`
-            : d.type === 'curse'   ? `詛咒了 ${escapeHtml(d.targetName)}`
+            : d.type === 'plunder'  ? `洗劫 ${escapeHtml(d.targetName)} ${(d.amount||0).toLocaleString()} 幣`
+            : d.type === 'duel'     ? `向 ${escapeHtml(d.targetName)} 發出決鬥邀請`
+            : d.type === 'curse'    ? `詛咒了 ${escapeHtml(d.targetName)}`
+            : d.type === 'seal'     ? `封印了 ${escapeHtml(d.targetName)} 15分鐘`
+            : d.type === 'drainXp'  ? `吸走 ${escapeHtml(d.targetName)} ${d.amount} EXP`
             : `對 ${escapeHtml(d.targetName)} 施展惡行`;
           return `<div style="font-size:11px; color:#fca5a5; padding:3px 0; border-bottom:1px solid #3f0000;">${icon} ${t}　${desc}</div>`;
         }).join('');
@@ -18227,9 +18484,24 @@ ${b.text}
         <div style="font-size:13px; font-weight:800; color:#f87171; margin-bottom:8px; letter-spacing:1px;">🎯 選擇目標</div>
         ${targetOptions}
 
+        <!-- 地獄業績 -->
+        <div style="background:#0d0000; border:1px solid #7f1d1d; border-radius:10px; padding:10px 12px; margin-top:12px; margin-bottom:10px;">
+          <div style="font-size:12px; font-weight:700; color:#f87171; margin-bottom:8px;">📊 地獄業績</div>
+          ${statsHtml}
+        </div>
+
+        <!-- 備用技能狀態 -->
+        ${shopStatusHtml ? `<div style="margin-bottom:8px; padding:6px 10px; background:#0d0000; border:1px dashed #7f1d1d; border-radius:8px;">${shopStatusHtml}</div>` : ''}
+
+        <!-- 地獄黑市 -->
+        <div style="background:#0d0000; border:1px solid #7f1d1d; border-radius:10px; padding:10px 12px; margin-bottom:10px;">
+          <div style="font-size:12px; font-weight:700; color:#f87171; margin-bottom:8px;">🏪 地獄黑市</div>
+          ${shopItemsHtml}
+        </div>
+
         <!-- 惡行記錄 -->
-        <div style="background:#0d0000; border:1px solid #3f0000; border-radius:10px; padding:10px 12px; margin-top:12px; margin-bottom:12px;">
-          <div style="font-size:12px; font-weight:700; color:#f87171; margin-bottom:6px;">📜 我的惡行</div>
+        <div style="background:#0d0000; border:1px solid #3f0000; border-radius:10px; padding:10px 12px; margin-bottom:12px;">
+          <div style="font-size:12px; font-weight:700; color:#f87171; margin-bottom:6px;">📜 最近惡行</div>
           ${deedsHtml}
         </div>
 
@@ -18256,6 +18528,13 @@ ${b.text}
     if (!me) return;
     const rpg = getRpg(me);
     if (!rpg.class) return;
+    // ⭐ 地獄封印檢查
+    if (rpg.hellSeal && Date.now() < rpg.hellSeal.endAt) {
+      const rem = Math.ceil((rpg.hellSeal.endAt - Date.now()) / 60000);
+      showToast(`🔒 被地獄封印！剩餘 ${rem} 分鐘（${escapeHtml(rpg.hellSeal.applier)} 施加）`);
+      return;
+    }
+    if (rpg.hellSeal) delete rpg.hellSeal;
     if (!skipStamina) {
       tickRecovery(me);
       if (rpg.stamina < STAMINA_PER_FIGHT) {
