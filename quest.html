@@ -11469,7 +11469,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507023634';
+  const APP_VERSION = '20260507024429';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -17958,6 +17958,8 @@ ${b.text}
     const deed = { ts: Date.now(), type: 'stealStamina', targetName: target.name || targetId, amount: actualStolen };
     myRpg.hellDeeds = [deed, ...(myRpg.hellDeeds || [])].slice(0, 10);
     broadcastHellAction('⚡', `地獄使者 【${escapeHtml(me.name || '???')}】 奪走了 ${escapeHtml(target.name || '???')} 的 ${actualStolen} 點體力！`);
+    // ⭐ 強制寫入目標玩家（save() 只寫自己，seenPlayerIds 會跳過其他人）
+    window.__firebaseSync?.forceWriteAllPlayers?.([target]).catch(() => {});
     renderHellMessenger();
   }
   window.hellStealStamina = hellStealStamina;
@@ -17983,6 +17985,8 @@ ${b.text}
     const deed = { ts: Date.now(), type: 'plunder', targetName: target.name || targetId, amount: stolen };
     myRpg.hellDeeds = [deed, ...(myRpg.hellDeeds || [])].slice(0, 10);
     broadcastHellAction('💰', `地獄使者 【${escapeHtml(me.name || '???')}】 洗劫了 ${escapeHtml(target.name || '???')} 的 ${stolen.toLocaleString()} 鵝鵝幣！`);
+    // ⭐ 強制寫入目標玩家
+    window.__firebaseSync?.forceWriteAllPlayers?.([target]).catch(() => {});
     renderHellMessenger();
   }
   window.hellPlunder = hellPlunder;
@@ -18003,6 +18007,8 @@ ${b.text}
     const deed = { ts: Date.now(), type: 'duel', targetName: target.name || targetId };
     myRpg.hellDeeds = [deed, ...(myRpg.hellDeeds || [])].slice(0, 10);
     broadcastHellAction('⚔️', `地獄使者 【${escapeHtml(me.name || '???')}】 向 ${escapeHtml(target.name || '???')} 發出決鬥邀請！勇敢接受還是怯懦逃跑？`);
+    // ⭐ 強制寫入目標玩家
+    window.__firebaseSync?.forceWriteAllPlayers?.([target]).catch(() => {});
     renderHellMessenger();
   }
   window.hellSendDuel = hellSendDuel;
@@ -18023,6 +18029,8 @@ ${b.text}
     const deed = { ts: Date.now(), type: 'curse', targetName: target.name || targetId };
     myRpg.hellDeeds = [deed, ...(myRpg.hellDeeds || [])].slice(0, 10);
     broadcastHellAction('😱', `地獄使者 【${escapeHtml(me.name || '???')}】 對 ${escapeHtml(target.name || '???')} 施加了死亡詛咒！下一場戰鬥 DEF −30%！`);
+    // ⭐ 強制寫入目標玩家
+    window.__firebaseSync?.forceWriteAllPlayers?.([target]).catch(() => {});
     renderHellMessenger();
   }
   window.hellCurse = hellCurse;
@@ -21063,11 +21071,25 @@ ${b.text}
           const hh  = String(now.getHours()).padStart(2, '0');
           const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
           const slotId  = `snapshot_${hh}`;
+          // ⭐ 精簡玩家資料：去除大型 field，壓到 1MB 以內
+          const _lightPlayer = (p) => {
+            if (!p) return p;
+            const copy = { ...p };
+            if (copy.rpg) {
+              const r = { ...copy.rpg };
+              delete r.inventory;          // 大型裝備陣列，可從遊戲重建
+              delete r.hellDeeds;          // 地獄使者行為記錄
+              delete r.forageBattleHistory;
+              delete r.battleLog;
+              copy.rpg = r;
+            }
+            return copy;
+          };
           const payload = _prune({
             ts:      Date.now(),
             date:    `${dateStr}_${hh}`,
             version: window.__APP_VERSION || '',
-            players: local.players,
+            players: local.players.map(_lightPlayer),
           });
           await setDoc(doc(backupsCol, slotId), payload);
           console.log('[backup] slot:', slotId, '玩家數:', local.players.length);
