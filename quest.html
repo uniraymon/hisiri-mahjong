@@ -5456,6 +5456,8 @@
       players = merged;
       __persistLocalSnapshot();
       render();
+      // ⭐ 地獄使者：決鬥邀請通知
+      setTimeout(checkHellDuelNotification, 300);
     } finally { __isApplyingRemote = false; }
     if (needRepush) {
       setTimeout(() => {
@@ -6814,6 +6816,14 @@
       };
     }
 
+    // ⭐ 地獄詛咒：DEF -30%（下一場戰鬥）
+    const _hellCurse = player.rpg.hellCurse;
+    if (_hellCurse) {
+      const _cursePct = _hellCurse.defPct || 0.30;
+      stats.def = Math.round(stats.def * (1 - _cursePct));
+      log.push({ type: 'system', text: `😱 地獄詛咒發動！DEF -${Math.round(_cursePct * 100)}%（施加者：${_hellCurse.applier}）` });
+      delete player.rpg.hellCurse;
+    }
     const bonus = computeSkillBonuses(player);
     const abil  = computeAbilityBonuses(player);
     const passive = computePassiveBonuses(player);
@@ -8041,6 +8051,14 @@
     { const _fmOrig = log.push.bind(log); log.push = (e) => { if (e && e.round === undefined) e.round = round; return _fmOrig(e); }; }
     const cls = CLASSES[player.rpg.class];
     const stats = computeStats(player);
+    // ⭐ 地獄詛咒：DEF -30%（下一場戰鬥）
+    const _hellCurseM = player.rpg.hellCurse;
+    if (_hellCurseM) {
+      const _cursePctM = _hellCurseM.defPct || 0.30;
+      stats.def = Math.round(stats.def * (1 - _cursePctM));
+      log.push({ type: 'system', text: `😱 地獄詛咒發動！DEF -${Math.round(_cursePctM * 100)}%（施加者：${_hellCurseM.applier}）` });
+      delete player.rpg.hellCurse;
+    }
     const bonus = computeSkillBonuses(player);
     const abil  = computeAbilityBonuses(player);
     const passive = computePassiveBonuses(player);
@@ -11443,7 +11461,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507014424';
+  const APP_VERSION = '20260507021912';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13863,6 +13881,7 @@ ${b.text}
       <div class="char-info">
         <div class="char-name">${escapeHtml(me.name)}</div>
         <div class="char-class">${cls.name} · Lv ${rpg.level}</div>
+        ${rpg.hellCurse ? `<div style="background:#7f1d1d; color:#fca5a5; font-size:11px; font-weight:700; padding:4px 8px; border-radius:6px; margin-top:4px; border:1px solid #dc2626;">😱 地獄詛咒 — 下場戰鬥 DEF -${Math.round((rpg.hellCurse.defPct||0.30)*100)}%（${escapeHtml(rpg.hellCurse.applier)} 施加）</div>` : ''}
         <div class="char-coins">🪙 ${coins} 鵝鵝幣　·　🧭 ${rpg.exploreCoins || 0} 探險幣　·　🥚 ${me.eggCoins || 0} 鵝蛋幣</div>
         <div class="stat-bar">
           <div class="stat-bar-label"><span>❤️ HP</span><span>${rpg.hp} / ${stats.maxHp}</span></div>
@@ -17831,7 +17850,7 @@ ${b.text}
   // ⭐⭐⭐  地獄使者系統  ⭐⭐⭐
   // ============================================================
 
-  const HELL_STAMINA_COST = { stealStamina: 10, plunder: 20 };
+  const HELL_STAMINA_COST = { stealStamina: 10, plunder: 20, duel: 15, curse: 25 };
   const HELL_STEAL_STAMINA_AMOUNT = [10, 20]; // [min, max]
   const HELL_PLUNDER_AMOUNT = 50000;
 
@@ -17956,6 +17975,136 @@ ${b.text}
   }
   window.hellPlunder = hellPlunder;
 
+  // --- 動作：發出決鬥邀請 ---
+  function hellSendDuel(targetId) {
+    const me = getMe(); if (!me) return;
+    const myRpg = getRpg(me);
+    if ((myRpg.stamina || 0) < HELL_STAMINA_COST.duel) { showToast(`⚡ 靈力不足（需 ${HELL_STAMINA_COST.duel}）`); return; }
+    const target = players.find(p => p && p.id === targetId);
+    if (!target) { showToast('找不到目標'); return; }
+    const targetRpg = getRpg(target);
+    if (targetRpg.hellDuelRequest?.status === 'pending') { showToast('對方已有決鬥邀請中'); return; }
+    targetRpg.hellDuelRequest = { fromId: me.id, fromName: me.name || '地獄使者', ts: Date.now(), status: 'pending' };
+    targetRpg.saveVersion = (targetRpg.saveVersion || 0) + 1;
+    target.lastTouchedAt = Date.now() - 1;
+    myRpg.stamina = Math.max(0, (myRpg.stamina || 0) - HELL_STAMINA_COST.duel);
+    const deed = { ts: Date.now(), type: 'duel', targetName: target.name || targetId };
+    myRpg.hellDeeds = [deed, ...(myRpg.hellDeeds || [])].slice(0, 10);
+    broadcastHellAction('⚔️', `地獄使者 【${escapeHtml(me.name || '???')}】 向 ${escapeHtml(target.name || '???')} 發出決鬥邀請！勇敢接受還是怯懦逃跑？`);
+    renderHellMessenger();
+  }
+  window.hellSendDuel = hellSendDuel;
+
+  // --- 動作：施加詛咒 ---
+  function hellCurse(targetId) {
+    const me = getMe(); if (!me) return;
+    const myRpg = getRpg(me);
+    if ((myRpg.stamina || 0) < HELL_STAMINA_COST.curse) { showToast(`⚡ 靈力不足（需 ${HELL_STAMINA_COST.curse}）`); return; }
+    const target = players.find(p => p && p.id === targetId);
+    if (!target) { showToast('找不到目標'); return; }
+    const targetRpg = getRpg(target);
+    if (targetRpg.hellCurse) { showToast('對方已被詛咒中'); return; }
+    targetRpg.hellCurse = { applier: me.name || '地獄使者', ts: Date.now(), defPct: 0.30 };
+    targetRpg.saveVersion = (targetRpg.saveVersion || 0) + 1;
+    target.lastTouchedAt = Date.now() - 1;
+    myRpg.stamina = Math.max(0, (myRpg.stamina || 0) - HELL_STAMINA_COST.curse);
+    const deed = { ts: Date.now(), type: 'curse', targetName: target.name || targetId };
+    myRpg.hellDeeds = [deed, ...(myRpg.hellDeeds || [])].slice(0, 10);
+    broadcastHellAction('😱', `地獄使者 【${escapeHtml(me.name || '???')}】 對 ${escapeHtml(target.name || '???')} 施加了死亡詛咒！下一場戰鬥 DEF −30%！`);
+    renderHellMessenger();
+  }
+  window.hellCurse = hellCurse;
+
+  // --- 決鬥通知彈窗（目標收到邀請時顯示）---
+  let _hellDuelModalShown = false;
+  function checkHellDuelNotification() {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (rpg.class === 'hellmessenger') return;
+    const duel = rpg.hellDuelRequest;
+    if (!duel || duel.status !== 'pending') return;
+    if (_hellDuelModalShown) return;
+    // 超過 5 分鐘自動拒絕
+    if (Date.now() - duel.ts > 5 * 60 * 1000) { delete rpg.hellDuelRequest; saveData(); return; }
+    _hellDuelModalShown = true;
+    showModal('⚔️ 決鬥邀請！', `
+      <div style="text-align:center; padding:8px 0 16px; background:linear-gradient(180deg,#1a0000,#0d0000); border-radius:10px; margin:-8px -12px 0;">
+        <div style="font-size:52px; margin-bottom:8px; padding-top:12px;">⚔️</div>
+        <div style="font-size:15px; font-weight:800; color:#f87171; margin:0 16px 8px;">
+          地獄使者 【${escapeHtml(duel.fromName)}】<br>向你發出決鬥邀請！
+        </div>
+        <div style="font-size:12px; color:#9ca3af; margin-bottom:16px; padding:0 16px;">接受決鬥將以地獄使者為敵人進行一場戰鬥<br>戰果將廣播給所有玩家</div>
+        <div style="padding:0 16px; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <button onclick="hellAcceptDuel('${escapeHtml(duel.fromId)}','${escapeHtml(duel.fromName)}')" style="
+            padding:12px; border:none; border-radius:10px; cursor:pointer;
+            background:linear-gradient(135deg,#7f1d1d,#dc2626); color:#fff;
+            font-size:13px; font-weight:800;">⚔️ 接受決鬥</button>
+          <button onclick="hellDeclineDuel('${escapeHtml(duel.fromId)}','${escapeHtml(duel.fromName)}')" style="
+            padding:12px; border:none; border-radius:10px; cursor:pointer;
+            background:linear-gradient(135deg,#1f2937,#4b5563); color:#d1d5db;
+            font-size:13px; font-weight:700;">🏳️ 怯懦逃跑</button>
+        </div>
+      </div>
+    `);
+  }
+  window.checkHellDuelNotification = checkHellDuelNotification;
+
+  // --- 接受決鬥 ---
+  function hellAcceptDuel(fromId, fromName) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    _hellDuelModalShown = false;
+    rpg.hellDuelRequest = { ...(rpg.hellDuelRequest || {}), status: 'accepted' };
+    // 建立地獄使者怪物（依目標等級縮放）
+    const lv = rpg.level || 1;
+    const hellMonster = {
+      name: '地獄使者', icon: '💀',
+      hp: Math.round(lv * 80 + 500),
+      atk: Math.round(lv * 12 + 50),
+      def: Math.round(lv * 5 + 20),
+      spd: Math.round(lv * 0.4 + 8),
+      exp: 0, gold: 0, level: lv, isHellDuel: true,
+    };
+    hideModal();
+    // 執行戰鬥
+    const result = autoFight(me, hellMonster);
+    rpg.hp = Math.max(1, result.pHpFinal);
+    rpg.mp = result.pMpFinal;
+    delete rpg.hellDuelRequest;
+    saveData();
+    // 廣播結果
+    if (result.won) {
+      broadcastHellAction('🏆', `${escapeHtml(me.name)} 擊敗了地獄使者 【${escapeHtml(fromName)}】 的決鬥挑戰！地獄顏面盡失！`);
+    } else {
+      broadcastHellAction('💀', `地獄使者 【${escapeHtml(fromName)}】 在決鬥中擊潰了 ${escapeHtml(me.name)}！跪下臣服！`);
+    }
+    // 顯示戰鬥結果摘要
+    const logLines = result.log.slice(-12).map(e => `<div style="font-size:11px; color:${e.type==='player'?'#93c5fd':e.type==='monster'?'#fca5a5':'#9ca3af'}; padding:1px 0;">${escapeHtml(e.text || '')}</div>`).join('');
+    showModal(result.won ? '🏆 決鬥勝利！' : '💀 決鬥落敗', `
+      <div style="background:#0d0000; border-radius:10px; padding:10px; margin-bottom:12px; max-height:200px; overflow-y:auto;">${logLines}</div>
+      <div style="text-align:center; font-size:14px; font-weight:800; color:${result.won?'#fde047':'#f87171'};">
+        ${result.won ? '⚔️ 你打敗了地獄使者！' : '💀 地獄使者擊敗了你！'}
+      </div>
+      <div style="text-align:center; font-size:12px; color:#9ca3af; margin-top:4px;">剩餘 HP：${rpg.hp}</div>
+      <button onclick="hideModal(); render();" style="margin-top:12px; width:100%; padding:10px; border:none; border-radius:8px; background:#374151; color:#fff; cursor:pointer; font-size:13px;">關閉</button>
+    `);
+    render();
+  }
+  window.hellAcceptDuel = hellAcceptDuel;
+
+  // --- 拒絕決鬥 ---
+  function hellDeclineDuel(fromId, fromName) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    _hellDuelModalShown = false;
+    delete rpg.hellDuelRequest;
+    saveData();
+    hideModal();
+    broadcastHellAction('🏳️', `${escapeHtml(me.name)} 怯懦地逃跑了，拒絕接受地獄使者 【${escapeHtml(fromName)}】 的決鬥邀請！`);
+    render();
+  }
+  window.hellDeclineDuel = hellDeclineDuel;
+
   // --- 渲染地獄使者介面 ---
   function renderHellMessenger() {
     const me = getMe(); if (!me) return;
@@ -17996,6 +18145,19 @@ ${b.text}
                   ${stamina < HELL_STAMINA_COST.plunder || tCoins <= 0 ? 'opacity:0.4; pointer-events:none;' : ''}">
                   💰 洗劫<br><span style="font-size:10px; opacity:0.7;">消耗 ${HELL_STAMINA_COST.plunder} 靈力</span>
                 </button>
+                <button onclick="hellSendDuel('${t.id}')" style="
+                  padding:8px 4px; border:none; border-radius:8px; cursor:pointer; font-size:12px; font-weight:700;
+                  background:linear-gradient(135deg,#3f0000,#dc2626); color:#fff;
+                  ${stamina < HELL_STAMINA_COST.duel ? 'opacity:0.4; pointer-events:none;' : ''}
+                  ${tRpg.hellDuelRequest?.status === 'pending' ? 'opacity:0.4; pointer-events:none;' : ''}">
+                  ⚔️ 決鬥邀請<br><span style="font-size:10px; opacity:0.8;">消耗 ${HELL_STAMINA_COST.duel} 靈力</span>
+                </button>
+                <button onclick="hellCurse('${t.id}')" style="
+                  padding:8px 4px; border:none; border-radius:8px; cursor:pointer; font-size:12px; font-weight:700;
+                  background:linear-gradient(135deg,#1a0030,#7c3aed); color:#e9d5ff;
+                  ${stamina < HELL_STAMINA_COST.curse || tRpg.hellCurse ? 'opacity:0.4; pointer-events:none;' : ''}">
+                  😱 詛咒<br><span style="font-size:10px; opacity:0.8;">消耗 ${HELL_STAMINA_COST.curse} 靈力</span>
+                </button>
               </div>
             </div>`;
         }).join('');
@@ -18006,10 +18168,12 @@ ${b.text}
       ? `<div style="color:#6b7280; font-size:12px; text-align:center; padding:8px;">尚無惡行記錄</div>`
       : deeds.map(d => {
           const t = new Date(d.ts).toLocaleTimeString('zh-TW', { hour:'2-digit', minute:'2-digit' });
-          const icon = d.type === 'stealStamina' ? '⚡' : '💰';
-          const desc = d.type === 'stealStamina'
-            ? `奪走 ${escapeHtml(d.targetName)} 的 ${d.amount} 體力`
-            : `洗劫 ${escapeHtml(d.targetName)} ${d.amount.toLocaleString()} 幣`;
+          const icon = { stealStamina:'⚡', plunder:'💰', duel:'⚔️', curse:'😱' }[d.type] || '💀';
+          const desc = d.type === 'stealStamina' ? `奪走 ${escapeHtml(d.targetName)} 的 ${d.amount} 體力`
+            : d.type === 'plunder' ? `洗劫 ${escapeHtml(d.targetName)} ${(d.amount||0).toLocaleString()} 幣`
+            : d.type === 'duel'    ? `向 ${escapeHtml(d.targetName)} 發出決鬥邀請`
+            : d.type === 'curse'   ? `詛咒了 ${escapeHtml(d.targetName)}`
+            : `對 ${escapeHtml(d.targetName)} 施展惡行`;
           return `<div style="font-size:11px; color:#fca5a5; padding:3px 0; border-bottom:1px solid #3f0000;">${icon} ${t}　${desc}</div>`;
         }).join('');
 
