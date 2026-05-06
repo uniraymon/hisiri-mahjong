@@ -10492,7 +10492,7 @@
     if (!sp) return;
     // ⭐ 刻印未完成不能裝備
     if (sp.engraving && !sp.engraving.done) {
-      showToast('⚗️ 刻印尚未完成，無法裝備！完成刻印或刪除刻印後再試。');
+      showToast('⚗️ 刻印尚未完成，無法裝備！完成刻印後再試。');
       return;
     }
     const isEngraved = !!(sp.engraving?.done);
@@ -10762,9 +10762,8 @@
             A軌：${aSucc}/${aFill}格　B軌：${bSucc}/${bFill}格　C軌（懲罰）：${cSucc}/${cFill}格<br>
             AB 合計成功：<b style="color:${aSucc+bSucc>=10?'#10b981':'#374151'}">${aSucc+bSucc}</b>/10
           </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:6px;">
-            <button class="btn btn-primary" onclick="showSpiritEngraving(${bagIdx})" style="font-size:11px;">⚗️ 繼續刻印</button>
-            <button class="btn btn-secondary" onclick="confirmDeleteEngraving(${bagIdx})" style="font-size:11px; background:#fef2f2; color:#dc2626; border-color:#fca5a5;">🗑 刪除進度</button>
+          <div style="margin-top:6px;">
+            <button class="btn btn-primary" onclick="showSpiritEngraving(${bagIdx})" style="font-size:11px; width:100%;">⚗️ 繼續刻印</button>
           </div>
         </div>`;
     }
@@ -10899,12 +10898,7 @@
           <div class="eng-special-name">${specialIcon} ${ed.special.name}（AB合計10格解鎖）</div>
           <div class="eng-special-desc">${ed.special.desc}</div>
         </div>
-        ${!eng.done ? `
-        <div style="margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-          <button class="btn btn-secondary" onclick="openSpiritActions(${bagIdx})" style="font-size:11px;">← 返回</button>
-          <button class="btn btn-secondary" onclick="confirmDeleteEngraving(${bagIdx})" style="font-size:11px; background:#fef2f2; color:#dc2626; border-color:#fca5a5;">🗑 刪除進度</button>
-        </div>` : `
-        <button class="btn btn-secondary" onclick="openSpiritActions(${bagIdx})" style="width:100%; margin-top:8px; font-size:11px;">← 返回</button>`}
+        <button class="btn btn-secondary" onclick="openSpiritActions(${bagIdx})" style="width:100%; margin-top:10px; font-size:11px;">← 返回</button>
       </div>`;
     showModal(`⚗️ 精魂刻印 — ${sp.icon}${sp.name}`, html);
   }
@@ -11185,7 +11179,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506214817';
+  const APP_VERSION = '20260506214905';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
