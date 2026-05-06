@@ -2177,8 +2177,8 @@
       ],
       skillTree: [
         { id: 'w_hp',   name: '鋼鐵之軀', icon: '🛡',  desc: '+5% 最大 HP',         maxLevel: 5, effect: 'hpPct',     per: 0.05 },
-        { id: 'w_atk',  name: '力量強化', icon: '💪', desc: '+2 ATK',              maxLevel: 5, effect: 'atk',       per: 2 },
-        { id: 'w_def',  name: '防禦強化', icon: '🛡️', desc: '+2 DEF',              maxLevel: 5, effect: 'def',       per: 2 },
+        { id: 'w_atk',  name: '力量強化', icon: '💪', desc: '+2% ATK',             maxLevel: 5, effect: 'atkPct',    per: 0.02 },
+        { id: 'w_def',  name: '防禦強化', icon: '🛡️', desc: '+2% DEF',             maxLevel: 5, effect: 'defPct',    per: 0.02 },
         { id: 'w_crit', name: '怒火暴擊', icon: '💥', desc: '+2% 暴擊率',          maxLevel: 5, effect: 'critChance', per: 0.02 },
         { id: 'w_regen', name: '戰意自癒', icon: '🌿', desc: '每回合 +1% maxHP',   maxLevel: 5, effect: 'regen',     per: 0.01 },
         { id: 'w_skill', name: '技能精通', icon: '⚔️', desc: '+5% 所有技能傷害',  maxLevel: 5, effect: 'skillDmgPct', per: 0.05 },
@@ -2223,9 +2223,9 @@
       ],
       skillTree: [
         { id: 'a_crit', name: '致命瞄準', icon: '💥', desc: '+2% 暴擊率',         maxLevel: 5, effect: 'critChance', per: 0.02 },
-        { id: 'a_spd',  name: '疾風之足', icon: '💨', desc: '+1 SPD',              maxLevel: 5, effect: 'spd',       per: 1 },
+        { id: 'a_spd',  name: '疾風之足', icon: '💨', desc: '+2% SPD',             maxLevel: 5, effect: 'spdPct',    per: 0.02 },
         { id: 'a_hp',   name: '敏捷之身', icon: '🦋', desc: '+5% 最大 HP',         maxLevel: 5, effect: 'hpPct',     per: 0.05 },
-        { id: 'a_atk',  name: '銳利之矢', icon: '🏹', desc: '+2 ATK',              maxLevel: 5, effect: 'atk',       per: 2 },
+        { id: 'a_atk',  name: '銳利之矢', icon: '🏹', desc: '+2% ATK',             maxLevel: 5, effect: 'atkPct',    per: 0.02 },
         { id: 'a_skill',name: '技能精通', icon: '🌟', desc: '+5% 所有技能傷害',  maxLevel: 5, effect: 'skillDmgPct', per: 0.05 },
         { id: 'a_mp',   name: '專注',     icon: '🧘', desc: '+5% 最大 MP',         maxLevel: 5, effect: 'mpPct',     per: 0.05 },
       ],
@@ -2268,10 +2268,10 @@
       ],
       skillTree: [
         { id: 'm_mp',    name: '法力深淵', icon: '💎', desc: '+5% 最大 MP',         maxLevel: 5, effect: 'mpPct',     per: 0.05 },
-        { id: 'm_atk',   name: '智慧',     icon: '📚', desc: '+3 MARK',             maxLevel: 5, effect: 'mark',      per: 3 },
+        { id: 'm_atk',   name: '智慧',     icon: '📚', desc: '+2% MARK',            maxLevel: 5, effect: 'markPct',   per: 0.02 },
         { id: 'm_crit',  name: '暴擊精通', icon: '💥', desc: '+2% 暴擊率',         maxLevel: 5, effect: 'critChance', per: 0.02 },
         { id: 'm_hp',    name: '靈體強化', icon: '🪄', desc: '+5% 最大 HP',         maxLevel: 5, effect: 'hpPct',     per: 0.05 },
-        { id: 'm_def',   name: '法力護甲', icon: '🛡', desc: '+1 DEF',              maxLevel: 5, effect: 'def',       per: 1 },
+        { id: 'm_def',   name: '法力護甲', icon: '🛡', desc: '+2% DEF',             maxLevel: 5, effect: 'defPct',    per: 0.02 },
         { id: 'm_skill', name: '元素精通', icon: '🌀', desc: '+5% 所有技能傷害',  maxLevel: 5, effect: 'skillDmgPct', per: 0.05 },
       ],
       passives: [
@@ -2314,11 +2314,11 @@
         { id: 'p_holy_mother',   name: '聖母鵝招喚', icon: '🕊️', unlockLv: 10, cooldown: 0, mpCost: 50, type: 'summon', maxLv: 1 },
       ],
       skillTree: [
-        { id: 'p_def',   name: '聖光鎧甲', icon: '🛡',  desc: '+2 DEF',              maxLevel: 5, effect: 'def',          per: 2 },
+        { id: 'p_def',   name: '聖光鎧甲', icon: '🛡',  desc: '+2% DEF',             maxLevel: 5, effect: 'defPct',        per: 0.02 },
         { id: 'p_regen', name: '自癒強化', icon: '🌿', desc: '每回合 +1% maxHP',   maxLevel: 5, effect: 'regen',        per: 0.01 },
         { id: 'p_hp',    name: '信仰之力', icon: '🙏', desc: '+5% 最大 HP',         maxLevel: 5, effect: 'hpPct',        per: 0.05 },
         { id: 'p_heal',  name: '治癒精通', icon: '✨', desc: '+5% 治癒量',          maxLevel: 5, effect: 'skillHealPct', per: 0.05 },
-        { id: 'p_atk',   name: '聖光武裝', icon: '✝️', desc: '+2 ATK',              maxLevel: 5, effect: 'atk',          per: 2 },
+        { id: 'p_atk',   name: '聖光武裝', icon: '✝️', desc: '+2% ATK',             maxLevel: 5, effect: 'atkPct',        per: 0.02 },
         { id: 'p_skill', name: '聖光精通', icon: '🌟', desc: '+5% 所有技能傷害',   maxLevel: 5, effect: 'skillDmgPct',   per: 0.05 },
       ],
       passives: [
@@ -6199,7 +6199,7 @@
   function computeSkillBonuses(player) {
     const rpg = getRpg(player);
     const cls = rpg && rpg.class ? CLASSES[rpg.class] : null;
-    const b = { hp: 0, atk: 0, def: 0, spd: 0, mp: 0, hpPct: 0, mpPct: 0, critChance: 0, skillDmgPct: 0, skillFlat: 0, skillHealPct: 0, regen: 0,
+    const b = { hp: 0, atk: 0, def: 0, spd: 0, mp: 0, mark: 0, hpPct: 0, mpPct: 0, atkPct: 0, defPct: 0, markPct: 0, spdPct: 0, critChance: 0, skillDmgPct: 0, skillFlat: 0, skillHealPct: 0, regen: 0,
                 skill0Pct: 0, skill1Pct: 0, skill2Pct: 0 };
     if (!cls || !cls.skillTree) return b;
     const skills = rpg.skills || {};
@@ -6328,10 +6328,10 @@
     let stats = {
       maxHp: Math.round((cls.hp + (lv - 1) * cls.hpPer) * (1 + b.hpPct)) + b.hp + ab.hp,
       maxMp: Math.round(((cls.mp || 30) + (lv - 1) * (cls.mpPer || 5)) * (1 + b.mpPct)) + b.mp + ab.mp,
-      atk:   Math.round(cls.atk + (lv - 1) * cls.atkPer) + b.atk + ab.atk,
-      def:   Math.round(cls.def + (lv - 1) * cls.defPer) + b.def + ab.def,
-      spd:   Math.round(cls.spd + (lv - 1) * cls.spdPer) + b.spd + ab.spd,
-      mark:  Math.round((cls.mark || 0) + (lv - 1) * (cls.markPer || 0)) + (b.mark || 0) + (ab.mark || 0),
+      atk:   Math.round((cls.atk + (lv - 1) * cls.atkPer)  * (1 + (b.atkPct  || 0))) + b.atk  + ab.atk,
+      def:   Math.round((cls.def + (lv - 1) * cls.defPer)  * (1 + (b.defPct  || 0))) + b.def  + ab.def,
+      spd:   Math.round((cls.spd + (lv - 1) * cls.spdPer)  * (1 + (b.spdPct  || 0))) + b.spd  + ab.spd,
+      mark:  Math.round(((cls.mark || 0) + (lv - 1) * (cls.markPer || 0)) * (1 + (b.markPct || 0))) + (b.mark || 0) + (ab.mark || 0),
     };
     // 裝備加成（10 個槽）— 同時累積裝備本身的 critChance / critDmg / mpRegen
     let itemCritChance = 0;
@@ -11332,7 +11332,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506234524';
+  const APP_VERSION = '20260506235731';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -11408,6 +11408,30 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#1e293b,#0f766e); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">⚔️ 被動技能全面 % 化　<span style="font-size:11px; opacity:0.85;">2026-05-06</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#0f766e; margin:6px 0 4px;">📈 平補 → 百分比強化</div>
+        <div>・以下被動技能從<b>固定數值</b>改為<b>基底百分比加成</b>，等級越高效果越顯著</div>
+        <div style="margin-top:8px; font-size:12px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px 12px;">
+            <div>💪 <b>力量強化</b>（戰士）+2% ATK/級</div>
+            <div>🛡️ <b>防禦強化</b>（戰士）+2% DEF/級</div>
+            <div>🏹 <b>銳利之矢</b>（弓手）+2% ATK/級</div>
+            <div>💨 <b>疾風之足</b>（弓手）+2% SPD/級</div>
+            <div>📚 <b>智慧</b>（法師）+2% MARK/級</div>
+            <div>🛡 <b>法力護甲</b>（法師）+2% DEF/級</div>
+            <div>✝️ <b>聖光武裝</b>（聖騎）+2% ATK/級</div>
+            <div>🛡 <b>聖光鎧甲</b>（聖騎）+2% DEF/級</div>
+          </div>
+        </div>
+        <div style="font-size:11px; color:#6b7280; margin-top:6px;">・5 級滿點 = +10% 加成，高等級角色效益遠超舊版固定值</div>
+
+        <div style="background:#ccfbf1; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#134e4a;">
+          💡 已點的技能點會自動套新公式，無需重置！
+        </div>
 
         <div style="background:linear-gradient(135deg,#1e3a5f,#ca8a04); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">⚗️ 印記合成 新增風鵝槽（第 4 槽）　<span style="font-size:11px; opacity:0.85;">2026-05-06</span></div>
