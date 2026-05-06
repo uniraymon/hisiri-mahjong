@@ -304,8 +304,8 @@
   /* ⭐ 精魂刻印 UI */
   .eng-track { margin-bottom: 10px; }
   .eng-track-label { font-size: 11px; font-weight: 700; color: #5b3d62; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
-  .eng-slots { display: flex; gap: 5px; flex-wrap: wrap; }
-  .eng-slot { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #c4b5fd; background: #f5f3ff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; flex-shrink: 0; }
+  .eng-slots { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+  .eng-slot { width: 100%; aspect-ratio: 1; border-radius: 50%; border: 2px solid #c4b5fd; background: #f5f3ff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; }
   .eng-slot:hover:not(.eng-slot-filled) { transform: scale(1.1); box-shadow: 0 2px 6px #a78bfa55; }
   .eng-slot.eng-slot-success { background: linear-gradient(135deg, #d1fae5, #6ee7b7); border-color: #10b981; color: #065f46; box-shadow: 0 2px 0 #059669; }
   .eng-slot.eng-slot-fail    { background: linear-gradient(135deg, #fee2e2, #fca5a5); border-color: #ef4444; color: #991b1b; box-shadow: 0 2px 0 #dc2626; }
@@ -11336,7 +11336,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507001521';
+  const APP_VERSION = '20260507002757';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
