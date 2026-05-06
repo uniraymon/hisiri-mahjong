@@ -2298,15 +2298,15 @@
         { id: 'p_judgment',  name: '審判',     icon: '⚖️', unlockLv: 8,  cooldown: 0, mpCost: 38, type: 'damage', mult: 2.0, magic: true, targetCount: 'all' },
         // ⭐ 聖光斬：1.2 ATK + 5% maxHp（不回血）；Lv 5 / Lv 10 各 +10% 暴擊率
         { id: 'p_holy_slash',name: '聖光斬',   icon: '✝️', unlockLv: 1,  cooldown: 0, mpCost: 5,  type: 'damage', mult: 1.2, bonusMaxHpPct: 0.05, customLv: true },
-        { id: 'p_holy_heal', name: '神聖治癒', icon: '✨', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'heal', healPct: 0.3 },
+        { id: 'p_holy_heal', name: '神聖治癒', icon: '✨', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'heal', healPct: 0.3, customLv: true },
         { id: 'p_pray',      name: '祈禱',     icon: '🙏', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true, isMpRegenStrong: true },
         // ⭐ 神聖懲戒：2.5× ATK + 10% maxHp；Lv 5 +5% maxHp / Lv 10 易傷 +1 次
         { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 6,  cooldown: 0, mpCost: 35, type: 'damage', mult: 2.5, bonusMaxHpPct: 0.10, cast: 30, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 2, chance: 1 }, customLv: true },
         { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 7,  cooldown: 0, mpCost: 35, type: 'damage', mult: 1.7, targetCount: 2, applyStatus: { type: 'paralyze', charges: 2, chance: 1.0 }, cast: 15 },
         // ⭐ 神聖祝福：DEF +40%（3 回合）+ 臨時最大HP +20%（僅戰鬥中有效）
-        { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.25, turns: 3 }, buffMaxHpPct: 0.20 },
+        { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.25, turns: 3, key: 'p_blessing' }, buffMaxHpPct: 0.20 },
         // ⭐ 護盾衝鋒：6× DEF；攻擊完後 DEF +10%（持續 3 回合）硬值 40
-        { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 45, type: 'damage', defMult: 5.1, postSelfBuff: { stat: 'defPct', amount: 0.10, turns: 3 }, cast: 35 },
+        { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 45, type: 'damage', defMult: 5.1, postSelfBuff: { stat: 'defPct', amount: 0.10, turns: 3, key: 'p_shield_charge' }, cast: 35 },
         { id: 'p_aegis',         name: '反傷護盾', icon: '🪞', unlockLv: 8,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.50, turns: 3 } },
         // ⭐ 新增：神聖奪魂 — 0.8× ATK 傷害 + 回 4 MP（聖騎回魔多一倍）
         { id: 'p_mana_drain',    name: '神聖奪魂', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 0.8, mpRestore: 4 },
@@ -4193,6 +4193,11 @@
       if (level >= 5)  eff.markMult = (eff.markMult || 0) + 1;
       if (level >= 10) eff.markMult = (eff.markMult || 0) + 1;
     }
+    // ⭐ 神聖治癒（customLv）：Lv 5 MP 折扣 -25%；Lv 10 再 -25% + 攻擊後 DEF +20%（3 行動回合）
+    if (skill.id === 'p_holy_heal') {
+      if (level >= 5)  eff.mpCostMult = 0.75;
+      if (level >= 10) { eff.mpCostMult = 0.5625; eff.postSelfBuff = { stat: 'defPct', amount: 0.20, turns: 3, key: 'p_holy_heal' }; }
+    }
     return eff;
   }
   // 判斷某技能 Lv 5 應該拿什麼樣的加成
@@ -4292,6 +4297,9 @@
         if (level === 10) parts.push('🌊 多 1 段（共 5 段）');
       } else if (skill.id === 'w_blood_burst') {
         if (level === 10) parts.push('🩸 吸血 +5%（共 25%）');
+      } else if (skill.id === 'p_holy_heal') {
+        if (level === 5)  parts.push('💙 MP 消耗 -25%');
+        if (level === 10) parts.push('💙 MP 消耗 再 -25%（共 ~44%）　🛡 DEF +20%（3 行動回合）');
       }
     } else {
       if (level === 5)  parts.push(describeLv5Bonus(skill));
@@ -7374,6 +7382,11 @@
               applyStatus(playerObj, { type: 'shield', charges: skill.applyShield, turns: 99 });
               gainedParts.push('🛡 免疫一次傷害');
             }
+            // ⭐ 治療技能 postSelfBuff（神聖治癒 Lv10: DEF +20%）
+            if (skill.postSelfBuff) {
+              applyStatus(playerObj, { type: 'buff', stat: skill.postSelfBuff.stat, amount: skill.postSelfBuff.amount, turns: skill.postSelfBuff.turns, key: skill.postSelfBuff.key });
+              gainedParts.push(`${describeBuff(skill.postSelfBuff)}（${skill.postSelfBuff.turns} 行動回合）`);
+            }
             const gainedStr = gainedParts.length ? gainedParts.join(' ') : '無效果';
             // ⭐ 聖母鵝計數：補血技能（含祈禱 isMpRegen）
             if (_isPaladin && !_hmgFrozen && skill.healPct) _hmgHealCount++;
@@ -7587,7 +7600,7 @@
           if (_hmgChosen === '慈悲') {
             // ⭐ 慈悲：DEF +擊中數×2%，持續 1+補血數 回合（與神聖祝福獨立疊加）
             const buffAmt = Math.max(0.01, _hmgHitCount * 2 / 100);
-            applyStatus(playerObj, { type: 'buff', stat: 'defPct', amount: buffAmt, turns: _hTurns });
+            applyStatus(playerObj, { type: 'buff', stat: 'defPct', amount: buffAmt, turns: _hTurns, key: 'hmg_mercy' });
             _hmgLogText = `DEF +${_hmgHitCount * 2}%（${_hTurns} 回合）`;
           } else if (_hmgChosen === '吻') {
             // ⭐ 吻：DEF/ATK 削減 + 易傷（持續 補血數÷2 次）
@@ -7851,10 +7864,11 @@
   //   vulnerable/shield: 見 consumeVulnerable / 護盾處理
   function applyStatus(target, status) {
     target.statuses = target.statuses || [];
-    // 同類覆蓋（取較長 turns）— 'buff' 型用 stat 區分，可同時帶多個不同 stat 的 buff
+    // 同類覆蓋（取較長 turns）— 'buff' 型用 (stat, key) 區分
+    // key 不同（或一方有 key 一方無）= 不同來源，允許疊加；key 相同 = 同技能重複施放，取較大值
     const isBuff = status.type === 'buff';
     const existing = isBuff
-      ? target.statuses.find(s => s.type === 'buff' && s.stat === status.stat)
+      ? target.statuses.find(s => s.type === 'buff' && s.stat === status.stat && s.key === status.key)
       : target.statuses.find(s => s.type === status.type);
     if (existing) {
       if (status.type === 'vulnerable') {
@@ -8552,6 +8566,11 @@
               applyStatus(playerObj, { type: 'shield', charges: skill.applyShield, turns: 99 });
               gainedParts.push('🛡 免疫一次傷害');
             }
+            // ⭐ 治療技能 postSelfBuff（神聖治癒 Lv10: DEF +20%）
+            if (skill.postSelfBuff) {
+              applyStatus(playerObj, { type: 'buff', stat: skill.postSelfBuff.stat, amount: skill.postSelfBuff.amount, turns: skill.postSelfBuff.turns, key: skill.postSelfBuff.key });
+              gainedParts.push(`${describeBuff(skill.postSelfBuff)}（${skill.postSelfBuff.turns} 行動回合）`);
+            }
             // ⭐ 聖母鵝計數：補血技能（含祈禱 isMpRegen）
             if (_isPaladinM && !_hmgFrozenM && skill.healPct) _hmgHealCountM++;
             log.push({
@@ -8725,7 +8744,7 @@
           let _hmgLogTextM = '', _hmgIsCritM = false;
           if (_hmgChosenM === '慈悲') {
             // ⭐ 慈悲：DEF +擊中數×2%，持續 1+補血數 回合（與神聖祝福獨立疊加）
-            applyStatus(playerObj, { type: 'buff', stat: 'defPct', amount: Math.max(0.01, _hmgHitCountM * 2 / 100), turns: _hTurnsM });
+            applyStatus(playerObj, { type: 'buff', stat: 'defPct', amount: Math.max(0.01, _hmgHitCountM * 2 / 100), turns: _hTurnsM, key: 'hmg_mercy' });
             _hmgLogTextM = `DEF +${_hmgHitCountM * 2}%（${_hTurnsM} 回合）`;
           } else if (_hmgChosenM === '吻') {
             // ⭐ 吻：DEF/ATK 削減 + 易傷（持續 補血數÷2 次）
@@ -11370,7 +11389,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507005246';
+  const APP_VERSION = '20260507010055';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -11426,7 +11445,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260506_v5';
+  const NEWS_LATEST_ID = 'patch_20260507_v6';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -11446,6 +11465,43 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#1e3a5f,#1d4ed8); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">✝️ 聖騎士全面強化　<span style="font-size:11px; opacity:0.85;">2026-05-07</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#1d4ed8; margin:6px 0 4px;">🙌 神聖祝福　持續回合改計玩家行動</div>
+        <div>・持續回合從固定值改為<b>依等級計玩家自身行動回合</b>：Lv1 → <b>3回合</b>，Lv5 → <b>4回合</b>，Lv10 → <b>5回合</b></div>
+        <div style="font-size:11px; color:#6b7280;">→ 怪物的行動不計入，施放後效果維持更穩定</div>
+
+        <div style="font-weight:700; color:#1d4ed8; margin:10px 0 4px;">🛡 護盾衝鋒　攻後 DEF 加成改為百分比</div>
+        <div>・攻擊後 DEF 加成：<b>+10 固定值 → +10% 百分比</b>（持續 3 行動回合）</div>
+        <div style="font-size:11px; color:#6b7280;">→ 高 DEF 聖騎受益更顯著，後期使用價值大幅提升</div>
+
+        <div style="font-weight:700; color:#1d4ed8; margin:10px 0 4px;">🤜 神之拳　100% 麻痺</div>
+        <div>・麻痺施加機率：<b>80% → 100%</b>（2 層麻痺，每次被命中消耗 1 層）</div>
+
+        <div style="font-weight:700; color:#1d4ed8; margin:10px 0 4px;">✨ 神聖治癒 Lv10　攻後 DEF +20%</div>
+        <div>・Lv10 新增：治癒後額外獲得 <b>DEF +20%（3 行動回合）</b></div>
+        <div style="font-size:12px; color:#374151; margin-top:2px;">　Lv5 仍有 MP 消耗 -25%；Lv10 MP 消耗共降低 ~44%</div>
+
+        <div style="font-weight:700; color:#1d4ed8; margin:10px 0 4px;">🌸 聖母鵝‧慈悲　DEF 加成翻倍</div>
+        <div>・DEF 加成：擊中數% → <b>擊中數×2%</b>，且<b>與神聖祝福獨立疊加</b>（不互相蓋掉）</div>
+        <div style="font-size:11px; color:#6b7280;">→ 例：神聖祝福 DEF+25% + 慈悲 DEF+60%（擊中30下）同時生效</div>
+
+        <div style="font-weight:700; color:#1d4ed8; margin:10px 0 4px;">💋 聖母鵝‧吻　新增易傷</div>
+        <div>・在 DEF/ATK 削減基礎上追加 <b>易傷 × max(1, 補血數÷2) 次</b>（每次觸發 ×1.5 倍傷害）</div>
+
+        <div style="font-weight:700; color:#1d4ed8; margin:10px 0 4px;">🪶 聖母鵝‧激動亂舞　公式強化</div>
+        <div>・傷害乘數：(1 + 擊中數÷10) → <b>(1 + 擊中數÷5)</b>（相同擊中數傷害大幅提升）</div>
+
+        <div style="font-weight:700; color:#1d4ed8; margin:10px 0 4px;">🔧 系統修正：聖騎 DEF 增益全面獨立疊加</div>
+        <div>・<b>神聖祝福 / 護盾衝鋒 / 神聖治癒 / 慈悲</b> 四個 DEF 來源現在<b>各自獨立計算並累加</b></div>
+        <div style="font-size:11px; color:#6b7280;">→ 修正先前同 stat 增益互相覆蓋的問題，所有 DEF 加成均可同時生效</div>
+
+        <div style="background:#dbeafe; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#1e3a5f;">
+          💡 全 DEF 增益疊加示例：神聖祝福 +25%、護盾衝鋒 +10%、神聖治癒 +20%、慈悲 +60% → 合計 DEF <b>×2.15</b>！
+        </div>
 
         <div style="background:linear-gradient(135deg,#4a044e,#9d174d); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🕊️ 聖母鵝技能全面強化　<span style="font-size:11px; opacity:0.85;">2026-05-06</span></div>
