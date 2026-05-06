@@ -11325,7 +11325,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506222612';
+  const APP_VERSION = '20260506232632';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -11401,6 +11401,20 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#1e3a5f,#ca8a04); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">⚗️ 印記合成 新增風鵝槽（第 4 槽）　<span style="font-size:11px; opacity:0.85;">2026-05-06</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#ca8a04; margin:6px 0 4px;">⚡ 風鵝槽 加入印記合成</div>
+        <div>・印記合成工作台新增第 4 槽：<b>風鵝槽</b>（顯示為 ⚡）</div>
+        <div>・可合入任意 1 件<b>風鵝護符</b>（物坑 / 魔坑 / 抗狀 / 早防）</div>
+        <div>・已合成的飾品同樣可進入工作台補合風鵝槽</div>
+        <div style="font-size:11px; color:#6b7280; margin-top:4px;">→ 四槽齊全：👑 鵝王 / 🐉 古龍 / 🪨 鵝卵石 / ⚡ 風鵝，各槽最多合 1 次</div>
+
+        <div style="background:#fef9c3; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#78350f;">
+          💡 風鵝護符效果固定（減傷/抗狀/早防），與鵝王/古龍的輸出型效果完美互補，建議防禦流必帶！
+        </div>
 
         <div style="background:linear-gradient(135deg,#1c1917,#ca8a04); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">⚡ 風中殘鵝扭蛋 開放！飾品 4 種　<span style="font-size:11px; opacity:0.85;">2026-05-06</span></div>
@@ -14016,8 +14030,8 @@ ${b.text}
         ${compareHtml}
         ${setHtml}
         ${item.isBossGift ? (() => {
-          const _isc = { king:'#f59e0b', dragon:'#06b6d4', pebble:'#94a3b8' };
-          const _isl = { king:'鵝王', dragon:'古龍', pebble:'鵝卵石' };
+          const _isc = { king:'#f59e0b', dragon:'#06b6d4', pebble:'#94a3b8', storm:'#ca8a04' };
+          const _isl = { king:'鵝王', dragon:'古龍', pebble:'鵝卵石', storm:'風鵝' };
           const _fused = item.fusedComponents || [];
           const _baseRow = item.affixDesc
             ? `<div style="display:flex;gap:6px;align-items:flex-start;padding:4px 7px;background:#fef9c3;border:1px solid #f59e0b;border-radius:6px;margin-bottom:3px;font-size:10px;color:#92400e;"><span style="flex-shrink:0;">${item.icon}</span><span><b>本體</b>　${escapeHtml(item.affixDesc)}</span></div>` : '';
@@ -14028,7 +14042,7 @@ ${b.text}
           return `<div style="margin-top:10px; padding:8px 10px; background:linear-gradient(135deg,#fef9c3,#fde68a); border:1.5px solid #fbbf24; border-radius:10px; text-align:left;">
             <div style="font-size:11px; font-weight:700; color:#92400e; margin-bottom:5px;">⚗️ 印記效果</div>
             ${_baseRow}${_fusedRows}
-            ${_fused.length === 0 ? `<div style="font-size:10px;color:#b45309;padding:2px 0;">可合入古龍鵝恩賜 / 鵝卵石恩賜，疊加屬性與效果</div>` : ''}
+            ${_fused.length === 0 ? `<div style="font-size:10px;color:#b45309;padding:2px 0;">可合入古龍鵝恩賜 / 鵝卵石恩賜 / 風鵝護符，疊加屬性與效果</div>` : ''}
             <button class="btn btn-primary" onclick="showFusionHub(${idx})" style="margin-top:6px; width:100%; background:linear-gradient(135deg,#d97706,#b45309); box-shadow:0 3px 0 #92400e; font-size:12px;">⚗️ 前往合成工作台</button>
           </div>`;
         })() : ''}
@@ -14080,10 +14094,11 @@ ${b.text}
     }
     __fusionBaseIdx = baseIdx;
 
-    const slotColor = { king: '#f59e0b', dragon: '#06b6d4', pebble: '#94a3b8' };
-    const slotBg    = { king: '#fef9c3', dragon: '#ecfeff', pebble: '#f1f5f9' };
-    const slotIcon  = { king: '👑', dragon: '🐉', pebble: '🪨' };
-    const slotLabel = { king: '鵝王槽', dragon: '古龍槽', pebble: '鵝卵石槽' };
+    const slotColor = { king: '#f59e0b', dragon: '#06b6d4', pebble: '#94a3b8', storm: '#ca8a04' };
+    const slotBg    = { king: '#fef9c3', dragon: '#ecfeff', pebble: '#f1f5f9', storm: '#fefce8' };
+    const slotIcon  = { king: '👑', dragon: '🐉', pebble: '🪨', storm: '⚡' };
+    const slotLabel = { king: '鵝王槽', dragon: '古龍槽', pebble: '鵝卵石槽', storm: '風鵝槽' };
+    const ALL_SLOTS = ['king', 'dragon', 'pebble', 'storm'];
 
     // ── 基底選擇：橫向滾動 chips ──
     const baseChips = allGifts.length === 0
@@ -14091,11 +14106,11 @@ ${b.text}
       : allGifts.map(({ item, idx }) => {
           const isActive = idx === baseIdx;
           const fused = item.fusedComponents || [];
-          const filled = ['king','dragon','pebble'].filter(s => fused.some(fc => _fusionSlotOf(fc) === s)).length;
+          const filled = ALL_SLOTS.filter(s => fused.some(fc => _fusionSlotOf(fc) === s)).length;
           return `<div onclick="showFusionHub(${idx})" style="display:inline-flex; flex-direction:column; align-items:center; padding:6px 10px; border-radius:10px; cursor:pointer; border:2px solid ${isActive ? '#d97706' : '#e5e7eb'}; background:${isActive ? '#fef3c7' : '#f9fafb'}; margin-right:6px; flex-shrink:0; min-width:64px; text-align:center;">
             <span style="font-size:22px;">${item.icon}</span>
             <span style="font-size:9px; font-weight:700; color:${isActive ? '#92400e' : '#374151'}; margin-top:2px; max-width:72px; word-break:break-all;">${escapeHtml(item.name)}</span>
-            <span style="font-size:9px; color:${isActive ? '#b45309' : '#9ca3af'};">${filled}/3 槽</span>
+            <span style="font-size:9px; color:${isActive ? '#b45309' : '#9ca3af'};">${filled}/4 槽</span>
           </div>`;
         }).join('');
 
@@ -14115,8 +14130,8 @@ ${b.text}
       if (baseItem.critDmg)    statParts.push(`爆傷+${Math.round(baseItem.critDmg*100)}%`);
       if (baseItem.mpRegen)    statParts.push(`MP回復+${baseItem.mpRegen}`);
 
-      // 3 槽格子
-      const slotsHtml = ['king','dragon','pebble'].map(s => {
+      // 4 槽格子（king / dragon / pebble / storm）
+      const slotsHtml = ALL_SLOTS.map(s => {
         const fc = fused.find(f => _fusionSlotOf(f) === s);
         const mats = allGifts.filter(({ item, idx: i }) => i !== baseIdx && _fusionSlotOf(item) === s);
         if (fc) {
@@ -14220,12 +14235,15 @@ ${b.text}
     const s = item.sourceBossId;
     if (s === 'dragon_goose') return 'dragon';
     if (s === 'pebble_goose') return 'pebble';
-    if (s === 'goose_king') return 'king';
+    if (s === 'storm_goose')  return 'storm';
+    if (s === 'goose_king')   return 'king';
     // fallback by baseId prefix（舊物件可能沒有 sourceBossId）
-    if ((item.baseId || '').startsWith('bg_dg')) return 'dragon';
-    if ((item.baseId || '').startsWith('bg_pg')) return 'pebble';
-    if ((item.id || '').startsWith('bg_dg')) return 'dragon';
-    if ((item.id || '').startsWith('bg_pg')) return 'pebble';
+    if ((item.baseId || '').startsWith('bg_dg'))  return 'dragon';
+    if ((item.baseId || '').startsWith('bg_pg'))  return 'pebble';
+    if ((item.baseId || '').startsWith('bg_sg'))  return 'storm';
+    if ((item.id    || '').startsWith('bg_dg'))   return 'dragon';
+    if ((item.id    || '').startsWith('bg_pg'))   return 'pebble';
+    if ((item.id    || '').startsWith('bg_sg'))   return 'storm';
     return 'king';
   }
 
@@ -14237,9 +14255,7 @@ ${b.text}
     if (!baseItem || !baseItem.isBossGift) { showToast('非印記裝備'); return; }
 
     const fusedComponents = baseItem.fusedComponents || [];
-    const hasKing   = fusedComponents.some(fc => _fusionSlotOf(fc) === 'king');
-    const hasDragon = fusedComponents.some(fc => _fusionSlotOf(fc) === 'dragon');
-    const hasPebble = fusedComponents.some(fc => _fusionSlotOf(fc) === 'pebble');
+    const occupied = new Set(fusedComponents.map(fc => _fusionSlotOf(fc)));
 
     // 找出背包中可合入的材料（排除自身、排除已滿的槽）
     const available = r.inventory
@@ -14248,14 +14264,12 @@ ${b.text}
         if (!item || !item.isBossGift) return false;
         if (idx === baseInvIdx) return false;
         const slot = _fusionSlotOf(item);
-        if (slot === 'king'   && hasKing)   return false;
-        if (slot === 'dragon' && hasDragon) return false;
-        if (slot === 'pebble' && hasPebble) return false;
+        if (occupied.has(slot)) return false;
         return true;
       });
 
-    const slotLabel = { king: '鵝王槽', dragon: '古龍槽', pebble: '鵝卵石槽' };
-    const slotColor = { king: '#fbbf24', dragon: '#22d3ee', pebble: '#a3a3a3' };
+    const slotLabel = { king: '鵝王槽', dragon: '古龍槽', pebble: '鵝卵石槽', storm: '風鵝槽' };
+    const slotColor = { king: '#fbbf24', dragon: '#22d3ee', pebble: '#a3a3a3', storm: '#ca8a04' };
 
     const currentFusedHtml = fusedComponents.length > 0
       ? fusedComponents.map(fc => {
@@ -14281,7 +14295,7 @@ ${b.text}
             <button class="btn btn-primary" onclick="doFusion(${baseInvIdx}, ${matIdx})" style="font-size:11px; padding:4px 8px; white-space:nowrap;">⚗️ 合入</button>
           </div>`;
         }).join('')
-      : '<div style="font-size:12px; color:#9ca3af; text-align:center; padding:8px;">沒有可用的合成材料<br><span style="font-size:11px;">（需古龍鵝恩賜 或 鵝卵石恩賜，且各槽最多合 1 次）</span></div>';
+      : '<div style="font-size:12px; color:#9ca3af; text-align:center; padding:8px;">沒有可用的合成材料<br><span style="font-size:11px;">（需鵝王恩賜 / 古龍鵝恩賜 / 鵝卵石恩賜 / 風鵝護符，各槽最多合 1 次）</span></div>';
 
     const html = `
       <div style="padding:4px 0;">
