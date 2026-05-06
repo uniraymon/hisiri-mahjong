@@ -5835,6 +5835,14 @@
         window.__pendingUpdateV13.add(player.id);
       }
     }
+    // ⭐ v14：聖母鵝強化 / 弓手爆傷隨機化 / 爆血×3
+    if (!player.rpg.updateV14 && typeof getMeId === 'function' && player.id === getMeId()) {
+      player.rpg.updateV14 = true;
+      if (typeof window !== 'undefined') {
+        window.__pendingUpdateV14 = window.__pendingUpdateV14 || new Set();
+        window.__pendingUpdateV14.add(player.id);
+      }
+    }
     // skillPoints migration
     if (player.rpg.skillPoints == null) {
       const earned = Math.max(0, (player.rpg.level || 1) - 1) * POINTS_PER_LEVEL.skill;
@@ -6948,8 +6956,8 @@
               hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp, bloodPool },
               hmgCounters: _isPaladin ? { hit: _hmgHitCount + (_hmgFrozen ? 0 : 1), taken: _hmgTakenCount, heal: _hmgHealCount, active: _hmgActive, actionsLeft: _hmgActionsLeft } : undefined,
             });
-            // ⭐ 聖母鵝計數：玩家技能擊中
-            if (_isPaladin && !_hmgFrozen && totalDmg > 0) _hmgHitCount++;
+            // ⭐ 聖母鵝計數：玩家技能擊中（按段數加成）
+            if (_isPaladin && !_hmgFrozen && totalDmg > 0) _hmgHitCount += (skill.hits || 1);
             if (mAbility?.type === 'reflect' && mAbility.resist) {
               log.push({ type: 'monster', text: `回合 ${round}：🪞 ${monster.name} 反射光芒（多段反彈）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
             }
@@ -7015,6 +7023,8 @@
               text: `回合 ${round}：${skill.icon} ${skill.name} → ${mainDesc}${extraNote.length ? ' / ' + extraNote.join(' / ') : ''}${costStr}`,
               hp: { player: pHp, monster: mHp, mp: pMp, bloodPool }
             });
+            // ⭐ 聖母鵝計數：神聖祝福也算補血
+            if (_isPaladin && !_hmgFrozen && skill.id === 'p_blessing') _hmgHealCount++;
           } else if (skill.type === 'heal') {
             // 'heal' 類型：可同時帶 healPct（HP 補）+ mpFlat 或 mpPct（MP 補）
             const gainedParts = [];
@@ -7038,8 +7048,8 @@
               gainedParts.push('🛡 免疫一次傷害');
             }
             const gainedStr = gainedParts.length ? gainedParts.join(' ') : '無效果';
-            // ⭐ 聖母鵝計數：補血技能（不含每回再生 isMpRegen）
-            if (_isPaladin && !_hmgFrozen && skill.healPct && !skill.isMpRegen) _hmgHealCount++;
+            // ⭐ 聖母鵝計數：補血技能（含祈禱 isMpRegen）
+            if (_isPaladin && !_hmgFrozen && skill.healPct) _hmgHealCount++;
             log.push({
               type: 'player',
               text: `回合 ${round}：${skill.icon} ${skill.name} ${gainedStr}${costStr}`,
@@ -7146,8 +7156,8 @@
               const vampHeal = Math.max(1, Math.round(stats.atk * 0.03 * totalHits));
               pHp = Math.min(stats.maxHp, pHp + vampHeal);
             }
-            // ⭐ 聖母鵝計數：弓手普攻擊中（每回合計一次）
-            if (_isPaladin && !_hmgFrozen) _hmgHitCount++;
+            // ⭐ 聖母鵝計數：弓手普攻擊中（按箭數計段）
+            if (_isPaladin && !_hmgFrozen) _hmgHitCount += totalHits;
           } else {
             // 其他職業普攻（單擊）
             // ⭐ 合成效果：fx_dg_crit（必爆+30%傷害；合入×2下兩次）
@@ -7220,7 +7230,7 @@
           const _hmgMark = stats.mark * (1 + (_hmgPBuff.atkPct  || 0) + (_hmgPBuff.markPct || 0));
           const _hmgDef  = (stats.def + (_hmgPBuff.def || 0)) * (1 + (_hmgPBuff.defPct || 0));
           const _hmgMonDef = monster.def + (getBuffBonus(monster).def || 0);
-          const _hTurns  = Math.max(1, _hmgHealCount);
+          const _hTurns  = 1 + _hmgHealCount;
           const _dlg = _HMG_DLG[_hmgChosen][Math.floor(Math.random() * _HMG_DLG[_hmgChosen].length)];
           let _hmgLogText = '', _hmgIsCrit = false;
           if (_hmgChosen === '慈悲') {
@@ -7232,13 +7242,19 @@
             if (_hmgTakenCount > 0) applyStatus(monster, { type: 'buff', stat: 'atkPct', amount: -_hmgTakenCount / 100, turns: _hTurns });
             _hmgLogText = `${monster.name} DEF -${_hmgHitCount}% / ATK -${_hmgTakenCount}%（${_hTurns} 回合）`;
           } else if (_hmgChosen === '激動亂舞') {
-            const physDmg = Math.max(0, _hmgAtk  * (1 + _hmgHitCount  / 10) - Math.floor(_hmgMonDef / 2));
-            const magDmg  = Math.max(0, _hmgMark * (1 + _hmgTakenCount / 10) - Math.floor(_hmgMonDef / 2));
-            const _dCrit  = Math.random() < Math.min(0.95, _hmgHealCount * 0.1);
-            let _hmgDmg   = Math.max(1, Math.round((physDmg + magDmg) * (_dCrit ? critMult : 1)));
-            if (_dCrit) { _hmgIsCrit = true; critCount++; }
+            const physDmg = Math.max(0, (_hmgAtk + _hmgDef) * (1 + _hmgHitCount / 10) - Math.floor(_hmgMonDef / 2));
+            const magDmg  = Math.max(0, (_hmgMark + _hmgDef) * (1 + _hmgHitCount / 10) - Math.floor(_hmgMonDef / 2));
+            const _critChance = Math.min(0.95, _hmgHealCount * 0.1);
+            const _pCrit = Math.random() < _critChance;
+            const _mCrit = Math.random() < _critChance;
+            const physFinal = Math.round(physDmg * (_pCrit ? critMult : 1));
+            const magFinal  = Math.round(magDmg  * (_mCrit ? critMult : 1));
+            let _hmgDmg = Math.max(1, physFinal + magFinal);
+            const _anyCrit = _pCrit || _mCrit;
+            if (_anyCrit) { _hmgIsCrit = true; critCount++; }
             mHp -= _hmgDmg;
-            _hmgLogText = `${monster.name} -${_hmgDmg} HP${_dCrit ? '【暴擊】' : ''}（物理 ${Math.round(physDmg)} + 魔法 ${Math.round(magDmg)}）`;
+            const _critStr = _pCrit && _mCrit ? '【雙暴擊】' : _pCrit ? '【物理暴擊】' : _mCrit ? '【魔法暴擊】' : '';
+            _hmgLogText = `${monster.name} -${_hmgDmg} HP${_critStr}（物理 ${physFinal} + 魔法 ${magFinal}）`;
           } else { // 獻身
             const _turnsUsed = _hmgActionsLeft + 1; // 含本次（已 -- 過）
             const _devBase = (_hmgAtk + _hmgMark + _hmgDef) * (1 + _hmgHitCount / 10 + _hmgTakenCount / 10) * _turnsUsed;
@@ -7999,8 +8015,8 @@
             // ⭐ 爆血：攻擊完畢後清空血池
             if (skill.usesBloodPool) bloodPool = 0;
             const targetSummary = hits.map(h => `${h.tgt.icon}${h.tgt.name} -${h.dmg}${h.isCrit ? '【爆】' : ''}`).join(' / ');
-            // ⭐ 聖母鵝計數：技能擊中
-            if (_isPaladinM && !_hmgFrozenM && hits.some(h => h.dmg > 0)) _hmgHitCountM++;
+            // ⭐ 聖母鵝計數：技能擊中（按段數加成）
+            if (_isPaladinM && !_hmgFrozenM && hits.some(h => h.dmg > 0)) _hmgHitCountM += (skill.hits || 1);
             log.push({
               type: 'crit-player',
               text: `回合 ${round}：${skill.icon} ${skill.name}${isMagic ? '【魔攻】' : ''} → ${targetSummary}${extra}${costStr}`,
@@ -8068,6 +8084,8 @@
               text: `回合 ${round}：${skill.icon} ${skill.name} → ${mainDesc2}${extraNote.length ? ' / ' + extraNote.join(' / ') : ''}${costStr}`,
               hp: hpsSnapshot(),
             });
+            // ⭐ 聖母鵝計數：神聖祝福也算補血
+            if (_isPaladinM && !_hmgFrozenM && skill.id === 'p_blessing') _hmgHealCountM++;
           } else if (skill.type === 'heal') {
             const gainedParts = [];
             if (skill.healPct) {
@@ -8089,8 +8107,8 @@
               applyStatus(playerObj, { type: 'shield', charges: skill.applyShield, turns: 99 });
               gainedParts.push('🛡 免疫一次傷害');
             }
-            // ⭐ 聖母鵝計數：補血技能
-            if (_isPaladinM && !_hmgFrozenM && skill.healPct && !skill.isMpRegen) _hmgHealCountM++;
+            // ⭐ 聖母鵝計數：補血技能（含祈禱 isMpRegen）
+            if (_isPaladinM && !_hmgFrozenM && skill.healPct) _hmgHealCountM++;
             log.push({
               type: 'player',
               text: `回合 ${round}：${skill.icon} ${skill.name} ${gainedParts.join(' ') || '無效果'}${costStr}`,
@@ -8183,8 +8201,8 @@
               const vampHeal = Math.max(1, Math.round(stats.atk * 0.03 * totalHits));
               pHp = Math.min(stats.maxHp, pHp + vampHeal);
             }
-            // ⭐ 聖母鵝計數
-            if (_isPaladinM && !_hmgFrozenM) _hmgHitCountM++;
+            // ⭐ 聖母鵝計數：弓手普攻擊中（按箭數計段）
+            if (_isPaladinM && !_hmgFrozenM) _hmgHitCountM += totalHits;
           } else {
             // ⭐ 合成效果：fx_dg_def（攻擊無視 DEF 15%）
             const _tgtDef2 = tgt.def * (_fx.has('fx_dg_def') ? 0.85 : 1.0);
@@ -8251,7 +8269,7 @@
           const _aliveTargets = mList.filter(m => m.alive);
           const _hmgTgt = _aliveTargets.length ? _aliveTargets.sort((a, b) => a.hp - b.hp)[0] : null;
           const _hmgTgtDef = _hmgTgt ? (_hmgTgt.def + (getBuffBonus(_hmgTgt).def || 0)) : 0;
-          const _hTurnsM  = Math.max(1, _hmgHealCountM);
+          const _hTurnsM  = 1 + _hmgHealCountM;
           const _dlgM = _HMG_DLG_M[_hmgChosenM][Math.floor(Math.random() * _HMG_DLG_M[_hmgChosenM].length)];
           let _hmgLogTextM = '', _hmgIsCritM = false;
           if (_hmgChosenM === '慈悲') {
@@ -8265,14 +8283,20 @@
             _hmgLogTextM = `${_hmgTgt ? _hmgTgt.name : '?'} DEF -${_hmgHitCountM}% / ATK -${_hmgTakenCountM}%（${_hTurnsM} 回合）`;
           } else if (_hmgChosenM === '激動亂舞') {
             if (_hmgTgt) {
-              const physDmgM = Math.max(0, _hmgAtkM  * (1 + _hmgHitCountM  / 10) - Math.floor(_hmgTgtDef / 2));
-              const magDmgM  = Math.max(0, _hmgMarkM * (1 + _hmgTakenCountM / 10) - Math.floor(_hmgTgtDef / 2));
-              const _dCritM  = Math.random() < Math.min(0.95, _hmgHealCountM * 0.1);
-              let _hmgDmgM   = Math.max(1, Math.round((physDmgM + magDmgM) * (_dCritM ? critMult : 1)));
-              if (_dCritM) { _hmgIsCritM = true; critCount++; }
+              const physDmgM = Math.max(0, (_hmgAtkM + _hmgDefM) * (1 + _hmgHitCountM / 10) - Math.floor(_hmgTgtDef / 2));
+              const magDmgM  = Math.max(0, (_hmgMarkM + _hmgDefM) * (1 + _hmgHitCountM / 10) - Math.floor(_hmgTgtDef / 2));
+              const _critChanceM = Math.min(0.95, _hmgHealCountM * 0.1);
+              const _pCritM = Math.random() < _critChanceM;
+              const _mCritM = Math.random() < _critChanceM;
+              const physFinalM = Math.round(physDmgM * (_pCritM ? critMult : 1));
+              const magFinalM  = Math.round(magDmgM  * (_mCritM ? critMult : 1));
+              let _hmgDmgM = Math.max(1, physFinalM + magFinalM);
+              const _anyCritM = _pCritM || _mCritM;
+              if (_anyCritM) { _hmgIsCritM = true; critCount++; }
               _hmgTgt.hp = Math.max(0, _hmgTgt.hp - _hmgDmgM);
               if (_hmgTgt.hp <= 0) _hmgTgt.alive = false;
-              _hmgLogTextM = `${_hmgTgt.icon}${_hmgTgt.name} -${_hmgDmgM} HP${_dCritM ? '【暴擊】' : ''}`;
+              const _critStrM = _pCritM && _mCritM ? '【雙暴擊】' : _pCritM ? '【物理暴擊】' : _mCritM ? '【魔法暴擊】' : '';
+              _hmgLogTextM = `${_hmgTgt.icon}${_hmgTgt.name} -${_hmgDmgM} HP${_critStrM}（物理 ${physFinalM} + 魔法 ${magFinalM}）`;
             }
           } else { // 獻身
             if (_hmgTgt) {
@@ -8536,6 +8560,39 @@
   function maybeShowBetaCompModal() {
     const me = getMe();
     if (!me) return;
+    // ⭐ v14 優先（最新）：聖母鵝強化 / 弓手爆傷隨機化 / 爆血×3
+    if (window.__pendingUpdateV14 && window.__pendingUpdateV14.has(me.id)) {
+      window.__pendingUpdateV14.delete(me.id);
+      const html = `
+        <div style="text-align:left; padding:6px 0;">
+          <div style="text-align:center; font-size:48px; margin-bottom:6px;">🕊️⚔️🏹</div>
+          <div style="text-align:center; font-weight:800; font-size:17px; color:#7c3aed; margin-bottom:8px;">v14 系統強化更新</div>
+          <div style="font-size:12px; color:#2d1b4e; line-height:1.9; padding:10px 14px; background:#f5f3ff; border-radius:10px; border:2px dashed #a78bfa;">
+
+            <div style="font-weight:800; color:#7c3aed; margin-bottom:4px;">🕊️ 聖母鵝（聖騎）系統強化</div>
+            • <b>補血計數器</b>新增：<b>神聖祝福🙌</b> 與 <b>祈禱🙏</b> 使用時也計入補血數<br>
+            • <b>慈悲</b> 持續回合：原 max(1,補血數) → <b>1 + 補血數</b>（即使補血為0也有1回合）<br>
+            • <b>擊中數 / 被擊數</b>：現在按技能段數計算！2段技能 +2，弓手3連射 +3<br>
+            • <b>激動亂舞</b>公式大幅強化：<br>
+            &nbsp;&nbsp;物理傷 = <b>(ATK+DEF)</b>×(1+擊中÷10) − 敵DEF÷2<br>
+            &nbsp;&nbsp;魔法傷 = <b>(MARK+DEF)</b>×(1+擊中÷10) − 敵DEF÷2<br>
+            &nbsp;&nbsp;物理 / 魔法<b>各自獨立暴擊</b>，可觸發雙暴擊！<br>
+
+            <div style="font-weight:800; color:#b45309; margin:10px 0 4px;">🏹 弓手疊加調整</div>
+            • 爆擊後爆傷增加：<b>隨機 +1~4%</b>（原固定 +3%）<br>
+            • 爆頭傷害增加：<b>隨機 +5~13%</b>（原固定 +10%）<br>
+
+            <div style="font-weight:800; color:#b91c1c; margin:10px 0 4px;">⚔️ 劍士血池強化</div>
+            • <b>爆血</b>傷害倍率：<b>血池 × 2 → 血池 × 3</b>（大幅提升爆發力）<br>
+
+          </div>
+          <button class="btn btn-primary" onclick="hideModal()" style="margin-top:14px; width:100%; background:linear-gradient(135deg,#7c3aed,#b91c1c);">✨ 了解！</button>
+        </div>
+      `;
+      showModal('🎉 v14 更新公告', html);
+      saveData();
+      return;
+    }
     // ⭐ v13 優先（最新）：死戰之怒調整 / 血池強化 / 戰報回合顯示 / 100 回合
     if (window.__pendingUpdateV13 && window.__pendingUpdateV13.has(me.id)) {
       window.__pendingUpdateV13.delete(me.id);
@@ -10336,7 +10393,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506081706';
+  const APP_VERSION = '20260506102142';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -11352,18 +11409,19 @@ ${b.text}
       buffPairs.push('─────────────');
       buffPairs.push('📊 計數器（凍結前記錄）：');
       buffPairs.push('　① 回合數（召喚時當前）');
-      buffPairs.push('　② 擊中數（玩家對敵技能 / 普攻命中）');
-      buffPairs.push('　③ 被擊數（被怪物技能 / 普攻打中）');
-      buffPairs.push('　④ 補血數（治療技能使用次數，不含每回再生）');
+      buffPairs.push('　② 擊中數：玩家技能 / 普攻擊中，按段數加成（2段+2）');
+      buffPairs.push('　③ 被擊數：被怪物打中，同樣按段數加成');
+      buffPairs.push('　④ 補血數：治療技（含祈禱🙏 / 神聖祝福🙌）每次使用 +1');
       buffPairs.push('─────────────');
       buffPairs.push('🌸 聖母鵝之慈悲（30%）');
-      buffPairs.push('　玩家 DEF +擊中數%，持續 max(1,補血數) 回合');
+      buffPairs.push('　玩家 DEF +擊中數%，持續 1+補血數 回合');
       buffPairs.push('💋 聖母鵝之吻（30%）');
-      buffPairs.push('　敵 DEF -擊中數%、ATK -被擊數%，持續同上');
+      buffPairs.push('　敵 DEF -擊中數%、ATK -被擊數%，持續 1+補血數 回合');
       buffPairs.push('🪶 聖母鵝之激動亂舞（30%）');
-      buffPairs.push('　物理傷 = ATK×(1+擊中數÷10) - 敵DEF÷2');
-      buffPairs.push('　魔法傷 = MARK×(1+被擊數÷10) - 敵DEF÷2');
-      buffPairs.push('　暴擊率 = min(95%, 補血數×10%)，暴擊則乘 critMult');
+      buffPairs.push('　物理傷 = (ATK+DEF)×(1+擊中數÷10) - 敵DEF÷2');
+      buffPairs.push('　魔法傷 = (MARK+DEF)×(1+擊中數÷10) - 敵DEF÷2');
+      buffPairs.push('　物理 / 魔法各自獨立暴擊，暴擊率 = min(95%, 補血數×10%)');
+      buffPairs.push('　暴擊則各自乘 critMult（可能雙暴）');
       buffPairs.push('🔥 聖母鵝的獻身（10%）— 立即結束聖母鵝');
       buffPairs.push('　傷害 = (ATK+MARK+DEF)×(1+擊中數÷10+被擊數÷10)×剩餘次數 × critMult（必暴）');
     }
@@ -12058,7 +12116,7 @@ ${b.text}
     }
     // ⭐ 聖母鵝招喚（不可升級，公式詳見下方）
     if (s.type === 'summon') {
-      return '🕊️ 召喚聖母鵝！每次玩家行動後自動施放1招（4技：慈悲30% / 吻30% / 激動亂舞30% / 獻身10%）不佔回合，持續 ⌊召喚回合÷5⌋ 次';
+      return '🕊️ 召喚聖母鵝！每次行動後自動施 1 招（慈悲30%/吻30%/亂舞30%/獻身10%），不佔回合。持續⌊回合÷5⌋次。擊中/被擊依段數計，補血含祈禱🙏與神聖祝福🙌';
     }
     const hitsStr = (s.hits && s.hits > 1) ? ` ×${s.hits} 段` : '';
     if (s.defMult != null)   return `${s.defMult}× DEF 傷害${hitsStr}`;
