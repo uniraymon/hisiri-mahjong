@@ -2292,8 +2292,8 @@
         { id: 'p_aegis',         name: '反傷護盾', icon: '🪞', unlockLv: 8,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.50, turns: 3 } },
         // ⭐ 新增：神聖奪魂 — 0.8× ATK 傷害 + 回 4 MP（聖騎回魔多一倍）
         { id: 'p_mana_drain',    name: '神聖奪魂', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 0.8, mpRestore: 4 },
-        // ⭐ 聖母鵝招喚：召喚聖母鵝（持續 floor(round/5) 次行動）；計數器在召喚後凍結
-        { id: 'p_holy_mother',   name: '聖母鵝招喚', icon: '🕊️', unlockLv: 10, cooldown: 0, mpCost: 50, type: 'summon' },
+        // ⭐ 聖母鵝招喚：召喚聖母鵝（持續 floor(round/5) 次行動）；計數器在召喚後凍結；不可升級
+        { id: 'p_holy_mother',   name: '聖母鵝招喚', icon: '🕊️', unlockLv: 10, cooldown: 0, mpCost: 50, type: 'summon', maxLv: 1 },
       ],
       skillTree: [
         { id: 'p_def',   name: '聖光鎧甲', icon: '🛡',  desc: '+2 DEF',              maxLevel: 5, effect: 'def',          per: 2 },
@@ -10336,7 +10336,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260506080718';
+  const APP_VERSION = '20260506081706';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
