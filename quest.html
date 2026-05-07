@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -17,10 +17,15 @@
       radial-gradient(circle at 50% 80%, #fde68a 0%, transparent 40%),
       linear-gradient(135deg, #f3e8ff 0%, #fef3c7 100%);
     min-height: 100vh;
+    min-height: -webkit-fill-available;
     padding: 16px;
-    padding-bottom: 100px;
+    padding-top: calc(16px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+    padding-left: calc(16px + env(safe-area-inset-left, 0px));
+    padding-right: calc(16px + env(safe-area-inset-right, 0px));
     color: #5a4a4a;
   }
+  button, a, [onclick] { touch-action: manipulation; }
   .container { max-width: 600px; margin: 0 auto; position: relative; z-index: 1; }
 
   .top-bar {
@@ -175,7 +180,8 @@
     border: 1px solid rgba(124, 58, 237, 0.3);
     border-radius: 10px;
     padding: 4px 8px;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
   }
   /* 技能列表（角色卡內，每行可點看詳細） */
   .skill-row {
@@ -716,6 +722,7 @@
     line-height: 1.6;
     max-height: 180px;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     font-family: "Consolas", "Microsoft JhengHei", monospace;
   }
   .battle-log .log-line { margin-bottom: 2px; }
@@ -1203,7 +1210,7 @@
     padding: 5px 6px;
     border: 1px solid #e9d5e3;
     border-radius: 6px;
-    font-size: 12px;
+    font-size: 16px;
     background: #fef9ff;
     cursor: pointer;
     font-family: inherit;
@@ -1217,7 +1224,7 @@
     padding: 5px 4px;
     border: 1px solid #e9d5e3;
     border-radius: 6px;
-    font-size: 12px;
+    font-size: 16px;
     text-align: center;
     background: #fef9ff;
     font-family: inherit;
@@ -1698,7 +1705,8 @@
     position: fixed;
     inset: 0;
     background: rgba(30, 27, 75, 0.5);
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
     z-index: 999;
     display: flex;
     align-items: center;
@@ -1714,6 +1722,7 @@
     width: 100%;
     max-height: 85vh;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     box-shadow: 0 8px 30px rgba(124, 58, 237, 0.3);
   }
   .modal-content h3 {
@@ -1725,7 +1734,7 @@
 
   .toast {
     position: fixed;
-    bottom: 24px;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
     left: 50%;
     transform: translateX(-50%) translateY(120px);
     background: linear-gradient(135deg, #c4b5fd, #8b5cf6);
@@ -1813,8 +1822,8 @@
   /* Debug 按鈕（右上角小齒輪） */
   .debug-btn {
     position: fixed;
-    top: 10px;
-    right: 10px;
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    right: calc(10px + env(safe-area-inset-right, 0px));
     width: 36px; height: 36px;
     border-radius: 50%;
     background: rgba(124, 58, 237, 0.6);
@@ -1833,8 +1842,8 @@
   /* BUG 按鈕（齒輪左邊兩格） */
   .bug-btn {
     position: fixed;
-    top: 10px;
-    right: 102px;
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    right: calc(102px + env(safe-area-inset-right, 0px));
     height: 36px;
     min-width: 40px;
     padding: 0 10px;
@@ -1873,8 +1882,8 @@
   /* 版本重整按鈕（右上角，存檔左邊） */
   .refresh-ver-btn {
     position: fixed;
-    top: 10px;
-    right: 302px;
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    right: calc(302px + env(safe-area-inset-right, 0px));
     height: 36px;
     min-width: 40px;
     padding: 0 10px;
@@ -1898,8 +1907,8 @@
   /* 存檔下載按鈕（右上角，公告左邊） */
   .save-dl-btn {
     position: fixed;
-    top: 10px;
-    right: 252px;
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    right: calc(252px + env(safe-area-inset-right, 0px));
     height: 36px;
     min-width: 40px;
     padding: 0 10px;
@@ -1921,8 +1930,8 @@
   /* 公告按鈕（右上角，圖鑑左邊） */
   .news-btn {
     position: fixed;
-    top: 10px;
-    right: 202px;
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    right: calc(202px + env(safe-area-inset-right, 0px));
     height: 36px;
     min-width: 40px;
     padding: 0 10px;
@@ -1953,8 +1962,8 @@
   /* 圖鑑按鈕（右上角，BUG 左邊） */
   .dex-btn {
     position: fixed;
-    top: 10px;
-    right: 152px;
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    right: calc(152px + env(safe-area-inset-right, 0px));
     height: 36px;
     min-width: 40px;
     padding: 0 10px;
@@ -1976,8 +1985,8 @@
   /* 教學按鈕（右上角，齒輪左邊） */
   .help-btn {
     position: fixed;
-    top: 10px;
-    right: 56px;
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    right: calc(56px + env(safe-area-inset-right, 0px));
     width: 36px; height: 36px;
     border-radius: 50%;
     background: linear-gradient(135deg, #fde047, #f59e0b);
@@ -2039,6 +2048,8 @@
   @keyframes fadeOut {
     to { opacity: 0; }
   }
+  /* ⭐ 防 iOS Safari 自動放大：所有 input/select 字體不得小於 16px */
+  input, select, textarea { font-size: max(16px, 1em) !important; }
 </style>
 </head>
 <body>
@@ -2914,7 +2925,7 @@
       attackerAvatar: me.avatar || cls?.icon || '🎴',
       playerSnap: { name: me.name, avatar: cls?.icon || '🎴', level: r.level, maxHp: stats.maxHp, maxMp: stats.maxMp, class: r.class, baseCrit: result.archerStats?.baseCrit },
       monsterSnap: { name: monster.name, icon: monster.icon, level: monster.level, ability: monster.ability },
-      log: (result.log || []).slice(0, 1000),
+      log: (result.log || []).slice(0, 300),
     };
 
     // 送 TX
@@ -5207,6 +5218,9 @@
 
   let __isApplyingRemote = false;
   let __initialSyncDone = false;
+  // ⭐ Firebase snapshot render/save debounce（手機上防止連發多次觸發 UI 重繪 + 存檔）
+  let __renderDebounceTimer = null;
+  let __hellDuelDebounceTimer = null;
   const STORAGE_KEY = 'mahjong-tracker-v2';
   const ME_KEY = 'mahjong-me-id';
   const PASS_KEY = 'mahjong-pass-ok';
@@ -5463,6 +5477,59 @@
     if (typeof wb9Render === 'function') wb9Render({ force: true });
   };
 
+  // ⭐ iOS PWA 安全 confirm / prompt（iOS PWA 模式下 confirm/prompt 靜默失敗）
+  // safeConfirm(msg, onYes, onNo) — 用法：取代 if (!confirm(msg)) return;
+  // 改為：safeConfirm(msg, () => { /* 確定後執行 */ });
+  const _isIosPwa = typeof navigator !== 'undefined' &&
+    navigator.standalone === true &&
+    /iPhone|iPad|iPod/.test(navigator.userAgent || '');
+
+  function safeConfirm(msg, onYes, onNo) {
+    if (!_isIosPwa) {
+      if (window.confirm(msg)) { onYes && onYes(); }
+      else { onNo && onNo(); }
+      return;
+    }
+    // iOS PWA 模式：改用自訂 modal
+    showModal('⚠️ 確認', `
+      <div style="text-align:center; padding:4px 0 8px;">
+        <div style="font-size:14px; color:#5a4a4a; white-space:pre-line; line-height:1.6; margin-bottom:18px;">${escapeHtml(msg)}</div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-secondary" style="flex:1;" onclick="hideModal(); window.__scNo && window.__scNo();">取消</button>
+          <button class="btn btn-primary" style="flex:1;" onclick="hideModal(); window.__scYes && window.__scYes();">確定</button>
+        </div>
+      </div>
+    `);
+    window.__scYes = onYes || null;
+    window.__scNo  = onNo  || null;
+  }
+  window.safeConfirm = safeConfirm;
+
+  // safePrompt(msg, defaultVal, onResult) — onResult(value) or onResult(null) on cancel
+  function safePrompt(msg, defaultVal, onResult) {
+    if (!_isIosPwa) {
+      const r = window.prompt(msg, defaultVal || '');
+      onResult && onResult(r);
+      return;
+    }
+    const eid = '__spInput_' + Date.now();
+    showModal('✏️ 輸入', `
+      <div style="padding:4px 0 8px;">
+        <div style="font-size:13px; color:#5a4a4a; white-space:pre-line; line-height:1.5; margin-bottom:12px;">${escapeHtml(msg)}</div>
+        <input id="${eid}" type="text" value="${escapeHtml(defaultVal || '')}"
+          style="width:100%; padding:10px; border:2px solid #c4b5fd; border-radius:8px; font-size:16px; margin-bottom:14px; box-sizing:border-box; font-family:inherit;">
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-secondary" style="flex:1;" onclick="hideModal(); window.__spCb && window.__spCb(null);">取消</button>
+          <button class="btn btn-primary" style="flex:1;" onclick="var v=document.getElementById('${eid}')?.value??null; hideModal(); window.__spCb && window.__spCb(v);">確定</button>
+        </div>
+      </div>
+    `);
+    window.__spCb = onResult || null;
+    // focus the input
+    setTimeout(() => document.getElementById(eid)?.focus(), 100);
+  }
+  window.safePrompt = safePrompt;
+
   window.__applyRemotePlayers = function(remotePlayers) {
     if (!Array.isArray(remotePlayers)) return;
     __isApplyingRemote = true;
@@ -5509,9 +5576,12 @@
       }
       players = merged;
       __persistLocalSnapshot();
-      render();
-      // ⭐ 地獄使者：決鬥邀請通知
-      setTimeout(checkHellDuelNotification, 300);
+      // ⭐ debounce render：snapshot 連發時只執行最後一次，避免手機上連續 DOM 重建
+      clearTimeout(__renderDebounceTimer);
+      __renderDebounceTimer = setTimeout(() => render(), 60);
+      // ⭐ 地獄使者：決鬥邀請通知（debounce）
+      clearTimeout(__hellDuelDebounceTimer);
+      __hellDuelDebounceTimer = setTimeout(checkHellDuelNotification, 400);
     } finally { __isApplyingRemote = false; }
     if (needRepush) {
       setTimeout(() => {
@@ -5657,7 +5727,8 @@
         }
       }
       __persistLocalSnapshot();
-      render();
+      clearTimeout(__renderDebounceTimer);
+      __renderDebounceTimer = setTimeout(() => render(), 60);
     } finally { __isApplyingRemote = false; }
     if (needRepush) {
       setTimeout(() => {
@@ -5782,13 +5853,13 @@
       // 好處：新增層時不需要手動對齊裝備等級，系統自動抓最高那批
       const inRange = ITEMS.filter(i => _baseFilter(i) && (i.lv || 1) >= layerRange.min && (i.lv || 1) <= layerRange.max);
       if (inRange.length > 0) {
-        const topLv = Math.max(...inRange.map(i => i.lv || 1));
+        const topLv = inRange.reduce((m, i) => Math.max(m, i.lv || 1), 0);
         eligible = inRange.filter(i => (i.lv || 1) === topLv);
       } else {
         // fallback：找 max 以下等級最近的裝備
         const below = ITEMS.filter(i => _baseFilter(i) && (i.lv || 1) <= layerRange.max);
         if (below.length > 0) {
-          const topLv = Math.max(...below.map(i => i.lv || 1));
+          const topLv = below.reduce((m, i) => Math.max(m, i.lv || 1), 0);
           eligible = below.filter(i => (i.lv || 1) === topLv);
         } else {
           eligible = ITEMS.filter(i => _baseFilter(i));
@@ -7018,20 +7089,18 @@
     // ⭐ 戰鬥 log 加上「ATB 進度」資訊：UI 可畫出 SPD 進度條
     //   為了避免每個 push 都手動加 gauge，直接 monkey-patch log.push：
     //   只要 entry 有 hp（代表是「戰鬥中」），就自動補上 gauge
-    {
-      const __origPush = log.push.bind(log);
-      log.push = function(e) {
-        if (e && e.hp && !e.gauge) {
-          e.gauge = {
-            p: Math.max(0, Math.min(100, pGauge)),
-            m: Math.max(0, Math.min(100, mGauge)),
-            pSpd: effPSpd, mSpd,
-          };
-        }
-        if (e && e.round === undefined) e.round = round;
-        return __origPush(e);
-      };
-    }
+    const __origLogPush = log.push.bind(log);
+    log.push = function(e) {
+      if (e && e.hp && !e.gauge) {
+        e.gauge = {
+          p: Math.max(0, Math.min(100, pGauge)),
+          m: Math.max(0, Math.min(100, mGauge)),
+          pSpd: effPSpd, mSpd,
+        };
+      }
+      if (e && e.round === undefined) e.round = round;
+      return __origLogPush(e);
+    };
     // 狀態追蹤（玩家身上的 buff/中毒/麻痺 + 怪物身上的中毒/麻痺）
     const playerObj = { statuses: [] };
     monster.statuses = monster.statuses || [];
@@ -8005,6 +8074,7 @@
       }
     }
     const won = pHp > 0 && mHp <= 0;
+    log.push = __origLogPush; // ⭐ 還原 push，避免 closure 洩漏
     return {
       won,
       pHpFinal: Math.max(0, pHp),
@@ -10062,17 +10132,18 @@
     if (total === 0) { showToast('沒有點數可退'); return; }
     const myCoins = getCoins(me.id);
     if (myCoins < RESET_ABILITY_COST) { showToast(`需要 🪙 ${RESET_ABILITY_COST}（你有 ${myCoins}）`); return; }
-    if (!confirm(`花 🪙 ${RESET_ABILITY_COST} 退回所有能力點 (${total} 點)？`)) return;
-    if (!spendCoins(me.id, RESET_ABILITY_COST)) { showToast('鵝鵝幣不足'); return; }
-    r.abilityPoints = (r.abilityPoints || 0) + total;
-    r.abilities = { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0 };
-    const s = computeStats(me);
-    if (r.hp > s.maxHp) r.hp = s.maxHp;
-    if (r.mp > s.maxMp) r.mp = s.maxMp;
-    saveData();
-    renderCharCard();
-    renderAbilityTree();
-    showToast(`🔄 退回 ${total} 點能力 (-🪙 ${RESET_ABILITY_COST})`);
+    safeConfirm(`花 🪙 ${RESET_ABILITY_COST} 退回所有能力點 (${total} 點)？`, () => {
+      if (!spendCoins(me.id, RESET_ABILITY_COST)) { showToast('鵝鵝幣不足'); return; }
+      r.abilityPoints = (r.abilityPoints || 0) + total;
+      r.abilities = { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0 };
+      const s = computeStats(me);
+      if (r.hp > s.maxHp) r.hp = s.maxHp;
+      if (r.mp > s.maxMp) r.mp = s.maxMp;
+      saveData();
+      renderCharCard();
+      renderAbilityTree();
+      showToast(`🔄 退回 ${total} 點能力 (-🪙 ${RESET_ABILITY_COST})`);
+    });
   }
   window.resetAbilities = resetAbilities;
 
@@ -10085,19 +10156,20 @@
     if (total === 0) { showToast('沒有點數可退'); return; }
     const myCoins = getCoins(me.id);
     if (myCoins < RESET_SKILL_COST) { showToast(`需要 🪙 ${RESET_SKILL_COST}（你有 ${myCoins}）`); return; }
-    if (!confirm(`花 🪙 ${RESET_SKILL_COST} 退回所有技能點 (${total} 點)？\n\n包含主動技能升級 + 屬性強化樹`)) return;
-    if (!spendCoins(me.id, RESET_SKILL_COST)) { showToast('鵝鵝幣不足'); return; }
-    r.skillPoints = (r.skillPoints || 0) + total;
-    r.skills = {};
-    r.skillLevels = {};
-    const s = computeStats(me);
-    if (r.hp > s.maxHp) r.hp = s.maxHp;
-    if (r.mp > s.maxMp) r.mp = s.maxMp;
-    saveData();
-    renderCharCard();
-    hideModal();
-    showSkillsModal(); // 重開讓玩家看到清空狀態
-    showToast(`🔄 退回 ${total} 技能點 (-🪙 ${RESET_SKILL_COST})`);
+    safeConfirm(`花 🪙 ${RESET_SKILL_COST} 退回所有技能點 (${total} 點)？\n\n包含主動技能升級 + 屬性強化樹`, () => {
+      if (!spendCoins(me.id, RESET_SKILL_COST)) { showToast('鵝鵝幣不足'); return; }
+      r.skillPoints = (r.skillPoints || 0) + total;
+      r.skills = {};
+      r.skillLevels = {};
+      const s = computeStats(me);
+      if (r.hp > s.maxHp) r.hp = s.maxHp;
+      if (r.mp > s.maxMp) r.mp = s.maxMp;
+      saveData();
+      renderCharCard();
+      hideModal();
+      showSkillsModal();
+      showToast(`🔄 退回 ${total} 技能點 (-🪙 ${RESET_SKILL_COST})`);
+    });
   }
   window.resetSkills = resetSkills;
 
@@ -10397,19 +10469,20 @@
     }
     const count = toDisassemble.length;
     const skipNote = skippedPinned > 0 ? `\n（${skippedPinned} 隻釘選精魂會跳過）` : '';
-    if (!confirm(`確定拆解選取的 ${count} 隻精魂？${skipNote}\n獲得 💠 精華碎片 ×${count}，無法還原。`)) return;
-    // 從高到低刪，避免 index 位移
-    const sorted = toDisassemble.sort((a, b) => b - a);
-    for (const idx of sorted) bag.splice(idx, 1);
-    rpg.spiritBag = bag;
-    rpg.essenceFragments = (rpg.essenceFragments || 0) + count;
-    __spiritSelected.clear();
-    __spiritBulkMode = false;
-    saveData();
-    renderCharCard();
-    renderCharQuickMenu();
-    showToast(`🔨 批量拆解 ${count} 隻！獲得 💠 精華碎片 ×${count}（共 ${rpg.essenceFragments} 片）`);
-    showSpiritsModal();
+    safeConfirm(`確定拆解選取的 ${count} 隻精魂？${skipNote}\n獲得 💠 精華碎片 ×${count}，無法還原。`, () => {
+      // 從高到低刪，避免 index 位移
+      const sorted = toDisassemble.sort((a, b) => b - a);
+      for (const idx of sorted) bag.splice(idx, 1);
+      rpg.spiritBag = bag;
+      rpg.essenceFragments = (rpg.essenceFragments || 0) + count;
+      __spiritSelected.clear();
+      __spiritBulkMode = false;
+      saveData();
+      renderCharCard();
+      renderCharQuickMenu();
+      showToast(`🔨 批量拆解 ${count} 隻！獲得 💠 精華碎片 ×${count}（共 ${rpg.essenceFragments} 片）`);
+      showSpiritsModal();
+    });
   }
   window.batchDisassembleSpirits = batchDisassembleSpirits;
 
@@ -10974,8 +11047,18 @@
     if (isEngraved) {
       // ⭐ 刻印精魂只能裝在第 6 槽（刻印槽）
       if (slots[5]) {
-        if (!confirm(`⚗️ 刻印槽已有 ${slots[5].icon} ${slots[5].name}，要替換嗎？`)) return;
-        bag.push(slots[5]);
+        safeConfirm(`⚗️ 刻印槽已有 ${slots[5].icon} ${slots[5].name}，要替換嗎？`, () => {
+          bag.push(slots[5]);
+          slots[5] = sp;
+          const myEngIdx = bag.indexOf(sp);
+          if (myEngIdx >= 0) bag.splice(myEngIdx, 1);
+          saveData();
+          showSpiritsModal();
+          renderCharCard();
+          renderCharQuickMenu();
+          showToast(`⚗️ 刻印精魂 ${sp.icon} ${sp.name} 裝入刻印槽！`);
+        });
+        return; // stop here, callback handles it
       }
       slots[5] = sp;
       const myEngIdx = bag.indexOf(sp);
@@ -11000,20 +11083,20 @@
       return;
     }
     // 1-5 槽滿了 — 問要替換哪一槽
-    const choice = prompt(`槽 1-5 都裝滿了。要替換第幾槽？(1-5，輸入 0 取消)\n目前槽：\n${slots.slice(0, 5).map((s, i) => `${i+1}. ${s ? s.icon + ' ' + s.name : '空'}`).join('\n')}`);
-    const n = parseInt(choice, 10);
-    if (!n || n < 1 || n > 5) return;
-    const targetIdx = n - 1;
-    if (slots[targetIdx]) bag.push(slots[targetIdx]);
-    slots[targetIdx] = sp;
-    // 找回 bagIdx 對應 sp（剛才可能因為 push 多了一筆）
-    const myIdx = bag.indexOf(sp);
-    if (myIdx >= 0) bag.splice(myIdx, 1);
-    saveData();
-    showSpiritsModal();
-    renderCharCard();
-    renderCharQuickMenu();
-    showToast(`✨ 替換到槽 ${n}：${sp.icon} ${sp.name}`);
+    safePrompt(`槽 1-5 都裝滿了。要替換第幾槽？(1-5，輸入 0 取消)\n目前槽：\n${slots.slice(0, 5).map((s, i) => `${i+1}. ${s ? s.icon + ' ' + s.name : '空'}`).join('\n')}`, '', (choice) => {
+      const n = parseInt(choice, 10);
+      if (!n || n < 1 || n > 5) return;
+      const targetIdx = n - 1;
+      if (slots[targetIdx]) bag.push(slots[targetIdx]);
+      slots[targetIdx] = sp;
+      const myIdx = bag.indexOf(sp);
+      if (myIdx >= 0) bag.splice(myIdx, 1);
+      saveData();
+      showSpiritsModal();
+      renderCharCard();
+      renderCharQuickMenu();
+      showToast(`✨ 替換到槽 ${n}：${sp.icon} ${sp.name}`);
+    });
   }
   window.equipSpiritFromBag = equipSpiritFromBag;
 
@@ -11173,16 +11256,17 @@
     const bag = rpg.spiritBag || [];
     const sp = bag[bagIdx];
     if (!sp) return;
-    if (!confirm(`確定拆解 ${sp.icon} ${sp.name}？\n拆解後獲得 💠 精華碎片 ×1，無法還原。`)) return;
-    bag.splice(bagIdx, 1);
-    rpg.spiritBag = bag;
-    rpg.essenceFragments = (rpg.essenceFragments || 0) + 1;
-    saveData();
-    renderCharCard();
-    renderCharQuickMenu();
-    hideModal();
-    showToast(`🔨 拆解完成！獲得 💠 精華碎片 ×1（共 ${rpg.essenceFragments} 片）`);
-    showSpiritsModal();
+    safeConfirm(`確定拆解 ${sp.icon} ${sp.name}？\n拆解後獲得 💠 精華碎片 ×1，無法還原。`, () => {
+      bag.splice(bagIdx, 1);
+      rpg.spiritBag = bag;
+      rpg.essenceFragments = (rpg.essenceFragments || 0) + 1;
+      saveData();
+      renderCharCard();
+      renderCharQuickMenu();
+      hideModal();
+      showToast(`🔨 拆解完成！獲得 💠 精華碎片 ×1（共 ${rpg.essenceFragments} 片）`);
+      showSpiritsModal();
+    });
   }
   window.disassembleSpirit = disassembleSpirit;
 
@@ -11429,17 +11513,18 @@
   window.doSpiritEngraveClick = doSpiritEngraveClick;
 
   function confirmDeleteEngraving(bagIdx) {
-    if (!confirm('確定刪除刻印進度？\n已花費的晶魂碎片不會退還，精魂可恢復裝備。')) return;
-    const me = getMe(); if (!me) return;
-    const rpg = getRpg(me);
-    const bag = rpg.spiritBag || [];
-    const sp = bag[bagIdx];
-    if (!sp?.engraving) return;
-    delete sp.engraving;
-    saveData();
-    hideModal();
-    showToast('🗑 已刪除刻印進度，精魂可重新裝備');
-    showSpiritsModal();
+    safeConfirm('確定刪除刻印進度？\n已花費的晶魂碎片不會退還，精魂可恢復裝備。', () => {
+      const me = getMe(); if (!me) return;
+      const rpg = getRpg(me);
+      const bag = rpg.spiritBag || [];
+      const sp = bag[bagIdx];
+      if (!sp?.engraving) return;
+      delete sp.engraving;
+      saveData();
+      hideModal();
+      showToast('🗑 已刪除刻印進度，精魂可重新裝備');
+      showSpiritsModal();
+    });
   }
   window.confirmDeleteEngraving = confirmDeleteEngraving;
 
@@ -11658,7 +11743,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507182905';
+  const APP_VERSION = '20260507192611';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -12637,11 +12722,12 @@ ${b.text}
 
   function deleteBug(id) {
     if (!Array.isArray(bugs)) return;
-    if (!confirm('刪掉這筆？')) return;
-    bugs = bugs.filter(b => b.id !== id);
-    saveData();
-    showBugList();
-    refreshBugBadge();
+    safeConfirm('刪掉這筆？', () => {
+      bugs = bugs.filter(b => b.id !== id);
+      saveData();
+      showBugList();
+      refreshBugBadge();
+    });
   }
   window.deleteBug = deleteBug;
 
@@ -13487,13 +13573,14 @@ ${b.text}
   window.moveActionRule = moveActionRule;
 
   function resetActionPattern() {
-    if (!confirm(`確定重置「${(getRpg(getMe()).patternPageNames||[])[__apPage]||'頁 '+(__apPage+1)}」為預設規則表？目前的設定會清掉。`)) return;
-    const me = getMe(); if (!me) return;
-    const rpg = getRpg(me);
-    rpg.actionPatterns = rpg.actionPatterns || [[], [], [], []];
-    rpg.actionPatterns[__apPage] = getDefaultActionPattern(rpg.class);
-    saveData();
-    renderActionPattern();
+    safeConfirm(`確定重置「${(getRpg(getMe()).patternPageNames||[])[__apPage]||'頁 '+(__apPage+1)}」為預設規則表？目前的設定會清掉。`, () => {
+      const me = getMe(); if (!me) return;
+      const rpg = getRpg(me);
+      rpg.actionPatterns = rpg.actionPatterns || [[], [], [], []];
+      rpg.actionPatterns[__apPage] = getDefaultActionPattern(rpg.class);
+      saveData();
+      renderActionPattern();
+    });
   }
   window.resetActionPattern = resetActionPattern;
 
@@ -13510,12 +13597,13 @@ ${b.text}
     const rpg = getRpg(me);
     rpg.patternPageNames = rpg.patternPageNames || ['頁 1', '頁 2', '頁 3', '頁 4'];
     const cur = rpg.patternPageNames[idx] || '頁 '+(idx+1);
-    const newName = prompt('規則頁名稱：', cur);
-    if (!newName || !newName.trim()) return;
-    rpg.patternPageNames[idx] = newName.trim().slice(0, 12);
-    saveData();
-    renderActionPattern();
-    renderCharQuickMenu();
+    safePrompt('規則頁名稱：', cur, (newName) => {
+      if (!newName || !newName.trim()) return;
+      rpg.patternPageNames[idx] = newName.trim().slice(0, 12);
+      saveData();
+      renderActionPattern();
+      renderCharQuickMenu();
+    });
   }
   window.renameApPage = renameApPage;
 
