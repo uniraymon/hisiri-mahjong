@@ -3471,7 +3471,7 @@
         const bState = wb9GetState(b.id);
         const bHpPct = Math.max(0, Math.min(100, (bState.hp / b.maxHp) * 100));
         const isActive = window._wb9ActiveTab === b.id;
-        return `<button onclick="window._wb9ActiveTab='${b.id}';wb9Render()" style="flex:0 0 auto;padding:7px 10px;border:none;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;
+        return `<button onclick="window._wb9ActiveTab='${b.id}';wb9Render({force:true})" style="flex:0 0 auto;padding:7px 10px;border:none;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;
           background:${isActive?'linear-gradient(135deg,#7c3aed,#4c1d95)':'#1e1b4b'};
           color:${isActive?'#fff':'#94a3b8'};
           border:1px solid ${isActive?'#7c3aed':'#312e81'};
@@ -12114,7 +12114,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508031559';
+  const APP_VERSION = '20260508032003';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
