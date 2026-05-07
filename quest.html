@@ -6146,26 +6146,18 @@
       return 1.80; // 奈落
     })();
     // ⭐ 奈落詞條規則：
-    //   - 只有紫裝（legendary）才有詞條
-    //   - 奈落傳說裝：4 條（第 1-3 條從普通池 + 生命湧現；第 4 條從特殊奈落池）
-    //   - 非奈落傳說裝：3 條（普通池，不出 nabyssOnly）
+    //   - 掉落時最多 3 條（白0/綠1/藍2/紫3），第 4 條只能靠奈落鍛造打出
+    //   - 奈落裝（lv26+）前 3 條：普通詞條 + 生命湧現，
+    //     禁止出現 虛空之力/深淵護盾/混沌疾影/奈落根基（這 4 條只能在第 4 條）
+    //   - 非奈落裝：普通詞條池，完全不出 nabyssOnly
     const isNabyssItem = (drop.lv || 1) >= 26;
-    // 奈落傳說裝：強制 4 條（覆蓋 affixCount）
-    const finalAffixCount = (isNabyssItem && rarity === 'legendary') ? 4 : affixCount;
-    // 普通詞條池（非 nabyssOnly，+ 生命湧現可在前 3 條出現）
-    const poolNormal   = AFFIXES.filter(a => !a.nabyssOnly || a.type === 'hpRegen');
-    // 特殊奈落池（全部 nabyssOnly，第 4 條用）
-    const poolSpecial  = AFFIXES.filter(a => a.nabyssOnly);
+    // 奈落裝前 3 條：普通池 + 生命湧現（hpRegen），排除其他 nabyssOnly
+    const poolNormal = AFFIXES.filter(a => !a.nabyssOnly || a.type === 'hpRegen');
     // 非奈落裝：完全禁用 nabyssOnly
-    const poolBase     = AFFIXES.filter(a => !a.nabyssOnly);
+    const poolBase   = AFFIXES.filter(a => !a.nabyssOnly);
 
-    for (let i = 0; i < finalAffixCount; i++) {
-      let pool;
-      if (isNabyssItem) {
-        pool = (i === 3) ? poolSpecial : poolNormal; // 第 4 條（index 3）才出特殊奈落詞條
-      } else {
-        pool = poolBase;
-      }
+    for (let i = 0; i < affixCount; i++) {
+      const pool = isNabyssItem ? poolNormal : poolBase;
       const a = pool[Math.floor(Math.random() * pool.length)];
       // ⭐ hpRegen 詞條：固定 2%（存整數 2，代表 2%；戰鬥引擎讀出後除以 100），上限 10%
       const val = a.fixedPct != null
@@ -12059,7 +12051,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508011015';
+  const APP_VERSION = '20260508011334';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
