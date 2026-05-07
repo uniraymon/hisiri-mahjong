@@ -12051,7 +12051,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508011707';
+  const APP_VERSION = '20260508012254';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -17904,6 +17904,7 @@ ${b.text}
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
     if (!rpg.class) { showToast('先選職業'); return; }
+    tickRecovery(me); // ⭐ HP=0 時自動恢復 50%（與 zone 戰鬥行為一致）
     if (rpg.hp <= 0) { showToast('💀 HP 不足'); return; }
     const def = PERSONAL_BOSSES.find(b => b.id === bossId);
     if (!def) return;
@@ -20980,6 +20981,7 @@ ${b.text}
       <button class="btn btn-danger" onclick="adminWipeAll()" style="margin-top:6px; background:linear-gradient(135deg,#fca5a5,#7f1d1d); box-shadow:0 4px 0 #450a0a;">💀 全玩家洗白（伺服器 + 本地都重置）</button>
       <button class="btn btn-secondary" onclick="adminMigrateAccessoryToRing()" style="margin-top:6px; background:linear-gradient(135deg,#ddd6fe,#7c3aed); box-shadow:0 4px 0 #6d28d9; color:#fff;">💍 遷移：飾品槽戒指 → 戒指槽（所有玩家）</button>
       <button class="btn btn-secondary" onclick="adminFixNabyssAffixes()" style="margin-top:6px; background:linear-gradient(135deg,#1e1b4b,#4c1d95); box-shadow:0 4px 0 #3730a3; color:#a5b4fc;">⚒️ 修復奈落詞條位置（虛空之力等特殊詞條不應出現在第1-3條）</button>
+      <button class="btn btn-secondary" onclick="adminInspectPlayerBoss()" style="margin-top:6px; background:linear-gradient(135deg,#0c4a6e,#0369a1); box-shadow:0 4px 0 #075985; color:#bae6fd;">🔍 查看 / 修復指定玩家個人王狀態</button>
       <button class="btn btn-secondary" onclick="adminDownloadAllPlayersZip()" style="margin-top:6px; background:linear-gradient(135deg,#0f172a,#1e40af); box-shadow:0 4px 0 #1e3a8a; color:#93c5fd;">📦 一鍵下載所有玩家存檔（ZIP）</button>
       <button class="btn btn-secondary" onclick="adminLockDebug()" style="margin-top:6px;">🔐 鎖回 Debug</button>
 
@@ -22974,6 +22976,50 @@ ${b.text}
     const n = _iterAllItems(_fixOneNabyssItem);
     if (n > 0) { try { saveData(); } catch(e){} }
   })();
+
+  // ============================================================
+  // 🔍 Admin：查看 / 修復指定玩家個人王狀態
+  // ============================================================
+  window.adminInspectPlayerBoss = function() {
+    const name = prompt('輸入玩家名稱（部分符合也行）：');
+    if (!name) return;
+    const target = players.find(p => p && p.name && p.name.toLowerCase().includes(name.toLowerCase()));
+    if (!target) { showToast(`找不到玩家：${name}`); return; }
+    const rpg = getRpg(target);
+    const stats = computeStats(target);
+    const cdMs = rpg.personalBossLastAt ? rpg.personalBossLastAt + 2.5*60*1000 - Date.now() : 0;
+    const cdStr = cdMs > 0 ? `冷卻剩 ${Math.ceil(cdMs/1000)} 秒` : '無冷卻';
+    const sealStr = (rpg.hellSeal && Date.now() < rpg.hellSeal.endAt)
+      ? `封印剩 ${Math.ceil((rpg.hellSeal.endAt - Date.now())/60000)} 分（${rpg.hellSeal.applier}）` : '無封印';
+    const bossLines = PERSONAL_BOSSES.map(b => {
+      const st = rpg.personalBoss?.[b.id];
+      return `  ${b.name}：HP ${st ? st.currentHp.toLocaleString() : '未初始化'} / ${b.hp.toLocaleString()}（擊殺 ${st?.killCount ?? 0}）`;
+    }).join('\n');
+    const msg = [
+      `玩家：${target.name}`,
+      `HP：${rpg.hp ?? '?'} / ${stats?.maxHp ?? '?'}`,
+      `個人王冷卻：${cdStr}`,
+      `地獄封印：${sealStr}`,
+      `個人王狀態：`,
+      bossLines,
+      '',
+      '要一鍵修復嗎？（清除冷卻 + 解除封印 + HP 恢復至 50%）',
+    ].join('\n');
+    if (!confirm(msg)) return;
+    // 執行修復
+    tickRecovery(target); // HP=0 → 恢復 50%
+    if (rpg.hp <= 0) rpg.hp = Math.max(1, Math.floor((stats?.maxHp || 100) * 0.5));
+    rpg.personalBossLastAt = 0; // 清除冷卻
+    if (rpg.hellSeal) delete rpg.hellSeal; // 解除封印
+    // 修復 NaN/負數 boss HP
+    PERSONAL_BOSSES.forEach(b => {
+      const st = rpg.personalBoss?.[b.id];
+      if (st && (isNaN(st.currentHp) || st.currentHp < 0)) st.currentHp = b.hp;
+    });
+    saveData();
+    showToast(`✅ ${target.name} 個人王狀態已修復！冷卻清除、封印解除、HP 恢復`);
+    if (typeof renderCharCard === 'function') renderCharCard();
+  };
 
   // Admin 一鍵修復（Debug 面板用）
   window.adminFixNabyssAffixes = function() {
