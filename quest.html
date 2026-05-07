@@ -12054,7 +12054,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508022613';
+  const APP_VERSION = '20260508024309';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -12110,7 +12110,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260507_nabyss';
+  const NEWS_LATEST_ID = 'patch_20260508_nabyss_boost';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -12130,6 +12130,30 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#0f172a,#1e0040); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">⚡ 奈落強化更新　<span style="font-size:11px; opacity:0.85;">2026-05-08</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#a855f7; margin:6px 0 4px;">📈 奈落單挑區 EXP ×2</div>
+        <div>・<b>奈落單挑區</b>擊敗怪物所獲 EXP 全面 <b>×2</b>（群戰區維持原倍率不變）</div>
+
+        <div style="font-weight:700; color:#a855f7; margin:10px 0 4px;">⭐ 精英怪強化獎勵</div>
+        <div>・精英怪擊殺額外獎勵升級：</div>
+        <div style="padding-left:8px; font-size:12px;">
+          <div>・固定 <b>+5,000 EXP</b> 精英獎勵</div>
+          <div>・掉落 <b>2 件傳說紫裝</b>（原本 1 件）</div>
+        </div>
+
+        <div style="font-weight:700; color:#a855f7; margin:10px 0 4px;">🪖 裝備掉落修正</div>
+        <div>・<b>頭盔</b>、<b>披風</b> 已加回奈落單挑／群戰掉落表（之前意外遺漏）</div>
+
+        <div style="font-weight:700; color:#a855f7; margin:10px 0 4px;">🍵 多人戰鬥調整</div>
+        <div>・<b>群戰區</b>不再出現綠茶鵝（綠茶鵝仍會在其他區域正常出沒）</div>
+
+        <div style="background:#f5f3ff; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#3b0764;">
+          💡 奈落單挑區升級效率大幅提升，搭配精英怪雙紫裝掉落刷裝更快！
+        </div>
 
         <div style="background:linear-gradient(135deg,#1e0040,#4c1d95); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🕳️ 奈落深域開放 ＋ 奈落鍛造　<span style="font-size:11px; opacity:0.85;">2026-05-07</span></div>
@@ -20655,7 +20679,10 @@ ${b.text}
 
     if (result.won) {
       rpg.fightsWon = (rpg.fightsWon || 0) + 1;
-      rpg.xp = (rpg.xp || 0) + monster.xpDrop;
+      // ⭐ 奈落單挑區（nabyss_solo）EXP ×2，群戰區維持原倍率
+      const _nabyssXpMult = (rpg.currentZone === 'nabyss_solo') ? 2 : 1;
+      const _xpGained = monster.xpDrop * _nabyssXpMult;
+      rpg.xp = (rpg.xp || 0) + _xpGained;
       rpg.totalGold = (rpg.totalGold || 0) + monster.goldDrop;
       // 勝利補 20% MP
       const mpBack = Math.round(stats.maxMp * 0.2);
@@ -20691,15 +20718,19 @@ ${b.text}
       let treasureDropped = null;     // 拿到的寶物本體（首次取得才會有）
       let treasureDupXp = 0;           // 重複的話換 XP
       if (monster.isElite && !monster.isForageElite) {
-        // ⭐ 地區精英：必掉 1 件「紫裝」（legendary，3 詞條）100%
-        // layerRange 讓系統自動找該層 [minLv,maxLv] 內等級最高的裝備，新增層不需手動對齊
+        // ⭐ 地區精英：必掉 2 件「紫裝」（legendary，3 詞條）100% + 固定 +5000 XP
         const _eliteLayerRange = _curLayer ? { min: _curLayer.minLv, max: _curLayer.maxLv } : null;
-        const eliteDrop = generateDropItem(dropLv, { slotBias: _zone ? _zone.dropBias : null, forceAffixes: 3, boosted: true, forceRarity: 'legendary', layerRange: _isNabyssZoneSingle ? null : _eliteLayerRange, nabyssZone: _isNabyssZoneSingle });
-        if (eliteDrop) {
-          addInventoryItem(player.id, eliteDrop);  // ⭐ Phase A: atomic tx
-          eliteExtraDrops.push(eliteDrop);
+        for (let _ei = 0; _ei < 2; _ei++) {
+          const eliteDrop = generateDropItem(dropLv, { slotBias: _zone ? _zone.dropBias : null, forceAffixes: 3, boosted: true, forceRarity: 'legendary', layerRange: _isNabyssZoneSingle ? null : _eliteLayerRange, nabyssZone: _isNabyssZoneSingle });
+          if (eliteDrop) {
+            addInventoryItem(player.id, eliteDrop);  // ⭐ Phase A: atomic tx
+            eliteExtraDrops.push(eliteDrop);
+          }
         }
-        forageTrace('zone-elite drop (1x legendary)', { dropLv, count: eliteExtraDrops.length, ids: eliteExtraDrops.map(d => d.id) });
+        // ⭐ 精英固定額外 +5000 XP 獎勵
+        const _eliteXpBonus = 5000;
+        rpg.xp = (rpg.xp || 0) + _eliteXpBonus;
+        forageTrace('zone-elite drop (2x legendary +5000xp)', { dropLv, count: eliteExtraDrops.length, ids: eliteExtraDrops.map(d => d.id) });
       } else if (monster.isForageElite) {
         // ⭐ 探險精英：改成給寶物（重複→ +1000 XP）
         rpg.treasures = rpg.treasures || [];
@@ -20746,7 +20777,7 @@ ${b.text}
       rewardHtml = `
         <div class="reward-list" ${monster.isElite ? 'style="background:linear-gradient(135deg,#fef3c7,#fde047); border-color:#f59e0b;"' : ''}>
           <div class="rl-title">${monster.isElite ? '⭐ 精英戰利品' : '🎉 戰利品'}</div>
-          <div class="rl-item">⭐ +${monster.xpDrop} XP</div>
+          <div class="rl-item">⭐ +${_xpGained}${_nabyssXpMult > 1 ? ` XP（奈落 ×${_nabyssXpMult}）` : ' XP'}${monster.isElite && !monster.isForageElite ? ' <b style="color:#fbbf24;">+5000 精英獎勵</b>' : ''}</div>
           <div class="rl-item">🪙 +${monster.goldDrop} 鵝鵝幣</div>
           ${drop ? `<div class="rl-item">${drop.icon} ${drop.name}<span style="font-size:10px; color:#8b6f9b;"> · ${drop.affixes?.length || 0} 詞條</span></div>` : ''}
           ${chestExtraDrop ? `<div class="rl-item" style="color:#92400e;">📦 寶箱多掉：${chestExtraDrop.icon} ${chestExtraDrop.name} <span style="font-size:10px; opacity:0.85;">· ${chestExtraDrop.affixes?.length || 0} 詞條</span></div>` : ''}
