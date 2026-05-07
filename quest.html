@@ -4320,7 +4320,7 @@
     if (skill.applyStatus && skill.applyStatus.type === 'poison') {
       const baseCharges = skill.applyStatus.charges || 3;
       const charges = baseCharges + Math.min(level, 5) + (level >= 5 ? 1 : 0);
-      const parts = [`☠️ 中毒 ${charges} 次（一般怪 3% maxHP / 王 0.5% maxHP，無上限）`];
+      const parts = [`☠️ 中毒 ${charges} 次（一般怪 3% maxHP / 王 0.25% maxHP，無上限）`];
       if (level === 5) parts.push('🌟 中毒次數再 +1');
       return parts.join('、');
     }
@@ -8064,8 +8064,8 @@
     const safeMax = Math.max(1, maxHp || target.maxHp || 0);
     for (const s of target.statuses) {
       if (s.type === 'poison') {
-        // ⭐ 中毒傷害去上限：Boss（有 defPen）固定 0.5% maxHp；一般怪 3% maxHp
-        const _poisonPct = target.defPen ? 0.005 : 0.03;
+        // ⭐ 中毒傷害去上限：Boss（有 defPen）固定 0.25% maxHp；一般怪 3% maxHp
+        const _poisonPct = target.defPen ? 0.0025 : 0.03;
         const dmg = Math.max(1, Math.round(safeMax * _poisonPct));
         events.push({ type: 'poison', dmg });
         s.charges = (s.charges || 0) - 1; // ⭐ charge-based：每次觸發消耗 1 層
@@ -11649,7 +11649,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507133851';
+  const APP_VERSION = '20260507141314';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
