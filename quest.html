@@ -3707,9 +3707,11 @@
       affixes: [],
     };
     // 滾 2 條隨機詞條（以王等級當「lv」算強度，這裡固定 30）
+    // ⭐ 精魂不出奈落專用詞條（nabyssOnly）
     const refLv = 30;
+    const _spiritAffixPool = AFFIXES.filter(a => !a.nabyssOnly);
     for (let i = 0; i < SPIRIT_AFFIX_COUNT; i++) {
-      const a = AFFIXES[Math.floor(Math.random() * AFFIXES.length)];
+      const a = _spiritAffixPool[Math.floor(Math.random() * _spiritAffixPool.length)];
       let val = Math.max(1, Math.round((1 + refLv * a.perLv) * 1.0));
       // ⭐ HP 平衡：精魂 HP 詞綴值再砍 30%
       if (a.type === 'hp') val = Math.max(1, Math.round(val * 0.7));
@@ -12051,7 +12053,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508012254';
+  const APP_VERSION = '20260508012723';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -22971,10 +22973,64 @@ ${b.text}
     });
     return count;
   }
+  // ── 修復裝備 生命湧現 val=5 → val=2 ──────────────────────────
+  function _fixHpRegenVal(item) {
+    if (!item || typeof item !== 'object' || !Array.isArray(item.affixes)) return false;
+    let dirty = false;
+    item.affixes.forEach(af => {
+      if (af.name === '生命湧現' && af.val === 5) {
+        item.hpRegen = Math.max(0, (item.hpRegen || 0) - 3); // 5 → 2，差 3
+        af.val = 2;
+        dirty = true;
+      }
+    });
+    return dirty;
+  }
+  // ── 修復精魂裡的 hpRegen 詞條 → 改成 ATK（鋒利）────────────────
+  // 精魂 lv=30, mult=1.0 → 鋒利 ATK = max(1, round((1+30*0.35)*1.0)) = 12
+  function _fixSpiritHpRegen(spirit) {
+    if (!spirit || !Array.isArray(spirit.affixes)) return false;
+    let dirty = false;
+    spirit.affixes.forEach(af => {
+      if (af.type === 'hpRegen' || af.name === '生命湧現') {
+        // 扣除錯誤的 hpRegen 值
+        spirit.hpRegen = Math.max(0, (spirit.hpRegen || 0) - (af.val || 0));
+        // 改成 ATK（鋒利）
+        const newVal = Math.max(1, Math.round((1 + 30 * 0.35) * 1.0)); // = 12
+        spirit.atk = (spirit.atk || 0) + newVal;
+        af.type = 'atk'; af.name = '鋒利'; af.val = newVal;
+        // 如果是第一條詞條，更新精魂名稱
+        if (spirit.affixes[0] === af) spirit.name = `鋒利的 ${spirit.name.replace(/^.*的 /, '')}`;
+        dirty = true;
+      }
+    });
+    if (dirty && spirit.hpRegen <= 0) delete spirit.hpRegen;
+    return dirty;
+  }
+  // ── 遍歷所有精魂（裝備中 + 背包）────────────────────────────────
+  function _iterAllSpirits(fn) {
+    let count = 0;
+    if (!Array.isArray(players)) return 0;
+    players.forEach(p => {
+      if (!p || !p.rpg) return;
+      const rpg = p.rpg;
+      if (Array.isArray(rpg.spirits)) {
+        rpg.spirits.forEach(s => { if (s && fn(s)) count++; });
+      }
+      if (Array.isArray(rpg.spiritBag)) {
+        rpg.spiritBag.forEach(s => { if (s && fn(s)) count++; });
+      }
+    });
+    return count;
+  }
+
   // 啟動時自動修復一次
   (function() {
-    const n = _iterAllItems(_fixOneNabyssItem);
-    if (n > 0) { try { saveData(); } catch(e){} }
+    let changed = false;
+    if (_iterAllItems(_fixOneNabyssItem) > 0) changed = true;  // 特殊詞條位置
+    if (_iterAllItems(_fixHpRegenVal) > 0) changed = true;     // 生命湧現 5→2
+    if (_iterAllSpirits(_fixSpiritHpRegen) > 0) changed = true; // 精魂 hpRegen→ATK
+    if (changed) { try { saveData(); } catch(e){} }
   })();
 
   // ============================================================
@@ -23021,14 +23077,17 @@ ${b.text}
     if (typeof renderCharCard === 'function') renderCharCard();
   };
 
-  // Admin 一鍵修復（Debug 面板用）
+  // Admin 一鍵修復（Debug 面板用）— 含生命湧現+精魂修復
   window.adminFixNabyssAffixes = function() {
-    const n = _iterAllItems(_fixOneNabyssItem);
-    if (n === 0) {
+    const n1 = _iterAllItems(_fixOneNabyssItem);
+    const n2 = _iterAllItems(_fixHpRegenVal);
+    const n3 = _iterAllSpirits(_fixSpiritHpRegen);
+    const total = n1 + n2 + n3;
+    if (total === 0) {
       showToast('✅ 沒有需要修復的詞條！');
     } else {
       saveData();
-      showToast(`⚒️ 修復完成！共修正 ${n} 件裝備的詞條`);
+      showToast(`⚒️ 修復完成！特殊詞條位置:${n1} 生命湧現5→2:${n2} 精魂hpRegen:${n3}`);
       if (typeof renderCharCard === 'function') renderCharCard();
     }
   };
