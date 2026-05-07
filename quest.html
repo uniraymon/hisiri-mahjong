@@ -6911,6 +6911,16 @@
       + (mergedBonuses.critDmg || 0);
     // ⭐ 每回合 MP 自動恢復（鵝王恩賜首飾 + 寶物 mpRegen、之後其他來源都加在這裡）
     stats.mpRegen = itemMpRegen + (treasure.mpRegen || 0);
+    // ⭐ 地獄使者戰鬥裝備加成（hellBattlePlayer 傳入的 bat* 屬性總和）
+    if (rpg._hellBattleBonusStats) {
+      const hb = rpg._hellBattleBonusStats;
+      stats.atk   += hb.atk  || 0;
+      stats.def   += hb.def  || 0;
+      stats.spd   += hb.spd  || 0;
+      stats.maxHp += hb.hp   || 0;
+      stats.maxMp += hb.mp   || 0;
+      stats.mark  += hb.mark || 0;
+    }
     return stats;
   }
 
@@ -12057,7 +12067,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508024430';
+  const APP_VERSION = '20260508025941';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -18813,32 +18823,62 @@ ${b.text}
       desc:'全服詛咒 DEF -50% + 封印所有人 5 分鐘（4 小時 CD）' },
   };
 
-  // ⭐ 地獄裝備扭蛋池（12 件，3 槽 × 4 稀有度）
+  // ⭐ 8 個裝備槽名稱
+  const HELL_EQUIP_SLOTS = ['weapon','armor','accessory','helmet','gloves','boots','ring','talisman'];
+  const HELL_SLOT_LBL = { weapon:'武器 靈兵', armor:'防具 邪甲', accessory:'飾品 詛物', helmet:'頭盔 邪冠', gloves:'手套 業手', boots:'靴子 冥靴', ring:'戒指 邪環', talisman:'靈符' };
+
+  // ⭐ 地獄裝備扭蛋池（32 件，8 槽 × 4 稀有度）
+  // 詛咒屬性 + 戰鬥屬性(bat*)，兩套共用同一件裝備
   const HELL_GACHA_POOL = [
-    // 武器（靈兵）
-    { id:'w_bone',    name:'骨爪之刃',   slot:'weapon',    rarity:'common',    icon:'🦴', plunderBonus:0.08, desc:'洗劫 +8%' },
-    { id:'w_scythe',  name:'奪命鐮刀',   slot:'weapon',    rarity:'rare',      icon:'⚔️', plunderBonus:0.18, stealBonus:3,   desc:'洗劫 +18%・奪體力 +3' },
-    { id:'w_spear',   name:'冥府長戟',   slot:'weapon',    rarity:'epic',      icon:'🔱', plunderBonus:0.28, drainBonus:80,  desc:'洗劫 +28%・奪魂 +80 EXP' },
-    { id:'w_hellaxe', name:'地獄煉魂斧', slot:'weapon',    rarity:'legendary', icon:'🪓', plunderBonus:0.45, drainBonus:120, duelAtkBonus:0.50, desc:'洗劫 +45%・奪魂 +120 EXP・決鬥 ATK +50%' },
-    // 防具（邪甲）
-    { id:'a_cracked', name:'破碎縛甲',   slot:'armor',     rarity:'common',    icon:'🛡️', sealBonusMin:4,   desc:'封印 +4 分鐘' },
-    { id:'a_iron',    name:'黑鐵詛鎧',   slot:'armor',     rarity:'rare',      icon:'⛓️', sealBonusMin:10,  staminaMax:25,  desc:'封印 +10 分鐘・靈力 +25' },
-    { id:'a_karma',   name:'地獄業甲',   slot:'armor',     rarity:'epic',      icon:'🦾', sealBonusMin:20,  staminaMax:50,  staminaRegen:1, desc:'封印 +20 分鐘・靈力 +50・回復 +1' },
-    { id:'a_chaos',   name:'混沌惡魔甲', slot:'armor',     rarity:'legendary', icon:'😈', sealBonusMin:35,  staminaMax:100, cursePower:0.20, desc:'封印 +35 分鐘・靈力 +100・詛咒 +20%' },
-    // 飾品（詛物）
-    { id:'r_charm',   name:'怨靈符咒',   slot:'accessory', rarity:'common',    icon:'📿', cursePower:0.08,  desc:'詛咒 +8%' },
-    { id:'r_seal_r',  name:'死亡封印印', slot:'accessory', rarity:'rare',      icon:'💠', cursePower:0.12,  costReduce:2,   desc:'詛咒 +12%・行動消耗 -2' },
-    { id:'r_eye',     name:'邪神之眼',   slot:'accessory', rarity:'epic',      icon:'👁️', cursePower:0.18,  costReduce:5,   expBonus:0.15, desc:'詛咒 +18%・消耗 -5・EXP +15%' },
-    { id:'r_crown',   name:'地獄王冠',   slot:'accessory', rarity:'legendary', icon:'👑', cursePower:0.28,  costReduce:8,   expBonus:0.30, staminaMax:40, desc:'詛咒 +28%・消耗 -8・EXP +30%・靈力 +40' },
+    // ── 武器（靈兵）──
+    { id:'w_bone',    name:'骨爪之刃',   slot:'weapon',    rarity:'common',    icon:'🦴', plunderBonus:0.08, batAtk:30,  desc:'洗劫 +8%　ATK +30' },
+    { id:'w_scythe',  name:'奪命鐮刀',   slot:'weapon',    rarity:'rare',      icon:'⚔️', plunderBonus:0.18, stealBonus:3,   batAtk:55,  desc:'洗劫 +18%・奪體力 +3　ATK +55' },
+    { id:'w_spear',   name:'冥府長戟',   slot:'weapon',    rarity:'epic',      icon:'🔱', plunderBonus:0.28, drainBonus:80,  batAtk:90,  desc:'洗劫 +28%・奪魂 +80 EXP　ATK +90' },
+    { id:'w_hellaxe', name:'地獄煉魂斧', slot:'weapon',    rarity:'legendary', icon:'🪓', plunderBonus:0.45, drainBonus:120, duelAtkBonus:0.50, batAtk:150, desc:'洗劫 +45%・奪魂 +120・決鬥 +50%　ATK +150' },
+    // ── 防具（邪甲）──
+    { id:'a_cracked', name:'破碎縛甲',   slot:'armor',     rarity:'common',    icon:'🛡️', sealBonusMin:4,   batDef:25, batHp:80,   desc:'封印 +4min　DEF +25・HP +80' },
+    { id:'a_iron',    name:'黑鐵詛鎧',   slot:'armor',     rarity:'rare',      icon:'⛓️', sealBonusMin:10,  staminaMax:25,  batDef:50, batHp:160,  desc:'封印 +10min・靈力 +25　DEF +50・HP +160' },
+    { id:'a_karma',   name:'地獄業甲',   slot:'armor',     rarity:'epic',      icon:'🦾', sealBonusMin:20,  staminaMax:50,  staminaRegen:1, batDef:80, batHp:250,  desc:'封印 +20min・靈力 +50・回復 +1　DEF +80・HP +250' },
+    { id:'a_chaos',   name:'混沌惡魔甲', slot:'armor',     rarity:'legendary', icon:'😈', sealBonusMin:35,  staminaMax:100, cursePower:0.20, batDef:130, batHp:400, desc:'封印 +35min・靈力 +100・詛咒 +20%　DEF +130・HP +400' },
+    // ── 飾品（詛物）──
+    { id:'r_charm',   name:'怨靈符咒',   slot:'accessory', rarity:'common',    icon:'📿', cursePower:0.08,  batMark:20,  desc:'詛咒 +8%　MARK +20' },
+    { id:'r_seal_r',  name:'死亡封印印', slot:'accessory', rarity:'rare',      icon:'💠', cursePower:0.12,  costReduce:2,   batMark:35,  desc:'詛咒 +12%・消耗 -2　MARK +35' },
+    { id:'r_eye',     name:'邪神之眼',   slot:'accessory', rarity:'epic',      icon:'👁️', cursePower:0.18,  costReduce:5,   expBonus:0.15, batMark:55, batMp:20, desc:'詛咒 +18%・消耗 -5・EXP +15%　MARK +55・MP +20' },
+    { id:'r_crown',   name:'地獄王冠',   slot:'accessory', rarity:'legendary', icon:'👑', cursePower:0.28,  costReduce:8,   expBonus:0.30, staminaMax:40, batMark:90, batMp:40, desc:'詛咒 +28%・消耗 -8・EXP +30%・靈力 +40　MARK +90・MP +40' },
+    // ── 頭盔（邪冠）──
+    { id:'h_frag',    name:'破碎邪冠',   slot:'helmet',    rarity:'common',    icon:'💀', batDef:20, batHp:80,   desc:'DEF +20・HP +80' },
+    { id:'h_iron',    name:'鐵煉邪冠',   slot:'helmet',    rarity:'rare',      icon:'🎭', sealBonusMin:5,  batDef:40, batHp:160,  desc:'封印 +5min　DEF +40・HP +160' },
+    { id:'h_void',    name:'虛空邪冠',   slot:'helmet',    rarity:'epic',      icon:'🌑', cursePower:0.10, batDef:70, batHp:280,  desc:'詛咒 +10%　DEF +70・HP +280' },
+    { id:'h_hell',    name:'地獄邪冠',   slot:'helmet',    rarity:'legendary', icon:'🔮', cursePower:0.20, staminaMax:30, batDef:120, batHp:450, desc:'詛咒 +20%・靈力 +30　DEF +120・HP +450' },
+    // ── 手套（業手）──
+    { id:'g_claw',    name:'鬼爪縛手',   slot:'gloves',    rarity:'common',    icon:'🖐️', batAtk:25,  desc:'ATK +25' },
+    { id:'g_chain',   name:'業鏈手套',   slot:'gloves',    rarity:'rare',      icon:'⛓️', stealBonus:2, batAtk:50,  desc:'奪體力 +2　ATK +50' },
+    { id:'g_dark',    name:'暗煉業手',   slot:'gloves',    rarity:'epic',      icon:'🤚', drainBonus:40, batAtk:85,  desc:'奪魂 +40 EXP　ATK +85' },
+    { id:'g_abyss',   name:'奈落業手',   slot:'gloves',    rarity:'legendary', icon:'👹', drainBonus:80, plunderBonus:0.15, batAtk:140, desc:'奪魂 +80 EXP・洗劫 +15%　ATK +140' },
+    // ── 靴子（冥靴）──
+    { id:'b_worn',    name:'破舊冥靴',   slot:'boots',     rarity:'common',    icon:'👢', batSpd:15,  desc:'SPD +15' },
+    { id:'b_shadow',  name:'暗影冥靴',   slot:'boots',     rarity:'rare',      icon:'🌫️', batSpd:30, batDef:20,  desc:'SPD +30・DEF +20' },
+    { id:'b_ghost',   name:'幽靈冥靴',   slot:'boots',     rarity:'epic',      icon:'👻', staminaMax:20, batSpd:55, batDef:40,  desc:'靈力 +20　SPD +55・DEF +40' },
+    { id:'b_void',    name:'虛空冥靴',   slot:'boots',     rarity:'legendary', icon:'🌌', staminaMax:30, staminaRegen:1, batSpd:90, batDef:70,  desc:'靈力 +30・回復 +1　SPD +90・DEF +70' },
+    // ── 戒指（邪環）──
+    { id:'rg_bone',   name:'骨鍊邪環',   slot:'ring',      rarity:'common',    icon:'💍', batMark:20,  desc:'MARK +20' },
+    { id:'rg_spirit', name:'靈魂邪環',   slot:'ring',      rarity:'rare',      icon:'🔵', cursePower:0.05, batMark:40,  desc:'詛咒 +5%　MARK +40' },
+    { id:'rg_doom',   name:'末日邪環',   slot:'ring',      rarity:'epic',      icon:'🟣', cursePower:0.12, batMark:70, batMp:20,  desc:'詛咒 +12%　MARK +70・MP +20' },
+    { id:'rg_abyss',  name:'奈落邪環',   slot:'ring',      rarity:'legendary', icon:'💜', cursePower:0.20, batMark:110, batMp:40, duelAtkBonus:0.10, desc:'詛咒 +20%　MARK +110・MP +40・決鬥 +10%' },
+    // ── 靈符（talisman）──
+    { id:'t_torn',    name:'破碎靈符',   slot:'talisman',  rarity:'common',    icon:'📜', batHp:60,  batMp:15,  desc:'HP +60・MP +15' },
+    { id:'t_curse',   name:'詛咒靈符',   slot:'talisman',  rarity:'rare',      icon:'📛', cursePower:0.06, batHp:120, batMp:30,  desc:'詛咒 +6%　HP +120・MP +30' },
+    { id:'t_demon',   name:'惡魔靈符',   slot:'talisman',  rarity:'epic',      icon:'🗿', staminaMax:25, expBonus:0.10, batHp:200, batMp:55, desc:'靈力 +25・EXP +10%　HP +200・MP +55' },
+    { id:'t_hell',    name:'地獄靈符',   slot:'talisman',  rarity:'legendary', icon:'⛧',  staminaMax:50, expBonus:0.20, costReduce:3, batHp:350, batMp:90, desc:'靈力 +50・EXP +20%・消耗 -3　HP +350・MP +90' },
   ];
 
-  // ⭐ 扭蛋機等級（3 階）
+  // ⭐ 扭蛋機等級（3 階）— 費用 ×200 倍（地獄使者專用豪奢版）
   const HELL_GACHA_TIERS = [
-    { id:'normal', name:'邪靈轉', icon:'🎰', cost:1000,  unlockLv:3,
+    { id:'normal', name:'邪靈轉', icon:'🎰', cost:200000,   unlockLv:3,
       rates:{ common:0.65, rare:0.30, epic:0.05, legendary:0.00 } },
-    { id:'rare',   name:'業障轉', icon:'💀', cost:5000,  unlockLv:6,
+    { id:'rare',   name:'業障轉', icon:'💀', cost:1000000,  unlockLv:6,
       rates:{ common:0.25, rare:0.50, epic:0.22, legendary:0.03 } },
-    { id:'hell',   name:'地獄轉', icon:'👹', cost:20000, unlockLv:12,
+    { id:'hell',   name:'地獄轉', icon:'👹', cost:4000000,  unlockLv:12,
       rates:{ common:0.00, rare:0.30, epic:0.55, legendary:0.15 } },
   ];
 
@@ -18855,7 +18895,7 @@ ${b.text}
     const s = { plunderBonus:0, stealBonus:0, drainBonus:0, duelAtkBonus:0,
                 sealBonusMin:0, staminaMax:0, staminaRegen:0, cursePower:0,
                 costReduce:0,  expBonus:0 };
-    for (const slot of ['weapon','armor','accessory']) {
+    for (const slot of HELL_EQUIP_SLOTS) {
       const id = equip[slot]; if (!id) continue;
       const item = HELL_GACHA_POOL.find(x => x.id === id); if (!item) continue;
       for (const k of Object.keys(s)) if (item[k] != null) s[k] += item[k];
@@ -19050,7 +19090,7 @@ ${b.text}
         <div style="font-size:18px; font-weight:900; color:${rc[rarity]}; margin-bottom:4px;">${item.name}</div>
         <div style="font-size:12px; color:${rc[rarity]}; margin-bottom:10px;">${rl[rarity]}</div>
         <div style="font-size:13px; color:#fca5a5; background:#1a0000; border-radius:8px; padding:8px 12px; margin-bottom:6px;">${item.desc}</div>
-        <div style="font-size:11px; color:#6b7280;">槽位：${item.slot==='weapon'?'武器 靈兵':item.slot==='armor'?'防具 邪甲':'飾品 詛物'}</div>
+        <div style="font-size:11px; color:#6b7280;">槽位：${HELL_SLOT_LBL[item.slot] || item.slot}</div>
         <button onclick="hideModal()" style="margin-top:12px; width:100%; padding:10px; border:none; border-radius:8px; background:linear-gradient(135deg,#7f1d1d,#dc2626); color:#fff; cursor:pointer; font-size:13px; font-weight:700;">收入背包</button>
       </div>`);
   }
@@ -19090,8 +19130,8 @@ ${b.text}
   }
   window.hellDiscardItem = hellDiscardItem;
 
-  // ⭐ 分頁切換
-  window.hellTab = function(tab) { window._hellActiveTab = tab; renderHellMessenger(); };
+  // ⭐ 分頁切換（詛咒模式）
+  window.hellTab = function(tab) { window._hellActiveTab = tab; window._hellMode = 'curse'; renderHellMessenger(); };
 
   // --- 建立地獄使者角色（DEBUG 限定）---
   function pickHellMessenger() {
@@ -19139,6 +19179,15 @@ ${b.text}
     rpg.hellEquip = {};
     rpg.hellInventory = [];
     rpg.hellSkillCd = {};
+    // ⭐ 戰鬥模式初始值（5 技能點起手）
+    rpg.hellBattleLv          = 1;
+    rpg.hellBattleXp          = 0;
+    rpg.hellBattleSkillPoints = 5;
+    rpg.hellBattleSkills      = {};
+    rpg.hellBattleSkillLevels = {};
+    rpg.hellBattleAbilities   = {};
+    rpg.hellBattleAbilityTree = {};
+    rpg.hellBattleCd          = {};
     saveData();
     hideModal();
     render();
@@ -19587,9 +19636,11 @@ ${b.text}
     tickRecovery(me);
     window._hellActiveTab = window._hellActiveTab || 'action';
     const activeTab = window._hellActiveTab;
+    window._hellMode = window._hellMode || 'curse';
+    const hellMode = window._hellMode;
     const RAR = { common:'#9ca3af', rare:'#60a5fa', epic:'#c084fc', legendary:'#fbbf24' };
     const RAR_LBL = { common:'普通', rare:'稀有', epic:'史詩', legendary:'傳說' };
-    const SLOT_LBL = { weapon:'武器 靈兵', armor:'防具 邪甲', accessory:'飾品 詛物' };
+    const SLOT_LBL = HELL_SLOT_LBL;
 
     // ===== TAB: 行動 =====
     const targets = (players || []).filter(p =>
@@ -19667,7 +19718,7 @@ ${b.text}
     // ===== TAB: 裝備 =====
     const equip = rpg.hellEquip || {};
     const inv   = rpg.hellInventory || [];
-    const equipSlotHtml = ['weapon','armor','accessory'].map(slot=>{
+    const equipSlotHtml = HELL_EQUIP_SLOTS.map(slot=>{
       const eId  = equip[slot];
       const eDef = eId ? HELL_GACHA_POOL.find(x=>x.id===eId) : null;
       return `<div style="background:#0d0000;border:1px solid ${eDef?'#7c3aed':'#3f0000'};border-radius:9px;padding:7px 11px;margin-bottom:5px;">
@@ -19760,7 +19811,7 @@ ${b.text}
       hStats.duelAtkBonus>0&&`⚔️ATK+${(hStats.duelAtkBonus*100).toFixed(0)}%`,
     ].filter(Boolean).map(s=>`<span style="font-size:10px;background:#1a0020;color:#c084fc;padding:2px 5px;border-radius:3px;">${s}</span>`).join(' ');
 
-    // ===== Tab Nav =====
+    // ===== Tab Nav（詛咒模式）=====
     const TABS = [
       {id:'action',lbl:'⚡ 行動',c:'#dc2626'},
       {id:'skills',lbl:'🔮 技能',c:'#7c3aed'},
@@ -19768,6 +19819,85 @@ ${b.text}
       {id:'gacha', lbl:'🎰 扭蛋',c:'#d97706'},
     ];
     const tabNav = `<div style="display:flex;gap:3px;margin-bottom:10px;">${TABS.map(t=>`<button onclick="hellTab('${t.id}')" style="flex:1;padding:7px 2px;border:none;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;background:${activeTab===t.id?`linear-gradient(135deg,${t.c}99,${t.c})`:'#1a0000'};color:${activeTab===t.id?'#fff':'#9ca3af'};border:1px solid ${activeTab===t.id?t.c:'#3f0000'};">${t.lbl}</button>`).join('')}</div>`;
+
+    // ===== 戰鬥模式 HTML =====
+    const hbCls   = rpg.hellBattleClass;
+    const hbClsDef= hbCls ? CLASSES[hbCls] : null;
+    const hbLv    = rpg.hellBattleLv  || 1;
+    const hbXp    = rpg.hellBattleXp  || 0;
+    const hbSP    = rpg.hellBattleSkillPoints || 0;
+    const hbXpMax = 100 + (hbLv - 1) * 80;
+    const hbXpPct = Math.min(100, Math.round(hbXp / hbXpMax * 100));
+    const hbBatStats = computeHellBattleStats(rpg);
+    const battleTargets = (players||[]).filter(p=>p && p.id!==me.id && p.rpg?.class && p.rpg.class!=='hellmessenger');
+    const battleModeHtml = (() => {
+      if (!hbCls) {
+        // 選職業介面
+        const clsChoices = ['warrior','archer','paladin','mage'].map(c=>{
+          const cd = CLASSES[c]; if(!cd) return '';
+          return `<button onclick="hellSelectBattleClass('${c}')" style="padding:12px 8px;border:none;border-radius:10px;cursor:pointer;background:linear-gradient(135deg,#0d0020,#1a003a);color:#e9d5ff;font-size:12px;font-weight:700;border:1px solid #4c1d95;display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <span style="font-size:24px;">${cd.icon||'⚔️'}</span>
+            <span>${cd.name}</span>
+          </button>`;
+        }).join('');
+        return `<div style="padding:12px 0;">
+          <div style="font-size:13px;font-weight:800;color:#c084fc;margin-bottom:10px;">⚔️ 選擇戰鬥職業</div>
+          <div style="font-size:11px;color:#9ca3af;margin-bottom:12px;">地獄使者以自身力量挑戰玩家。選擇職業後獲得 5 技能點起手，所有經驗只能從決鬥獲得（勝利較少，落敗 ×2）。</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">${clsChoices}</div>
+        </div>`;
+      }
+      // 戰鬥資訊
+      const battleStatsRow = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;font-size:10px;margin-top:6px;">
+        <div style="background:#0d0020;padding:4px 6px;border-radius:5px;text-align:center;"><div style="color:#fca5a5;">ATK</div><div style="color:#fff;font-weight:700;">${hbBatStats.atk}</div></div>
+        <div style="background:#0d0020;padding:4px 6px;border-radius:5px;text-align:center;"><div style="color:#fca5a5;">DEF</div><div style="color:#fff;font-weight:700;">${hbBatStats.def}</div></div>
+        <div style="background:#0d0020;padding:4px 6px;border-radius:5px;text-align:center;"><div style="color:#fca5a5;">HP</div><div style="color:#fff;font-weight:700;">${hbBatStats.hp}</div></div>
+        <div style="background:#0d0020;padding:4px 6px;border-radius:5px;text-align:center;"><div style="color:#fca5a5;">SPD</div><div style="color:#fff;font-weight:700;">${hbBatStats.spd}</div></div>
+        <div style="background:#0d0020;padding:4px 6px;border-radius:5px;text-align:center;"><div style="color:#fca5a5;">MARK</div><div style="color:#fff;font-weight:700;">${hbBatStats.mark}</div></div>
+        <div style="background:#0d0020;padding:4px 6px;border-radius:5px;text-align:center;"><div style="color:#fca5a5;">MP</div><div style="color:#fff;font-weight:700;">${hbBatStats.mp}</div></div>
+      </div>`;
+      const targetListHtml = battleTargets.length===0
+        ? `<div style="color:#6b7280;font-size:12px;text-align:center;padding:10px;">目前沒有可挑戰目標</div>`
+        : battleTargets.map(t=>{
+            const tRpg=getRpg(t); const tCls=CLASSES[tRpg.class]||{};
+            rpg.hellBattleCd = rpg.hellBattleCd||{};
+            const cdRem = Math.max(0, (rpg.hellBattleCd[t.id]||0)+30*60*1000 - Date.now());
+            return `<div style="background:#0d0020;border:1px solid #3b0764;border-radius:8px;padding:8px 10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:11px;font-weight:700;color:#e9d5ff;">${escapeHtml(tCls.icon||'?')} ${escapeHtml(t.name||t.id)} <span style="color:#6b7280;font-size:10px;">Lv${tRpg.level||1} ${escapeHtml(tCls.name||'')}</span></div>
+                ${cdRem>0?`<div style="font-size:9px;color:#6b7280;">⏳ CD ${Math.ceil(cdRem/60000)}min</div>`:''}
+              </div>
+              ${cdRem>0
+                ?`<button disabled style="padding:5px 10px;border:none;border-radius:6px;background:#374151;color:#6b7280;font-size:10px;font-weight:700;cursor:not-allowed;">冷卻中</button>`
+                :`<button onclick="hellChallengePlayer('${t.id}')" style="padding:5px 10px;border:none;border-radius:6px;background:linear-gradient(135deg,#1a003a,#7c3aed);color:#e9d5ff;font-size:10px;font-weight:700;cursor:pointer;">⚔️ 挑戰</button>`}
+            </div>`;
+          }).join('');
+      return `
+        <!-- 戰鬥資訊卡 -->
+        <div style="background:#0d0020;border:1px solid #4c1d95;border-radius:10px;padding:10px 12px;margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <div style="font-size:13px;font-weight:800;color:#c084fc;">${hbClsDef?.icon||'⚔️'} ${hbClsDef?.name||'?'} 戰鬥模式</div>
+            <button onclick="hellSelectBattleClass(null)" style="font-size:9px;padding:2px 6px;border:none;border-radius:4px;background:#1a0040;color:#9ca3af;cursor:pointer;">換職業</button>
+          </div>
+          <div style="font-size:11px;color:#9ca3af;">戰鬥 Lv ${hbLv}　${hbLv<20?hbXp+' / '+hbXpMax+' EXP':'✨ MAX'}</div>
+          <div style="background:#1a003a;border-radius:3px;height:4px;margin:4px 0;"><div style="height:100%;width:${hbXpPct}%;background:linear-gradient(90deg,#7c3aed,#a855f7);border-radius:3px;"></div></div>
+          <div style="font-size:11px;color:#fbbf24;">🎯 技能點 <b>${hbSP} SP</b>
+            <button onclick="hellShowBattleSkillModal()" style="margin-left:8px;padding:2px 8px;border:none;border-radius:5px;background:${hbSP>0?'linear-gradient(135deg,#4c1d95,#7c3aed)':'#374151'};color:#fff;font-size:9px;font-weight:700;cursor:pointer;">分配技能</button>
+          </div>
+          ${battleStatsRow}
+          <div style="font-size:9px;color:#4b5563;margin-top:4px;">※ 裝備欄（詛咒模式）的 bat* 屬性加成於戰鬥中生效</div>
+        </div>
+        <!-- 挑戰目標 -->
+        <div style="font-size:12px;font-weight:700;color:#c084fc;margin-bottom:6px;">⚔️ 可挑戰玩家</div>
+        ${targetListHtml}
+        <div style="font-size:10px;color:#4b0000;text-align:center;margin-top:8px;">勝利 EXP 較低・落敗獲 2 倍 EXP（越挫越勇）</div>
+      `;
+    })();
+
+    // ===== 模式切換按鈕 =====
+    const modeSwitchHtml = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+      <button onclick="window._hellMode='curse';renderHellMessenger()" style="padding:8px;border:none;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;background:${hellMode==='curse'?'linear-gradient(135deg,#7f1d1d,#dc2626)':'#1a0000'};color:${hellMode==='curse'?'#fff':'#9ca3af'};border:1px solid ${hellMode==='curse'?'#dc2626':'#3f0000'};">😈 詛咒模式</button>
+      <button onclick="window._hellMode='battle';renderHellMessenger()" style="padding:8px;border:none;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;background:${hellMode==='battle'?'linear-gradient(135deg,#1a003a,#7c3aed)':'#1a0000'};color:${hellMode==='battle'?'#fff':'#9ca3af'};border:1px solid ${hellMode==='battle'?'#7c3aed':'#3f0000'};">⚔️ 戰鬥模式</button>
+    </div>`;
 
     stage.innerHTML = `
       <div style="background:linear-gradient(180deg,#0d0000,#1a0000);min-height:100vh;padding:12px;color:#fca5a5;">
@@ -19792,14 +19922,20 @@ ${b.text}
           ${statBadges?`<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px;">${statBadges}</div>`:''}
         </div>
 
-        <!-- Tab Nav -->
-        ${tabNav}
+        <!-- 模式切換 -->
+        ${modeSwitchHtml}
 
-        <!-- Tab Content -->
+        ${hellMode==='curse'?`
+        <!-- 詛咒模式：4 分頁 -->
+        ${tabNav}
         ${activeTab==='action'?actionTabHtml:''}
         ${activeTab==='skills'?skillsTabHtml:''}
         ${activeTab==='equip' ?equipTabHtml :''}
         ${activeTab==='gacha' ?gachaTabHtml :''}
+        `:`
+        <!-- 戰鬥模式 -->
+        ${battleModeHtml}
+        `}
 
         <!-- 業績 -->
         <div style="background:#0d0000;border:1px solid #7f1d1d;border-radius:9px;padding:9px 11px;margin-top:10px;margin-bottom:8px;">
@@ -19830,6 +19966,218 @@ ${b.text}
       </div>`;
   }
   window.renderHellMessenger = renderHellMessenger;
+
+  // ============================================================
+  // ⭐⭐⭐  地獄使者：戰鬥模式輔助函式  ⭐⭐⭐
+  // ============================================================
+
+  // 計算裝備的戰鬥 bat* 屬性加成
+  function computeHellBattleStats(rpg) {
+    const equip = rpg.hellEquip || {};
+    const s = { atk:0, def:0, hp:0, spd:0, mark:0, mp:0 };
+    for (const slot of HELL_EQUIP_SLOTS) {
+      const id = equip[slot]; if (!id) continue;
+      const item = HELL_GACHA_POOL.find(x => x.id === id); if (!item) continue;
+      if (item.batAtk)  s.atk  += item.batAtk;
+      if (item.batDef)  s.def  += item.batDef;
+      if (item.batHp)   s.hp   += item.batHp;
+      if (item.batSpd)  s.spd  += item.batSpd;
+      if (item.batMark) s.mark += item.batMark;
+      if (item.batMp)   s.mp   += item.batMp;
+    }
+    return s;
+  }
+  window.computeHellBattleStats = computeHellBattleStats;
+
+  // 戰鬥 EXP + 升等（每升一等 +2 技能點）
+  function hellBattleGainExp(me, amount) {
+    const rpg = getRpg(me);
+    rpg.hellBattleLv  = rpg.hellBattleLv  || 1;
+    rpg.hellBattleXp  = (rpg.hellBattleXp || 0) + amount;
+    const xpPerLv = (lv) => 100 + (lv - 1) * 80;
+    let leveled = false;
+    while (rpg.hellBattleLv < 20) {
+      const needed = xpPerLv(rpg.hellBattleLv);
+      if (rpg.hellBattleXp >= needed) {
+        rpg.hellBattleXp -= needed;
+        rpg.hellBattleLv++;
+        rpg.hellBattleSkillPoints = (rpg.hellBattleSkillPoints || 0) + POINTS_PER_LEVEL.skill;
+        leveled = true;
+      } else break;
+    }
+    if (leveled) showToast(`⚔️ 戰鬥等級升至 Lv${rpg.hellBattleLv}！+${POINTS_PER_LEVEL.skill} 技能點`);
+  }
+
+  // 選擇戰鬥職業
+  function hellSelectBattleClass(cls) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (cls === null) {
+      // 重選：清空職業但保留其他資料
+      delete rpg.hellBattleClass;
+      saveData(); window._hellMode = 'battle'; renderHellMessenger(); return;
+    }
+    if (!CLASSES[cls] || CLASSES[cls].isHellSpecial) { showToast('無效職業'); return; }
+    rpg.hellBattleClass         = cls;
+    rpg.hellBattleLv            = rpg.hellBattleLv || 1;
+    rpg.hellBattleXp            = rpg.hellBattleXp || 0;
+    if (rpg.hellBattleSkillPoints == null) rpg.hellBattleSkillPoints = 5;
+    rpg.hellBattleSkills        = rpg.hellBattleSkills        || {};
+    rpg.hellBattleSkillLevels   = rpg.hellBattleSkillLevels   || {};
+    rpg.hellBattleAbilities     = rpg.hellBattleAbilities     || {};
+    rpg.hellBattleAbilityTree   = rpg.hellBattleAbilityTree   || {};
+    rpg.hellBattleCd            = rpg.hellBattleCd            || {};
+    saveData(); renderHellMessenger();
+    showToast(`⚔️ 選擇了【${CLASSES[cls].name}】！起手 5 技能點可分配。`);
+  }
+  window.hellSelectBattleClass = hellSelectBattleClass;
+
+  // 技能樹節點加點（被動強化）
+  function hellBattleLearnSkill(nodeId) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const cls = CLASSES[rpg.hellBattleClass]; if (!cls?.skillTree) return;
+    const node = cls.skillTree.find(n => n.id === nodeId); if (!node) return;
+    if ((rpg.hellBattleSkillPoints || 0) < 1) { showToast('沒有可用技能點'); return; }
+    const cur = (rpg.hellBattleSkills || {})[nodeId] || 0;
+    if (cur >= node.maxLevel) { showToast('已達最高等'); return; }
+    rpg.hellBattleSkills = rpg.hellBattleSkills || {};
+    rpg.hellBattleSkills[nodeId] = cur + 1;
+    rpg.hellBattleSkillPoints -= 1;
+    saveData(); renderHellMessenger();
+    // 刷新技能 modal（若開著）
+    const modalEl = document.getElementById('genericModal');
+    if (modalEl && !modalEl.classList.contains('hidden')) hellShowBattleSkillModal();
+    showToast(`✨ ${node.name} → Lv ${cur + 1}`);
+  }
+  window.hellBattleLearnSkill = hellBattleLearnSkill;
+
+  // 主動技能加點
+  function hellBattleLearnActiveSkill(skillId) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const cls = CLASSES[rpg.hellBattleClass]; if (!cls) return;
+    const skill = (cls.skills || []).find(s => s.id === skillId); if (!skill) return;
+    if ((rpg.hellBattleLv || 1) < (skill.unlockLv || 1)) { showToast(`需要戰鬥 Lv${skill.unlockLv}`); return; }
+    if ((rpg.hellBattleSkillPoints || 0) < 1) { showToast('沒有可用技能點'); return; }
+    const sMax = skill.maxLv || SKILL_MAX_LEVEL;
+    const cur = (rpg.hellBattleSkillLevels || {})[skillId] || 0;
+    if (cur >= sMax) { showToast('已達最高等'); return; }
+    rpg.hellBattleSkillLevels = rpg.hellBattleSkillLevels || {};
+    rpg.hellBattleSkillLevels[skillId] = cur + 1;
+    rpg.hellBattleSkillPoints -= 1;
+    saveData(); renderHellMessenger();
+    const modalEl = document.getElementById('genericModal');
+    if (modalEl && !modalEl.classList.contains('hidden')) hellShowBattleSkillModal();
+    showToast(`✨ ${skill.name} → Lv ${cur + 1}`);
+  }
+  window.hellBattleLearnActiveSkill = hellBattleLearnActiveSkill;
+
+  // 技能分配 modal
+  function hellShowBattleSkillModal() {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const cls = CLASSES[rpg.hellBattleClass]; if (!cls) return;
+    const points = rpg.hellBattleSkillPoints || 0;
+    const activeHtml = (cls.skills || []).map(s => {
+      const locked = (s.unlockLv || 1) > (rpg.hellBattleLv || 1);
+      const sLv = (rpg.hellBattleSkillLevels || {})[s.id] || 0;
+      const sMax = s.maxLv || SKILL_MAX_LEVEL;
+      const canUp = !locked && sLv < sMax && points >= 1;
+      return `<div style="padding:6px 8px;margin-bottom:4px;background:#0d0020;border-radius:7px;border:1px solid #3b0764;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12px;color:#c084fc;">${s.icon} ${s.name} <span style="color:#6b7280;font-size:10px;">Lv${sLv}/${sMax}</span></span>
+          <button onclick="hellBattleLearnActiveSkill('${s.id}')" ${canUp?'':'disabled'} style="padding:2px 9px;border:none;border-radius:5px;background:${canUp?'linear-gradient(135deg,#4c1d95,#7c3aed)':'#374151'};color:#fff;font-size:10px;font-weight:700;cursor:pointer;">+</button>
+        </div>
+        ${locked?`<div style="font-size:10px;color:#4b0000;">🔒 需戰鬥 Lv${s.unlockLv}</div>`:''}
+      </div>`;
+    }).join('');
+    const treeHtml = (cls.skillTree || []).map(node => {
+      const lv = (rpg.hellBattleSkills || {})[node.id] || 0;
+      const maxed = lv >= node.maxLevel;
+      const canLearn = !maxed && points >= 1;
+      return `<div style="padding:6px 8px;margin-bottom:4px;background:#001a00;border-radius:7px;border:1px solid #14532d;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:12px;color:#86efac;">${node.icon} ${escapeHtml(node.name)} <span style="color:#6b7280;font-size:10px;">Lv${lv}/${node.maxLevel}</span></div>
+          <button onclick="hellBattleLearnSkill('${node.id}')" ${canLearn?'':'disabled'} style="padding:2px 9px;border:none;border-radius:5px;background:${canLearn?'linear-gradient(135deg,#14532d,#16a34a)':'#374151'};color:#fff;font-size:10px;font-weight:700;cursor:pointer;">+</button>
+        </div>
+        <div style="font-size:10px;color:#6b7280;">${escapeHtml(node.desc)}</div>
+      </div>`;
+    }).join('');
+    showModal('⚔️ 戰鬥技能分配', `
+      <div style="background:#0d0020;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:13px;color:#c084fc;font-weight:700;">
+        可用技能點：<span style="color:#fbbf24;font-size:16px;">${points} SP</span>　·　每升 1 等 +2 SP（起始 5 SP）
+      </div>
+      <div style="font-size:11px;font-weight:700;color:#e9d5ff;margin:6px 0 4px;">⚡ 主動技能</div>
+      ${activeHtml || '<div style="color:#6b7280;font-size:11px;text-align:center;">尚無主動技能</div>'}
+      <div style="font-size:11px;font-weight:700;color:#86efac;margin:8px 0 4px;">🌿 屬性強化</div>
+      ${treeHtml || '<div style="color:#6b7280;font-size:11px;text-align:center;">尚無技能樹</div>'}
+    `);
+  }
+  window.hellShowBattleSkillModal = hellShowBattleSkillModal;
+
+  // 挑戰玩家（戰鬥模式核心）
+  function hellChallengePlayer(targetId) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (!rpg.hellBattleClass) {
+      showToast('請先在【戰鬥模式】選擇職業！');
+      window._hellMode = 'battle'; renderHellMessenger(); return;
+    }
+    const target = players.find(p => p && p.id === targetId);
+    if (!target) { showToast('找不到目標'); return; }
+    // CD 30 min
+    rpg.hellBattleCd = rpg.hellBattleCd || {};
+    const cdRem = Math.max(0, (rpg.hellBattleCd[targetId] || 0) + 30*60*1000 - Date.now());
+    if (cdRem > 0) { showToast(`⏳ 冷卻中（剩 ${Math.ceil(cdRem/60000)} min）`); return; }
+
+    // 建立戰鬥替身（複製，不動真實 rpg）
+    const batBonus = computeHellBattleStats(rpg);
+    const battleRpg = {
+      class:            rpg.hellBattleClass,
+      level:            rpg.hellBattleLv || 1,
+      skills:           rpg.hellBattleSkills        || {},
+      skillLevels:      rpg.hellBattleSkillLevels   || {},
+      abilities:        rpg.hellBattleAbilities      || {},
+      abilityTree:      rpg.hellBattleAbilityTree    || {},
+      equipment: {}, equippedGems: {}, gems: {},
+      spirits: [], spiritBag: [], treasure: [],
+      _hellBattleBonusStats: batBonus,
+    };
+    const battlePlayer = { id: me.id, name: me.name, rpg: battleRpg };
+    const bStats = computeStats(battlePlayer);
+    if (bStats) { battleRpg.hp = bStats.maxHp; battleRpg.mp = bStats.maxMp; }
+
+    const result = autoFightPvP(battlePlayer, target);
+
+    // XP：勝利 30，落敗 60（2 倍）
+    const xpGained = result.won ? 30 : 60;
+    hellBattleGainExp(me, xpGained);
+    rpg.hellBattleCd[targetId] = Date.now();
+    rpg.hellStats = rpg.hellStats || {};
+    rpg.hellStats.duelCount = (rpg.hellStats.duelCount || 0) + 1;
+
+    // 廣播
+    if (result.won) {
+      broadcastHellAction('⚔️', `地獄使者 【${escapeHtml(me.name||'???')}】 在正面決鬥中擊潰了 ${escapeHtml(target.name)}！（+${xpGained} EXP）`);
+    } else {
+      broadcastHellAction('💀', `地獄使者 【${escapeHtml(me.name||'???')}】 向 ${escapeHtml(target.name)} 發起決鬥落敗，越挫越勇！（+${xpGained} EXP）`);
+    }
+    saveData();
+
+    const logLines = result.log.slice(-15).map(e =>
+      `<div style="font-size:11px;color:${e.type==='player'?'#93c5fd':e.type==='monster'?'#fca5a5':'#9ca3af'};padding:1px 0;">${escapeHtml(e.text||'')}</div>`
+    ).join('');
+    showModal(result.won ? '⚔️ 決鬥勝利！' : '💀 決鬥落敗', `
+      <div style="background:#0d0000;border-radius:8px;padding:8px;margin-bottom:10px;max-height:200px;overflow-y:auto;">${logLines}</div>
+      <div style="text-align:center;font-size:14px;font-weight:800;color:${result.won?'#fde047':'#f87171'};">
+        ${result.won ? '⚔️ 地獄使者勝！' : '💀 地獄使者敗！'}
+      </div>
+      <div style="text-align:center;font-size:12px;color:#9ca3af;margin-top:4px;">獲得 <b style="color:#fbbf24;">${xpGained} 戰鬥 EXP</b>（${result.won?'勝利':'落敗 ×2'}）</div>
+      <button onclick="hideModal();renderHellMessenger();" style="margin-top:12px;width:100%;padding:10px;border:none;border-radius:8px;background:#374151;color:#fff;cursor:pointer;font-size:13px;font-weight:700;">關閉</button>
+    `);
+  }
+  window.hellChallengePlayer = hellChallengePlayer;
 
   // ============================================================
   // ⭐⭐⭐  競技場系統（Arena / PvP）  ⭐⭐⭐
