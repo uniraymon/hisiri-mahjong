@@ -2444,11 +2444,37 @@
       icon: '💀', name: '地獄使者',
       desc: '黑暗使者，以靈力施懲於眾生',
       isHellSpecial: true,
-      hp: 1, atk: 0, def: 0, spd: 0, mark: 0,
-      mp: 0, mpPer: 0,
-      hpPer: 0, atkPer: 0, defPer: 0, spdPer: 0, markPer: 0,
-      regenPer: 0, attackVerb: '詛咒',
-      skills: [], skillTree: [], passives: [],
+      hp: 1500, hpPer: 200,
+      atk: 110,  atkPer: 18,
+      def: 70,   defPer: 12,
+      spd: 85,   spdPer: 8,
+      mark: 10,  markPer: 2,
+      mp: 40,    mpPer: 6,
+      regenPer: 0.02,
+      attackVerb: '靈魂攻擊',
+      skills: [
+        // 靈魂斬：1.8× ATK，無視 DEF，低 MP — 基礎輸出
+        { id: 'hm_soul_slash',   name: '靈魂斬',   icon: '⚔️', unlockLv: 1,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.8, ignoreDef: true },
+        // 詛咒爆發：2.0× ATK + 強毒（4 charges, 55/回）
+        { id: 'hm_curse_burst',  name: '詛咒爆發', icon: '💜', unlockLv: 2,  cooldown: 0, mpCost: 30, type: 'damage', mult: 2.0, applyStatus: { type: 'poison', charges: 4, dmg: 55, chance: 0.80 } },
+        // 業障護盾：DEF +50%（4 回合）— 防守技
+        { id: 'hm_karma_shield', name: '業障護盾', icon: '🛡️', unlockLv: 3,  cooldown: 0, mpCost: 25, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.50, turns: 4, key: 'hm_karma_shield' } },
+        // 地獄汲取：回復 12% maxHP + MP 回充（免費）
+        { id: 'hm_hell_drain',   name: '地獄汲取', icon: '🩸', unlockLv: 5,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.12, isMpRegen: true },
+        // 地獄烈焰：3.2× ATK + 強灼（3 charges, 90/回，90% 機率）
+        { id: 'hm_hellfire',     name: '地獄烈焰', icon: '🔥', unlockLv: 8,  cooldown: 0, mpCost: 50, type: 'damage', mult: 3.2, applyStatus: { type: 'poison', charges: 3, dmg: 90, chance: 0.90 } },
+        // 魔王怒吼：4.5× ATK + 麻痺（2 charges，70% 機率）— 大招
+        { id: 'hm_death_howl',   name: '魔王怒吼', icon: '💀', unlockLv: 10, cooldown: 0, mpCost: 65, type: 'damage', mult: 4.5, applyStatus: { type: 'paralyze', charges: 2, chance: 0.70 } },
+      ],
+      skillTree: [
+        { id: 'hm_dark_atk',   name: '黑暗強化', icon: '⚔️', desc: '+3% ATK',       maxLevel: 5, effect: 'atkPct',      per: 0.03 },
+        { id: 'hm_evil_def',   name: '邪能護盾', icon: '🛡',  desc: '+2% DEF',       maxLevel: 5, effect: 'defPct',      per: 0.02 },
+        { id: 'hm_karma_crit', name: '業力爆擊', icon: '💥',  desc: '+3% 暴擊率',    maxLevel: 5, effect: 'critChance',  per: 0.03 },
+        { id: 'hm_soul_spd',   name: '冥力流動', icon: '💨',  desc: '+3% SPD',       maxLevel: 5, effect: 'spdPct',      per: 0.03 },
+        { id: 'hm_hell_hp',    name: '地獄意志', icon: '❤️',  desc: '+5% 最大 HP',   maxLevel: 5, effect: 'hpPct',       per: 0.05 },
+        { id: 'hm_skill_dmg',  name: '靈魂精通', icon: '🌟',  desc: '+5% 技能傷害',  maxLevel: 5, effect: 'skillDmgPct', per: 0.05 },
+      ],
+      passives: [],
     },
   };
 
@@ -3436,7 +3462,27 @@
         </div>`;
       return;
     }
-    const cardsHtml = WB9_BOSSES.map(boss => {
+    // ===== 分頁 tab =====
+    if (!window._wb9ActiveTab || !WB9_BOSSES.find(b => b.id === window._wb9ActiveTab)) {
+      window._wb9ActiveTab = WB9_BOSSES[0]?.id;
+    }
+    const tabNavHtml = `<div style="display:flex;gap:4px;margin-bottom:10px;overflow-x:auto;">
+      ${WB9_BOSSES.map(b => {
+        const bState = wb9GetState(b.id);
+        const bHpPct = Math.max(0, Math.min(100, (bState.hp / b.maxHp) * 100));
+        const isActive = window._wb9ActiveTab === b.id;
+        return `<button onclick="window._wb9ActiveTab='${b.id}';wb9Render()" style="flex:0 0 auto;padding:7px 10px;border:none;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;
+          background:${isActive?'linear-gradient(135deg,#7c3aed,#4c1d95)':'#1e1b4b'};
+          color:${isActive?'#fff':'#94a3b8'};
+          border:1px solid ${isActive?'#7c3aed':'#312e81'};
+          white-space:nowrap;">
+          ${b.icon} ${b.name}
+          <div style="font-size:9px;margin-top:2px;color:${isActive?'#c4b5fd':'#6b7280'};">${bHpPct.toFixed(0)}% HP</div>
+        </button>`;
+      }).join('')}
+    </div>`;
+
+    const cardsHtml = WB9_BOSSES.filter(b => b.id === window._wb9ActiveTab).map(boss => {
       const state = wb9GetState(boss.id);
       const hpPct = Math.max(0, Math.min(100, (state.hp / boss.maxHp) * 100));
       const queue = (state.queue || []);
@@ -3537,6 +3583,7 @@
         🛠️ <b>世界王 v9 — Commit 5</b>　排隊 + 攻擊 + 戰報 + UI（${WB9_TESTING_NO_REWARDS ? '測試：獎勵不發放' : '正式模式'}）<br>
         <span style="font-size:10px; color:#a16207;">EXP 上限 ${WB9_MAX_XP_PER_FIGHT}　·　5 分鐘冷卻</span>
       </div>
+      ${tabNavHtml}
       ${cardsHtml}
     `;
     el.dataset.disabledShown = '';
@@ -12067,7 +12114,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508025941';
+  const APP_VERSION = '20260508031201';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -14406,7 +14453,7 @@ ${b.text}
 
   function renderClassPicker() {
     const grid = document.getElementById('classGrid');
-    grid.innerHTML = Object.entries(CLASSES).map(([id, c]) => `
+    grid.innerHTML = Object.entries(CLASSES).filter(([id, c]) => !c.isHellSpecial).map(([id, c]) => `
       <button class="class-card" onclick="pickClass('${id}')">
         <div class="cls-icon">${c.icon}</div>
         <div class="cls-name">${c.name}</div>
@@ -19831,29 +19878,26 @@ ${b.text}
     const hbBatStats = computeHellBattleStats(rpg);
     const battleTargets = (players||[]).filter(p=>p && p.id!==me.id && p.rpg?.class && p.rpg.class!=='hellmessenger');
     const battleModeHtml = (() => {
-      if (!hbCls) {
-        // 選職業介面
-        const clsChoices = ['warrior','archer','paladin','mage'].map(c=>{
-          const cd = CLASSES[c]; if(!cd) return '';
-          return `<button onclick="hellSelectBattleClass('${c}')" style="padding:12px 8px;border:none;border-radius:10px;cursor:pointer;background:linear-gradient(135deg,#0d0020,#1a003a);color:#e9d5ff;font-size:12px;font-weight:700;border:1px solid #4c1d95;display:flex;flex-direction:column;align-items:center;gap:4px;">
-            <span style="font-size:24px;">${cd.icon||'⚔️'}</span>
-            <span>${cd.name}</span>
-          </button>`;
-        }).join('');
-        return `<div style="padding:12px 0;">
-          <div style="font-size:13px;font-weight:800;color:#c084fc;margin-bottom:10px;">⚔️ 選擇戰鬥職業</div>
-          <div style="font-size:11px;color:#9ca3af;margin-bottom:12px;">地獄使者以自身力量挑戰玩家。選擇職業後獲得 5 技能點起手，所有經驗只能從決鬥獲得（勝利較少，落敗 ×2）。</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">${clsChoices}</div>
-        </div>`;
-      }
-      // 戰鬥資訊
+      // 地獄使者固定職業，直接顯示戰鬥資訊
+      const hmCls = CLASSES['hellmessenger'];
+      // 計算含裝備加成後的完整戰鬥屬性
+      const _batBonus = computeHellBattleStats(rpg);
+      const _tempBattleRpg = {
+        class: 'hellmessenger', level: hbLv,
+        skills: rpg.hellBattleSkills || {}, skillLevels: rpg.hellBattleSkillLevels || {},
+        abilities: rpg.hellBattleAbilities || {}, abilityTree: rpg.hellBattleAbilityTree || {},
+        equipment: {}, equippedGems: {}, gems: {}, spirits: [], spiritBag: [], treasure: [],
+        _hellBattleBonusStats: _batBonus,
+      };
+      const _batPlayer = { id: me.id, name: me.name, rpg: _tempBattleRpg };
+      const _fullStats = computeStats(_batPlayer) || {};
       const battleStatsRow = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;font-size:10px;margin-top:6px;">
-        <div style="background:#0d0020;padding:4px 6px;border-radius:5px;text-align:center;"><div style="color:#fca5a5;">ATK</div><div style="color:#fff;font-weight:700;">${hbBatStats.atk}</div></div>
-        <div style="background:#0d0020;padding:4px 6px;border-radius:5px;text-align:center;"><div style="color:#fca5a5;">DEF</div><div style="color:#fff;font-weight:700;">${hbBatStats.def}</div></div>
-        <div style="background:#0d0020;padding:4px 6px;border-radius:5px;text-align:center;"><div style="color:#fca5a5;">HP</div><div style="color:#fff;font-weight:700;">${hbBatStats.hp}</div></div>
-        <div style="background:#0d0020;padding:4px 6px;border-radius:5px;text-align:center;"><div style="color:#fca5a5;">SPD</div><div style="color:#fff;font-weight:700;">${hbBatStats.spd}</div></div>
-        <div style="background:#0d0020;padding:4px 6px;border-radius:5px;text-align:center;"><div style="color:#fca5a5;">MARK</div><div style="color:#fff;font-weight:700;">${hbBatStats.mark}</div></div>
-        <div style="background:#0d0020;padding:4px 6px;border-radius:5px;text-align:center;"><div style="color:#fca5a5;">MP</div><div style="color:#fff;font-weight:700;">${hbBatStats.mp}</div></div>
+        <div style="background:#0d0020;padding:4px 6px;border-radius:5px;text-align:center;"><div style="color:#fca5a5;">ATK</div><div style="color:#fff;font-weight:700;">${_fullStats.atk||0}</div></div>
+        <div style="background:#0d0020;padding:4px 6px;border-radius:5px;text-align:center;"><div style="color:#fca5a5;">DEF</div><div style="color:#fff;font-weight:700;">${_fullStats.def||0}</div></div>
+        <div style="background:#0d0020;padding:4px 6px;border-radius:5px;text-align:center;"><div style="color:#fca5a5;">HP</div><div style="color:#fff;font-weight:700;">${_fullStats.maxHp||0}</div></div>
+        <div style="background:#0d0020;padding:4px 6px;border-radius:5px;text-align:center;"><div style="color:#fca5a5;">SPD</div><div style="color:#fff;font-weight:700;">${_fullStats.spd||0}</div></div>
+        <div style="background:#0d0020;padding:4px 6px;border-radius:5px;text-align:center;"><div style="color:#fca5a5;">MARK</div><div style="color:#fff;font-weight:700;">${_fullStats.mark||0}</div></div>
+        <div style="background:#0d0020;padding:4px 6px;border-radius:5px;text-align:center;"><div style="color:#fca5a5;">MP</div><div style="color:#fff;font-weight:700;">${_fullStats.maxMp||0}</div></div>
       </div>`;
       const targetListHtml = battleTargets.length===0
         ? `<div style="color:#6b7280;font-size:12px;text-align:center;padding:10px;">目前沒有可挑戰目標</div>`
@@ -19874,10 +19918,7 @@ ${b.text}
       return `
         <!-- 戰鬥資訊卡 -->
         <div style="background:#0d0020;border:1px solid #4c1d95;border-radius:10px;padding:10px 12px;margin-bottom:10px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-            <div style="font-size:13px;font-weight:800;color:#c084fc;">${hbClsDef?.icon||'⚔️'} ${hbClsDef?.name||'?'} 戰鬥模式</div>
-            <button onclick="hellSelectBattleClass(null)" style="font-size:9px;padding:2px 6px;border:none;border-radius:4px;background:#1a0040;color:#9ca3af;cursor:pointer;">換職業</button>
-          </div>
+          <div style="font-size:13px;font-weight:800;color:#c084fc;margin-bottom:4px;">💀 地獄使者 戰鬥模式</div>
           <div style="font-size:11px;color:#9ca3af;">戰鬥 Lv ${hbLv}　${hbLv<20?hbXp+' / '+hbXpMax+' EXP':'✨ MAX'}</div>
           <div style="background:#1a003a;border-radius:3px;height:4px;margin:4px 0;"><div style="height:100%;width:${hbXpPct}%;background:linear-gradient(90deg,#7c3aed,#a855f7);border-radius:3px;"></div></div>
           <div style="font-size:11px;color:#fbbf24;">🎯 技能點 <b>${hbSP} SP</b>
@@ -20036,7 +20077,7 @@ ${b.text}
   function hellBattleLearnSkill(nodeId) {
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
-    const cls = CLASSES[rpg.hellBattleClass]; if (!cls?.skillTree) return;
+    const cls = CLASSES['hellmessenger']; if (!cls?.skillTree) return;
     const node = cls.skillTree.find(n => n.id === nodeId); if (!node) return;
     if ((rpg.hellBattleSkillPoints || 0) < 1) { showToast('沒有可用技能點'); return; }
     const cur = (rpg.hellBattleSkills || {})[nodeId] || 0;
@@ -20056,7 +20097,7 @@ ${b.text}
   function hellBattleLearnActiveSkill(skillId) {
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
-    const cls = CLASSES[rpg.hellBattleClass]; if (!cls) return;
+    const cls = CLASSES['hellmessenger']; if (!cls) return;
     const skill = (cls.skills || []).find(s => s.id === skillId); if (!skill) return;
     if ((rpg.hellBattleLv || 1) < (skill.unlockLv || 1)) { showToast(`需要戰鬥 Lv${skill.unlockLv}`); return; }
     if ((rpg.hellBattleSkillPoints || 0) < 1) { showToast('沒有可用技能點'); return; }
@@ -20077,7 +20118,7 @@ ${b.text}
   function hellShowBattleSkillModal() {
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
-    const cls = CLASSES[rpg.hellBattleClass]; if (!cls) return;
+    const cls = CLASSES['hellmessenger']; if (!cls) return;
     const points = rpg.hellBattleSkillPoints || 0;
     const activeHtml = (cls.skills || []).map(s => {
       const locked = (s.unlockLv || 1) > (rpg.hellBattleLv || 1);
@@ -20120,10 +20161,6 @@ ${b.text}
   function hellChallengePlayer(targetId) {
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
-    if (!rpg.hellBattleClass) {
-      showToast('請先在【戰鬥模式】選擇職業！');
-      window._hellMode = 'battle'; renderHellMessenger(); return;
-    }
     const target = players.find(p => p && p.id === targetId);
     if (!target) { showToast('找不到目標'); return; }
     // CD 30 min
@@ -20134,7 +20171,7 @@ ${b.text}
     // 建立戰鬥替身（複製，不動真實 rpg）
     const batBonus = computeHellBattleStats(rpg);
     const battleRpg = {
-      class:            rpg.hellBattleClass,
+      class:            'hellmessenger',
       level:            rpg.hellBattleLv || 1,
       skills:           rpg.hellBattleSkills        || {},
       skillLevels:      rpg.hellBattleSkillLevels   || {},
