@@ -5322,6 +5322,11 @@
     { id: 'dex', name: '技巧 DEX', short: 'DEX', icon: '🎯', desc: '+0.4% 暴擊率 / 點' },
     { id: 'int', name: '智力 INT', short: 'INT', icon: '📚', desc: '+2 MP / 點，+0.5 法術傷害，+1.5 MARK' },
     { id: 'luk', name: '幸運 LUK', short: 'LUK', icon: '🍀', desc: '+0.2% 暴擊率 +1% 暴擊傷害 / 點' },
+    { id: 'reg', name: '再生 REG', short: 'REG', icon: '💚', desc: '每點 +0.5% MaxHP 回復 / 回（每回行動自動補血）' },
+    { id: 'spi', name: '靈力 SPI', short: 'SPI', icon: '💙', desc: '每點 +1 MP 回復 / 回（疊加在基礎回魔上）' },
+    { id: 'crt', name: '爆頭 CRT', short: 'CRT', icon: '💥', desc: '每點 +0.5% 暴擊率（與 DEX / LUK 疊加）' },
+    { id: 'res', name: '物抗 RES', short: 'RES', icon: '🛡', desc: '每點 -1% 受到物理傷害（上限 25 點 = 25%）' },
+    { id: 'mre', name: '魔抗 MRE', short: 'MRE', icon: '🔮', desc: '每點 -1% 受到技能傷害（上限 25 點 = 25%）' },
   ];
   const POINTS_PER_LEVEL = { skill: 2, ability: 3 };
 
@@ -6633,6 +6638,11 @@
       dex: (a.dex || 0) + t.dex,
       int: (a.int || 0) + t.int,
       luk: (a.luk || 0) + t.luk,
+      reg: (a.reg || 0),
+      spi: (a.spi || 0),
+      crt: (a.crt || 0),
+      res: (a.res || 0),
+      mre: (a.mre || 0),
     };
   }
   function computeAbilityBonuses(player) {
@@ -6643,11 +6653,15 @@
       hp: (a.vit || 0) * 5,
       def: Math.floor((a.vit || 0) / 2),
       spd: Math.floor((a.agi || 0) / 2),
-      critChance: (a.dex || 0) * 0.004 + (a.luk || 0) * 0.002,
+      critChance: (a.dex || 0) * 0.004 + (a.luk || 0) * 0.002 + (a.crt || 0) * 0.005,
       critDmgBonus: (a.luk || 0) * 0.01,
       mp: (a.int || 0) * 2,
       skillFlat: (a.int || 0) * 0.5,
       mark: (a.int || 0) * 1.5,
+      hpRegen: (a.reg || 0) * 0.5,
+      mpRegen: (a.spi || 0),
+      physRes: Math.min(0.25, (a.res || 0) * 0.01),
+      magRes:  Math.min(0.25, (a.mre || 0) * 0.01),
     };
   }
 
@@ -6878,7 +6892,7 @@
         if (item?.hpRegen) totalHpRegen += item.hpRegen;
       }
     }
-    stats.hpRegenPct = Math.min(10, totalHpRegen); // 存為百分比整數（2 = 2%），上限 10%
+    stats.hpRegenPct = Math.min(10, totalHpRegen + (ab.hpRegen || 0)); // 存為百分比整數（2 = 2%），上限 10%
     // 套裝加成
     const setInfo = computeSetBonuses(player);
     if (setInfo.bonuses.atk)  stats.atk  += setInfo.bonuses.atk;
@@ -6956,8 +6970,11 @@
       + (cAbil.critDmgBonus || 0)
       + (cPass.critDmg || 0)
       + (mergedBonuses.critDmg || 0);
-    // ⭐ 每回合 MP 自動恢復（鵝王恩賜首飾 + 寶物 mpRegen、之後其他來源都加在這裡）
-    stats.mpRegen = itemMpRegen + (treasure.mpRegen || 0);
+    // ⭐ 每回合 MP 自動恢復（鵝王恩賜首飾 + 寶物 mpRegen、靈力能力、之後其他來源都加在這裡）
+    stats.mpRegen = itemMpRegen + (treasure.mpRegen || 0) + (ab.mpRegen || 0);
+    // ⭐ 物抗 / 魔抗（能力值 RES/MRE，上限 25%）
+    stats.playerPhysRes = Math.min(0.25, ab.physRes || 0);
+    stats.playerMagRes  = Math.min(0.25, ab.magRes  || 0);
     // ⭐ 地獄使者戰鬥裝備加成（hellBattlePlayer 傳入的 bat* 屬性總和）
     if (rpg._hellBattleBonusStats) {
       const hb = rpg._hellBattleBonusStats;
@@ -8342,6 +8359,9 @@
             // ⭐ 鵝盾刀：物理/魔法各減傷 physShieldPct/magShieldPct
             if (mSkill.magic && _weaponMagShield > 0)   dmg = Math.max(1, Math.round(dmg * (1 - Math.min(0.5, _weaponMagShield))));
             if (!mSkill.magic && _weaponPhysShield > 0) dmg = Math.max(1, Math.round(dmg * (1 - Math.min(0.5, _weaponPhysShield))));
+            // ⭐ 能力物抗/魔抗（RES/MRE）
+            if (mSkill.ignoreDef && (stats.playerMagRes  || 0) > 0) dmg = Math.max(1, Math.round(dmg * (1 - stats.playerMagRes)));
+            if (!mSkill.ignoreDef && (stats.playerPhysRes || 0) > 0) dmg = Math.max(1, Math.round(dmg * (1 - stats.playerPhysRes)));
             if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1) * (_weaponBpBoostMult || 1);
             pHp = Math.max(0, pHp - dmg);
             if (dmg > 0) {
@@ -8391,6 +8411,8 @@
             if (_fxPhysShield > 0) dmg = Math.max(1, Math.round(dmg * Math.max(0.40, 1 - _fxPhysShield * 0.20)));
             // ⭐ 鵝盾刀：普攻物理減傷
             if (_weaponPhysShield > 0) dmg = Math.max(1, Math.round(dmg * (1 - Math.min(0.5, _weaponPhysShield))));
+            // ⭐ 能力物抗（RES）
+            if ((stats.playerPhysRes || 0) > 0) dmg = Math.max(1, Math.round(dmg * (1 - stats.playerPhysRes)));
             if (player.rpg.class === 'warrior') bloodPool += Math.min(Math.max(0, pHp), dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1) * (_weaponBpBoostMult || 1);
             pHp -= dmg;
             if (dmg > 0) {
@@ -9574,6 +9596,9 @@
             // ⭐ 風鵝護符：物理/魔法傷害減免（ignoreDef=魔法，其餘=物理）
             if (mSkill.ignoreDef && _fxMagShield > 0)   dmg = Math.max(1, Math.round(dmg * Math.max(0.40, 1 - _fxMagShield * 0.20)));
             if (!mSkill.ignoreDef && _fxPhysShield > 0) dmg = Math.max(1, Math.round(dmg * Math.max(0.40, 1 - _fxPhysShield * 0.20)));
+            // ⭐ 能力物抗/魔抗（RES/MRE）
+            if (mSkill.ignoreDef && (stats.playerMagRes  || 0) > 0) dmg = Math.max(1, Math.round(dmg * (1 - stats.playerMagRes)));
+            if (!mSkill.ignoreDef && (stats.playerPhysRes || 0) > 0) dmg = Math.max(1, Math.round(dmg * (1 - stats.playerPhysRes)));
             if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1) * (_weaponBpBoostMult || 1);
             pHp = Math.max(0, pHp - dmg);
             // ⭐ 不屈：首次致死改為 1 HP 存活
@@ -9619,6 +9644,8 @@
             dmg = consumePartialShield2(dmg);
             // ⭐ 風鵝護符：普攻為物理傷害
             if (_fxPhysShield > 0) dmg = Math.max(1, Math.round(dmg * Math.max(0.40, 1 - _fxPhysShield * 0.20)));
+            // ⭐ 能力物抗（RES）
+            if ((stats.playerPhysRes || 0) > 0) dmg = Math.max(1, Math.round(dmg * (1 - stats.playerPhysRes)));
             if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1) * (_weaponBpBoostMult || 1);
             pHp = Math.max(0, pHp - dmg);
             // ⭐ 不屈：首次致死改為 1 HP 存活
@@ -10506,7 +10533,7 @@
     safeConfirm(`花 🪙 ${RESET_ABILITY_COST} 退回所有能力點 (${total} 點)？`, () => {
       if (!spendCoins(me.id, RESET_ABILITY_COST)) { showToast('鵝鵝幣不足'); return; }
       r.abilityPoints = (r.abilityPoints || 0) + total;
-      r.abilities = { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0 };
+      r.abilities = { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0, reg: 0, spi: 0, crt: 0, res: 0, mre: 0 };
       const s = computeStats(me);
       if (r.hp > s.maxHp) r.hp = s.maxHp;
       if (r.mp > s.maxMp) r.mp = s.maxMp;
@@ -12114,7 +12141,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508032003';
+  const APP_VERSION = '20260508033326';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
