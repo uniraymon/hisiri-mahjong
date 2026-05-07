@@ -7754,6 +7754,7 @@
             let lastIsCrit = false;
             const hitLogs = [];
             let monsterDied = false;
+            let totalReflect = 0; // ⭐ 反彈傷害累計（用於 log 顯示）
             for (let h = 0; h < skillHits && !monsterDied; h++) {
               let hitDmg = skill.usesBloodPool ? baseDmg : baseDmg * (0.9 + Math.random() * 0.2);
               // ⭐ 合成效果：fx_dg_crit（必爆+30%傷害；合入×2則下兩次必爆）
@@ -7777,6 +7778,7 @@
                 // 反傷：受到傷害的 N%，上限由 cap 設定（預設 300）
                 const r = Math.min(mAbility.cap || 300, Math.max(1, Math.round(hitDmg * mAbility.resist)));
                 pHp = Math.max(0, pHp - r);
+                totalReflect += r;
               }
               if (mHp <= 0) { monsterDied = true; }
             }
@@ -7862,8 +7864,9 @@
             });
             // ⭐ 聖母鵝計數：玩家技能擊中（按段數加成）
             if (_isPaladin && !_hmgFrozen && totalDmg > 0) _hmgHitCount += (skill.hits || 1);
-            if (mAbility?.type === 'reflect' && mAbility.resist) {
-              log.push({ type: 'monster', text: `回合 ${round}：🪞 ${monster.name} 反射光芒（多段反彈）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+            if (mAbility?.type === 'reflect' && mAbility.resist && totalReflect > 0) {
+              const _reflStr = skillHits > 1 ? `（共反彈 ${totalReflect} HP）` : `→ ${player.name} -${totalReflect} HP`;
+              log.push({ type: 'monster', text: `回合 ${round}：🪞 ${monster.name} 反射光芒 ${_reflStr}`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
             }
             // 對怪物上狀態（毒箭、冰錐術…）
             if (skill.applyStatus && Math.random() < (skill.applyStatus.chance || 1)) {
@@ -9032,6 +9035,16 @@
                 applyStatus(tgt, skill.applyStatus);
               }
             }
+            // ⭐ 反彈傷害在技能 log 後統一顯示（計算已在迴圈內套用）
+            const _skillReflectDmg = (() => {
+              let tot = 0;
+              for (const h of hits) {
+                if (h.tgt.ability?.type === 'reflect' && h.tgt.ability.resist) {
+                  tot += Math.min(h.tgt.ability.cap || 300, Math.max(1, Math.round(h.dmg * h.tgt.ability.resist)));
+                }
+              }
+              return tot;
+            })();
             // ⭐ 血祭斬：最後追加 血池÷10 固定真實傷（不受暴擊，不消耗血池）
             if (skill.id === 'w_blood_slash' && bloodPool > 0) {
               const _bpTrueDmg = Math.floor(bloodPool / 10);
@@ -9123,6 +9136,11 @@
               text: `回合 ${round}：${skill.icon} ${skill.name}${isMagic ? '【魔攻】' : ''} → ${targetSummary}${extra}${costStr}`,
               hp: hpsSnapshot(),
             });
+            // ⭐ 反彈傷害 log
+            if (_skillReflectDmg > 0) {
+              const _reflSrc = hits.filter(h => h.tgt.ability?.type === 'reflect').map(h => `${h.tgt.icon}${h.tgt.name}`).join(' / ');
+              log.push({ type: 'monster', text: `回合 ${round}：🪞 ${_reflSrc} 反射光芒 → ${player.name} -${_skillReflectDmg} HP`, hp: hpsSnapshot() });
+            }
             // 套狀態的 log
             if (skill.applyStatus) {
               const stuck = hits.filter(h => h.tgt.statuses.find(s => s.type === skill.applyStatus.type));
@@ -9318,6 +9336,7 @@
               if (tgt.ability?.type === 'reflect' && tgt.ability.resist) {
                 const r = Math.min(tgt.ability.cap || 300, Math.max(1, Math.round(dmg * tgt.ability.resist)));
                 pHp = Math.max(0, pHp - r);
+                log.push({ type: 'monster', text: `回合 ${round}：🪞 ${tgt.icon}${tgt.name} 反射光芒 → ${player.name} -${r} HP`, hp: hpsSnapshot() });
               }
               if (tgt.hp <= 0) break;
             }
@@ -9362,10 +9381,11 @@
               pHp = Math.min(stats.maxHp, pHp + vampHeal);
               if (pHp - _vbefore > 0) log.push({ type: 'player', text: `回合 ${round}：🩸 吸血 +${pHp - _vbefore} HP`, hp: hpsSnapshot() });
             }
+            let _normReflect = 0;
             if (tgt.ability?.type === 'reflect' && tgt.ability.resist) {
               // 反傷：受到傷害的 N%，上限由 cap 設定（預設 300）
-              const r = Math.min(tgt.ability.cap || 300, Math.max(1, Math.round(dmg * tgt.ability.resist)));
-              pHp = Math.max(0, pHp - r);
+              _normReflect = Math.min(tgt.ability.cap || 300, Math.max(1, Math.round(dmg * tgt.ability.resist)));
+              pHp = Math.max(0, pHp - _normReflect);
             }
             // ⭐ 聖母鵝計數
             if (_isPaladinM && !_hmgFrozenM) _hmgHitCountM++;
@@ -9375,6 +9395,9 @@
               text: `回合 ${round}：${cls.attackVerb}${_hsLabelM}${isCrit ? '【暴擊】' : ''} → ${tgt.icon}${tgt.name} -${dmg} HP`,
               hp: hpsSnapshot(),
             });
+            if (_normReflect > 0) {
+              log.push({ type: 'monster', text: `回合 ${round}：🪞 ${tgt.icon}${tgt.name} 反射光芒 → ${player.name} -${_normReflect} HP`, hp: hpsSnapshot() });
+            }
           }
           // ⭐ 嗜血劍：普攻打流血目標 → ATK+20%(3T)
           if (weaponBloodEffect && hasStatus(tgt, 'bleed') && tgt.hp > 0) {
@@ -12141,7 +12164,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508033326';
+  const APP_VERSION = '20260508033908';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
