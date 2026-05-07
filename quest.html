@@ -4681,7 +4681,7 @@
     // ⭐ 奈落精英：奈落支配者（Lv 30 頂階，hpBase 直接設高層值，不用 deepBase）
     {
       id: 'elite_nabyss', zone: 'nabyss', name: '★ 奈落支配者', icon: '👁️',
-      hpBase: 3600, atkBase: 155, defBase: 480, spdBase: 95,
+      fixedHp: 1800000, hpBase: 3600, atkBase: 155, defBase: 480, spdBase: 95,
       goldBase: 600, xpBase: 1400,
       verb: '奈落審判',
       ability: { type: 'multiHit', hits: 2 },
@@ -7127,9 +7127,9 @@
         };
       }
     }
-    // 精英怪：在指定地區內 14% 機率出現；noSpecial 跳過
-    if (!noSpecial && opts && opts.zoneId && Math.random() < 0.14) {
-      // ⭐ 奈落兩子區均對應 elite_nabyss（zone: 'nabyss'）
+    // 精英怪：在指定地區內 14% 機率出現；noSpecial 跳過；nabyss_multi 不出精英（群戰區）
+    if (!noSpecial && opts && opts.zoneId && opts.zoneId !== 'nabyss_multi' && Math.random() < 0.14) {
+      // ⭐ 奈落兩子區均對應 elite_nabyss（zone: 'nabyss'）；精英只出現在 nabyss_solo
       const _eliteZoneId = opts.zoneId?.startsWith('nabyss') ? 'nabyss' : opts.zoneId;
       const elite = ELITES.find(e => e.zone === _eliteZoneId);
       const zone = ZONES.find(z => z.id === opts.zoneId) || ZONES.find(z => z.id === _eliteZoneId);
@@ -12053,7 +12053,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508012723';
+  const APP_VERSION = '20260508013327';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
