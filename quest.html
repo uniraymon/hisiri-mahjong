@@ -5030,6 +5030,9 @@
   const STAMINA_MAX = 200;
   const STAMINA_PER_FIGHT = 10;
 
+  // ⭐ DEF 百分比公式常數：減傷% = DEF/(DEF+K)，K 越小 DEF 越有效（隨時可調）
+  const DEF_PIERCE_K = 500;
+
   // ⭐ 宵夜鵝精魂「最後的宵夜」觸發常數（隨時可調）
   const MIDNIGHT_LATE_TRIGGER_ROUNDS = 20;   // 最後幾回合觸發
   const MIDNIGHT_LATE_ATK_BONUS      = 0.50; // ATK   +50%
@@ -7248,13 +7251,12 @@
             const perHitFactor = 1.0; // 每段都用完整 mult
             if (skill.defMult != null) {
               // ⭐ 聖騎風格：以 DEF 結算傷害
-              dmg = effDef * skill.defMult - Math.floor(monDef / 2);
+              dmg = effDef * skill.defMult;
             } else if (skill.maxHpMult != null) {
               // ⭐ 聖騎風格：以 maxHp 結算傷害（魔攻）
-              dmg = stats.maxHp * skill.maxHpMult - Math.floor(monDef / 2);
+              dmg = stats.maxHp * skill.maxHpMult;
             } else if (isFlat) {
               dmg = (skill.flat + (bonus.skillFlat || 0) + (abil.skillFlat || 0)) + (skill.perLv || 0) * (player.rpg.level || 1);
-              if (!skill.ignoreDef) dmg -= Math.floor(monDef / 2);
             } else if (skill.usesBloodPool) {
               // ⭐ 爆血：血池 × 3，無視 DEF / 抗性，易傷 / 暴擊正常計算，無隨機變異
               dmg = bloodPool * 3;
@@ -7262,11 +7264,15 @@
             } else {
               // ⭐ useMark:true 的技能使用 MARK 而非 ATK（法師魔攻技）
               const dmgStat = skill.useMark ? effMark : effAtk;
-              dmg = dmgStat * (skill.mult || 1) - Math.floor(monDef / 2);
+              dmg = dmgStat * (skill.mult || 1);
             }
             // ⭐ markMult：flat 傷害後追加 MARK 加傷（火焰風暴：固定150 + 6*MARK）
             if (skill.markMult && !skill.usesBloodPool) {
               dmg = Math.max(0, dmg) + effMark * skill.markMult;
+            }
+            // ⭐ DEF 百分比公式：減傷% = monDef/(monDef+K)；ignoreDef/真傷/爆血 無視防禦
+            if (!skill.usesBloodPool && !skill.ignoreDef) {
+              dmg *= DEF_PIERCE_K / (monDef + DEF_PIERCE_K);
             }
             dmg *= perHitFactor;
             // 技能個別 % 加成（從技能樹點到的對應節點）— 只對前 3 個技能有效
@@ -7588,11 +7594,12 @@
               const isCrit = _fcA || Math.random() < baseCrit2;
               if (_fcA) _nextForceCrit--;
               const isHs   = forceHs || _fcA || Math.random() < HEADSHOT_CHANCE;
-              const defVal = isHs ? 0 : Math.floor(monDef0 / 2 / totalHits); // 爆頭無視防禦；普攻防禦分攤各段
-              let dmg = Math.max(1, effAtk * 0.30 - defVal);
+              // ⭐ DEF 百分比公式：爆頭無視防禦；普攻依 monDef 減傷
+              let dmg = effAtk * 0.30;
               dmg *= (0.85 + Math.random() * 0.3);
               // ⭐ 弓手普攻流疊加：命中 +1%（使用上一箭累積的層數）
               dmg *= (1 + _aHit * 0.01);
+              if (!isHs) dmg *= DEF_PIERCE_K / (monDef0 + DEF_PIERCE_K);
               // ⭐ 弓手普攻流疊加：暴擊爆傷（隨機 +1~4%/層，累積）
               const _hitCritMult = critMult2 + _aCritBonus;
               if (isCrit) {
@@ -7648,8 +7655,10 @@
             const _fcB = _nextForceCrit > 0;
             const isCrit2 = _fcB || Math.random() < baseCrit2;
             if (_fcB) _nextForceCrit--;
-            let dmg = Math.max(1, effAtk - Math.floor(monDef0 / 2));
+            let dmg = effAtk;
             dmg *= (0.85 + Math.random() * 0.3);
+            // ⭐ DEF 百分比公式：減傷% = monDef/(monDef+K)
+            dmg *= DEF_PIERCE_K / (monDef0 + DEF_PIERCE_K);
             if (isCrit2) {
               // ⭐ 最擊坑性：forceCrit 不受限
               const _effCritMult2B = (_fcB || !monster.critDmgReduct) ? critMult2 : 1.0 + (critMult2 - 1.0) * (1 - monster.critDmgReduct);
@@ -8485,22 +8494,25 @@
               const tgtMonDef = tgt.def + (getBuffBonus(tgt).def || 0);
               let dmg;
               if (skill.defMult != null) {
-                dmg = effDef * skill.defMult - Math.floor(tgtMonDef / 2);
+                dmg = effDef * skill.defMult;
               } else if (skill.maxHpMult != null) {
-                dmg = stats.maxHp * skill.maxHpMult - Math.floor(tgtMonDef / 2);
+                dmg = stats.maxHp * skill.maxHpMult;
               } else if (isFlat) {
                 dmg = (skill.flat + (bonus.skillFlat || 0) + (abil.skillFlat || 0)) + (skill.perLv || 0) * (player.rpg.level || 1);
-                if (!skill.ignoreDef) dmg -= Math.floor(tgtMonDef / 2);
               } else if (skill.usesBloodPool) {
                 // ⭐ 爆血：真傷 = 血池 × 3（每個目標各打一次，但 targetCount = 1）
                 dmg = bloodPool * 3;
               } else {
                 const dmgStat = skill.useMark ? effMark : effAtk;
-                dmg = dmgStat * (skill.mult || 1) - Math.floor(tgtMonDef / 2);
+                dmg = dmgStat * (skill.mult || 1);
               }
               // ⭐ markMult：flat 傷害後追加 MARK 加傷（火焰風暴：固定150 + 6*MARK）
               if (skill.markMult && !skill.usesBloodPool) {
                 dmg = Math.max(0, dmg) + effMark * skill.markMult;
+              }
+              // ⭐ DEF 百分比公式：減傷% = tgtMonDef/(tgtMonDef+K)；ignoreDef/真傷/爆血 無視防禦
+              if (!skill.usesBloodPool && !skill.ignoreDef) {
+                dmg *= DEF_PIERCE_K / (tgtMonDef + DEF_PIERCE_K);
               }
               // 爆血（真傷）不吃技能加成與被動加成
               if (!skill.usesBloodPool) {
@@ -8797,11 +8809,12 @@
               const isCrit = _fcAM || Math.random() < baseCrit2;
               if (_fcAM) _nextForceCrit--;
               const isHs   = forceHs || _fcAM || Math.random() < HEADSHOT_CHANCE;
-              const defVal = isHs ? 0 : Math.floor(_tgtDef / 2 / totalHits);
-              let dmg = Math.max(1, effAtk * 0.30 - defVal);
+              // ⭐ DEF 百分比公式：爆頭無視防禦；普攻依 _tgtDef 減傷
+              let dmg = effAtk * 0.30;
               dmg *= (0.85 + Math.random() * 0.3);
               // ⭐ 弓手普攻流疊加：命中 +1%
               dmg *= (1 + _aHit * 0.01);
+              if (!isHs) dmg *= DEF_PIERCE_K / (_tgtDef + DEF_PIERCE_K);
               // ⭐ 弓手普攻流疊加：暴擊爆傷（隨機 +1~4%/層，累積）
               const _hitCritMultM = critMult2 + _aCritBonus;
               if (isCrit) {
@@ -8857,8 +8870,10 @@
             const _fcBM = _nextForceCrit > 0;
             const isCrit = _fcBM || Math.random() < baseCrit2;
             if (_fcBM) _nextForceCrit--;
-            let dmg = Math.max(1, effAtk - Math.floor(_tgtDef2 / 2));
+            let dmg = effAtk;
             dmg *= (0.85 + Math.random() * 0.3);
+            // ⭐ DEF 百分比公式：減傷% = _tgtDef2/(_tgtDef2+K)
+            dmg *= DEF_PIERCE_K / (_tgtDef2 + DEF_PIERCE_K);
             if (isCrit) {
               // ⭐ 最擊坑性：forceCrit 不受限
               const _effCritMult2BM = (_fcBM || !tgt.critDmgReduct) ? critMult2 : 1.0 + (critMult2 - 1.0) * (1 - tgt.critDmgReduct);
@@ -11634,7 +11649,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507123657';
+  const APP_VERSION = '20260507131740';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
