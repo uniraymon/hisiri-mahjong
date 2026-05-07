@@ -11743,7 +11743,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507201034';
+  const APP_VERSION = '20260507201202';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -17070,7 +17070,12 @@ ${b.text}
     const list = Array.isArray(r.personalBossHistory) ? r.personalBossHistory : [];
     const snap = list.find(h => h.id === historyId);
     if (!snap) { showToast('找不到該戰報'); return; }
-    return _doReplay(snap);
+    // ⭐ log 另存 localStorage（snap 本身可能無 log 欄位）
+    let log = snap.log || [];
+    if (!log.length) {
+      try { log = JSON.parse(localStorage.getItem('pbLog_' + historyId) || '[]'); } catch(e) { log = []; }
+    }
+    return _doReplay({ ...snap, log });
   }
   window.replayPersonalBossFight = replayPersonalBossFight;
 
@@ -17580,11 +17585,13 @@ ${b.text}
           if (_pbRes) _pbRes.innerHTML = rewardHtml;
         }
         snapshotLastFight(monster, result);
-        // ⭐ 個人王戰報 history（最多 15 筆，假人不記錄）
+        // ⭐ 個人王戰報 history（最多 5 筆，假人不記錄）
+        // ⭐ log 另存 localStorage（'pbLog_'+id），不放進 personalBossHistory → Firebase 文件永遠小
         if (!def.isDummy) {
           try {
+            const pbId = 'pb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
             const pbSnap = {
-              id: 'pb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+              id: pbId,
               ts: Date.now(),
               bossId: def.id,
               bossName: def.name,
@@ -17594,11 +17601,18 @@ ${b.text}
               killed,
               playerSnap: { name: me.name, avatar: CLASSES[rpg.class]?.icon || '🎴', level: rpg.level, maxHp: stats.maxHp, maxMp: stats.maxMp, class: rpg.class, baseCrit: result.archerStats?.baseCrit },
               monsterSnap: { name: def.name, icon: def.icon, level: def.level, maxHp: def.hp, ability: def.ability },
-              log: (result.log || []).slice(0, 500), // ⭐ 上限 500 條（壓住文件大小）
+              // ⭐ log 不存此處，改存 localStorage，Firebase 文件零負擔
             };
+            // ⭐ 先存 log 到 localStorage（先存再寫 history，確保 replay 資料不遺失）
+            try { localStorage.setItem('pbLog_' + pbId, JSON.stringify((result.log || []).slice(0, 500))); } catch(e) {}
+            // ⭐ 然後才把摘要推進 history（Firebase 結算能成功）
             rpg.personalBossHistory = Array.isArray(rpg.personalBossHistory) ? rpg.personalBossHistory : [];
             rpg.personalBossHistory.unshift(pbSnap);
-            if (rpg.personalBossHistory.length > 5) rpg.personalBossHistory.length = 5; // ⭐ 保 5 場
+            if (rpg.personalBossHistory.length > 5) {
+              // 清掉被擠出去的 log（避免 localStorage 堆積）
+              const dropped = rpg.personalBossHistory.splice(5);
+              for (const d of dropped) { try { localStorage.removeItem('pbLog_' + d.id); } catch(e) {} }
+            }
           } catch (e) { console.warn('personalBoss history snap fail', e); }
         }
         me.lastTouchedAt = Date.now();   // 🔒 結算後鎖定，防止 Firebase 同步回朔
