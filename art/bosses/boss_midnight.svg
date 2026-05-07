@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- 宵夜鵝 Midnight Goose Boss Lv.35 ⭐ 最強個人王 -->
+  <defs>
+    <linearGradient id="mn-feather" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#cbd5e1"/>
+      <stop offset="1" stop-color="#475569"/>
+    </linearGradient>
+    <linearGradient id="mn-beak" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#a16207"/>
+      <stop offset="1" stop-color="#451a03"/>
+    </linearGradient>
+    <linearGradient id="mn-pj" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#64748b"/>
+      <stop offset="1" stop-color="#1e293b"/>
+    </linearGradient>
+    <radialGradient id="mn-aura" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#7c3aed" stop-opacity="0"/>
+      <stop offset="0.6" stop-color="#7c3aed" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#3b0764" stop-opacity="0.85"/>
+    </radialGradient>
+    <radialGradient id="mn-eye" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fef2f2"/>
+      <stop offset="0.5" stop-color="#dc2626"/>
+      <stop offset="1" stop-color="#7f1d1d"/>
+    </radialGradient>
+    <radialGradient id="mn-bowl" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fde68a"/>
+      <stop offset="0.6" stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#92400e"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 紫黑詭異光環 -->
+  <ellipse cx="200" cy="200" rx="200" ry="200" fill="url(#mn-aura)"/>
+
+  <!-- 影子 -->
+  <ellipse cx="200" cy="378" rx="105" ry="10" fill="#000" opacity="0.4"/>
+
+  <!-- 蹼足 -->
+  <path d="M 156 350 Q 144 374 156 378 Q 175 378 178 372 Q 185 378 192 372 L 192 350 Z" fill="url(#mn-beak)" stroke="#1c1917" stroke-width="1.5"/>
+  <path d="M 244 350 Q 256 374 244 378 Q 225 378 222 372 Q 215 378 208 372 L 208 350 Z" fill="url(#mn-beak)" stroke="#1c1917" stroke-width="1.5"/>
+
+  <!-- 身體 -->
+  <ellipse cx="200" cy="270" rx="100" ry="105" fill="url(#mn-feather)" stroke="#334155" stroke-width="2"/>
+
+  <!-- 破爛睡衣（大身體區） -->
+  <path d="M 110 215 Q 105 320 120 360 L 280 360 Q 295 320 290 215 Q 200 195 110 215 Z" fill="url(#mn-pj)" stroke="#0f172a" stroke-width="2"/>
+  <!-- 睡衣條紋 -->
+  <line x1="130" y1="240" x2="270" y2="240" stroke="#94a3b8" stroke-width="1" opacity="0.5"/>
+  <line x1="125" y1="270" x2="275" y2="270" stroke="#94a3b8" stroke-width="1" opacity="0.5"/>
+  <line x1="125" y1="300" x2="275" y2="300" stroke="#94a3b8" stroke-width="1" opacity="0.5"/>
+  <line x1="125" y1="330" x2="275" y2="330" stroke="#94a3b8" stroke-width="1" opacity="0.5"/>
+
+  <!-- 破洞 / 撕裂痕 -->
+  <path d="M 145 285 L 155 305 L 150 320 L 140 305 Z" fill="#1e293b" stroke="#0f172a" stroke-width="1"/>
+  <path d="M 245 250 L 258 268 L 252 282 L 240 268 Z" fill="#1e293b" stroke="#0f172a" stroke-width="1"/>
+  <path d="M 200 340 L 210 355 L 195 358 L 188 348 Z" fill="#1e293b" stroke="#0f172a" stroke-width="1"/>
+
+  <!-- 鈕釦 -->
+  <circle cx="200" cy="240" r="3" fill="#1e293b" stroke="#0f172a"/>
+  <circle cx="200" cy="280" r="3" fill="#1e293b" stroke="#0f172a"/>
+  <circle cx="200" cy="320" r="3" fill="#1e293b" stroke="#0f172a"/>
+
+  <!-- 翅膀 -->
+  <path d="M 100 220 Q 60 250 75 305 Q 95 285 112 270" fill="url(#mn-feather)" stroke="#334155" stroke-width="1.5"/>
+  <path d="M 300 220 Q 340 250 325 305 Q 305 285 288 270" fill="url(#mn-feather)" stroke="#334155" stroke-width="1.5"/>
+
+  <!-- 巨大泡麵碗（雙手抱著） -->
+  <path d="M 80 295 L 320 295 Q 320 360 200 365 Q 80 360 80 295 Z" fill="url(#mn-bowl)" stroke="#451a03" stroke-width="2.5"/>
+  <ellipse cx="200" cy="295" rx="120" ry="14" fill="#fde047" stroke="#92400e" stroke-width="2"/>
+  <ellipse cx="200" cy="295" rx="115" ry="9" fill="#a16207" opacity="0.6"/>
+  <!-- 泡麵 -->
+  <path d="M 110 290 Q 130 285 150 290 Q 170 285 190 290 Q 210 285 230 290 Q 250 285 270 290 Q 290 285 290 295" stroke="#fde047" stroke-width="2.5" fill="none"/>
+  <path d="M 115 295 Q 135 290 155 295 Q 175 290 195 295 Q 215 290 235 295 Q 255 290 285 295" stroke="#fbbf24" stroke-width="2" fill="none" opacity="0.7"/>
+  <!-- 蛋 -->
+  <ellipse cx="160" cy="298" rx="12" ry="6" fill="#ffffff" stroke="#fbbf24" stroke-width="1"/>
+  <circle cx="160" cy="298" r="4" fill="#fbbf24"/>
+  <!-- 蔥花 -->
+  <circle cx="220" cy="294" r="2" fill="#10b981"/>
+  <circle cx="240" cy="296" r="2" fill="#10b981"/>
+  <circle cx="180" cy="293" r="2" fill="#10b981"/>
+  <!-- 碗紋 -->
+  <path d="M 100 320 L 300 320" stroke="#92400e" stroke-width="1.5" opacity="0.6"/>
+  <text x="200" y="345" font-family="serif" font-size="20" fill="#451a03" text-anchor="middle" font-weight="bold">麵</text>
+
+  <!-- 碗中冒出的詭異蒸氣（暗紫色） -->
+  <path d="M 130 285 Q 110 250 130 215 Q 145 230 130 260" stroke="#7c3aed" stroke-width="3" fill="none" opacity="0.7"/>
+  <path d="M 200 285 Q 180 240 210 195 Q 220 215 205 250" stroke="#a855f7" stroke-width="3" fill="none" opacity="0.6"/>
+  <path d="M 270 285 Q 290 245 270 215 Q 255 235 270 260" stroke="#7c3aed" stroke-width="3" fill="none" opacity="0.7"/>
+
+  <!-- 脖子 -->
+  <path d="M 178 200 Q 160 168 168 118 Q 184 100 210 110 Q 222 145 208 188 Z" fill="url(#mn-feather)" stroke="#334155" stroke-width="2"/>
+
+  <!-- 頭 -->
+  <circle cx="200" cy="92" r="38" fill="url(#mn-feather)" stroke="#334155" stroke-width="2"/>
+
+  <!-- 嘴喙 -->
+  <path d="M 232 86 L 268 84 Q 274 92 268 102 L 232 102 Z" fill="url(#mn-beak)" stroke="#1c1917" stroke-width="1.5"/>
+  <!-- 詭異尖牙 -->
+  <path d="M 240 102 L 244 110 L 248 102 Z" fill="#fff"/>
+  <path d="M 256 102 L 260 110 L 264 102 Z" fill="#fff"/>
+
+  <!-- 黑眼圈（深濃） -->
+  <ellipse cx="218" cy="86" rx="11" ry="6" fill="#0f172a" opacity="0.85"/>
+  <ellipse cx="183" cy="84" rx="10" ry="5" fill="#0f172a" opacity="0.85"/>
+
+  <!-- 紅眼（發光） -->
+  <circle cx="218" cy="83" r="6" fill="url(#mn-eye)"/>
+  <circle cx="218" cy="83" r="9" fill="#dc2626" opacity="0.3"/>
+  <circle cx="183" cy="81" r="5" fill="url(#mn-eye)"/>
+  <circle cx="183" cy="81" r="8" fill="#dc2626" opacity="0.3"/>
+
+  <!-- 詭異眉毛 -->
+  <path d="M 175 64 L 192 72" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M 208 72 L 226 64" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- 詭異笑紋 -->
+  <path d="M 232 105 Q 245 112 250 108" stroke="#7f1d1d" stroke-width="1.5" fill="none"/>
+
+  <!-- 睡帽 / 翹頭髮 -->
+  <path d="M 180 55 L 175 28 Q 195 35 200 55 Z" fill="url(#mn-feather)" stroke="#334155" stroke-width="1.2"/>
+  <path d="M 200 55 L 215 22 Q 220 38 215 55 Z" fill="url(#mn-feather)" stroke="#334155" stroke-width="1.2"/>
+
+  <!-- 漂浮詭異粒子 -->
+  <circle cx="80" cy="120" r="2" fill="#a855f7" opacity="0.7"/>
+  <circle cx="100" cy="80" r="1.5" fill="#a855f7" opacity="0.5"/>
+  <circle cx="320" cy="100" r="2" fill="#a855f7" opacity="0.7"/>
+  <circle cx="340" cy="140" r="1.5" fill="#a855f7" opacity="0.5"/>
+  <circle cx="60" cy="200" r="2" fill="#7c3aed" opacity="0.6"/>
+  <circle cx="345" cy="220" r="2" fill="#7c3aed" opacity="0.6"/>
+</svg>

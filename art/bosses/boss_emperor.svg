@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- 鵝皇 Goose Emperor World Boss -->
+  <defs>
+    <linearGradient id="ge-feather" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dbeafe"/>
+    </linearGradient>
+    <linearGradient id="ge-beak" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#fbbf24"/>
+      <stop offset="1" stop-color="#b45309"/>
+    </linearGradient>
+    <linearGradient id="ge-gold" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#fde047"/>
+      <stop offset="0.5" stop-color="#fbbf24"/>
+      <stop offset="1" stop-color="#b45309"/>
+    </linearGradient>
+    <radialGradient id="ge-aura" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#60a5fa" stop-opacity="0.5"/>
+      <stop offset="0.7" stop-color="#3b82f6" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#1e3a8a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="ge-jewel" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fef2f2"/>
+      <stop offset="0.4" stop-color="#dc2626"/>
+      <stop offset="1" stop-color="#7f1d1d"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 皇者藍光氣場 -->
+  <circle cx="200" cy="200" r="200" fill="url(#ge-aura)"/>
+  <circle cx="200" cy="200" r="150" fill="url(#ge-aura)" opacity="0.5"/>
+
+  <!-- 影子（更大） -->
+  <ellipse cx="200" cy="378" rx="130" ry="12" fill="#000" opacity="0.3"/>
+
+  <!-- 蹼足（金爪） -->
+  <path d="M 145 348 Q 130 376 145 380 Q 170 380 175 372 Q 184 380 192 372 L 192 348 Z" fill="url(#ge-gold)" stroke="#92400e" stroke-width="1.8"/>
+  <path d="M 255 348 Q 270 376 255 380 Q 230 380 225 372 Q 216 380 208 372 L 208 348 Z" fill="url(#ge-gold)" stroke="#92400e" stroke-width="1.8"/>
+
+  <!-- 巨大羽翼（展開） -->
+  <!-- 左翼 -->
+  <path d="M 100 200 Q 30 180 8 220 Q 25 240 60 235 Q 30 260 25 295 Q 70 280 100 260 Q 75 230 90 210 Z" fill="url(#ge-feather)" stroke="#bfdbfe" stroke-width="2"/>
+  <path d="M 35 215 Q 50 210 70 220" stroke="#bfdbfe" stroke-width="1.5" fill="none"/>
+  <path d="M 30 245 Q 50 240 75 245" stroke="#bfdbfe" stroke-width="1.5" fill="none"/>
+  <path d="M 45 275 Q 65 270 90 275" stroke="#bfdbfe" stroke-width="1.5" fill="none"/>
+  <!-- 翼羽分叉 -->
+  <path d="M 8 220 L 20 218 M 12 235 L 25 232 M 25 295 L 35 290 M 40 290 L 50 282" stroke="#bfdbfe" stroke-width="1.2"/>
+  <!-- 右翼 -->
+  <path d="M 300 200 Q 370 180 392 220 Q 375 240 340 235 Q 370 260 375 295 Q 330 280 300 260 Q 325 230 310 210 Z" fill="url(#ge-feather)" stroke="#bfdbfe" stroke-width="2"/>
+  <path d="M 365 215 Q 350 210 330 220" stroke="#bfdbfe" stroke-width="1.5" fill="none"/>
+  <path d="M 370 245 Q 350 240 325 245" stroke="#bfdbfe" stroke-width="1.5" fill="none"/>
+  <path d="M 355 275 Q 335 270 310 275" stroke="#bfdbfe" stroke-width="1.5" fill="none"/>
+  <path d="M 392 220 L 380 218 M 388 235 L 375 232 M 375 295 L 365 290 M 360 290 L 350 282" stroke="#bfdbfe" stroke-width="1.2"/>
+
+  <!-- 身體（更大） -->
+  <ellipse cx="200" cy="270" rx="110" ry="110" fill="url(#ge-feather)" stroke="#bfdbfe" stroke-width="2.5"/>
+
+  <!-- 胸前金羽紋 -->
+  <path d="M 175 230 Q 200 220 225 230 L 215 280 Q 200 270 185 280 Z" fill="url(#ge-gold)" opacity="0.85" stroke="#92400e" stroke-width="1"/>
+  <path d="M 180 240 L 220 240" stroke="#92400e" stroke-width="0.8" opacity="0.5"/>
+  <path d="M 185 260 L 215 260" stroke="#92400e" stroke-width="0.8" opacity="0.5"/>
+
+  <!-- 羽毛紋路 -->
+  <path d="M 130 280 Q 160 295 200 290" stroke="#bfdbfe" stroke-width="1.5" fill="none"/>
+  <path d="M 200 290 Q 240 295 270 280" stroke="#bfdbfe" stroke-width="1.5" fill="none"/>
+  <path d="M 140 320 Q 200 332 260 320" stroke="#bfdbfe" stroke-width="1.5" fill="none"/>
+
+  <!-- 脖子（高貴粗壯） -->
+  <path d="M 175 200 Q 152 162 168 110 Q 188 90 215 100 Q 228 145 215 188 Z" fill="url(#ge-feather)" stroke="#bfdbfe" stroke-width="2.5"/>
+
+  <!-- 頭（更大） -->
+  <circle cx="200" cy="80" r="42" fill="url(#ge-feather)" stroke="#bfdbfe" stroke-width="2.5"/>
+
+  <!-- 嘴喙 -->
+  <path d="M 236 74 L 280 70 Q 290 80 280 96 L 236 96 Z" fill="url(#ge-beak)" stroke="#92400e" stroke-width="1.8"/>
+  <line x1="238" y1="84" x2="280" y2="84" stroke="#92400e" stroke-width="1.2" opacity="0.7"/>
+
+  <!-- 王者眼（金光） -->
+  <ellipse cx="218" cy="72" rx="5" ry="6" fill="#1a1a1a"/>
+  <circle cx="220" cy="70" r="2" fill="#fbbf24"/>
+  <circle cx="221" cy="69" r="0.8" fill="#fff"/>
+  <!-- 銳利眉 -->
+  <path d="M 206 50 L 232 60" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- 皇冠 -->
+  <!-- 冠基底圈 -->
+  <ellipse cx="200" cy="44" rx="40" ry="6" fill="url(#ge-gold)" stroke="#92400e" stroke-width="1.8"/>
+  <!-- 冠尖（5 個） -->
+  <path d="M 162 44 L 168 22 L 178 38 Z" fill="url(#ge-gold)" stroke="#92400e" stroke-width="1.5"/>
+  <path d="M 178 44 L 188 18 L 196 36 Z" fill="url(#ge-gold)" stroke="#92400e" stroke-width="1.5"/>
+  <path d="M 196 44 L 200 8 L 208 8 L 222 44 Z" fill="url(#ge-gold)" stroke="#92400e" stroke-width="1.8"/>
+  <path d="M 208 36 L 218 18 L 222 44 Z" fill="url(#ge-gold)" stroke="#92400e" stroke-width="1.5"/>
+  <path d="M 222 44 L 232 22 L 240 38 Z" fill="url(#ge-gold)" stroke="#92400e" stroke-width="1.5"/>
+  <!-- 中央寶石 -->
+  <circle cx="204" cy="22" r="6" fill="url(#ge-jewel)" stroke="#7f1d1d" stroke-width="1.5"/>
+  <circle cx="203" cy="21" r="1.8" fill="#fff" opacity="0.8"/>
+  <!-- 兩側小寶石 -->
+  <circle cx="186" cy="32" r="2.5" fill="#3b82f6" stroke="#1e3a8a" stroke-width="1"/>
+  <circle cx="222" cy="32" r="2.5" fill="#3b82f6" stroke="#1e3a8a" stroke-width="1"/>
+
+  <!-- 神聖光點裝飾 -->
+  <circle cx="60" cy="60" r="2" fill="#fbbf24"/>
+  <circle cx="55" cy="55" r="4" fill="#fbbf24" opacity="0.4"/>
+  <circle cx="340" cy="60" r="2" fill="#fbbf24"/>
+  <circle cx="345" cy="55" r="4" fill="#fbbf24" opacity="0.4"/>
+  <circle cx="200" cy="160" r="1.5" fill="#fff" opacity="0.9"/>
+  <circle cx="180" cy="155" r="1" fill="#fff" opacity="0.9"/>
+  <circle cx="220" cy="155" r="1" fill="#fff" opacity="0.9"/>
+</svg>

@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 250" width="200" height="250">
+  <!-- 法師天鵝 Mage Swan -->
+  <defs>
+    <linearGradient id="mag-feather" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dde2eb"/>
+    </linearGradient>
+    <linearGradient id="mag-beak" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffb74d"/>
+      <stop offset="1" stop-color="#e8780b"/>
+    </linearGradient>
+    <linearGradient id="mag-robe" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#6c44c2"/>
+      <stop offset="1" stop-color="#2d1a5a"/>
+    </linearGradient>
+    <linearGradient id="mag-trim" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffe28a"/>
+      <stop offset="1" stop-color="#c69a2a"/>
+    </linearGradient>
+    <radialGradient id="mag-aura" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#a78bfa" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#a78bfa" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <circle cx="100" cy="135" r="100" fill="url(#mag-aura)"/>
+
+  <ellipse cx="100" cy="238" rx="50" ry="6" fill="#000" opacity="0.18"/>
+
+  <path d="M 76 220 Q 68 234 76 236 Q 86 236 88 232 Q 92 236 96 232 L 96 220 Z" fill="url(#mag-beak)" stroke="#9c4a05" stroke-width="1"/>
+  <path d="M 124 220 Q 132 234 124 236 Q 114 236 112 232 Q 108 236 104 232 L 104 220 Z" fill="url(#mag-beak)" stroke="#9c4a05" stroke-width="1"/>
+
+  <ellipse cx="100" cy="170" rx="55" ry="58" fill="url(#mag-feather)" stroke="#a8b0bd" stroke-width="2"/>
+
+  <!-- 紫袍（梯形外型，領口上移到脖子根部 y=117，擋住胸前白羽） -->
+  <path d="M 55 125 Q 60 117 100 117 Q 140 117 145 125 L 152 226 Q 100 232 48 226 Z" fill="url(#mag-robe)" stroke="#1a0d3a" stroke-width="1.5"/>
+  <!-- 袍底金邊 -->
+  <path d="M 50 224 Q 100 230 150 224" stroke="url(#mag-trim)" stroke-width="3" fill="none"/>
+  <!-- 衣襟金線 -->
+  <line x1="100" y1="120" x2="100" y2="225" stroke="url(#mag-trim)" stroke-width="2" opacity="0.7"/>
+
+  <!-- 星 -->
+  <path d="M 76 165 L 78 170 L 83 171 L 79 174 L 80 179 L 76 176 L 72 179 L 73 174 L 69 171 L 74 170 Z" fill="url(#mag-trim)"/>
+  <path d="M 124 195 L 126 199 L 130 200 L 127 202 L 128 206 L 124 203 L 121 206 L 122 202 L 118 200 L 123 199 Z" fill="url(#mag-trim)"/>
+
+  <!-- 翅膀（紫色寬袖 + 金邊袖口） -->
+  <path d="M 58 142 Q 36 156 42 182 Q 50 172 58 165 L 60 160 Q 56 150 58 142 Z" fill="url(#mag-robe)" stroke="#1a0d3a" stroke-width="1.5"/>
+  <path d="M 142 142 Q 164 156 158 182 Q 150 172 142 165 L 140 160 Q 144 150 142 142 Z" fill="url(#mag-robe)" stroke="#1a0d3a" stroke-width="1.5"/>
+  <ellipse cx="48" cy="178" rx="10" ry="3" fill="url(#mag-trim)"/>
+  <ellipse cx="152" cy="178" rx="10" ry="3" fill="url(#mag-trim)"/>
+
+  <!-- 脖子 -->
+  <path d="M 90 115 Q 76 95 86 75 Q 96 65 110 70 Q 114 90 105 105 Z" fill="url(#mag-feather)" stroke="#a8b0bd" stroke-width="2"/>
+
+  <!-- 頭 -->
+  <circle cx="100" cy="55" r="22" fill="url(#mag-feather)" stroke="#a8b0bd" stroke-width="2"/>
+
+  <!-- 嘴喙 -->
+  <path d="M 118 50 L 138 48 Q 142 52 138 60 L 118 60 Z" fill="url(#mag-beak)" stroke="#9c4a05" stroke-width="1.2"/>
+  <ellipse cx="124" cy="51" rx="1" ry="1.2" fill="#3a1f10"/>
+
+  <!-- 眼（瞇眼老法師） -->
+  <path d="M 105 44 Q 109 47 113 44" stroke="#2a1860" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M 102 36 Q 108 33 116 38" stroke="#e8e8e8" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+  <!-- 巫師帽（縮小，留在 viewBox 內，不擋眼） -->
+  <!-- 主三角，y=8 到 y=30 -->
+  <path d="M 78 30 L 100 8 L 122 30 Z" fill="url(#mag-robe)" stroke="#1a0d3a" stroke-width="1.5"/>
+  <!-- 帽尖小球 -->
+  <circle cx="100" cy="9" r="3" fill="url(#mag-trim)"/>
+  <!-- 帽簷（窄一點，剛好戴頭頂，不過眼） -->
+  <ellipse cx="100" cy="32" rx="30" ry="5" fill="url(#mag-robe)" stroke="#1a0d3a" stroke-width="1.5"/>
+  <!-- 金帶 -->
+  <rect x="72" y="27" width="56" height="4" fill="url(#mag-trim)" stroke="#7a5a1a" stroke-width="0.8"/>
+  <!-- 帽上星 -->
+  <path d="M 95 16 L 97 20 L 101 21 L 98 23 L 99 27 L 95 25 L 91 27 L 92 23 L 89 21 L 93 20 Z" fill="url(#mag-trim)"/>
+
+  <!-- 呆毛（從帽簷下方左前方翹出） -->
+  <path d="M 80 36 Q 76 28 78 22 Q 84 26 84 32 Q 84 36 80 36 Z" fill="url(#mag-feather)" stroke="#a8b0bd" stroke-width="1"/>
+</svg>

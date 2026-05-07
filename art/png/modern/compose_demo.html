@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8"/>
+<title>紙娃娃換裝預覽</title>
+<style>
+  body{margin:0;font-family:-apple-system,"Segoe UI",sans-serif;background:linear-gradient(180deg,#0f172a,#1e1b4b);color:#e2e8f0;padding:20px;}
+  h1{margin:0 0 4px;font-size:22px;color:#fbbf24;}
+  small{color:#94a3b8;}
+  h2{margin:20px 0 8px;font-size:15px;color:#a5b4fc;border-bottom:1px solid #312e81;padding-bottom:4px;}
+  .wrap{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:14px;}
+  @media(max-width:760px){.wrap{grid-template-columns:1fr;}}
+  .stage{background:linear-gradient(180deg,#312e81,#1e1b4b);border:1px solid #4338ca;border-radius:14px;padding:24px;text-align:center;}
+  .stage .layered{position:relative;width:384px;height:384px;margin:0 auto;background:rgba(255,255,255,0.04);border-radius:8px;}
+  .stage img{position:absolute;left:0;top:0;width:384px;height:384px;image-rendering:pixelated;image-rendering:crisp-edges;}
+  .panel{background:rgba(0,0,0,0.25);border:1px solid #312e81;border-radius:14px;padding:14px;}
+  .row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .row label{font-size:12px;width:80px;color:#cbd5e1;}
+  .row select{flex:1;padding:6px 8px;background:#1e1b4b;color:#e2e8f0;border:1px solid #4338ca;border-radius:6px;font-size:12px;}
+  .preset{display:inline-block;padding:4px 10px;border-radius:8px;background:#4338ca;color:#fff;font-size:12px;cursor:pointer;margin:2px 4px 2px 0;}
+  .preset:hover{background:#6d28d9;}
+  code{background:#0f172a;padding:1px 6px;border-radius:4px;color:#fbbf24;font-size:11px;}
+  .gallery{display:flex;flex-wrap:wrap;gap:10px;}
+  .gallery .item{background:rgba(0,0,0,0.3);border:1px solid #312e81;border-radius:8px;padding:8px;text-align:center;font-size:11px;color:#cbd5e1;}
+  .gallery img{display:block;width:96px;height:96px;image-rendering:pixelated;image-rendering:crisp-edges;background:rgba(255,255,255,0.05);}
+</style>
+</head>
+<body>
+
+<h1>🪄 Hisiri Mahjong — 紙娃娃換裝系統</h1>
+<small>所有層都對齊到 96×96 anchor，可以隨意組合</small>
+
+<div class="wrap">
+  <div class="stage">
+    <div class="layered" id="stage">
+      <img id="L_aura" src=""/>
+      <img id="L_wings" src=""/>
+      <img id="L_base" src="base/swan_white_x4.png"/>
+      <img id="L_body" src=""/>
+      <img id="L_hand_l" src=""/>
+      <img id="L_hand_r" src=""/>
+      <img id="L_steam" src=""/>
+      <img id="L_head" src=""/>
+      <img id="L_eyes" src=""/>
+    </div>
+    <div style="margin-top:12px;">
+      <span class="preset" onclick="preset('warrior')">戰士</span>
+      <span class="preset" onclick="preset('archer')">弓手</span>
+      <span class="preset" onclick="preset('paladin')">聖騎</span>
+      <span class="preset" onclick="preset('mage')">法師</span>
+      <span class="preset" onclick="preset('breakfast')">早餐鵝</span>
+      <span class="preset" onclick="preset('lunch')">午餐鵝</span>
+      <span class="preset" onclick="preset('dinner')">晚餐鵝</span>
+      <span class="preset" onclick="preset('midnight')">宵夜鵝</span>
+      <span class="preset" onclick="preset('emperor')">鵝皇</span>
+      <span class="preset" onclick="preset('dragon')">龍鵝</span>
+      <span class="preset" onclick="preset('naked')">裸鵝</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>自訂組合</h2>
+    <div class="row">
+      <label>底身</label>
+      <select id="sel_base" onchange="setLayer('base', this.value)">
+        <option value="base/swan_white">swan_white</option>
+        <option value="base/swan_dark">swan_dark</option>
+        <option value="base/swan_green">swan_green</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>頭部</label>
+      <select id="sel_head" onchange="setLayer('head', this.value)">
+        <option value="">（無）</option>
+        <option value="layers/head/red_headband">red_headband</option>
+        <option value="layers/head/archer_hood">archer_hood</option>
+        <option value="layers/head/paladin_halo">paladin_halo</option>
+        <option value="layers/head/star_hat">star_hat</option>
+        <option value="layers/head/chef_hat">chef_hat</option>
+        <option value="layers/head/chef_hat_french">chef_hat_french</option>
+        <option value="layers/head/pajama_hair">pajama_hair</option>
+        <option value="layers/head/crown">crown</option>
+        <option value="layers/head/dragon_horns">dragon_horns</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>身體</label>
+      <select id="sel_body" onchange="setLayer('body', this.value)">
+        <option value="">（無）</option>
+        <option value="layers/body/warrior_chest">warrior_chest</option>
+        <option value="layers/body/archer_vest">archer_vest</option>
+        <option value="layers/body/paladin_armor">paladin_armor</option>
+        <option value="layers/body/mage_robe">mage_robe</option>
+        <option value="layers/body/chef_apron">chef_apron</option>
+        <option value="layers/body/business_suit">business_suit</option>
+        <option value="layers/body/chef_coat_french">chef_coat_french</option>
+        <option value="layers/body/pajamas_torn">pajamas_torn</option>
+        <option value="layers/body/emperor_chest">emperor_chest</option>
+        <option value="layers/body/dragon_scales">dragon_scales</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>左手</label>
+      <select id="sel_hand_l" onchange="setLayer('hand_l', this.value)">
+        <option value="">（無）</option>
+        <option value="layers/hand_l/shield">shield</option>
+        <option value="layers/hand_l/bow">bow</option>
+        <option value="layers/hand_l/lunchbox">lunchbox</option>
+        <option value="layers/hand_l/frying_pan">frying_pan</option>
+        <option value="layers/hand_l/wine_glass">wine_glass</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>右手</label>
+      <select id="sel_hand_r" onchange="setLayer('hand_r', this.value)">
+        <option value="">（無）</option>
+        <option value="layers/hand_r/sword">sword</option>
+        <option value="layers/hand_r/holy_sword">holy_sword</option>
+        <option value="layers/hand_r/staff">staff</option>
+        <option value="layers/hand_r/chef_knife">chef_knife</option>
+        <option value="layers/hand_r/ramen_bowl">ramen_bowl</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>翅膀層</label>
+      <select id="sel_wings" onchange="setLayer('wings', this.value)">
+        <option value="">（無）</option>
+        <option value="layers/fx/emperor_wings">emperor_wings</option>
+        <option value="layers/fx/dragon_wings">dragon_wings</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>光環</label>
+      <select id="sel_aura" onchange="setLayer('aura', this.value)">
+        <option value="">（無）</option>
+        <option value="layers/fx/royal_aura">royal_aura</option>
+        <option value="layers/fx/dark_aura">dark_aura</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>嘴前/特效</label>
+      <select id="sel_steam" onchange="setLayer('steam', this.value)">
+        <option value="">（無）</option>
+        <option value="layers/fx/dragon_fire">dragon_fire</option>
+        <option value="layers/fx/midnight_steam">midnight_steam</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>眼覆蓋</label>
+      <select id="sel_eyes" onchange="setLayer('eyes', this.value)">
+        <option value="">（無）</option>
+        <option value="layers/fx/midnight_red_eyes">midnight_red_eyes</option>
+      </select>
+    </div>
+    <p style="font-size:11px;color:#94a3b8;margin-top:14px;">
+      組合方式 = 底身 → body → hand_l → hand_r → 特效 → head/eyes 由下往上疊。<br/>
+      Boss 跟玩家用同一套基底，未來想出新裝備就追加一個 <code>body_xxx.png</code> 即可，不用重畫整隻。
+    </p>
+  </div>
+</div>
+
+<h2>合成成品（classes/ + bosses/）</h2>
+<div class="gallery">
+  <div class="item"><img src="classes/warrior.png"/><br/>warrior</div>
+  <div class="item"><img src="classes/archer.png"/><br/>archer</div>
+  <div class="item"><img src="classes/paladin.png"/><br/>paladin</div>
+  <div class="item"><img src="classes/mage.png"/><br/>mage</div>
+  <div class="item"><img src="bosses/boss_breakfast.png"/><br/>breakfast</div>
+  <div class="item"><img src="bosses/boss_lunch.png"/><br/>lunch</div>
+  <div class="item"><img src="bosses/boss_dinner.png"/><br/>dinner</div>
+  <div class="item"><img src="bosses/boss_midnight.png"/><br/>midnight</div>
+  <div class="item"><img src="bosses/boss_emperor.png"/><br/>emperor</div>
+  <div class="item"><img src="bosses/boss_dragon.png"/><br/>dragon</div>
+</div>
+
+<h2>技能圖示（skills/）</h2>
+<div class="gallery">
+  <div class="item"><img src="skills/skill_fire.png" style="width:64px;height:64px;"/><br/>fire</div>
+  <div class="item"><img src="skills/skill_lightning.png" style="width:64px;height:64px;"/><br/>lightning</div>
+  <div class="item"><img src="skills/skill_ice.png" style="width:64px;height:64px;"/><br/>ice</div>
+  <div class="item"><img src="skills/skill_blood.png" style="width:64px;height:64px;"/><br/>blood</div>
+  <div class="item"><img src="skills/skill_holy.png" style="width:64px;height:64px;"/><br/>holy</div>
+  <div class="item"><img src="skills/skill_death.png" style="width:64px;height:64px;"/><br/>death</div>
+</div>
+
+<script>
+const PRESETS = {
+  warrior:   {base:'base/swan_white', body:'layers/body/warrior_chest',    hand_r:'layers/hand_r/sword',       head:'layers/head/red_headband'},
+  archer:    {base:'base/swan_white', body:'layers/body/archer_vest',      hand_l:'layers/hand_l/bow',         head:'layers/head/archer_hood'},
+  paladin:   {base:'base/swan_white', body:'layers/body/paladin_armor',    hand_l:'layers/hand_l/shield',      hand_r:'layers/hand_r/holy_sword', head:'layers/head/paladin_halo'},
+  mage:      {base:'base/swan_white', body:'layers/body/mage_robe',        hand_r:'layers/hand_r/staff',       head:'layers/head/star_hat'},
+  breakfast: {base:'base/swan_white', body:'layers/body/chef_apron',       hand_l:'layers/hand_l/frying_pan',  head:'layers/head/chef_hat'},
+  lunch:     {base:'base/swan_white', body:'layers/body/business_suit',    hand_l:'layers/hand_l/lunchbox'},
+  dinner:    {base:'base/swan_white', body:'layers/body/chef_coat_french', hand_l:'layers/hand_l/wine_glass',  hand_r:'layers/hand_r/chef_knife', head:'layers/head/chef_hat_french'},
+  midnight:  {base:'base/swan_dark',  body:'layers/body/pajamas_torn',     hand_r:'layers/hand_r/ramen_bowl',  head:'layers/head/pajama_hair', aura:'layers/fx/dark_aura', steam:'layers/fx/midnight_steam', eyes:'layers/fx/midnight_red_eyes'},
+  emperor:   {base:'base/swan_white', body:'layers/body/emperor_chest',    head:'layers/head/crown', aura:'layers/fx/royal_aura', wings:'layers/fx/emperor_wings'},
+  dragon:    {base:'base/swan_green', body:'layers/body/dragon_scales',    head:'layers/head/dragon_horns', wings:'layers/fx/dragon_wings', steam:'layers/fx/dragon_fire'},
+  naked:     {base:'base/swan_white'},
+};
+
+const SLOTS = ['base','body','hand_l','hand_r','head','wings','aura','steam','eyes'];
+
+function setLayer(slot, val) {
+  const img = document.getElementById('L_' + slot);
+  if (val) {
+    img.src = val + '_x4.png';
+    img.style.display = 'block';
+  } else {
+    img.removeAttribute('src');
+    img.style.display = 'none';
+  }
+  const sel = document.getElementById('sel_' + slot);
+  if (sel) sel.value = val;
+}
+
+function preset(name) {
+  const p = PRESETS[name] || {};
+  for (const slot of SLOTS) {
+    setLayer(slot, p[slot] || '');
+  }
+}
+
+// 預設先載戰士
+preset('warrior');
+</script>
+
+</body>
+</html>

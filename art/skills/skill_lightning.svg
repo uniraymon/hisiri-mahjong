@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- 閃電系 Lightning Skill Icon -->
+  <defs>
+    <radialGradient id="lt-bg" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#1e3a8a"/>
+      <stop offset="1" stop-color="#0f172a"/>
+    </radialGradient>
+    <radialGradient id="lt-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#dbeafe" stop-opacity="0.85"/>
+      <stop offset="0.5" stop-color="#3b82f6" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#1e3a8a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="lt-bolt" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#fef3c7"/>
+      <stop offset="0.4" stop-color="#dbeafe"/>
+      <stop offset="1" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 圓形底 -->
+  <circle cx="128" cy="128" r="120" fill="url(#lt-bg)" stroke="#3b82f6" stroke-width="4"/>
+  <circle cx="128" cy="128" r="115" fill="none" stroke="#dbeafe" stroke-width="1" opacity="0.5"/>
+
+  <!-- 中央光暈 -->
+  <circle cx="128" cy="128" r="90" fill="url(#lt-glow)"/>
+
+  <!-- 放射性電弧（圍繞 8 條） -->
+  <g stroke="#dbeafe" stroke-width="2" fill="none" opacity="0.7" stroke-linecap="round">
+    <path d="M 128 50 L 122 80 L 130 90 L 124 110"/>
+    <path d="M 128 206 L 134 176 L 126 166 L 132 146"/>
+    <path d="M 50 128 L 80 134 L 90 126 L 110 132"/>
+    <path d="M 206 128 L 176 122 L 166 130 L 146 124"/>
+    <path d="M 75 75 L 95 95 L 88 105 L 105 115"/>
+    <path d="M 181 75 L 161 95 L 168 105 L 151 115"/>
+    <path d="M 75 181 L 95 161 L 105 168 L 115 151"/>
+    <path d="M 181 181 L 161 161 L 151 168 L 141 151"/>
+  </g>
+
+  <!-- 主閃電（Z 字形） -->
+  <path d="M 145 60 L 105 130 L 135 130 L 110 196 L 165 110 L 130 110 Z" fill="url(#lt-bolt)" stroke="#1e3a8a" stroke-width="2"/>
+  <!-- 內亮 -->
+  <path d="M 142 75 L 115 130 L 128 130 L 115 180 L 152 115 L 132 115 Z" fill="#fef3c7" opacity="0.9"/>
+
+  <!-- 電火花 -->
+  <circle cx="80" cy="80" r="3" fill="#fef3c7"/>
+  <circle cx="180" cy="80" r="2" fill="#dbeafe"/>
+  <circle cx="200" cy="160" r="3" fill="#fef3c7"/>
+  <circle cx="60" cy="180" r="2" fill="#dbeafe"/>
+  <circle cx="200" cy="200" r="2.5" fill="#fef3c7"/>
+  <circle cx="56" cy="100" r="2" fill="#dbeafe"/>
+
+  <!-- 外圈光暈 -->
+  <circle cx="128" cy="128" r="120" fill="none" stroke="#fef3c7" stroke-width="1" opacity="0.4"/>
+</svg>

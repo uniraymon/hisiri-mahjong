@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8"/>
+<title>Hisiri Mahjong — V3 動感版預覽</title>
+<style>
+  body{margin:0;font-family:-apple-system,"Segoe UI",sans-serif;background:linear-gradient(180deg,#0f172a,#1e1b4b);color:#e2e8f0;padding:20px;}
+  h1{margin:0 0 6px;font-size:24px;color:#fbbf24;}
+  small{color:#94a3b8;}
+  h2{margin:24px 0 10px;font-size:17px;color:#a5b4fc;border-bottom:1px solid #312e81;padding-bottom:6px;}
+  .row{display:flex;gap:16px;flex-wrap:wrap;}
+  .card{background:#1e1b4b;border:1px solid #312e81;border-radius:10px;padding:14px;text-align:center;}
+  .card img{display:block;background:radial-gradient(ellipse at center,#312e81 0%,#0f172a 100%);border-radius:8px;image-rendering:pixelated;image-rendering:crisp-edges;}
+  .card .name{margin-top:8px;font-size:14px;color:#cbd5e1;font-weight:bold;}
+  .card .desc{font-size:11px;color:#94a3b8;margin-top:2px;}
+  .card.boss{border-color:#dc2626;}
+  .card.skill{border-color:#fbbf24;}
+  .card.world{border-color:#a855f7;background:linear-gradient(135deg,#1e1b4b,#3b0764);}
+</style>
+</head>
+<body>
+
+<h1>🦢 Hisiri Mahjong — V3 動感版</h1>
+<small>3/4 視角戰鬥姿勢、5 級陰影、深色描邊、動感速度線</small>
+
+<h2>玩家角色（4 職業）</h2>
+<div class="row">
+  <div class="card"><img src="classes/warrior_x4.png" width="288" height="288"/><div class="name">戰士天鵝</div><div class="desc">弓步舉劍 攻擊預備</div></div>
+  <div class="card"><img src="classes/archer_x4.png" width="288" height="288"/><div class="name">弓手天鵝</div><div class="desc">拉弓瞄準 蓄勢待發</div></div>
+  <div class="card"><img src="classes/paladin_x4.png" width="288" height="288"/><div class="name">聖騎天鵝</div><div class="desc">舉盾持劍 神聖之姿</div></div>
+  <div class="card"><img src="classes/mage_x4.png" width="288" height="288"/><div class="name">法師天鵝</div><div class="desc">法杖高舉 詠唱咒文</div></div>
+</div>
+
+<h2>個人王（Lv.30 個人 Boss）</h2>
+<div class="row">
+  <div class="card boss"><img src="bosses/boss_breakfast_x4.png" width="288" height="288"/><div class="name">早餐鵝</div><div class="desc">揮鍋猛擊</div></div>
+  <div class="card boss"><img src="bosses/boss_lunch_x4.png" width="288" height="288"/><div class="name">午餐鵝</div><div class="desc">疲憊上班族 提便當</div></div>
+  <div class="card boss"><img src="bosses/boss_dinner_x4.png" width="288" height="288"/><div class="name">晚餐鵝</div><div class="desc">優雅閉眼笑 雙手酒杯+刀</div></div>
+  <div class="card boss"><img src="bosses/boss_midnight_x4.png" width="288" height="288"/><div class="name">宵夜鵝 ⭐</div><div class="desc">紫黑邪氣 紅眼怒視 詭異紫煙</div></div>
+</div>
+
+<h2>世界王（World Boss）</h2>
+<div class="row">
+  <div class="card world"><img src="bosses/boss_emperor_x4.png" width="288" height="288"/><div class="name">鵝皇</div><div class="desc">巨翼大張 王者之姿</div></div>
+  <div class="card world"><img src="bosses/boss_dragon_x4.png" width="288" height="288"/><div class="name">古龍鵝</div><div class="desc">龍翼龍角 噴火咆哮</div></div>
+</div>
+
+<h2>技能圖示</h2>
+<div class="row">
+  <div class="card skill"><img src="skills/skill_fire_x4.png" width="192" height="192"/><div class="name">🔥 火焰</div><div class="desc">螺旋漩渦爆發</div></div>
+  <div class="card skill"><img src="skills/skill_lightning_x4.png" width="192" height="192"/><div class="name">⚡ 閃電</div><div class="desc">Z 型放射</div></div>
+  <div class="card skill"><img src="skills/skill_ice_x4.png" width="192" height="192"/><div class="name">❄️ 冰霜</div><div class="desc">六角雪花爆發</div></div>
+  <div class="card skill"><img src="skills/skill_blood_x4.png" width="192" height="192"/><div class="name">🩸 流血</div><div class="desc">血滴漩渦</div></div>
+  <div class="card skill"><img src="skills/skill_holy_x4.png" width="192" height="192"/><div class="name">💫 神聖</div><div class="desc">十字光柱</div></div>
+  <div class="card skill"><img src="skills/skill_death_x4.png" width="192" height="192"/><div class="name">☠️ 死亡</div><div class="desc">怒吼骷髏</div></div>
+</div>
+
+<h2>整合說明</h2>
+<div style="background:rgba(0,0,0,0.3);border:1px solid #312e81;border-radius:10px;padding:14px;font-size:13px;line-height:1.7;">
+  <p>所有 PNG 都有兩種尺寸：</p>
+  <ul>
+    <li><code style="background:#1e1b4b;padding:1px 6px;border-radius:4px;color:#fbbf24;">xxx.png</code>     — 原生 96×96（角色）/ 64×64（技能），<strong>遊戲實際使用</strong></li>
+    <li><code style="background:#1e1b4b;padding:1px 6px;border-radius:4px;color:#fbbf24;">xxx_x4.png</code>  — 放大 4×（384×384 / 256×256），預覽用</li>
+  </ul>
+  <p>整合到遊戲時加 <code style="background:#1e1b4b;padding:1px 6px;border-radius:4px;color:#fbbf24;">image-rendering: pixelated</code> CSS，否則會糊掉。</p>
+  <p>詳細整合方式看 <code style="background:#1e1b4b;padding:1px 6px;border-radius:4px;color:#fbbf24;">art/INTEGRATION.md</code>。</p>
+</div>
+
+</body>
+</html>

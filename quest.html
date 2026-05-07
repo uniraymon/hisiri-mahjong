@@ -1100,6 +1100,74 @@
   .boss-card.dead { background: linear-gradient(135deg, #374151, #6b7280); border-color: #9ca3af; opacity: 0.85; }
   .boss-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
   .boss-icon { font-size: 38px; }
+
+  /* ========================================================
+     V3 像素美術整合
+     ======================================================== */
+  .boss-art, .class-art, .skill-art {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    display: block;
+  }
+  /* 世界王卡片小圖 */
+  .boss-art {
+    width: 64px; height: 64px;
+    filter: drop-shadow(0 3px 8px rgba(124,58,237,0.45));
+  }
+  /* 個人王大圖（戰鬥面板用） */
+  .boss-art.pb-large {
+    width: 96px; height: 96px;
+    filter: drop-shadow(0 4px 20px rgba(124,58,237,0.65));
+  }
+  /* 戰鬥 arena 對戰圖（combatant-icon 內） */
+  .combatant-icon .boss-art,
+  .combatant-icon .class-art {
+    width: 56px; height: 56px;
+    margin: 0 auto;
+  }
+  .skill-art {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+  }
+
+  /* ── 戰鬥動畫 ── */
+  @keyframes boss-attack {
+    0%,100% { transform: translateX(0) scaleX(1); }
+    30%  { transform: translateX(-8px) scale(1.06); }
+    60%  { transform: translateX(12px) scaleX(1.03); }
+  }
+  @keyframes boss-hurt {
+    0%,100% { filter: drop-shadow(0 4px 12px rgba(124,58,237,0.4)); }
+    50%  { filter: drop-shadow(0 0 20px #ef4444) brightness(1.45); }
+  }
+  @keyframes boss-cast {
+    0%,100% { filter: drop-shadow(0 4px 12px rgba(124,58,237,0.4)); }
+    50%  { filter: drop-shadow(0 0 25px #fbbf24) brightness(1.35); }
+  }
+  .boss-art.attacking { animation: boss-attack 0.5s ease; }
+  .boss-art.hurt      { animation: boss-hurt   0.4s ease; }
+  .boss-art.casting   { animation: boss-cast   0.7s ease; }
+  /* 透過父層 .combatant 觸發 */
+  .combatant.hurt     .boss-art  { animation: boss-hurt   0.4s ease; }
+  .combatant.attacking .boss-art { animation: boss-attack 0.5s ease; }
+  .combatant.hurt     .class-art { animation: boss-hurt   0.4s ease; }
+  .combatant.attacking .class-art { animation: boss-attack 0.5s ease; }
+
+  /* ── 受傷數字飄出 ── */
+  @keyframes dmg-float {
+    0%   { opacity: 0; transform: translateY(0) scale(0.7); }
+    20%  { opacity: 1; transform: translateY(-10px) scale(1.1); }
+    100% { opacity: 0; transform: translateY(-60px) scale(1); }
+  }
+  .dmg-num {
+    position: absolute; pointer-events: none; z-index: 100;
+    font-weight: 900; font-size: 22px;
+    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    animation: dmg-float 0.9s ease forwards;
+  }
+  .dmg-num.crit   { color: #fbbf24; font-size: 32px; text-shadow: 0 0 8px #ef4444; }
+  .dmg-num.normal { color: #fef3c7; }
+  .dmg-num.heal   { color: #10b981; }
   .boss-name { font-size: 18px; font-weight: 800; color: #fde68a; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
   .boss-status { font-size: 11px; color: #ddd6fe; margin-top: 2px; }
   .boss-hp-bar {
@@ -2186,6 +2254,7 @@
   const CLASSES = {
     warrior: {
       icon: '🤺', name: '戰士',
+      image: 'art/png/modern_v3/classes/warrior.png',
       baseImage:   'assets/classes/warrior.svg',
       weaponImage: 'assets/equipment/sword.svg',
       accImage:    'assets/equipment/helmet.svg',
@@ -2231,6 +2300,7 @@
     },
     archer: {
       icon: '🧝', name: '弓手',
+      image: 'art/png/modern_v3/classes/archer.png',
       baseImage:   'assets/classes/archer.svg',
       weaponImage: 'assets/equipment/bow.svg',
       accImage:    'assets/equipment/wing-amulet.svg',
@@ -2277,6 +2347,7 @@
     },
     mage: {
       icon: '🧙', name: '法師',
+      image: 'art/png/modern_v3/classes/mage.png',
       baseImage:   'assets/classes/mage.svg',
       weaponImage: 'assets/equipment/staff.svg',
       accImage:    'assets/equipment/crown.svg',
@@ -2322,6 +2393,7 @@
     },
     paladin: {
       icon: '🦸', name: '聖騎',
+      image: 'art/png/modern_v3/classes/paladin.png',
       baseImage:   'assets/classes/paladin.svg',
       weaponImage: 'assets/equipment/holy-sword.svg',
       accImage:    'assets/equipment/crown.svg',
@@ -2796,7 +2868,7 @@
   const WB9_BOSSES = [
     {
       id: 'goose_king',
-      name: '🦢 鵝皇', icon: '🦢',
+      name: '🦢 鵝皇', icon: '🦢', art: 'art/png/modern_v3/bosses/boss_emperor.png',
       maxHp: 3600000,
       atk: 150, def: 80, spd: 70, defPen: 0.30,
       level: 30,
@@ -2816,7 +2888,7 @@
     },
     {
       id: 'dragon_goose',
-      name: '🐉 古龍鵝', icon: '🐉',
+      name: '🐉 古龍鵝', icon: '🐉', art: 'art/png/modern_v3/bosses/boss_dragon.png',
       maxHp: 4000000,
       atk: 220, def: 120, spd: 100, defPen: 0.30,
       level: 40,
@@ -3439,7 +3511,9 @@
         <div class="boss-card" data-bossid="${boss.id}">
           ${killBanner}
           <div class="boss-header">
-            <span class="boss-icon" style="font-size:42px;">${boss.icon}</span>
+            ${boss.art
+              ? `<img class="boss-art" src="${boss.art}" alt="${boss.name}" style="width:64px;height:64px;">`
+              : `<span class="boss-icon" style="font-size:42px;">${boss.icon}</span>`}
             <div style="flex:1;">
               <div class="boss-name">${boss.name} <span style="font-size:11px; color:#a16207; font-weight:600;">Lv ${boss.level}</span></div>
               <div class="boss-status">⚔️ ATK ${boss.atk} / 🛡️ DEF ${boss.def} / 💨 SPD ${boss.spd}</div>
@@ -3477,7 +3551,7 @@
   const PERSONAL_BOSSES = [
     {
       id: 'breakfast_goose',
-      name: '早餐鵝', icon: '🍳',
+      name: '早餐鵝', icon: '🍳', art: 'art/png/modern_v3/bosses/boss_breakfast.png',
       hp: 25000, atk: 150, def: 150, spd: 80, level: 30, defPen: 0.30,
       verb: '塗果醬',
       fixedSkillOrder: true,
@@ -3492,7 +3566,7 @@
     },
     {
       id: 'lunch_goose',
-      name: '午餐鵝', icon: '🍱',
+      name: '午餐鵝', icon: '🍱', art: 'art/png/modern_v3/bosses/boss_lunch.png',
       hp: 40000, atk: 200, def: 180, spd: 100, level: 30, defPen: 0.30,
       verb: '便當蓋下擊',
       ability: { type: 'multiHit', hits: 2 },
@@ -3508,7 +3582,7 @@
     },
     {
       id: 'dinner_goose',
-      name: '晚餐鵝', icon: '🍷',
+      name: '晚餐鵝', icon: '🍷', art: 'art/png/modern_v3/bosses/boss_dinner.png',
       hp: 60000, atk: 220, def: 200, spd: 70, level: 30, defPen: 0.30,
       verb: '紅酒甩擊',
       ability: { type: 'magicResist', resist: 0.3 },
@@ -3535,7 +3609,7 @@
     },
     {
       id: 'midnight_goose',
-      name: '宵夜鵝', icon: '🍜',
+      name: '宵夜鵝', icon: '🍜', art: 'art/png/modern_v3/bosses/boss_midnight.png',
       hp: 2000000, atk: 250, def: 900, spd: 120,
       level: 35, defPen: 0.30,
       physRes: 0.20, magRes: 0.50,
@@ -5396,6 +5470,20 @@
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2200);
   }
+
+  // ⭐ 受傷數字飄出（V3 美術用）
+  function showDamage(targetEl, amount, type = 'normal') {
+    if (!targetEl || !amount) return;
+    const el = document.createElement('div');
+    el.className = `dmg-num ${type}`;
+    el.textContent = type === 'heal' ? `+${amount}` : `-${amount}`;
+    el.style.left = `${20 + Math.random() * 50}%`;
+    el.style.top = '10%';
+    targetEl.style.position = 'relative';
+    targetEl.appendChild(el);
+    setTimeout(() => el.remove(), 900);
+  }
+  window.showDamage = showDamage;
 
   function getMeId() { return localStorage.getItem(ME_KEY); }
   function isPassVerified() { return localStorage.getItem(PASS_KEY) === '1'; }
@@ -11956,7 +12044,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508001535';
+  const APP_VERSION = '20260508004105';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -17760,7 +17848,9 @@ ${b.text}
       <div style="display:flex; gap:6px; margin-bottom:10px;">${tabsHtml}</div>
       <div style="background:linear-gradient(135deg,#1e1b4b,#4c1d95); color:#fff; padding:14px; border-radius:12px;">
         <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
-          <div style="font-size:36px;">${cur.icon}</div>
+          ${cur.art
+            ? `<img class="boss-art pb-large" id="curBossArt" src="${cur.art}" alt="${cur.name}">`
+            : `<div style="font-size:36px;">${cur.icon}</div>`}
           <div style="flex:1;">
             <div style="font-weight:700;">${cur.name} <span style="font-size:11px; opacity:0.85;">Lv ${cur.level}</span></div>
             <div style="font-size:10px; opacity:0.85;">ATK ${cur.atk} · DEF ${cur.def} · SPD ${cur.spd}${cur.ability ? ' · ' + describeAbility(cur.ability) : ''}${describeResist(cur) ? ' · ' + describeResist(cur) : ''}</div>
@@ -17832,6 +17922,7 @@ ${b.text}
       skills: def.skills || [],
       dialogue: def.dialogue, deathLine: def.deathLine,
       goldDrop: 0, xpDrop: 0,
+      art: def.art,
       isElite: false, isPersonalBoss: true,
       maxRounds: def.maxRounds,
     };
@@ -17843,7 +17934,7 @@ ${b.text}
     const arenaHtml = `
       <div class="battle-arena" id="battleArena">
         <div class="combatant" id="combatPlayer">
-          <div class="combatant-icon">${CLASSES[rpg.class].icon}</div>
+          <div class="combatant-icon">${CLASSES[rpg.class].image ? `<img class="class-art" src="${CLASSES[rpg.class].image}" alt="${CLASSES[rpg.class].name}">` : CLASSES[rpg.class].icon}</div>
           <div class="combatant-name">${escapeHtml(me.name)} Lv${rpg.level}</div>
           <div class="combatant-hp-track"><div class="combatant-hp-fill" id="pHpBar" style="width:100%"></div></div>
           <div class="combatant-hp-text" id="pHpText">${stats.maxHp}/${stats.maxHp}</div>
@@ -17857,7 +17948,7 @@ ${b.text}
         </div>
         <div class="vs-icon">⚔️</div>
         <div class="combatant" id="combatMonster">
-          <div class="combatant-icon">${monster.icon}</div>
+          <div class="combatant-icon">${monster.art ? `<img class="boss-art" src="${monster.art}" alt="${monster.name}">` : monster.icon}</div>
           <div class="combatant-name">${monster.name} Lv${monster.level}</div>
           <div class="combatant-hp-track"><div class="combatant-hp-fill" id="mHpBar" style="width:${(monster.hp/monster.maxHp)*100}%"></div></div>
           <div class="combatant-hp-text" id="mHpText">${monster.hp}/${monster.maxHp}</div>
@@ -19661,7 +19752,7 @@ ${b.text}
     const arenaHtml = `
       <div class="battle-arena" id="battleArena">
         <div class="combatant" id="combatPlayer">
-          <div class="combatant-icon">${CLASSES[rpg.class].icon}</div>
+          <div class="combatant-icon">${CLASSES[rpg.class].image ? `<img class="class-art" src="${CLASSES[rpg.class].image}" alt="${CLASSES[rpg.class].name}">` : CLASSES[rpg.class].icon}</div>
           <div class="combatant-name">${escapeHtml(me.name)} Lv${rpg.level}</div>
           <div class="combatant-hp-track"><div class="combatant-hp-fill" id="pHpBar" style="width:100%"></div></div>
           <div class="combatant-hp-text" id="pHpText">${stats.maxHp}/${stats.maxHp}</div>
@@ -19675,7 +19766,7 @@ ${b.text}
         </div>
         <div class="vs-icon">⚔️</div>
         <div class="combatant" id="combatMonster">
-          <div class="combatant-icon">${monster.icon}</div>
+          <div class="combatant-icon">${monster.art ? `<img class="boss-art" src="${monster.art}" alt="${monster.name}">` : monster.icon}</div>
           <div class="combatant-name">${monster.name} Lv${monster.level}</div>
           ${monster.ability ? `<div style="font-size:9px; color:#7c3aed; font-weight:600; margin-bottom:2px;">${describeAbility(monster.ability)}</div>` : ''}
           ${describeResist(monster) ? `<div style="font-size:9px; color:#d97706; font-weight:600; margin-bottom:2px;">${describeResist(monster)}</div>` : ''}
@@ -19692,6 +19783,7 @@ ${b.text}
     // 播放 log
     const logEl = document.getElementById('battleLog');
     let i = 0; let _lastRound;
+    let _prevPHp = stats.maxHp; let _prevMHp = monster.maxHp;
     const playStep = () => {
       if (i >= result.log.length) {
         // ⭐ try-finally 保證 __fightInProgress 一定被解鎖，不讓任何例外永久卡住按鈕
@@ -19791,13 +19883,35 @@ ${b.text}
           if (bpBar) bpBar.style.width = Math.min(100, (entry.hp.bloodPool / Math.max(1, stats.maxHp)) * 100) + '%';
           if (bpText) bpText.textContent = `🩸 血池 ${entry.hp.bloodPool}`;
         }
-        // shake 動畫
+        // 浮動傷害數字
+        const _mDmg = _prevMHp - entry.hp.monster;
+        const _pDmg = _prevPHp - entry.hp.player;
+        if (_mDmg > 0) {
+          const _mEl = document.getElementById('combatMonster');
+          if (_mEl) showDamage(_mEl, _mDmg, entry.type === 'crit-player' ? 'crit' : 'normal');
+        }
+        if (_pDmg > 0) {
+          const _pEl = document.getElementById('combatPlayer');
+          if (_pEl) showDamage(_pEl, _pDmg, 'normal');
+        }
+        if (entry.hp.player > _prevPHp) {
+          const _pEl = document.getElementById('combatPlayer');
+          if (_pEl) showDamage(_pEl, entry.hp.player - _prevPHp, 'heal');
+        }
+        _prevPHp = entry.hp.player; _prevMHp = entry.hp.monster;
+        // shake 動畫 + 攻擊動畫
         if (entry.type === 'player' || entry.type === 'crit-player') {
           const m = document.getElementById('combatMonster');
           m.classList.remove('hurt'); void m.offsetWidth; m.classList.add('hurt');
+          const p = document.getElementById('combatPlayer');
+          p.classList.remove('attacking'); void p.offsetWidth; p.classList.add('attacking');
+          setTimeout(() => p.classList.remove('attacking'), 500);
         } else if (entry.type === 'monster') {
           const p = document.getElementById('combatPlayer');
           p.classList.remove('hurt'); void p.offsetWidth; p.classList.add('hurt');
+          const m = document.getElementById('combatMonster');
+          m.classList.remove('attacking'); void m.offsetWidth; m.classList.add('attacking');
+          setTimeout(() => m.classList.remove('attacking'), 500);
         }
       }
       // ⭐ 行動條（純視覺，跑得比實際戰鬥快）
@@ -19822,7 +19936,7 @@ ${b.text}
     const arenaHtml = `
       <div class="multi-arena" id="battleArena">
         <div class="t-player">
-          <div class="t-icon">${CLASSES[rpg.class].icon}</div>
+          <div class="t-icon">${CLASSES[rpg.class].image ? `<img class="class-art" src="${CLASSES[rpg.class].image}" alt="${CLASSES[rpg.class].name}" style="width:48px;height:48px;image-rendering:pixelated;image-rendering:crisp-edges;">` : CLASSES[rpg.class].icon}</div>
           <div class="t-name">${escapeHtml(me.name)} Lv${rpg.level}</div>
           <div class="t-hp"><div class="t-hp-fill" id="mfPHpFill" style="width:100%"></div></div>
           <div class="t-hp-text" id="mfPHpText">${stats.maxHp}/${stats.maxHp}</div>
@@ -19838,7 +19952,7 @@ ${b.text}
         <div class="t-monsters">
           ${monsters.map((m, i) => `
             <div class="t-monster" id="mfTm${i}">
-              <div class="t-icon">${m.icon}</div>
+              <div class="t-icon">${m.art ? `<img class="boss-art" src="${m.art}" alt="${escapeHtml(m.name)}" style="width:40px;height:40px;image-rendering:pixelated;image-rendering:crisp-edges;">` : m.icon}</div>
               <div class="t-name">${escapeHtml(m.name)} Lv${m.level}</div>
               <div class="t-hp"><div class="t-hp-fill t-mfill" id="mfTmHpFill${i}" style="width:100%"></div></div>
               <div class="t-hp-text" id="mfTmHpText${i}">${m.hp}/${m.maxHp}</div>

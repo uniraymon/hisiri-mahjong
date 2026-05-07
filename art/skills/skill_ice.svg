@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- 冰霜系 Ice Skill Icon -->
+  <defs>
+    <radialGradient id="ic-bg" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#0c4a6e"/>
+      <stop offset="1" stop-color="#0f172a"/>
+    </radialGradient>
+    <radialGradient id="ic-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#e0f2fe" stop-opacity="0.85"/>
+      <stop offset="0.5" stop-color="#7dd3fc" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#0c4a6e" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ic-crystal" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#f0f9ff"/>
+      <stop offset="0.5" stop-color="#7dd3fc"/>
+      <stop offset="1" stop-color="#0284c7"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 圓形底 -->
+  <circle cx="128" cy="128" r="120" fill="url(#ic-bg)" stroke="#7dd3fc" stroke-width="4"/>
+  <circle cx="128" cy="128" r="115" fill="none" stroke="#e0f2fe" stroke-width="1" opacity="0.5"/>
+
+  <!-- 中央光暈 -->
+  <circle cx="128" cy="128" r="90" fill="url(#ic-glow)"/>
+
+  <!-- 六角雪花（主） -->
+  <g transform="translate(128 128)" stroke="url(#ic-crystal)" stroke-width="4" fill="none" stroke-linecap="round">
+    <line x1="0" y1="-70" x2="0" y2="70"/>
+    <line x1="-60" y1="-35" x2="60" y2="35"/>
+    <line x1="-60" y1="35" x2="60" y2="-35"/>
+    <!-- 雪花分支 -->
+    <path d="M 0 -70 L -10 -55 M 0 -70 L 10 -55"/>
+    <path d="M 0 70 L -10 55 M 0 70 L 10 55"/>
+    <path d="M 60 35 L 50 28 M 60 35 L 53 45"/>
+    <path d="M -60 -35 L -50 -28 M -60 -35 L -53 -45"/>
+    <path d="M 60 -35 L 50 -28 M 60 -35 L 53 -45"/>
+    <path d="M -60 35 L -50 28 M -60 35 L -53 45"/>
+    <!-- 中段裝飾 -->
+    <path d="M 0 -40 L -7 -35 M 0 -40 L 7 -35"/>
+    <path d="M 0 40 L -7 35 M 0 40 L 7 35"/>
+    <path d="M 35 20 L 28 17 M 35 20 L 31 26"/>
+    <path d="M -35 -20 L -28 -17 M -35 -20 L -31 -26"/>
+    <path d="M 35 -20 L 28 -17 M 35 -20 L 31 -26"/>
+    <path d="M -35 20 L -28 17 M -35 20 L -31 26"/>
+  </g>
+
+  <!-- 中央冰晶亮點 -->
+  <circle cx="128" cy="128" r="14" fill="#f0f9ff" stroke="#7dd3fc" stroke-width="2"/>
+  <circle cx="128" cy="128" r="7" fill="#0284c7"/>
+  <circle cx="125" cy="125" r="2" fill="#fff"/>
+
+  <!-- 邊緣冰晶 -->
+  <g fill="url(#ic-crystal)" stroke="#0284c7" stroke-width="1.2" opacity="0.85">
+    <polygon points="128,30 122,42 134,42"/>
+    <polygon points="128,226 122,214 134,214"/>
+    <polygon points="30,128 42,122 42,134"/>
+    <polygon points="226,128 214,122 214,134"/>
+  </g>
+
+  <!-- 雪花粒子 -->
+  <circle cx="70" cy="70" r="2" fill="#e0f2fe"/>
+  <circle cx="186" cy="70" r="1.5" fill="#e0f2fe"/>
+  <circle cx="70" cy="186" r="1.5" fill="#e0f2fe"/>
+  <circle cx="186" cy="186" r="2" fill="#e0f2fe"/>
+
+  <!-- 外圈光暈 -->
+  <circle cx="128" cy="128" r="120" fill="none" stroke="#e0f2fe" stroke-width="1" opacity="0.35"/>
+</svg>

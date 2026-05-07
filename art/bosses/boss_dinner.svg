@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- 晚餐鵝 Dinner Goose Boss Lv.30 -->
+  <defs>
+    <linearGradient id="di-feather" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dde2eb"/>
+    </linearGradient>
+    <linearGradient id="di-beak" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffb74d"/>
+      <stop offset="1" stop-color="#e8780b"/>
+    </linearGradient>
+    <linearGradient id="di-coat" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <linearGradient id="di-gold" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#fde047"/>
+      <stop offset="1" stop-color="#b45309"/>
+    </linearGradient>
+    <radialGradient id="di-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fbbf24" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#7f1d1d" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="di-wine" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#dc2626"/>
+      <stop offset="1" stop-color="#7f1d1d"/>
+    </linearGradient>
+    <linearGradient id="di-blade" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#f1f5f9"/>
+      <stop offset="0.5" stop-color="#cbd5e1"/>
+      <stop offset="1" stop-color="#94a3b8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 燭光暈染（背景光環） -->
+  <ellipse cx="200" cy="220" rx="200" ry="190" fill="url(#di-glow)"/>
+
+  <!-- 影子 -->
+  <ellipse cx="200" cy="378" rx="105" ry="10" fill="#000" opacity="0.25"/>
+
+  <!-- 蹼足 -->
+  <path d="M 156 350 Q 144 374 156 378 Q 175 378 178 372 Q 185 378 192 372 L 192 350 Z" fill="url(#di-beak)" stroke="#9c4a05" stroke-width="1.5"/>
+  <path d="M 244 350 Q 256 374 244 378 Q 225 378 222 372 Q 215 378 208 372 L 208 350 Z" fill="url(#di-beak)" stroke="#9c4a05" stroke-width="1.5"/>
+
+  <!-- 身體 -->
+  <ellipse cx="200" cy="270" rx="100" ry="105" fill="url(#di-feather)" stroke="#a8b0bd" stroke-width="2"/>
+
+  <!-- 法式廚師服（雙排扣） -->
+  <path d="M 130 215 L 110 358 Q 120 365 145 360 L 165 215 Z" fill="url(#di-coat)" stroke="#94a3b8" stroke-width="1.5"/>
+  <path d="M 270 215 L 290 358 Q 280 365 255 360 L 235 215 Z" fill="url(#di-coat)" stroke="#94a3b8" stroke-width="1.5"/>
+  <path d="M 165 215 L 145 360 Q 170 368 200 366 Q 230 368 255 360 L 235 215 Q 200 200 165 215 Z" fill="url(#di-coat)" stroke="#94a3b8" stroke-width="2"/>
+  <!-- 金邊 -->
+  <path d="M 165 215 L 145 360" stroke="url(#di-gold)" stroke-width="3" fill="none"/>
+  <path d="M 235 215 L 255 360" stroke="url(#di-gold)" stroke-width="3" fill="none"/>
+  <!-- 雙排扣 -->
+  <circle cx="178" cy="240" r="3" fill="url(#di-gold)" stroke="#92400e"/>
+  <circle cx="178" cy="270" r="3" fill="url(#di-gold)" stroke="#92400e"/>
+  <circle cx="178" cy="300" r="3" fill="url(#di-gold)" stroke="#92400e"/>
+  <circle cx="178" cy="330" r="3" fill="url(#di-gold)" stroke="#92400e"/>
+  <circle cx="222" cy="240" r="3" fill="url(#di-gold)" stroke="#92400e"/>
+  <circle cx="222" cy="270" r="3" fill="url(#di-gold)" stroke="#92400e"/>
+  <circle cx="222" cy="300" r="3" fill="url(#di-gold)" stroke="#92400e"/>
+  <circle cx="222" cy="330" r="3" fill="url(#di-gold)" stroke="#92400e"/>
+
+  <!-- 金色領巾 -->
+  <path d="M 175 215 L 200 240 L 225 215 L 220 230 L 200 250 L 180 230 Z" fill="url(#di-gold)" stroke="#92400e" stroke-width="1"/>
+
+  <!-- 翅膀（左舉酒杯，右拿刀） -->
+  <path d="M 100 220 Q 60 245 70 295 Q 90 275 110 268" fill="url(#di-feather)" stroke="#94a3b8" stroke-width="1.5"/>
+  <path d="M 300 220 Q 340 245 330 295 Q 310 275 290 268" fill="url(#di-feather)" stroke="#94a3b8" stroke-width="1.5"/>
+
+  <!-- 紅酒杯（左手） -->
+  <path d="M 60 165 L 75 165 L 78 195 Q 78 215 67 218 Q 56 215 56 195 Z" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5" opacity="0.4"/>
+  <path d="M 60 175 L 75 175 L 76 195 Q 76 210 67 212 Q 58 210 58 195 Z" fill="url(#di-wine)" stroke="#7f1d1d" stroke-width="1"/>
+  <ellipse cx="67" cy="178" rx="6" ry="1.5" fill="#fca5a5" opacity="0.6"/>
+  <line x1="67" y1="218" x2="67" y2="245" stroke="#94a3b8" stroke-width="2"/>
+  <ellipse cx="67" cy="247" rx="10" ry="2" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1"/>
+
+  <!-- 主廚刀（右手） -->
+  <line x1="335" y1="300" x2="345" y2="240" stroke="#1f2937" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 340 250 L 360 165 L 372 175 L 348 252 Z" fill="url(#di-blade)" stroke="#475569" stroke-width="1.5"/>
+  <line x1="346" y1="200" x2="362" y2="195" stroke="#fff" stroke-width="1" opacity="0.6"/>
+  <ellipse cx="338" cy="293" rx="5" ry="3" fill="#fbbf24"/>
+
+  <!-- 脖子 -->
+  <path d="M 178 200 Q 160 165 172 118 Q 188 100 210 110 Q 220 148 208 188 Z" fill="url(#di-feather)" stroke="#a8b0bd" stroke-width="2"/>
+
+  <!-- 領巾（脖子上） -->
+  <path d="M 178 195 L 222 195 L 222 210 L 178 210 Z" fill="url(#di-gold)" stroke="#92400e" stroke-width="1"/>
+
+  <!-- 頭 -->
+  <circle cx="200" cy="92" r="38" fill="url(#di-feather)" stroke="#a8b0bd" stroke-width="2"/>
+
+  <!-- 嘴喙 -->
+  <path d="M 232 86 L 268 84 Q 274 92 268 102 L 232 102 Z" fill="url(#di-beak)" stroke="#9c4a05" stroke-width="1.5"/>
+  <line x1="234" y1="94" x2="268" y2="94" stroke="#9c4a05" stroke-width="1" opacity="0.7"/>
+  <ellipse cx="244" cy="86" rx="1.5" ry="2" fill="#3a1f10"/>
+
+  <!-- 眼睛（優雅閉眼） -->
+  <path d="M 210 84 Q 218 80 226 84" stroke="#1a1a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M 213 86 Q 218 90 223 86" stroke="#1a1a1a" stroke-width="1.2" fill="none"/>
+  <!-- 微笑（嘴角往上） -->
+  <path d="M 246 100 Q 252 104 254 100" stroke="#9c4a05" stroke-width="1.5" fill="none"/>
+
+  <!-- 廚師帽（矮版法式） -->
+  <ellipse cx="200" cy="60" rx="38" ry="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <path d="M 162 60 L 164 38 Q 168 28 200 28 Q 232 28 236 38 L 238 60 Z" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <!-- 帽圍金邊 -->
+  <rect x="162" y="55" width="76" height="5" fill="url(#di-gold)" stroke="#92400e" stroke-width="0.8"/>
+
+  <!-- 蠟燭光點（附近裝飾） -->
+  <circle cx="60" cy="115" r="3" fill="#fbbf24" opacity="0.9"/>
+  <circle cx="60" cy="115" r="6" fill="#fbbf24" opacity="0.3"/>
+  <circle cx="340" cy="115" r="3" fill="#fbbf24" opacity="0.9"/>
+  <circle cx="340" cy="115" r="6" fill="#fbbf24" opacity="0.3"/>
+</svg>

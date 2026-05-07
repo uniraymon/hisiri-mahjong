@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- 死亡系 Death Skill Icon -->
+  <defs>
+    <radialGradient id="dt-bg" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#3b0764"/>
+      <stop offset="1" stop-color="#020617"/>
+    </radialGradient>
+    <radialGradient id="dt-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#a855f7" stop-opacity="0.7"/>
+      <stop offset="0.5" stop-color="#7c3aed" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#3b0764" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="dt-skull" cx="0.5" cy="0.4" r="0.5">
+      <stop offset="0" stop-color="#f5f3ff"/>
+      <stop offset="0.7" stop-color="#c4b5fd"/>
+      <stop offset="1" stop-color="#7c3aed"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 圓形底 -->
+  <circle cx="128" cy="128" r="120" fill="url(#dt-bg)" stroke="#a855f7" stroke-width="4"/>
+  <circle cx="128" cy="128" r="115" fill="none" stroke="#c4b5fd" stroke-width="1" opacity="0.4"/>
+
+  <!-- 紫黑光環 -->
+  <circle cx="128" cy="128" r="100" fill="url(#dt-glow)"/>
+
+  <!-- 詭異光環 -->
+  <circle cx="128" cy="128" r="85" fill="none" stroke="#a855f7" stroke-width="2" opacity="0.6" stroke-dasharray="6 4"/>
+  <circle cx="128" cy="128" r="98" fill="none" stroke="#7c3aed" stroke-width="1.5" opacity="0.5" stroke-dasharray="3 5"/>
+
+  <!-- 骷髏頭 -->
+  <!-- 頭骨 -->
+  <ellipse cx="128" cy="120" rx="50" ry="55" fill="url(#dt-skull)" stroke="#3b0764" stroke-width="2.5"/>
+  <!-- 下顎 -->
+  <path d="M 95 155 Q 100 185 128 188 Q 156 185 161 155 L 155 165 L 145 158 L 135 165 L 128 158 L 121 165 L 111 158 L 101 165 Z" fill="url(#dt-skull)" stroke="#3b0764" stroke-width="2"/>
+  <!-- 牙縫 -->
+  <line x1="128" y1="160" x2="128" y2="185" stroke="#3b0764" stroke-width="1.2" opacity="0.6"/>
+  <line x1="118" y1="162" x2="118" y2="180" stroke="#3b0764" stroke-width="1" opacity="0.5"/>
+  <line x1="138" y1="162" x2="138" y2="180" stroke="#3b0764" stroke-width="1" opacity="0.5"/>
+
+  <!-- 眼洞（發光紫紅） -->
+  <ellipse cx="110" cy="115" rx="11" ry="13" fill="#0c0a09" stroke="#3b0764" stroke-width="1.5"/>
+  <ellipse cx="146" cy="115" rx="11" ry="13" fill="#0c0a09" stroke="#3b0764" stroke-width="1.5"/>
+  <circle cx="110" cy="115" r="6" fill="#a855f7" opacity="0.95"/>
+  <circle cx="146" cy="115" r="6" fill="#a855f7" opacity="0.95"/>
+  <circle cx="110" cy="115" r="2.5" fill="#fef3c7"/>
+  <circle cx="146" cy="115" r="2.5" fill="#fef3c7"/>
+
+  <!-- 鼻洞 -->
+  <path d="M 128 130 L 122 150 L 134 150 Z" fill="#0c0a09" stroke="#3b0764" stroke-width="1.2"/>
+
+  <!-- 頭骨裂痕 -->
+  <path d="M 110 80 L 105 65 M 145 80 L 150 65" stroke="#3b0764" stroke-width="1.5" fill="none" opacity="0.6"/>
+  <path d="M 128 75 Q 122 85 128 95" stroke="#3b0764" stroke-width="1.2" fill="none" opacity="0.5"/>
+
+  <!-- 環繞紫粒子 -->
+  <circle cx="60" cy="80" r="3" fill="#a855f7"/>
+  <circle cx="196" cy="80" r="3" fill="#a855f7"/>
+  <circle cx="60" cy="180" r="2" fill="#c4b5fd"/>
+  <circle cx="196" cy="180" r="2" fill="#c4b5fd"/>
+  <circle cx="48" cy="128" r="2" fill="#7c3aed"/>
+  <circle cx="208" cy="128" r="2" fill="#7c3aed"/>
+  <circle cx="80" cy="220" r="2" fill="#a855f7"/>
+  <circle cx="176" cy="220" r="2" fill="#a855f7"/>
+
+  <!-- 外圈光暈 -->
+  <circle cx="128" cy="128" r="120" fill="none" stroke="#c4b5fd" stroke-width="1" opacity="0.4"/>
+</svg>

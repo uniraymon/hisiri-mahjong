@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- 神聖系 Holy Skill Icon -->
+  <defs>
+    <radialGradient id="hy-bg" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fef3c7"/>
+      <stop offset="0.4" stop-color="#fbbf24"/>
+      <stop offset="1" stop-color="#1e3a8a"/>
+    </radialGradient>
+    <radialGradient id="hy-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.5" stop-color="#fde047" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#fbbf24" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="hy-cross" x1="0.5" x2="0.5" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.5" stop-color="#fef3c7"/>
+      <stop offset="1" stop-color="#fbbf24"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 圓形底 -->
+  <circle cx="128" cy="128" r="120" fill="url(#hy-bg)" stroke="#fbbf24" stroke-width="4"/>
+  <circle cx="128" cy="128" r="115" fill="none" stroke="#fef3c7" stroke-width="1" opacity="0.55"/>
+
+  <!-- 中央光暈 -->
+  <circle cx="128" cy="128" r="90" fill="url(#hy-glow)"/>
+  <circle cx="128" cy="128" r="60" fill="#fff" opacity="0.6"/>
+  <circle cx="128" cy="128" r="30" fill="#fff" opacity="0.85"/>
+
+  <!-- 放射光柱（8 條） -->
+  <g stroke="#fef3c7" stroke-width="3" opacity="0.85" stroke-linecap="round">
+    <line x1="128" y1="20" x2="128" y2="55"/>
+    <line x1="128" y1="201" x2="128" y2="236"/>
+    <line x1="20" y1="128" x2="55" y2="128"/>
+    <line x1="201" y1="128" x2="236" y2="128"/>
+    <line x1="50" y1="50" x2="80" y2="80"/>
+    <line x1="206" y1="50" x2="176" y2="80"/>
+    <line x1="50" y1="206" x2="80" y2="176"/>
+    <line x1="206" y1="206" x2="176" y2="176"/>
+  </g>
+  <g stroke="#fbbf24" stroke-width="1.5" opacity="0.7" stroke-linecap="round">
+    <line x1="68" y1="32" x2="80" y2="60"/>
+    <line x1="188" y1="32" x2="176" y2="60"/>
+    <line x1="68" y1="224" x2="80" y2="196"/>
+    <line x1="188" y1="224" x2="176" y2="196"/>
+    <line x1="32" y1="68" x2="60" y2="80"/>
+    <line x1="224" y1="68" x2="196" y2="80"/>
+    <line x1="32" y1="188" x2="60" y2="176"/>
+    <line x1="224" y1="188" x2="196" y2="176"/>
+  </g>
+
+  <!-- 十字 -->
+  <rect x="118" y="60" width="20" height="136" rx="3" fill="url(#hy-cross)" stroke="#b45309" stroke-width="1.8"/>
+  <rect x="78" y="115" width="100" height="20" rx="3" fill="url(#hy-cross)" stroke="#b45309" stroke-width="1.8"/>
+  <!-- 十字高光 -->
+  <rect x="121" y="63" width="6" height="130" rx="2" fill="#fff" opacity="0.85"/>
+  <rect x="81" y="118" width="94" height="6" rx="2" fill="#fff" opacity="0.85"/>
+
+  <!-- 中央寶石 -->
+  <circle cx="128" cy="125" r="9" fill="#fde047" stroke="#b45309" stroke-width="1.5"/>
+  <circle cx="126" cy="123" r="3" fill="#fff"/>
+
+  <!-- 光點 -->
+  <circle cx="80" cy="80" r="2.5" fill="#fff"/>
+  <circle cx="176" cy="80" r="2.5" fill="#fff"/>
+  <circle cx="80" cy="176" r="2.5" fill="#fff"/>
+  <circle cx="176" cy="176" r="2.5" fill="#fff"/>
+
+  <!-- 外圈光暈 -->
+  <circle cx="128" cy="128" r="120" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.5"/>
+</svg>

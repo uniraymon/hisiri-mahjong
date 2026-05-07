@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8"/>
+<title>Hisiri Mahjong — 美術預覽</title>
+<style>
+  body{margin:0;font-family:-apple-system,"Segoe UI",sans-serif;background:linear-gradient(180deg,#0f172a,#1e1b4b);color:#e2e8f0;padding:24px;}
+  h1{margin:0 0 8px;font-size:24px;color:#fbbf24;}
+  h2{margin:32px 0 12px;font-size:18px;color:#a5b4fc;border-bottom:1px solid #312e81;padding-bottom:6px;}
+  .row{display:flex;flex-wrap:wrap;gap:18px;}
+  .card{background:#1e1b4b;border:1px solid #312e81;border-radius:12px;padding:14px;text-align:center;}
+  .card img{display:block;background:radial-gradient(ellipse at center,#312e81 0%,#0f172a 100%);border-radius:8px;}
+  .card .name{margin-top:8px;font-size:13px;color:#cbd5e1;}
+  .card .lvl{font-size:11px;color:#fbbf24;margin-top:2px;}
+  .skills .card img{background:transparent;}
+  small{color:#94a3b8;}
+</style>
+</head>
+<body>
+
+<h1>🦢 Hisiri Mahjong — 美術預覽</h1>
+<small>所有素材以 SVG 製作，可直接在瀏覽器顯示，亦可由 Claude Code 整合到遊戲。</small>
+
+<h2>玩家角色（Classes）</h2>
+<div class="row">
+  <div class="card"><img src="classes/warrior.svg" width="200" height="250"/><div class="name">戰士天鵝</div></div>
+  <div class="card"><img src="classes/archer.svg" width="200" height="250"/><div class="name">弓手天鵝</div></div>
+  <div class="card"><img src="classes/paladin.svg" width="200" height="250"/><div class="name">聖騎天鵝</div></div>
+  <div class="card"><img src="classes/mage.svg" width="200" height="250"/><div class="name">法師天鵝</div></div>
+</div>
+
+<h2>個人王（Personal Bosses）</h2>
+<div class="row">
+  <div class="card"><img src="bosses/boss_breakfast.svg" width="240" height="240"/><div class="name">早餐鵝</div><div class="lvl">Lv.30</div></div>
+  <div class="card"><img src="bosses/boss_lunch.svg" width="240" height="240"/><div class="name">午餐鵝</div><div class="lvl">Lv.30</div></div>
+  <div class="card"><img src="bosses/boss_dinner.svg" width="240" height="240"/><div class="name">晚餐鵝</div><div class="lvl">Lv.30</div></div>
+  <div class="card"><img src="bosses/boss_midnight.svg" width="240" height="240"/><div class="name">宵夜鵝 ⭐</div><div class="lvl">Lv.35</div></div>
+</div>
+
+<h2>世界王（World Bosses）</h2>
+<div class="row">
+  <div class="card"><img src="bosses/boss_emperor.svg" width="280" height="280"/><div class="name">鵝皇</div></div>
+  <div class="card"><img src="bosses/boss_dragon.svg" width="280" height="280"/><div class="name">古龍鵝</div></div>
+</div>
+
+<h2 class="skills-title">技能圖示（Skill Icons）</h2>
+<div class="row skills">
+  <div class="card"><img src="skills/skill_fire.svg" width="128" height="128"/><div class="name">火焰</div></div>
+  <div class="card"><img src="skills/skill_lightning.svg" width="128" height="128"/><div class="name">閃電</div></div>
+  <div class="card"><img src="skills/skill_ice.svg" width="128" height="128"/><div class="name">冰霜</div></div>
+  <div class="card"><img src="skills/skill_blood.svg" width="128" height="128"/><div class="name">流血</div></div>
+  <div class="card"><img src="skills/skill_holy.svg" width="128" height="128"/><div class="name">神聖</div></div>
+  <div class="card"><img src="skills/skill_death.svg" width="128" height="128"/><div class="name">死亡</div></div>
+</div>
+
+</body>
+</html>

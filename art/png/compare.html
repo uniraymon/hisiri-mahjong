@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8"/>
+<title>Pixel Art 風格比較</title>
+<style>
+  body{margin:0;font-family:-apple-system,"Segoe UI",sans-serif;background:linear-gradient(180deg,#0f172a,#1e1b4b);color:#e2e8f0;padding:24px;}
+  h1{margin:0 0 6px;font-size:22px;color:#fbbf24;}
+  h2{margin:24px 0 8px;font-size:16px;color:#a5b4fc;}
+  .row{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:16px;}
+  .card{background:#1e1b4b;border:1px solid #312e81;border-radius:10px;padding:12px;text-align:center;}
+  .card img{display:block;background:#cbd5e1;border-radius:6px;image-rendering:pixelated;image-rendering:crisp-edges;}
+  .card .name{margin-top:6px;font-size:12px;color:#cbd5e1;}
+  .card .size{font-size:10px;color:#94a3b8;}
+  .style-block{padding:14px;border:1px solid #312e81;border-radius:14px;margin-bottom:24px;background:rgba(0,0,0,0.2);}
+  .tag{display:inline-block;padding:2px 10px;border-radius:10px;font-size:11px;margin-left:8px;}
+  .tag-classic{background:#dc2626;color:#fff;}
+  .tag-modern{background:#10b981;color:#fff;}
+  small{color:#94a3b8;}
+</style>
+</head>
+<body>
+
+<h1>🎮 Hisiri Mahjong — 點陣圖風格比較</h1>
+<small>左邊是「原始尺寸」（native，遊戲實際使用大小），右邊是「放大預覽」（preview，方便看細節）</small>
+
+<div class="style-block">
+  <h2>① 16-bit 經典風 <span class="tag tag-classic">FF4 / DQ5 風</span></h2>
+  <small>角色 48×48，技能 32×32，限定色板 ~8 色，明顯像素感</small>
+  <div class="row">
+    <div class="card">
+      <img src="16bit/warrior_native.png" width="48" height="48"/>
+      <div class="name">戰士天鵝</div>
+      <div class="size">48×48 native</div>
+    </div>
+    <div class="card">
+      <img src="16bit/warrior_preview.png" width="384" height="384"/>
+      <div class="name">放大 8× 預覽</div>
+      <div class="size">384×384</div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="card">
+      <img src="16bit/boss_breakfast_native.png" width="48" height="48"/>
+      <div class="name">早餐鵝</div>
+      <div class="size">48×48 native</div>
+    </div>
+    <div class="card">
+      <img src="16bit/boss_breakfast_preview.png" width="384" height="384"/>
+      <div class="name">放大 8× 預覽</div>
+      <div class="size">384×384</div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="card">
+      <img src="16bit/skill_fire_native.png" width="32" height="32"/>
+      <div class="name">火焰技能</div>
+      <div class="size">32×32 native</div>
+    </div>
+    <div class="card">
+      <img src="16bit/skill_fire_preview.png" width="256" height="256"/>
+      <div class="name">放大 8× 預覽</div>
+      <div class="size">256×256</div>
+    </div>
+  </div>
+</div>
+
+<div class="style-block">
+  <h2>② 現代精緻像素 <span class="tag tag-modern">Stardew / Hollow Knight 風</span></h2>
+  <small>角色 96×96，技能 64×64，更多色階、軟陰影、更多細節</small>
+  <div class="row">
+    <div class="card">
+      <img src="modern/warrior_native.png" width="96" height="96"/>
+      <div class="name">戰士天鵝</div>
+      <div class="size">96×96 native</div>
+    </div>
+    <div class="card">
+      <img src="modern/warrior_preview.png" width="384" height="384"/>
+      <div class="name">放大 4× 預覽</div>
+      <div class="size">384×384</div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="card">
+      <img src="modern/boss_breakfast_native.png" width="96" height="96"/>
+      <div class="name">早餐鵝</div>
+      <div class="size">96×96 native</div>
+    </div>
+    <div class="card">
+      <img src="modern/boss_breakfast_preview.png" width="384" height="384"/>
+      <div class="name">放大 4× 預覽</div>
+      <div class="size">384×384</div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="card">
+      <img src="modern/skill_fire_native.png" width="64" height="64"/>
+      <div class="name">火焰技能</div>
+      <div class="size">64×64 native</div>
+    </div>
+    <div class="card">
+      <img src="modern/skill_fire_preview.png" width="384" height="384"/>
+      <div class="name">放大 6× 預覽</div>
+      <div class="size">384×384</div>
+    </div>
+  </div>
+</div>
+
+<div class="style-block">
+  <h2>選擇後告訴我</h2>
+  <small>選好風格後我會用同一支腳本一次產出全部 12 張：4 玩家角色 + 4 個人王 + 2 世界王 + 6 技能 icon。風格也可以混搭（角色用現代、技能用 16-bit）。</small>
+</div>
+
+</body>
+</html>

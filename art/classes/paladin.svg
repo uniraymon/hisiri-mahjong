@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 250" width="200" height="250">
+  <!-- 聖騎天鵝 Paladin Swan -->
+  <defs>
+    <linearGradient id="pal-feather" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e8ecf2"/>
+    </linearGradient>
+    <linearGradient id="pal-beak" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffd966"/>
+      <stop offset="1" stop-color="#c69a2a"/>
+    </linearGradient>
+    <linearGradient id="pal-armor" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#f5f5f5"/>
+      <stop offset="1" stop-color="#9ca3af"/>
+    </linearGradient>
+    <linearGradient id="pal-cape" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#e63a3a"/>
+      <stop offset="1" stop-color="#7a1010"/>
+    </linearGradient>
+    <linearGradient id="pal-gold" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#fff7c2"/>
+      <stop offset="1" stop-color="#c69a2a"/>
+    </linearGradient>
+    <radialGradient id="pal-halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff7c2" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#fff7c2" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 聖光光暈 -->
+  <circle cx="100" cy="50" r="60" fill="url(#pal-halo)"/>
+
+  <ellipse cx="100" cy="238" rx="50" ry="6" fill="#000" opacity="0.18"/>
+
+  <!-- 披風 -->
+  <path d="M 60 130 Q 40 150 30 230 L 50 232 L 65 145 Z" fill="url(#pal-cape)" stroke="#4a0808" stroke-width="1.5"/>
+  <path d="M 140 130 Q 160 150 170 230 L 150 232 L 135 145 Z" fill="url(#pal-cape)" stroke="#4a0808" stroke-width="1.5"/>
+
+  <path d="M 76 220 Q 68 234 76 236 Q 86 236 88 232 Q 92 236 96 232 L 96 220 Z" fill="url(#pal-beak)" stroke="#7a5a1a" stroke-width="1"/>
+  <path d="M 124 220 Q 132 234 124 236 Q 114 236 112 232 Q 108 236 104 232 L 104 220 Z" fill="url(#pal-beak)" stroke="#7a5a1a" stroke-width="1"/>
+
+  <ellipse cx="100" cy="170" rx="55" ry="58" fill="url(#pal-feather)" stroke="#a8b0bd" stroke-width="2"/>
+
+  <!-- 板甲 -->
+  <path d="M 65 138 Q 65 130 78 128 L 122 128 Q 135 130 135 138 L 135 200 Q 100 210 65 200 Z" fill="url(#pal-armor)" stroke="#3a3e47" stroke-width="2"/>
+
+  <!-- 金十字 -->
+  <rect x="96" y="148" width="8" height="44" fill="url(#pal-gold)" stroke="#7a5a1a" stroke-width="1"/>
+  <rect x="84" y="162" width="32" height="8" fill="url(#pal-gold)" stroke="#7a5a1a" stroke-width="1"/>
+
+  <!-- 翅膀（金邊） -->
+  <path d="M 58 142 Q 36 156 42 182 Q 50 172 58 165 L 60 160 Q 56 150 58 142 Z" fill="url(#pal-feather)" stroke="url(#pal-gold)" stroke-width="2"/>
+  <path d="M 142 142 Q 164 156 158 182 Q 150 172 142 165 L 140 160 Q 144 150 142 142 Z" fill="url(#pal-feather)" stroke="url(#pal-gold)" stroke-width="2"/>
+  <path d="M 48 152 Q 46 168 46 180" stroke="#cbd5e1" stroke-width="1" fill="none"/>
+  <path d="M 152 152 Q 154 168 154 180" stroke="#cbd5e1" stroke-width="1" fill="none"/>
+
+  <!-- 脖子 -->
+  <path d="M 90 115 Q 76 95 86 75 Q 96 65 110 70 Q 114 90 105 105 Z" fill="url(#pal-feather)" stroke="#a8b0bd" stroke-width="2"/>
+
+  <!-- 頭 -->
+  <circle cx="100" cy="55" r="22" fill="url(#pal-feather)" stroke="#a8b0bd" stroke-width="2"/>
+
+  <!-- 嘴喙（金色） -->
+  <path d="M 118 50 L 138 48 Q 142 52 138 60 L 118 60 Z" fill="url(#pal-beak)" stroke="#7a5a1a" stroke-width="1.2"/>
+  <ellipse cx="124" cy="51" rx="1" ry="1.2" fill="#3a1f10"/>
+
+  <!-- 眼 -->
+  <ellipse cx="108" cy="46" rx="3" ry="3.5" fill="#1a4a8a"/>
+  <circle cx="109" cy="44.5" r="1" fill="#fff"/>
+  <path d="M 103 39 Q 108 37 113 40" stroke="#7a5a1a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+  <!-- 呆毛（從頭頂往光環內翹） -->
+  <path d="M 100 30 Q 98 16 103 10 Q 108 14 105 22 Q 103 28 101 30 Z" fill="url(#pal-feather)" stroke="#a8b0bd" stroke-width="1.2"/>
+
+  <!-- 頭頂光環 -->
+  <ellipse cx="100" cy="22" rx="22" ry="4" fill="none" stroke="url(#pal-gold)" stroke-width="3" opacity="0.95"/>
+  <ellipse cx="100" cy="22" rx="22" ry="4" fill="none" stroke="#fff" stroke-width="1" opacity="0.7"/>
+</svg>

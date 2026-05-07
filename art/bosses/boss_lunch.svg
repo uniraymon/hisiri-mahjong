@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- 午餐鵝 Lunch Goose Boss Lv.30 -->
+  <defs>
+    <linearGradient id="lu-feather" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dde2eb"/>
+    </linearGradient>
+    <linearGradient id="lu-beak" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffb74d"/>
+      <stop offset="1" stop-color="#e8780b"/>
+    </linearGradient>
+    <linearGradient id="lu-suit" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#1e3a8a"/>
+      <stop offset="1" stop-color="#0c1e4d"/>
+    </linearGradient>
+    <linearGradient id="lu-tie" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#fb923c"/>
+      <stop offset="1" stop-color="#c2410c"/>
+    </linearGradient>
+    <linearGradient id="lu-box" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#fef3c7"/>
+      <stop offset="1" stop-color="#fbbf24"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 影子 -->
+  <ellipse cx="200" cy="378" rx="105" ry="10" fill="#000" opacity="0.2"/>
+
+  <!-- 蹼足（穿皮鞋） -->
+  <ellipse cx="170" cy="370" rx="22" ry="8" fill="#1f2937" stroke="#000" stroke-width="1"/>
+  <ellipse cx="230" cy="370" rx="22" ry="8" fill="#1f2937" stroke="#000" stroke-width="1"/>
+  <ellipse cx="170" cy="367" rx="14" ry="3" fill="#374151"/>
+  <ellipse cx="230" cy="367" rx="14" ry="3" fill="#374151"/>
+
+  <!-- 西裝褲 -->
+  <path d="M 162 280 L 160 365 L 192 365 L 198 280 Z" fill="url(#lu-suit)" stroke="#0c1e4d" stroke-width="1.5"/>
+  <path d="M 238 280 L 240 365 L 208 365 L 202 280 Z" fill="url(#lu-suit)" stroke="#0c1e4d" stroke-width="1.5"/>
+
+  <!-- 身體 -->
+  <ellipse cx="200" cy="262" rx="100" ry="100" fill="url(#lu-feather)" stroke="#a8b0bd" stroke-width="2"/>
+
+  <!-- 西裝外套 -->
+  <path d="M 110 215 L 100 320 Q 110 332 130 332 L 162 280 L 198 270 L 202 270 L 238 280 L 270 332 Q 290 332 300 320 L 290 215 Q 280 200 250 200 L 150 200 Q 120 200 110 215 Z" fill="url(#lu-suit)" stroke="#0c1e4d" stroke-width="2"/>
+  <!-- 翻領 -->
+  <path d="M 162 200 L 200 265 L 175 215 Z" fill="#0c1e4d" stroke="#000" stroke-width="1"/>
+  <path d="M 238 200 L 200 265 L 225 215 Z" fill="#0c1e4d" stroke="#000" stroke-width="1"/>
+  <!-- 白襯衫 -->
+  <path d="M 178 215 L 200 265 L 222 215 L 222 280 L 178 280 Z" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+
+  <!-- 領帶 -->
+  <path d="M 195 218 L 205 218 L 210 235 L 215 290 L 200 305 L 185 290 L 190 235 Z" fill="url(#lu-tie)" stroke="#9a3412" stroke-width="1.5"/>
+  <path d="M 192 230 L 208 230" stroke="#9a3412" stroke-width="1.2"/>
+  <path d="M 188 250 L 212 250" stroke="#9a3412" stroke-width="1.2" opacity="0.6"/>
+  <path d="M 187 270 L 213 270" stroke="#9a3412" stroke-width="1.2" opacity="0.6"/>
+
+  <!-- 鈕釦 -->
+  <circle cx="170" cy="305" r="2.5" fill="#fbbf24"/>
+  <circle cx="170" cy="285" r="2.5" fill="#fbbf24" opacity="0.5"/>
+
+  <!-- 翅膀（袖口） -->
+  <path d="M 96 220 Q 70 248 80 295 Q 96 275 110 270" stroke="#0c1e4d" stroke-width="1.5" fill="url(#lu-suit)"/>
+  <path d="M 304 220 Q 330 248 320 295 Q 304 275 290 270" stroke="#0c1e4d" stroke-width="1.5" fill="url(#lu-suit)"/>
+  <!-- 袖口白色 -->
+  <rect x="74" y="290" width="14" height="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <rect x="312" y="290" width="14" height="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+
+  <!-- 便當盒（左手提著） -->
+  <rect x="40" y="305" width="64" height="48" rx="4" fill="url(#lu-box)" stroke="#92400e" stroke-width="2"/>
+  <rect x="40" y="315" width="64" height="3" fill="#dc2626"/>
+  <line x1="56" y1="305" x2="56" y2="353" stroke="#92400e" stroke-width="1"/>
+  <line x1="88" y1="305" x2="88" y2="353" stroke="#92400e" stroke-width="1"/>
+  <!-- 便當提把 -->
+  <path d="M 50 305 Q 72 280 94 305" stroke="#92400e" stroke-width="3" fill="none"/>
+  <line x1="80" y1="295" x2="82" y2="295" stroke="#fff" stroke-width="2"/>
+  <!-- 飯團裝飾 -->
+  <circle cx="56" cy="333" r="6" fill="#fff" stroke="#cbd5e1"/>
+  <rect x="53" y="335" width="6" height="3" fill="#1f2937"/>
+
+  <!-- 脖子 -->
+  <path d="M 178 200 Q 160 170 168 120 Q 184 100 210 110 Q 220 145 208 188 Z" fill="url(#lu-feather)" stroke="#a8b0bd" stroke-width="2"/>
+
+  <!-- 領子（白） -->
+  <path d="M 175 195 L 200 215 L 225 195 L 222 205 L 200 220 L 178 205 Z" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+
+  <!-- 頭 -->
+  <circle cx="200" cy="90" r="38" fill="url(#lu-feather)" stroke="#a8b0bd" stroke-width="2"/>
+
+  <!-- 嘴喙 -->
+  <path d="M 232 86 L 268 84 Q 274 92 268 102 L 232 102 Z" fill="url(#lu-beak)" stroke="#9c4a05" stroke-width="1.5"/>
+  <line x1="234" y1="94" x2="268" y2="94" stroke="#9c4a05" stroke-width="1" opacity="0.7"/>
+
+  <!-- 黑眼圈 -->
+  <path d="M 210 86 Q 218 92 226 86" stroke="#475569" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M 211 88 Q 218 94 225 88" stroke="#64748b" stroke-width="2" fill="none" opacity="0.5"/>
+
+  <!-- 眼睛（疲憊空洞） -->
+  <ellipse cx="218" cy="80" rx="4" ry="3" fill="#1a1a1a"/>
+  <circle cx="219" cy="79" r="0.8" fill="#fff" opacity="0.6"/>
+  <!-- 眼皮 -->
+  <path d="M 213 76 Q 218 74 224 76" stroke="#1a1a1a" stroke-width="1.5" fill="none"/>
+
+  <!-- 公事包提把上的疲憊靈魂 -->
+  <text x="200" y="65" font-family="serif" font-size="14" fill="#64748b" text-anchor="middle" opacity="0.7">…</text>
+</svg>

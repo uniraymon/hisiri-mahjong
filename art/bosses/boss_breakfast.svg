@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- 早餐鵝 Breakfast Goose Boss Lv.30 -->
+  <defs>
+    <linearGradient id="bf-feather" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e6ebf2"/>
+    </linearGradient>
+    <linearGradient id="bf-beak" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffb74d"/>
+      <stop offset="1" stop-color="#e8780b"/>
+    </linearGradient>
+    <linearGradient id="bf-apron" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#fbbf24"/>
+      <stop offset="1" stop-color="#d97706"/>
+    </linearGradient>
+    <radialGradient id="bf-yolk" cx="0.5" cy="0.45" r="0.5">
+      <stop offset="0" stop-color="#fde047"/>
+      <stop offset="1" stop-color="#f59e0b"/>
+    </radialGradient>
+    <linearGradient id="bf-pan" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#4b5563"/>
+      <stop offset="1" stop-color="#1f2937"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 影子 -->
+  <ellipse cx="200" cy="378" rx="105" ry="10" fill="#000" opacity="0.2"/>
+
+  <!-- 蹼足 -->
+  <path d="M 156 350 Q 144 374 156 378 Q 175 378 178 372 Q 185 378 192 372 L 192 350 Z" fill="url(#bf-beak)" stroke="#9c4a05" stroke-width="1.5"/>
+  <path d="M 244 350 Q 256 374 244 378 Q 225 378 222 372 Q 215 378 208 372 L 208 350 Z" fill="url(#bf-beak)" stroke="#9c4a05" stroke-width="1.5"/>
+
+  <!-- 身體 -->
+  <ellipse cx="200" cy="270" rx="100" ry="105" fill="url(#bf-feather)" stroke="#a8b0bd" stroke-width="2"/>
+
+  <!-- 圍裙 -->
+  <path d="M 160 200 Q 160 192 172 190 L 228 190 Q 240 192 240 200 L 252 350 Q 252 358 244 358 L 156 358 Q 148 358 148 350 Z" fill="url(#bf-apron)" stroke="#92400e" stroke-width="2"/>
+  <!-- 圍裙頸帶 -->
+  <path d="M 175 192 Q 165 175 175 158" stroke="#92400e" stroke-width="3" fill="none"/>
+  <path d="M 225 192 Q 235 175 225 158" stroke="#92400e" stroke-width="3" fill="none"/>
+  <!-- 圍裙腰帶 -->
+  <rect x="148" y="270" width="104" height="10" fill="#fbbf24" stroke="#92400e" stroke-width="1.5"/>
+  <rect x="190" y="270" width="20" height="10" fill="#92400e"/>
+
+  <!-- 煎蛋圖案 -->
+  <ellipse cx="200" cy="240" rx="32" ry="26" fill="#fffbeb" stroke="#fcd34d" stroke-width="1.5"/>
+  <circle cx="200" cy="238" r="14" fill="url(#bf-yolk)" stroke="#d97706" stroke-width="1.5"/>
+  <circle cx="196" cy="234" r="3" fill="#fef3c7" opacity="0.7"/>
+
+  <!-- 翅膀（左翼握平底鍋柄） -->
+  <path d="M 102 215 Q 60 240 70 290 Q 86 270 102 258 L 110 250 Q 100 232 102 215 Z" fill="url(#bf-feather)" stroke="#a8b0bd" stroke-width="1.5"/>
+  <!-- 翅膀（右翼） -->
+  <path d="M 298 215 Q 340 240 330 290 Q 314 270 298 258 L 290 250 Q 300 232 298 215 Z" fill="url(#bf-feather)" stroke="#a8b0bd" stroke-width="1.5"/>
+  <path d="M 80 235 Q 76 265 78 285" stroke="#cbd5e1" stroke-width="1.2" fill="none"/>
+  <path d="M 320 235 Q 324 265 322 285" stroke="#cbd5e1" stroke-width="1.2" fill="none"/>
+
+  <!-- 平底鍋（左手舉起） -->
+  <line x1="80" y1="270" x2="35" y2="195" stroke="#1f2937" stroke-width="6" stroke-linecap="round"/>
+  <ellipse cx="48" cy="170" rx="38" ry="14" fill="url(#bf-pan)" stroke="#0f172a" stroke-width="2"/>
+  <ellipse cx="48" cy="166" rx="32" ry="9" fill="#374151" stroke="#0f172a" stroke-width="1"/>
+  <ellipse cx="40" cy="163" rx="6" ry="2" fill="#9ca3af" opacity="0.6"/>
+
+  <!-- 脖子 S 曲線 -->
+  <path d="M 178 192 Q 156 152 172 116 Q 188 100 210 108 Q 218 142 206 178 Z" fill="url(#bf-feather)" stroke="#a8b0bd" stroke-width="2"/>
+
+  <!-- 頭 -->
+  <circle cx="200" cy="92" r="38" fill="url(#bf-feather)" stroke="#a8b0bd" stroke-width="2"/>
+
+  <!-- 嘴喙 -->
+  <path d="M 232 86 L 268 82 Q 274 90 268 102 L 232 102 Z" fill="url(#bf-beak)" stroke="#9c4a05" stroke-width="1.5"/>
+  <line x1="234" y1="94" x2="268" y2="94" stroke="#9c4a05" stroke-width="1" opacity="0.7"/>
+  <ellipse cx="244" cy="86" rx="1.5" ry="2" fill="#3a1f10"/>
+
+  <!-- 眼睛（精神飽滿，挑眉） -->
+  <ellipse cx="218" cy="78" rx="4.5" ry="5.5" fill="#1a1a1a"/>
+  <circle cx="219.5" cy="76" r="1.6" fill="#fff"/>
+  <!-- 挑高的眉 -->
+  <path d="M 208 60 Q 220 56 230 65" stroke="#3a1f10" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <!-- 廚師帽 -->
+  <ellipse cx="200" cy="60" rx="42" ry="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <path d="M 162 60 L 158 30 Q 160 12 180 16 Q 184 4 198 8 Q 210 0 220 12 Q 240 8 242 28 L 238 60 Z" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <path d="M 172 22 Q 178 28 174 38" stroke="#e2e8f0" stroke-width="1.2" fill="none"/>
+  <path d="M 196 14 Q 202 22 198 32" stroke="#e2e8f0" stroke-width="1.2" fill="none"/>
+  <path d="M 222 18 Q 228 26 224 36" stroke="#e2e8f0" stroke-width="1.2" fill="none"/>
+
+  <!-- 蒸氣（活力效果） -->
+  <path d="M 130 130 Q 122 110 128 95 Q 134 105 130 120" stroke="#e0f2fe" stroke-width="2" fill="none" opacity="0.7"/>
+  <path d="M 270 130 Q 278 110 272 95 Q 266 105 270 120" stroke="#e0f2fe" stroke-width="2" fill="none" opacity="0.7"/>
+</svg>

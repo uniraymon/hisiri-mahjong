@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 250" width="200" height="250">
+  <!-- 弓手天鵝 Archer Swan -->
+  <defs>
+    <linearGradient id="arc-feather" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dde2eb"/>
+    </linearGradient>
+    <linearGradient id="arc-beak" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffb74d"/>
+      <stop offset="1" stop-color="#e8780b"/>
+    </linearGradient>
+    <linearGradient id="arc-tunic" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#5fa055"/>
+      <stop offset="1" stop-color="#1f5a1a"/>
+    </linearGradient>
+  </defs>
+
+  <ellipse cx="100" cy="238" rx="50" ry="6" fill="#000" opacity="0.18"/>
+
+  <path d="M 76 220 Q 68 234 76 236 Q 86 236 88 232 Q 92 236 96 232 L 96 220 Z" fill="url(#arc-beak)" stroke="#9c4a05" stroke-width="1"/>
+  <path d="M 124 220 Q 132 234 124 236 Q 114 236 112 232 Q 108 236 104 232 L 104 220 Z" fill="url(#arc-beak)" stroke="#9c4a05" stroke-width="1"/>
+
+  <ellipse cx="100" cy="170" rx="55" ry="58" fill="url(#arc-feather)" stroke="#a8b0bd" stroke-width="2"/>
+
+  <!-- 綠色短袍 -->
+  <path d="M 60 145 Q 70 138 100 138 Q 130 138 140 145 L 138 195 Q 100 205 62 195 Z" fill="url(#arc-tunic)" stroke="#1f3a14" stroke-width="1.5"/>
+  <path d="M 100 138 L 95 198" stroke="#1f3a14" stroke-width="1.2" opacity="0.7"/>
+  <path d="M 90 158 Q 100 153 110 158 Q 100 165 90 158 Z" fill="#a8d878" stroke="#1f3a14" stroke-width="1"/>
+  <rect x="62" y="180" width="76" height="8" fill="#6b4226" stroke="#2a1810" stroke-width="1"/>
+
+  <!-- 翅膀 -->
+  <path d="M 58 142 Q 36 156 42 182 Q 50 172 58 165 L 60 160 Q 56 150 58 142 Z" fill="url(#arc-feather)" stroke="#a8b0bd" stroke-width="1.5"/>
+  <path d="M 142 142 Q 164 156 158 182 Q 150 172 142 165 L 140 160 Q 144 150 142 142 Z" fill="url(#arc-feather)" stroke="#a8b0bd" stroke-width="1.5"/>
+  <path d="M 48 152 Q 46 168 46 180" stroke="#cbd5e1" stroke-width="1" fill="none"/>
+  <path d="M 152 152 Q 154 168 154 180" stroke="#cbd5e1" stroke-width="1" fill="none"/>
+
+  <!-- 脖子 -->
+  <path d="M 90 115 Q 76 95 86 75 Q 96 65 110 70 Q 114 90 105 105 Z" fill="url(#arc-feather)" stroke="#a8b0bd" stroke-width="2"/>
+
+  <!-- 頭 -->
+  <circle cx="100" cy="55" r="22" fill="url(#arc-feather)" stroke="#a8b0bd" stroke-width="2"/>
+
+  <!-- 嘴喙 -->
+  <path d="M 118 50 L 138 48 Q 142 52 138 60 L 118 60 Z" fill="url(#arc-beak)" stroke="#9c4a05" stroke-width="1.2"/>
+  <ellipse cx="124" cy="51" rx="1" ry="1.2" fill="#3a1f10"/>
+
+  <!-- 眼睛 -->
+  <ellipse cx="108" cy="46" rx="3" ry="3.5" fill="#1f5a1a"/>
+  <circle cx="109" cy="44.5" r="1" fill="#fff"/>
+  <path d="M 103 39 Q 108 37 113 40" stroke="#1f3a14" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+  <!-- 綠斗篷帽 -->
+  <path d="M 78 38 Q 100 18 122 38 L 124 50 Q 100 42 76 50 Z" fill="url(#arc-tunic)" stroke="#1f3a14" stroke-width="1.5"/>
+  <path d="M 122 38 Q 132 24 138 28 Q 130 36 124 42 Z" fill="url(#arc-tunic)" stroke="#1f3a14" stroke-width="1"/>
+  <path d="M 88 30 Q 95 22 102 28 Q 95 34 88 30 Z" fill="#a8d878" stroke="#1f3a14" stroke-width="0.8"/>
+
+  <!-- 呆毛（從帽尖翹出） -->
+  <path d="M 100 22 Q 98 8 103 4 Q 108 8 105 16 Q 103 20 101 22 Z" fill="url(#arc-feather)" stroke="#a8b0bd" stroke-width="1.2"/>
+</svg>

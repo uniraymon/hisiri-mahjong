@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- 古龍鵝 Dragon Goose World Boss -->
+  <defs>
+    <linearGradient id="dr-scale" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#10b981"/>
+      <stop offset="0.5" stop-color="#065f46"/>
+      <stop offset="1" stop-color="#022c22"/>
+    </linearGradient>
+    <linearGradient id="dr-belly" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#fbbf24"/>
+      <stop offset="1" stop-color="#92400e"/>
+    </linearGradient>
+    <linearGradient id="dr-beak" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#fbbf24"/>
+      <stop offset="1" stop-color="#7f1d1d"/>
+    </linearGradient>
+    <radialGradient id="dr-fire" cx="0.3" cy="0.5" r="0.7">
+      <stop offset="0" stop-color="#fef3c7"/>
+      <stop offset="0.3" stop-color="#fbbf24"/>
+      <stop offset="0.7" stop-color="#dc2626"/>
+      <stop offset="1" stop-color="#7f1d1d" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="dr-aura" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#dc2626" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#022c22" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="dr-eye" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fef3c7"/>
+      <stop offset="0.5" stop-color="#fbbf24"/>
+      <stop offset="1" stop-color="#92400e"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 火紅光環背景 -->
+  <circle cx="200" cy="200" r="200" fill="url(#dr-aura)"/>
+
+  <!-- 影子 -->
+  <ellipse cx="200" cy="378" rx="125" ry="11" fill="#000" opacity="0.4"/>
+
+  <!-- 龍尾 -->
+  <path d="M 280 320 Q 350 330 380 290 Q 360 295 350 305 Q 360 280 380 260 Q 350 270 335 290 Q 305 305 285 305 Z" fill="url(#dr-scale)" stroke="#022c22" stroke-width="2"/>
+  <path d="M 376 286 L 388 288 L 380 278 Z" fill="url(#dr-scale)" stroke="#022c22" stroke-width="1.5"/>
+
+  <!-- 龍翼（左） -->
+  <path d="M 105 215 Q 50 180 15 200 L 25 230 L 8 250 L 30 268 L 12 290 L 55 295 L 50 318 L 95 305 L 105 270 Z" fill="url(#dr-scale)" stroke="#022c22" stroke-width="2"/>
+  <!-- 翼膜紋 -->
+  <path d="M 25 230 L 70 250" stroke="#10b981" stroke-width="1" opacity="0.6"/>
+  <path d="M 30 268 L 75 270" stroke="#10b981" stroke-width="1" opacity="0.6"/>
+  <path d="M 55 295 L 80 285" stroke="#10b981" stroke-width="1" opacity="0.6"/>
+  <!-- 龍翼（右） -->
+  <path d="M 295 215 Q 350 180 385 200 L 375 230 L 392 250 L 370 268 L 388 290 L 345 295 L 350 318 L 305 305 L 295 270 Z" fill="url(#dr-scale)" stroke="#022c22" stroke-width="2"/>
+  <path d="M 375 230 L 330 250" stroke="#10b981" stroke-width="1" opacity="0.6"/>
+  <path d="M 370 268 L 325 270" stroke="#10b981" stroke-width="1" opacity="0.6"/>
+  <path d="M 345 295 L 320 285" stroke="#10b981" stroke-width="1" opacity="0.6"/>
+
+  <!-- 蹼足（龍爪） -->
+  <path d="M 156 350 Q 144 374 156 378 L 175 378 L 175 365 L 168 360 L 178 358 L 178 350 Z" fill="#022c22" stroke="#000" stroke-width="1.5"/>
+  <path d="M 244 350 Q 256 374 244 378 L 225 378 L 225 365 L 232 360 L 222 358 L 222 350 Z" fill="#022c22" stroke="#000" stroke-width="1.5"/>
+  <!-- 利爪 -->
+  <path d="M 162 372 L 164 380 L 168 372" fill="#fbbf24"/>
+  <path d="M 232 372 L 236 380 L 238 372" fill="#fbbf24"/>
+
+  <!-- 身體 -->
+  <ellipse cx="200" cy="270" rx="100" ry="105" fill="url(#dr-scale)" stroke="#022c22" stroke-width="2.5"/>
+
+  <!-- 龍鱗（鱗片紋路） -->
+  <g fill="#10b981" opacity="0.55" stroke="#022c22" stroke-width="0.5">
+    <path d="M 145 220 Q 155 215 165 220 Q 160 230 155 230 Q 150 230 145 220"/>
+    <path d="M 175 222 Q 185 217 195 222 Q 190 232 185 232 Q 180 232 175 222"/>
+    <path d="M 205 222 Q 215 217 225 222 Q 220 232 215 232 Q 210 232 205 222"/>
+    <path d="M 235 220 Q 245 215 255 220 Q 250 230 245 230 Q 240 230 235 220"/>
+    <path d="M 130 250 Q 140 245 150 250 Q 145 260 140 260 Q 135 260 130 250"/>
+    <path d="M 160 252 Q 170 247 180 252 Q 175 262 170 262 Q 165 262 160 252"/>
+    <path d="M 220 252 Q 230 247 240 252 Q 235 262 230 262 Q 225 262 220 252"/>
+    <path d="M 250 250 Q 260 245 270 250 Q 265 260 260 260 Q 255 260 250 250"/>
+    <path d="M 145 280 Q 155 275 165 280 Q 160 290 155 290 Q 150 290 145 280"/>
+    <path d="M 235 280 Q 245 275 255 280 Q 250 290 245 290 Q 240 290 235 280"/>
+    <path d="M 160 310 Q 170 305 180 310 Q 175 320 170 320 Q 165 320 160 310"/>
+    <path d="M 220 310 Q 230 305 240 310 Q 235 320 230 320 Q 225 320 220 310"/>
+  </g>
+
+  <!-- 腹部黃色（龍特徵） -->
+  <ellipse cx="200" cy="305" rx="42" ry="50" fill="url(#dr-belly)" opacity="0.9"/>
+  <line x1="200" y1="265" x2="200" y2="345" stroke="#92400e" stroke-width="0.6" opacity="0.5"/>
+  <path d="M 175 280 L 225 280 M 175 295 L 225 295 M 175 310 L 225 310 M 175 325 L 225 325" stroke="#92400e" stroke-width="0.5" opacity="0.4"/>
+
+  <!-- 脖子 -->
+  <path d="M 175 200 Q 152 165 168 115 Q 188 95 215 105 Q 228 145 215 188 Z" fill="url(#dr-scale)" stroke="#022c22" stroke-width="2.5"/>
+  <!-- 脖子龍鱗 -->
+  <g fill="#10b981" opacity="0.55" stroke="#022c22" stroke-width="0.5">
+    <path d="M 178 175 Q 188 170 198 175 Q 193 185 188 185 Q 183 185 178 175"/>
+    <path d="M 178 145 Q 188 140 198 145 Q 193 155 188 155 Q 183 155 178 145"/>
+    <path d="M 178 115 Q 188 110 198 115 Q 193 125 188 125 Q 183 125 178 115"/>
+  </g>
+
+  <!-- 頭 -->
+  <circle cx="200" cy="80" r="38" fill="url(#dr-scale)" stroke="#022c22" stroke-width="2.5"/>
+
+  <!-- 龍角 -->
+  <path d="M 174 50 Q 162 32 158 14 Q 168 24 175 38 Z" fill="url(#dr-belly)" stroke="#451a03" stroke-width="1.5"/>
+  <path d="M 226 50 Q 238 32 242 14 Q 232 24 225 38 Z" fill="url(#dr-belly)" stroke="#451a03" stroke-width="1.5"/>
+
+  <!-- 嘴喙（噴火張開） -->
+  <path d="M 232 70 L 285 60 Q 295 75 290 85 L 248 90 Z" fill="url(#dr-beak)" stroke="#451a03" stroke-width="1.8"/>
+  <path d="M 232 90 L 285 100 Q 295 92 285 86 L 248 90 Z" fill="url(#dr-beak)" stroke="#451a03" stroke-width="1.8"/>
+  <!-- 牙 -->
+  <path d="M 240 86 L 246 95 L 252 86 Z" fill="#fff"/>
+  <path d="M 264 86 L 270 95 L 276 86 Z" fill="#fff"/>
+
+  <!-- 火焰噴射 -->
+  <path d="M 290 75 Q 320 65 350 75 Q 370 85 390 80 Q 365 90 388 100 Q 360 100 380 115 Q 355 110 340 105 Q 320 100 295 90 Z" fill="url(#dr-fire)" stroke="#dc2626" stroke-width="1.2" opacity="0.95"/>
+  <!-- 火焰核心 -->
+  <ellipse cx="320" cy="85" rx="18" ry="8" fill="#fef3c7" opacity="0.9"/>
+  <ellipse cx="345" cy="92" rx="10" ry="5" fill="#fbbf24" opacity="0.95"/>
+
+  <!-- 金龍眼 -->
+  <ellipse cx="218" cy="72" rx="5" ry="6.5" fill="url(#dr-eye)"/>
+  <path d="M 218 66 L 218 80" stroke="#1c1917" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="220" cy="69" r="1" fill="#fff"/>
+  <!-- 凶眉 -->
+  <path d="M 205 55 L 232 65" stroke="#022c22" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- 火星粒子 -->
+  <circle cx="350" cy="65" r="2" fill="#fbbf24"/>
+  <circle cx="370" cy="115" r="2" fill="#dc2626"/>
+  <circle cx="320" cy="110" r="1.5" fill="#fef3c7"/>
+  <circle cx="385" cy="80" r="1.5" fill="#fbbf24"/>
+</svg>
