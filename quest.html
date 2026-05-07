@@ -12053,7 +12053,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508014003';
+  const APP_VERSION = '20260508015314';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -23394,7 +23394,8 @@ ${b.text}
               damageLog: { ...state.damageLog }, settlement: _settlement };
             state.damageLog = {};
             state.queue = [];
-            state.hp = state.maxHp || (bossDef && bossDef.maxHp) || state.hp;  // ⭐ 優先用 doc 內的可信 maxHp，防客戶端快取舊值
+            if (bossDef && bossDef.maxHp) state.maxHp = bossDef.maxHp;  // ⭐ 每次擊殺都以最新定義值更新 Firestore maxHp，防舊文件造成復活血量錯誤
+            state.hp = state.maxHp;
           }
           tx.set(bossRef, _prune(state));
           return { actualDmg, killed, newState: state };
