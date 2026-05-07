@@ -2071,6 +2071,9 @@
   <!-- Stage D: 地獄使者專屬介面 -->
   <div id="stageHell" class="hidden"></div>
 
+  <!-- Stage E: 競技場（modal overlay，不替換 stageGame） -->
+  <div id="stageArena" class="hidden"></div>
+
   <!-- 地獄使者全服公告橫幅 -->
   <div id="hellBanner" style="
     display:none; position:fixed; top:0; left:0; right:0; z-index:9999;
@@ -3438,6 +3441,26 @@
       deathLine: ['倒了...就這樣...'],
       reward: { coins: 0, xp: 0 },
     },
+    {
+      id: 'midnight_goose',
+      name: '宵夜鵝', icon: '🍜',
+      hp: 2000000, atk: 250, def: 900, spd: 120,
+      level: 35, defPen: 0.30,
+      physRes: 0.20, magRes: 0.20,
+      critDmgReduct: 0.30,  // ⭐ 最擊坑性：普通暴擊爆傷加成 ×0.70，alwaysCrit/forceCrit/爆頭不受影響
+      verb: '宵夜猛擊',
+      fixedSkillOrder: true,
+      maxRounds: 200,
+      skills: [
+        { verb: '泡麵滾湯', mult: 1.3, applyStatus: { type: 'poison', charges: 4, dmg: 55, chance: 0.70 }, cooldown: 3 },
+        { verb: '宵夜暴食', type: 'monsterSelfBuff', stat: 'atkPct', amount: 0.85, turns: 3, cooldown: 3 },
+        { verb: '深夜狂斬', mult: 3.2, cooldown: 3 },
+        { verb: '午夜寒煙', mult: 1.0, ignoreDef: true, applyStatus: { type: 'paralyze', charges: 2, chance: 0.60 }, cooldown: 3 },
+      ],
+      dialogue: ['吃消夜算你有眼光！', '深夜了還敢來挑釁？', '正好，我剛泡好麵…'],
+      deathLine: ['泡麵...涼掉了...', '碗...摔破了...', '下次再算帳...'],
+      reward: { coins: 1500, xp: 6000 },
+    },
   ];
 
 
@@ -3482,6 +3505,16 @@
     { id: 'sp_pebble_goose', sourceBossId: 'pebble_goose', name: '鵝卵石精魂', icon: '🪨', color: '#78716c',
       theme: '不朽（極厚生存）',
       base: { hp: 150, def: 10 } },
+    // ⭐ 個人王精魂
+    { id: 'sp_midnight_goose', sourceBossId: 'midnight_goose', name: '宵夜鵝精魂', icon: '🍜', color: '#7c3aed',
+      theme: '蓄勢（ATK+MARK+最後爆發）',
+      base: { atk: 10, mark: 10, spd: 3 },
+      engravingDef: {
+        trackA: { stat: 'atk',  perSuccess: 2,  label: 'ATK',  isPct: false },
+        trackB: { stat: 'mark', perSuccess: 5,  label: 'MARK', isPct: false },
+        special: { id: 'last_midnight', name: '最後的宵夜', desc: '戰鬥最後20回合：ATK/MARK/DEF +50%，暴傷+100%（刻印激活後生效）' },
+      },
+    },
   ];
   const SPIRIT_BY_BOSS = Object.fromEntries(SPIRIT_DEFS.map(s => [s.sourceBossId, s]));
 
@@ -4996,6 +5029,22 @@
 
   const STAMINA_MAX = 200;
   const STAMINA_PER_FIGHT = 10;
+
+  // ⭐ 宵夜鵝精魂「最後的宵夜」觸發常數（隨時可調）
+  const MIDNIGHT_LATE_TRIGGER_ROUNDS = 20;   // 最後幾回合觸發
+  const MIDNIGHT_LATE_ATK_BONUS      = 0.50; // ATK   +50%
+  const MIDNIGHT_LATE_MARK_BONUS     = 0.50; // MARK  +50%
+  const MIDNIGHT_LATE_DEF_BONUS      = 0.50; // DEF   +50%
+  const MIDNIGHT_LATE_CRITDMG_BONUS  = 1.00; // 暴傷 +100%
+
+  // ⭐ 競技場 PvP 縮放常數
+  const PVP_ATK_MULT        = 0.55;   // 攻方 ATK × 0.55
+  const PVP_DEF_BOOST       = 1.8;    // 守方 DEF × 1.8
+  const PVP_HP_MULT         = 2.0;    // 雙方 HP × 2.0
+  const ARENA_ELO_K         = 32;     // ELO 係數
+  const ARENA_REMATCH_MS    = 4 * 60 * 60 * 1000; // 4 小時再挑戰冷卻
+  const ARENA_WIN_COINS     = 80;     // 勝利獲得競技場幣
+  const ARENA_LOSS_COINS    = 20;     // 敗北安慰獎
   const STAMINA_PER_TICK = 4;     // 每分鐘 +4 體力（原本 +5，慢 20%）
   const HP_PER_TICK = 1;
   const MP_PER_TICK = 2;
@@ -5104,6 +5153,7 @@
   // ============================================================
   let players = [];
   let hellAnnouncements = []; // ⭐ 地獄使者全服公告
+  let arenaLog = [];          // ⭐ 競技場全服戰報
   let history = [];
   let gifts = [];
   let _giftsLocalTs = 0; // ⭐ 上次本地修改 gifts 的時間戳，防 Firebase 快照回朔
@@ -5304,7 +5354,7 @@
       }
     }
     __rotateBackup();
-    const payload = { players, history, gifts, comments, pendingBets, betPool, worldBoss, wb9, baseMoney, basePoint, bossOverrides: _bossOverrides, hellAnnouncements };
+    const payload = { players, history, gifts, comments, pendingBets, betPool, worldBoss, wb9, baseMoney, basePoint, bossOverrides: _bossOverrides, hellAnnouncements, arenaLog };
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch (e) {}
     if (!__isApplyingRemote && window.__firebaseSync && window.__firebaseSync.ready) {
       window.__firebaseSync.save(payload);
@@ -5380,6 +5430,10 @@
         const prevIds = new Set(hellAnnouncements.map(a => a.id));
         hellAnnouncements = data.hellAnnouncements;
         hellAnnouncements.filter(a => !prevIds.has(a.id)).forEach(a => showHellBanner(a));
+      }
+      // ⭐ 競技場全服戰報
+      if (Array.isArray(data.arenaLog)) {
+        arenaLog = data.arenaLog;
       }
       __persistLocalSnapshot();
       render();
@@ -6122,6 +6176,14 @@
         window.__pendingUpdateV17.add(player.id);
       }
     }
+    // ⭐ v18：競技場 / 嗜血爆裂修正 / 宵夜鵝個人王 / 精魂最後的宵夜
+    if (!player.rpg.updateV18 && typeof getMeId === 'function' && player.id === getMeId()) {
+      player.rpg.updateV18 = true;
+      if (typeof window !== 'undefined') {
+        window.__pendingUpdateV18 = window.__pendingUpdateV18 || new Set();
+        window.__pendingUpdateV18.add(player.id);
+      }
+    }
     // ⭐ v16 migration：修正聖騎 p_aegis 在行動規則表中永遠被 p_blessing 搶先的問題
     //   舊規則表：p_blessing（judge 1000）在前，p_aegis（judge 1000）在後 → p_aegis 永不觸發
     //   新規則表：p_aegis 改用 judge 1910（每4回合，含麻痺），移到 p_blessing 之前
@@ -6791,6 +6853,12 @@
     const cls = CLASSES[player.rpg.class];
     const stats = computeStats(player);
 
+    // ⭐ PvP 模式：攻方 ATK × PVP_ATK_MULT，HP × PVP_HP_MULT
+    if (opts?.pvpMode) {
+      stats.atk   = Math.round(stats.atk   * PVP_ATK_MULT);
+      stats.maxHp = Math.round(stats.maxHp * PVP_HP_MULT);
+    }
+
     // 綠茶事件：腳本式遭遇，跳過正常戰鬥
     if (monster.ability?.type === 'cameo') {
       const startHp = Math.min(player.rpg.hp ?? stats.maxHp, stats.maxHp);
@@ -6833,7 +6901,7 @@
     // ⭐ 合成效果
     const _fx = getFusionEffects(player);
     const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0) + (setB.critChance || 0);
-    const critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
+    let critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
     // ⭐ 合成效果疊加層數（getFusionEffectCount = 裝幾層算幾層）
     const _fxGuardian   = getFusionEffectCount(player, 'fx_guardian');
     const _fxMage       = getFusionEffectCount(player, 'fx_mage');
@@ -6869,6 +6937,7 @@
     const _spiritSpecials = getSpiritSpecials(player);
     let _tenaciousUsed = false;           // 不屈：每場限一次
     let _perfectTempoStreak = 0;          // 完美節拍：連續暴擊層數 0-4
+    let _midnightLateActivated = false;   // 最後的宵夜：每場限一次
     let pHp = stats.maxHp; // ⭐ 每場戰鬥 HP 自動回滿（HP 變成屬性，不是耗材）
     let pMp = stats.maxMp; // ⭐ 每場戰鬥 MP 自動回滿
     let mHp = monster.hp;
@@ -7025,6 +7094,15 @@
         }
       }
       if (pTurn) {
+        // ⭐ 最後的宵夜（宵夜鵝精魂刻印特殊）：最後 N 回合一次性發動
+        if (!_midnightLateActivated && _spiritSpecials.has('last_midnight') && monster.maxRounds && round >= (monster.maxRounds - MIDNIGHT_LATE_TRIGGER_ROUNDS)) {
+          _midnightLateActivated = true;
+          stats.atk  = Math.round(stats.atk  * (1 + MIDNIGHT_LATE_ATK_BONUS));
+          stats.def  = Math.round(stats.def  * (1 + MIDNIGHT_LATE_DEF_BONUS));
+          stats.mark = Math.round((stats.mark || 0) * (1 + MIDNIGHT_LATE_MARK_BONUS));
+          critMult  += MIDNIGHT_LATE_CRITDMG_BONUS;
+          log.push({ type: 'crit-player', text: `🍜【最後的宵夜】發動！ATK/MARK/DEF +${Math.round(MIDNIGHT_LATE_ATK_BONUS*100)}%，爆傷 +${Math.round(MIDNIGHT_LATE_CRITDMG_BONUS*100)}%（剩 ${monster.maxRounds - round} 回合）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+        }
         pGauge -= ATB_THRESHOLD;
         playerActions++;
         // 玩家身上狀態 tick（中毒、buff 倒數）
@@ -7244,7 +7322,11 @@
               const _fcS = _nextForceCrit > 0;
               const hitCrit = skill.alwaysCrit || _fcS || Math.random() < skillCrit;
               if (_fcS) _nextForceCrit--;
-              if (hitCrit) { hitDmg *= skillCritMult; if (_fcS && _dgCritCount > 0) hitDmg *= 1.30; critCount++; lastIsCrit = true; if (_dgCritCount > 0 && !_fcS) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount); }
+              if (hitCrit) {
+                // ⭐ 最擊坑性：只對普通暴擊有效，alwaysCrit/forceCrit 不受限
+                const _effSkillCritMult = (skill.alwaysCrit || _fcS || !monster.critDmgReduct) ? skillCritMult : 1.0 + (skillCritMult - 1.0) * (1 - monster.critDmgReduct);
+                hitDmg *= _effSkillCritMult; if (_fcS && _dgCritCount > 0) hitDmg *= 1.30; critCount++; lastIsCrit = true; if (_dgCritCount > 0 && !_fcS) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount);
+              }
               // ⭐ 易傷（hit-based）：每段各消耗 1 層
               hitDmg *= consumeVulnerable(monster);
               hitDmg = Math.max(1, Math.round(hitDmg));
@@ -7283,7 +7365,7 @@
               pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + heal));  // 不下調（神聖祝福可讓 HP 超過 maxHp，後續補血不應拉低）
               if (pHp - before > 0) extra += ` 🩸+${pHp - before} HP (吸血)`;
               // ⭐ 嗜血爆裂：吸血量也加入血池
-              if (skill.id === 'w_blood_burst') bloodPool += heal;
+              if (skill.id === 'w_blood_burst') { bloodPool += heal; extra += ` 🩸血池+${heal}→${bloodPool}`; }
             }
             // ⭐ 流血吸血（嗜血爆裂）：打流血目標額外 +10% 吸血
             if (skill.bleedLifestealBonus && hasStatus(monster, 'bleed')) {
@@ -7292,7 +7374,7 @@
               pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + extraHeal));
               if (pHp - before > 0) extra += ` 🩸+${pHp - before} HP (流血吸血)`;
               // ⭐ 嗜血爆裂：流血吸血也加入血池
-              if (skill.id === 'w_blood_burst') bloodPool += extraHeal;
+              if (skill.id === 'w_blood_burst') { bloodPool += extraHeal; extra += ` 🩸血池+${extraHeal}→${bloodPool}`; }
             }
             // ⭐ 嗜血劍：攻擊流血目標 → 回血×2 + ATK+20%(3T)
             if (weaponBloodEffect && hasStatus(monster, 'bleed') && totalDmg > 0) {
@@ -7513,7 +7595,11 @@
               dmg *= (1 + _aHit * 0.01);
               // ⭐ 弓手普攻流疊加：暴擊爆傷（隨機 +1~4%/層，累積）
               const _hitCritMult = critMult2 + _aCritBonus;
-              if (isCrit) { dmg *= _hitCritMult; critCount++; if (_dgCritCount > 0 && !_fcA) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount); }
+              if (isCrit) {
+                // ⭐ 最擊坑性：forceCrit 或爆頭時不受限
+                const _effHitCritMult = (_fcA || isHs || !monster.critDmgReduct) ? _hitCritMult : 1.0 + (_hitCritMult - 1.0) * (1 - monster.critDmgReduct);
+                dmg *= _effHitCritMult; critCount++; if (_dgCritCount > 0 && !_fcA) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount);
+              }
               // ⭐ 弓手普攻流疊加：爆頭傷害（隨機 +5~13%/層，累積）
               const _hsBase = (_fcA && _dgCritCount > 0) ? 3.9 : 3;
               if (isHs) dmg *= _hsBase + _aHsBonus;
@@ -7564,7 +7650,11 @@
             if (_fcB) _nextForceCrit--;
             let dmg = Math.max(1, effAtk - Math.floor(monDef0 / 2));
             dmg *= (0.85 + Math.random() * 0.3);
-            if (isCrit2) { dmg *= critMult2; if (_fcB && _dgCritCount > 0) dmg *= 1.30; critCount++; if (_dgCritCount > 0 && !_fcB) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount); }
+            if (isCrit2) {
+              // ⭐ 最擊坑性：forceCrit 不受限
+              const _effCritMult2B = (_fcB || !monster.critDmgReduct) ? critMult2 : 1.0 + (critMult2 - 1.0) * (1 - monster.critDmgReduct);
+              dmg *= _effCritMult2B; if (_fcB && _dgCritCount > 0) dmg *= 1.30; critCount++; if (_dgCritCount > 0 && !_fcB) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount);
+            }
             // ⭐ 合成效果：fx_conquer（普攻傷害+50%/層）
             if (_fxConquer > 0) dmg *= (1 + _fxConquer * 0.50);
             // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%/層）
@@ -7776,9 +7866,12 @@
         };
         if (mSkill) {
           if (mSkill.type === 'monsterSelfBuff') {
-            // ⭐ 怪物自身加 buff（早餐鵝加防）
+            // ⭐ 怪物自身加 buff（早餐鵝加防、宵夜鵝加攻）
             applyStatus(monster, { type: 'buff', stat: mSkill.stat, amount: mSkill.amount, turns: mSkill.turns });
-            log.push({ type: 'monster', text: `回合 ${round}：${monster.icon}${monster.name} 🛡 ${mSkill.verb} → ${mSkill.stat === 'def' ? `DEF +${mSkill.amount}（${mSkill.turns} 回合）` : `${mSkill.stat} +${mSkill.amount}`}`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+            const _mSelfBuffLabel = mSkill.stat === 'def'    ? `DEF +${mSkill.amount}（${mSkill.turns} 回合）` :
+                                    mSkill.stat === 'atkPct' ? `ATK +${Math.round(mSkill.amount * 100)}%（${mSkill.turns} 回合）` :
+                                    `${mSkill.stat} +${mSkill.amount}`;
+            log.push({ type: 'monster', text: `回合 ${round}：${monster.icon}${monster.name} 🛡 ${mSkill.verb} → ${_mSelfBuffLabel}`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
           } else if (mSkill.type === 'monsterShield') {
             // ⭐ 怪物獲得護盾（午餐鵝咖哩潑灑：無視傷害 N 次）
             applyStatus(monster, { type: 'shield', charges: mSkill.charges || 1, turns: 99 });
@@ -7795,11 +7888,12 @@
           } else {
             // ⭐ 30% DEF 穿透：boss 有 defPen 屬性時，部分 ATK 直接無視防禦
             const _mPen = monster.defPen || 0;
+            const _monAtkBuff = 1 + (getBuffBonus(monster).atkPct || 0); // ⭐ 宵夜暴食等 atkPct buff
             let dmg;
             if (mSkill.ignoreDef || _mPen <= 0) {
-              dmg = Math.max(1, monster.atk * (mSkill.mult || 1) - (mSkill.ignoreDef ? 0 : Math.floor(effDef / 2)));
+              dmg = Math.max(1, monster.atk * _monAtkBuff * (mSkill.mult || 1) - (mSkill.ignoreDef ? 0 : Math.floor(effDef / 2)));
             } else {
-              const _totAtk = monster.atk * (mSkill.mult || 1);
+              const _totAtk = monster.atk * _monAtkBuff * (mSkill.mult || 1);
               dmg = Math.max(1, _totAtk * _mPen + Math.max(0, _totAtk * (1 - _mPen) - Math.floor(effDef / 2)));
             }
             dmg *= (0.85 + Math.random() * 0.3);
@@ -7841,12 +7935,13 @@
           const hits = (mAbility?.type === 'multiHit') ? Math.max(1, mAbility.hits || 2) : 1;
           const perHitMult = hits === 1 ? 1.0 : (1.3 / hits);
           const _mPen2 = monster.defPen || 0;
+          const _monAtkBuff2 = 1 + (getBuffBonus(monster).atkPct || 0); // ⭐ 宵夜暴食等 atkPct buff
           for (let h = 0; h < hits; h++) {
             let dmg;
             if (_mPen2 > 0) {
-              dmg = Math.max(1, monster.atk * _mPen2 + Math.max(0, monster.atk * (1 - _mPen2) - Math.floor(effDef / 2)));
+              dmg = Math.max(1, monster.atk * _monAtkBuff2 * _mPen2 + Math.max(0, monster.atk * _monAtkBuff2 * (1 - _mPen2) - Math.floor(effDef / 2)));
             } else {
-              dmg = Math.max(1, monster.atk - Math.floor(effDef / 2));
+              dmg = Math.max(1, monster.atk * _monAtkBuff2 - Math.floor(effDef / 2));
             }
             dmg *= (0.85 + Math.random() * 0.3);
             dmg *= perHitMult;
@@ -8079,7 +8174,7 @@
     const _fxMagShield  = getFusionEffectCount(player, 'fx_sg_magshield');
     const _fxStatusRes  = getFusionEffectCount(player, 'fx_sg_statusres');
     const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0) + (setB.critChance || 0);
-    const critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
+    let critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
     // fx_guardian: 每回合 HP 回復最大值 3%/層
     const regenPer = (cls.regenPer || 0) + (bonus.regen || 0) + _fxGuardian * 0.03;
     // fx_mage: 技能 MP 消耗 -20%/層
@@ -8103,6 +8198,7 @@
     const _spiritSpecials = getSpiritSpecials(player);
     let _tenaciousUsed = false;
     let _perfectTempoStreak = 0;
+    let _midnightLateActivated = false;   // 最後的宵夜：每場限一次
 
     let pHp = stats.maxHp; // ⭐ 每場戰鬥 HP 自動回滿（HP 變成屬性，不是耗材）
     let pMp = stats.maxMp; // ⭐ 每場戰鬥 MP 自動回滿
@@ -8236,6 +8332,18 @@
       round++;
 
       if (actor === 'player') {
+        // ⭐ 最後的宵夜（宵夜鵝精魂刻印特殊）：最後 N 回合一次性發動
+        {
+          const _mlRef = mList.find(m => m.alive && m.maxRounds)?.maxRounds || 100;
+          if (!_midnightLateActivated && _spiritSpecials.has('last_midnight') && round >= (_mlRef - MIDNIGHT_LATE_TRIGGER_ROUNDS)) {
+            _midnightLateActivated = true;
+            stats.atk  = Math.round(stats.atk  * (1 + MIDNIGHT_LATE_ATK_BONUS));
+            stats.def  = Math.round(stats.def  * (1 + MIDNIGHT_LATE_DEF_BONUS));
+            stats.mark = Math.round((stats.mark || 0) * (1 + MIDNIGHT_LATE_MARK_BONUS));
+            critMult  += MIDNIGHT_LATE_CRITDMG_BONUS;
+            log.push({ type: 'crit-player', text: `🍜【最後的宵夜】發動！ATK/MARK/DEF +${Math.round(MIDNIGHT_LATE_ATK_BONUS*100)}%，爆傷 +${Math.round(MIDNIGHT_LATE_CRITDMG_BONUS*100)}%（剩 ${_mlRef - round} 回合）`, hp: hpsSnapshot() });
+          }
+        }
         pGauge -= ATB_THRESHOLD;
         playerActions++;
 
@@ -8431,7 +8539,11 @@
               const isCrit = skill.alwaysCrit || _fcSM || Math.random() < skillCrit;
               if (_fcSM) _nextForceCrit--;
               if (!skill.usesBloodPool) dmg *= (0.9 + Math.random() * 0.2);
-              if (isCrit) { dmg *= skillCritMult; if (_fcSM && _dgCritCount > 0) dmg *= 1.30; critCount++; if (_dgCritCount > 0 && !_fcSM) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount); }
+              if (isCrit) {
+                // ⭐ 最擊坑性：只對普通暴擊有效，alwaysCrit/forceCrit 不受限
+                const _effSkillCritMultM = (skill.alwaysCrit || _fcSM || !tgt.critDmgReduct) ? skillCritMult : 1.0 + (skillCritMult - 1.0) * (1 - tgt.critDmgReduct);
+                dmg *= _effSkillCritMultM; if (_fcSM && _dgCritCount > 0) dmg *= 1.30; critCount++; if (_dgCritCount > 0 && !_fcSM) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount);
+              }
               dmg = Math.max(1, Math.round(dmg));
               if (tgt.ability?.type === 'flatCapDmg') dmg = Math.min(dmg, tgt.ability.cap || 1);
               dmg = consumeMonsterShield2(tgt, dmg);
@@ -8473,7 +8585,7 @@
               const gained = pHp - before;
               if (gained > 0) extra += ` 🩸+${gained} HP`;
               // ⭐ 嗜血爆裂：吸血量也加入血池
-              if (skill.id === 'w_blood_burst') bloodPool += heal;
+              if (skill.id === 'w_blood_burst') { bloodPool += heal; extra += ` 🩸血池+${heal}→${bloodPool}`; }
             }
             // ⭐ 流血吸血（嗜血爆裂）：打流血目標額外 +10% 吸血
             if (skill.bleedLifestealBonus && hits.length) {
@@ -8485,7 +8597,7 @@
                 pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + extraHeal));
                 if (pHp - before > 0) extra += ` 🩸+${pHp - before} HP (流血吸血)`;
                 // ⭐ 嗜血爆裂：流血吸血也加入血池
-                if (skill.id === 'w_blood_burst') bloodPool += extraHeal;
+                if (skill.id === 'w_blood_burst') { bloodPool += extraHeal; extra += ` 🩸血池+${extraHeal}→${bloodPool}`; }
               }
             }
             // ⭐ 嗜血劍：攻擊流血目標 → 回血×2 + ATK+20%(3T)
@@ -8691,7 +8803,11 @@
               dmg *= (1 + _aHit * 0.01);
               // ⭐ 弓手普攻流疊加：暴擊爆傷（隨機 +1~4%/層，累積）
               const _hitCritMultM = critMult2 + _aCritBonus;
-              if (isCrit) { dmg *= _hitCritMultM; critCount++; if (_dgCritCount > 0 && !_fcAM) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount); }
+              if (isCrit) {
+                // ⭐ 最擊坑性：forceCrit 或爆頭時不受限
+                const _effHitCritMultM = (_fcAM || isHs || !tgt.critDmgReduct) ? _hitCritMultM : 1.0 + (_hitCritMultM - 1.0) * (1 - tgt.critDmgReduct);
+                dmg *= _effHitCritMultM; critCount++; if (_dgCritCount > 0 && !_fcAM) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount);
+              }
               // ⭐ 弓手普攻流疊加：爆頭傷害（隨機 +5~13%/層，累積）
               const _hsBaseM = (_fcAM && _dgCritCount > 0) ? 3.9 : 3;
               if (isHs) dmg *= _hsBaseM + _aHsBonus;
@@ -8742,7 +8858,11 @@
             if (_fcBM) _nextForceCrit--;
             let dmg = Math.max(1, effAtk - Math.floor(_tgtDef2 / 2));
             dmg *= (0.85 + Math.random() * 0.3);
-            if (isCrit) { dmg *= critMult2; if (_fcBM && _dgCritCount > 0) dmg *= 1.30; critCount++; if (_dgCritCount > 0 && !_fcBM) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount); }
+            if (isCrit) {
+              // ⭐ 最擊坑性：forceCrit 不受限
+              const _effCritMult2BM = (_fcBM || !tgt.critDmgReduct) ? critMult2 : 1.0 + (critMult2 - 1.0) * (1 - tgt.critDmgReduct);
+              dmg *= _effCritMult2BM; if (_fcBM && _dgCritCount > 0) dmg *= 1.30; critCount++; if (_dgCritCount > 0 && !_fcBM) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount);
+            }
             // ⭐ 合成效果：fx_conquer（普攻傷害+50%/層）
             if (_fxConquer > 0) dmg *= (1 + _fxConquer * 0.50);
             // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%/層）
@@ -8956,7 +9076,9 @@
         if (mSkill) {
           if (mSkill.type === 'monsterSelfBuff') {
             applyStatus(m, { type: 'buff', stat: mSkill.stat, amount: mSkill.amount, turns: mSkill.turns });
-            const buffDesc = mSkill.stat === 'def' ? `DEF +${mSkill.amount}（${mSkill.turns} 回合）` : `強化 ${mSkill.turns} 回合`;
+            const buffDesc = mSkill.stat === 'def'    ? `DEF +${mSkill.amount}（${mSkill.turns} 回合）` :
+                             mSkill.stat === 'atkPct' ? `ATK +${Math.round(mSkill.amount * 100)}%（${mSkill.turns} 回合）` :
+                             `強化 ${mSkill.turns} 回合`;
             log.push({ type: 'monster', text: `回合 ${round}：${m.icon}${m.name} ✨${mSkill.verb || '強化'} → ${buffDesc}`, hp: hpsSnapshot() });
           } else if (mSkill.type === 'monsterShield') {
             applyStatus(m, { type: 'shield', charges: mSkill.charges || 1, turns: 99 });
@@ -8973,11 +9095,12 @@
           } else {
             // ⭐ 30% DEF 穿透（試煉場）
             const _mPen3 = m.defPen || 0;
+            const _monAtkBuff3 = 1 + (getBuffBonus(m).atkPct || 0); // ⭐ 宵夜暴食等 atkPct buff
             let dmg;
             if (mSkill.ignoreDef || _mPen3 <= 0) {
-              dmg = Math.max(1, m.atk * (mSkill.mult || 1) - (mSkill.ignoreDef ? 0 : Math.floor(effDef / 2)));
+              dmg = Math.max(1, m.atk * _monAtkBuff3 * (mSkill.mult || 1) - (mSkill.ignoreDef ? 0 : Math.floor(effDef / 2)));
             } else {
-              const _totAtk3 = m.atk * (mSkill.mult || 1);
+              const _totAtk3 = m.atk * _monAtkBuff3 * (mSkill.mult || 1);
               dmg = Math.max(1, _totAtk3 * _mPen3 + Math.max(0, _totAtk3 * (1 - _mPen3) - Math.floor(effDef / 2)));
             }
             dmg *= (0.85 + Math.random() * 0.3);
@@ -9017,12 +9140,13 @@
           const hits = (m.ability?.type === 'multiHit') ? Math.max(1, m.ability.hits || 2) : 1;
           const perHitMult = hits === 1 ? 1.0 : (1.3 / hits);
           const _mPen4 = m.defPen || 0;
+          const _monAtkBuff4 = 1 + (getBuffBonus(m).atkPct || 0); // ⭐ 宵夜暴食等 atkPct buff
           for (let h = 0; h < hits; h++) {
             let dmg;
             if (_mPen4 > 0) {
-              dmg = Math.max(1, m.atk * _mPen4 + Math.max(0, m.atk * (1 - _mPen4) - Math.floor(effDef / 2)));
+              dmg = Math.max(1, m.atk * _monAtkBuff4 * _mPen4 + Math.max(0, m.atk * _monAtkBuff4 * (1 - _mPen4) - Math.floor(effDef / 2)));
             } else {
-              dmg = Math.max(1, m.atk - Math.floor(effDef / 2));
+              dmg = Math.max(1, m.atk * _monAtkBuff4 - Math.floor(effDef / 2));
             }
             dmg *= (0.85 + Math.random() * 0.3);
             dmg *= perHitMult;
@@ -9140,7 +9264,46 @@
   function maybeShowBetaCompModal() {
     const me = getMe();
     if (!me) return;
-    // ⭐ v17 優先（最新）：精魂刻印系統 + 刻印槽
+    // ⭐ v18 優先（最新）：競技場 / 嗜血爆裂修正 / 宵夜鵝 / 精魂最後的宵夜
+    if (window.__pendingUpdateV18 && window.__pendingUpdateV18.has(me.id)) {
+      window.__pendingUpdateV18.delete(me.id);
+      const html = `
+        <div style="text-align:left; padding:6px 0;">
+          <div style="text-align:center; font-size:48px; margin-bottom:6px;">⚔️🍜🩸✨</div>
+          <div style="text-align:center; font-weight:800; font-size:17px; color:#7c3aed; margin-bottom:8px;">v18 競技場 &amp; 新Boss更新</div>
+          <div style="font-size:12px; color:#2d1b4e; line-height:1.9; padding:10px 14px; background:#fdf4ff; border-radius:10px; border:2px dashed #d8b4fe;">
+
+            <div style="font-weight:800; color:#7c3aed; margin-bottom:4px;">⚔️ 競技場（Beta）上線！</div>
+            • 新分頁「競技場」：與其他玩家展開 <b>PvP 對戰</b>！<br>
+            • 設定你的防守職業頁（1頁行動規則），讓其他人挑戰你的「AI分身」<br>
+            • <b>勝敗記錄</b>追蹤，攻守雙方使用不同縮放係數平衡對戰<br>
+            • 全服戰報：每場勝負結果廣播給所有人<br>
+            • ⚙️ 目前為<b>平衡測試階段</b>，ELO計分 / 競技場幣暫停，打完以後會回補！<br>
+
+            <div style="font-weight:800; color:#b91c1c; margin:10px 0 4px;">🩸 嗜血爆裂修正</div>
+            • 戰鬥日誌現在正確顯示 <b>🩸 血池+N→總計</b>，讓你知道每次爆裂補了多少血池<br>
+
+            <div style="font-weight:800; color:#f97316; margin:10px 0 4px;">🍜 新個人王：宵夜鵝</div>
+            • <b>200萬 HP</b>・ATK 250・DEF 900・SPD 120<br>
+            • 特殊機制「<b>最擊坑性 30%</b>」：普通暴擊爆傷加成減少30%（forceCrit / 爆頭不受影響）<br>
+            • 技能：泡麵滾湯🔥（毒）・宵夜暴食💪（ATK+85%）・深夜狂斬⚔️・午夜寒煙❄️（麻痺）<br>
+            • 擊殺掉落 <b>宵夜鵝精魂🍜</b>！<br>
+
+            <div style="font-weight:800; color:#7c3aed; margin:10px 0 4px;">✨ 宵夜鵝精魂 — 最後的宵夜</div>
+            • 基礎：<b>ATK+10・MARK+10・SPD+3</b><br>
+            • 刻印A：ATK+2/格 ｜ 刻印B：MARK+5/格<br>
+            • 特殊（10格激活）：「<b>最後的宵夜</b>」—— 戰鬥<b>最後20回合</b>觸發！<br>
+            &nbsp;&nbsp;<b>ATK / MARK / DEF +50%</b>，暴傷 <b>+100%</b>，一舉逆轉戰局！<br>
+
+          </div>
+          <button class="btn btn-primary" onclick="hideModal()" style="margin-top:14px; width:100%; background:linear-gradient(135deg,#7c3aed,#f97316);">🍜 了解！</button>
+        </div>
+      `;
+      showModal('🍜 v18 新內容更新', html);
+      saveData();
+      return;
+    }
+    // ⭐ v17 優先：精魂刻印系統 + 刻印槽
     if (window.__pendingUpdateV17 && window.__pendingUpdateV17.has(me.id)) {
       window.__pendingUpdateV17.delete(me.id);
       const html = `
@@ -11469,7 +11632,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507031307';
+  const APP_VERSION = '20260507114112';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -12590,6 +12753,11 @@ ${b.text}
         <span class="cqm-icon">⚗️</span>
         <span class="cqm-label">合成</span>
         <span class="cqm-badge">印記</span>
+      </button>
+      <button class="cqm-btn" onclick="showArenaModal()" title="競技場">
+        <span class="cqm-icon">⚔️</span>
+        <span class="cqm-label">競技場</span>
+        <span class="cqm-badge">${(getRpg(getMe())?.arena?.wins||0)}勝${(getRpg(getMe())?.arena?.losses||0)}敗</span>
       </button>
     `;
   }
@@ -18517,6 +18685,319 @@ ${b.text}
     `;
   }
   window.renderHellMessenger = renderHellMessenger;
+
+  // ============================================================
+  // ⭐⭐⭐  競技場系統（Arena / PvP）  ⭐⭐⭐
+  // ============================================================
+
+  // ELO 計算：scoreA = 1(勝) / 0.5(平) / 0(敗)
+  function computeEloChange(ratingA, ratingB, scoreA) {
+    const expectedA = 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
+    return Math.round(ARENA_ELO_K * (scoreA - expectedA));
+  }
+
+  // 獲取/初始化競技場數據
+  function getArena(rpg) {
+    if (!rpg.arena) rpg.arena = {};
+    const a = rpg.arena;
+    if (!a.rating)              a.rating           = 1000;
+    if (!a.wins)                a.wins             = 0;
+    if (!a.losses)              a.losses           = 0;
+    if (!a.arenaCoins)          a.arenaCoins       = 0;
+    if (!a.lastChallengeTs)     a.lastChallengeTs  = {};
+    if (a.defensePatternPage === undefined) a.defensePatternPage = 0;
+    if (a.registered === undefined)         a.registered         = false;
+    return a;
+  }
+
+  // ─── 全服廣播競技場戰報 ───────────────────────
+  function broadcastArenaAction(icon, text) {
+    arenaLog = arenaLog || [];
+    const entry = { id: `${Date.now()}_${Math.random().toString(36).slice(2)}`, ts: Date.now(), icon, text };
+    arenaLog.unshift(entry);
+    if (arenaLog.length > 50) arenaLog = arenaLog.slice(0, 50);
+    saveData();
+  }
+  window.broadcastArenaAction = broadcastArenaAction;
+
+  // ─── 報名 / 退出 競技場 ──────────────────────
+  function arenaToggleRegister() {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (rpg.class === 'hellmessenger') { showToast('地獄使者無法參加競技場'); return; }
+    const arena = getArena(rpg);
+    arena.registered = !arena.registered;
+    saveData();
+    showArenaModal();
+  }
+  window.arenaToggleRegister = arenaToggleRegister;
+
+  // ─── 設定防禦規則頁 ──────────────────────────
+  function arenaSetDefensePage(page) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const arena = getArena(rpg);
+    arena.defensePatternPage = page;
+    saveData();
+    showArenaModal();
+  }
+  window.arenaSetDefensePage = arenaSetDefensePage;
+
+  // ─── 依職業構建守方怪物技能 ──────────────────
+  function buildDefenderSkills(defenderPlayer, dStats) {
+    const cls = defenderPlayer.rpg?.class;
+    if (cls === 'paladin') {
+      return [
+        { verb: '神聖打擊', mult: 1.4, ignoreDef: true },
+        { type: 'monsterSelfBuff', stat: 'def', amount: Math.round(dStats.def * PVP_DEF_BOOST * 0.3), turns: 3, verb: '聖盾強化' },
+      ];
+    } else if (cls === 'mage') {
+      return [
+        { verb: '奧術轟炸', mult: 1.5, ignoreDef: true },
+        { verb: '寒冰矢', mult: 1.2, ignoreDef: true, applyStatus: { type: 'paralyze', charges: 1, chance: 0.4 } },
+      ];
+    } else if (cls === 'archer') {
+      return [
+        { verb: '穿心箭', mult: 1.3 },
+        { verb: '連射', mult: 1.1 },
+      ];
+    } else if (cls === 'warrior') {
+      return [
+        { verb: '重斬', mult: 1.4 },
+        { verb: '狂怒一擊', mult: 1.6, applyStatus: { type: 'bleed', charges: 2, chance: 0.5 } },
+      ];
+    } else if (cls === 'rogue') {
+      return [
+        { verb: '暗刺', mult: 1.2 },
+        { verb: '致命連擊', mult: 1.4 },
+      ];
+    }
+    return [
+      { verb: '攻擊', mult: 1.0 },
+      { verb: '強力一擊', mult: 1.4 },
+    ];
+  }
+
+  // ─── PvP 戰鬥核心 ────────────────────────────
+  function autoFightPvP(attackerPlayer, defenderPlayer) {
+    const dStats = computeStats(defenderPlayer);
+    const dCls   = CLASSES[defenderPlayer.rpg?.class] || { icon: '👤', name: '冒險者' };
+    const defSkills = buildDefenderSkills(defenderPlayer, dStats);
+
+    // 守方「怪物」：HP×2, ATK×0.55, DEF×1.8
+    const defMonster = {
+      name:      defenderPlayer.name || '競技場挑戰者',
+      icon:      dCls.icon || '👤',
+      hp:        Math.round(dStats.maxHp * PVP_HP_MULT),
+      maxHp:     Math.round(dStats.maxHp * PVP_HP_MULT),
+      atk:       Math.round(dStats.atk   * PVP_ATK_MULT),
+      def:       Math.round(dStats.def   * PVP_DEF_BOOST),
+      spd:       dStats.spd,
+      level:     defenderPlayer.rpg?.level || 1,
+      exp: 0, gold: 0,
+      maxRounds: 150,
+      skills:    defSkills,
+      ability:   null,
+      statuses:  [],
+    };
+
+    // 攻方使用自己當前啟用的 HOF 規則頁
+    const atkPatternPage = attackerPlayer.rpg?.activePatternPage ?? 0;
+
+    return autoFight(attackerPlayer, defMonster, {
+      patternPage: atkPatternPage,
+      pvpMode: true,
+    });
+  }
+  window.autoFightPvP = autoFightPvP;
+
+  // ─── 挑戰玩家 ────────────────────────────────
+  function arenaChallenge(targetId) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const arena = getArena(rpg);
+
+    if (!arena.registered) { showToast('請先報名競技場！'); return; }
+
+    const target = players.find(p => p && p.id === targetId);
+    if (!target) { showToast('找不到對手！'); return; }
+    const targetRpg   = getRpg(target);
+    const targetArena = getArena(targetRpg);
+    if (!targetArena.registered) { showToast('對方未報名競技場！'); return; }
+    if (targetId === me.id) { showToast('不能挑戰自己！'); return; }
+
+    // 挑戰冷卻
+    const lastTs  = arena.lastChallengeTs?.[targetId] || 0;
+    const elapsed = Date.now() - lastTs;
+    if (elapsed < ARENA_REMATCH_MS) {
+      const rem = Math.ceil((ARENA_REMATCH_MS - elapsed) / 60000);
+      showToast(`⏳ 對 ${escapeHtml(target.name || targetId)} 的挑戰冷卻：剩餘 ${rem} 分鐘`);
+      return;
+    }
+
+    // 執行 PvP 戰鬥
+    const result = autoFightPvP(me, target);
+    const won = result.won;
+
+    // ⚙️ 算分/獎勵暫停中（平衡測試階段）
+    // ELO 和競技場幣在確認平衡後再開啟
+
+    // 勝敗記錄（僅統計，不影響評分）
+    if (won) {
+      arena.wins         = (arena.wins || 0) + 1;
+      targetArena.losses = (targetArena.losses || 0) + 1;
+    } else {
+      arena.losses       = (arena.losses || 0) + 1;
+      targetArena.wins   = (targetArena.wins || 0) + 1;
+    }
+
+    // 更新冷卻
+    arena.lastChallengeTs           = arena.lastChallengeTs || {};
+    arena.lastChallengeTs[targetId]  = Date.now();
+
+    // 對手勝敗也同步（不需 ELO/coins，輕量同步）
+    target.lastTouchedAt  = Date.now() - 1;
+    targetRpg.saveVersion = (targetRpg.saveVersion || 0) + 1;
+    window.__firebaseSync?.forceWriteAllPlayers?.([target]).catch(() => {});
+
+    saveData();
+
+    // 全服廣播（平衡測試期，不顯示分數）
+    broadcastArenaAction(
+      won ? '🏆' : '⚔️',
+      won
+        ? `【${escapeHtml(me.name)}】在競技場擊敗了【${escapeHtml(target.name || '???')}】！`
+        : `【${escapeHtml(me.name)}】挑戰【${escapeHtml(target.name || '???')}】失敗！`
+    );
+
+    // 顯示戰鬥結果（不顯示 ELO / 幣）
+    const logLines = result.log.slice(-15).map(e =>
+      `<div style="font-size:11px; color:${e.type==='player'?'#93c5fd':e.type==='monster'?'#fca5a5':'#9ca3af'}; padding:1px 0;">${escapeHtml(e.text || '')}</div>`
+    ).join('');
+    const dStats = computeStats(target);
+
+    showModal(won ? '🏆 競技場勝利！' : '💀 競技場敗北', `
+      <div style="text-align:center; padding:8px 0 10px;">
+        <div style="font-size:40px; margin-bottom:6px;">${won ? '🏆' : '💀'}</div>
+        <div style="font-size:15px; font-weight:800; color:${won?'#fde047':'#f87171'}; margin-bottom:4px;">
+          ${won ? `擊敗了 ${escapeHtml(target.name || '???')}！` : `被 ${escapeHtml(target.name || '???')} 守住了！`}
+        </div>
+        <div style="background:#1f2937; border-radius:8px; padding:8px; margin:0 16px 10px; font-size:11px; color:#9ca3af; text-align:center;">
+          ⚙️ 平衡測試階段 — ELO 計分 / 獎勵暫停中<br>
+          勝敗：${arena.wins}勝 ${arena.losses}敗 ｜ 守方 HP ${Math.round(dStats.maxHp*PVP_HP_MULT)} / ATK ${Math.round(dStats.atk*PVP_ATK_MULT)} / DEF ${Math.round(dStats.def*PVP_DEF_BOOST)}
+        </div>
+      </div>
+      <div style="background:#0d1117; border-radius:8px; padding:8px; margin:0 4px 12px; max-height:220px; overflow-y:auto;">${logLines}</div>
+      <button onclick="hideModal(); showArenaModal();" style="width:100%; padding:10px; border:none; border-radius:8px; background:#374151; color:#fff; cursor:pointer; font-size:13px; font-weight:700;">返回競技場</button>
+    `);
+  }
+  window.arenaChallenge = arenaChallenge;
+
+  // ─── 競技場 UI ────────────────────────────────
+  function showArenaModal() {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const arena = getArena(rpg);
+
+    // 已報名玩家（排除自己 + 地獄使者，依 ELO 降序）
+    const registered = players
+      .filter(p => p && p.id !== me.id && getRpg(p)?.arena?.registered && getRpg(p)?.class !== 'hellmessenger')
+      .sort((a, b) => (getRpg(b).arena?.rating || 1000) - (getRpg(a).arena?.rating || 1000));
+
+    // 防禦頁按鈕
+    const pageNames = ['規則第一頁', '規則第二頁', '規則第三頁', '規則第四頁'];
+    const defPageBtns = pageNames.map((name, i) => `
+      <button onclick="arenaSetDefensePage(${i})" style="
+        padding:5px 10px; border:none; border-radius:6px; cursor:pointer; font-size:11px;
+        background:${arena.defensePatternPage === i ? 'linear-gradient(135deg,#7c3aed,#4f46e5)' : '#374151'};
+        color:${arena.defensePatternPage === i ? '#fff' : '#9ca3af'};
+        font-weight:${arena.defensePatternPage === i ? '700' : '400'};">
+        ${arena.defensePatternPage === i ? '✓ ' : ''}${name}
+      </button>`).join('');
+
+    // 對手列表
+    const challengeRows = registered.length === 0
+      ? `<div style="text-align:center; padding:20px; color:#6b7280; font-size:12px;">
+           <div style="font-size:32px; margin-bottom:6px;">🏟️</div>
+           暫無其他報名玩家
+         </div>`
+      : registered.map(p => {
+          const pRpg   = getRpg(p);
+          const pArena = pRpg?.arena || {};
+          const pRating = pArena.rating || 1000;
+          const pCls   = CLASSES[pRpg?.class] || {};
+          const lastTs = arena.lastChallengeTs?.[p.id] || 0;
+          const onCd   = (Date.now() - lastTs) < ARENA_REMATCH_MS;
+          const cdMin  = onCd ? Math.ceil((ARENA_REMATCH_MS - (Date.now() - lastTs)) / 60000) : 0;
+          const eloWin = computeEloChange(arena.rating, pRating, 1);
+          const eloLoss = computeEloChange(arena.rating, pRating, 0);
+          const pStats = computeStats(p);
+          return `
+            <div style="display:flex; align-items:center; gap:8px; padding:10px; background:#1f2937; border-radius:10px; margin-bottom:6px;">
+              <div style="font-size:22px; flex-shrink:0;">${pCls.icon || '👤'}</div>
+              <div style="flex:1; min-width:0; overflow:hidden;">
+                <div style="font-size:13px; font-weight:700; color:#f3f4f6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(p.name || '???')}</div>
+                <div style="font-size:10px; color:#9ca3af;">Lv${pRpg?.level||1} ${pCls.name||'?'} ｜ 🏆 ${pArena.wins||0}勝 ${pArena.losses||0}敗</div>
+                <div style="font-size:10px; color:#6b7280;">HP ${Math.round(pStats.maxHp*PVP_HP_MULT)} / ATK ${Math.round(pStats.atk*PVP_ATK_MULT)} / DEF ${Math.round(pStats.def*PVP_DEF_BOOST)}</div>
+              </div>
+              <div style="flex-shrink:0;">
+                ${onCd
+                  ? `<div style="font-size:10px; color:#6b7280; text-align:center;">⏳ ${cdMin}分後</div>`
+                  : `<button onclick="arenaChallenge('${escapeHtml(p.id)}')" style="
+                      padding:8px 12px; border:none; border-radius:8px; cursor:pointer;
+                      background:linear-gradient(135deg,#7c3aed,#4f46e5); color:#fff;
+                      font-size:12px; font-weight:700; white-space:nowrap;">⚔️ 挑戰</button>`}
+              </div>
+            </div>`;
+        }).join('');
+
+    // 近期戰報
+    const recentLog = (arenaLog || []).slice(0, 8)
+      .map(a => `<div style="font-size:11px; color:#9ca3af; padding:2px 0; border-bottom:1px solid #1f2937;">${a.icon} ${escapeHtml(a.text||'')}</div>`)
+      .join('') || `<div style="font-size:11px; color:#6b7280; text-align:center; padding:8px;">暫無戰報</div>`;
+
+    showModal('⚔️ 競技場', `
+      <div style="font-size:12px;">
+
+        <!-- 我的資訊 -->
+        <div style="background:linear-gradient(135deg,#1e1b4b,#312e81); border-radius:10px; padding:12px 14px; margin-bottom:12px;">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:${arena.registered?'10':'0'}px;">
+            <div>
+              <div style="font-size:13px; font-weight:800; color:#c4b5fd;">${escapeHtml(me.name||'我')} 的競技場</div>
+              <div style="font-size:11px; color:#a78bfa; margin-top:2px;">
+                🏆 ${arena.wins}勝 ${arena.losses}敗 ｜ <span style="color:#6b7280;">⚙️ 平衡測試中（ELO/獎勵暫停）</span>
+              </div>
+            </div>
+            <button onclick="arenaToggleRegister()" style="
+              flex-shrink:0; padding:8px 12px; border:none; border-radius:8px; cursor:pointer;
+              font-size:11px; font-weight:700; white-space:nowrap;
+              background:${arena.registered ? 'linear-gradient(135deg,#dc2626,#7f1d1d)' : 'linear-gradient(135deg,#16a34a,#14532d)'};
+              color:#fff;">
+              ${arena.registered ? '✓ 已報名（退出）' : '+ 報名參加'}
+            </button>
+          </div>
+          ${arena.registered ? `
+            <div style="font-size:11px; color:#9ca3af; margin-bottom:4px;">🛡 防禦規則頁（守方 AI）：</div>
+            <div style="display:flex; gap:4px; flex-wrap:wrap;">${defPageBtns}</div>
+          ` : `<div style="font-size:11px; color:#6b7280; margin-top:6px;">報名後可設定防禦規則並被其他玩家挑戰</div>`}
+        </div>
+
+        <!-- 對手列表 -->
+        <div style="margin-bottom:12px;">
+          <div style="font-size:12px; font-weight:700; color:#e5e7eb; margin-bottom:6px;">⚔️ 可挑戰的對手（4小時挑戰一次）</div>
+          ${challengeRows}
+        </div>
+
+        <!-- 近期戰報 -->
+        <div style="background:#111827; border-radius:8px; padding:8px;">
+          <div style="font-size:11px; font-weight:700; color:#6b7280; margin-bottom:4px;">📜 近期競技場戰報</div>
+          ${recentLog}
+        </div>
+
+      </div>
+    `);
+  }
+  window.showArenaModal = showArenaModal;
 
   // ============================================================
 
