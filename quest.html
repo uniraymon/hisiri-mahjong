@@ -6037,8 +6037,8 @@
   //   紫 (legendary) 3 詞條
   const RARITY = {
     common:    { color: '#9ca3af', label: '普通',  affixes: 0, mult: 1.0 },
-    magic:     { color: '#22c55e', label: '魔法',  affixes: 0, mult: 1.05 }, // 綠：無詞條（只有紫裝能加詞條）
-    rare:      { color: '#3b82f6', label: '稀有',  affixes: 0, mult: 1.2 },  // 藍：無詞條（只有紫裝能加詞條）
+    magic:     { color: '#22c55e', label: '魔法',  affixes: 1, mult: 1.05 }, // 綠：1 條
+    rare:      { color: '#3b82f6', label: '稀有',  affixes: 2, mult: 1.2 },  // 藍：2 條
     legendary: { color: '#a855f7', label: '傳說',  affixes: 3, mult: 1.5 }, // 紫：3 條（奈落傳說裝→4 條）
     // ⭐ 金裝（鵝王扭蛋專屬，固定詞條，不 roll）
     gold:      { color: '#fbbf24', label: '金裝',  affixes: 0, mult: 1.0 },
@@ -12059,7 +12059,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508010743';
+  const APP_VERSION = '20260508011015';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -12162,7 +12162,7 @@ ${b.text}
         <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">⚒️ 奈落鍛造（第 4 條詞條）</div>
         <div>・奈落層 (Lv 26+) <b>傳說（紫）</b>掉落物可在背包詳情頁<b>花費鵝鵝幣敲出第 4 條詞條</b></div>
         <div>・第 4 條詞條為奈落特殊詞條（生命湧現／虛空之力／深淵護盾／混沌疾影／奈落根基）</div>
-        <div>・只有紫裝才能擁有詞條；前 3 條為普通詞條，第 4 條為奈落特殊詞條</div>
+        <div>・前 1-3 條為普通詞條，第 4 條為奈落特殊詞條（只有傳說裝可鍛造）</div>
         <div>・可重複敲擊以<b>更換</b>第 4 條詞條，費用依次遞增：</div>
         <div style="font-size:12px; padding-left:8px; margin-top:2px;">
           15萬 → 30萬 → 60萬 → 120萬 → 240萬 → <b>300萬（上限）</b>
