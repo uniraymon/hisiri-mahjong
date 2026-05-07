@@ -7055,8 +7055,9 @@
       // 落入下面的 forage elite 分支
     } else if (noSpecial) {
       // 多怪同戰時的「補位怪」：跳過綠茶 / 寶箱 / 精英 roll，直接到普通怪邏輯
-    } else {
+    } else if (opts?.zoneId !== 'nabyss_multi') {
       // 綠茶事件：頭 5 場固定 5%，第 6 場起每場 +2% 慢慢加，第 30 場保底必出
+      // ⭐ nabyss_multi（群戰區）排除綠茶鵝，不適合在多怪戰場出現
       if (rpg) {
         rpg.greenTeaPity = (rpg.greenTeaPity || 0) + 1;
         const baseRate = 0.05;
@@ -12053,7 +12054,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508015946';
+  const APP_VERSION = '20260508022506';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -20988,6 +20989,7 @@ ${b.text}
       <button class="btn btn-secondary" onclick="adminMigrateAccessoryToRing()" style="margin-top:6px; background:linear-gradient(135deg,#ddd6fe,#7c3aed); box-shadow:0 4px 0 #6d28d9; color:#fff;">💍 遷移：飾品槽戒指 → 戒指槽（所有玩家）</button>
       <button class="btn btn-secondary" onclick="adminFixNabyssAffixes()" style="margin-top:6px; background:linear-gradient(135deg,#1e1b4b,#4c1d95); box-shadow:0 4px 0 #3730a3; color:#a5b4fc;">⚒️ 修復奈落詞條位置（虛空之力等特殊詞條不應出現在第1-3條）</button>
       <button class="btn btn-secondary" onclick="adminInspectPlayerBoss()" style="margin-top:6px; background:linear-gradient(135deg,#0c4a6e,#0369a1); box-shadow:0 4px 0 #075985; color:#bae6fd;">🔍 查看 / 修復指定玩家個人王狀態</button>
+      <button class="btn btn-secondary" onclick="adminPromptResetPlayerBoss()" style="margin-top:6px; background:linear-gradient(135deg,#1e1b4b,#7c3aed); box-shadow:0 4px 0 #6d28d9; color:#e9d5ff;">🗑 強制重置玩家個人王（Firebase 直寫）</button>
       <button class="btn btn-secondary" onclick="adminDownloadAllPlayersZip()" style="margin-top:6px; background:linear-gradient(135deg,#0f172a,#1e40af); box-shadow:0 4px 0 #1e3a8a; color:#93c5fd;">📦 一鍵下載所有玩家存檔（ZIP）</button>
       <button class="btn btn-secondary" onclick="adminLockDebug()" style="margin-top:6px;">🔐 鎖回 Debug</button>
 
@@ -23084,6 +23086,73 @@ ${b.text}
     if (typeof renderPersonalBoss === 'function') renderPersonalBoss();
   };
 
+  // ⭐ Admin：強制重置指定玩家的指定個人王（killCount=0 + HP回滿 + 清 history）
+  //   用法：adminResetPlayerBoss('CHAD', 'midnight_goose')
+  //        或 adminResetPlayerBoss('p1777825452148', 'midnight_goose')
+  window.adminResetPlayerBoss = async function(playerNameOrId, bossId) {
+    const target = players.find(p => p && (p.id === playerNameOrId || p.name === playerNameOrId));
+    if (!target) { alert('找不到玩家：' + playerNameOrId); return; }
+    const def = PERSONAL_BOSSES.find(b => b.id === bossId);
+    if (!def) { alert('找不到 Boss：' + bossId); return; }
+    if (!confirm(`確定要重置 ${target.name} 的「${def.name}」記錄嗎？\nkillCount → 0，HP → ${def.hp.toLocaleString()}，history 清空。`)) return;
+
+    const rpg = getRpg(target);
+    // ── 本地重置 ──
+    rpg.personalBoss = rpg.personalBoss || {};
+    rpg.personalBoss[bossId] = { currentHp: def.hp, killCount: 0 };
+    if (Array.isArray(rpg.personalBossHistory)) {
+      rpg.personalBossHistory = rpg.personalBossHistory.filter(h => h && h.bossId !== bossId);
+    }
+    rpg.saveVersion = (rpg.saveVersion || 0) + 200; // ⭐ 強制版本高於 Firebase
+    target.lastTouchedAt = Date.now() + 120000;     // ⭐ +2 分鐘，贏過所有 pending write
+    __persistLocalSnapshot();
+
+    // ── Firebase 寫入：優先用 updateDoc（欄位級更新，繞過文件損壞）──
+    const sync = window.__firebaseSync;
+    let fbOk = false;
+    if (sync?.directUpdatePlayerFields) {
+      try {
+        await sync.directUpdatePlayerFields(target.id, {
+          [`rpg.personalBoss.${bossId}.currentHp`]: def.hp,
+          [`rpg.personalBoss.${bossId}.killCount`]: 0,
+          'rpg.saveVersion': rpg.saveVersion,
+          'lastTouchedAt':   target.lastTouchedAt,
+        });
+        fbOk = true;
+      } catch (e) {
+        console.warn('[adminResetPlayerBoss] updateDoc failed, trying forceWriteAllPlayers:', e);
+      }
+    }
+    if (!fbOk && sync?.forceWriteAllPlayers) {
+      try {
+        await sync.forceWriteAllPlayers([target]);
+        fbOk = true;
+      } catch (e) {
+        console.warn('[adminResetPlayerBoss] forceWriteAllPlayers also failed:', e);
+      }
+    }
+
+    if (fbOk) {
+      showToast(`✅ ${target.name} 的「${def.name}」已重置！Firebase 已更新。`);
+    } else {
+      showToast(`⚠️ ${target.name} 本地已重置，但 Firebase 更新失敗（見 console）`);
+    }
+    if (typeof renderPersonalBoss === 'function') renderPersonalBoss();
+    if (typeof renderCharCard === 'function') renderCharCard();
+  };
+
+  // ⭐ Debug 面板按鈕：彈出輸入框 → 呼叫 adminResetPlayerBoss
+  window.adminPromptResetPlayerBoss = function() {
+    const playerInput = prompt('輸入玩家名稱或 ID（如 CHAD 或 p1777825452148）：');
+    if (!playerInput) return;
+    const bossOptions = PERSONAL_BOSSES.filter(b => !b.isDummy).map((b, i) => `${i+1}. ${b.name}（${b.id}）`).join('\n');
+    const bossInput = prompt(`選擇要重置的 Boss（輸入名稱或 ID）：\n\n${bossOptions}`);
+    if (!bossInput) return;
+    const def = PERSONAL_BOSSES.find(b => b.id === bossInput || b.name === bossInput || b.name.includes(bossInput));
+    if (!def) { alert('找不到 Boss：' + bossInput); return; }
+    adminResetPlayerBoss(playerInput, def.id);
+  };
+
   // Admin 一鍵修復（Debug 面板用）— 含生命湧現+精魂修復
   window.adminFixNabyssAffixes = function() {
     const n1 = _iterAllItems(_fixOneNabyssItem);
@@ -23487,6 +23556,12 @@ ${b.text}
           await setDoc(metaRef, { gifts: pruneUndef(giftsArr) }, { merge: true });
         } catch (e) { window.__logSaveError?.('forceSaveGifts', e); }
       },
+      // ⭐ 管理員專用：直接以 updateDoc 更新單一玩家的特定欄位（bypass 全量 setDoc，繞過文件損壞問題）
+      //   fieldMap 格式：{ 'rpg.personalBoss.midnight_goose.currentHp': 2000000, ... }
+      directUpdatePlayerFields: async (playerId, fieldMap) => {
+        const ref = doc(playersCol, playerId);
+        await updateDoc(ref, fieldMap);
+      },
       forceWriteAllPlayers: async (allPlayers) => {
         const _prune = (v) => {
           if (Array.isArray(v)) {
@@ -23510,6 +23585,10 @@ ${b.text}
         for (const p of (allPlayers || [])) {
           if (!p || !p.id) continue;
           const cp = _prune(p);
+          // ⭐ 防腐：lastTouchedAt 必須是有效數字
+          if (typeof cp.lastTouchedAt !== 'number' || !isFinite(cp.lastTouchedAt)) {
+            cp.lastTouchedAt = Date.now();
+          }
           // ⭐ Firebase 文件大小防爆：個人王 history log 不寫進 Firestore
           if (cp.rpg && Array.isArray(cp.rpg.personalBossHistory)) {
             cp.rpg.personalBossHistory = cp.rpg.personalBossHistory.map(h => {
@@ -23588,6 +23667,11 @@ ${b.text}
         }
         for (const p of playersToWrite) {
           const cleanP = pruneUndef(p);
+          // ⭐ 防腐：lastTouchedAt 必須是有效數字（NaN / 字串會讓 Firestore 拒絕整份文件）
+          if (typeof cleanP.lastTouchedAt !== 'number' || !isFinite(cleanP.lastTouchedAt)) {
+            console.warn(`[save] correcting invalid lastTouchedAt for ${p.id}:`, cleanP.lastTouchedAt, '→ Date.now()');
+            cleanP.lastTouchedAt = Date.now();
+          }
           // ⭐ Firebase 文件大小防爆：個人王 history log 只存到 localStorage，不寫進 Firestore
           //    （戰鬥重播從 localStorage 讀，Firebase 只存摘要 metadata）
           if (cleanP.rpg && Array.isArray(cleanP.rpg.personalBossHistory)) {
