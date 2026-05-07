@@ -3090,6 +3090,7 @@
       skills: boss.skills || [],
       maxRounds: (boss.maxRounds || 100) + 20, // ⭐ 世界王每場多 20 回合
       goldDrop: 0, xpDrop: 0,
+      art: boss.art || null,
     };
 
     const _wbPage = r.wbPatternPage?.[bossId];
@@ -3104,8 +3105,8 @@
       bossId:  boss.id, bossName: boss.name, bossIcon: boss.icon, bossLevel: boss.level,
       attackerId: me.id, attackerName: me.name,
       attackerAvatar: me.avatar || cls?.icon || '🎴',
-      playerSnap: { name: me.name, avatar: cls?.icon || '🎴', level: r.level, maxHp: stats.maxHp, maxMp: stats.maxMp, class: r.class, baseCrit: result.archerStats?.baseCrit },
-      monsterSnap: { name: monster.name, icon: monster.icon, level: monster.level, maxHp: monster.maxHp, ability: monster.ability },
+      playerSnap: { name: me.name, avatar: cls?.icon || '🎴', level: r.level, maxHp: stats.maxHp, maxMp: stats.maxMp, class: r.class, baseCrit: result.archerStats?.baseCrit, classImage: cls?.image || null },
+      monsterSnap: { name: monster.name, icon: monster.icon, level: monster.level, maxHp: monster.maxHp, ability: monster.ability, art: boss.art || null },
       log: (result.log || []).slice(0, 600),
     };
     // ⭐ log 另存 localStorage（Firestore snap 可能會被剝掉 log 欄位）
@@ -3194,9 +3195,10 @@
     wb9Render({ force: true });
     if (typeof renderWbHistory === 'function') renderWbHistory();
 
-    // 顯示本場結果
+    // 顯示本場結果（動畫）
     wb9ShowFightResult({ boss, dmgDealt: actualDmg, killed, xpGain, coinGain,
-      won: result.pHpFinal > 0, log: result.log, snapId: _wbSnapId });
+      won: result.pHpFinal > 0, log: result.log, snapId: _wbSnapId,
+      me, stats, monster });
   }
   window.wb9Attack = wb9Attack;
 
@@ -3260,34 +3262,141 @@
   window.wb9ClaimKillReward = wb9ClaimKillReward;
 
   // 本場戰鬥結果（顯示在 #fightResult）
-  function wb9ShowFightResult({ boss, dmgDealt, killed, xpGain, coinGain, won, log, snapId }) {
+  function wb9ShowFightResult({ boss, dmgDealt, killed, xpGain, coinGain, won, log, snapId, me, stats, monster }) {
     const fr = document.getElementById('fightResult');
     if (!fr) return;
-    const killLine = killed
-      ? `<div style="font-size:15px; font-weight:700; color:#dc2626; text-align:center; padding:6px 0;">💥 尾刀！${boss.name} 倒下了！</div>`
-      : '';
-    const defeatLine = !won
-      ? `<div style="font-size:13px; color:#dc2626; text-align:center;">💀 你被打倒了（HP 歸 0）</div>`
-      : '';
-    const killRewardLine = killed
-      ? `<div style="font-size:11px; color:#92400e; text-align:center; margin-top:2px;">🏆 擊殺獎勵已發放（原石 + 扭蛋幣）</div>`
-      : '';
-    const rewardLine = `<div style="font-size:12px; text-align:center;">+${xpGain.toLocaleString()} XP　·　+${coinGain.toLocaleString()} 鵝鵝幣</div>${killRewardLine}`;
-    fr.innerHTML = `
-      <div class="card" style="border-color:#f59e0b; margin-top:10px;">
-        <h2>⚔️ ${boss.name} — 攻擊結果</h2>
-        ${killLine}${defeatLine}
-        <div style="font-size:14px; text-align:center; padding:4px 0;">
-          💢 造成傷害 <b>${dmgDealt.toLocaleString()}</b>
+    const _wbCls = me ? CLASSES[getRpg(me).class] : null;
+    const _wbStats = stats || {};
+    const _wbMon = monster || {};
+    const arenaHtml = `
+      <div class="battle-arena" id="battleArena">
+        <div class="combatant" id="combatPlayer">
+          <div class="combatant-icon">${_wbCls?.image ? `<img class="class-art" src="${_wbCls.image}" alt="${_wbCls.name}" style="image-rendering:pixelated;image-rendering:crisp-edges;">` : (_wbCls?.icon || '🎴')}</div>
+          <div class="combatant-name">${escapeHtml(me?.name || '?')} Lv${me ? getRpg(me).level : '?'}</div>
+          <div class="combatant-hp-track"><div class="combatant-hp-fill" id="pHpBar" style="width:100%"></div></div>
+          <div class="combatant-hp-text" id="pHpText">${_wbStats.maxHp || '?'}/${_wbStats.maxHp || '?'}</div>
+          <div class="combatant-hp-track" style="margin-top:2px;"><div class="combatant-hp-fill" id="pMpBar" style="width:100%; background:linear-gradient(90deg,#93c5fd,#3b82f6);"></div></div>
+          <div class="combatant-hp-text" id="pMpText" style="color:#1e40af;">MP ${_wbStats.maxMp || '?'}/${_wbStats.maxMp || '?'}</div>
+          <div class="combatant-spd-track"><div class="combatant-spd-fill" id="pSpdBar" style="width:0%"></div></div>
+          <div class="combatant-spd-text" id="pSpdText">⏱ 行動條 0%</div>
         </div>
-        ${rewardLine}
-        <div style="display:flex; gap:8px; margin-top:8px;">
-          ${snapId ? `<button class="btn btn-primary" onclick="replayWbFight('${snapId}')" style="flex:1; background:linear-gradient(135deg,#1e3a5f,#2563eb); box-shadow:0 2px 0 #1e40af; font-size:12px;">▶ 查看戰鬥記錄</button>` : ''}
-          <button class="btn btn-secondary" onclick="this.closest('.card').remove()" style="flex:1;">關閉</button>
+        <div class="vs-icon">⚔️</div>
+        <div class="combatant" id="combatMonster">
+          <div class="combatant-icon">${_wbMon.art ? `<img class="boss-art" src="${_wbMon.art}" alt="${boss.name}" style="image-rendering:pixelated;image-rendering:crisp-edges; width:96px; height:96px;">` : boss.icon}</div>
+          <div class="combatant-name">${boss.name} Lv${boss.level}</div>
+          <div class="combatant-hp-track"><div class="combatant-hp-fill" id="mHpBar" style="width:${_wbMon.maxHp ? (_wbMon.hp / _wbMon.maxHp * 100) : 100}%"></div></div>
+          <div class="combatant-hp-text" id="mHpText">${(_wbMon.hp || 0).toLocaleString()}/${(_wbMon.maxHp || 0).toLocaleString()}</div>
+          <div class="combatant-spd-track" style="margin-top:14px;"><div class="combatant-spd-fill" id="mSpdBar" style="width:0%"></div></div>
+          <div class="combatant-spd-text" id="mSpdText">⏱ 行動條 0%</div>
         </div>
       </div>
+      <div class="battle-log" id="battleLog"></div>
     `;
+    fr.innerHTML = arenaHtml;
     fr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    const _wbLogEl = document.getElementById('battleLog');
+    const _wbLogArr = log || [];
+    const _maxHp = _wbStats.maxHp || 1;
+    const _maxMp = _wbStats.maxMp || 1;
+    const _monMaxHp = _wbMon.maxHp || 1;
+    let _wbi = 0; let _wbLastRound;
+    let _wbPrevPHp = _maxHp; let _wbPrevMHp = _wbMon.hp || _monMaxHp;
+
+    const wbPlayStep = () => {
+      if (_wbi >= _wbLogArr.length) {
+        // 結算卡片
+        const killLine = killed
+          ? `<div style="font-size:15px; font-weight:700; color:#dc2626; text-align:center; padding:6px 0;">💥 尾刀！${boss.name} 倒下了！</div>`
+          : '';
+        const defeatLine = !won
+          ? `<div style="font-size:13px; color:#dc2626; text-align:center;">💀 你被打倒了（HP 歸 0）</div>`
+          : '';
+        const killRewardLine = killed
+          ? `<div style="font-size:11px; color:#92400e; text-align:center; margin-top:2px;">🏆 擊殺獎勵已發放（原石 + 扭蛋幣）</div>`
+          : '';
+        const rewardLine = `<div style="font-size:12px; text-align:center;">+${xpGain.toLocaleString()} XP　·　+${coinGain.toLocaleString()} 鵝鵝幣</div>${killRewardLine}`;
+        if (_wbLogEl) {
+          const _card = document.createElement('div');
+          _card.innerHTML = `
+            <div class="card" style="border-color:#f59e0b; margin-top:10px;">
+              <h2>⚔️ ${boss.name} — 攻擊結果</h2>
+              ${killLine}${defeatLine}
+              <div style="font-size:14px; text-align:center; padding:4px 0;">💢 造成傷害 <b>${dmgDealt.toLocaleString()}</b></div>
+              ${rewardLine}
+            </div>`;
+          _wbLogEl.appendChild(_card);
+          _wbLogEl.scrollTop = _wbLogEl.scrollHeight;
+        }
+        return;
+      }
+      const entry = _wbLogArr[_wbi++];
+      if (entry.round !== undefined && entry.round !== _wbLastRound) {
+        _wbLastRound = entry.round;
+        const _sep = document.createElement('div');
+        _sep.style.cssText = 'text-align:center;color:#475569;font-size:10px;padding:3px 0;border-top:1px solid #1e293b;margin:3px 0;';
+        _sep.textContent = `── 回合 ${entry.round} ──`;
+        _wbLogEl?.appendChild(_sep);
+      }
+      const _ec = entry.type === 'crit-player' ? 'log-crit'
+        : entry.type === 'player' ? 'log-player'
+        : entry.type === 'monster' ? 'log-monster'
+        : 'log-system';
+      const _ediv = document.createElement('div');
+      _ediv.className = `log-line ${_ec}`;
+      _ediv.textContent = entry.text;
+      _wbLogEl?.appendChild(_ediv);
+      if (_wbLogEl) _wbLogEl.scrollTop = _wbLogEl.scrollHeight;
+      if (entry.hp) {
+        const pHpEl = document.getElementById('pHpBar');
+        const mHpEl = document.getElementById('mHpBar');
+        if (pHpEl) pHpEl.style.width = (entry.hp.player / _maxHp * 100) + '%';
+        if (mHpEl) mHpEl.style.width = (entry.hp.monster / _monMaxHp * 100) + '%';
+        const pHpTx = document.getElementById('pHpText');
+        const mHpTx = document.getElementById('mHpText');
+        if (pHpTx) pHpTx.textContent = `${entry.hp.player}/${_maxHp}`;
+        if (mHpTx) mHpTx.textContent = `${entry.hp.monster.toLocaleString()}/${_monMaxHp.toLocaleString()}`;
+        if (entry.hp.mp != null) {
+          const pMpBar = document.getElementById('pMpBar');
+          const pMpTx = document.getElementById('pMpText');
+          if (pMpBar) pMpBar.style.width = (entry.hp.mp / _maxMp * 100) + '%';
+          if (pMpTx) pMpTx.textContent = `MP ${entry.hp.mp}/${_maxMp}`;
+        }
+        // 浮動傷害 + 精靈動畫
+        const _mDmg = _wbPrevMHp - entry.hp.monster;
+        const _pDmg = _wbPrevPHp - entry.hp.player;
+        if (_mDmg > 0) {
+          const _mEl = document.getElementById('combatMonster');
+          if (_mEl) showDamage(_mEl, _mDmg, entry.type === 'crit-player' ? 'crit' : 'normal');
+          const _mArt = document.querySelector('#combatMonster .boss-art');
+          if (_mArt) { _mArt.classList.add('hurt'); setTimeout(() => _mArt.classList.remove('hurt'), 400); }
+        }
+        if (_pDmg > 0) {
+          const _pEl = document.getElementById('combatPlayer');
+          if (_pEl) showDamage(_pEl, _pDmg, 'normal');
+          const _pArt = document.querySelector('#combatPlayer .class-art');
+          if (_pArt) { _pArt.classList.add('hurt'); setTimeout(() => _pArt.classList.remove('hurt'), 400); }
+        }
+        if (entry.hp.player > _wbPrevPHp) {
+          const _pEl = document.getElementById('combatPlayer');
+          if (_pEl) showDamage(_pEl, entry.hp.player - _wbPrevPHp, 'heal');
+        }
+        if (entry.type === 'player' || entry.type === 'crit-player') {
+          const _mArt2 = document.querySelector('#combatMonster .boss-art');
+          if (_mArt2) { _mArt2.classList.add('attacking'); setTimeout(() => _mArt2.classList.remove('attacking'), 500); }
+        }
+        _wbPrevPHp = entry.hp.player;
+        _wbPrevMHp = entry.hp.monster;
+      }
+      if (entry.gauge && typeof updateSpdBar === 'function') {
+        updateSpdBar('pSpdBar', 'pSpdText', entry.gauge.p, '行動條');
+        updateSpdBar('mSpdBar', 'mSpdText', entry.gauge.m, '行動條');
+      }
+      const _nx = _wbLogArr[_wbi];
+      const _sr = _nx && entry.round !== undefined && entry.round === _nx.round;
+      setTimeout(wbPlayStep, _sr ? 80 : 550);
+    };
+    wbPlayStep();
   }
 
   // ⭐ 結構性雜湊：HP / 排隊頭 pid / 排隊長度 / killCount / cd 開關
@@ -12174,7 +12283,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508050734';
+  const APP_VERSION = '20260508051938';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -17837,7 +17946,7 @@ ${b.text}
     const arenaHtml = `
       <div class="battle-arena" id="replayArena">
         <div class="combatant" id="replayPlayer">
-          <div class="combatant-icon">${ps.avatar || '🎴'}</div>
+          <div class="combatant-icon">${ps.classImage ? `<img class="class-art" src="${ps.classImage}" alt="${escapeHtml(ps.name||'?')}" style="image-rendering:pixelated;image-rendering:crisp-edges;">` : (ps.avatar || '🎴')}</div>
           <div class="combatant-name">${escapeHtml(ps.name || '?')} Lv${ps.level || '?'}</div>
           <div class="combatant-hp-track"><div class="combatant-hp-fill" id="replayPHpBar" style="width:100%"></div></div>
           <div class="combatant-hp-text" id="replayPHpText">${maxHp}/${maxHp}</div>
@@ -17851,7 +17960,7 @@ ${b.text}
         </div>
         <div class="vs-icon">⚔️</div>
         <div class="combatant" id="replayMonster">
-          <div class="combatant-icon">${ms.icon || '👹'}</div>
+          <div class="combatant-icon">${ms.art ? `<img class="boss-art" src="${ms.art}" alt="${escapeHtml(ms.name||'?')}" style="image-rendering:pixelated;image-rendering:crisp-edges;">` : (ms.icon || '👹')}</div>
           <div class="combatant-name">${escapeHtml(ms.name || '?')} Lv${ms.level || '?'}</div>
           <div class="combatant-hp-track"><div class="combatant-hp-fill" id="replayMHpBar" style="width:100%"></div></div>
           <div class="combatant-hp-text" id="replayMHpText">${monsterMaxHp.toLocaleString()}/${monsterMaxHp.toLocaleString()}</div>
@@ -17901,6 +18010,8 @@ ${b.text}
       maxHp, maxMp, monsterMaxHp,
       speed: 1,
       timer: null,
+      prevPHp: maxHp,
+      prevMHp: monsterMaxHp,
     };
     runReplayStep(__replayState.sessionId);
   }
@@ -17967,6 +18078,31 @@ ${b.text}
         if (bpBar) bpBar.style.width = Math.min(100, (entry.hp.bloodPool / Math.max(1, st.maxHp)) * 100) + '%';
         if (bpText) bpText.textContent = `🩸 血池 ${entry.hp.bloodPool}`;
       }
+      // ⭐ 浮動傷害數字 + 精靈動畫
+      const _mDmg = st.prevMHp - entry.hp.monster;
+      const _pDmg = st.prevPHp - entry.hp.player;
+      if (_mDmg > 0) {
+        const _mEl = document.getElementById('replayMonster');
+        if (_mEl) showDamage(_mEl, _mDmg, entry.type === 'crit-player' ? 'crit' : 'normal');
+        const _mArt = document.querySelector('#replayMonster .boss-art');
+        if (_mArt) { _mArt.classList.add('hurt'); setTimeout(() => _mArt.classList.remove('hurt'), 400); }
+      }
+      if (_pDmg > 0) {
+        const _pEl = document.getElementById('replayPlayer');
+        if (_pEl) showDamage(_pEl, _pDmg, 'normal');
+        const _pArt = document.querySelector('#replayPlayer .class-art');
+        if (_pArt) { _pArt.classList.add('hurt'); setTimeout(() => _pArt.classList.remove('hurt'), 400); }
+      }
+      if (entry.hp.player > st.prevPHp) {
+        const _pEl = document.getElementById('replayPlayer');
+        if (_pEl) showDamage(_pEl, entry.hp.player - st.prevPHp, 'heal');
+      }
+      if (entry.type === 'player' || entry.type === 'crit-player') {
+        const _mArt2 = document.querySelector('#replayMonster .boss-art');
+        if (_mArt2) { _mArt2.classList.add('attacking'); setTimeout(() => _mArt2.classList.remove('attacking'), 500); }
+      }
+      st.prevPHp = entry.hp.player;
+      st.prevMHp = entry.hp.monster;
     }
     if (entry.gauge && typeof updateSpdBar === 'function') {
       updateSpdBar('replayPSpdBar', 'replayPSpdText', entry.gauge.p, '我的行動條');
@@ -18352,119 +18488,220 @@ ${b.text}
       return;
     }
 
-    // ── 真正個人王：立即顯示結果 ──
+    // ── 真正個人王：動畫戰鬥顯示 ──
     {
-      const dmgDealt = monster.hp - result.mHpFinal;
-      st.currentHp = Math.max(0, result.mHpFinal);
-      let killed = false;
-      let rewardHtml = '';
-
-      if (st.currentHp <= 0) {
-        killed = true;
-        st.killCount = (st.killCount || 0) + 1;
-        st.currentHp = def.hp;
-        rpg.xp = (rpg.xp || 0) + def.reward.xp;
-        rpg.totalGold = (rpg.totalGold || 0) + def.reward.coins;
-        refundCoins(me.id, def.reward.coins);
-        let leveled = 0;
-        while (rpg.xp >= xpForLevel(rpg.level)) {
-          rpg.xp -= xpForLevel(rpg.level);
-          rpg.level += 1;
-          rpg.skillPoints = (rpg.skillPoints || 0) + POINTS_PER_LEVEL.skill;
-          rpg.abilityPoints = (rpg.abilityPoints || 0) + POINTS_PER_LEVEL.ability;
-          leveled++;
-        }
-        // ⭐ 掉精魂
-        let spiritDropped = null;
-        try {
-          const sp = generateSpirit(def.id);
-          if (sp) {
-            rpg.spiritBag = rpg.spiritBag || [];
-            rpg.spiritBag.push(sp);
-            spiritDropped = sp;
-          }
-        } catch (e) { /* swallow */ }
-        rewardHtml = `
-          <div class="reward-list" style="background:linear-gradient(135deg,#fef3c7,#fde047); border-color:#f59e0b;">
-            <div class="rl-title" style="color:#7c2d12;">🏆 ${def.name} 被擊殺！</div>
-            <div class="rl-item">💢 你打掉了 <b>${dmgDealt.toLocaleString()}</b> HP，給予最後一擊！</div>
-            <div class="rl-item">🪙 +${def.reward.coins} 鵝鵝幣　·　⭐ +${def.reward.xp} XP${leveled ? `（升 ${leveled} 級）` : ''}</div>
-            ${spiritDropped ? `<div class="rl-item" style="color:${spiritDropped.color}; font-weight:700;">🌟 掉落精魂：${spiritDropped.icon} ${escapeHtml(spiritDropped.name)}<div style="font-size:10px; color:#8b6f9b; font-weight:500; margin-top:1px;">${escapeHtml(describeSpirit(spiritDropped))}</div></div>` : ''}
-            <div class="rl-item" style="font-size:11px; color:#7c2d12;">王已重生（HP 回滿，2.5 分鐘後可再戰）</div>
-          </div>`;
-      } else {
-        // 沒殺死 → 王回 5% HP
-        const regen = Math.round(def.hp * PERSONAL_BOSS_REGEN_PCT);
-        st.currentHp = Math.min(def.hp, st.currentHp + regen);
-        const hpPct = (st.currentHp / def.hp * 100).toFixed(1);
-        rewardHtml = `
-          <div class="reward-list" style="background:linear-gradient(135deg,#1e1b4b,#4c1d95); color:#fff; border-color:#7c3aed;">
-            <div class="rl-title" style="color:#fde047;">${result.won ? '⏸ 暫時撤退' : '⏸ 戰鬥結束'}</div>
-            <div class="rl-item">💢 你打掉了 <b style="color:#fca5a5;">${dmgDealt.toLocaleString()}</b> HP</div>
-            <div class="rl-item" style="color:#fde047;">🩹 王回復 +${regen} HP（5%）</div>
-            <div class="rl-item">${def.icon} ${def.name} 還剩 ${st.currentHp.toLocaleString()} / ${def.hp.toLocaleString()} HP（${hpPct}%）</div>
-            <div class="rl-item" style="font-size:11px; opacity:0.85;">⏳ 2.5 分鐘後可再戰</div>
-          </div>`;
-      }
-
-      // HP/MP 結算
-      const ns = computeStats(me);
-      if (result.pHpFinal <= 0) {
-        rpg.hp = Math.max(1, Math.floor(ns.maxHp * REST_HP_RATIO));
-      } else {
-        rpg.hp = ns.maxHp; rpg.mp = ns.maxMp;
-      }
-      rpg.deathAt = null;
-      if (rpg.critCount == null) rpg.critCount = 0;
-      rpg.critCount += (result.critCount || 0);
-
-      // ⭐ 存戰報到 history（最多 5 筆）
-      let pbId = null;
-      try {
-        pbId = 'pb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
-        const pbSnap = {
-          id: pbId,
-          ts: Date.now(),
-          bossId: def.id,
-          bossName: def.name,
-          bossIcon: def.icon,
-          bossLevel: def.level,
-          dmgDealt,
-          killed,
-          rounds: result.log.length > 0 ? (result.log[result.log.length - 1]?.round || 0) : 0,
-          playerSnap: { name: me.name, avatar: CLASSES[rpg.class]?.icon || '🎴', level: rpg.level, maxHp: stats.maxHp, maxMp: stats.maxMp, class: rpg.class, baseCrit: result.archerStats?.baseCrit },
-          monsterSnap: { name: def.name, icon: def.icon, level: def.level, maxHp: def.hp, ability: def.ability },
-        };
-        // log 另存 localStorage
-        try { localStorage.setItem('pbLog_' + pbId, JSON.stringify((result.log || []).slice(0, 500))); } catch(e) {}
-        rpg.personalBossHistory = Array.isArray(rpg.personalBossHistory) ? rpg.personalBossHistory : [];
-        rpg.personalBossHistory.unshift(pbSnap);
-        if (rpg.personalBossHistory.length > 5) {
-          const dropped = rpg.personalBossHistory.splice(5);
-          for (const d of dropped) { try { localStorage.removeItem('pbLog_' + d.id); } catch(e) {} }
-        }
-      } catch (e) { console.warn('personalBoss history snap fail', e); }
-
-      // ⭐ 顯示結果（立即，含重播按鈕）
-      const replayBtn = pbId
-        ? `<div style="text-align:center; margin-top:8px;">
-             <button onclick="replayPersonalBossFight('${pbId}')" style="background:linear-gradient(135deg,#1e3a5f,#2563eb); color:#fff; border:none; padding:6px 18px; border-radius:8px; font-size:12px; cursor:pointer; font-family:inherit; font-weight:700; box-shadow:0 2px 0 #1e40af;">▶ 查看戰鬥記錄</button>
-           </div>`
-        : '';
+      const _pbCls = CLASSES[rpg.class];
+      const arenaHtml = `
+        <div class="battle-arena" id="battleArena">
+          <div class="combatant" id="combatPlayer">
+            <div class="combatant-icon">${_pbCls.image ? `<img class="class-art" src="${_pbCls.image}" alt="${_pbCls.name}" style="image-rendering:pixelated;image-rendering:crisp-edges;">` : _pbCls.icon}</div>
+            <div class="combatant-name">${escapeHtml(me.name)} Lv${rpg.level}</div>
+            <div class="combatant-hp-track"><div class="combatant-hp-fill" id="pHpBar" style="width:100%"></div></div>
+            <div class="combatant-hp-text" id="pHpText">${stats.maxHp}/${stats.maxHp}</div>
+            <div class="combatant-hp-track" style="margin-top:2px;"><div class="combatant-hp-fill" id="pMpBar" style="width:100%; background:linear-gradient(90deg,#93c5fd,#3b82f6);"></div></div>
+            <div class="combatant-hp-text" id="pMpText" style="color:#1e40af;">MP ${stats.maxMp}/${stats.maxMp}</div>
+            ${rpg.class === 'warrior' ? `
+            <div class="combatant-hp-track" style="margin-top:2px; background:#3f0000;"><div class="combatant-hp-fill" id="bloodPoolBar" style="width:0%; background:linear-gradient(90deg,#ef4444,#991b1b);"></div></div>
+            <div class="combatant-hp-text" id="bloodPoolText" style="color:#ef4444;">🩸 血池 0</div>` : ''}
+            <div class="combatant-spd-track"><div class="combatant-spd-fill" id="pSpdBar" style="width:0%"></div></div>
+            <div class="combatant-spd-text" id="pSpdText">⏱ 行動條 0%</div>
+          </div>
+          <div class="vs-icon">⚔️</div>
+          <div class="combatant" id="combatMonster">
+            <div class="combatant-icon">${monster.art ? `<img class="boss-art" src="${monster.art}" alt="${monster.name}" style="image-rendering:pixelated;image-rendering:crisp-edges;">` : monster.icon}</div>
+            <div class="combatant-name">${monster.name} Lv${monster.level}</div>
+            <div class="combatant-hp-track"><div class="combatant-hp-fill" id="mHpBar" style="width:${(monster.hp/monster.maxHp)*100}%"></div></div>
+            <div class="combatant-hp-text" id="mHpText">${monster.hp.toLocaleString()}/${monster.maxHp.toLocaleString()}</div>
+            <div class="combatant-spd-track" style="margin-top:14px;"><div class="combatant-spd-fill" id="mSpdBar" style="width:0%"></div></div>
+            <div class="combatant-spd-text" id="mSpdText">⏱ 行動條 0%</div>
+          </div>
+        </div>
+        <div class="battle-log" id="battleLog"></div>
+      `;
       const _pbRes = document.getElementById('personalBossResult');
-      if (_pbRes) _pbRes.innerHTML = rewardHtml + replayBtn;
+      if (_pbRes) _pbRes.innerHTML = arenaHtml;
+      const _pbLogEl = document.getElementById('battleLog');
+      let _pbi = 0; let _pbLastRound;
+      let _pbPrevPHp = stats.maxHp; let _pbPrevMHp = monster.hp;
 
-      snapshotLastFight(monster, result);
-      me.lastTouchedAt = Date.now();
-      __persistLocalSnapshot();
-      saveData();
-      renderCharCard();
-      renderEquipment();
-      renderRpgStats();
-      renderPersonalBoss();
-      renderPersonalBossHistory();
-      __personalBossInProgress = false;
-      if (typeof updateStaminaUI === 'function') updateStaminaUI();
+      const pbPlayStep = () => {
+        if (_pbi >= result.log.length) {
+          // ── 結算 ──
+          // ⭐ 重抓 live 參考
+          const _liveMe = getPlayer(me.id) || me;
+          const _liveRpg = getRpg(_liveMe);
+          const _liveSt = getPersonalBossState(_liveRpg, bossId);
+          const dmgDealt = monster.hp - result.mHpFinal;
+          _liveSt.currentHp = Math.max(0, result.mHpFinal);
+          let killed = false;
+          let rewardHtml = '';
+
+          if (_liveSt.currentHp <= 0) {
+            killed = true;
+            _liveSt.killCount = (_liveSt.killCount || 0) + 1;
+            _liveSt.currentHp = def.hp;
+            _liveRpg.xp = (_liveRpg.xp || 0) + def.reward.xp;
+            _liveRpg.totalGold = (_liveRpg.totalGold || 0) + def.reward.coins;
+            refundCoins(me.id, def.reward.coins);
+            let leveled = 0;
+            while (_liveRpg.xp >= xpForLevel(_liveRpg.level)) {
+              _liveRpg.xp -= xpForLevel(_liveRpg.level);
+              _liveRpg.level += 1;
+              _liveRpg.skillPoints = (_liveRpg.skillPoints || 0) + POINTS_PER_LEVEL.skill;
+              _liveRpg.abilityPoints = (_liveRpg.abilityPoints || 0) + POINTS_PER_LEVEL.ability;
+              leveled++;
+            }
+            let spiritDropped = null;
+            try {
+              const sp = generateSpirit(def.id);
+              if (sp) { _liveRpg.spiritBag = _liveRpg.spiritBag || []; _liveRpg.spiritBag.push(sp); spiritDropped = sp; }
+            } catch(e) {}
+            rewardHtml = `
+              <div class="reward-list" style="background:linear-gradient(135deg,#fef3c7,#fde047); border-color:#f59e0b;">
+                <div class="rl-title" style="color:#7c2d12;">🏆 ${def.name} 被擊殺！</div>
+                <div class="rl-item">💢 你打掉了 <b>${dmgDealt.toLocaleString()}</b> HP，給予最後一擊！</div>
+                <div class="rl-item">🪙 +${def.reward.coins} 鵝鵝幣　·　⭐ +${def.reward.xp} XP${leveled ? `（升 ${leveled} 級）` : ''}</div>
+                ${spiritDropped ? `<div class="rl-item" style="color:${spiritDropped.color}; font-weight:700;">🌟 掉落精魂：${spiritDropped.icon} ${escapeHtml(spiritDropped.name)}<div style="font-size:10px; color:#8b6f9b; font-weight:500; margin-top:1px;">${escapeHtml(describeSpirit(spiritDropped))}</div></div>` : ''}
+                <div class="rl-item" style="font-size:11px; color:#7c2d12;">王已重生（HP 回滿，2.5 分鐘後可再戰）</div>
+              </div>`;
+          } else {
+            const regen = Math.round(def.hp * PERSONAL_BOSS_REGEN_PCT);
+            _liveSt.currentHp = Math.min(def.hp, _liveSt.currentHp + regen);
+            const hpPct = (_liveSt.currentHp / def.hp * 100).toFixed(1);
+            rewardHtml = `
+              <div class="reward-list" style="background:linear-gradient(135deg,#1e1b4b,#4c1d95); color:#fff; border-color:#7c3aed;">
+                <div class="rl-title" style="color:#fde047;">${result.won ? '⏸ 暫時撤退' : '⏸ 戰鬥結束'}</div>
+                <div class="rl-item">💢 你打掉了 <b style="color:#fca5a5;">${dmgDealt.toLocaleString()}</b> HP</div>
+                <div class="rl-item" style="color:#fde047;">🩹 王回復 +${regen} HP（5%）</div>
+                <div class="rl-item">${def.icon} ${def.name} 還剩 ${_liveSt.currentHp.toLocaleString()} / ${def.hp.toLocaleString()} HP（${hpPct}%）</div>
+                <div class="rl-item" style="font-size:11px; opacity:0.85;">⏳ 2.5 分鐘後可再戰</div>
+              </div>`;
+          }
+
+          // HP/MP 結算
+          const ns = computeStats(_liveMe);
+          if (result.pHpFinal <= 0) {
+            _liveRpg.hp = Math.max(1, Math.floor(ns.maxHp * REST_HP_RATIO));
+          } else {
+            _liveRpg.hp = ns.maxHp; _liveRpg.mp = ns.maxMp;
+          }
+          _liveRpg.deathAt = null;
+          if (_liveRpg.critCount == null) _liveRpg.critCount = 0;
+          _liveRpg.critCount += (result.critCount || 0);
+
+          // ⭐ 存戰報到 history（最多 5 筆）
+          try {
+            const pbId = 'pb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+            const pbSnap = {
+              id: pbId, ts: Date.now(),
+              bossId: def.id, bossName: def.name, bossIcon: def.icon, bossLevel: def.level,
+              dmgDealt, killed,
+              rounds: result.log.length > 0 ? (result.log[result.log.length - 1]?.round || 0) : 0,
+              playerSnap: { name: _liveMe.name, avatar: _pbCls.icon || '🎴', level: _liveRpg.level, maxHp: stats.maxHp, maxMp: stats.maxMp, class: _liveRpg.class, baseCrit: result.archerStats?.baseCrit, classImage: _pbCls.image || null },
+              monsterSnap: { name: def.name, icon: def.icon, level: def.level, maxHp: def.hp, ability: def.ability, art: def.art || null },
+            };
+            try { localStorage.setItem('pbLog_' + pbId, JSON.stringify((result.log || []).slice(0, 500))); } catch(e) {}
+            _liveRpg.personalBossHistory = Array.isArray(_liveRpg.personalBossHistory) ? _liveRpg.personalBossHistory : [];
+            _liveRpg.personalBossHistory.unshift(pbSnap);
+            if (_liveRpg.personalBossHistory.length > 5) {
+              const dropped = _liveRpg.personalBossHistory.splice(5);
+              for (const d of dropped) { try { localStorage.removeItem('pbLog_' + d.id); } catch(e) {} }
+            }
+          } catch(e) { console.warn('personalBoss history snap fail', e); }
+
+          if (_pbLogEl) {
+            const _summary = document.createElement('div');
+            _summary.innerHTML = rewardHtml;
+            _pbLogEl.appendChild(_summary);
+            _pbLogEl.scrollTop = _pbLogEl.scrollHeight;
+          }
+          snapshotLastFight(monster, result);
+          _liveMe.lastTouchedAt = Date.now();
+          __persistLocalSnapshot();
+          saveData();
+          renderCharCard();
+          renderEquipment();
+          renderRpgStats();
+          renderPersonalBoss();
+          renderPersonalBossHistory();
+          __personalBossInProgress = false;
+          if (typeof updateStaminaUI === 'function') updateStaminaUI();
+          return;
+        }
+
+        const entry = result.log[_pbi++];
+        if (entry.round !== undefined && entry.round !== _pbLastRound) {
+          _pbLastRound = entry.round;
+          const _sep = document.createElement('div');
+          _sep.style.cssText = 'text-align:center;color:#475569;font-size:10px;padding:3px 0;border-top:1px solid #1e293b;margin:3px 0;';
+          _sep.textContent = `── 回合 ${entry.round} ──`;
+          _pbLogEl?.appendChild(_sep);
+        }
+        const _ec = entry.type === 'crit-player' ? 'log-crit'
+          : entry.type === 'player' ? 'log-player'
+          : entry.type === 'monster' ? 'log-monster'
+          : 'log-system';
+        const _ediv = document.createElement('div');
+        _ediv.className = `log-line ${_ec}`;
+        _ediv.textContent = entry.text;
+        _pbLogEl?.appendChild(_ediv);
+        if (_pbLogEl) _pbLogEl.scrollTop = _pbLogEl.scrollHeight;
+        if (entry.hp) {
+          const pHpEl = document.getElementById('pHpBar');
+          const mHpEl = document.getElementById('mHpBar');
+          if (pHpEl) pHpEl.style.width = (entry.hp.player / stats.maxHp * 100) + '%';
+          if (mHpEl) mHpEl.style.width = (entry.hp.monster / monster.maxHp * 100) + '%';
+          const pHpTx = document.getElementById('pHpText');
+          const mHpTx = document.getElementById('mHpText');
+          if (pHpTx) pHpTx.textContent = `${entry.hp.player}/${stats.maxHp}`;
+          if (mHpTx) mHpTx.textContent = `${entry.hp.monster.toLocaleString()}/${monster.maxHp.toLocaleString()}`;
+          if (entry.hp.mp != null) {
+            const pMpBar = document.getElementById('pMpBar');
+            const pMpTx = document.getElementById('pMpText');
+            if (pMpBar) pMpBar.style.width = (entry.hp.mp / stats.maxMp * 100) + '%';
+            if (pMpTx) pMpTx.textContent = `MP ${entry.hp.mp}/${stats.maxMp}`;
+          }
+          if (entry.hp.bloodPool != null) {
+            const bpBar = document.getElementById('bloodPoolBar');
+            const bpTx = document.getElementById('bloodPoolText');
+            if (bpBar) bpBar.style.width = Math.min(100, (entry.hp.bloodPool / Math.max(1, stats.maxHp)) * 100) + '%';
+            if (bpTx) bpTx.textContent = `🩸 血池 ${entry.hp.bloodPool}`;
+          }
+          // 浮動傷害 + 精靈動畫
+          const _mDmg = _pbPrevMHp - entry.hp.monster;
+          const _pDmg = _pbPrevPHp - entry.hp.player;
+          if (_mDmg > 0) {
+            const _mEl = document.getElementById('combatMonster');
+            if (_mEl) showDamage(_mEl, _mDmg, entry.type === 'crit-player' ? 'crit' : 'normal');
+            const _mArt = document.querySelector('#combatMonster .boss-art');
+            if (_mArt) { _mArt.classList.add('hurt'); setTimeout(() => _mArt.classList.remove('hurt'), 400); }
+          }
+          if (_pDmg > 0) {
+            const _pEl = document.getElementById('combatPlayer');
+            if (_pEl) showDamage(_pEl, _pDmg, 'normal');
+            const _pArt = document.querySelector('#combatPlayer .class-art');
+            if (_pArt) { _pArt.classList.add('hurt'); setTimeout(() => _pArt.classList.remove('hurt'), 400); }
+          }
+          if (entry.hp.player > _pbPrevPHp) {
+            const _pEl = document.getElementById('combatPlayer');
+            if (_pEl) showDamage(_pEl, entry.hp.player - _pbPrevPHp, 'heal');
+          }
+          if (entry.type === 'player' || entry.type === 'crit-player') {
+            const _mArt2 = document.querySelector('#combatMonster .boss-art');
+            if (_mArt2) { _mArt2.classList.add('attacking'); setTimeout(() => _mArt2.classList.remove('attacking'), 500); }
+          }
+          _pbPrevPHp = entry.hp.player;
+          _pbPrevMHp = entry.hp.monster;
+        }
+        if (entry.gauge && typeof updateSpdBar === 'function') {
+          updateSpdBar('pSpdBar', 'pSpdText', entry.gauge.p, '我的行動條');
+          updateSpdBar('mSpdBar', 'mSpdText', entry.gauge.m, '怪行動條');
+        }
+        const _nx = result.log[_pbi];
+        const _sr = _nx && entry.round !== undefined && entry.round === _nx.round;
+        setTimeout(pbPlayStep, _sr ? 80 : 550);
+      };
+      pbPlayStep();
     }
   }
   window.attackPersonalBoss = attackPersonalBoss;
@@ -20757,93 +20994,169 @@ ${b.text}
     const result = autoFight(me, monster);
     const stats = computeStats(me);
 
-    // ⭐ 即時結算（不播動畫）—— 結果直接顯示，log 存 localStorage 供事後重播
-    const _frSnap = { id: null };
-    document.getElementById('fightResult').innerHTML = '';
-    try {
-      // 記錄戰前等級（finalizeFight 可能升級，playerSnap 應記戰時等級）
-      const _preLevel = rpg.level;
-      const _preClass = rpg.class;
+    // ⭐ 記錄戰前資訊（finalizeFight 可能升級，snap 要用戰前等級）
+    const _preLevel = rpg.level;
+    const _preClass = rpg.class;
 
-      finalizeFight(me, monster, result, stats);
-      snapshotLastFight(monster, result);
+    // 戰鬥 arena HTML（含精靈圖 + 所有條）
+    const arenaHtml = `
+      <div class="battle-arena" id="battleArena">
+        <div class="combatant" id="combatPlayer">
+          <div class="combatant-icon">${CLASSES[rpg.class].image ? `<img class="class-art" src="${CLASSES[rpg.class].image}" alt="${CLASSES[rpg.class].name}">` : CLASSES[rpg.class].icon}</div>
+          <div class="combatant-name">${escapeHtml(me.name)} Lv${rpg.level}</div>
+          <div class="combatant-hp-track"><div class="combatant-hp-fill" id="pHpBar" style="width:100%"></div></div>
+          <div class="combatant-hp-text" id="pHpText">${stats.maxHp}/${stats.maxHp}</div>
+          <div class="combatant-hp-track" style="margin-top:2px;"><div class="combatant-hp-fill" id="pMpBar" style="width:100%; background:linear-gradient(90deg,#93c5fd,#3b82f6);"></div></div>
+          <div class="combatant-hp-text" id="pMpText" style="color:#1e40af;">MP ${stats.maxMp}/${stats.maxMp}</div>
+          ${rpg.class === 'warrior' ? `
+          <div class="combatant-hp-track" style="margin-top:2px; background:#3f0000;"><div class="combatant-hp-fill" id="bloodPoolBar" style="width:0%; background:linear-gradient(90deg,#ef4444,#991b1b);"></div></div>
+          <div class="combatant-hp-text" id="bloodPoolText" style="color:#ef4444;">🩸 血池 0</div>` : ''}
+          <div class="combatant-spd-track"><div class="combatant-spd-fill" id="pSpdBar" style="width:0%"></div></div>
+          <div class="combatant-spd-text" id="pSpdText">⏱ 行動條 0%</div>
+        </div>
+        <div class="vs-icon">⚔️</div>
+        <div class="combatant" id="combatMonster">
+          <div class="combatant-icon">${monster.art ? `<img class="boss-art" src="${monster.art}" alt="${monster.name}">` : monster.icon}</div>
+          <div class="combatant-name">${monster.name} Lv${monster.level}</div>
+          ${monster.ability ? `<div style="font-size:9px; color:#7c3aed; font-weight:600; margin-bottom:2px;">${describeAbility(monster.ability)}</div>` : ''}
+          ${describeResist(monster) ? `<div style="font-size:9px; color:#d97706; font-weight:600; margin-bottom:2px;">${describeResist(monster)}</div>` : ''}
+          <div class="combatant-hp-track"><div class="combatant-hp-fill" id="mHpBar" style="width:100%"></div></div>
+          <div class="combatant-hp-text" id="mHpText">${monster.hp}/${monster.maxHp}</div>
+          <div class="combatant-spd-track" style="margin-top:14px;"><div class="combatant-spd-fill" id="mSpdBar" style="width:0%"></div></div>
+          <div class="combatant-spd-text" id="mSpdText">⏱ 行動條 0%</div>
+        </div>
+      </div>
+      <div class="battle-log" id="battleLog"></div>
+    `;
+    document.getElementById('fightResult').innerHTML = arenaHtml;
 
-      // 存戰報到「最近 5 場」
-      try {
-        const _sid = 'fr_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
-        _frSnap.id = _sid;
-        const dmgDealt = Math.max(0, (monster.maxHp || monster.hp) - (result.mHpFinal || 0));
-        const battleSnap = {
-          id: _sid,
-          ts: Date.now(),
-          bossId: monster.id || 'forage_' + zoneId,
-          bossName: monster.name,
-          bossIcon: monster.icon,
-          bossLevel: monster.level,
-          dmgDealt,
-          killed: !!result.won,
-          fled: !!result.fled,
-          playerSnap: {
-            name: me.name,
-            avatar: CLASSES[_preClass]?.icon || '🎴',
-            level: _preLevel,
-            maxHp: stats.maxHp,
-            maxMp: stats.maxMp,
-            class: _preClass,
-            baseCrit: result.archerStats?.baseCrit,
-          },
-          monsterSnap: {
-            name: monster.name,
-            icon: monster.icon,
-            level: monster.level,
-            maxHp: monster.maxHp || monster.hp,
-            ability: monster.ability,
-          },
-          zoneId, layerId,
-          isForage: true,
-        };
-        // log 另存 localStorage，不塞進 Firestore
-        try { localStorage.setItem('fbLog_' + _sid, JSON.stringify((result.log || []).slice(0, 1000))); } catch(e) {}
-        // 存到 live player（finalizeFight 已重抓 live ref）
-        const _liveRpgFr = getRpg(getPlayer(me.id) || me);
-        _liveRpgFr.forageBattleHistory = Array.isArray(_liveRpgFr.forageBattleHistory) ? _liveRpgFr.forageBattleHistory : [];
-        _liveRpgFr.forageBattleHistory.unshift(battleSnap);
-        if (_liveRpgFr.forageBattleHistory.length > 5) {
-          const _dropped = _liveRpgFr.forageBattleHistory.splice(5);
-          for (const _d of _dropped) { try { localStorage.removeItem('fbLog_' + _d.id); } catch(e) {} }
+    // 播放 log 動畫
+    const logEl = document.getElementById('battleLog');
+    let i = 0; let _lastRound;
+    let _prevPHp = stats.maxHp; let _prevMHp = monster.maxHp;
+    const playStep = () => {
+      if (i >= result.log.length) {
+        try {
+          finalizeFight(me, monster, result, stats);
+          snapshotLastFight(monster, result);
+          // ⭐ 存戰報到「最近 5 場」
+          try {
+            const _sid = 'fr_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+            const dmgDealt = Math.max(0, (monster.maxHp || monster.hp) - (result.mHpFinal || 0));
+            const battleSnap = {
+              id: _sid, ts: Date.now(),
+              bossId: monster.id || 'forage_' + zoneId,
+              bossName: monster.name, bossIcon: monster.icon, bossLevel: monster.level,
+              dmgDealt, killed: !!result.won, fled: !!result.fled,
+              playerSnap: { name: me.name, avatar: CLASSES[_preClass]?.image || CLASSES[_preClass]?.icon || '🎴',
+                classImage: CLASSES[_preClass]?.image || null,
+                level: _preLevel, maxHp: stats.maxHp, maxMp: stats.maxMp, class: _preClass,
+                baseCrit: result.archerStats?.baseCrit },
+              monsterSnap: { name: monster.name, icon: monster.icon, art: monster.art || null,
+                level: monster.level, maxHp: monster.maxHp || monster.hp, ability: monster.ability },
+              zoneId, layerId, isForage: true,
+            };
+            try { localStorage.setItem('fbLog_' + _sid, JSON.stringify((result.log || []).slice(0, 1000))); } catch(e) {}
+            const _liveRpgFr = getRpg(getPlayer(me.id) || me);
+            _liveRpgFr.forageBattleHistory = Array.isArray(_liveRpgFr.forageBattleHistory) ? _liveRpgFr.forageBattleHistory : [];
+            _liveRpgFr.forageBattleHistory.unshift(battleSnap);
+            if (_liveRpgFr.forageBattleHistory.length > 5) {
+              const _dropped = _liveRpgFr.forageBattleHistory.splice(5);
+              for (const _d of _dropped) { try { localStorage.removeItem('fbLog_' + _d.id); } catch(e) {} }
+            }
+            saveData();
+            renderForageHistory();
+          } catch (e) { console.warn('snapshot forage fight:', e); }
+          // 回報 BUG 按鈕
+          try {
+            const fr = document.getElementById('fightResult');
+            if (fr) {
+              const btn = document.createElement('button');
+              btn.className = 'btn btn-secondary';
+              btn.style.cssText = 'margin-top:8px; padding:6px 10px; font-size:12px; background:#fef2f2; color:#991b1b; border:1px dashed #f87171;';
+              btn.textContent = '🐛 這場有 BUG？回報一下';
+              btn.onclick = () => openBugReport(true);
+              fr.appendChild(btn);
+            }
+          } catch (e) {}
+        } catch (e) {
+          console.error('[onFight] playStep 結算出錯，強制解鎖按鈕:', e);
+        } finally {
+          __fightInProgress = false;
+          if (typeof updateStaminaUI === 'function') updateStaminaUI();
         }
-        saveData();
-        renderForageHistory();
-      } catch (e) { console.warn('snapshot forage fight:', e); }
-
-      // 加「查看戰鬥記錄」+「回報 BUG」按鈕
-      try {
-        const fr = document.getElementById('fightResult');
-        if (fr) {
-          const _row = document.createElement('div');
-          _row.style.cssText = 'display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:8px;';
-          if (_frSnap.id) {
-            const _replayBtn = document.createElement('button');
-            _replayBtn.style.cssText = 'background:linear-gradient(135deg,#1e3a5f,#2563eb); color:#fff; border:none; padding:6px 18px; border-radius:8px; font-size:12px; cursor:pointer; font-family:inherit; font-weight:700; box-shadow:0 2px 0 #1e40af;';
-            _replayBtn.textContent = '▶ 查看戰鬥記錄';
-            _replayBtn.onclick = () => replayForageFight(_frSnap.id);
-            _row.appendChild(_replayBtn);
-          }
-          const _bugBtn = document.createElement('button');
-          _bugBtn.className = 'btn btn-secondary';
-          _bugBtn.style.cssText = 'padding:6px 10px; font-size:12px; background:#fef2f2; color:#991b1b; border:1px dashed #f87171;';
-          _bugBtn.textContent = '🐛 這場有 BUG？回報一下';
-          _bugBtn.onclick = () => openBugReport(true);
-          _row.appendChild(_bugBtn);
-          fr.appendChild(_row);
+        return;
+      }
+      const entry = result.log[i++];
+      if (entry.round !== undefined && entry.round !== _lastRound) {
+        _lastRound = entry.round;
+        const _sep = document.createElement('div');
+        _sep.style.cssText = 'text-align:center;color:#475569;font-size:10px;padding:3px 0;border-top:1px solid #1e293b;margin:3px 0;';
+        _sep.textContent = `── 回合 ${entry.round} ──`;
+        logEl.appendChild(_sep);
+      }
+      const cls = entry.type === 'crit-player' ? 'log-crit'
+        : entry.type === 'player' ? 'log-player'
+        : entry.type === 'monster' ? 'log-monster'
+        : 'log-system';
+      const div = document.createElement('div');
+      div.className = `log-line ${cls}`;
+      div.textContent = entry.text;
+      logEl.appendChild(div);
+      logEl.scrollTop = logEl.scrollHeight;
+      if (entry.hp) {
+        document.getElementById('pHpBar').style.width = (entry.hp.player / stats.maxHp * 100) + '%';
+        document.getElementById('pHpText').textContent = `${entry.hp.player}/${stats.maxHp}`;
+        document.getElementById('mHpBar').style.width = (entry.hp.monster / monster.maxHp * 100) + '%';
+        document.getElementById('mHpText').textContent = `${entry.hp.monster}/${monster.maxHp}`;
+        if (entry.hp.mp != null) {
+          document.getElementById('pMpBar').style.width = (entry.hp.mp / stats.maxMp * 100) + '%';
+          document.getElementById('pMpText').textContent = `MP ${entry.hp.mp}/${stats.maxMp}`;
         }
-      } catch (e) {}
-    } catch (e) {
-      console.error('[onFight] 結算出錯，強制解鎖按鈕:', e);
-    } finally {
-      __fightInProgress = false;
-      if (typeof updateStaminaUI === 'function') updateStaminaUI();
-    }
+        if (entry.hp.bloodPool != null) {
+          const bpBar = document.getElementById('bloodPoolBar');
+          const bpText = document.getElementById('bloodPoolText');
+          if (bpBar) bpBar.style.width = Math.min(100, (entry.hp.bloodPool / Math.max(1, stats.maxHp)) * 100) + '%';
+          if (bpText) bpText.textContent = `🩸 血池 ${entry.hp.bloodPool}`;
+        }
+        // 浮動傷害數字
+        const _mDmg = _prevMHp - entry.hp.monster;
+        const _pDmg = _prevPHp - entry.hp.player;
+        if (_mDmg > 0) {
+          const _mEl = document.getElementById('combatMonster');
+          if (_mEl) showDamage(_mEl, _mDmg, entry.type === 'crit-player' ? 'crit' : 'normal');
+        }
+        if (_pDmg > 0) {
+          const _pEl = document.getElementById('combatPlayer');
+          if (_pEl) showDamage(_pEl, _pDmg, 'normal');
+        }
+        if (entry.hp.player > _prevPHp) {
+          const _pEl = document.getElementById('combatPlayer');
+          if (_pEl) showDamage(_pEl, entry.hp.player - _prevPHp, 'heal');
+        }
+        _prevPHp = entry.hp.player;
+        _prevMHp = entry.hp.monster;
+        // CSS 動畫：精靈圖攻擊 / 受傷效果
+        if (_mDmg > 0) {
+          const _mArt = document.querySelector('#combatMonster .boss-art');
+          if (_mArt) { _mArt.classList.add('hurt'); setTimeout(() => _mArt.classList.remove('hurt'), 400); }
+        }
+        if (_pDmg > 0) {
+          const _pArt = document.querySelector('#combatPlayer .class-art');
+          if (_pArt) { _pArt.classList.add('hurt'); setTimeout(() => _pArt.classList.remove('hurt'), 400); }
+        }
+        if (entry.type === 'player' || entry.type === 'crit-player') {
+          const _mArt2 = document.querySelector('#combatMonster .boss-art');
+          if (_mArt2) { _mArt2.classList.add('attacking'); setTimeout(() => _mArt2.classList.remove('attacking'), 500); }
+        }
+      }
+      if (entry.gauge && typeof updateSpdBar === 'function') {
+        updateSpdBar('pSpdBar', 'pSpdText', entry.gauge.p, '行動條');
+        updateSpdBar('mSpdBar', 'mSpdText', entry.gauge.m, '行動條');
+      }
+      setTimeout(playStep, 550);
+    };
+    playStep();
   }
   window.onFight = onFight;
 
