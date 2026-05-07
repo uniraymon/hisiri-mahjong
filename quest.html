@@ -12155,7 +12155,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508043832';
+  const APP_VERSION = '20260508044330';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -18144,31 +18144,35 @@ ${b.text}
         }
         if (i >= result.log.length) {
           // 假人結算
+          // ⭐ 重抓 live 參考：動畫期間 __applyRemotePlayer 可能換掉 players[idx]
+          const _liveMe = getPlayer(me.id) || me;
+          const _liveRpg = getRpg(_liveMe);
+          const _liveSt = getPersonalBossState(_liveRpg, bossId);
           const dmgDealt = monster.hp - result.mHpFinal;
-          st.currentHp = Math.max(0, result.mHpFinal);
+          _liveSt.currentHp = Math.max(0, result.mHpFinal);
           let rewardHtml = '';
-          if (st.currentHp <= 0) {
-            st.killCount = (st.killCount || 0) + 1;
-            st.currentHp = def.hp;
+          if (_liveSt.currentHp <= 0) {
+            _liveSt.killCount = (_liveSt.killCount || 0) + 1;
+            _liveSt.currentHp = def.hp;
             rewardHtml = `
               <div class="reward-list" style="background:linear-gradient(135deg,#1e293b,#334155); color:#fff; border-color:#64748b; margin-top:8px;">
-                <div class="rl-title" style="color:#fde047;">🎯 假人倒下！（累計 ${st.killCount} 次）</div>
+                <div class="rl-title" style="color:#fde047;">🎯 假人倒下！（累計 ${_liveSt.killCount} 次）</div>
                 <div class="rl-item">💢 總傷害：<b style="color:#fca5a5;">${dmgDealt.toLocaleString()}</b> HP</div>
                 <div class="rl-item" style="color:#94a3b8; font-size:11px;">無獎勵 · 無冷卻 · 已重置（可立即再測）</div>
               </div>`;
           } else {
-            const hpPct = (st.currentHp / def.hp * 100).toFixed(1);
+            const hpPct = (_liveSt.currentHp / def.hp * 100).toFixed(1);
             rewardHtml = `
               <div class="reward-list" style="background:linear-gradient(135deg,#1e293b,#334155); color:#fff; border-color:#64748b; margin-top:8px;">
                 <div class="rl-title" style="color:#fde047;">🎯 測試結束（${monster.maxRounds} 回合）</div>
                 <div class="rl-item">💢 總傷害：<b style="color:#fca5a5;">${dmgDealt.toLocaleString()}</b> HP</div>
-                <div class="rl-item">${def.icon} 剩餘 ${st.currentHp.toLocaleString()} / ${def.hp.toLocaleString()} HP（${hpPct}%）</div>
+                <div class="rl-item">${def.icon} 剩餘 ${_liveSt.currentHp.toLocaleString()} / ${def.hp.toLocaleString()} HP（${hpPct}%）</div>
                 <div class="rl-item" style="color:#94a3b8; font-size:11px;">無獎勵 · 無冷卻 · 可立即再測</div>
               </div>`;
           }
-          const ns = computeStats(me);
-          rpg.hp = ns.maxHp; rpg.mp = ns.maxMp;
-          rpg.deathAt = null;
+          const ns = computeStats(_liveMe);
+          _liveRpg.hp = ns.maxHp; _liveRpg.mp = ns.maxMp;
+          _liveRpg.deathAt = null;
           window.__lastDummyFight = { result, stats, monster };
           const _dLog = document.getElementById('battleLog');
           if (_dLog) {
@@ -18180,7 +18184,7 @@ ${b.text}
             _dLog.appendChild(_summary);
             _dLog.scrollTop = _dLog.scrollHeight;
           }
-          me.lastTouchedAt = Date.now();
+          _liveMe.lastTouchedAt = Date.now();
           __persistLocalSnapshot();
           saveData();
           renderPersonalBoss();
