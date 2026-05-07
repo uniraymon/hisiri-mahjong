@@ -2579,6 +2579,73 @@
       ],
       dialogue: ['你看到的是真的嗎？', '嘻嘻嘻...錢錢...', '小鵝鵝迷路了嗎～'],
       deathLine: ['哎呀～被識破了～', '把錢還給你...一半好了...', '下次見囉～'] },
+
+    // ===== 奈落深域 專屬怪物（Lv 26-30）=====
+    // ⭐ stats 直接設 nabyss tier 值（不用 deepBase，因為這些怪只出現在 nabyss，lv 永遠 >20）
+    // 最終數值 = base × monsterK/HPK/DEFK（lv 26-30 用 layer 3 系數 + 層內偏移）
+    // 設計目標（lv 28 中位）：HP ~13000-22000，ATK ~380-520，DEF ~400-600
+    { id: 'void_wraith', name: '虛空幽靈', icon: '👻', tier: 6,
+      hpBase: 1950, atkBase: 115, defBase: 295, spdBase: 138,
+      magRes: 0.5, physRes: 0,
+      verbs: [
+        { verb: '虛空侵蝕', mult: 1.3, magic: true, applyStatus: { type: 'poison', charges: 2, dmg: 1, chance: 0.55 }, cooldown: 4 },
+        { verb: '魂魄撕裂', mult: 1.8, magic: true, ignoreDef: true, cooldown: 6 },
+      ],
+      dialogue: ['你已進入虛空...', '靈魂...屬於我！', '形體不過是幻覺...'],
+      deathLine: ['虛空...召喚我回去...', '形體消散...', '我仍...無處不在...'] },
+
+    { id: 'abyss_knight', name: '深淵騎士', icon: '⚔️', tier: 6,
+      hpBase: 2850, atkBase: 118, defBase: 420, spdBase: 70,
+      physRes: 0.4, magRes: 0.1,
+      ability: { type: 'multiHit', hits: 2 },
+      verbs: [
+        { verb: '深淵裂斬', mult: 1.5, applyStatus: { type: 'bleed', charges: 3, chance: 0.55 }, cooldown: 4 },
+        { verb: '虛空盾擊', mult: 0.7, applyStatus: { type: 'paralyze', charges: 2, chance: 0.40 }, cooldown: 5 },
+      ],
+      dialogue: ['奈落的鋼鐵，無法穿透！', '以深淵之名，格殺！', '你的力量，還不夠...'],
+      deathLine: ['鎧甲碎裂...', '深淵...再見...', '你的力量...我承認了...'] },
+
+    { id: 'shadow_golem', name: '暗影魔像', icon: '🗿', tier: 6,
+      hpBase: 3300, atkBase: 98, defBase: 480, spdBase: 60,
+      physRes: 0.3, magRes: 0.3,
+      verbs: [
+        { verb: '碎地踐踏', mult: 1.6, applyStatus: { type: 'paralyze', charges: 2, chance: 0.55 }, cooldown: 5 },
+        { verb: '黑暗護盾', mult: 0, applyStatus: { type: 'shield', charges: 2, chance: 1.0 }, cooldown: 7 },
+      ],
+      dialogue: ['碎...一切碎！', '...', '踩...踩！'],
+      deathLine: ['暗影...消散...', '...崩...', '怪力...收回...'] },
+
+    { id: 'null_mage', name: '奈落術師', icon: '🌑', tier: 6,
+      hpBase: 1750, atkBase: 130, defBase: 310, spdBase: 112,
+      physRes: 0, magRes: 0.5,
+      verbs: [
+        { verb: '奈落術陣', mult: 1.4, magic: true, applyStatus: { type: 'vulnerable', hits: 2, amount: 0.25, chance: 0.65 }, cooldown: 4 },
+        { verb: '靈魂虹吸', mult: 1.0, magic: true, ignoreDef: true, cooldown: 5 },
+        { verb: '混沌爆裂', mult: 2.2, magic: true, cooldown: 7 },
+      ],
+      dialogue: ['奈落的力量...', '一切都是能量！', '魔法...吞噬你！'],
+      deathLine: ['術陣...崩潰...', '能量...失控...', '奈落...再戰...'] },
+
+    { id: 'chaos_beast', name: '混沌野獸', icon: '🐺', tier: 6,
+      hpBase: 2250, atkBase: 148, defBase: 268, spdBase: 118,
+      physRes: 0.2, magRes: 0.2,
+      verbs: [
+        { verb: '狂暴蹂躪', mult: 1.2, applyStatus: { type: 'bleed', charges: 4, chance: 0.60 }, cooldown: 3 },
+        { verb: '獸化狂咬', mult: 2.0, applyStatus: { type: 'bleed', charges: 2, chance: 0.45 }, cooldown: 6 },
+      ],
+      dialogue: ['咆哮！！', '肉...血...！', '混沌...蔓延！'],
+      deathLine: ['嗥...', '血...止息...', '野性...沉眠...'] },
+
+    { id: 'phantom_ruler', name: '幻影支配', icon: '🌀', tier: 6,
+      hpBase: 2550, atkBase: 133, defBase: 350, spdBase: 102,
+      physRes: 0.25, magRes: 0.35,
+      verbs: [
+        { verb: '支配之眼', mult: 1.2, applyStatus: { type: 'paralyze', charges: 3, chance: 0.50 }, cooldown: 4 },
+        { verb: '幻影斬擊', mult: 2.2, applyStatus: { type: 'vulnerable', hits: 2, amount: 0.30, chance: 0.55 }, cooldown: 6 },
+        { verb: '次元裂縫', mult: 1.8, magic: true, ignoreDef: true, cooldown: 7 },
+      ],
+      dialogue: ['現實...只是幻象...', '支配...你的意識！', '幻影...才是真實！'],
+      deathLine: ['幻象...破碎...', '支配...終結...', '現實...消融...'] },
   ];
 
   // === 打怪地區 ===
@@ -2596,6 +2663,8 @@
     { id: 'deep',  name: '深層', icon: '🌑', minLv: 16, maxLv: 20, unlockLv: 15 },
     { id: 'abyss',  name: '深淵',    icon: '☠️', minLv: 21, maxLv: 25, unlockLv: 20 },
     { id: 'abyss2', name: '深淵 II', icon: '⚔️', minLv: 21, maxLv: 25, unlockLv: 20 },
+    // ⭐ 奈落：超越深淵的混沌虛空（第一層，未來可擴增）
+    { id: 'nabyss', name: '奈落', icon: '🕳️', minLv: 26, maxLv: 30, unlockLv: 25 },
   ];
   const ZONES = [
     { id: 'forest',  name: '鵝森林',   icon: '🌳', desc: '弱小怪物與惡作劇鵝鵝',
@@ -2618,6 +2687,12 @@
       monsters: ['titan', 'dragon', 'demon', 'lich', 'steel', 'mirror'],
       dropBias: ['helmet', 'boots', 'cape'],
       color: '#3b82f6' },
+    // ⭐ 奈落深域：單一區域（未來多層擴充），怪物等級 Lv 26-30
+    { id: 'nabyss', name: '奈落深域', icon: '🕳️', desc: '超越深淵的混沌虛空，極強怪物的棲息地',
+      minLv: 25,
+      monsters: ['void_wraith', 'abyss_knight', 'shadow_golem', 'null_mage', 'chaos_beast', 'phantom_ruler'],
+      dropBias: ['weapon', 'armor', 'gloves', 'boots'],
+      color: '#4c1d95' },
   ];
   // ⭐ 怪物能力 → 等級的縮放係數（HOF 風格層級制）
   // ATK/SPD 用基本曲線：每進一層 ×1.30，每等 +2.5%
@@ -2666,8 +2741,8 @@
   // 鵝鵝幣掉落：依層級（不再看怪物 goldBase）
   // 上層 ~30 / 中層 ~60 / 下層 ~90 / 深層 ~130，± 約 15% 浮動
   function coinDropByLevel(lv) {
-    const layer = Math.min(4, Math.floor((Math.max(1, lv) - 1) / 5));
-    const base = [30, 60, 90, 130, 250][layer];  // Lv 21-25 深淵層 250 鵝鵝幣
+    const layer = Math.min(5, Math.floor((Math.max(1, lv) - 1) / 5));
+    const base = [30, 60, 90, 130, 250, 400][layer];  // Lv 26-30 奈落層 400 鵝鵝幣
     return Math.round(base * (0.9 + Math.random() * 0.2));
   }
   // 在某層內隨機抽一個怪物等級
@@ -4522,6 +4597,22 @@
       dialogue: ['冰封一切...', '汝之溫暖...微不足道...', '冰原...永恆...'],
       deathLine: ['吾魂...歸於冰原...', '下次相見...化為寒風...', '冰封...也有解凍...'],
     },
+    // ⭐ 奈落精英：奈落支配者（Lv 30 頂階，hpBase 直接設高層值，不用 deepBase）
+    {
+      id: 'elite_nabyss', zone: 'nabyss', name: '★ 奈落支配者', icon: '👁️',
+      hpBase: 3600, atkBase: 155, defBase: 480, spdBase: 95,
+      goldBase: 600, xpBase: 1400,
+      verb: '奈落審判',
+      ability: { type: 'multiHit', hits: 2 },
+      physRes: 0.3, magRes: 0.3,
+      verbs: [
+        { verb: '奈落審判',   mult: 2.0, applyStatus: { type: 'vulnerable', hits: 3, amount: 0.30, chance: 0.70 }, cooldown: 5 },
+        { verb: '虛空壓制',   mult: 1.5, applyStatus: { type: 'paralyze',   charges: 3, chance: 0.60 }, cooldown: 4 },
+        { verb: '絕對支配',   mult: 2.8, magic: true, ignoreDef: true, cooldown: 8 },
+      ],
+      dialogue: ['此域一切，皆由我支配！', '奈落的力量，凡人無法承受！', '踏入奈落者，命運已定！'],
+      deathLine: ['支配...終結...了...', '奈落...會有新的...主宰...', '你...比我預想的...強...'],
+    },
   ];
 
   // === 打工 ===
@@ -5025,6 +5116,27 @@
     { id: 'g_myth',     name: '神話護腕', icon: '🌌', slot: 'gloves', atk: 22, mark: 17, spd: 8, lv: 25 },
     { id: 'b_myth',     name: '神話靴',   icon: '🌌', slot: 'boots',  spd: 18, hp: 80, lv: 25 },
     { id: 'p_myth',     name: '神話披',   icon: '🌌', slot: 'cape',   hp: 150, def: 18, lv: 25 },
+    // ⭐ 奈落裝備（Lv 28，只在奈落層掉落）
+    // 4 把特殊武器（rareWeapon: true → 掉落率減半）
+    { id: 'w_void_bow',    name: '虛空長弓',   icon: '🏹', slot: 'weapon', atk: 45, lv: 28, rareWeapon: true,
+      nabyssHs: 0.05,   // ⭐ 所有職業普攻可爆頭 +5%
+      desc: '虛空弦線賦予持有者穿透靈魂的爆頭能力，不限職業' },
+    { id: 'w_nabyss_blade',name: '奈落之刃',   icon: '🌑', slot: 'weapon', atk: 55, lv: 28, rareWeapon: true,
+      bloodPoolBoost: 0.20, // ⭐ 劍士血池累積量 +20%
+      desc: '刀鋒吸收使用者流出的鮮血，強化血池汲取效率' },
+    { id: 'w_abyss_staff', name: '深淵法杖',   icon: '🔮', slot: 'weapon', mark: 55, lv: 28, rareWeapon: true,
+      mpDiscount: 0.25, // ⭐ 技能 MP 消耗 -25%
+      desc: '深淵魔力循環系統，大幅降低法術能量損耗' },
+    { id: 'w_goose_shield_sword', name: '鵝盾刀', icon: '🛡️', slot: 'weapon', atk: 60, mark: 30, def: 60, lv: 28, rareWeapon: true,
+      physShieldPct: 0.10, magShieldPct: 0.10, // ⭐ 被攻擊時物理/魔法各減傷 10%
+      desc: '鵝王鍛造的攻守合一神器，防禦與攻擊同樣出色' },
+    // 6 件一般奈落裝備
+    { id: 'a_nabyss',  name: '奈落甲',   icon: '🌑', slot: 'armor',   def: 40,                   lv: 28 },
+    { id: 'h_nabyss',  name: '奈落冠',   icon: '👁️', slot: 'helmet',  def: 28, atk: 10, mark: 8,  lv: 28 },
+    { id: 'g_nabyss',  name: '奈落護腕', icon: '🖤', slot: 'gloves',  atk: 28, mark: 20, spd: 10, lv: 28 },
+    { id: 'b_nabyss',  name: '奈落靴',   icon: '🌑', slot: 'boots',   spd: 22, hp: 100,           lv: 28 },
+    { id: 'p_nabyss',  name: '奈落披',   icon: '🌑', slot: 'cape',    hp: 200, def: 22,            lv: 28 },
+    { id: 'a_nabyss2', name: '奈落鎧',   icon: '⚫', slot: 'armor',   def: 35, hp: 80,             lv: 28 },
     // 綠茶指南書（slot: guide）— 不掉落、不販售，遇綠茶鵝達到次數時自動發放
     { id: 'gt_10',  name: '綠茶見習指南',   icon: '💚', slot: 'guide', atk: 3,  spd: 2,                   lv: 1, gtReq: 10  },
     { id: 'gt_20',  name: '綠茶實戰手冊',   icon: '📗', slot: 'guide', atk: 6,  spd: 4,  hp: 15,          lv: 1, gtReq: 20  },
@@ -5809,15 +5921,21 @@
 
   // === 掉落物隨機詞綴系統 ===
   const AFFIXES = [
-    { type: 'atk',  name: '鋒利', perLv: 0.35 },
-    { type: 'def',  name: '堅固', perLv: 0.35 },
-    { type: 'spd',  name: '迅速', perLv: 0.25 },
-    { type: 'hp',   name: '健壯', perLv: 2 },     // ⭐ HP 平衡：4 → 2
-    { type: 'atk',  name: '暴怒', perLv: 0.3 },
-    { type: 'def',  name: '鋼鐵', perLv: 0.3 },
-    { type: 'hp',   name: '巨魂', perLv: 2.5 },   // ⭐ HP 平衡：5 → 2.5
-    { type: 'mark', name: '魔力', perLv: 0.35 },   // ⭐ MARK 詞條
-    { type: 'mark', name: '神秘', perLv: 0.3 },    // ⭐ MARK 詞條（次級）
+    { type: 'atk',     name: '鋒利',   perLv: 0.35 },
+    { type: 'def',     name: '堅固',   perLv: 0.35 },
+    { type: 'spd',     name: '迅速',   perLv: 0.25 },
+    { type: 'hp',      name: '健壯',   perLv: 2 },     // ⭐ HP 平衡：4 → 2
+    { type: 'atk',     name: '暴怒',   perLv: 0.3 },
+    { type: 'def',     name: '鋼鐵',   perLv: 0.3 },
+    { type: 'hp',      name: '巨魂',   perLv: 2.5 },   // ⭐ HP 平衡：5 → 2.5
+    { type: 'mark',    name: '魔力',   perLv: 0.35 },   // ⭐ MARK 詞條
+    { type: 'mark',    name: '神秘',   perLv: 0.3 },    // ⭐ MARK 詞條（次級）
+    // ⭐ 奈落專用詞條池（lv 28 裝備才會出）
+    { type: 'hpRegen', name: '生命湧現', perLv: 0, fixedPct: 5, nabyssOnly: true },  // 每回合回血 5% maxHP
+    { type: 'atk',     name: '虛空之力', perLv: 0.50, nabyssOnly: true },
+    { type: 'def',     name: '深淵護盾', perLv: 0.45, nabyssOnly: true },
+    { type: 'spd',     name: '混沌疾影', perLv: 0.35, nabyssOnly: true },
+    { type: 'hp',      name: '奈落根基', perLv: 3.5,  nabyssOnly: true },
   ];
   // ⭐ 稀有度：詞條數綁定顏色
   //   白 (common)    0 詞條
@@ -5856,8 +5974,14 @@
     // 排除綠茶指南書（slot: guide）— 那是綠茶遭遇次數的里程碑獎勵，不能掉落
     // 排除飾品（accessory 不在 6 槽掉落清單中，從商店買）
     const _baseFilter = i => i.slot !== 'guide' && i.slot !== 'accessory' && i.slot !== 'ring';
+    // ⭐ 奈落專屬掉落：只掉 lv 28 裝備（nabyssZone flag）
+    const forceNabyss = opts && opts.nabyssZone;
     let eligible;
-    if (layerRange) {
+    if (forceNabyss) {
+      // ⭐ 奈落掉落：只取 lv 28 裝備
+      eligible = ITEMS.filter(i => _baseFilter(i) && (i.lv || 1) === 28);
+      if (eligible.length === 0) eligible = ITEMS.filter(i => _baseFilter(i));
+    } else if (layerRange) {
       // ⭐ 精英掉落：在層的 [min, max] 範圍找等級最高的裝備
       // 好處：新增層時不需要手動對齊裝備等級，系統自動抓最高那批
       const inRange = ITEMS.filter(i => _baseFilter(i) && (i.lv || 1) >= layerRange.min && (i.lv || 1) <= layerRange.max);
@@ -5885,7 +6009,12 @@
       const biased = eligible.filter(i => slotBias.includes(i.slot));
       if (biased.length > 0) eligible = biased;
     }
-    const base = eligible[Math.floor(Math.random() * eligible.length)];
+    let base = eligible[Math.floor(Math.random() * eligible.length)];
+    // ⭐ 奈落特殊武器（rareWeapon: true）掉落率減半：50% 機率重選非稀有武器
+    if (base.rareWeapon && Math.random() < 0.5) {
+      const nonRare = eligible.filter(i => !i.rareWeapon);
+      if (nonRare.length > 0) base = nonRare[Math.floor(Math.random() * nonRare.length)];
+    }
     // ⭐ 支援 forceRarity：精英怪固定掉紫
     const forceRarity = opts && opts.forceRarity;
     const rarity = forceRarity && RARITY[forceRarity] ? forceRarity : rollRarity(boosted);
@@ -5912,19 +6041,30 @@
     //   Lv 6-10（中層） ×1.10
     //   Lv 11-15（下層）×1.20
     //   Lv 16-20（深層）×1.35
-    //   Lv 21+          ×1.50
+    //   Lv 21-25（深淵）×1.50
+    //   Lv 26+（奈落）  ×1.80
     const layerAffixMult = (() => {
       const lv = drop.lv || 1;
       if (lv <= 5)  return 1.00;
       if (lv <= 10) return 1.10;
       if (lv <= 15) return 1.20;
       if (lv <= 20) return 1.35;
-      return 1.50;
+      if (lv <= 25) return 1.50;
+      return 1.80; // 奈落
     })();
+    // ⭐ 奈落詞條池：lv 28+ 裝備可出奈落專用詞條；其他層不出
+    const isNabyssItem = (drop.lv || 1) >= 26;
+    const affixPool = isNabyssItem
+      ? AFFIXES                                       // 全池（包含 nabyssOnly）
+      : AFFIXES.filter(a => !a.nabyssOnly);          // 非奈落不出奈落詞條
     for (let i = 0; i < affixCount; i++) {
-      const a = AFFIXES[Math.floor(Math.random() * AFFIXES.length)];
-      const val = Math.max(1, Math.round((1 + drop.lv * a.perLv) * def.mult * layerAffixMult));
-      drop[a.type] = (drop[a.type] || 0) + val;
+      const a = affixPool[Math.floor(Math.random() * affixPool.length)];
+      // ⭐ hpRegen 詞條：固定 5%（存整數 5，代表 5%；戰鬥引擎讀出後除以 100）
+      const val = a.fixedPct != null
+        ? a.fixedPct
+        : Math.max(1, Math.round((1 + drop.lv * a.perLv) * def.mult * layerAffixMult));
+      if (a.type !== 'hpRegen') drop[a.type] = (drop[a.type] || 0) + val;
+      else drop.hpRegen = (drop.hpRegen || 0) + val; // hpRegen 不疊加到傷害相關屬性
       drop.affixes.push({ type: a.type, name: a.name, val });
     }
     if (drop.affixes.length > 0) {
@@ -6577,6 +6717,16 @@
         }
       }
     }
+    // ⭐ 裝備 hpRegen 累積（奈落裝備「生命湧現」詞條）
+    let totalHpRegen = 0;
+    for (const slot of ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape', 'wings', 'pet', 'guide', 'ring1', 'ring2']) {
+      const itemId = rpg.equipment?.[slot];
+      if (itemId) {
+        const item = resolveItem(itemId);
+        if (item?.hpRegen) totalHpRegen += item.hpRegen;
+      }
+    }
+    stats.hpRegenPct = totalHpRegen; // 存為百分比整數（5 = 5%）
     // 套裝加成
     const setInfo = computeSetBonuses(player);
     if (setInfo.bonuses.atk)  stats.atk  += setInfo.bonuses.atk;
@@ -6877,8 +7027,9 @@
     }
     // 精英怪：在指定地區內 14% 機率出現；noSpecial 跳過
     if (!noSpecial && opts && opts.zoneId && Math.random() < 0.14) {
-      const elite = ELITES.find(e => e.zone === opts.zoneId);
-      const zone = ZONES.find(z => z.id === opts.zoneId);
+      const _eliteZoneId = (opts.layerId === 'nabyss') ? 'nabyss' : opts.zoneId;
+      const elite = ELITES.find(e => e.zone === _eliteZoneId);
+      const zone = ZONES.find(z => z.id === _eliteZoneId) || ZONES.find(z => z.id === opts.zoneId);
       if (elite && zone) {
         // ⭐ 精英怪強制使用該層最高等級（保證掉落當層最強裝備）
         const _eliteLayer = opts.layerId ? ZONE_LAYERS.find(l => l.id === opts.layerId) : null;
@@ -6904,7 +7055,9 @@
     let candidates;
     let levelMin = playerLv, levelMax = playerLv;
     if (opts && opts.zoneId) {
-      const zone = ZONES.find(z => z.id === opts.zoneId);
+      // ⭐ 奈落層：強制使用奈落怪物池（不管玩家選的是哪個地區）
+      const effectiveZoneId = (opts.layerId === 'nabyss') ? 'nabyss' : opts.zoneId;
+      const zone = ZONES.find(z => z.id === effectiveZoneId) || ZONES.find(z => z.id === opts.zoneId);
       candidates = MONSTERS.filter(m => zone.monsters.includes(m.id));
       // 怪物等級 = 樓層直接決定（不再用 baseLv + floor）
       const flv = Math.max(1, opts.targetLv || layerFloorToLevel(opts.layerId, opts.floor) || 1);
@@ -7023,9 +7176,14 @@
     let _aHs = 0;        // 爆頭計數（用於 UI 顯示）
     let _aCritBonus = 0; // ⭐ 暴擊爆傷累積（每次暴擊隨機 +1~4%）
     let _aHsBonus   = 0; // ⭐ 爆頭傷害累積（每次爆頭隨機 +5~13%）
-    // ⭐ 嗜血劍：裝備時攻擊流血目標 → 回血×2 + ATK+20%(3T)
+    // ⭐ 武器特殊被動（嗜血劍 / 奈落武器）
     const _weaponItem = resolveItem(player.rpg?.equipment?.weapon);
-    const weaponBloodEffect = !!_weaponItem?.onHitBleeding;
+    const weaponBloodEffect   = !!_weaponItem?.onHitBleeding;
+    const _weaponNabyssHs     = _weaponItem?.nabyssHs     || 0;   // 虛空長弓：全職業爆頭 +N%
+    const _weaponBpBoostMult  = 1 + (_weaponItem?.bloodPoolBoost || 0); // 奈落之刃：血池 +20%
+    const _weaponMpDiscount   = _weaponItem?.mpDiscount   || 0;   // 深淵法杖：MP 消耗 -25%
+    const _weaponPhysShield   = _weaponItem?.physShieldPct || 0;  // 鵝盾刀：物理減傷
+    const _weaponMagShield    = _weaponItem?.magShieldPct  || 0;  // 鵝盾刀：魔法減傷
     // ⭐ 精魂刻印特殊效果
     const _spiritSpecials = getSpiritSpecials(player);
     let _tenaciousUsed = false;           // 不屈：每場限一次
@@ -7172,6 +7330,12 @@
         pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + heal));  // 不下調（神聖祝福可讓 HP 超過 maxHp，後續補血不應拉低）
         log.push({ type: 'player', text: `回合 ${round}：自癒 +${heal} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
       }
+      // ⭐ 生命湧現（奈落裝備詞條）：每回行動回血 hpRegenPct% MaxHP
+      if (pTurn && (stats.hpRegenPct || 0) > 0 && pHp < stats.maxHp && pHp > 0) {
+        const _regenHeal = Math.max(1, Math.round(stats.maxHp * (stats.hpRegenPct / 100)));
+        pHp = Math.min(stats.maxHp, pHp + _regenHeal);
+        log.push({ type: 'player', text: `回合 ${round}：💚 生命湧現 +${_regenHeal} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
+      }
       // ⭐ 每回合自動回 MP（法系 4 / 其他 2）+ 鵝王恩賜飾品 mpRegen — 戰術中持續產生 MP，不必依賴回魔技
       if (pTurn && pMp < stats.maxMp) {
         const isCaster = (player.rpg.class === 'mage' || player.rpg.class === 'paladin');
@@ -7210,8 +7374,8 @@
           log.push({ type: 'system', text: `回合 ${round}：💖 最大HP 加成結束，HP 恢復上限 ${stats.maxHp}`, hp: { player: pHp, monster: mHp, mp: pMp } });
         }
         if (pHp <= 0) break;
-        // ⭐ 麻痺（charge-based + 30% RNG）：玩家受麻痺發動率 30%
-        if (consumeParalyze(playerObj, 0.30)) {
+        // ⭐ 麻痺（charge-based + 20% RNG）：玩家受麻痺發動率 20%（原 30%，玩家反映太高故調降）
+        if (consumeParalyze(playerObj, 0.20)) {
           log.push({ type: 'system', text: `回合 ${round}：${player.name} ⚡麻痺，無法行動！`, hp: { player: pHp, monster: mHp, mp: pMp } });
           continue;
         }
@@ -7257,7 +7421,7 @@
           if ((s.unlockLv || 1) > (player.rpg.level || 1)) continue;
           // ⭐ 玩家技能 CD 取消（用 MP 跟硬值控制節奏）
           // if (playerActions < (nextActionForSkill[s.id] || 0)) continue;
-          const effMpCost = Math.round((s.mpCost || 0) * (1 - Math.min(0.80, (passive.mpDiscount || 0) + _fusionMpDiscount)));
+          const effMpCost = Math.round((s.mpCost || 0) * (1 - Math.min(0.80, (passive.mpDiscount || 0) + _fusionMpDiscount + (_weaponMpDiscount || 0))));
           if (pMp < effMpCost) continue;
           // HP 代價技能：必須有「比成本多」的 HP（防自爆）
           if (s.hpCost) {
@@ -7287,7 +7451,7 @@
           const __skillLv = (player.rpg.skillLevels && player.rpg.skillLevels[useSkill.id]) || 0;
           const skill = getSkillEffectiveStats(useSkill, __skillLv);
           // Lv 5 治療系：mpCostMult 進一步打折
-          const effMpCost = Math.round((skill.mpCost || 0) * (skill.mpCostMult || 1) * (1 - Math.min(0.80, (passive.mpDiscount || 0) + _fusionMpDiscount)));
+          const effMpCost = Math.round((skill.mpCost || 0) * (skill.mpCostMult || 1) * (1 - Math.min(0.80, (passive.mpDiscount || 0) + _fusionMpDiscount + (_weaponMpDiscount || 0))));
           pMp -= effMpCost;
           // ⭐ HP 代價（戰士血祭系列）：施法時扣自身 HP（最少留 1）
           let hpPaid = 0;
@@ -7305,7 +7469,7 @@
           // 成本說明字串（多種代價可能組合：MP / HP）
           // ⭐ 血池累積：任何扣 HP 的技能（血祭斬 / 死戰之怒 / 嗜血怒嚎…）都加進血池
           // ⭐ 嗜血怒嚎 期間：血池增量×2
-          if (hpPaid > 0) bloodPool += hpPaid * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1);
+          if (hpPaid > 0) bloodPool += hpPaid * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1) * (_weaponBpBoostMult || 1);
           const costParts = [];
           if (effMpCost > 0) costParts.push(`-${effMpCost} MP`);
           if (hpPaid > 0)    costParts.push(`-${hpPaid} HP`);
@@ -7744,10 +7908,16 @@
             const _fcB = _nextForceCrit > 0;
             const isCrit2 = _fcB || Math.random() < baseCrit2;
             if (_fcB) _nextForceCrit--;
+            // ⭐ 虛空長弓爆頭：所有職業普攻可爆頭（5% 基礎，不加暴擊，無視防禦×3傷）
+            const _nonArcHs = _weaponNabyssHs > 0 && Math.random() < _weaponNabyssHs;
             let dmg = effAtk;
             dmg *= (0.85 + Math.random() * 0.3);
-            // ⭐ DEF 百分比公式：減傷% = monDef/(monDef+K)
-            dmg *= DEF_PIERCE_K / (monDef0 + DEF_PIERCE_K);
+            // ⭐ 爆頭：無視防禦 × 3 傷害；普通：DEF 百分比公式
+            if (_nonArcHs) {
+              dmg *= 3;
+            } else {
+              dmg *= DEF_PIERCE_K / (monDef0 + DEF_PIERCE_K);
+            }
             if (isCrit2) {
               // ⭐ 最擊坑性：forceCrit 不受限
               const _effCritMult2B = (_fcB || !monster.critDmgReduct) ? critMult2 : 1.0 + (critMult2 - 1.0) * (1 - monster.critDmgReduct);
@@ -7757,7 +7927,7 @@
             if (_fxConquer > 0) dmg *= (1 + _fxConquer * 0.50);
             // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%/層）
             if (_fxPgHp > 0 && pHp < stats.maxHp * 0.3) dmg *= (1 + _fxPgHp * 0.50);
-            if (_monPhysRes) dmg *= (1 - _monPhysRes);
+            if (!_nonArcHs && _monPhysRes) dmg *= (1 - _monPhysRes); // 爆頭無視抗性
             dmg *= consumeVulnerable(monster);
             dmg = Math.max(1, Math.round(dmg));
             if (mAbility?.type === 'flatCapDmg') dmg = Math.min(dmg, mAbility.cap || 1);
@@ -7772,9 +7942,10 @@
             }
             // ⭐ 聖母鵝計數：普攻擊中
             if (_isPaladin && !_hmgFrozen) _hmgHitCount++;
+            const _hsLabel = _nonArcHs ? '🎯【爆頭】' : '';
             log.push({
-              type: isCrit2 ? 'crit-player' : 'player',
-              text: `回合 ${round}：${cls.attackVerb}${isCrit2 ? '【暴擊】' : ''} → ${monster.name} -${dmg} HP`,
+              type: (_nonArcHs || isCrit2) ? 'crit-player' : 'player',
+              text: `回合 ${round}：${cls.attackVerb}${_hsLabel}${isCrit2 ? '【暴擊】' : ''} → ${monster.name} -${dmg} HP`,
               hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp },
               hmgCounters: _isPaladin ? { hit: _hmgHitCount, taken: _hmgTakenCount, heal: _hmgHealCount, active: _hmgActive, actionsLeft: _hmgActionsLeft } : undefined,
             });
@@ -8004,7 +8175,10 @@
             // ⭐ 風鵝護符：物理/魔法傷害減免（ignoreDef=魔法，其餘=物理）
             if (mSkill.ignoreDef && _fxMagShield > 0)   dmg = Math.max(1, Math.round(dmg * Math.max(0.40, 1 - _fxMagShield * 0.20)));
             if (!mSkill.ignoreDef && _fxPhysShield > 0) dmg = Math.max(1, Math.round(dmg * Math.max(0.40, 1 - _fxPhysShield * 0.20)));
-            if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1);
+            // ⭐ 鵝盾刀：物理/魔法各減傷 physShieldPct/magShieldPct
+            if (mSkill.magic && _weaponMagShield > 0)   dmg = Math.max(1, Math.round(dmg * (1 - Math.min(0.5, _weaponMagShield))));
+            if (!mSkill.magic && _weaponPhysShield > 0) dmg = Math.max(1, Math.round(dmg * (1 - Math.min(0.5, _weaponPhysShield))));
+            if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1) * (_weaponBpBoostMult || 1);
             pHp = Math.max(0, pHp - dmg);
             if (dmg > 0) {
               // ⭐ 聖母鵝計數：被怪物技能擊中
@@ -8051,7 +8225,9 @@
             dmg = consumePartialShield(dmg);
             // ⭐ 風鵝護符：普攻為物理傷害
             if (_fxPhysShield > 0) dmg = Math.max(1, Math.round(dmg * Math.max(0.40, 1 - _fxPhysShield * 0.20)));
-            if (player.rpg.class === 'warrior') bloodPool += Math.min(Math.max(0, pHp), dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1);
+            // ⭐ 鵝盾刀：普攻物理減傷
+            if (_weaponPhysShield > 0) dmg = Math.max(1, Math.round(dmg * (1 - Math.min(0.5, _weaponPhysShield))));
+            if (player.rpg.class === 'warrior') bloodPool += Math.min(Math.max(0, pHp), dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1) * (_weaponBpBoostMult || 1);
             pHp -= dmg;
             if (dmg > 0) {
               // ⭐ 聖母鵝計數：被怪物普攻擊中
@@ -8198,7 +8374,7 @@
     return 1 + (v.amount || 0.5);
   }
   // ⭐ 麻痺（charge-based + RNG）：每次行動消耗 1 層，依 skipChance 決定是否真的跳過
-  //   玩家受麻痺：skipChance = 0.30（30%）；怪物受麻痺：skipChance = 0.50（50%）
+  //   玩家受麻痺：skipChance = 0.20（20%）；怪物受麻痺：skipChance = 0.50（50%）
   function consumeParalyze(target, skipChance) {
     const p = (target.statuses || []).find(s => s.type === 'paralyze' && (s.charges || 0) > 0);
     if (!p) return false;
@@ -8291,9 +8467,14 @@
     let _aHs = 0;        // 爆頭計數（UI 顯示）
     let _aCritBonus = 0; // ⭐ 暴擊爆傷累積（每次暴擊隨機 +1~4%）
     let _aHsBonus   = 0; // ⭐ 爆頭傷害累積（每次爆頭隨機 +5~13%）
-    // ⭐ 嗜血劍：裝備時攻擊流血目標 → 回血×2 + ATK+20%(3T)
+    // ⭐ 武器特殊被動（嗜血劍 / 奈落武器）
     const _weaponItemM = resolveItem(player.rpg?.equipment?.weapon);
-    const weaponBloodEffect = !!_weaponItemM?.onHitBleeding;
+    const weaponBloodEffect   = !!_weaponItemM?.onHitBleeding;
+    const _weaponNabyssHs     = _weaponItemM?.nabyssHs     || 0;
+    const _weaponBpBoostMult  = 1 + (_weaponItemM?.bloodPoolBoost || 0);
+    const _weaponMpDiscount   = _weaponItemM?.mpDiscount   || 0;
+    const _weaponPhysShield   = _weaponItemM?.physShieldPct || 0;
+    const _weaponMagShield    = _weaponItemM?.magShieldPct  || 0;
     // ⭐ 精魂刻印特殊效果
     const _spiritSpecials = getSpiritSpecials(player);
     let _tenaciousUsed = false;
@@ -8461,8 +8642,8 @@
         }
         if (pHp <= 0) break;
 
-        // ⭐ 麻痺（charge-based）：30% RNG 決定跳過，消耗 1 層
-        if (consumeParalyze(playerObj, 0.30)) {
+        // ⭐ 麻痺（charge-based）：20% RNG 決定跳過，消耗 1 層（原 30%，調降）
+        if (consumeParalyze(playerObj, 0.20)) {
           log.push({ type: 'system', text: `回合 ${round}：${player.name} ⚡麻痺，無法行動！`, hp: hpsSnapshot() });
           continue;
         }
@@ -8474,6 +8655,12 @@
           const heal = Math.max(1, Math.round(stats.maxHp * regenPer));
           pHp = Math.max(pHp, Math.min(stats.maxHp, pHp + heal));  // 不下調（神聖祝福可讓 HP 超過 maxHp，後續補血不應拉低）
           log.push({ type: 'player', text: `回合 ${round}：自癒 +${heal} HP`, hp: hpsSnapshot() });
+        }
+        // ⭐ 生命湧現（奈落裝備詞條）
+        if ((stats.hpRegenPct || 0) > 0 && pHp < stats.maxHp && pHp > 0) {
+          const _regenHeal = Math.max(1, Math.round(stats.maxHp * (stats.hpRegenPct / 100)));
+          pHp = Math.min(stats.maxHp, pHp + _regenHeal);
+          log.push({ type: 'player', text: `回合 ${round}：💚 生命湧現 +${_regenHeal} HP`, hp: hpsSnapshot() });
         }
         // ⭐ 每回合自動回 MP（法系 4 / 其他 2）+ 鵝王恩賜飾品 mpRegen
         if (pMp < stats.maxMp) {
@@ -8517,7 +8704,7 @@
           if ((s.unlockLv || 1) > (player.rpg.level || 1)) continue;
           // ⭐ 玩家技能 CD 取消（用 MP 跟硬值控制節奏）
           // if (playerActions < (nextActionForSkill[s.id] || 0)) continue;
-          const effMpCost = Math.round((s.mpCost || 0) * (1 - Math.min(0.80, (passive.mpDiscount || 0) + _fusionMpDiscount)));
+          const effMpCost = Math.round((s.mpCost || 0) * (1 - Math.min(0.80, (passive.mpDiscount || 0) + _fusionMpDiscount + (_weaponMpDiscount || 0))));
           if (pMp < effMpCost) continue;
           if (s.hpCost) {
             const need = Math.max(1, Math.round(stats.maxHp * s.hpCost));
@@ -8543,7 +8730,7 @@
           const __skillLv = (player.rpg.skillLevels && player.rpg.skillLevels[useSkill.id]) || 0;
           const skill = getSkillEffectiveStats(useSkill, __skillLv);
           // Lv 5 治療系：mpCostMult 進一步打折
-          const effMpCost = Math.round((skill.mpCost || 0) * (skill.mpCostMult || 1) * (1 - Math.min(0.80, (passive.mpDiscount || 0) + _fusionMpDiscount)));
+          const effMpCost = Math.round((skill.mpCost || 0) * (skill.mpCostMult || 1) * (1 - Math.min(0.80, (passive.mpDiscount || 0) + _fusionMpDiscount + (_weaponMpDiscount || 0))));
           pMp -= effMpCost;
           let hpPaid = 0;
           if (skill.hpCost) {
@@ -8552,7 +8739,7 @@
           }
           if (skill.hpCostFlat) { hpPaid += skill.hpCostFlat; pHp = Math.max(1, pHp - skill.hpCostFlat); }
           // ⭐ 血池累積：任何扣 HP 的技能都加進血池（嗜血怒嚎期間×2）
-          if (hpPaid > 0) bloodPool += hpPaid * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1);
+          if (hpPaid > 0) bloodPool += hpPaid * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1) * (_weaponBpBoostMult || 1);
           nextActionForSkill[skill.id] = playerActions + skill.cooldown;
           const costParts = [];
           if (effMpCost > 0) costParts.push(`-${effMpCost} MP`);
@@ -8957,10 +9144,16 @@
             const _fcBM = _nextForceCrit > 0;
             const isCrit = _fcBM || Math.random() < baseCrit2;
             if (_fcBM) _nextForceCrit--;
+            // ⭐ 虛空長弓爆頭：所有職業普攻可爆頭
+            const _nonArcHsM = _weaponNabyssHs > 0 && Math.random() < _weaponNabyssHs;
             let dmg = effAtk;
             dmg *= (0.85 + Math.random() * 0.3);
-            // ⭐ DEF 百分比公式：減傷% = _tgtDef2/(_tgtDef2+K)
-            dmg *= DEF_PIERCE_K / (_tgtDef2 + DEF_PIERCE_K);
+            // ⭐ 爆頭：無視防禦 × 3；普通：DEF 公式
+            if (_nonArcHsM) {
+              dmg *= 3;
+            } else {
+              dmg *= DEF_PIERCE_K / (_tgtDef2 + DEF_PIERCE_K);
+            }
             if (isCrit) {
               // ⭐ 最擊坑性：forceCrit 不受限
               const _effCritMult2BM = (_fcBM || !tgt.critDmgReduct) ? critMult2 : 1.0 + (critMult2 - 1.0) * (1 - tgt.critDmgReduct);
@@ -8970,7 +9163,7 @@
             if (_fxConquer > 0) dmg *= (1 + _fxConquer * 0.50);
             // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%/層）
             if (_fxPgHp > 0 && pHp < stats.maxHp * 0.3) dmg *= (1 + _fxPgHp * 0.50);
-            if (tgt.physRes) dmg *= (1 - tgt.physRes);
+            if (!_nonArcHsM && tgt.physRes) dmg *= (1 - tgt.physRes);
             dmg *= consumeVulnerable(tgt); // ⭐ 易傷（hit-based）
             dmg = Math.max(1, Math.round(dmg));
             if (tgt.ability?.type === 'flatCapDmg') dmg = Math.min(dmg, tgt.ability.cap || 1);
@@ -8990,9 +9183,10 @@
             }
             // ⭐ 聖母鵝計數
             if (_isPaladinM && !_hmgFrozenM) _hmgHitCountM++;
+            const _hsLabelM = _nonArcHsM ? '🎯【爆頭】' : '';
             log.push({
-              type: isCrit ? 'crit-player' : 'player',
-              text: `回合 ${round}：${cls.attackVerb}${isCrit ? '【暴擊】' : ''} → ${tgt.icon}${tgt.name} -${dmg} HP`,
+              type: (_nonArcHsM || isCrit) ? 'crit-player' : 'player',
+              text: `回合 ${round}：${cls.attackVerb}${_hsLabelM}${isCrit ? '【暴擊】' : ''} → ${tgt.icon}${tgt.name} -${dmg} HP`,
               hp: hpsSnapshot(),
             });
           }
@@ -9216,7 +9410,7 @@
             // ⭐ 風鵝護符：物理/魔法傷害減免（ignoreDef=魔法，其餘=物理）
             if (mSkill.ignoreDef && _fxMagShield > 0)   dmg = Math.max(1, Math.round(dmg * Math.max(0.40, 1 - _fxMagShield * 0.20)));
             if (!mSkill.ignoreDef && _fxPhysShield > 0) dmg = Math.max(1, Math.round(dmg * Math.max(0.40, 1 - _fxPhysShield * 0.20)));
-            if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1);
+            if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1) * (_weaponBpBoostMult || 1);
             pHp = Math.max(0, pHp - dmg);
             // ⭐ 不屈：首次致死改為 1 HP 存活
             if (pHp <= 0 && _spiritSpecials.has('tenacious') && !_tenaciousUsed) {
@@ -9261,7 +9455,7 @@
             dmg = consumePartialShield2(dmg);
             // ⭐ 風鵝護符：普攻為物理傷害
             if (_fxPhysShield > 0) dmg = Math.max(1, Math.round(dmg * Math.max(0.40, 1 - _fxPhysShield * 0.20)));
-            if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1);
+            if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1) * (_weaponBpBoostMult || 1);
             pHp = Math.max(0, pHp - dmg);
             // ⭐ 不屈：首次致死改為 1 HP 存活
             if (pHp <= 0 && _spiritSpecials.has('tenacious') && !_tenaciousUsed) {
@@ -11756,7 +11950,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507224329';
+  const APP_VERSION = '20260507233854';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -11812,7 +12006,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260507_v8';
+  const NEWS_LATEST_ID = 'patch_20260507_nabyss';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -11832,6 +12026,43 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#1e0040,#4c1d95); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🕳️ 奈落深域開放 ＋ 奈落鍛造　<span style="font-size:11px; opacity:0.85;">2026-05-07</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:6px 0 4px;">🕳️ 奈落深域（Lv 26-30）正式開放</div>
+        <div>・解鎖條件：玩家達 <b>Lv 25</b></div>
+        <div>・全新 6 種怪物：虛空幽靈、深淵騎士、暗影魔像、奈落術師、混沌野獸、幻影支配</div>
+        <div>・每場戰鬥隨機 <b>2～4 隻</b>怪物同時出現</div>
+        <div>・精英王：<b>★ 奈落支配者</b>（HP 360萬、雙重攻擊、奈落審判+麻痺+穿透）</div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">⚔️ 奈落專屬裝備（Lv 28）</div>
+        <div>・一般裝備 6 件：奈落甲、奈落冠、奈落護腕、奈落靴、奈落披、奈落鎧</div>
+        <div>・<b>特殊武器 4 件（稀有掉率）</b>：</div>
+        <div style="margin-top:4px; font-size:12px; padding-left:8px;">
+          <div>🏹 <b>虛空長弓</b>：所有職業普攻 <b>5% 爆頭機率</b>（3倍傷，無視DEF）</div>
+          <div>🌑 <b>奈落之刃</b>：戰士血池積累 <b>+20%</b></div>
+          <div>🔮 <b>深淵法杖</b>：所有技能 MP 消耗 <b>-25%</b></div>
+          <div>🛡️ <b>鵝盾刀</b>：ATK+60、MARK+30、DEF+60，物理/魔法傷害 <b>各減 10%</b></div>
+        </div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">✨ 新詞條：生命湧現</div>
+        <div>・奈落裝備專屬詞條：每回合開始自動回復 <b>最大HP 5%</b></div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">⚒️ 奈落鍛造（第 4 條詞條）</div>
+        <div>・奈落層 (Lv 26+) 掉落物可在背包詳情頁<b>花費鵝鵝幣敲出第 4 條詞條</b></div>
+        <div>・可重複敲擊以<b>更換</b>第 4 條詞條，費用依次遞增：</div>
+        <div style="font-size:12px; padding-left:8px; margin-top:2px;">
+          15萬 → 30萬 → 60萬 → 120萬 → 240萬 → <b>300萬（上限）</b>
+        </div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">⚡ 麻痺調整</div>
+        <div>・玩家受麻痺跳回合機率：<b>30% → 20%</b>（怪物麻痺維持 50%）</div>
+
+        <div style="background:#ede9fe; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#3b0764;">
+          💡 奈落深域掉落物品固定為 Lv 28，詞條強化倍率 ×1.80！搭配奈落鍛造打造頂尖裝備。
+        </div>
 
         <div style="background:linear-gradient(135deg,#78350f,#d97706); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">💎 寶石四階神石 ＋ 百抽 ＋ 一鍵合成　<span style="font-size:11px; opacity:0.85;">2026-05-07</span></div>
@@ -14587,8 +14818,27 @@ ${b.text}
     const rarColor = item.rarity ? RARITY[item.rarity]?.color : (item.setId ? (SETS[item.setId]?.color || '#f59e0b') : '#7c3aed');
     const rarLabel = item.rarity ? RARITY[item.rarity]?.label : (item.setId ? '套裝' : '');
     const affixHtml = item.affixes && item.affixes.length
-      ? `<div style="margin-top:6px; padding:6px 8px; background:${rarColor}20; border-radius:8px; font-size:11px;">${item.affixes.map(a => `<div style="color:${rarColor};">+${a.val} ${a.type.toUpperCase()}（${a.name}）</div>`).join('')}</div>`
+      ? `<div style="margin-top:6px; padding:6px 8px; background:${rarColor}20; border-radius:8px; font-size:11px;">${item.affixes.map((a, _ai) => _ai < 3
+          ? `<div style="color:${rarColor};">+${a.val} ${a.type.toUpperCase()}（${a.name}）</div>`
+          : `<div style="color:#a78bfa; border-top:1px dashed #7c3aed40; margin-top:4px; padding-top:4px;">⚒️ +${a.val} ${a.type.toUpperCase()}（${a.name}）</div>`
+        ).join('')}</div>`
       : '';
+    // ⭐ 奈落鍛造：lv 26+ 掉落物可花費鵝鵝幣敲第 4 條詞條
+    const _REROLL_COSTS = [150000, 300000, 600000, 1200000, 2400000, 3000000];
+    const _isNabyssLoot = (item.lv || 1) >= 26 && Array.isArray(item.affixes);
+    const _rerollCount = item.rerollCount || 0;
+    const _nextRerollCost = _REROLL_COSTS[Math.min(_rerollCount, _REROLL_COSTS.length - 1)];
+    const _hasFourthAffix = (item.affixes || []).length >= 4;
+    const rerollHtml = _isNabyssLoot ? `
+      <div style="margin-top:8px; padding:8px 10px; background:#4c1d9520; border:1.5px dashed #7c3aed; border-radius:10px; text-align:center;">
+        <div style="font-size:11px; color:#a78bfa; margin-bottom:5px; font-weight:700;">⚒️ 奈落鍛造</div>
+        <div style="font-size:10px; color:#8b5cf6; margin-bottom:6px; line-height:1.5;">
+          ${_hasFourthAffix ? '重新敲第 4 條詞條' : '敲出第 4 條詞條'}　花費 <b style="color:#fbbf24;">${_nextRerollCost.toLocaleString()} 🪙</b>
+          ${_rerollCount > 0 ? `<br><span style="color:#9ca3af;">（已敲 ${_rerollCount} 次，下次 ${(_REROLL_COSTS[Math.min(_rerollCount+1, _REROLL_COSTS.length-1)]).toLocaleString()} 🪙）</span>` : ''}
+        </div>
+        <button class="btn btn-primary" onclick="doAffixReroll(${idx})" style="width:100%; background:linear-gradient(135deg,#7c3aed,#4c1d95); box-shadow:0 3px 0 #3b0764; font-size:12px;">⚒️ ${_hasFourthAffix ? '重敲詞條' : '敲一條詞條'}</button>
+      </div>
+    ` : '';
     // ⭐ 比較：目前該槽位裝備的物件（戒指：比較 ring1 / ring2 中第一個有裝的）
     let compareHtml = '';
     const _cmpSlot = item.slot === 'ring'
@@ -14654,6 +14904,7 @@ ${b.text}
           ${item.lv ? `Lv ${item.lv}　·　` : ''}${formatItemStats(item)}
         </div>
         ${affixHtml}
+        ${rerollHtml}
         ${compareHtml}
         ${setHtml}
         ${item.isBossGift ? (() => {
@@ -14690,6 +14941,59 @@ ${b.text}
     if (typeof showEquipmentModal === 'function') showEquipmentModal();
   }
   window.backToBackpack = backToBackpack;
+
+  // ⚒️ 奈落鍛造：第 4 條詞條敲擊系統
+  window.doAffixReroll = function doAffixReroll(idx) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const item = r.inventory[idx];
+    if (!item || !Array.isArray(item.affixes)) return;
+    if ((item.lv || 1) < 26) return; // 只有奈落物品可敲
+
+    const COSTS = [150000, 300000, 600000, 1200000, 2400000, 3000000];
+    const rc = item.rerollCount || 0;
+    const cost = COSTS[Math.min(rc, COSTS.length - 1)];
+
+    if (getCoins(me.id) < cost) {
+      showToast(`⚒️ 鵝鵝幣不足！需要 ${cost.toLocaleString()} 枚（目前 ${getCoins(me.id).toLocaleString()}）`);
+      return;
+    }
+
+    // 移除舊第 4 條詞條的屬性貢獻（若存在）
+    const oldFourth = item.affixes[3];
+    if (oldFourth) {
+      if (oldFourth.type === 'hpRegen') {
+        item.hpRegen = Math.max(0, (item.hpRegen || 0) - oldFourth.val);
+      } else {
+        item[oldFourth.type] = Math.max(0, (item[oldFourth.type] || 0) - oldFourth.val);
+      }
+      item.affixes.splice(3, 1);
+    }
+
+    // 從奈落全詞條池中隨機一條
+    const layerAffixMult = 1.80;
+    const def = RARITY[item.rarity] || RARITY['legendary'];
+    const a = AFFIXES[Math.floor(Math.random() * AFFIXES.length)];
+    const val = a.fixedPct != null
+      ? a.fixedPct
+      : Math.max(1, Math.round((1 + (item.lv || 28) * a.perLv) * def.mult * layerAffixMult));
+
+    if (a.type === 'hpRegen') {
+      item.hpRegen = (item.hpRegen || 0) + val;
+    } else {
+      item[a.type] = (item[a.type] || 0) + val;
+    }
+    item.affixes.push({ type: a.type, name: a.name, val });
+    item.rerollCount = rc + 1;
+
+    spendCoins(me.id, cost);
+    saveData();
+    if (typeof renderCharCard === 'function') renderCharCard();
+
+    const typeLabel = a.type === 'hpRegen' ? '生命回復' : a.type.toUpperCase();
+    showToast(`⚒️ 敲出【${a.name}】！+${val} ${typeLabel}（花費 ${cost.toLocaleString()} 🪙）`);
+    openInvItemActions(idx);
+  };
 
   // ============================================================
   // ⚗️ 印記合成系統
@@ -19304,6 +19608,23 @@ ${b.text}
         return runMultiMonsterFight(me, monsters, { zoneId, layerId, opts });
       }
     }
+    // ⭐ 奈落：2-4 隻怪（單怪 + 精英 OR 2-4 普通怪）
+    if (layerId === 'nabyss') {
+      // 若觸發精英（14%），直接單打精英
+      if (monster.isElite) {
+        // 精英單打：直接跑 autoFight（後面邏輯處理）
+      } else {
+        const count = 2 + Math.floor(Math.random() * 3); // 隨機 2-4 隻
+        const monsters = [monster];
+        for (let i = 1; i < count; i++) {
+          const m = generateMonster(rpg.level, { zoneId: 'nabyss', layerId: 'nabyss', targetLv, noSpecial: true });
+          if (m) monsters.push(m);
+        }
+        if (monsters.length > 1) {
+          return runMultiMonsterFight(me, monsters, { zoneId, layerId, opts });
+        }
+      }
+    }
     // ⭐ 下層 / 深層：固定多一隻同伴怪（普通怪、不是精英 / 寶箱 / 綠茶 / 探險精英）
     const isMultiLayer = (layerId === 'lower' || layerId === 'deep');
     const isFirstSpecial = !!(monster.isElite || monster.isChest || monster.isForageElite || monster.ability?.type === 'cameo');
@@ -19616,7 +19937,9 @@ ${b.text}
         totalXp += m.xpDrop || 0;
         totalGold += m.goldDrop || 0;
         const dropLv = Math.max(m.level || rpg.level, _layerDropFloor);
-        const drop = rollItemDrop(dropLv, { slotBias: _zone ? _zone.dropBias : null });
+        // ⭐ 奈落掉落：強制只掉 lv 28 裝備
+        const _isNabyssZone = _layerId === 'nabyss';
+        const drop = rollItemDrop(dropLv, { slotBias: _zone ? _zone.dropBias : null, nabyssZone: _isNabyssZone });
         if (drop) {
           // ⭐ Phase A：走 atomic tx，避免並發 race 把剛拿的裝備吃掉
           addInventoryItem(player.id, drop);  // fire-and-forget；本地已樂觀更新
@@ -19757,13 +20080,14 @@ ${b.text}
       const _zone = ZONES.find(z => z.id === (rpg.currentZone || 'forest'));
       const _curLayer = ZONE_LAYERS.find(l => l.id === (rpg.currentLayer || 'upper'));
       const _isElite = !!(monster.isElite && !monster.isForageElite);
+      const _isNabyssZoneSingle = (rpg.currentLayer || 'upper') === 'nabyss';
       const dropLv = _isElite
         ? (_curLayer ? _curLayer.maxLv : (monster.level || rpg.level))
         : Math.max(monster.level || rpg.level, _curLayer ? _curLayer.maxLv - 2 : 0);
       // 防護：確保 inventory 是陣列（防止 sync race 造成 undefined）
       if (!Array.isArray(rpg.inventory)) rpg.inventory = [];
       // ⭐ 精英怪跳過隨機掉落（只掉後面的保證傳說裝，避免混入普通裝）
-      const drop = _isElite ? null : rollItemDrop(dropLv, { slotBias: _zone ? _zone.dropBias : null });
+      const drop = _isElite ? null : rollItemDrop(dropLv, { slotBias: _zone ? _zone.dropBias : null, nabyssZone: _isNabyssZoneSingle });
       if (drop) {
         // ⭐ Phase A：atomic tx，避免並發 race
         addInventoryItem(player.id, drop);  // fire-and-forget
@@ -19771,7 +20095,7 @@ ${b.text}
       }
       let chestExtraDrop = null;
       if (monster.isChest) {
-        chestExtraDrop = rollItemDrop(dropLv, { slotBias: _zone ? _zone.dropBias : null });
+        chestExtraDrop = rollItemDrop(dropLv, { slotBias: _zone ? _zone.dropBias : null, nabyssZone: _isNabyssZoneSingle });
         if (chestExtraDrop) addInventoryItem(player.id, chestExtraDrop);
       }
       forageTrace('rollItemDrop', { zoneId: _zone?.id, dropBias: _zone?.dropBias, dropLv, gotDrop: !!drop, dropId: drop?.id, dropName: drop?.name, rarity: drop?.rarity, affixCount: drop?.affixes?.length, isChest: !!monster.isChest, chestExtra: !!chestExtraDrop });
@@ -19784,7 +20108,7 @@ ${b.text}
         // ⭐ 地區精英：必掉 1 件「紫裝」（legendary，3 詞條）100%
         // layerRange 讓系統自動找該層 [minLv,maxLv] 內等級最高的裝備，新增層不需手動對齊
         const _eliteLayerRange = _curLayer ? { min: _curLayer.minLv, max: _curLayer.maxLv } : null;
-        const eliteDrop = generateDropItem(dropLv, { slotBias: _zone ? _zone.dropBias : null, forceAffixes: 3, boosted: true, forceRarity: 'legendary', layerRange: _eliteLayerRange });
+        const eliteDrop = generateDropItem(dropLv, { slotBias: _zone ? _zone.dropBias : null, forceAffixes: 3, boosted: true, forceRarity: 'legendary', layerRange: _isNabyssZoneSingle ? null : _eliteLayerRange, nabyssZone: _isNabyssZoneSingle });
         if (eliteDrop) {
           addInventoryItem(player.id, eliteDrop);  // ⭐ Phase A: atomic tx
           eliteExtraDrops.push(eliteDrop);
