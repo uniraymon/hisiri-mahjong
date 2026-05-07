@@ -2687,12 +2687,17 @@
       monsters: ['titan', 'dragon', 'demon', 'lich', 'steel', 'mirror'],
       dropBias: ['helmet', 'boots', 'cape'],
       color: '#3b82f6' },
-    // ⭐ 奈落深域：單一區域（未來多層擴充），怪物等級 Lv 26-30
-    { id: 'nabyss', name: '奈落深域', icon: '🕳️', desc: '超越深淵的混沌虛空，極強怪物的棲息地',
+    // ⭐ 奈落深域（Lv 26-30）分為兩個子區：單挑 / 群戰
+    { id: 'nabyss_solo', name: '奈落・單挑', icon: '🕳️', desc: '奈落虛空，與強敵一對一決戰',
       minLv: 25,
       monsters: ['void_wraith', 'abyss_knight', 'shadow_golem', 'null_mage', 'chaos_beast', 'phantom_ruler'],
       dropBias: ['weapon', 'armor', 'gloves', 'boots'],
       color: '#4c1d95' },
+    { id: 'nabyss_multi', name: '奈落・群戰', icon: '💀', desc: '奈落虛空深處，2～4 隻怪物同時出現',
+      minLv: 25,
+      monsters: ['void_wraith', 'abyss_knight', 'shadow_golem', 'null_mage', 'chaos_beast', 'phantom_ruler'],
+      dropBias: ['weapon', 'armor', 'gloves', 'boots'],
+      color: '#6d28d9' },
   ];
   // ⭐ 怪物能力 → 等級的縮放係數（HOF 風格層級制）
   // ATK/SPD 用基本曲線：每進一層 ×1.30，每等 +2.5%
@@ -7027,9 +7032,10 @@
     }
     // 精英怪：在指定地區內 14% 機率出現；noSpecial 跳過
     if (!noSpecial && opts && opts.zoneId && Math.random() < 0.14) {
-      const _eliteZoneId = (opts.layerId === 'nabyss') ? 'nabyss' : opts.zoneId;
+      // ⭐ 奈落兩子區均對應 elite_nabyss（zone: 'nabyss'）
+      const _eliteZoneId = opts.zoneId?.startsWith('nabyss') ? 'nabyss' : opts.zoneId;
       const elite = ELITES.find(e => e.zone === _eliteZoneId);
-      const zone = ZONES.find(z => z.id === _eliteZoneId) || ZONES.find(z => z.id === opts.zoneId);
+      const zone = ZONES.find(z => z.id === opts.zoneId) || ZONES.find(z => z.id === _eliteZoneId);
       if (elite && zone) {
         // ⭐ 精英怪強制使用該層最高等級（保證掉落當層最強裝備）
         const _eliteLayer = opts.layerId ? ZONE_LAYERS.find(l => l.id === opts.layerId) : null;
@@ -7055,9 +7061,9 @@
     let candidates;
     let levelMin = playerLv, levelMax = playerLv;
     if (opts && opts.zoneId) {
-      // ⭐ 奈落層：強制使用奈落怪物池（不管玩家選的是哪個地區）
-      const effectiveZoneId = (opts.layerId === 'nabyss') ? 'nabyss' : opts.zoneId;
-      const zone = ZONES.find(z => z.id === effectiveZoneId) || ZONES.find(z => z.id === opts.zoneId);
+      // ⭐ 奈落兩子區（nabyss_solo / nabyss_multi）直接用 opts.zoneId 查怪物池
+      const effectiveZoneId = opts.zoneId;
+      const zone = ZONES.find(z => z.id === effectiveZoneId) || ZONES[0];
       candidates = MONSTERS.filter(m => zone.monsters.includes(m.id));
       // 怪物等級 = 樓層直接決定（不再用 baseLv + floor）
       const flv = Math.max(1, opts.targetLv || layerFloorToLevel(opts.layerId, opts.floor) || 1);
@@ -11950,7 +11956,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508001003';
+  const APP_VERSION = '20260508001535';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -16034,11 +16040,12 @@ ${b.text}
     if (!host) return;
     if (!rpg.currentZone) rpg.currentZone = 'forest';
     if (!rpg.currentLayer) rpg.currentLayer = 'upper';
-    // ⭐ 奈落層與其他層互斥：奈落層只顯示奈落區；一般層不顯示奈落區
+    // ⭐ 奈落層與其他層互斥：奈落層只顯示兩個奈落子區；一般層不顯示奈落子區
     const _isNabyssLayer = rpg.currentLayer === 'nabyss';
-    if (_isNabyssLayer && rpg.currentZone !== 'nabyss') rpg.currentZone = 'nabyss';
-    if (!_isNabyssLayer && rpg.currentZone === 'nabyss') rpg.currentZone = 'forest';
-    const _visibleZones = ZONES.filter(z => _isNabyssLayer ? z.id === 'nabyss' : z.id !== 'nabyss');
+    const _isNabyssZone = rpg.currentZone?.startsWith('nabyss');
+    if (_isNabyssLayer && !_isNabyssZone) rpg.currentZone = 'nabyss_solo';
+    if (!_isNabyssLayer && _isNabyssZone) rpg.currentZone = 'forest';
+    const _visibleZones = ZONES.filter(z => _isNabyssLayer ? z.id.startsWith('nabyss') : !z.id.startsWith('nabyss'));
     const tabsHtml = _visibleZones.map(z => {
       const locked = rpg.level < z.minLv;
       const active = rpg.currentZone === z.id;
@@ -16107,10 +16114,10 @@ ${b.text}
       return;
     }
     rpg.currentLayer = layerId;
-    // ⭐ 奈落層互斥：進入奈落自動切到奈落區；離開奈落自動切回一般區
+    // ⭐ 奈落層互斥：進入奈落自動切到奈落單挑；離開奈落自動切回一般區
     if (layerId === 'nabyss') {
-      rpg.currentZone = 'nabyss';
-    } else if (rpg.currentZone === 'nabyss') {
+      if (!rpg.currentZone?.startsWith('nabyss')) rpg.currentZone = 'nabyss_solo';
+    } else if (rpg.currentZone?.startsWith('nabyss')) {
       rpg.currentZone = 'forest';
     }
     saveData();
@@ -16126,8 +16133,8 @@ ${b.text}
     if (!z) return;
     if (rpg.level < z.minLv) { showToast(`需 Lv${z.minLv} 才能進入${z.name}`); return; }
     // ⭐ 奈落區只能在奈落層選；一般區不能在奈落層選
-    if (zoneId === 'nabyss' && rpg.currentLayer !== 'nabyss') return;
-    if (zoneId !== 'nabyss' && rpg.currentLayer === 'nabyss') return;
+    if (zoneId.startsWith('nabyss') && rpg.currentLayer !== 'nabyss') return;
+    if (!zoneId.startsWith('nabyss') && rpg.currentLayer === 'nabyss') return;
     rpg.currentZone = zoneId;
     if (!rpg.currentLayer) rpg.currentLayer = 'upper';
     saveData();
@@ -19622,16 +19629,15 @@ ${b.text}
         return runMultiMonsterFight(me, monsters, { zoneId, layerId, opts });
       }
     }
-    // ⭐ 奈落：2-4 隻怪（單怪 + 精英 OR 2-4 普通怪）
-    if (layerId === 'nabyss') {
-      // 若觸發精英（14%），直接單打精英
+    // ⭐ 奈落群戰區（nabyss_multi）：2-4 隻怪同時出現；精英照常單打
+    if (zoneId === 'nabyss_multi') {
       if (monster.isElite) {
         // 精英單打：直接跑 autoFight（後面邏輯處理）
       } else {
         const count = 2 + Math.floor(Math.random() * 3); // 隨機 2-4 隻
         const monsters = [monster];
         for (let i = 1; i < count; i++) {
-          const m = generateMonster(rpg.level, { zoneId: 'nabyss', layerId: 'nabyss', targetLv, noSpecial: true });
+          const m = generateMonster(rpg.level, { zoneId, layerId, targetLv, noSpecial: true });
           if (m) monsters.push(m);
         }
         if (monsters.length > 1) {
