@@ -11751,7 +11751,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507202926';
+  const APP_VERSION = '20260507203038';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -11807,7 +11807,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260507_v7';
+  const NEWS_LATEST_ID = 'patch_20260507_v8';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -11827,6 +11827,36 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#78350f,#d97706); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">💎 寶石四階神石 ＋ 百抽 ＋ 一鍵合成　<span style="font-size:11px; opacity:0.85;">2026-05-07</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#d97706; margin:6px 0 4px;">✨ 四階神石（新最高階）</div>
+        <div>・7 種寶石各新增<b>四階神石</b>：<b>3 個三階鑽石 → 1 個四階神石</b></div>
+        <div style="margin-top:4px; font-size:12px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:2px 12px;">
+            <div>🔴 攻擊神石：ATK <b>+50</b></div>
+            <div>🟣 法術神石：MARK <b>+50</b></div>
+            <div>🔵 防禦神石：DEF <b>+40</b></div>
+            <div>🟡 速度神石：SPD <b>+30</b></div>
+            <div>❤️ 生命神石：HP <b>+500</b></div>
+            <div>🔹 魔力神石：MP <b>+55</b></div>
+            <div>⭐ 暴擊神石：暴擊率 <b>+18%</b></div>
+          </div>
+        </div>
+
+        <div style="font-weight:700; color:#d97706; margin:10px 0 4px;">✨ 百抽</div>
+        <div>・鵝鵝幣 <b>×100 抽（500,000 🪙）</b> 與 扭蛋幣 <b>×100 抽</b> 按鈕同步開放</div>
+        <div>・多次抽獎結果按稀有度排序顯示，扭蛋幣欄位也整合至轉蛋面板</div>
+
+        <div style="font-weight:700; color:#d97706; margin:10px 0 4px;">⚗️ 一鍵合成</div>
+        <div>・合成頁新增「<b>⚗️ 一鍵合成</b>」按鈕：自動把所有材料升到最高可達階數</div>
+        <div style="font-size:11px; color:#6b7280;">→ 一階需 ≥4 個、二/三階需 ≥3 個；原石仍需手動使用</div>
+
+        <div style="background:#fef3c7; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#78350f;">
+          💡 神石屬性約為鑽石的 2 倍！武器孔可嵌入神石最多可獲得 ATK +150、暴擊率 +54% 等驚人加成。
+        </div>
 
         <div style="background:linear-gradient(135deg,#3b0764,#7c3aed); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🍜 宵夜鵝個人王 ＋ DEF 系統大改　<span style="font-size:11px; opacity:0.85;">2026-05-07</span></div>
