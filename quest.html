@@ -3362,31 +3362,35 @@
           if (pMpBar) pMpBar.style.width = (entry.hp.mp / _maxMp * 100) + '%';
           if (pMpTx) pMpTx.textContent = `MP ${entry.hp.mp}/${_maxMp}`;
         }
-        // 浮動傷害 + 精靈動畫
+        // 浮動傷害 + 精靈動畫（舊版完整邏輯）
         const _mDmg = _wbPrevMHp - entry.hp.monster;
         const _pDmg = _wbPrevPHp - entry.hp.player;
         if (_mDmg > 0) {
           const _mEl = document.getElementById('combatMonster');
           if (_mEl) showDamage(_mEl, _mDmg, entry.type === 'crit-player' ? 'crit' : 'normal');
-          const _mArt = document.querySelector('#combatMonster .boss-art');
-          if (_mArt) { _mArt.classList.add('hurt'); setTimeout(() => _mArt.classList.remove('hurt'), 400); }
         }
         if (_pDmg > 0) {
           const _pEl = document.getElementById('combatPlayer');
           if (_pEl) showDamage(_pEl, _pDmg, 'normal');
-          const _pArt = document.querySelector('#combatPlayer .class-art');
-          if (_pArt) { _pArt.classList.add('hurt'); setTimeout(() => _pArt.classList.remove('hurt'), 400); }
         }
         if (entry.hp.player > _wbPrevPHp) {
           const _pEl = document.getElementById('combatPlayer');
           if (_pEl) showDamage(_pEl, entry.hp.player - _wbPrevPHp, 'heal');
         }
-        if (entry.type === 'player' || entry.type === 'crit-player') {
-          const _mArt2 = document.querySelector('#combatMonster .boss-art');
-          if (_mArt2) { _mArt2.classList.add('attacking'); setTimeout(() => _mArt2.classList.remove('attacking'), 500); }
-        }
         _wbPrevPHp = entry.hp.player;
         _wbPrevMHp = entry.hp.monster;
+        // ⭐ 攻擊者 .attacking + 被攻擊者 .hurt（含 reflow 強制重啟）
+        if (entry.type === 'player' || entry.type === 'crit-player') {
+          const _mEl2 = document.getElementById('combatMonster');
+          const _pEl2 = document.getElementById('combatPlayer');
+          if (_mEl2) { _mEl2.classList.remove('hurt'); void _mEl2.offsetWidth; _mEl2.classList.add('hurt'); }
+          if (_pEl2) { _pEl2.classList.remove('attacking'); void _pEl2.offsetWidth; _pEl2.classList.add('attacking'); setTimeout(() => _pEl2.classList.remove('attacking'), 500); }
+        } else if (entry.type === 'monster') {
+          const _pEl2 = document.getElementById('combatPlayer');
+          const _mEl2 = document.getElementById('combatMonster');
+          if (_pEl2) { _pEl2.classList.remove('hurt'); void _pEl2.offsetWidth; _pEl2.classList.add('hurt'); }
+          if (_mEl2) { _mEl2.classList.remove('attacking'); void _mEl2.offsetWidth; _mEl2.classList.add('attacking'); setTimeout(() => _mEl2.classList.remove('attacking'), 500); }
+        }
       }
       if (entry.gauge && typeof updateSpdBar === 'function') {
         updateSpdBar('pSpdBar', 'pSpdText', entry.gauge.p, '行動條');
@@ -12283,7 +12287,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508051938';
+  const APP_VERSION = '20260508052648';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -18078,31 +18082,35 @@ ${b.text}
         if (bpBar) bpBar.style.width = Math.min(100, (entry.hp.bloodPool / Math.max(1, st.maxHp)) * 100) + '%';
         if (bpText) bpText.textContent = `🩸 血池 ${entry.hp.bloodPool}`;
       }
-      // ⭐ 浮動傷害數字 + 精靈動畫
+      // ⭐ 浮動傷害數字 + 精靈動畫（舊版完整邏輯）
       const _mDmg = st.prevMHp - entry.hp.monster;
       const _pDmg = st.prevPHp - entry.hp.player;
       if (_mDmg > 0) {
         const _mEl = document.getElementById('replayMonster');
         if (_mEl) showDamage(_mEl, _mDmg, entry.type === 'crit-player' ? 'crit' : 'normal');
-        const _mArt = document.querySelector('#replayMonster .boss-art');
-        if (_mArt) { _mArt.classList.add('hurt'); setTimeout(() => _mArt.classList.remove('hurt'), 400); }
       }
       if (_pDmg > 0) {
         const _pEl = document.getElementById('replayPlayer');
         if (_pEl) showDamage(_pEl, _pDmg, 'normal');
-        const _pArt = document.querySelector('#replayPlayer .class-art');
-        if (_pArt) { _pArt.classList.add('hurt'); setTimeout(() => _pArt.classList.remove('hurt'), 400); }
       }
       if (entry.hp.player > st.prevPHp) {
         const _pEl = document.getElementById('replayPlayer');
         if (_pEl) showDamage(_pEl, entry.hp.player - st.prevPHp, 'heal');
       }
-      if (entry.type === 'player' || entry.type === 'crit-player') {
-        const _mArt2 = document.querySelector('#replayMonster .boss-art');
-        if (_mArt2) { _mArt2.classList.add('attacking'); setTimeout(() => _mArt2.classList.remove('attacking'), 500); }
-      }
       st.prevPHp = entry.hp.player;
       st.prevMHp = entry.hp.monster;
+      // ⭐ 攻擊者 .attacking + 被攻擊者 .hurt（含 reflow 強制重啟）
+      if (entry.type === 'player' || entry.type === 'crit-player') {
+        const _mEl2 = document.getElementById('replayMonster');
+        const _pEl2 = document.getElementById('replayPlayer');
+        if (_mEl2) { _mEl2.classList.remove('hurt'); void _mEl2.offsetWidth; _mEl2.classList.add('hurt'); }
+        if (_pEl2) { _pEl2.classList.remove('attacking'); void _pEl2.offsetWidth; _pEl2.classList.add('attacking'); setTimeout(() => _pEl2.classList.remove('attacking'), 500); }
+      } else if (entry.type === 'monster') {
+        const _pEl2 = document.getElementById('replayPlayer');
+        const _mEl2 = document.getElementById('replayMonster');
+        if (_pEl2) { _pEl2.classList.remove('hurt'); void _pEl2.offsetWidth; _pEl2.classList.add('hurt'); }
+        if (_mEl2) { _mEl2.classList.remove('attacking'); void _mEl2.offsetWidth; _mEl2.classList.add('attacking'); setTimeout(() => _mEl2.classList.remove('attacking'), 500); }
+      }
     }
     if (entry.gauge && typeof updateSpdBar === 'function') {
       updateSpdBar('replayPSpdBar', 'replayPSpdText', entry.gauge.p, '我的行動條');
@@ -18353,6 +18361,7 @@ ${b.text}
       if (resultHost) resultHost.innerHTML = arenaHtml;
       const logEl = document.getElementById('battleLog');
       let i = 0; let _lastRound;
+      let _dPrevPHp = stats.maxHp; let _dPrevMHp = monster.hp;
       const playStep = () => {
         if (__stopDummyBattle) {
           __stopDummyBattle = false;
@@ -18445,6 +18454,25 @@ ${b.text}
             const bpText = document.getElementById('bloodPoolText');
             if (bpBar) bpBar.style.width = Math.min(100, (entry.hp.bloodPool / Math.max(1, stats.maxHp)) * 100) + '%';
             if (bpText) bpText.textContent = `🩸 血池 ${entry.hp.bloodPool}`;
+          }
+          // ⭐ 浮動傷害 + 攻擊者/受傷者動畫（舊版完整邏輯）
+          const _dmgM = _dPrevMHp - entry.hp.monster;
+          const _dmgP = _dPrevPHp - entry.hp.player;
+          if (_dmgM > 0) { const _el = document.getElementById('combatMonster'); if (_el) showDamage(_el, _dmgM, entry.type === 'crit-player' ? 'crit' : 'normal'); }
+          if (_dmgP > 0) { const _el = document.getElementById('combatPlayer'); if (_el) showDamage(_el, _dmgP, 'normal'); }
+          if (entry.hp.player > _dPrevPHp) { const _el = document.getElementById('combatPlayer'); if (_el) showDamage(_el, entry.hp.player - _dPrevPHp, 'heal'); }
+          _dPrevPHp = entry.hp.player;
+          _dPrevMHp = entry.hp.monster;
+          if (entry.type === 'player' || entry.type === 'crit-player') {
+            const _mEl2 = document.getElementById('combatMonster');
+            const _pEl2 = document.getElementById('combatPlayer');
+            if (_mEl2) { _mEl2.classList.remove('hurt'); void _mEl2.offsetWidth; _mEl2.classList.add('hurt'); }
+            if (_pEl2) { _pEl2.classList.remove('attacking'); void _pEl2.offsetWidth; _pEl2.classList.add('attacking'); setTimeout(() => _pEl2.classList.remove('attacking'), 500); }
+          } else if (entry.type === 'monster') {
+            const _pEl2 = document.getElementById('combatPlayer');
+            const _mEl2 = document.getElementById('combatMonster');
+            if (_pEl2) { _pEl2.classList.remove('hurt'); void _pEl2.offsetWidth; _pEl2.classList.add('hurt'); }
+            if (_mEl2) { _mEl2.classList.remove('attacking'); void _mEl2.offsetWidth; _mEl2.classList.add('attacking'); setTimeout(() => _mEl2.classList.remove('attacking'), 500); }
           }
         }
         if (entry.gauge && typeof updateSpdBar === 'function') {
@@ -18667,31 +18695,35 @@ ${b.text}
             if (bpBar) bpBar.style.width = Math.min(100, (entry.hp.bloodPool / Math.max(1, stats.maxHp)) * 100) + '%';
             if (bpTx) bpTx.textContent = `🩸 血池 ${entry.hp.bloodPool}`;
           }
-          // 浮動傷害 + 精靈動畫
+          // 浮動傷害 + 精靈動畫（舊版完整邏輯）
           const _mDmg = _pbPrevMHp - entry.hp.monster;
           const _pDmg = _pbPrevPHp - entry.hp.player;
           if (_mDmg > 0) {
             const _mEl = document.getElementById('combatMonster');
             if (_mEl) showDamage(_mEl, _mDmg, entry.type === 'crit-player' ? 'crit' : 'normal');
-            const _mArt = document.querySelector('#combatMonster .boss-art');
-            if (_mArt) { _mArt.classList.add('hurt'); setTimeout(() => _mArt.classList.remove('hurt'), 400); }
           }
           if (_pDmg > 0) {
             const _pEl = document.getElementById('combatPlayer');
             if (_pEl) showDamage(_pEl, _pDmg, 'normal');
-            const _pArt = document.querySelector('#combatPlayer .class-art');
-            if (_pArt) { _pArt.classList.add('hurt'); setTimeout(() => _pArt.classList.remove('hurt'), 400); }
           }
           if (entry.hp.player > _pbPrevPHp) {
             const _pEl = document.getElementById('combatPlayer');
             if (_pEl) showDamage(_pEl, entry.hp.player - _pbPrevPHp, 'heal');
           }
-          if (entry.type === 'player' || entry.type === 'crit-player') {
-            const _mArt2 = document.querySelector('#combatMonster .boss-art');
-            if (_mArt2) { _mArt2.classList.add('attacking'); setTimeout(() => _mArt2.classList.remove('attacking'), 500); }
-          }
           _pbPrevPHp = entry.hp.player;
           _pbPrevMHp = entry.hp.monster;
+          // ⭐ 攻擊者 .attacking + 被攻擊者 .hurt（含 reflow 強制重啟）
+          if (entry.type === 'player' || entry.type === 'crit-player') {
+            const _mEl2 = document.getElementById('combatMonster');
+            const _pEl2 = document.getElementById('combatPlayer');
+            if (_mEl2) { _mEl2.classList.remove('hurt'); void _mEl2.offsetWidth; _mEl2.classList.add('hurt'); }
+            if (_pEl2) { _pEl2.classList.remove('attacking'); void _pEl2.offsetWidth; _pEl2.classList.add('attacking'); setTimeout(() => _pEl2.classList.remove('attacking'), 500); }
+          } else if (entry.type === 'monster') {
+            const _pEl2 = document.getElementById('combatPlayer');
+            const _mEl2 = document.getElementById('combatMonster');
+            if (_pEl2) { _pEl2.classList.remove('hurt'); void _pEl2.offsetWidth; _pEl2.classList.add('hurt'); }
+            if (_mEl2) { _mEl2.classList.remove('attacking'); void _mEl2.offsetWidth; _mEl2.classList.add('attacking'); setTimeout(() => _mEl2.classList.remove('attacking'), 500); }
+          }
         }
         if (entry.gauge && typeof updateSpdBar === 'function') {
           updateSpdBar('pSpdBar', 'pSpdText', entry.gauge.p, '我的行動條');
@@ -21136,18 +21168,17 @@ ${b.text}
         }
         _prevPHp = entry.hp.player;
         _prevMHp = entry.hp.monster;
-        // CSS 動畫：精靈圖攻擊 / 受傷效果
-        if (_mDmg > 0) {
-          const _mArt = document.querySelector('#combatMonster .boss-art');
-          if (_mArt) { _mArt.classList.add('hurt'); setTimeout(() => _mArt.classList.remove('hurt'), 400); }
-        }
-        if (_pDmg > 0) {
-          const _pArt = document.querySelector('#combatPlayer .class-art');
-          if (_pArt) { _pArt.classList.add('hurt'); setTimeout(() => _pArt.classList.remove('hurt'), 400); }
-        }
+        // ⭐ 舊版完整動畫：攻擊者 .attacking + 被攻擊者 .hurt（含 reflow 強制重啟）
         if (entry.type === 'player' || entry.type === 'crit-player') {
-          const _mArt2 = document.querySelector('#combatMonster .boss-art');
-          if (_mArt2) { _mArt2.classList.add('attacking'); setTimeout(() => _mArt2.classList.remove('attacking'), 500); }
+          const _mEl2 = document.getElementById('combatMonster');
+          const _pEl2 = document.getElementById('combatPlayer');
+          if (_mEl2) { _mEl2.classList.remove('hurt'); void _mEl2.offsetWidth; _mEl2.classList.add('hurt'); }
+          if (_pEl2) { _pEl2.classList.remove('attacking'); void _pEl2.offsetWidth; _pEl2.classList.add('attacking'); setTimeout(() => _pEl2.classList.remove('attacking'), 500); }
+        } else if (entry.type === 'monster') {
+          const _pEl2 = document.getElementById('combatPlayer');
+          const _mEl2 = document.getElementById('combatMonster');
+          if (_pEl2) { _pEl2.classList.remove('hurt'); void _pEl2.offsetWidth; _pEl2.classList.add('hurt'); }
+          if (_mEl2) { _mEl2.classList.remove('attacking'); void _mEl2.offsetWidth; _mEl2.classList.add('attacking'); setTimeout(() => _mEl2.classList.remove('attacking'), 500); }
         }
       }
       if (entry.gauge && typeof updateSpdBar === 'function') {
