@@ -3446,7 +3446,7 @@
       name: '宵夜鵝', icon: '🍜',
       hp: 2000000, atk: 250, def: 900, spd: 120,
       level: 35, defPen: 0.30,
-      physRes: 0.20, magRes: 0.20,
+      physRes: 0.20, magRes: 0.50,
       critDmgReduct: 0.30,  // ⭐ 最擊坑性：普通暴擊爆傷加成 ×0.70，alwaysCrit/forceCrit/爆頭不受影響
       verb: '宵夜猛擊',
       fixedSkillOrder: true,
@@ -11632,7 +11632,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507114112';
+  const APP_VERSION = '20260507114650';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
