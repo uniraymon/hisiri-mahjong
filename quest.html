@@ -7270,9 +7270,10 @@
             if (skill.markMult && !skill.usesBloodPool) {
               dmg = Math.max(0, dmg) + effMark * skill.markMult;
             }
-            // ⭐ DEF 百分比公式：減傷% = monDef/(monDef+K)；ignoreDef/真傷/爆血 無視防禦
-            if (!skill.usesBloodPool && !skill.ignoreDef) {
-              dmg *= DEF_PIERCE_K / (monDef + DEF_PIERCE_K);
+            // ⭐ DEF 百分比公式：爆血（真傷）完全無視；ignoreDef 技能半效（monDef/2）；一般技能全效
+            if (!skill.usesBloodPool) {
+              const _defForCalc = skill.ignoreDef ? monDef / 2 : monDef;
+              dmg *= DEF_PIERCE_K / (_defForCalc + DEF_PIERCE_K);
             }
             dmg *= perHitFactor;
             // 技能個別 % 加成（從技能樹點到的對應節點）— 只對前 3 個技能有效
@@ -8510,9 +8511,10 @@
               if (skill.markMult && !skill.usesBloodPool) {
                 dmg = Math.max(0, dmg) + effMark * skill.markMult;
               }
-              // ⭐ DEF 百分比公式：減傷% = tgtMonDef/(tgtMonDef+K)；ignoreDef/真傷/爆血 無視防禦
-              if (!skill.usesBloodPool && !skill.ignoreDef) {
-                dmg *= DEF_PIERCE_K / (tgtMonDef + DEF_PIERCE_K);
+              // ⭐ DEF 百分比公式：爆血（真傷）完全無視；ignoreDef 技能半效（tgtMonDef/2）；一般技能全效
+              if (!skill.usesBloodPool) {
+                const _defForCalcM = skill.ignoreDef ? tgtMonDef / 2 : tgtMonDef;
+                dmg *= DEF_PIERCE_K / (_defForCalcM + DEF_PIERCE_K);
               }
               // 爆血（真傷）不吃技能加成與被動加成
               if (!skill.usesBloodPool) {
@@ -11649,7 +11651,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507141314';
+  const APP_VERSION = '20260507141538';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
