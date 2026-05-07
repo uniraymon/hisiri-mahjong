@@ -12155,7 +12155,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508044330';
+  const APP_VERSION = '20260508045333';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -17651,7 +17651,10 @@ ${b.text}
           const time = typeof formatRelativeTime === 'function' ? formatRelativeTime(h.ts) : '';
           const result = h.fled ? '🏃 逃跑' : (h.killed ? '🏆 勝' : '💀 敗');
           const resultColor = h.fled ? '#fbbf24' : (h.killed ? '#86efac' : '#fca5a5');
-          const hasLog = h.id && Array.isArray(h.log) && h.log.length > 0;
+          const hasLog = h.id && (
+            (Array.isArray(h.log) && h.log.length > 0) ||
+            !!localStorage.getItem('fbLog_' + h.id)
+          );
           return `
             <button class="boss-history-row ${h.killed ? 'is-kill' : ''}"
                     style="cursor:${hasLog ? 'pointer' : 'default'};"
@@ -17676,7 +17679,12 @@ ${b.text}
     const list = Array.isArray(r.forageBattleHistory) ? r.forageBattleHistory : [];
     const snap = list.find(h => h.id === historyId);
     if (!snap) { showToast('找不到該戰報'); return; }
-    return _doReplay(snap);
+    // ⭐ log 另存 localStorage（snap 本身可能無 log 欄位，Firestore 同步後被剝掉）
+    let log = snap.log || [];
+    if (!log.length) {
+      try { log = JSON.parse(localStorage.getItem('fbLog_' + historyId) || '[]'); } catch(e) { log = []; }
+    }
+    return _doReplay({ ...snap, log });
   }
   window.replayForageFight = replayForageFight;
 
@@ -20675,184 +20683,95 @@ ${b.text}
       }
     }
     const result = autoFight(me, monster);
-
-    // 渲染戰鬥場景，依序播放
     const stats = computeStats(me);
-    const arenaHtml = `
-      <div class="battle-arena" id="battleArena">
-        <div class="combatant" id="combatPlayer">
-          <div class="combatant-icon">${CLASSES[rpg.class].image ? `<img class="class-art" src="${CLASSES[rpg.class].image}" alt="${CLASSES[rpg.class].name}">` : CLASSES[rpg.class].icon}</div>
-          <div class="combatant-name">${escapeHtml(me.name)} Lv${rpg.level}</div>
-          <div class="combatant-hp-track"><div class="combatant-hp-fill" id="pHpBar" style="width:100%"></div></div>
-          <div class="combatant-hp-text" id="pHpText">${stats.maxHp}/${stats.maxHp}</div>
-          <div class="combatant-hp-track" style="margin-top:2px;"><div class="combatant-hp-fill" id="pMpBar" style="width:100%; background:linear-gradient(90deg,#93c5fd,#3b82f6);"></div></div>
-          <div class="combatant-hp-text" id="pMpText" style="color:#1e40af;">MP ${stats.maxMp}/${stats.maxMp}</div>
-          ${rpg.class === 'warrior' ? `
-          <div class="combatant-hp-track" style="margin-top:2px; background:#3f0000;"><div class="combatant-hp-fill" id="bloodPoolBar" style="width:0%; background:linear-gradient(90deg,#ef4444,#991b1b);"></div></div>
-          <div class="combatant-hp-text" id="bloodPoolText" style="color:#ef4444;">🩸 血池 0</div>` : ''}
-          <div class="combatant-spd-track"><div class="combatant-spd-fill" id="pSpdBar" style="width:0%"></div></div>
-          <div class="combatant-spd-text" id="pSpdText">⏱ 行動條 0%</div>
-        </div>
-        <div class="vs-icon">⚔️</div>
-        <div class="combatant" id="combatMonster">
-          <div class="combatant-icon">${monster.art ? `<img class="boss-art" src="${monster.art}" alt="${monster.name}">` : monster.icon}</div>
-          <div class="combatant-name">${monster.name} Lv${monster.level}</div>
-          ${monster.ability ? `<div style="font-size:9px; color:#7c3aed; font-weight:600; margin-bottom:2px;">${describeAbility(monster.ability)}</div>` : ''}
-          ${describeResist(monster) ? `<div style="font-size:9px; color:#d97706; font-weight:600; margin-bottom:2px;">${describeResist(monster)}</div>` : ''}
-          <div class="combatant-hp-track"><div class="combatant-hp-fill" id="mHpBar" style="width:100%"></div></div>
-          <div class="combatant-hp-text" id="mHpText">${monster.hp}/${monster.maxHp}</div>
-          <div class="combatant-spd-track" style="margin-top:14px;"><div class="combatant-spd-fill" id="mSpdBar" style="width:0%"></div></div>
-          <div class="combatant-spd-text" id="mSpdText">⏱ 行動條 0%</div>
-        </div>
-      </div>
-      <div class="battle-log" id="battleLog"></div>
-    `;
-    document.getElementById('fightResult').innerHTML = arenaHtml;
 
-    // 播放 log
-    const logEl = document.getElementById('battleLog');
-    let i = 0; let _lastRound;
-    let _prevPHp = stats.maxHp; let _prevMHp = monster.maxHp;
-    const playStep = () => {
-      if (i >= result.log.length) {
-        // ⭐ try-finally 保證 __fightInProgress 一定被解鎖，不讓任何例外永久卡住按鈕
-        try {
-          // 結算
-          finalizeFight(me, monster, result, stats);
-          snapshotLastFight(monster, result);
-          // ⭐ 把這場探索 / 打怪戰鬥存到「最近 5 場」（只給自己看）
-          try {
-            const dmgDealt = Math.max(0, (monster.maxHp || monster.hp) - (result.mHpFinal || 0));
-            const battleSnap = {
-              id: 'fr_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-              ts: Date.now(),
-              bossId: monster.id || 'forage_' + zoneId,
-              bossName: monster.name,
-              bossIcon: monster.icon,
-              bossLevel: monster.level,
-              dmgDealt,
-              killed: !!result.won,
-              fled: !!result.fled,
-              playerSnap: {
-                name: me.name,
-                avatar: CLASSES[rpg.class]?.icon || '🎴',
-                level: rpg.level,
-                maxHp: stats.maxHp,
-                maxMp: stats.maxMp,
-                class: rpg.class,
-                baseCrit: result.archerStats?.baseCrit,
-              },
-              monsterSnap: {
-                name: monster.name,
-                icon: monster.icon,
-                level: monster.level,
-                maxHp: monster.maxHp || monster.hp,
-                ability: monster.ability,
-              },
-              log: (result.log || []).slice(0, 1000),
-              zoneId, layerId,
-              isForage: true,
-            };
-            rpg.forageBattleHistory = Array.isArray(rpg.forageBattleHistory) ? rpg.forageBattleHistory : [];
-            rpg.forageBattleHistory.unshift(battleSnap);
-            if (rpg.forageBattleHistory.length > 5) rpg.forageBattleHistory.length = 5;
-            saveData();
-            renderForageHistory();
-          } catch (e) { console.warn('snapshot forage fight:', e); }
-          // 在戰鬥結果下方加一個小回報按鈕
-          try {
-            const fr = document.getElementById('fightResult');
-            if (fr) {
-              const btn = document.createElement('button');
-              btn.className = 'btn btn-secondary';
-              btn.style.cssText = 'margin-top:8px; padding:6px 10px; font-size:12px; background:#fef2f2; color:#991b1b; border:1px dashed #f87171;';
-              btn.textContent = '🐛 這場有 BUG？回報一下';
-              btn.onclick = () => openBugReport(true);
-              fr.appendChild(btn);
-            }
-          } catch (e) {}
-        } catch (e) {
-          console.error('[onFight] playStep 結算出錯，強制解鎖按鈕:', e);
-        } finally {
-          __fightInProgress = false;
-          if (typeof updateStaminaUI === 'function') updateStaminaUI(); // ⭐ 立刻解鎖按鈕（不等 setInterval 1s 才更新）
+    // ⭐ 即時結算（不播動畫）—— 結果直接顯示，log 存 localStorage 供事後重播
+    const _frSnap = { id: null };
+    document.getElementById('fightResult').innerHTML = '';
+    try {
+      // 記錄戰前等級（finalizeFight 可能升級，playerSnap 應記戰時等級）
+      const _preLevel = rpg.level;
+      const _preClass = rpg.class;
+
+      finalizeFight(me, monster, result, stats);
+      snapshotLastFight(monster, result);
+
+      // 存戰報到「最近 5 場」
+      try {
+        const _sid = 'fr_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+        _frSnap.id = _sid;
+        const dmgDealt = Math.max(0, (monster.maxHp || monster.hp) - (result.mHpFinal || 0));
+        const battleSnap = {
+          id: _sid,
+          ts: Date.now(),
+          bossId: monster.id || 'forage_' + zoneId,
+          bossName: monster.name,
+          bossIcon: monster.icon,
+          bossLevel: monster.level,
+          dmgDealt,
+          killed: !!result.won,
+          fled: !!result.fled,
+          playerSnap: {
+            name: me.name,
+            avatar: CLASSES[_preClass]?.icon || '🎴',
+            level: _preLevel,
+            maxHp: stats.maxHp,
+            maxMp: stats.maxMp,
+            class: _preClass,
+            baseCrit: result.archerStats?.baseCrit,
+          },
+          monsterSnap: {
+            name: monster.name,
+            icon: monster.icon,
+            level: monster.level,
+            maxHp: monster.maxHp || monster.hp,
+            ability: monster.ability,
+          },
+          zoneId, layerId,
+          isForage: true,
+        };
+        // log 另存 localStorage，不塞進 Firestore
+        try { localStorage.setItem('fbLog_' + _sid, JSON.stringify((result.log || []).slice(0, 1000))); } catch(e) {}
+        // 存到 live player（finalizeFight 已重抓 live ref）
+        const _liveRpgFr = getRpg(getPlayer(me.id) || me);
+        _liveRpgFr.forageBattleHistory = Array.isArray(_liveRpgFr.forageBattleHistory) ? _liveRpgFr.forageBattleHistory : [];
+        _liveRpgFr.forageBattleHistory.unshift(battleSnap);
+        if (_liveRpgFr.forageBattleHistory.length > 5) {
+          const _dropped = _liveRpgFr.forageBattleHistory.splice(5);
+          for (const _d of _dropped) { try { localStorage.removeItem('fbLog_' + _d.id); } catch(e) {} }
         }
-        return;
-      }
-      const entry = result.log[i++];
-      if (entry.round !== undefined && entry.round !== _lastRound) {
-        _lastRound = entry.round;
-        const _sep = document.createElement('div');
-        _sep.style.cssText = 'text-align:center;color:#475569;font-size:10px;padding:3px 0;border-top:1px solid #1e293b;margin:3px 0;';
-        _sep.textContent = `── 回合 ${entry.round} ──`;
-        logEl.appendChild(_sep);
-      }
-      const cls = entry.type === 'crit-player' ? 'log-crit'
-        : entry.type === 'player' ? 'log-player'
-        : entry.type === 'monster' ? 'log-monster'
-        : 'log-system';
-      const div = document.createElement('div');
-      div.className = `log-line ${cls}`;
-      div.textContent = entry.text;
-      logEl.appendChild(div);
-      logEl.scrollTop = logEl.scrollHeight;
-      // 更新 HP / MP / 血池 條
-      if (entry.hp) {
-        document.getElementById('pHpBar').style.width = (entry.hp.player / stats.maxHp * 100) + '%';
-        document.getElementById('pHpText').textContent = `${entry.hp.player}/${stats.maxHp}`;
-        document.getElementById('mHpBar').style.width = (entry.hp.monster / monster.maxHp * 100) + '%';
-        document.getElementById('mHpText').textContent = `${entry.hp.monster}/${monster.maxHp}`;
-        if (entry.hp.mp != null) {
-          document.getElementById('pMpBar').style.width = (entry.hp.mp / stats.maxMp * 100) + '%';
-          document.getElementById('pMpText').textContent = `MP ${entry.hp.mp}/${stats.maxMp}`;
+        saveData();
+        renderForageHistory();
+      } catch (e) { console.warn('snapshot forage fight:', e); }
+
+      // 加「查看戰鬥記錄」+「回報 BUG」按鈕
+      try {
+        const fr = document.getElementById('fightResult');
+        if (fr) {
+          const _row = document.createElement('div');
+          _row.style.cssText = 'display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:8px;';
+          if (_frSnap.id) {
+            const _replayBtn = document.createElement('button');
+            _replayBtn.style.cssText = 'background:linear-gradient(135deg,#1e3a5f,#2563eb); color:#fff; border:none; padding:6px 18px; border-radius:8px; font-size:12px; cursor:pointer; font-family:inherit; font-weight:700; box-shadow:0 2px 0 #1e40af;';
+            _replayBtn.textContent = '▶ 查看戰鬥記錄';
+            _replayBtn.onclick = () => replayForageFight(_frSnap.id);
+            _row.appendChild(_replayBtn);
+          }
+          const _bugBtn = document.createElement('button');
+          _bugBtn.className = 'btn btn-secondary';
+          _bugBtn.style.cssText = 'padding:6px 10px; font-size:12px; background:#fef2f2; color:#991b1b; border:1px dashed #f87171;';
+          _bugBtn.textContent = '🐛 這場有 BUG？回報一下';
+          _bugBtn.onclick = () => openBugReport(true);
+          _row.appendChild(_bugBtn);
+          fr.appendChild(_row);
         }
-        if (entry.hp.bloodPool != null) {
-          const bpBar = document.getElementById('bloodPoolBar');
-          const bpText = document.getElementById('bloodPoolText');
-          if (bpBar) bpBar.style.width = Math.min(100, (entry.hp.bloodPool / Math.max(1, stats.maxHp)) * 100) + '%';
-          if (bpText) bpText.textContent = `🩸 血池 ${entry.hp.bloodPool}`;
-        }
-        // 浮動傷害數字
-        const _mDmg = _prevMHp - entry.hp.monster;
-        const _pDmg = _prevPHp - entry.hp.player;
-        if (_mDmg > 0) {
-          const _mEl = document.getElementById('combatMonster');
-          if (_mEl) showDamage(_mEl, _mDmg, entry.type === 'crit-player' ? 'crit' : 'normal');
-        }
-        if (_pDmg > 0) {
-          const _pEl = document.getElementById('combatPlayer');
-          if (_pEl) showDamage(_pEl, _pDmg, 'normal');
-        }
-        if (entry.hp.player > _prevPHp) {
-          const _pEl = document.getElementById('combatPlayer');
-          if (_pEl) showDamage(_pEl, entry.hp.player - _prevPHp, 'heal');
-        }
-        _prevPHp = entry.hp.player; _prevMHp = entry.hp.monster;
-        // shake 動畫 + 攻擊動畫
-        if (entry.type === 'player' || entry.type === 'crit-player') {
-          const m = document.getElementById('combatMonster');
-          m.classList.remove('hurt'); void m.offsetWidth; m.classList.add('hurt');
-          const p = document.getElementById('combatPlayer');
-          p.classList.remove('attacking'); void p.offsetWidth; p.classList.add('attacking');
-          setTimeout(() => p.classList.remove('attacking'), 500);
-        } else if (entry.type === 'monster') {
-          const p = document.getElementById('combatPlayer');
-          p.classList.remove('hurt'); void p.offsetWidth; p.classList.add('hurt');
-          const m = document.getElementById('combatMonster');
-          m.classList.remove('attacking'); void m.offsetWidth; m.classList.add('attacking');
-          setTimeout(() => m.classList.remove('attacking'), 500);
-        }
-      }
-      // ⭐ 行動條（純視覺，跑得比實際戰鬥快）
-      if (entry.gauge && typeof updateSpdBar === 'function') {
-        updateSpdBar('pSpdBar', 'pSpdText', entry.gauge.p, '我的行動條');
-        updateSpdBar('mSpdBar', 'mSpdText', entry.gauge.m, '怪行動條');
-      }
-      const _nx = result.log[i];
-      const _sr = _nx && entry.round !== undefined && entry.round === _nx.round;
-      setTimeout(playStep, _sr ? 80 : 550);
-    };
-    playStep();
+      } catch (e) {}
+    } catch (e) {
+      console.error('[onFight] 結算出錯，強制解鎖按鈕:', e);
+    } finally {
+      __fightInProgress = false;
+      if (typeof updateStaminaUI === 'function') updateStaminaUI();
+    }
   }
   window.onFight = onFight;
 
