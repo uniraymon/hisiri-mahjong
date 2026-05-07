@@ -4018,7 +4018,7 @@
   ];
 
   // ============================================================
-  // 💎 寶石系統 — 7 種 × 3 階 = 21 個，另有原石（合成材料）
+  // 💎 寶石系統 — 7 種 × 4 階 = 28 個，另有原石（合成材料）
   // 孔數：稀有(rare)=1 孔, 傳說/金(legendary/gold)=2 孔; 武器額外 +1
   // 轉蛋：5,000 鵝鵝幣 / 次，98% 一階晶石，2% 原石
   // 合成：4 個一階 → 1 個二階；3 個二階 → 1 個三階
@@ -4054,8 +4054,16 @@
     gem_crit_1: { id:'gem_crit_1', name:'暴擊晶石', icon:'⭐', grade:1, type:'crit', critChance:0.02, desc:'蘊含微弱暴擊能量的星形晶石' },
     gem_crit_2: { id:'gem_crit_2', name:'暴擊寶石', icon:'⭐', grade:2, type:'crit', critChance:0.05, desc:'暴擊能量濃縮的星形寶石' },
     gem_crit_3: { id:'gem_crit_3', name:'暴擊鑽石', icon:'⭐', grade:3, type:'crit', critChance:0.10, desc:'暴擊能量的極致星形結晶' },
+    gem_crit_4: { id:'gem_crit_4', name:'暴擊神石', icon:'⭐', grade:4, type:'crit', critChance:0.18, desc:'神聖暴擊能量的終極凝聚' },
+    // ── 四階神石 ── 三個三階 → 一個四階
+    gem_atk_4:  { id:'gem_atk_4',  name:'攻擊神石', icon:'🔴', grade:4, type:'atk',  atk:50,           desc:'神聖攻擊力量的終極凝聚' },
+    gem_mark_4: { id:'gem_mark_4', name:'法術神石', icon:'🟣', grade:4, type:'mark', mark:50,          desc:'神聖法術能量的終極凝聚' },
+    gem_def_4:  { id:'gem_def_4',  name:'防禦神石', icon:'🔵', grade:4, type:'def',  def:40,           desc:'神聖防禦力量的終極凝聚' },
+    gem_spd_4:  { id:'gem_spd_4',  name:'速度神石', icon:'🟡', grade:4, type:'spd',  spd:30,           desc:'神聖速度能量的終極凝聚' },
+    gem_hp_4:   { id:'gem_hp_4',   name:'生命神石', icon:'❤️', grade:4, type:'hp',   hp:500,           desc:'神聖生命力量的終極凝聚' },
+    gem_mp_4:   { id:'gem_mp_4',   name:'魔力神石', icon:'🔹', grade:4, type:'mp',   mp:55,            desc:'神聖魔力能量的終極凝聚' },
     // ── 原石（合成材料）── 轉蛋 2% 出貨
-    gem_raw:    { id:'gem_raw',    name:'原石',     icon:'🪨', grade:0, type:'raw',                   desc:'未加工的魔力石英，合成時可代替任意一階晶石' },
+    gem_raw:    { id:'gem_raw',    name:'原石',     icon:'🪨', grade:0, type:'raw',                    desc:'未加工的魔力石英，合成時可代替任意一階晶石' },
   };
 
   // 職業 → 該職業專屬套裝（探險精英怪會掉這個）
@@ -11743,7 +11751,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507201202';
+  const APP_VERSION = '20260507202926';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -15117,7 +15125,7 @@ ${b.text}
         <div style="display:flex; flex-wrap:wrap; gap:4px;">`;
       for (const gem of gems.sort((a,b) => a.grade - b.grade)) {
         const cnt = inv[gem.id] || 0;
-        const gc = ['', '#9ca3af', '#3b82f6', '#a855f7'][gem.grade] || '#9ca3af';
+        const gc = ['', '#9ca3af', '#3b82f6', '#a855f7', '#f59e0b'][gem.grade] || '#9ca3af';
         gemListHtml += `<button onclick="doSocketGem('${slot}',${socketIdx},'${gem.id}')" style="display:inline-flex; flex-direction:column; align-items:center; padding:6px 8px; background:linear-gradient(135deg,#f3e8ff,#ede9fe); border:2px solid ${gc}; border-radius:10px; cursor:pointer; min-width:58px;" title="${escapeHtml(gemStatText(gem))}">
           <span style="font-size:20px;">${gem.icon}</span>
           <span style="font-size:9px; font-weight:700; color:${gc};">${escapeHtml(gem.name)}</span>
@@ -15205,20 +15213,31 @@ ${b.text}
     const coins = getCoins(me.id);
 
     // 轉蛋區塊
-    const can1  = coins >= 5000;
-    const can10 = coins >= 50000;
+    const can1   = coins >= 5000;
+    const can10  = coins >= 50000;
+    const can100 = coins >= 500000;
+    const gachaCoin = getGachaCoin(me.id);
+    const canF1   = gachaCoin >= 1;
+    const canF10  = gachaCoin >= 10;
+    const canF100 = gachaCoin >= 100;
     const gachaHtml = `
-      <div style="background:linear-gradient(135deg,#7c3aed,#c026d3); border-radius:12px; padding:10px 14px; margin-bottom:12px; text-align:center;">
-        <div style="font-weight:800; font-size:14px; color:#fff; margin-bottom:2px;">🎰 寶石轉蛋</div>
-        <div style="font-size:11px; color:#e9d5ff; margin-bottom:6px;">5,000 鵝鵝幣 / 次 · 98% 一階晶石 · 2% 原石</div>
-        <div style="font-size:11px; color:#d8b4fe; margin-bottom:8px;">目前鵝鵝幣：<b style="color:#fff;">${coins.toLocaleString()}</b></div>
-        <div style="display:flex; gap:6px; justify-content:center; flex-wrap:wrap;">
-          <button onclick="doGemGacha(1)" style="padding:7px 10px; background:${can1 ? '#fff' : '#6b7280'}; color:${can1 ? '#7c3aed' : '#d1d5db'}; font-weight:800; font-size:12px; border:none; border-radius:20px; cursor:${can1 ? 'pointer' : 'not-allowed'};">
-            💎 ×1（5,000 🪙）
-          </button>
-          <button onclick="doGemGacha(10)" style="padding:7px 10px; background:${can10 ? '#fbbf24' : '#6b7280'}; color:${can10 ? '#7c2d12' : '#d1d5db'}; font-weight:800; font-size:12px; border:none; border-radius:20px; cursor:${can10 ? 'pointer' : 'not-allowed'};">
-            💎 ×10（50,000 🪙）
-          </button>
+      <div style="background:linear-gradient(135deg,#7c3aed,#c026d3); border-radius:12px; padding:10px 14px; margin-bottom:8px; text-align:center;">
+        <div style="font-weight:800; font-size:14px; color:#fff; margin-bottom:2px;">🎰 鵝鵝幣轉蛋</div>
+        <div style="font-size:11px; color:#e9d5ff; margin-bottom:4px;">5,000 鵝鵝幣 / 次 · 98% 一階晶石 · 2% 原石</div>
+        <div style="font-size:11px; color:#d8b4fe; margin-bottom:6px;">持有：<b style="color:#fff;">${coins.toLocaleString()}</b> 🪙</div>
+        <div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
+          <button onclick="doGemGacha(1)" style="padding:6px 10px; background:${can1 ? '#fff' : '#6b7280'}; color:${can1 ? '#7c3aed' : '#d1d5db'}; font-weight:800; font-size:11px; border:none; border-radius:20px; cursor:${can1 ? 'pointer' : 'not-allowed'};">×1（5k）</button>
+          <button onclick="doGemGacha(10)" style="padding:6px 10px; background:${can10 ? '#fbbf24' : '#6b7280'}; color:${can10 ? '#7c2d12' : '#d1d5db'}; font-weight:800; font-size:11px; border:none; border-radius:20px; cursor:${can10 ? 'pointer' : 'not-allowed'};">×10（50k）</button>
+          <button onclick="doGemGacha(100)" style="padding:6px 10px; background:${can100 ? 'linear-gradient(135deg,#fbbf24,#f97316)' : '#6b7280'}; color:${can100 ? '#fff' : '#d1d5db'}; font-weight:800; font-size:11px; border:none; border-radius:20px; cursor:${can100 ? 'pointer' : 'not-allowed'};">✨ 百抽（500k）</button>
+        </div>
+      </div>
+      <div style="background:linear-gradient(135deg,#065f46,#047857); border-radius:12px; padding:8px 14px; margin-bottom:12px; text-align:center;">
+        <div style="font-weight:800; font-size:13px; color:#fff; margin-bottom:2px;">🎟 扭蛋幣免費轉蛋</div>
+        <div style="font-size:11px; color:#a7f3d0; margin-bottom:6px;">持有：<b style="color:#fff;">${gachaCoin}</b> 枚（擊殺世界王獲得）</div>
+        <div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
+          <button onclick="doGemGachaFree(1)" style="padding:6px 10px; background:${canF1 ? '#fff' : '#6b7280'}; color:${canF1 ? '#065f46' : '#d1d5db'}; font-weight:800; font-size:11px; border:none; border-radius:20px; cursor:${canF1 ? 'pointer' : 'not-allowed'};">🎟 ×1</button>
+          <button onclick="doGemGachaFree(10)" style="padding:6px 10px; background:${canF10 ? '#6ee7b7' : '#6b7280'}; color:${canF10 ? '#064e3b' : '#d1d5db'}; font-weight:800; font-size:11px; border:none; border-radius:20px; cursor:${canF10 ? 'pointer' : 'not-allowed'};">🎟 ×10</button>
+          <button onclick="doGemGachaFree(100)" style="padding:6px 10px; background:${canF100 ? 'linear-gradient(135deg,#6ee7b7,#34d399)' : '#6b7280'}; color:${canF100 ? '#064e3b' : '#d1d5db'}; font-weight:800; font-size:11px; border:none; border-radius:20px; cursor:${canF100 ? 'pointer' : 'not-allowed'};">✨ 🎟 百抽</button>
         </div>
       </div>
     `;
@@ -15246,9 +15265,10 @@ ${b.text}
             <div style="display:flex; flex-wrap:wrap; gap:4px;">`;
           for (const gem of gems.sort((a,b) => a.grade - b.grade)) {
             const cnt = inv[gem.id] || 0;
-            const gc = ['', '#9ca3af', '#3b82f6', '#a855f7'][gem.grade] || '#9ca3af';
-            const gradeName = ['', '一階', '二階', '三階'][gem.grade] || '';
-            bodyHtml += `<div style="display:inline-flex; flex-direction:column; align-items:center; padding:6px 7px; background:linear-gradient(135deg,#fafafa,#f3e8ff); border:1.5px solid ${gc}; border-radius:8px; min-width:54px;" title="${escapeHtml(gem.desc)}">
+            const gc = ['', '#9ca3af', '#3b82f6', '#a855f7', '#f59e0b'][gem.grade] || '#9ca3af';
+            const gradeName = ['', '一階', '二階', '三階', '四階'][gem.grade] || '';
+            const bg4 = gem.grade === 4 ? 'linear-gradient(135deg,#fffbeb,#fef3c7)' : 'linear-gradient(135deg,#fafafa,#f3e8ff)';
+            bodyHtml += `<div style="display:inline-flex; flex-direction:column; align-items:center; padding:6px 7px; background:${bg4}; border:1.5px solid ${gc}; border-radius:8px; min-width:54px;" title="${escapeHtml(gem.desc)}">
               <span style="font-size:20px;">${gem.icon}</span>
               <span style="font-size:9px; font-weight:700; color:${gc};">${escapeHtml(gem.name)}</span>
               <span style="font-size:8px; color:#6b7280;">${gem.grade > 0 ? gemStatText(gem) : gem.desc}</span>
@@ -15278,43 +15298,97 @@ ${b.text}
   function buildCombineUI(rpg) {
     const inv = rpg.gemInventory || {};
     const rawCount = inv['gem_raw'] || 0;
-    let html = `<div style="font-size:11px; color:#5b3d62; padding:6px 10px; background:#fef3c7; border-radius:8px; margin-bottom:10px; border:1px dashed #f59e0b;">
-      ⚗️ <b>4 個一階 → 1 個二階</b>　·　<b>3 個二階 → 1 個三階</b><br>
-      🪨 <b>3 個一階 + 1 個原石 → 1 個二階</b>（同種）${rawCount > 0 ? `　<span style="color:#a855f7; font-weight:700;">原石 ×${rawCount}</span>` : ''}
+    // 計算是否有任何可合成的組合（給一鍵合成按鈕用）
+    let canAutoMerge = false;
+    for (const type of GEM_TYPES_LIST) {
+      if ((inv[`gem_${type}_1`]||0) >= 4) { canAutoMerge = true; break; }
+      if ((inv[`gem_${type}_2`]||0) >= 3) { canAutoMerge = true; break; }
+      if ((inv[`gem_${type}_3`]||0) >= 3) { canAutoMerge = true; break; }
+    }
+    let html = `
+    <button onclick="doAutoMergeAll()" ${canAutoMerge ? '' : 'disabled'} style="width:100%; padding:9px; margin-bottom:10px; border-radius:10px; font-size:13px; font-weight:800; cursor:${canAutoMerge ? 'pointer' : 'not-allowed'}; border:none; ${canAutoMerge ? 'background:linear-gradient(135deg,#7c3aed,#c026d3); color:#fff; box-shadow:0 3px 0 #6b21a8;' : 'background:#f3f4f6; color:#9ca3af;'}">
+      ⚗️ 一鍵合成（自動升到最高階）
+    </button>
+    <div style="font-size:11px; color:#5b3d62; padding:6px 10px; background:#fef3c7; border-radius:8px; margin-bottom:10px; border:1px dashed #f59e0b;">
+      ⚗️ <b>4×一階→1×二階</b>　·　<b>3×二階→1×三階</b>　·　<b>3×三階→1×四階</b><br>
+      🪨 <b>3×一階 + 1×原石 → 1×二階</b>（同種）${rawCount > 0 ? `　<span style="color:#a855f7; font-weight:700;">原石 ×${rawCount}</span>` : ''}
     </div>`;
 
     for (const type of GEM_TYPES_LIST) {
       const g1 = GEMS[`gem_${type}_1`];
       const g2 = GEMS[`gem_${type}_2`];
       const g3 = GEMS[`gem_${type}_3`];
+      const g4 = GEMS[`gem_${type}_4`];
       const cnt1 = inv[g1.id] || 0;
       const cnt2 = inv[g2.id] || 0;
       const cnt3 = inv[g3.id] || 0;
+      const cnt4 = g4 ? (inv[g4.id] || 0) : 0;
       const can4to1  = cnt1 >= 4;
       const can3raw  = cnt1 >= 3 && rawCount >= 1;
       const can3to2  = cnt2 >= 3;
+      const can3to3  = g4 && cnt3 >= 3;
       const tc = { atk:'#ef4444', mark:'#a855f7', def:'#3b82f6', spd:'#ca8a04', hp:'#f43f5e', mp:'#0ea5e9', crit:'#f97316' }[type] || '#7c3aed';
+      const cntText = g4 ? `一×${cnt1} · 二×${cnt2} · 三×${cnt3} · <span style="color:#f59e0b; font-weight:700;">四×${cnt4}</span>` : `一×${cnt1} · 二×${cnt2} · 三×${cnt3}`;
       html += `<div style="border:1.5px solid ${tc}30; border-radius:10px; padding:8px 10px; margin-bottom:8px; background:${tc}08;">
         <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
           <span style="font-size:16px;">${g1.icon}</span>
           <span style="font-size:12px; font-weight:700; color:${tc};">${gemTypeName(type)}</span>
-          <span style="margin-left:auto; font-size:10px; color:#6b7280;">一×${cnt1} · 二×${cnt2} · 三×${cnt3}</span>
+          <span style="margin-left:auto; font-size:10px; color:#6b7280;">${cntText}</span>
         </div>
         <div style="display:flex; flex-wrap:wrap; gap:4px;">
-          <button onclick="doCombineGem('${type}',1,'normal')" ${can4to1 ? '' : 'disabled'} style="flex:1; min-width:90px; padding:6px 4px; font-size:10px; border-radius:7px; ${can4to1 ? `background:${tc}; color:#fff; cursor:pointer; border:none; font-weight:700;` : 'background:#f3f4f6; color:#9ca3af; border:1px solid #e5e7eb;'}">
-            ${g1.icon}×4 → ${g2.icon}×1
+          <button onclick="doCombineGem('${type}',1,'normal')" ${can4to1 ? '' : 'disabled'} style="flex:1; min-width:80px; padding:6px 4px; font-size:10px; border-radius:7px; ${can4to1 ? `background:${tc}; color:#fff; cursor:pointer; border:none; font-weight:700;` : 'background:#f3f4f6; color:#9ca3af; border:1px solid #e5e7eb;'}">
+            ${g1.icon}×4→${g2.icon}
           </button>
-          <button onclick="doCombineGem('${type}',1,'raw')" ${can3raw ? '' : 'disabled'} style="flex:1; min-width:90px; padding:6px 4px; font-size:10px; border-radius:7px; ${can3raw ? `background:${tc}; color:#fff; cursor:pointer; border:none; font-weight:700;` : 'background:#f3f4f6; color:#9ca3af; border:1px solid #e5e7eb;'}">
-            ${g1.icon}×3+🪨 → ${g2.icon}×1
+          <button onclick="doCombineGem('${type}',1,'raw')" ${can3raw ? '' : 'disabled'} style="flex:1; min-width:80px; padding:6px 4px; font-size:10px; border-radius:7px; ${can3raw ? `background:${tc}; color:#fff; cursor:pointer; border:none; font-weight:700;` : 'background:#f3f4f6; color:#9ca3af; border:1px solid #e5e7eb;'}">
+            ${g1.icon}×3+🪨→${g2.icon}
           </button>
-          <button onclick="doCombineGem('${type}',2,'normal')" ${can3to2 ? '' : 'disabled'} style="flex:1; min-width:90px; padding:6px 4px; font-size:10px; border-radius:7px; ${can3to2 ? `background:${tc}; color:#fff; cursor:pointer; border:none; font-weight:700;` : 'background:#f3f4f6; color:#9ca3af; border:1px solid #e5e7eb;'}">
-            ${g2.icon}×3 → ${g3.icon}×1
+          <button onclick="doCombineGem('${type}',2,'normal')" ${can3to2 ? '' : 'disabled'} style="flex:1; min-width:80px; padding:6px 4px; font-size:10px; border-radius:7px; ${can3to2 ? `background:${tc}; color:#fff; cursor:pointer; border:none; font-weight:700;` : 'background:#f3f4f6; color:#9ca3af; border:1px solid #e5e7eb;'}">
+            ${g2.icon}×3→${g3.icon}
           </button>
+          ${g4 ? `<button onclick="doCombineGem('${type}',3,'normal')" ${can3to3 ? '' : 'disabled'} style="flex:1; min-width:80px; padding:6px 4px; font-size:10px; border-radius:7px; ${can3to3 ? `background:linear-gradient(135deg,${tc},#f59e0b); color:#fff; cursor:pointer; border:none; font-weight:700;` : 'background:#f3f4f6; color:#9ca3af; border:1px solid #e5e7eb;'}">
+            ${g3.icon}×3→<span style="color:#fbbf24;">✨</span>${g4.icon}
+          </button>` : ''}
         </div>
       </div>`;
     }
     return html;
   }
+
+  // ⭐ 一鍵合成：自動把所有可合成的寶石升到最高階
+  function doAutoMergeAll() {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const inv = rpg.gemInventory || {};
+    let totalMerges = 0;
+    for (const type of GEM_TYPES_LIST) {
+      // 一階 → 二階（4 個一次）
+      while ((inv[`gem_${type}_1`] || 0) >= 4 && GEMS[`gem_${type}_2`]) {
+        inv[`gem_${type}_1`] -= 4;
+        if ((inv[`gem_${type}_1`] || 0) <= 0) delete inv[`gem_${type}_1`];
+        inv[`gem_${type}_2`] = (inv[`gem_${type}_2`] || 0) + 1;
+        totalMerges++;
+      }
+      // 二階 → 三階（3 個一次）
+      while ((inv[`gem_${type}_2`] || 0) >= 3 && GEMS[`gem_${type}_3`]) {
+        inv[`gem_${type}_2`] -= 3;
+        if ((inv[`gem_${type}_2`] || 0) <= 0) delete inv[`gem_${type}_2`];
+        inv[`gem_${type}_3`] = (inv[`gem_${type}_3`] || 0) + 1;
+        totalMerges++;
+      }
+      // 三階 → 四階（3 個一次）
+      while ((inv[`gem_${type}_3`] || 0) >= 3 && GEMS[`gem_${type}_4`]) {
+        inv[`gem_${type}_3`] -= 3;
+        if ((inv[`gem_${type}_3`] || 0) <= 0) delete inv[`gem_${type}_3`];
+        inv[`gem_${type}_4`] = (inv[`gem_${type}_4`] || 0) + 1;
+        totalMerges++;
+      }
+    }
+    if (totalMerges === 0) { showToast('沒有可合成的材料（一階需 ≥4，二/三階需 ≥3）'); return; }
+    saveData();
+    showToast(`⚗️ 一鍵合成完成！共合成 ${totalMerges} 次`);
+    renderGemModal();
+  }
+  window.doAutoMergeAll = doAutoMergeAll;
 
   function doCombineGem(type, fromGrade, mode) {
     const me = getMe(); if (!me) return;
@@ -15349,6 +15423,37 @@ ${b.text}
     return GEMS[`gem_${type}_1`];
   }
 
+  // ⭐ 多次轉蛋結果顯示（共用）
+  function _showGachaResults(results, titleIcon, titleLabel) {
+    const tally = {};
+    let rawCount = 0;
+    for (const g of results) {
+      tally[g.id] = (tally[g.id] || 0) + 1;
+      if (g.type === 'raw') rawCount++;
+    }
+    const rows = Object.entries(tally)
+      .sort((a, b) => (GEMS[b[0]]?.grade || 0) - (GEMS[a[0]]?.grade || 0))
+      .map(([id, cnt]) => {
+        const g = GEMS[id];
+        const isRaw = g.type === 'raw';
+        return `<div style="display:flex; align-items:center; gap:8px; padding:5px 8px; background:${isRaw ? '#fef3c7' : '#f3e8ff'}; border-radius:8px; margin:3px 0;">
+          <span style="font-size:22px;">${g.icon}</span>
+          <div style="flex:1;">
+            <span style="font-weight:700; font-size:13px; color:${isRaw ? '#92400e' : '#5b21b6'};">${g.name}</span>
+            ${isRaw ? '<span style="font-size:11px; color:#d97706;"> ✨ 稀有</span>' : `<span style="font-size:11px; color:#6b7280;"> ${gemStatText(g)}</span>`}
+          </div>
+          <span style="font-weight:800; font-size:14px; color:#374151;">×${cnt}</span>
+        </div>`;
+      }).join('');
+    showModal(`${titleIcon} 轉蛋 ×${results.length}`, `<div style="padding:4px 0;">
+      <div style="font-size:12px; color:#5b3d62; font-weight:700; margin-bottom:8px; text-align:center;">
+        ${titleLabel} ×${results.length} 轉蛋結果${rawCount > 0 ? ' — <span style="color:#d97706;">✨ 有原石！</span>' : ''}
+      </div>
+      ${rows}
+      <button class="btn btn-primary" onclick="renderGemModal()" style="width:100%; margin-top:12px;">確認</button>
+    </div>`);
+  }
+
   function doGemGacha(count) {
     count = count || 1;
     const me = getMe(); if (!me) return;
@@ -15372,35 +15477,7 @@ ${b.text}
       showToast(r.type === 'raw' ? `✨ 稀有！${r.icon} ${r.name}（2%）` : `${r.icon} ${r.name}！`);
       renderGemModal();
     } else {
-      // ×10：顯示結果摘要 modal
-      const tally = {};
-      let rawCount = 0;
-      for (const g of results) {
-        tally[g.id] = (tally[g.id] || 0) + 1;
-        if (g.type === 'raw') rawCount++;
-      }
-      const rows = Object.entries(tally).map(([id, cnt]) => {
-        const g = GEMS[id];
-        const isRaw = g.type === 'raw';
-        return `<div style="display:flex; align-items:center; gap:8px; padding:5px 8px; background:${isRaw ? '#fef3c7' : '#f3e8ff'}; border-radius:8px; margin:3px 0;">
-          <span style="font-size:22px;">${g.icon}</span>
-          <div style="flex:1;">
-            <span style="font-weight:700; font-size:13px; color:${isRaw ? '#92400e' : '#5b21b6'};">${g.name}</span>
-            ${isRaw ? '<span style="font-size:11px; color:#d97706;"> ✨ 稀有</span>' : `<span style="font-size:11px; color:#6b7280;"> ${gemStatText(g)}</span>`}
-          </div>
-          <span style="font-weight:800; font-size:14px; color:#374151;">×${cnt}</span>
-        </div>`;
-      }).join('');
-      const html = `
-        <div style="padding:4px 0;">
-          <div style="font-size:12px; color:#5b3d62; font-weight:700; margin-bottom:8px; text-align:center;">
-            💎 ×10 轉蛋結果${rawCount > 0 ? ' — <span style="color:#d97706;">✨ 有原石！</span>' : ''}
-          </div>
-          ${rows}
-          <button class="btn btn-primary" onclick="renderGemModal()" style="width:100%; margin-top:12px;">確認</button>
-        </div>
-      `;
-      showModal('🎰 轉蛋 ×10', html);
+      _showGachaResults(results, '🎰', '💎');
     }
   }
   window.doGemGacha = doGemGacha;
@@ -15428,27 +15505,7 @@ ${b.text}
       showToast(r.type === 'raw' ? `✨ 稀有！${r.icon} ${r.name}（2%）` : `${r.icon} ${r.name}！`);
       renderGemModal();
     } else {
-      const tally = {};
-      let rawCount = 0;
-      for (const g of results) { tally[g.id] = (tally[g.id] || 0) + 1; if (g.type === 'raw') rawCount++; }
-      const rows = Object.entries(tally).map(([id, cnt]) => {
-        const g = GEMS[id];
-        const isRaw = g.type === 'raw';
-        return `<div style="display:flex; align-items:center; gap:8px; padding:5px 8px; background:${isRaw ? '#fef3c7' : '#f3e8ff'}; border-radius:8px; margin:3px 0;">
-          <span style="font-size:22px;">${g.icon}</span>
-          <div style="flex:1;"><span style="font-weight:700; font-size:13px; color:${isRaw ? '#92400e' : '#5b21b6'};">${g.name}</span>
-            ${isRaw ? '<span style="font-size:11px; color:#d97706;"> ✨ 稀有</span>' : `<span style="font-size:11px; color:#6b7280;"> ${gemStatText(g)}</span>`}
-          </div>
-          <span style="font-weight:800; font-size:14px; color:#374151;">×${cnt}</span>
-        </div>`;
-      }).join('');
-      showModal('🎟 扭蛋幣 ×10', `<div style="padding:4px 0;">
-        <div style="font-size:12px; color:#065f46; font-weight:700; margin-bottom:8px; text-align:center;">
-          🎟 ×10 轉蛋結果${rawCount > 0 ? ' — <span style="color:#d97706;">✨ 有原石！</span>' : ''}
-        </div>
-        ${rows}
-        <button class="btn btn-primary" onclick="renderGemModal()" style="width:100%; margin-top:12px;">確認</button>
-      </div>`);
+      _showGachaResults(results, '🎟', '🎟');
     }
   }
   window.doGemGachaFree = doGemGachaFree;
