@@ -11651,7 +11651,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507162048';
+  const APP_VERSION = '20260507162328';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -18644,7 +18644,7 @@ ${b.text}
 
     // ⭐ 黑市品項
     const shopItemsHtml = HELL_SHOP_ITEMS.map(item => {
-      const canAfford = item.costType === 'coins' ? getCoins(me.id) >= item.cost : (myRpg.stamina || 0) >= item.cost;
+      const canAfford = item.costType === 'coins' ? getCoins(me.id) >= item.cost : (rpg.stamina || 0) >= item.cost;
       return `<div style="display:flex; align-items:center; gap:8px; padding:7px 10px; background:#0d0000; border:1px solid #3f0000; border-radius:8px; margin-bottom:5px;">
         <span style="font-size:20px;">${item.icon}</span>
         <div style="flex:1; min-width:0;">
