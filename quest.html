@@ -11649,7 +11649,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507131740';
+  const APP_VERSION = '20260507133851';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -11705,7 +11705,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260507_v6';
+  const NEWS_LATEST_ID = 'patch_20260507_v7';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -11725,6 +11725,38 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#3b0764,#7c3aed); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🍜 宵夜鵝個人王 ＋ DEF 系統大改　<span style="font-size:11px; opacity:0.85;">2026-05-07</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:6px 0 4px;">🍜 新個人王：宵夜鵝</div>
+        <div>・HP <b>200萬</b>、ATK <b>250</b>、DEF <b>900</b>、物抗 20%、<b>法抗 50%</b>、最擊坑性 30%</div>
+        <div style="margin-top:4px;">・技能：泡麵滾湯（毒）、宵夜暴食（ATK +85%）、深夜狂斬（3.2倍）、午夜寒煙（麻痺・無視DEF）</div>
+        <div style="font-size:11px; color:#6b7280; margin-top:2px;">→ 擊倒後獲得精魂「宵夜鵝精魂」</div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">✨ 宵夜鵝精魂：最後的宵夜</div>
+        <div>・戰鬥最後 <b>20 回合</b>：ATK / MARK / DEF <b>+50%</b>，暴傷 <b>+100%</b>（刻印激活後生效）</div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">⚔️ DEF 百分比公式（全職業）</div>
+        <div>・防禦減傷公式由「ATK×倍率 <b>− DEF÷2</b>」改為「ATK×倍率 <b>× K÷(DEF+K)</b>（K=500）」</div>
+        <div style="margin-top:4px; font-size:12px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:2px 12px;">
+            <div>DEF <b>300</b>：舊減傷 15% → 新 <b>37.5%</b></div>
+            <div>DEF <b>500</b>：舊減傷 25% → 新 <b>50.0%</b></div>
+            <div>DEF <b>900</b>：舊減傷 45% → 新 <b>64.3%</b></div>
+            <div>DEF <b>1500</b>：舊減傷 75% → 新 <b>75.0%</b></div>
+          </div>
+        </div>
+        <div style="font-size:11px; color:#6b7280; margin-top:2px;">→ ignoreDef 技能 / 爆血真傷 仍完全無視防禦</div>
+
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">🔮 魔防半效（對玩家）</div>
+        <div>・怪物使用 ignoreDef 技能時，玩家 DEF 改以 <b>DEF÷4</b> 計算（原為 DEF÷2）</div>
+        <div style="font-size:11px; color:#6b7280; margin-top:2px;">→ 高防角色面對穿透技能仍有一定減傷，不再完全無效</div>
+
+        <div style="background:#ede9fe; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#3b0764;">
+          💡 DEF 公式改版後，高防裝備的實際減傷大幅提升，配合宵夜鵝的高倍技能，裝備選擇更有意義！
+        </div>
 
         <div style="background:linear-gradient(135deg,#1e3a5f,#1d4ed8); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">✝️ 聖騎士全面強化　<span style="font-size:11px; opacity:0.85;">2026-05-07</span></div>
