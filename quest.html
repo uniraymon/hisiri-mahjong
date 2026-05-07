@@ -2184,6 +2184,7 @@
     <div class="card">
       <h2><span>🌍 世界王挑戰</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（共享 BOSS、所有人合力擊殺）</span></h2>
       <div id="worldBossBody"></div>
+      <div id="wbHistoryArea"></div>
     </div>
 
     <div class="card">
@@ -3096,16 +3097,29 @@
     const dmgRaw  = Math.round(Math.max(0, state.hp - result.mHpFinal) * 1.3); // ⭐ 世界王傷害 × 1.3
 
     // 戰鬥快照（給 recentBattles）
+    const _wbSnapId = 'br9_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
     const snap_ = {
-      id: 'br9_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      id: _wbSnapId,
       ts: Date.now(),
       bossId:  boss.id, bossName: boss.name, bossIcon: boss.icon, bossLevel: boss.level,
       attackerId: me.id, attackerName: me.name,
       attackerAvatar: me.avatar || cls?.icon || '🎴',
       playerSnap: { name: me.name, avatar: cls?.icon || '🎴', level: r.level, maxHp: stats.maxHp, maxMp: stats.maxMp, class: r.class, baseCrit: result.archerStats?.baseCrit },
-      monsterSnap: { name: monster.name, icon: monster.icon, level: monster.level, ability: monster.ability },
+      monsterSnap: { name: monster.name, icon: monster.icon, level: monster.level, maxHp: monster.maxHp, ability: monster.ability },
       log: (result.log || []).slice(0, 600),
     };
+    // ⭐ log 另存 localStorage（Firestore snap 可能會被剝掉 log 欄位）
+    try { localStorage.setItem('wbLog_' + _wbSnapId, JSON.stringify((result.log || []).slice(0, 1000))); } catch(e) {}
+    // ⭐ 存到自己的 wbBattleHistory（最多 5 筆，供之後重播）
+    try {
+      const _wbSnap = { ...snap_ }; delete _wbSnap.log; // 不存 log，從 localStorage 讀
+      r.wbBattleHistory = Array.isArray(r.wbBattleHistory) ? r.wbBattleHistory : [];
+      r.wbBattleHistory.unshift(_wbSnap);
+      if (r.wbBattleHistory.length > 5) {
+        const _dropped = r.wbBattleHistory.splice(5);
+        for (const _d of _dropped) { try { localStorage.removeItem('wbLog_' + _d.id); } catch(e) {} }
+      }
+    } catch(e) {}
 
     // 送 TX
     let txOut;
@@ -3178,10 +3192,11 @@
     renderCharCard();
     updateStaminaUI();
     wb9Render({ force: true });
+    if (typeof renderWbHistory === 'function') renderWbHistory();
 
     // 顯示本場結果
     wb9ShowFightResult({ boss, dmgDealt: actualDmg, killed, xpGain, coinGain,
-      won: result.pHpFinal > 0, log: result.log });
+      won: result.pHpFinal > 0, log: result.log, snapId: _wbSnapId });
   }
   window.wb9Attack = wb9Attack;
 
@@ -3245,7 +3260,7 @@
   window.wb9ClaimKillReward = wb9ClaimKillReward;
 
   // 本場戰鬥結果（顯示在 #fightResult）
-  function wb9ShowFightResult({ boss, dmgDealt, killed, xpGain, coinGain, won, log }) {
+  function wb9ShowFightResult({ boss, dmgDealt, killed, xpGain, coinGain, won, log, snapId }) {
     const fr = document.getElementById('fightResult');
     if (!fr) return;
     const killLine = killed
@@ -3266,7 +3281,10 @@
           💢 造成傷害 <b>${dmgDealt.toLocaleString()}</b>
         </div>
         ${rewardLine}
-        <button class="btn btn-secondary" onclick="this.parentElement.remove()" style="margin-top:8px; width:100%;">關閉</button>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          ${snapId ? `<button class="btn btn-primary" onclick="replayWbFight('${snapId}')" style="flex:1; background:linear-gradient(135deg,#1e3a5f,#2563eb); box-shadow:0 2px 0 #1e40af; font-size:12px;">▶ 查看戰鬥記錄</button>` : ''}
+          <button class="btn btn-secondary" onclick="this.closest('.card').remove()" style="flex:1;">關閉</button>
+        </div>
       </div>
     `;
     fr.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -9755,6 +9773,7 @@
     renderPartyHistory();
     renderForageHistory(); // ⭐ 自己最近 5 場打怪戰報
     renderPersonalBossHistory(); // ⭐ 個人王最近 5 場戰報
+    renderWbHistory(); // ⭐ 世界王最近 5 場戰報
     maybeFlashHelp();
     initNewsBtn();
     refreshBugBadge();
@@ -12155,7 +12174,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508045842';
+  const APP_VERSION = '20260508050734';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -17703,7 +17722,10 @@ ${b.text}
           const time = typeof formatRelativeTime === 'function' ? formatRelativeTime(h.ts) : '';
           const resultLabel = h.killed ? '🏆 擊殺' : '💢 傷害';
           const resultColor = h.killed ? '#86efac' : '#fca5a5';
-          const hasLog = h.id && Array.isArray(h.log) && h.log.length > 0;
+          const hasLog = h.id && (
+            (Array.isArray(h.log) && h.log.length > 0) ||
+            !!localStorage.getItem('pbLog_' + h.id)
+          );
           return `
             <button class="boss-history-row ${h.killed ? 'is-kill' : ''}"
                     style="cursor:${hasLog ? 'pointer' : 'default'}; width:100%; text-align:left;"
@@ -17736,6 +17758,56 @@ ${b.text}
     return _doReplay({ ...snap, log });
   }
   window.replayPersonalBossFight = replayPersonalBossFight;
+
+  // ⭐ 世界王戰報重播
+  function replayWbFight(historyId) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const list = Array.isArray(r.wbBattleHistory) ? r.wbBattleHistory : [];
+    const snap = list.find(h => h.id === historyId);
+    if (!snap) { showToast('找不到該戰報'); return; }
+    let log = snap.log || [];
+    if (!log.length) {
+      try { log = JSON.parse(localStorage.getItem('wbLog_' + historyId) || '[]'); } catch(e) { log = []; }
+    }
+    return _doReplay({ ...snap, log });
+  }
+  window.replayWbFight = replayWbFight;
+
+  // ⭐ 世界王戰報 history 區塊（顯示在世界王頁面）
+  function renderWbHistory() {
+    const area = document.getElementById('wbHistoryArea');
+    if (!area) return;
+    const me = getMe(); if (!me) { area.innerHTML = ''; return; }
+    const r = getRpg(me);
+    const list = Array.isArray(r.wbBattleHistory) ? r.wbBattleHistory : [];
+    if (list.length === 0) { area.innerHTML = ''; return; }
+    area.innerHTML = `
+      <div class="boss-history" style="margin-top:12px;">
+        <div class="boss-history-title">📜 世界王戰報（${list.length}/5）　<span style="font-weight:500; opacity:0.75;">點 → 重播</span></div>
+        ${list.map(h => {
+          const time = typeof formatRelativeTime === 'function' ? formatRelativeTime(h.ts) : '';
+          const hasLog = h.id && (
+            (Array.isArray(h.log) && h.log.length > 0) ||
+            !!localStorage.getItem('wbLog_' + h.id)
+          );
+          return `
+            <button class="boss-history-row"
+                    style="cursor:${hasLog ? 'pointer' : 'default'}; width:100%; text-align:left;"
+                    ${hasLog ? `onclick="replayWbFight('${h.id}')"` : ''}>
+              <span class="bh-icon">${h.bossIcon || '🦢'}</span>
+              <div class="bh-meta">
+                <div class="bh-line1">${escapeHtml(h.bossName || '???')} Lv ${h.bossLevel || '?'}</div>
+                <div class="bh-line2">${time}</div>
+              </div>
+              <span class="bh-play">${hasLog ? '▶' : ''}</span>
+            </button>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+  window.renderWbHistory = renderWbHistory;
 
   // ⭐ 舊介面：從自己的戰報歷史播 — 保留 fallback（已棄用）
   function replayBossFight(historyId) {
