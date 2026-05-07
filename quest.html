@@ -2108,7 +2108,7 @@
     </div>
 
     <div class="card">
-      <h2><span>🍳 個人 BOSS</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（每 5 分挑戰 1 次、每場結束王回 5% HP）</span></h2>
+      <h2><span>🍳 個人 BOSS</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（每 2.5 分挑戰 1 次、每場結束王回 5% HP）</span></h2>
       <div id="personalBossBody"></div>
       <div id="personalBossResult"></div>
       <div id="personalBossHistoryArea"></div>
@@ -3377,10 +3377,10 @@
   }
 
   // === 個人 BOSS ===
-  // 每位玩家獨立打、5 分鐘冷卻、每場結束無論輸贏王回 5% HP
+  // 每位玩家獨立打、2.5 分鐘冷卻、每場結束無論輸贏王回 5% HP
   // 殺一隻 → 滿 HP 重生 + 給獎勵
   // 設計：玩家 Lv 30 大概 3000-5000 dmg/場，扣掉 5% regen 約 4-5 場可殺
-  const PERSONAL_BOSS_COOLDOWN_MS = 5 * 60 * 1000; // 5 分
+  const PERSONAL_BOSS_COOLDOWN_MS = 2.5 * 60 * 1000; // 2.5 分
   const PERSONAL_BOSS_REGEN_PCT = 0.05;
   const PERSONAL_BOSSES = [
     {
@@ -11651,7 +11651,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507141538';
+  const APP_VERSION = '20260507162048';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -17200,7 +17200,7 @@ ${b.text}
     }
     return rpg.personalBoss[bossId];
   }
-  // ⭐ 個人王共用冷卻（任何一隻打完都要等 5 分鐘才能再打）
+  // ⭐ 個人王共用冷卻（任何一隻打完都要等 2.5 分鐘才能再打）
   function getPersonalBossCdRemain(rpg) {
     const last = rpg.personalBossLastAt || 0;
     return Math.max(0, last + PERSONAL_BOSS_COOLDOWN_MS - Date.now());
@@ -17225,7 +17225,7 @@ ${b.text}
     const cur = PERSONAL_BOSSES.find(b => b.id === __personalBossTab) || PERSONAL_BOSSES[0];
     const st = getPersonalBossState(rpg, cur.id);
     const hpPct = Math.max(0, Math.min(100, st.currentHp / cur.hp * 100));
-    // ⭐ 共用冷卻（任一隻王打完都會鎖 5 分鐘）
+    // ⭐ 共用冷卻（任一隻王打完都會鎖 2.5 分鐘）
     const cdRemain = getPersonalBossCdRemain(rpg);
     const onCd = cdRemain > 0;
     const m = Math.floor(cdRemain / 60000);
@@ -17275,7 +17275,7 @@ ${b.text}
         <div style="margin-top:6px; font-size:10px; opacity:0.85;">
           ${cur.isDummy
             ? `🎯 傷害測試假人　·　最多 ${cur.maxRounds} 回合　·　<b>無獎勵 · 無冷卻 · 可連續挑戰</b>`
-            : `🎁 擊殺獎勵：🪙 ${cur.reward.coins} 鵝鵝幣 + ⭐ ${cur.reward.xp} XP + 🌟 精魂　·　每場王 +5% HP　·　<b>3 隻王共用 5 分鐘冷卻</b>`}
+            : `🎁 擊殺獎勵：🪙 ${cur.reward.coins} 鵝鵝幣 + ⭐ ${cur.reward.xp} XP + 🌟 精魂　·　每場王 +5% HP　·　<b>3 隻王共用 2.5 分鐘冷卻</b>`}
         </div>
       </div>
     `;
@@ -17312,7 +17312,11 @@ ${b.text}
       hp: st.currentHp, maxHp: def.hp,
       atk: def.atk, def: def.def, spd: def.spd,
       defPen: def.defPen,
+      physRes: def.physRes,
+      magRes: def.magRes,
+      critDmgReduct: def.critDmgReduct,
       verb: def.verb,
+      fixedSkillOrder: def.fixedSkillOrder,
       ability: def.ability,
       skills: def.skills || [],
       dialogue: def.dialogue, deathLine: def.deathLine,
@@ -17428,7 +17432,7 @@ ${b.text}
                 <div class="rl-item">💢 你打掉了 <b>${dmgDealt.toLocaleString()}</b> HP，給予最後一擊！</div>
                 <div class="rl-item">🪙 +${def.reward.coins} 鵝鵝幣　·　⭐ +${def.reward.xp} XP${leveled ? `（升 ${leveled} 級）` : ''}</div>
                 ${spiritDropped ? `<div class="rl-item" style="color:${spiritDropped.color}; font-weight:700;">🌟 掉落精魂：${spiritDropped.icon} ${escapeHtml(spiritDropped.name)}<div style="font-size:10px; color:#8b6f9b; font-weight:500; margin-top:1px;">${escapeHtml(describeSpirit(spiritDropped))}</div></div>` : ''}
-                <div class="rl-item" style="font-size:11px; color:#7c2d12;">王已重生（HP 回滿，5 分鐘後可再戰）</div>
+                <div class="rl-item" style="font-size:11px; color:#7c2d12;">王已重生（HP 回滿，2.5 分鐘後可再戰）</div>
               </div>`;
           }
         } else {
@@ -17453,7 +17457,7 @@ ${b.text}
                 <div class="rl-item">💢 你打掉了 <b style="color:#fca5a5;">${dmgDealt.toLocaleString()}</b> HP</div>
                 <div class="rl-item" style="color:#fde047;">🩹 王回復 +${regen} HP（5%）</div>
                 <div class="rl-item">${def.icon} ${def.name} 還剩 ${st.currentHp.toLocaleString()} / ${def.hp.toLocaleString()} HP（${hpPct}%）</div>
-                <div class="rl-item" style="font-size:11px; opacity:0.85;">⏳ 5 分鐘後可再戰</div>
+                <div class="rl-item" style="font-size:11px; opacity:0.85;">⏳ 2.5 分鐘後可再戰</div>
               </div>`;
           }
         }
