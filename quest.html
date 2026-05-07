@@ -11743,7 +11743,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507192611';
+  const APP_VERSION = '20260507193232';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -19967,6 +19967,7 @@ ${b.text}
       <button class="btn btn-secondary" onclick="adminShowSaveErrors()" style="margin-top:6px; background:linear-gradient(135deg,#fecaca,#dc2626); box-shadow:0 4px 0 #991b1b; color:#fff;">🪲 存檔錯誤日誌（查回朔原因）</button>
       <button class="btn btn-secondary" onclick="adminForcePlayerLevelModal()" style="margin-top:6px; background:linear-gradient(135deg,#bbf7d0,#16a34a); box-shadow:0 4px 0 #15803d; color:#fff;">🛠 強制設任意玩家等級（修復回朔）</button>
       <button class="btn btn-secondary" onclick="adminRestoreXiaoMi()" style="margin-top:6px; background:linear-gradient(135deg,#fde68a,#f59e0b); box-shadow:0 4px 0 #b45309; color:#7c2d12;">🔧 修復小米帳號（Lv33・130萬・原石+20・神話劍）</button>
+      <button class="btn btn-secondary" onclick="adminForceCleanPlayerDocs()" style="margin-top:6px; background:linear-gradient(135deg,#fecaca,#ef4444); box-shadow:0 4px 0 #b91c1c; color:#fff;">🗜 全員壓縮 Firebase 文件（清除 history logs）</button>
       <button class="btn btn-danger" onclick="adminResetLeaderboard()" style="margin-top:6px; background:linear-gradient(135deg,#fde047,#d97706); box-shadow:0 4px 0 #92400e; color:#7c2d12;">🏆 重置排行榜（所有玩家等級 / 鵝鵝幣 / 綠茶遭遇歸零）</button>
       <button class="btn btn-danger" onclick="adminWipeAll()" style="margin-top:6px; background:linear-gradient(135deg,#fca5a5,#7f1d1d); box-shadow:0 4px 0 #450a0a;">💀 全玩家洗白（伺服器 + 本地都重置）</button>
       <button class="btn btn-secondary" onclick="adminMigrateAccessoryToRing()" style="margin-top:6px; background:linear-gradient(135deg,#ddd6fe,#7c3aed); box-shadow:0 4px 0 #6d28d9; color:#fff;">💍 遷移：飾品槽戒指 → 戒指槽（所有玩家）</button>
@@ -20710,6 +20711,42 @@ ${b.text}
     render();
   }
   window.adminRestoreXiaoMi = adminRestoreXiaoMi;
+
+  // ⭐ 全員壓縮 Firebase 文件：把 personalBossHistory 裡的 log 陣列清掉再強制推上去
+  //    適用情境：某位玩家 Firebase 文件超過 1MB → saveData 靜默失敗 → 拿不到獎勵
+  //    執行後：每位玩家文件瘦身，下次打王的獎勵就能正常寫入
+  async function adminForceCleanPlayerDocs() {
+    if (!confirm('🗜 清除所有玩家 Firebase 文件內的 personalBossHistory logs？\n\n（本地重播資料不受影響，只清 Firebase 裡的 log 陣列）\n\n確定？')) return;
+    let cleaned = 0;
+    for (const p of (players || [])) {
+      if (!p || !p.id || !p.rpg) continue;
+      if (!Array.isArray(p.rpg.personalBossHistory) || p.rpg.personalBossHistory.length === 0) continue;
+      const beforeSize = JSON.stringify(p.rpg.personalBossHistory).length;
+      p.rpg.personalBossHistory = p.rpg.personalBossHistory.map(h => {
+        if (!h) return h;
+        const { log, ...rest } = h; // eslint-disable-line no-unused-vars
+        return rest;
+      });
+      const afterSize = JSON.stringify(p.rpg.personalBossHistory).length;
+      console.log(`[cleanDocs] ${p.name}: ${Math.round(beforeSize/1024)}KB → ${Math.round(afterSize/1024)}KB`);
+      cleaned++;
+    }
+    if (cleaned === 0) { showToast('沒有需要清理的資料'); return; }
+    __persistLocalSnapshot();
+    saveData();
+    if (window.__firebaseSync?.forceWriteAllPlayers) {
+      try {
+        await window.__firebaseSync.forceWriteAllPlayers(players);
+        showToast(`🗜 已壓縮 ${cleaned} 位玩家的 Firebase 文件並推上雲端`);
+      } catch (e) {
+        showToast(`⚠️ 本地已清理，雲端推送失敗：${e.message}`);
+      }
+    } else {
+      showToast(`🗜 已在本地清理 ${cleaned} 位玩家（離線模式）`);
+    }
+    showDebugModal();
+  }
+  window.adminForceCleanPlayerDocs = adminForceCleanPlayerDocs;
 
   function adminResetPoints() {
     const me = getMe(); if (!me) return;
@@ -22266,7 +22303,16 @@ ${b.text}
         const tasks = [];
         for (const p of (allPlayers || [])) {
           if (!p || !p.id) continue;
-          tasks.push(setDoc(doc(playersCol, p.id), _prune(p)));
+          const cp = _prune(p);
+          // ⭐ Firebase 文件大小防爆：個人王 history log 不寫進 Firestore
+          if (cp.rpg && Array.isArray(cp.rpg.personalBossHistory)) {
+            cp.rpg.personalBossHistory = cp.rpg.personalBossHistory.map(h => {
+              if (!h) return h;
+              const { log, ...rest } = h; // eslint-disable-line no-unused-vars
+              return rest;
+            });
+          }
+          tasks.push(setDoc(doc(playersCol, p.id), cp));
         }
         try {
           await Promise.all(tasks);
@@ -22336,6 +22382,15 @@ ${b.text}
         }
         for (const p of playersToWrite) {
           const cleanP = pruneUndef(p);
+          // ⭐ Firebase 文件大小防爆：個人王 history log 只存到 localStorage，不寫進 Firestore
+          //    （戰鬥重播從 localStorage 讀，Firebase 只存摘要 metadata）
+          if (cleanP.rpg && Array.isArray(cleanP.rpg.personalBossHistory)) {
+            cleanP.rpg.personalBossHistory = cleanP.rpg.personalBossHistory.map(h => {
+              if (!h) return h;
+              const { log, ...rest } = h; // eslint-disable-line no-unused-vars
+              return rest;
+            });
+          }
           clearTimeout(playerSaveTimers[p.id]);
           // ⭐ 1500ms debounce（緩解 Firestore write stream exhausted）
           playerSaveTimers[p.id] = setTimeout(async () => {
