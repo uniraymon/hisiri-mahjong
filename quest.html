@@ -6192,8 +6192,8 @@
       player.rpg.updateV19 = true;
       if (Array.isArray(player.rpg.personalBossHistory)) {
         player.rpg.personalBossHistory = player.rpg.personalBossHistory
-          .slice(0, 10) // 最多保留 10 場
-          .map(h => ({ ...h, log: (h.log || []).slice(0, 150) })); // 每場 log 截斷至 150 條
+          .slice(0, 5) // 最多保留 5 場
+          .map(h => ({ ...h, log: (h.log || []).slice(0, 500) })); // 每場 log 截斷至 500 條
       }
       if (typeof window !== 'undefined') {
         window.__pendingUpdateV19 = window.__pendingUpdateV19 || new Set();
@@ -9283,7 +9283,7 @@
     renderPartyTab();
     renderPartyHistory();
     renderForageHistory(); // ⭐ 自己最近 5 場打怪戰報
-    renderPersonalBossHistory(); // ⭐ 個人王最近 15 場戰報
+    renderPersonalBossHistory(); // ⭐ 個人王最近 5 場戰報
     maybeFlashHelp();
     initNewsBtn();
     refreshBugBadge();
@@ -11669,7 +11669,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507174207';
+  const APP_VERSION = '20260507175951';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -16969,7 +16969,7 @@ ${b.text}
     if (list.length === 0) { area.innerHTML = ''; return; }
     area.innerHTML = `
       <div class="boss-history" style="margin-top:12px;">
-        <div class="boss-history-title">📜 個人王戰報（${list.length}/15）　<span style="font-weight:500; opacity:0.75;">點 → 重播</span></div>
+        <div class="boss-history-title">📜 個人王戰報（${list.length}/5）　<span style="font-weight:500; opacity:0.75;">點 → 重播</span></div>
         ${list.map(h => {
           const time = typeof formatRelativeTime === 'function' ? formatRelativeTime(h.ts) : '';
           const resultLabel = h.killed ? '🏆 擊殺' : '💢 傷害';
@@ -17523,11 +17523,11 @@ ${b.text}
               killed,
               playerSnap: { name: me.name, avatar: CLASSES[rpg.class]?.icon || '🎴', level: rpg.level, maxHp: stats.maxHp, maxMp: stats.maxMp, class: rpg.class, baseCrit: result.archerStats?.baseCrit },
               monsterSnap: { name: def.name, icon: def.icon, level: def.level, maxHp: def.hp, ability: def.ability },
-              log: (result.log || []).slice(0, 150), // ⭐ 上限 150 條（宵夜鵝 200 回合 log 超大，壓住文件大小）
+              log: (result.log || []).slice(0, 500), // ⭐ 上限 500 條（壓住文件大小）
             };
             rpg.personalBossHistory = Array.isArray(rpg.personalBossHistory) ? rpg.personalBossHistory : [];
             rpg.personalBossHistory.unshift(pbSnap);
-            if (rpg.personalBossHistory.length > 10) rpg.personalBossHistory.length = 10; // ⭐ 保 10 場（原 15）
+            if (rpg.personalBossHistory.length > 5) rpg.personalBossHistory.length = 5; // ⭐ 保 5 場
           } catch (e) { console.warn('personalBoss history snap fail', e); }
         }
         me.lastTouchedAt = Date.now();   // 🔒 結算後鎖定，防止 Firebase 同步回朔
