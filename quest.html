@@ -6187,6 +6187,19 @@
         window.__pendingUpdateV18.add(player.id);
       }
     }
+    // ⭐ v19：個人王 history log 截斷（宵夜鵝 log 超大導致 Firebase 文件超限 → 獎勵寫不進）
+    if (!player.rpg.updateV19 && typeof getMeId === 'function' && player.id === getMeId()) {
+      player.rpg.updateV19 = true;
+      if (Array.isArray(player.rpg.personalBossHistory)) {
+        player.rpg.personalBossHistory = player.rpg.personalBossHistory
+          .slice(0, 10) // 最多保留 10 場
+          .map(h => ({ ...h, log: (h.log || []).slice(0, 150) })); // 每場 log 截斷至 150 條
+      }
+      if (typeof window !== 'undefined') {
+        window.__pendingUpdateV19 = window.__pendingUpdateV19 || new Set();
+        window.__pendingUpdateV19.add(player.id);
+      }
+    }
     // ⭐ v16 migration：修正聖騎 p_aegis 在行動規則表中永遠被 p_blessing 搶先的問題
     //   舊規則表：p_blessing（judge 1000）在前，p_aegis（judge 1000）在後 → p_aegis 永不觸發
     //   新規則表：p_aegis 改用 judge 1910（每4回合，含麻痺），移到 p_blessing 之前
@@ -9283,6 +9296,11 @@
   function maybeShowBetaCompModal() {
     const me = getMe();
     if (!me) return;
+    // ⭐ v19 靜默遷移：個人王 history log 截斷（修復 Firebase 超限 → 獎勵拿不到）
+    if (window.__pendingUpdateV19 && window.__pendingUpdateV19.has(me.id)) {
+      window.__pendingUpdateV19.delete(me.id);
+      saveData(); // 靜默存檔即可，無需彈窗
+    }
     // ⭐ v18 優先（最新）：競技場 / 嗜血爆裂修正 / 宵夜鵝 / 精魂最後的宵夜
     if (window.__pendingUpdateV18 && window.__pendingUpdateV18.has(me.id)) {
       window.__pendingUpdateV18.delete(me.id);
@@ -11651,7 +11669,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507164557';
+  const APP_VERSION = '20260507174207';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -17505,11 +17523,11 @@ ${b.text}
               killed,
               playerSnap: { name: me.name, avatar: CLASSES[rpg.class]?.icon || '🎴', level: rpg.level, maxHp: stats.maxHp, maxMp: stats.maxMp, class: rpg.class, baseCrit: result.archerStats?.baseCrit },
               monsterSnap: { name: def.name, icon: def.icon, level: def.level, maxHp: def.hp, ability: def.ability },
-              log: (result.log || []).slice(0, 1000),
+              log: (result.log || []).slice(0, 150), // ⭐ 上限 150 條（宵夜鵝 200 回合 log 超大，壓住文件大小）
             };
             rpg.personalBossHistory = Array.isArray(rpg.personalBossHistory) ? rpg.personalBossHistory : [];
             rpg.personalBossHistory.unshift(pbSnap);
-            if (rpg.personalBossHistory.length > 15) rpg.personalBossHistory.length = 15;
+            if (rpg.personalBossHistory.length > 10) rpg.personalBossHistory.length = 10; // ⭐ 保 10 場（原 15）
           } catch (e) { console.warn('personalBoss history snap fail', e); }
         }
         me.lastTouchedAt = Date.now();   // 🔒 結算後鎖定，防止 Firebase 同步回朔
