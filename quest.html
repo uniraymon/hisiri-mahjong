@@ -11950,7 +11950,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260507233854';
+  const APP_VERSION = '20260508001003';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -16034,7 +16034,12 @@ ${b.text}
     if (!host) return;
     if (!rpg.currentZone) rpg.currentZone = 'forest';
     if (!rpg.currentLayer) rpg.currentLayer = 'upper';
-    const tabsHtml = ZONES.map(z => {
+    // ⭐ 奈落層與其他層互斥：奈落層只顯示奈落區；一般層不顯示奈落區
+    const _isNabyssLayer = rpg.currentLayer === 'nabyss';
+    if (_isNabyssLayer && rpg.currentZone !== 'nabyss') rpg.currentZone = 'nabyss';
+    if (!_isNabyssLayer && rpg.currentZone === 'nabyss') rpg.currentZone = 'forest';
+    const _visibleZones = ZONES.filter(z => _isNabyssLayer ? z.id === 'nabyss' : z.id !== 'nabyss');
+    const tabsHtml = _visibleZones.map(z => {
       const locked = rpg.level < z.minLv;
       const active = rpg.currentZone === z.id;
       const cls = `zone-tab${active ? ' active' : ''}${locked ? ' locked' : ''}`;
@@ -16102,6 +16107,12 @@ ${b.text}
       return;
     }
     rpg.currentLayer = layerId;
+    // ⭐ 奈落層互斥：進入奈落自動切到奈落區；離開奈落自動切回一般區
+    if (layerId === 'nabyss') {
+      rpg.currentZone = 'nabyss';
+    } else if (rpg.currentZone === 'nabyss') {
+      rpg.currentZone = 'forest';
+    }
     saveData();
     renderZoneSelector();
   }
@@ -16114,6 +16125,9 @@ ${b.text}
     const z = ZONES.find(zz => zz.id === zoneId);
     if (!z) return;
     if (rpg.level < z.minLv) { showToast(`需 Lv${z.minLv} 才能進入${z.name}`); return; }
+    // ⭐ 奈落區只能在奈落層選；一般區不能在奈落層選
+    if (zoneId === 'nabyss' && rpg.currentLayer !== 'nabyss') return;
+    if (zoneId !== 'nabyss' && rpg.currentLayer === 'nabyss') return;
     rpg.currentZone = zoneId;
     if (!rpg.currentLayer) rpg.currentLayer = 'upper';
     saveData();
