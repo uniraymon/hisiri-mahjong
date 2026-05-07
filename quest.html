@@ -5206,7 +5206,7 @@
     { id: 'w_abyss_staff', name: '深淵法杖',   icon: '🔮', slot: 'weapon', mark: 55, lv: 28, rareWeapon: true,
       mpDiscount: 0.25, // ⭐ 技能 MP 消耗 -25%
       desc: '深淵魔力循環系統，大幅降低法術能量損耗' },
-    { id: 'w_goose_shield_sword', name: '鵝盾刀', icon: '🛡️', slot: 'weapon', atk: 60, mark: 30, def: 60, lv: 28, rareWeapon: true,
+    { id: 'w_goose_shield_sword', name: '鵝的刀盾', icon: '🛡️', slot: 'weapon', atk: 60, mark: 30, def: 60, lv: 28, rareWeapon: true,
       physShieldPct: 0.10, magShieldPct: 0.10, // ⭐ 被攻擊時物理/魔法各減傷 10%
       desc: '鵝王鍛造的攻守合一神器，防禦與攻擊同樣出色' },
     // 6 件一般奈落裝備
@@ -6024,7 +6024,7 @@
     { type: 'mark',    name: '魔力',   perLv: 0.35 },   // ⭐ MARK 詞條
     { type: 'mark',    name: '神秘',   perLv: 0.3 },    // ⭐ MARK 詞條（次級）
     // ⭐ 奈落專用詞條池（lv 28 裝備才會出）
-    { type: 'hpRegen', name: '生命湧現', perLv: 0, fixedPct: 5, nabyssOnly: true },  // 每回合回血 5% maxHP
+    { type: 'hpRegen', name: '生命湧現', perLv: 0, fixedPct: 2, nabyssOnly: true },  // 每回合回血 2% maxHP（上限 10%，每件 +2%）
     { type: 'atk',     name: '虛空之力', perLv: 0.50, nabyssOnly: true },
     { type: 'def',     name: '深淵護盾', perLv: 0.45, nabyssOnly: true },
     { type: 'spd',     name: '混沌疾影', perLv: 0.35, nabyssOnly: true },
@@ -6037,9 +6037,9 @@
   //   紫 (legendary) 3 詞條
   const RARITY = {
     common:    { color: '#9ca3af', label: '普通',  affixes: 0, mult: 1.0 },
-    magic:     { color: '#22c55e', label: '魔法',  affixes: 1, mult: 1.05 },// 綠（HP 平衡：1.1 → 1.05）
-    rare:      { color: '#3b82f6', label: '稀有',  affixes: 2, mult: 1.2 }, // 藍（HP 平衡：1.4 → 1.2）
-    legendary: { color: '#a855f7', label: '傳說',  affixes: 3, mult: 1.5 }, // 紫（HP 平衡：2.0 → 1.5）
+    magic:     { color: '#22c55e', label: '魔法',  affixes: 0, mult: 1.05 }, // 綠：無詞條（只有紫裝能加詞條）
+    rare:      { color: '#3b82f6', label: '稀有',  affixes: 0, mult: 1.2 },  // 藍：無詞條（只有紫裝能加詞條）
+    legendary: { color: '#a855f7', label: '傳說',  affixes: 3, mult: 1.5 }, // 紫：3 條（奈落傳說裝→4 條）
     // ⭐ 金裝（鵝王扭蛋專屬，固定詞條，不 roll）
     gold:      { color: '#fbbf24', label: '金裝',  affixes: 0, mult: 1.0 },
   };
@@ -6145,14 +6145,29 @@
       if (lv <= 25) return 1.50;
       return 1.80; // 奈落
     })();
-    // ⭐ 奈落詞條池：lv 28+ 裝備可出奈落專用詞條；其他層不出
+    // ⭐ 奈落詞條規則：
+    //   - 只有紫裝（legendary）才有詞條
+    //   - 奈落傳說裝：4 條（第 1-3 條從普通池 + 生命湧現；第 4 條從特殊奈落池）
+    //   - 非奈落傳說裝：3 條（普通池，不出 nabyssOnly）
     const isNabyssItem = (drop.lv || 1) >= 26;
-    const affixPool = isNabyssItem
-      ? AFFIXES                                       // 全池（包含 nabyssOnly）
-      : AFFIXES.filter(a => !a.nabyssOnly);          // 非奈落不出奈落詞條
-    for (let i = 0; i < affixCount; i++) {
-      const a = affixPool[Math.floor(Math.random() * affixPool.length)];
-      // ⭐ hpRegen 詞條：固定 5%（存整數 5，代表 5%；戰鬥引擎讀出後除以 100）
+    // 奈落傳說裝：強制 4 條（覆蓋 affixCount）
+    const finalAffixCount = (isNabyssItem && rarity === 'legendary') ? 4 : affixCount;
+    // 普通詞條池（非 nabyssOnly，+ 生命湧現可在前 3 條出現）
+    const poolNormal   = AFFIXES.filter(a => !a.nabyssOnly || a.type === 'hpRegen');
+    // 特殊奈落池（全部 nabyssOnly，第 4 條用）
+    const poolSpecial  = AFFIXES.filter(a => a.nabyssOnly);
+    // 非奈落裝：完全禁用 nabyssOnly
+    const poolBase     = AFFIXES.filter(a => !a.nabyssOnly);
+
+    for (let i = 0; i < finalAffixCount; i++) {
+      let pool;
+      if (isNabyssItem) {
+        pool = (i === 3) ? poolSpecial : poolNormal; // 第 4 條（index 3）才出特殊奈落詞條
+      } else {
+        pool = poolBase;
+      }
+      const a = pool[Math.floor(Math.random() * pool.length)];
+      // ⭐ hpRegen 詞條：固定 2%（存整數 2，代表 2%；戰鬥引擎讀出後除以 100），上限 10%
       const val = a.fixedPct != null
         ? a.fixedPct
         : Math.max(1, Math.round((1 + drop.lv * a.perLv) * def.mult * layerAffixMult));
@@ -6819,7 +6834,7 @@
         if (item?.hpRegen) totalHpRegen += item.hpRegen;
       }
     }
-    stats.hpRegenPct = totalHpRegen; // 存為百分比整數（5 = 5%）
+    stats.hpRegenPct = Math.min(10, totalHpRegen); // 存為百分比整數（2 = 2%），上限 10%
     // 套裝加成
     const setInfo = computeSetBonuses(player);
     if (setInfo.bonuses.atk)  stats.atk  += setInfo.bonuses.atk;
@@ -12044,7 +12059,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508005916';
+  const APP_VERSION = '20260508010743';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -12138,14 +12153,16 @@ ${b.text}
           <div>🏹 <b>虛空長弓</b>：所有職業普攻 <b>5% 爆頭機率</b>（3倍傷，無視DEF）</div>
           <div>🌑 <b>奈落之刃</b>：戰士血池積累 <b>+20%</b></div>
           <div>🔮 <b>深淵法杖</b>：所有技能 MP 消耗 <b>-25%</b></div>
-          <div>🛡️ <b>鵝盾刀</b>：ATK+60、MARK+30、DEF+60，物理/魔法傷害 <b>各減 10%</b></div>
+          <div>🛡️ <b>鵝的刀盾</b>：ATK+60、MARK+30、DEF+60，物理/魔法傷害 <b>各減 10%</b></div>
         </div>
 
         <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">✨ 新詞條：生命湧現</div>
-        <div>・奈落裝備專屬詞條：每回合開始自動回復 <b>最大HP 5%</b></div>
+        <div>・奈落裝備專屬詞條：每回合開始自動回復 <b>最大HP 2%</b>（疊多件上限 10%）</div>
 
         <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">⚒️ 奈落鍛造（第 4 條詞條）</div>
-        <div>・奈落層 (Lv 26+) 掉落物可在背包詳情頁<b>花費鵝鵝幣敲出第 4 條詞條</b></div>
+        <div>・奈落層 (Lv 26+) <b>傳說（紫）</b>掉落物可在背包詳情頁<b>花費鵝鵝幣敲出第 4 條詞條</b></div>
+        <div>・第 4 條詞條為奈落特殊詞條（生命湧現／虛空之力／深淵護盾／混沌疾影／奈落根基）</div>
+        <div>・只有紫裝才能擁有詞條；前 3 條為普通詞條，第 4 條為奈落特殊詞條</div>
         <div>・可重複敲擊以<b>更換</b>第 4 條詞條，費用依次遞增：</div>
         <div style="font-size:12px; padding-left:8px; margin-top:2px;">
           15萬 → 30萬 → 60萬 → 120萬 → 240萬 → <b>300萬（上限）</b>
@@ -14919,7 +14936,7 @@ ${b.text}
       : '';
     // ⭐ 奈落鍛造：lv 26+ 掉落物可花費鵝鵝幣敲第 4 條詞條
     const _REROLL_COSTS = [150000, 300000, 600000, 1200000, 2400000, 3000000];
-    const _isNabyssLoot = (item.lv || 1) >= 26 && Array.isArray(item.affixes);
+    const _isNabyssLoot = (item.lv || 1) >= 26 && Array.isArray(item.affixes) && item.rarity === 'legendary';
     const _rerollCount = item.rerollCount || 0;
     const _nextRerollCost = _REROLL_COSTS[Math.min(_rerollCount, _REROLL_COSTS.length - 1)];
     const _hasFourthAffix = (item.affixes || []).length >= 4;
@@ -14927,7 +14944,7 @@ ${b.text}
       <div style="margin-top:8px; padding:8px 10px; background:#4c1d9520; border:1.5px dashed #7c3aed; border-radius:10px; text-align:center;">
         <div style="font-size:11px; color:#a78bfa; margin-bottom:5px; font-weight:700;">⚒️ 奈落鍛造</div>
         <div style="font-size:10px; color:#8b5cf6; margin-bottom:6px; line-height:1.5;">
-          ${_hasFourthAffix ? '重新敲第 4 條詞條' : '敲出第 4 條詞條'}　花費 <b style="color:#fbbf24;">${_nextRerollCost.toLocaleString()} 🪙</b>
+          ${_hasFourthAffix ? '重新敲第 4 條詞條' : '敲出第 4 條詞條'}（奈落特殊詞條）　花費 <b style="color:#fbbf24;">${_nextRerollCost.toLocaleString()} 🪙</b>
           ${_rerollCount > 0 ? `<br><span style="color:#9ca3af;">（已敲 ${_rerollCount} 次，下次 ${(_REROLL_COSTS[Math.min(_rerollCount+1, _REROLL_COSTS.length-1)]).toLocaleString()} 🪙）</span>` : ''}
         </div>
         <button class="btn btn-primary" onclick="doAffixReroll(${idx})" style="width:100%; background:linear-gradient(135deg,#7c3aed,#4c1d95); box-shadow:0 3px 0 #3b0764; font-size:12px;">⚒️ ${_hasFourthAffix ? '重敲詞條' : '敲一條詞條'}</button>
@@ -15042,7 +15059,11 @@ ${b.text}
     const r = getRpg(me);
     const item = r.inventory[idx];
     if (!item || !Array.isArray(item.affixes)) return;
-    if ((item.lv || 1) < 26) return; // 只有奈落物品可敲
+    if ((item.lv || 1) < 26) return;          // 只有奈落物品可敲
+    if (item.rarity !== 'legendary') {         // 只有傳說（紫裝）可鍛造
+      showToast('⚒️ 只有傳說裝備可以進行奈落鍛造！');
+      return;
+    }
 
     const COSTS = [150000, 300000, 600000, 1200000, 2400000, 3000000];
     const rc = item.rerollCount || 0;
@@ -15064,10 +15085,11 @@ ${b.text}
       item.affixes.splice(3, 1);
     }
 
-    // 從奈落全詞條池中隨機一條
+    // 從奈落特殊詞條池（nabyssOnly）隨機一條（第 4 條專屬）
     const layerAffixMult = 1.80;
     const def = RARITY[item.rarity] || RARITY['legendary'];
-    const a = AFFIXES[Math.floor(Math.random() * AFFIXES.length)];
+    const poolNabyss = AFFIXES.filter(a => a.nabyssOnly);
+    const a = poolNabyss[Math.floor(Math.random() * poolNabyss.length)];
     const val = a.fixedPct != null
       ? a.fixedPct
       : Math.max(1, Math.round((1 + (item.lv || 28) * a.perLv) * def.mult * layerAffixMult));
@@ -22895,6 +22917,51 @@ ${b.text}
   // 啟動
   // ============================================================
   loadData();
+  // ⭐ 詞條規則修復：把舊的「非生命湧現 nabyssOnly 詞條出現在位置 0-2」改成 ATK
+  (function migrateNabyssAffixes() {
+    // 奈落特殊詞條（nabyssOnly 且非 hpRegen）的 type 列表
+    const SPECIAL_TYPES = new Set(['atk_nabyss','def_nabyss','spd_nabyss','hp_nabyss']);
+    const SPECIAL_NAMES = new Set(['虛空之力','深淵護盾','混沌疾影','奈落根基']);
+    // lv28 傳說 ATK 詞條的參考值（鋒利 perLv=0.35, mult=1.5, layerMult=1.80）
+    function nabyssAtkVal(itemLv) {
+      return Math.max(1, Math.round((1 + (itemLv||28)*0.35) * 1.5 * 1.80));
+    }
+    function fixItem(item) {
+      if (!item || !Array.isArray(item.affixes) || item.affixes.length < 4) return;
+      let dirty = false;
+      for (let i = 0; i <= 2; i++) {
+        const af = item.affixes[i];
+        if (af && SPECIAL_NAMES.has(af.name)) {
+          // 將此詞條統計值從 item 上移除
+          if (af.type && af.type !== 'hpRegen') {
+            item[af.type] = Math.max(0, (item[af.type] || 0) - (af.val || 0));
+          }
+          // 換成 ATK（鋒利）
+          const newVal = nabyssAtkVal(item.lv);
+          item.atk = (item.atk || 0) + newVal;
+          item.affixes[i] = { type: 'atk', name: '鋒利', val: newVal };
+          dirty = true;
+        }
+      }
+      return dirty;
+    }
+    let changed = false;
+    if (Array.isArray(players)) {
+      players.forEach(p => {
+        if (!p || !p.rpg) return;
+        const rpg = p.rpg;
+        // 裝備欄
+        if (rpg.equipped) {
+          Object.values(rpg.equipped).forEach(item => { if (fixItem(item)) changed = true; });
+        }
+        // 背包
+        if (Array.isArray(rpg.bag)) {
+          rpg.bag.forEach(item => { if (fixItem(item)) changed = true; });
+        }
+      });
+    }
+    if (changed) { try { saveData(); } catch(e){} }
+  })();
   render();
   refreshDebugBtn();
 </script>
