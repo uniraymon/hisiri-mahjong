@@ -12521,7 +12521,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508195634';
+  const APP_VERSION = '20260508200252';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -20645,6 +20645,17 @@ ${b.text}
   function renderHellMessenger() {
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
+    // ⭐ 自動 sync：把 hellBattle 技能同步到主遊戲欄位（舊存檔補丁）
+    if (rpg.hellBattleSkillLevels || rpg.hellBattleSkills) {
+      rpg.skillLevels = rpg.skillLevels || {};
+      rpg.skills      = rpg.skills      || {};
+      for (const [id, lv] of Object.entries(rpg.hellBattleSkillLevels || {})) {
+        if ((lv || 0) > (rpg.skillLevels[id] || 0)) rpg.skillLevels[id] = lv;
+      }
+      for (const [id, lv] of Object.entries(rpg.hellBattleSkills || {})) {
+        if ((lv || 0) > (rpg.skills[id] || 0)) rpg.skills[id] = lv;
+      }
+    }
     const stamina   = rpg.stamina || 0;
     const myCoins   = getCoins(me.id);
     const hellLv    = rpg.hellLv || 1;
@@ -21134,6 +21145,15 @@ ${b.text}
     rpg.hellBattleAbilities     = rpg.hellBattleAbilities     || { str:0, vit:0, agi:0, dex:0, int:0, luk:0 };
     rpg.hellBattleAbilityTree   = rpg.hellBattleAbilityTree   || {};
     rpg.hellBattleCd            = rpg.hellBattleCd            || {};
+    // ⭐ 舊存檔 migration：把 hellBattle 技能同步到主遊戲欄位
+    rpg.skillLevels = rpg.skillLevels || {};
+    rpg.skills      = rpg.skills      || {};
+    for (const [id, lv] of Object.entries(rpg.hellBattleSkillLevels)) {
+      if ((lv || 0) > (rpg.skillLevels[id] || 0)) rpg.skillLevels[id] = lv;
+    }
+    for (const [id, lv] of Object.entries(rpg.hellBattleSkills)) {
+      if ((lv || 0) > (rpg.skills[id] || 0)) rpg.skills[id] = lv;
+    }
     saveData(); renderHellMessenger();
     showToast(`⚔️ 選擇了【${CLASSES[cls].name}】！起手 5 技能點 + 5 能力點可分配。`);
   }
@@ -21150,6 +21170,9 @@ ${b.text}
     if (cur >= node.maxLevel) { showToast('已達最高等'); return; }
     rpg.hellBattleSkills = rpg.hellBattleSkills || {};
     rpg.hellBattleSkills[nodeId] = cur + 1;
+    // ⭐ 同步到主遊戲 skillTree 欄位，讓 computeStats 生效
+    rpg.skills = rpg.skills || {};
+    rpg.skills[nodeId] = cur + 1;
     rpg.hellBattleSkillPoints -= 1;
     saveData(); renderHellMessenger();
     // 刷新技能 modal（若開著）
@@ -21172,6 +21195,9 @@ ${b.text}
     if (cur >= sMax) { showToast('已達最高等'); return; }
     rpg.hellBattleSkillLevels = rpg.hellBattleSkillLevels || {};
     rpg.hellBattleSkillLevels[skillId] = cur + 1;
+    // ⭐ 同步到主遊戲 skillLevels 欄位，讓 autoFight 生效
+    rpg.skillLevels = rpg.skillLevels || {};
+    rpg.skillLevels[skillId] = cur + 1;
     rpg.hellBattleSkillPoints -= 1;
     saveData(); renderHellMessenger();
     const modalEl = document.getElementById('genericModal');
