@@ -12485,7 +12485,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508171401';
+  const APP_VERSION = '20260508171535';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -18245,7 +18245,22 @@ ${b.text}
     const list = (state && Array.isArray(state.recentBattles)) ? state.recentBattles : [];
     const snap = list.find(h => h.id === historyId);
     if (!snap) { showToast('找不到該戰報'); return; }
-    return _doReplay(snap);
+    // 一口氣讀取所有 localStorage 分塊（戰鬥本人有完整 log）
+    let log = [];
+    try {
+      const _c0 = localStorage.getItem('wbLog_' + historyId);
+      if (_c0) {
+        log = JSON.parse(_c0);
+        for (let _ci = 1; _ci <= 20; _ci++) {
+          const _v = localStorage.getItem('wbLog_' + historyId + '_' + _ci);
+          if (_v === null) break;
+          log = log.concat(JSON.parse(_v));
+        }
+      }
+    } catch(e) { log = []; }
+    // fallback：其他玩家用 Firestore 的 400 條 log
+    if (!log.length) log = snap.log || [];
+    return _doReplay({ ...snap, log });
   }
   window.replayBossFightFromState = replayBossFightFromState;
 
