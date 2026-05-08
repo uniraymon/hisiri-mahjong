@@ -2494,6 +2494,80 @@
     },
   };
 
+  // ===== 🎭 外觀系統：COSMETICS 定義 =====
+  const COSMETICS = [
+    // ── 普通（白）──
+    { id:'cosm_steel_frame',    name:'鋼鐵邊框',  icon:'⬜', rarity:'common',    price:300000,
+      desc:'堅硬的鋼鐵外框，簡潔有力。',
+      frameColor:'#94a3b8', glowColor:'rgba(148,163,184,0.6)', bgGradient:'linear-gradient(135deg,#1e293b,#334155)' },
+    { id:'cosm_forest_veil',    name:'森林薄霧',  icon:'🌿', rarity:'common',    price:320000,
+      desc:'翠綠薄霧環繞，自然之力護佑。',
+      frameColor:'#4ade80', glowColor:'rgba(74,222,128,0.5)', bgGradient:'linear-gradient(135deg,#052e16,#166534)' },
+    { id:'cosm_crimson_veil',   name:'緋紅面紗',  icon:'🔴', rarity:'common',    price:340000,
+      desc:'烈焰緋紅包覆，展現戰士氣魄。',
+      frameColor:'#f87171', glowColor:'rgba(248,113,113,0.5)', bgGradient:'linear-gradient(135deg,#450a0a,#7f1d1d)' },
+    { id:'cosm_azure_mist',     name:'蔚藍薄霧',  icon:'💙', rarity:'common',    price:360000,
+      desc:'清澈蔚藍如深海，沉穩之心。',
+      frameColor:'#60a5fa', glowColor:'rgba(96,165,250,0.5)', bgGradient:'linear-gradient(135deg,#0c1445,#1e3a8a)' },
+    { id:'cosm_golden_trim',    name:'黃金鑲邊',  icon:'✨', rarity:'common',    price:380000,
+      desc:'閃爍黃金裝飾，富貴之相。',
+      frameColor:'#fbbf24', glowColor:'rgba(251,191,36,0.5)', bgGradient:'linear-gradient(135deg,#451a03,#92400e)' },
+    // ── 稀有（藍）──
+    { id:'cosm_thunder_cage',   name:'雷霆囚籠',  icon:'⚡', rarity:'rare',      price:450000,
+      desc:'電弧交織成的外框，迸發電光。',
+      frameColor:'#a78bfa', glowColor:'rgba(167,139,250,0.7)', bgGradient:'linear-gradient(135deg,#1e0a3c,#4c1d95)' },
+    { id:'cosm_frostbind',      name:'霜凍封印',  icon:'❄️', rarity:'rare',      price:480000,
+      desc:'冰晶封印外圍，冷峻的力量。',
+      frameColor:'#67e8f9', glowColor:'rgba(103,232,249,0.7)', bgGradient:'linear-gradient(135deg,#042f2e,#134e4a)' },
+    { id:'cosm_shadow_veil',    name:'暗影遮幕',  icon:'🌑', rarity:'rare',      price:500000,
+      desc:'黑暗迷霧籠罩，神秘難測。',
+      frameColor:'#6b7280', glowColor:'rgba(107,114,128,0.8)', bgGradient:'linear-gradient(135deg,#030712,#111827)' },
+    { id:'cosm_blaze_mantle',   name:'烈焰斗篷',  icon:'🔥', rarity:'rare',      price:520000,
+      desc:'業火烈焰為披風，威壓十足。',
+      frameColor:'#fb923c', glowColor:'rgba(251,146,60,0.7)', bgGradient:'linear-gradient(135deg,#431407,#7c2d12)' },
+    { id:'cosm_nature_bloom',   name:'自然盛開',  icon:'🌸', rarity:'rare',      price:550000,
+      desc:'花瓣飄落圍繞，靈動清新。',
+      frameColor:'#f9a8d4', glowColor:'rgba(249,168,212,0.7)', bgGradient:'linear-gradient(135deg,#2d0a1e,#831843)' },
+    // ── 史詩（紫）──
+    { id:'cosm_void_rift',      name:'虛空裂縫',  icon:'🌌', rarity:'epic',      price:700000,
+      desc:'虛空裂縫撕裂現實，散發異次元氣息。',
+      frameColor:'#c084fc', glowColor:'rgba(192,132,252,0.9)', bgGradient:'linear-gradient(135deg,#1a003d,#3b0764)' },
+    { id:'cosm_dragon_aura',    name:'龍威氣場',  icon:'🐉', rarity:'epic',      price:720000,
+      desc:'龍之威嚴瀰漫四周，令人膽寒。',
+      frameColor:'#dc2626', glowColor:'rgba(220,38,38,0.9)', bgGradient:'linear-gradient(135deg,#1c0202,#450a0a)' },
+    { id:'cosm_specter_shroud', name:'幽靈裹身',  icon:'👻', rarity:'epic',      price:740000,
+      desc:'靈體薄紗纏繞，如幽靈現世。',
+      frameColor:'#a5f3fc', glowColor:'rgba(165,243,252,0.9)', bgGradient:'linear-gradient(135deg,#022c22,#064e3b)' },
+    { id:'cosm_fallen_star',    name:'墜落星辰',  icon:'⭐', rarity:'epic',      price:760000,
+      desc:'星辰之光化為戰甲，耀眼奪目。',
+      frameColor:'#fde68a', glowColor:'rgba(253,230,138,0.9)', bgGradient:'linear-gradient(135deg,#1c1002,#44280a)' },
+    { id:'cosm_demon_mark',     name:'魔紋標記',  icon:'😈', rarity:'epic',      price:800000,
+      desc:'魔界禁忌紋路浮現，力量暗湧其中。',
+      frameColor:'#f472b6', glowColor:'rgba(244,114,182,0.9)', bgGradient:'linear-gradient(135deg,#2d0023,#701a75)' },
+    // ── 傳說（橙）──
+    { id:'cosm_celestial',      name:'天界聖裝',  icon:'👼', rarity:'legendary', price:900000,
+      desc:'天界神聖光輝降臨，無上榮耀的象徵。',
+      frameColor:'#fef08a', glowColor:'rgba(254,240,138,1.0)', bgGradient:'linear-gradient(135deg,#1c1600,#713f12)' },
+    { id:'cosm_abyss_lord',     name:'冥淵魔主',  icon:'👿', rarity:'legendary', price:920000,
+      desc:'冥淵深處誕生的至黑之力，凝聚於此。',
+      frameColor:'#7c3aed', glowColor:'rgba(124,58,237,1.0)', bgGradient:'linear-gradient(135deg,#09000f,#1e003d)' },
+    { id:'cosm_time_fracture',  name:'時間裂紋',  icon:'⏳', rarity:'legendary', price:950000,
+      desc:'時間法則被扭曲，過去與未來在此交錯。',
+      frameColor:'#34d399', glowColor:'rgba(52,211,153,1.0)', bgGradient:'linear-gradient(135deg,#001c10,#064e3b)' },
+    { id:'cosm_phoenix_crown',  name:'不死鳳冠',  icon:'🦅', rarity:'legendary', price:980000,
+      desc:'不死鳳凰之冠，浴火重生永不言敗。',
+      frameColor:'#f97316', glowColor:'rgba(249,115,22,1.0)', bgGradient:'linear-gradient(135deg,#2c0a00,#7c2d12)' },
+    { id:'cosm_goose_god',      name:'鵝鵝神降',  icon:'🦢', rarity:'legendary', price:1000000,
+      desc:'鵝鵝之神親臨戰場，萬物臣服！（至尊限定）',
+      frameColor:'#ffffff', glowColor:'rgba(255,255,255,1.0)', bgGradient:'linear-gradient(135deg,#0f0f0f,#1a1a2e)' },
+  ];
+  const COSM_RARITY = {
+    common:    { label:'普通', color:'#94a3b8', bg:'#1e293b' },
+    rare:      { label:'稀有', color:'#60a5fa', bg:'#1e3a8a' },
+    epic:      { label:'史詩', color:'#c084fc', bg:'#3b0764' },
+    legendary: { label:'傳說', color:'#f97316', bg:'#431407' },
+  };
+
   // 鵝鵝怪物全名單（5 階、特殊能力：multiHit / steal / reflect / physRes / magRes）
   const MONSTERS = [
     // tier 1（玩家 Lv 1-4）
@@ -3286,7 +3360,7 @@
     const arenaHtml = `
       <div class="battle-arena" id="battleArena">
         <div class="combatant" id="combatPlayer">
-          <div class="combatant-icon">${_wbCls?.image ? `<img class="class-art" src="${_wbCls.image}" alt="${_wbCls.name}" style="image-rendering:pixelated;image-rendering:crisp-edges;">` : (_wbCls?.icon || '🎴')}</div>
+          ${me ? _playerCombatIconHTML(getRpg(me)) : '<div class="combatant-icon">🎴</div>'}
           <div class="combatant-name">${escapeHtml(me?.name || '?')} Lv${me ? getRpg(me).level : '?'}</div>
           <div class="combatant-hp-track"><div class="combatant-hp-fill" id="pHpBar" style="width:100%"></div></div>
           <div class="combatant-hp-text" id="pHpText">${_wbStats.maxHp || '?'}/${_wbStats.maxHp || '?'}</div>
@@ -12302,7 +12376,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508121021';
+  const APP_VERSION = '20260508123320';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13522,6 +13596,11 @@ ${b.text}
         <span class="cqm-icon">💎</span>
         <span class="cqm-label">寶石</span>
         <span class="cqm-badge">${Object.values(rpg.gemInventory||{}).reduce((s,v)=>s+v,0)}</span>
+      </button>
+      <button class="cqm-btn" onclick="showCosmeticShop()" title="外觀商店">
+        <span class="cqm-icon">🎭</span>
+        <span class="cqm-label">外觀</span>
+        <span class="cqm-badge">${rpg.equippedCosmetic ? (COSMETICS.find(c=>c.id===rpg.equippedCosmetic)?.icon||'▸') : '無'}</span>
       </button>
       <button class="cqm-btn" onclick="showResourcesModal()" title="資源">
         <span class="cqm-icon">💠</span>
@@ -15924,6 +16003,231 @@ ${b.text}
     renderGemModal();
   }
   window.showGemModal = showGemModal;
+
+  // =====================================================
+  // 🎭 外觀系統（Cosmetic Shop）
+  // =====================================================
+
+  function getEquippedCosmetic(rpg) {
+    if (!rpg || !rpg.equippedCosmetic) return null;
+    return COSMETICS.find(c => c.id === rpg.equippedCosmetic) || null;
+  }
+
+  // 回傳完整的 <div class="{divClass}"> 含外觀框效果
+  function _playerCombatIconHTML(rpg, divClass, imgSizeStyle) {
+    const cosm = getEquippedCosmetic(rpg);
+    const cls  = CLASSES[rpg && rpg.class];
+    const sty  = imgSizeStyle ? ` style="${imgSizeStyle}"` : '';
+    const imgHTML = cls && cls.image
+      ? `<img class="class-art" src="${cls.image}" alt="${escapeHtml(cls.name || '')}"${sty}>`
+      : (cls && cls.icon || '🎴');
+    const outerClass = divClass || 'combatant-icon';
+    if (!cosm) return `<div class="${outerClass}">${imgHTML}</div>`;
+    const wrapSty =
+      `border:3px solid ${cosm.frameColor};border-radius:8px;` +
+      `box-shadow:0 0 14px ${cosm.glowColor};background:${cosm.bgGradient};` +
+      `padding:2px;position:relative;`;
+    const badge =
+      `<span style="position:absolute;bottom:-5px;right:-5px;font-size:12px;` +
+      `text-shadow:0 1px 4px #000;z-index:2;">${cosm.icon}</span>`;
+    return `<div class="${outerClass}" style="${wrapSty}">${imgHTML}${badge}</div>`;
+  }
+
+  function showCosmeticShop() {
+    let el = document.getElementById('cosmeticShopModal');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'cosmeticShopModal';
+      el.style.cssText =
+        'position:fixed;top:0;left:0;right:0;bottom:0;z-index:9900;' +
+        'display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);';
+      document.body.appendChild(el);
+    }
+    el.style.display = 'flex';
+    el.innerHTML = _renderCosmeticShop(null);
+  }
+  window.showCosmeticShop = showCosmeticShop;
+
+  function _renderCosmeticShop(previewId) {
+    const me = getMe(); if (!me) return '';
+    const rpg      = getRpg(me);
+    const coins    = getCoins(me.id);
+    const owned    = rpg.ownedCosmetics || [];
+    const equipped = rpg.equippedCosmetic || null;
+    const previewCosm = previewId ? COSMETICS.find(c => c.id === previewId) : null;
+    const cls = CLASSES[rpg.class];
+
+    // ── 預覽面板 ──
+    const previewHtml = `
+      <div style="background:#0a0a1a;border:2px solid ${previewCosm ? previewCosm.frameColor : '#2a2a3a'};
+          border-radius:12px;padding:12px;text-align:center;min-height:180px;transition:all 0.3s;">
+        <div style="font-size:10px;color:#6b7280;margin-bottom:8px;">⚡ 戰鬥預覽</div>
+        <div style="display:inline-block;position:relative;
+            ${previewCosm ? `border:3px solid ${previewCosm.frameColor};border-radius:10px;` +
+              `box-shadow:0 0 20px ${previewCosm.glowColor};background:${previewCosm.bgGradient};padding:4px;` : ''}">
+          ${cls && cls.image
+            ? `<img src="${cls.image}" alt="${escapeHtml(cls.name||'')}" style="width:64px;height:64px;image-rendering:pixelated;display:block;">`
+            : `<div style="width:64px;height:64px;display:flex;align-items:center;justify-content:center;font-size:40px;">${cls && cls.icon || '🎴'}</div>`}
+          ${previewCosm ? `<span style="position:absolute;bottom:-7px;right:-7px;font-size:18px;
+              text-shadow:0 1px 4px #000;">${previewCosm.icon}</span>` : ''}
+        </div>
+        ${previewCosm ? `
+          <div style="margin-top:12px;">
+            <div style="color:${previewCosm.frameColor};font-weight:700;font-size:12px;">
+              ${previewCosm.icon} ${escapeHtml(previewCosm.name)}</div>
+            <div style="color:${COSM_RARITY[previewCosm.rarity].color};font-size:10px;margin-top:2px;">
+              ✦ ${COSM_RARITY[previewCosm.rarity].label}</div>
+            <div style="color:#9ca3af;font-size:10px;margin-top:5px;line-height:1.4;">
+              ${escapeHtml(previewCosm.desc)}</div>
+            <div style="color:#fbbf24;font-size:10px;margin-top:5px;font-weight:700;">
+              🪙 ${previewCosm.price.toLocaleString()}</div>
+          </div>
+        ` : `<div style="color:#4b5563;font-size:11px;margin-top:14px;">← 點選外觀可預覽</div>`}
+      </div>`;
+
+    // ── 外觀卡片列表 ──
+    const rarityOrder = ['legendary', 'epic', 'rare', 'common'];
+    const cardsHtml = rarityOrder.map(rar => {
+      const items = COSMETICS.filter(c => c.rarity === rar);
+      if (!items.length) return '';
+      const rs = COSM_RARITY[rar];
+      return `
+        <div style="margin-bottom:10px;">
+          <div style="font-size:10px;color:${rs.color};font-weight:700;margin-bottom:5px;
+              padding:2px 8px;background:${rs.bg}55;border-radius:4px;display:inline-block;">
+            ${rs.label} ✦</div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;">
+            ${items.map(c => {
+              const isOwned    = owned.includes(c.id);
+              const isEquipped = equipped === c.id;
+              const isPrev     = previewId === c.id;
+              const canBuy     = !isOwned && coins >= c.price;
+              return `
+                <div onclick="cosmeticPreview('${c.id}')"
+                    style="background:${isPrev ? c.bgGradient : '#0d0d1a'};
+                    border:2px solid ${isPrev ? c.frameColor : (isOwned ? c.frameColor + '88' : '#2a2a3a')};
+                    border-radius:8px;padding:8px;cursor:pointer;position:relative;
+                    transition:border-color 0.2s,background 0.2s;">
+                  ${isEquipped ? `<div style="position:absolute;top:3px;right:3px;font-size:8px;
+                      background:${c.frameColor};color:#000;border-radius:3px;padding:1px 4px;
+                      font-weight:700;">裝備中</div>` : ''}
+                  <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+                    <span style="font-size:22px;">${c.icon}</span>
+                    <div>
+                      <div style="color:${isOwned ? c.frameColor : '#e5e7eb'};font-size:11px;
+                          font-weight:700;">${escapeHtml(c.name)}</div>
+                      <div style="color:${rs.color};font-size:9px;">${rs.label}</div>
+                    </div>
+                  </div>
+                  ${isEquipped
+                    ? `<button onclick="event.stopPropagation();cosmUnequip()"
+                          style="width:100%;padding:3px;background:#374151;border:none;
+                          border-radius:5px;color:#9ca3af;font-size:9px;cursor:pointer;">
+                          取消裝備</button>`
+                    : isOwned
+                    ? `<button onclick="event.stopPropagation();cosmEquip('${c.id}')"
+                          style="width:100%;padding:3px;
+                          background:linear-gradient(135deg,${c.frameColor}44,${c.frameColor}88);
+                          border:1px solid ${c.frameColor};border-radius:5px;
+                          color:${c.frameColor};font-size:9px;font-weight:700;cursor:pointer;">
+                          ✅ 裝備</button>`
+                    : `<button onclick="event.stopPropagation();cosmBuy('${c.id}')" ${!canBuy ? 'disabled' : ''}
+                          style="width:100%;padding:3px;
+                          background:${canBuy ? 'linear-gradient(135deg,#fbbf24,#f59e0b)' : '#1f2937'};
+                          border:none;border-radius:5px;
+                          color:${canBuy ? '#000' : '#4b5563'};font-size:9px;font-weight:700;
+                          cursor:${canBuy ? 'pointer' : 'not-allowed'};">
+                          🪙 ${(c.price / 10000).toFixed(0)}萬</button>`}
+                </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+    }).join('');
+
+    const equippedCosm = equipped ? COSMETICS.find(c => c.id === equipped) : null;
+    return `
+      <div style="background:linear-gradient(135deg,#0a0014,#10001f);
+          border:2px solid #7c3aed;border-radius:16px;padding:0;
+          max-width:520px;width:95%;max-height:90vh;display:flex;flex-direction:column;
+          box-shadow:0 0 40px rgba(124,58,237,0.4);">
+        <div style="padding:14px 16px;border-bottom:1px solid #1f1040;
+            display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+          <div>
+            <div style="font-size:16px;font-weight:900;color:#c084fc;">🎭 外觀商店</div>
+            <div style="font-size:10px;color:#6b7280;margin-top:2px;">
+              購買外觀以改變戰鬥造型 · 持有：<span style="color:#fbbf24;">🪙 ${coins.toLocaleString()}</span>
+            </div>
+          </div>
+          <button onclick="document.getElementById('cosmeticShopModal').style.display='none'"
+              style="background:#1f1040;border:1px solid #374151;color:#9ca3af;
+              border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;">✕ 關閉</button>
+        </div>
+        <div style="display:flex;gap:10px;padding:14px;overflow:hidden;flex:1;min-height:0;">
+          <div style="width:150px;flex-shrink:0;">${previewHtml}</div>
+          <div style="flex:1;overflow-y:auto;padding-right:2px;">${cardsHtml}</div>
+        </div>
+        ${equippedCosm ? `
+        <div style="padding:8px 16px;border-top:1px solid #1f1040;font-size:10px;
+            color:#9ca3af;flex-shrink:0;">
+          目前裝備：<span style="color:${equippedCosm.frameColor};font-weight:700;">
+            ${equippedCosm.icon} ${escapeHtml(equippedCosm.name)}</span>
+        </div>` : ''}
+      </div>`;
+  }
+
+  window.cosmeticPreview = function(id) {
+    const el = document.getElementById('cosmeticShopModal');
+    if (!el) return;
+    el.innerHTML = _renderCosmeticShop(id);
+  };
+
+  window.cosmBuy = function(id) {
+    const me = getMe(); if (!me) return;
+    const rpg  = getRpg(me);
+    const cosm = COSMETICS.find(c => c.id === id);
+    if (!cosm) return;
+    if ((rpg.ownedCosmetics || []).includes(id)) { showToast('你已擁有此外觀！'); return; }
+    const coins = getCoins(me.id);
+    if (coins < cosm.price) {
+      showToast(`❌ 鵝鵝幣不足！需要 ${cosm.price.toLocaleString()}，現有 ${coins.toLocaleString()}`);
+      return;
+    }
+    safeConfirm(
+      `確定要購買「${cosm.icon} ${cosm.name}」？\n費用：${cosm.price.toLocaleString()} 鵝鵝幣`,
+      () => {
+        if (!spendCoins(me.id, cosm.price)) { showToast('❌ 購買失敗：鵝鵝幣不足'); return; }
+        rpg.ownedCosmetics = [...(rpg.ownedCosmetics || []), id];
+        saveData();
+        showToast(`✅ 購買成功！${cosm.icon} ${cosm.name}`);
+        const el2 = document.getElementById('cosmeticShopModal');
+        if (el2) el2.innerHTML = _renderCosmeticShop(id);
+      }
+    );
+  };
+
+  window.cosmEquip = function(id) {
+    const me = getMe(); if (!me) return;
+    const rpg  = getRpg(me);
+    const cosm = COSMETICS.find(c => c.id === id);
+    if (!cosm) return;
+    if (!(rpg.ownedCosmetics || []).includes(id)) { showToast('你尚未擁有此外觀！'); return; }
+    rpg.equippedCosmetic = id;
+    saveData();
+    showToast(`🎭 已裝備「${cosm.icon} ${cosm.name}」！`);
+    const el = document.getElementById('cosmeticShopModal');
+    if (el) el.innerHTML = _renderCosmeticShop(id);
+  };
+
+  window.cosmUnequip = function() {
+    const me = getMe(); if (!me) return;
+    const rpg  = getRpg(me);
+    const prev = rpg.equippedCosmetic;
+    rpg.equippedCosmetic = null;
+    saveData();
+    showToast('已取消裝備外觀');
+    const el = document.getElementById('cosmeticShopModal');
+    if (el) el.innerHTML = _renderCosmeticShop(prev || null);
+  };
 
   function setGemTab(tab) {
     __gemTab = tab;
@@ -18330,7 +18634,7 @@ ${b.text}
       const arenaHtml = `
         <div class="battle-arena" id="battleArena">
           <div class="combatant" id="combatPlayer">
-            <div class="combatant-icon">${CLASSES[rpg.class].image ? `<img class="class-art" src="${CLASSES[rpg.class].image}" alt="${CLASSES[rpg.class].name}">` : CLASSES[rpg.class].icon}</div>
+            ${_playerCombatIconHTML(rpg)}
             <div class="combatant-name">${escapeHtml(me.name)} Lv${rpg.level}</div>
             <div class="combatant-hp-track"><div class="combatant-hp-fill" id="pHpBar" style="width:100%"></div></div>
             <div class="combatant-hp-text" id="pHpText">${stats.maxHp}/${stats.maxHp}</div>
@@ -21007,7 +21311,7 @@ ${b.text}
     const arenaHtml = `
       <div class="battle-arena" id="battleArena">
         <div class="combatant" id="combatPlayer">
-          <div class="combatant-icon">${CLASSES[rpg.class].image ? `<img class="class-art" src="${CLASSES[rpg.class].image}" alt="${CLASSES[rpg.class].name}">` : CLASSES[rpg.class].icon}</div>
+          ${_playerCombatIconHTML(rpg)}
           <div class="combatant-name">${escapeHtml(me.name)} Lv${rpg.level}</div>
           <div class="combatant-hp-track"><div class="combatant-hp-fill" id="pHpBar" style="width:100%"></div></div>
           <div class="combatant-hp-text" id="pHpText">${stats.maxHp}/${stats.maxHp}</div>
@@ -21173,7 +21477,7 @@ ${b.text}
     const arenaHtml = `
       <div class="multi-arena" id="battleArena">
         <div class="t-player">
-          <div class="t-icon">${CLASSES[rpg.class].image ? `<img class="class-art" src="${CLASSES[rpg.class].image}" alt="${CLASSES[rpg.class].name}" style="width:48px;height:48px;image-rendering:pixelated;image-rendering:crisp-edges;">` : CLASSES[rpg.class].icon}</div>
+          ${_playerCombatIconHTML(rpg, 't-icon', 'width:48px;height:48px;image-rendering:pixelated;image-rendering:crisp-edges;')}
           <div class="t-name">${escapeHtml(me.name)} Lv${rpg.level}</div>
           <div class="t-hp"><div class="t-hp-fill" id="mfPHpFill" style="width:100%"></div></div>
           <div class="t-hp-text" id="mfPHpText">${stats.maxHp}/${stats.maxHp}</div>
