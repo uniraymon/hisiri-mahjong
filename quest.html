@@ -665,6 +665,12 @@
     25% { transform: translateX(-6px); }
     75% { transform: translateX(6px); }
   }
+  /* 外觀外框包覆層（frame + orbit 不跟著角色動畫移動） */
+  .cosm-wrap { position: relative; display: inline-block; }
+  @keyframes cosmOrbit {
+    from { transform: translate(-50%,-50%) rotate(0deg)   translateX(var(--cosm-r,38px)) rotate(0deg); }
+    to   { transform: translate(-50%,-50%) rotate(360deg) translateX(var(--cosm-r,38px)) rotate(-360deg); }
+  }
   .combatant-name { font-size: 11px; font-weight: 700; color: #5a4a4a; margin: 4px 0; }
   .combatant-hp-track {
     background: #fff;
@@ -12395,7 +12401,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508135238';
+  const APP_VERSION = '20260508142739';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -12451,7 +12457,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260508_nabyss_boost';
+  const NEWS_LATEST_ID = 'patch_20260508_cosmetic_layer';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -12471,6 +12477,34 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#1a0033,#4c1d95); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🎭 外觀系統升級 ＋ 地獄使者強化　<span style="font-size:11px; opacity:0.85;">2026-05-08</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#c084fc; margin:6px 0 4px;">🎭 外觀系統改版</div>
+        <div>・外觀外框現在<b>獨立圖層</b>，攻擊動畫時<b>只有角色動</b>，外框保持靜止</div>
+        <div>・外框右下角圖示升級為<b>公轉特效</b>——圖示會繞著角色旋轉一圈！</div>
+        <div>・購買外觀後<b>自動裝備</b>，不需要再手動按裝備按鈕</div>
+        <div>・裝備/取消外觀後主畫面即時更新</div>
+
+        <div style="font-weight:700; color:#c084fc; margin:10px 0 4px;">👹 地獄使者強化</div>
+        <div>・<b>能力點系統</b>上線！每升一等獲得 <b>4 點</b>能力點可分配</div>
+        <div>・能力加成全面統一為 <b>+1 / 點</b>（簡潔直觀）：</div>
+        <div style="font-size:12px; padding-left:8px; margin-top:2px;">
+          <div>💀 邪力 STR：+1% ATK / 點　🩸 魔體 VIT：+1 HP +1 DEF / 點</div>
+          <div>👁️ 冥速 AGI：+1 SPD / 點　⚖️ 業力 DEX：+1% 暴擊率 / 點</div>
+          <div>🌑 靈力 INT：+1 MP +1 MARK +1 技能傷害 / 點</div>
+          <div>🎴 命運 LUK：+1% 暴擊率 +1% 暴擊傷害 / 點</div>
+        </div>
+        <div style="margin-top:4px;">・地獄戰鬥完全採用與一般職業相同的 <b>autoFight</b> 引擎</div>
+
+        <div style="font-weight:700; color:#c084fc; margin:10px 0 4px;">🕳️ 奈落支配者調整</div>
+        <div>・★ 奈落支配者（精英怪）血量：360萬 → <b>80萬</b>（難度優化）</div>
+
+        <div style="background:#1e1040; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#c084fc;">
+          💡 外觀店目前有 20 款外框可購買，未來將加入帽子、武器、服裝換裝系統，敬請期待！
+        </div>
 
         <div style="background:linear-gradient(135deg,#0f172a,#1e0040); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">⚡ 奈落強化更新　<span style="font-size:11px; opacity:0.85;">2026-05-08</span></div>
@@ -16032,7 +16066,11 @@ ${b.text}
     return COSMETICS.find(c => c.id === rpg.equippedCosmetic) || null;
   }
 
-  // 回傳完整的 <div class="{divClass}"> 含外觀框效果
+  // 回傳完整的戰鬥圖示 HTML，含外觀分層效果：
+  //   cosm-wrap（最外層，不受攻擊動畫影響）
+  //   ├─ cosm-frame  圖層 0：靜態外框 + 光暈 + 背景漸層（絕對定位，攻擊時不動）
+  //   ├─ combatant-icon 圖層 1：角色圖（受 .attacking 動畫影響，frame 不跟著動）
+  //   └─ cosm-orbit 圖層 2：特殊圖示，繞著角色圓形公轉
   function _playerCombatIconHTML(rpg, divClass, imgSizeStyle) {
     const cosm = getEquippedCosmetic(rpg);
     const cls  = CLASSES[rpg && rpg.class];
@@ -16042,14 +16080,32 @@ ${b.text}
       : (cls && cls.icon || '🎴');
     const outerClass = divClass || 'combatant-icon';
     if (!cosm) return `<div class="${outerClass}">${imgHTML}</div>`;
-    const wrapSty =
-      `border:3px solid ${cosm.frameColor};border-radius:8px;` +
-      `box-shadow:0 0 14px ${cosm.glowColor};background:${cosm.bgGradient};` +
-      `padding:2px;position:relative;`;
-    const badge =
-      `<span style="position:absolute;bottom:-5px;right:-5px;font-size:12px;` +
-      `text-shadow:0 1px 4px #000;z-index:2;">${cosm.icon}</span>`;
-    return `<div class="${outerClass}" style="${wrapSty}">${imgHTML}${badge}</div>`;
+
+    // 小尺寸（多人戰鬥傳 imgSizeStyle）用較小公轉半徑
+    const isMini   = !!imgSizeStyle;
+    const orbitR   = isMini ? '24px' : '38px';
+    const iconSize = isMini ? '11px' : '14px';
+    const orbitDur = isMini ? '3s'   : '4s';
+
+    // 圖層 0：靜態外框（position:absolute，inset 撐出 4px 外圍）
+    const frameSty =
+      `position:absolute;inset:-4px;border:3px solid ${cosm.frameColor};border-radius:10px;` +
+      `box-shadow:0 0 18px ${cosm.glowColor},0 0 5px ${cosm.frameColor}88;` +
+      `background:${cosm.bgGradient};z-index:0;pointer-events:none;`;
+
+    // 圖層 2：公轉圖示（top/left 50% 定位在中心，用 CSS var 控制半徑）
+    const orbitSty =
+      `position:absolute;top:50%;left:50%;z-index:2;pointer-events:none;` +
+      `font-size:${iconSize};text-shadow:0 1px 6px #000,0 0 10px ${cosm.glowColor};` +
+      `animation:cosmOrbit ${orbitDur} linear infinite;--cosm-r:${orbitR};`;
+
+    return (
+      `<div class="cosm-wrap">` +
+        `<div style="${frameSty}"></div>` +
+        `<div class="${outerClass}" style="position:relative;z-index:1;">${imgHTML}</div>` +
+        `<span style="${orbitSty}">${cosm.icon}</span>` +
+      `</div>`
+    );
   }
 
   function showCosmeticShop() {
