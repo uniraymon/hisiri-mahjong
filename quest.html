@@ -2568,14 +2568,14 @@
     legendary: { label:'傳說', color:'#f97316', bg:'#431407' },
   };
 
-  // 地獄使者能力點（複用標準 ABILITIES 的 id，讓 computeAbilityBonuses 自動計算）
+  // 地獄使者能力點（自訂縮放，由 computeHellBattleStats 計算，不走標準 computeAbilityBonuses）
   const HM_ABILITIES = [
-    { id:'str', name:'邪力',     short:'STR', icon:'💀', desc:'+1 ATK / 點' },
-    { id:'vit', name:'魔體',     short:'VIT', icon:'🩸', desc:'+5 HP / 點，每 2 點 +1 DEF' },
-    { id:'agi', name:'冥速',     short:'AGI', icon:'👁️', desc:'每 2 點 +1 SPD' },
+    { id:'str', name:'邪力',     short:'STR', icon:'💀', desc:'+1% ATK / 點（百分比加成）' },
+    { id:'vit', name:'魔體',     short:'VIT', icon:'🩸', desc:'+6 HP / 點，+1 DEF / 點' },
+    { id:'agi', name:'冥速',     short:'AGI', icon:'👁️', desc:'+1 SPD / 點' },
     { id:'dex', name:'業力',     short:'DEX', icon:'⚖️', desc:'+0.4% 暴擊率 / 點' },
-    { id:'int', name:'靈力精通', short:'INT', icon:'🌑', desc:'+2 MP / 點，+1.5 MARK，+0.5 技能傷害' },
-    { id:'luk', name:'命運之輪', short:'LUK', icon:'🎴', desc:'+0.2% 暴擊率 / 點，+1% 暴擊傷害 / 點' },
+    { id:'int', name:'靈力精通', short:'INT', icon:'🌑', desc:'+3 MP / 點，+2.5 MARK / 點，+1.5 技能傷害' },
+    { id:'luk', name:'命運之輪', short:'LUK', icon:'🎴', desc:'+0.2% 暴擊率 / 點，+2% 暴擊傷害 / 點' },
   ];
 
   // 鵝鵝怪物全名單（5 階、特殊能力：multiHit / steal / reflect / physRes / magRes）
@@ -7206,7 +7206,7 @@
       + (mergedBonuses.critDmg || 0);
     // ⭐ 每回合 MP 自動恢復（鵝王恩賜首飾 + 寶物 mpRegen、之後其他來源都加在這裡）
     stats.mpRegen = itemMpRegen + (treasure.mpRegen || 0);
-    // ⭐ 地獄使者戰鬥裝備加成（hellBattlePlayer 傳入的 bat* 屬性總和）
+    // ⭐ 地獄使者戰鬥裝備 + 能力點加成（hellBattlePlayer 傳入的 bat* 屬性 + abilityBonuses）
     if (rpg._hellBattleBonusStats) {
       const hb = rpg._hellBattleBonusStats;
       stats.atk   += hb.atk  || 0;
@@ -7215,6 +7215,15 @@
       stats.maxHp += hb.hp   || 0;
       stats.maxMp += hb.mp   || 0;
       stats.mark  += hb.mark || 0;
+      // 能力點：ATK 百分比加成（套用在加完裝備的 atk 上）
+      if (hb.atkPct)  stats.atk = Math.round(stats.atk * (1 + (hb.atkPct || 0)));
+      // 能力點：暴擊 / 暴擊傷害 / 技能傷害 → 寫入 setBonuses 供 autoFight 讀取
+      if (hb.critChance || hb.critDmgBonus || hb.skillFlat) {
+        stats.setBonuses = stats.setBonuses || {};
+        stats.setBonuses.critChance = (stats.setBonuses.critChance || 0) + (hb.critChance   || 0);
+        stats.setBonuses.critDmg    = (stats.setBonuses.critDmg    || 0) + (hb.critDmgBonus || 0);
+        stats.setBonuses.skillFlat  = (stats.setBonuses.skillFlat  || 0) + (hb.skillFlat    || 0);
+      }
     }
     return stats;
   }
@@ -12386,7 +12395,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508124631';
+  const APP_VERSION = '20260508125933';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -20563,7 +20572,7 @@ ${b.text}
       const _tempBattleRpg = {
         class: 'hellmessenger', level: hbLv,
         skills: rpg.hellBattleSkills || {}, skillLevels: rpg.hellBattleSkillLevels || {},
-        abilities: rpg.hellBattleAbilities || {}, abilityTree: rpg.hellBattleAbilityTree || {},
+        abilities: {}, abilityTree: {}, // ⭐ 能力由 computeHellBattleStats 計算，不走標準路
         equipment: {}, equippedGems: {}, gems: {}, spirits: [], spiritBag: [], treasure: [],
         _hellBattleBonusStats: _batBonus,
       };
@@ -20709,7 +20718,9 @@ ${b.text}
   // 計算裝備的戰鬥 bat* 屬性加成
   function computeHellBattleStats(rpg) {
     const equip = rpg.hellEquip || {};
-    const s = { atk:0, def:0, hp:0, spd:0, mark:0, mp:0 };
+    const s = { atk:0, def:0, hp:0, spd:0, mark:0, mp:0,
+                atkPct:0, critChance:0, critDmgBonus:0, skillFlat:0 };
+    // ── 裝備加成 ──
     for (const slot of HELL_EQUIP_SLOTS) {
       const id = equip[slot]; if (!id) continue;
       const item = HELL_GACHA_POOL.find(x => x.id === id); if (!item) continue;
@@ -20720,6 +20731,24 @@ ${b.text}
       if (item.batMark) s.mark += item.batMark;
       if (item.batMp)   s.mp   += item.batMp;
     }
+    // ── 能力點加成（自訂縮放，不走標準 computeAbilityBonuses）──
+    const ab  = rpg.hellBattleAbilities || {};
+    const str = ab.str || 0;
+    const vit = ab.vit || 0;
+    const agi = ab.agi || 0;
+    const dex = ab.dex || 0;
+    const int_ = ab.int || 0;
+    const luk = ab.luk || 0;
+    s.atkPct       += str  * 0.01;          // +1% ATK / 點（百分比）
+    s.hp           += vit  * 6;             // +6 HP / 點
+    s.def          += vit  * 1;             // +1 DEF / 點
+    s.spd          += agi  * 1;             // +1 SPD / 點
+    s.critChance   += dex  * 0.004;         // +0.4% 暴擊率 / 點
+    s.mp           += int_ * 3;             // +3 MP / 點
+    s.mark         += int_ * 2.5;           // +2.5 MARK / 點
+    s.skillFlat    += int_ * 1.5;           // +1.5 技能傷害 / 點
+    s.critChance   += luk  * 0.002;         // +0.2% 暴擊率 / 點
+    s.critDmgBonus += luk  * 0.02;          // +2% 暴擊傷害 / 點
     return s;
   }
   window.computeHellBattleStats = computeHellBattleStats;
@@ -20966,8 +20995,7 @@ ${b.text}
       level:            rpg.hellBattleLv || 1,
       skills:           rpg.hellBattleSkills        || {},
       skillLevels:      rpg.hellBattleSkillLevels   || {},
-      abilities:        rpg.hellBattleAbilities      || {},
-      abilityTree:      rpg.hellBattleAbilityTree    || {},
+      abilities:        {}, abilityTree: {}, // ⭐ 能力由 computeHellBattleStats 計算
       equipment: {}, equippedGems: {}, gems: {},
       spirits: [], spiritBag: [], treasure: [],
       _hellBattleBonusStats: batBonus,
