@@ -3246,12 +3246,10 @@
       attackerAvatar: me.avatar || cls?.icon || '🎴',
       playerSnap: { name: me.name, avatar: cls?.icon || '🎴', level: r.level, maxHp: stats.maxHp, maxMp: stats.maxMp, class: r.class, baseCrit: result.archerStats?.baseCrit, classImage: cls?.image || null, equippedCosmetic: r.equippedCosmetic || null },
       monsterSnap: { name: monster.name, icon: monster.icon, level: monster.level, maxHp: monster.maxHp, ability: monster.ability, art: boss.art || null },
-      log: (result.log || []).slice(0, 600),
+      log: (result.log || []).slice(0, 80), // ⭐ Firestore 限 80 條（防 1MB 爆炸），完整 log 在 localStorage
     };
-    // ⭐ log 另存 localStorage（Firestore snap 可能會被剝掉 log 欄位）
+    // ⭐ 完整 log 另存 localStorage（供本人完整回放，最多 1000 條）
     try { localStorage.setItem('wbLog_' + _wbSnapId, JSON.stringify((result.log || []).slice(0, 1000))); } catch(e) {}
-    // ⭐ 移除 log，不存入 Firestore（避免 recentBattles 撐爆 1MB 文件上限）
-    delete snap_.log;
     // ⭐ 存到自己的 wbBattleHistory（最多 5 筆，供之後重播）
     try {
       const _wbSnap = { ...snap_ }; delete _wbSnap.log; // 不存 log，從 localStorage 讀
@@ -12469,7 +12467,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508162950';
+  const APP_VERSION = '20260508171026';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
