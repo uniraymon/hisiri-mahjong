@@ -12467,7 +12467,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508155141';
+  const APP_VERSION = '20260508160739';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -24760,6 +24760,14 @@ ${b.text}
             ? { ...bossSnap.data() }
             : { hp: bossDef.maxHp, maxHp: bossDef.maxHp, queue: [], damageLog: {}, killCount: 0, recentBattles: [], lastKill: null };
           state.queue = Array.isArray(state.queue) ? [...state.queue] : [];
+          // ⭐ 加入前先踢過期隊頭，讓新玩家有機會直接站上 queue[0]
+          const _joinStaleMs = (bossDef && bossDef.staleMs) || 60000;
+          while (state.queue.length > 0) {
+            const _jh = state.queue[0];
+            if (_jh && (Date.now() - (_jh.joinedAt || 0)) > _joinStaleMs) {
+              state.queue = state.queue.slice(1);
+            } else break;
+          }
           state.queue.push({ pid: attackerId, joinedAt: Date.now() });
           tx.set(bossRef, _prune(state));
           return { state, position: state.queue.length };
