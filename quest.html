@@ -2455,17 +2455,32 @@
       attackVerb: '靈魂攻擊',
       skills: [
         // 靈魂斬：1.8× ATK，無視 DEF，低 MP — 基礎輸出
-        { id: 'hm_soul_slash',   name: '靈魂斬',   icon: '⚔️', unlockLv: 1,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.8, ignoreDef: true },
+        { id: 'hm_soul_slash',   name: '靈魂斬',   icon: '⚔️', unlockLv: 1,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.8, ignoreDef: true,
+          desc: '以靈力斬擊貫穿防禦，無視目標 DEF。(1.8× ATK，無視防禦)' },
         // 詛咒爆發：2.0× ATK + 強毒（4 charges, 55/回）
-        { id: 'hm_curse_burst',  name: '詛咒爆發', icon: '💜', unlockLv: 2,  cooldown: 0, mpCost: 30, type: 'damage', mult: 2.0, applyStatus: { type: 'poison', charges: 4, dmg: 55, chance: 0.80 } },
+        { id: 'hm_curse_burst',  name: '詛咒爆發', icon: '💜', unlockLv: 2,  cooldown: 0, mpCost: 30, type: 'damage', mult: 2.0, applyStatus: { type: 'poison', charges: 4, dmg: 55, chance: 0.80 },
+          desc: '業力爆發侵蝕對手，80% 機率施加劇毒（4 回合，每回 55 傷害）。(2.0× ATK)' },
         // 業障護盾：DEF +50%（4 回合）— 防守技
-        { id: 'hm_karma_shield', name: '業障護盾', icon: '🛡️', unlockLv: 3,  cooldown: 0, mpCost: 25, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.50, turns: 4, key: 'hm_karma_shield' } },
+        { id: 'hm_karma_shield', name: '業障護盾', icon: '🛡️', unlockLv: 3,  cooldown: 0, mpCost: 25, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.50, turns: 4, key: 'hm_karma_shield' },
+          desc: '以業障之力構築護盾，DEF +50%，持續 4 回合。' },
         // 地獄汲取：回復 12% maxHP + MP 回充（免費）
-        { id: 'hm_hell_drain',   name: '地獄汲取', icon: '🩸', unlockLv: 5,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.12, isMpRegen: true },
+        { id: 'hm_hell_drain',   name: '地獄汲取', icon: '🩸', unlockLv: 5,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.12, isMpRegen: true,
+          desc: '吸取地獄之力，回復 12% 最大 HP 並補充 MP。(免費技能)' },
         // 地獄烈焰：3.2× ATK + 強灼（3 charges, 90/回，90% 機率）
-        { id: 'hm_hellfire',     name: '地獄烈焰', icon: '🔥', unlockLv: 8,  cooldown: 0, mpCost: 50, type: 'damage', mult: 3.2, applyStatus: { type: 'poison', charges: 3, dmg: 90, chance: 0.90 } },
+        { id: 'hm_hellfire',     name: '地獄烈焰', icon: '🔥', unlockLv: 8,  cooldown: 0, mpCost: 50, type: 'damage', mult: 3.2, applyStatus: { type: 'poison', charges: 3, dmg: 90, chance: 0.90 },
+          desc: '召喚地獄業火燃燒敵人，90% 機率施加灼燒（3 回合，每回 90 傷害）。(3.2× ATK)' },
         // 魔王怒吼：4.5× ATK + 麻痺（2 charges，70% 機率）— 大招
-        { id: 'hm_death_howl',   name: '魔王怒吼', icon: '💀', unlockLv: 10, cooldown: 0, mpCost: 65, type: 'damage', mult: 4.5, applyStatus: { type: 'paralyze', charges: 2, chance: 0.70 } },
+        { id: 'hm_death_howl',   name: '魔王怒吼', icon: '💀', unlockLv: 10, cooldown: 0, mpCost: 65, type: 'damage', mult: 4.5, applyStatus: { type: 'paralyze', charges: 2, chance: 0.70 },
+          desc: '爆發魔王之力以怒吼震懾敵人，70% 機率麻痺對手 2 回合。(4.5× ATK)' },
+        // 冥界審判：5.5× ATK，無視 DEF + 強毒（unlockLv 12）
+        { id: 'hm_abyss_judge',  name: '冥界審判', icon: '⚖️', unlockLv: 12, cooldown: 0, mpCost: 80, type: 'damage', mult: 5.5, ignoreDef: true, applyStatus: { type: 'poison', charges: 3, dmg: 120, chance: 0.85 },
+          desc: '冥府法庭降下裁決，貫穿防禦，85% 機率施加強毒（3 回合，每回 120 傷害）。(5.5× ATK，無視防禦)' },
+        // 靈魂撕裂：6.5× ATK，無視 DEF + 必定流血（unlockLv 15）
+        { id: 'hm_soul_rend',    name: '靈魂撕裂', icon: '💔', unlockLv: 15, cooldown: 0, mpCost: 95, type: 'damage', mult: 6.5, ignoreDef: true, applyStatus: { type: 'poison', charges: 5, dmg: 150, chance: 1.00 },
+          desc: '撕裂目標靈魂，無法防禦的巨大衝擊，必定施加持續流血（5 回合，每回 150 傷害）。(6.5× ATK，無視防禦)' },
+        // 魔神降臨：8.0× ATK，無視 DEF + 強麻痺（unlockLv 18）— 終極大招
+        { id: 'hm_demon_god',    name: '魔神降臨', icon: '👹', unlockLv: 18, cooldown: 0, mpCost: 120, type: 'damage', mult: 8.0, ignoreDef: true, applyStatus: { type: 'paralyze', charges: 3, chance: 0.90 },
+          desc: '魔神親臨降下終極制裁，90% 機率麻痺對手 3 回合。(8.0× ATK，無視防禦) ─ 終極大招' },
       ],
       skillTree: [
         { id: 'hm_dark_atk',   name: '黑暗強化', icon: '⚔️', desc: '+3% ATK',       maxLevel: 5, effect: 'atkPct',      per: 0.03 },
@@ -12287,7 +12302,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508052648';
+  const APP_VERSION = '20260508110944';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -18516,224 +18531,106 @@ ${b.text}
       return;
     }
 
-    // ── 真正個人王：動畫戰鬥顯示 ──
+    // ── 真正個人王：立即結算 + 戰報按鈕 ──
     {
-      const _pbCls = CLASSES[rpg.class];
-      const arenaHtml = `
-        <div class="battle-arena" id="battleArena">
-          <div class="combatant" id="combatPlayer">
-            <div class="combatant-icon">${_pbCls.image ? `<img class="class-art" src="${_pbCls.image}" alt="${_pbCls.name}" style="image-rendering:pixelated;image-rendering:crisp-edges;">` : _pbCls.icon}</div>
-            <div class="combatant-name">${escapeHtml(me.name)} Lv${rpg.level}</div>
-            <div class="combatant-hp-track"><div class="combatant-hp-fill" id="pHpBar" style="width:100%"></div></div>
-            <div class="combatant-hp-text" id="pHpText">${stats.maxHp}/${stats.maxHp}</div>
-            <div class="combatant-hp-track" style="margin-top:2px;"><div class="combatant-hp-fill" id="pMpBar" style="width:100%; background:linear-gradient(90deg,#93c5fd,#3b82f6);"></div></div>
-            <div class="combatant-hp-text" id="pMpText" style="color:#1e40af;">MP ${stats.maxMp}/${stats.maxMp}</div>
-            ${rpg.class === 'warrior' ? `
-            <div class="combatant-hp-track" style="margin-top:2px; background:#3f0000;"><div class="combatant-hp-fill" id="bloodPoolBar" style="width:0%; background:linear-gradient(90deg,#ef4444,#991b1b);"></div></div>
-            <div class="combatant-hp-text" id="bloodPoolText" style="color:#ef4444;">🩸 血池 0</div>` : ''}
-            <div class="combatant-spd-track"><div class="combatant-spd-fill" id="pSpdBar" style="width:0%"></div></div>
-            <div class="combatant-spd-text" id="pSpdText">⏱ 行動條 0%</div>
-          </div>
-          <div class="vs-icon">⚔️</div>
-          <div class="combatant" id="combatMonster">
-            <div class="combatant-icon">${monster.art ? `<img class="boss-art" src="${monster.art}" alt="${monster.name}" style="image-rendering:pixelated;image-rendering:crisp-edges;">` : monster.icon}</div>
-            <div class="combatant-name">${monster.name} Lv${monster.level}</div>
-            <div class="combatant-hp-track"><div class="combatant-hp-fill" id="mHpBar" style="width:${(monster.hp/monster.maxHp)*100}%"></div></div>
-            <div class="combatant-hp-text" id="mHpText">${monster.hp.toLocaleString()}/${monster.maxHp.toLocaleString()}</div>
-            <div class="combatant-spd-track" style="margin-top:14px;"><div class="combatant-spd-fill" id="mSpdBar" style="width:0%"></div></div>
-            <div class="combatant-spd-text" id="mSpdText">⏱ 行動條 0%</div>
-          </div>
-        </div>
-        <div class="battle-log" id="battleLog"></div>
-      `;
+      const dmgDealt = monster.hp - result.mHpFinal;
+      st.currentHp = Math.max(0, result.mHpFinal);
+      let killed = false;
+      let rewardHtml = '';
+
+      if (st.currentHp <= 0) {
+        killed = true;
+        st.killCount = (st.killCount || 0) + 1;
+        st.currentHp = def.hp;
+        rpg.xp = (rpg.xp || 0) + def.reward.xp;
+        rpg.totalGold = (rpg.totalGold || 0) + def.reward.coins;
+        refundCoins(me.id, def.reward.coins);
+        let leveled = 0;
+        while (rpg.xp >= xpForLevel(rpg.level)) {
+          rpg.xp -= xpForLevel(rpg.level);
+          rpg.level += 1;
+          rpg.skillPoints = (rpg.skillPoints || 0) + POINTS_PER_LEVEL.skill;
+          rpg.abilityPoints = (rpg.abilityPoints || 0) + POINTS_PER_LEVEL.ability;
+          leveled++;
+        }
+        let spiritDropped = null;
+        try {
+          const sp = generateSpirit(def.id);
+          if (sp) { rpg.spiritBag = rpg.spiritBag || []; rpg.spiritBag.push(sp); spiritDropped = sp; }
+        } catch(e) {}
+        rewardHtml = `
+          <div class="reward-list" style="background:linear-gradient(135deg,#fef3c7,#fde047); border-color:#f59e0b;">
+            <div class="rl-title" style="color:#7c2d12;">🏆 ${def.name} 被擊殺！</div>
+            <div class="rl-item">💢 你打掉了 <b>${dmgDealt.toLocaleString()}</b> HP，給予最後一擊！</div>
+            <div class="rl-item">🪙 +${def.reward.coins} 鵝鵝幣　·　⭐ +${def.reward.xp} XP${leveled ? `（升 ${leveled} 級）` : ''}</div>
+            ${spiritDropped ? `<div class="rl-item" style="color:${spiritDropped.color}; font-weight:700;">🌟 掉落精魂：${spiritDropped.icon} ${escapeHtml(spiritDropped.name)}<div style="font-size:10px; color:#8b6f9b; font-weight:500; margin-top:1px;">${escapeHtml(describeSpirit(spiritDropped))}</div></div>` : ''}
+            <div class="rl-item" style="font-size:11px; color:#7c2d12;">王已重生（HP 回滿，2.5 分鐘後可再戰）</div>
+          </div>`;
+      } else {
+        const regen = Math.round(def.hp * PERSONAL_BOSS_REGEN_PCT);
+        st.currentHp = Math.min(def.hp, st.currentHp + regen);
+        const hpPct = (st.currentHp / def.hp * 100).toFixed(1);
+        rewardHtml = `
+          <div class="reward-list" style="background:linear-gradient(135deg,#1e1b4b,#4c1d95); color:#fff; border-color:#7c3aed;">
+            <div class="rl-title" style="color:#fde047;">${result.won ? '⏸ 暫時撤退' : '⏸ 戰鬥結束'}</div>
+            <div class="rl-item">💢 你打掉了 <b style="color:#fca5a5;">${dmgDealt.toLocaleString()}</b> HP</div>
+            <div class="rl-item" style="color:#fde047;">🩹 王回復 +${regen} HP（5%）</div>
+            <div class="rl-item">${def.icon} ${def.name} 還剩 ${st.currentHp.toLocaleString()} / ${def.hp.toLocaleString()} HP（${hpPct}%）</div>
+            <div class="rl-item" style="font-size:11px; opacity:0.85;">⏳ 2.5 分鐘後可再戰</div>
+          </div>`;
+      }
+
+      const ns = computeStats(me);
+      if (result.pHpFinal <= 0) {
+        rpg.hp = Math.max(1, Math.floor(ns.maxHp * REST_HP_RATIO));
+      } else {
+        rpg.hp = ns.maxHp; rpg.mp = ns.maxMp;
+      }
+      rpg.deathAt = null;
+      if (rpg.critCount == null) rpg.critCount = 0;
+      rpg.critCount += (result.critCount || 0);
+
+      // ⭐ 存戰報（最多 5 筆）
+      let pbId = null;
+      try {
+        pbId = 'pb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+        const _pbCls2 = CLASSES[rpg.class];
+        const pbSnap = {
+          id: pbId, ts: Date.now(),
+          bossId: def.id, bossName: def.name, bossIcon: def.icon, bossLevel: def.level,
+          dmgDealt, killed,
+          rounds: result.log.length > 0 ? (result.log[result.log.length - 1]?.round || 0) : 0,
+          playerSnap: { name: me.name, avatar: _pbCls2?.icon || '🎴', level: rpg.level, maxHp: stats.maxHp, maxMp: stats.maxMp, class: rpg.class, baseCrit: result.archerStats?.baseCrit, classImage: _pbCls2?.image || null },
+          monsterSnap: { name: def.name, icon: def.icon, level: def.level, maxHp: def.hp, ability: def.ability, art: def.art || null },
+        };
+        try { localStorage.setItem('pbLog_' + pbId, JSON.stringify((result.log || []).slice(0, 500))); } catch(e) {}
+        rpg.personalBossHistory = Array.isArray(rpg.personalBossHistory) ? rpg.personalBossHistory : [];
+        rpg.personalBossHistory.unshift(pbSnap);
+        if (rpg.personalBossHistory.length > 5) {
+          const dropped = rpg.personalBossHistory.splice(5);
+          for (const d of dropped) { try { localStorage.removeItem('pbLog_' + d.id); } catch(e) {} }
+        }
+      } catch(e) { console.warn('personalBoss history snap fail', e); }
+
+      const replayBtn = pbId
+        ? `<div style="text-align:center; margin-top:8px;">
+             <button onclick="replayPersonalBossFight('${pbId}')" style="background:linear-gradient(135deg,#1e3a5f,#2563eb); color:#fff; border:none; padding:6px 18px; border-radius:8px; font-size:12px; cursor:pointer; font-family:inherit; font-weight:700; box-shadow:0 2px 0 #1e40af;">▶ 查看戰鬥記錄</button>
+           </div>`
+        : '';
       const _pbRes = document.getElementById('personalBossResult');
-      if (_pbRes) _pbRes.innerHTML = arenaHtml;
-      const _pbLogEl = document.getElementById('battleLog');
-      let _pbi = 0; let _pbLastRound;
-      let _pbPrevPHp = stats.maxHp; let _pbPrevMHp = monster.hp;
+      if (_pbRes) _pbRes.innerHTML = rewardHtml + replayBtn;
 
-      const pbPlayStep = () => {
-        if (_pbi >= result.log.length) {
-          // ── 結算 ──
-          // ⭐ 重抓 live 參考
-          const _liveMe = getPlayer(me.id) || me;
-          const _liveRpg = getRpg(_liveMe);
-          const _liveSt = getPersonalBossState(_liveRpg, bossId);
-          const dmgDealt = monster.hp - result.mHpFinal;
-          _liveSt.currentHp = Math.max(0, result.mHpFinal);
-          let killed = false;
-          let rewardHtml = '';
-
-          if (_liveSt.currentHp <= 0) {
-            killed = true;
-            _liveSt.killCount = (_liveSt.killCount || 0) + 1;
-            _liveSt.currentHp = def.hp;
-            _liveRpg.xp = (_liveRpg.xp || 0) + def.reward.xp;
-            _liveRpg.totalGold = (_liveRpg.totalGold || 0) + def.reward.coins;
-            refundCoins(me.id, def.reward.coins);
-            let leveled = 0;
-            while (_liveRpg.xp >= xpForLevel(_liveRpg.level)) {
-              _liveRpg.xp -= xpForLevel(_liveRpg.level);
-              _liveRpg.level += 1;
-              _liveRpg.skillPoints = (_liveRpg.skillPoints || 0) + POINTS_PER_LEVEL.skill;
-              _liveRpg.abilityPoints = (_liveRpg.abilityPoints || 0) + POINTS_PER_LEVEL.ability;
-              leveled++;
-            }
-            let spiritDropped = null;
-            try {
-              const sp = generateSpirit(def.id);
-              if (sp) { _liveRpg.spiritBag = _liveRpg.spiritBag || []; _liveRpg.spiritBag.push(sp); spiritDropped = sp; }
-            } catch(e) {}
-            rewardHtml = `
-              <div class="reward-list" style="background:linear-gradient(135deg,#fef3c7,#fde047); border-color:#f59e0b;">
-                <div class="rl-title" style="color:#7c2d12;">🏆 ${def.name} 被擊殺！</div>
-                <div class="rl-item">💢 你打掉了 <b>${dmgDealt.toLocaleString()}</b> HP，給予最後一擊！</div>
-                <div class="rl-item">🪙 +${def.reward.coins} 鵝鵝幣　·　⭐ +${def.reward.xp} XP${leveled ? `（升 ${leveled} 級）` : ''}</div>
-                ${spiritDropped ? `<div class="rl-item" style="color:${spiritDropped.color}; font-weight:700;">🌟 掉落精魂：${spiritDropped.icon} ${escapeHtml(spiritDropped.name)}<div style="font-size:10px; color:#8b6f9b; font-weight:500; margin-top:1px;">${escapeHtml(describeSpirit(spiritDropped))}</div></div>` : ''}
-                <div class="rl-item" style="font-size:11px; color:#7c2d12;">王已重生（HP 回滿，2.5 分鐘後可再戰）</div>
-              </div>`;
-          } else {
-            const regen = Math.round(def.hp * PERSONAL_BOSS_REGEN_PCT);
-            _liveSt.currentHp = Math.min(def.hp, _liveSt.currentHp + regen);
-            const hpPct = (_liveSt.currentHp / def.hp * 100).toFixed(1);
-            rewardHtml = `
-              <div class="reward-list" style="background:linear-gradient(135deg,#1e1b4b,#4c1d95); color:#fff; border-color:#7c3aed;">
-                <div class="rl-title" style="color:#fde047;">${result.won ? '⏸ 暫時撤退' : '⏸ 戰鬥結束'}</div>
-                <div class="rl-item">💢 你打掉了 <b style="color:#fca5a5;">${dmgDealt.toLocaleString()}</b> HP</div>
-                <div class="rl-item" style="color:#fde047;">🩹 王回復 +${regen} HP（5%）</div>
-                <div class="rl-item">${def.icon} ${def.name} 還剩 ${_liveSt.currentHp.toLocaleString()} / ${def.hp.toLocaleString()} HP（${hpPct}%）</div>
-                <div class="rl-item" style="font-size:11px; opacity:0.85;">⏳ 2.5 分鐘後可再戰</div>
-              </div>`;
-          }
-
-          // HP/MP 結算
-          const ns = computeStats(_liveMe);
-          if (result.pHpFinal <= 0) {
-            _liveRpg.hp = Math.max(1, Math.floor(ns.maxHp * REST_HP_RATIO));
-          } else {
-            _liveRpg.hp = ns.maxHp; _liveRpg.mp = ns.maxMp;
-          }
-          _liveRpg.deathAt = null;
-          if (_liveRpg.critCount == null) _liveRpg.critCount = 0;
-          _liveRpg.critCount += (result.critCount || 0);
-
-          // ⭐ 存戰報到 history（最多 5 筆）
-          try {
-            const pbId = 'pb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
-            const pbSnap = {
-              id: pbId, ts: Date.now(),
-              bossId: def.id, bossName: def.name, bossIcon: def.icon, bossLevel: def.level,
-              dmgDealt, killed,
-              rounds: result.log.length > 0 ? (result.log[result.log.length - 1]?.round || 0) : 0,
-              playerSnap: { name: _liveMe.name, avatar: _pbCls.icon || '🎴', level: _liveRpg.level, maxHp: stats.maxHp, maxMp: stats.maxMp, class: _liveRpg.class, baseCrit: result.archerStats?.baseCrit, classImage: _pbCls.image || null },
-              monsterSnap: { name: def.name, icon: def.icon, level: def.level, maxHp: def.hp, ability: def.ability, art: def.art || null },
-            };
-            try { localStorage.setItem('pbLog_' + pbId, JSON.stringify((result.log || []).slice(0, 500))); } catch(e) {}
-            _liveRpg.personalBossHistory = Array.isArray(_liveRpg.personalBossHistory) ? _liveRpg.personalBossHistory : [];
-            _liveRpg.personalBossHistory.unshift(pbSnap);
-            if (_liveRpg.personalBossHistory.length > 5) {
-              const dropped = _liveRpg.personalBossHistory.splice(5);
-              for (const d of dropped) { try { localStorage.removeItem('pbLog_' + d.id); } catch(e) {} }
-            }
-          } catch(e) { console.warn('personalBoss history snap fail', e); }
-
-          if (_pbLogEl) {
-            const _summary = document.createElement('div');
-            _summary.innerHTML = rewardHtml;
-            _pbLogEl.appendChild(_summary);
-            _pbLogEl.scrollTop = _pbLogEl.scrollHeight;
-          }
-          snapshotLastFight(monster, result);
-          _liveMe.lastTouchedAt = Date.now();
-          __persistLocalSnapshot();
-          saveData();
-          renderCharCard();
-          renderEquipment();
-          renderRpgStats();
-          renderPersonalBoss();
-          renderPersonalBossHistory();
-          __personalBossInProgress = false;
-          if (typeof updateStaminaUI === 'function') updateStaminaUI();
-          return;
-        }
-
-        const entry = result.log[_pbi++];
-        if (entry.round !== undefined && entry.round !== _pbLastRound) {
-          _pbLastRound = entry.round;
-          const _sep = document.createElement('div');
-          _sep.style.cssText = 'text-align:center;color:#475569;font-size:10px;padding:3px 0;border-top:1px solid #1e293b;margin:3px 0;';
-          _sep.textContent = `── 回合 ${entry.round} ──`;
-          _pbLogEl?.appendChild(_sep);
-        }
-        const _ec = entry.type === 'crit-player' ? 'log-crit'
-          : entry.type === 'player' ? 'log-player'
-          : entry.type === 'monster' ? 'log-monster'
-          : 'log-system';
-        const _ediv = document.createElement('div');
-        _ediv.className = `log-line ${_ec}`;
-        _ediv.textContent = entry.text;
-        _pbLogEl?.appendChild(_ediv);
-        if (_pbLogEl) _pbLogEl.scrollTop = _pbLogEl.scrollHeight;
-        if (entry.hp) {
-          const pHpEl = document.getElementById('pHpBar');
-          const mHpEl = document.getElementById('mHpBar');
-          if (pHpEl) pHpEl.style.width = (entry.hp.player / stats.maxHp * 100) + '%';
-          if (mHpEl) mHpEl.style.width = (entry.hp.monster / monster.maxHp * 100) + '%';
-          const pHpTx = document.getElementById('pHpText');
-          const mHpTx = document.getElementById('mHpText');
-          if (pHpTx) pHpTx.textContent = `${entry.hp.player}/${stats.maxHp}`;
-          if (mHpTx) mHpTx.textContent = `${entry.hp.monster.toLocaleString()}/${monster.maxHp.toLocaleString()}`;
-          if (entry.hp.mp != null) {
-            const pMpBar = document.getElementById('pMpBar');
-            const pMpTx = document.getElementById('pMpText');
-            if (pMpBar) pMpBar.style.width = (entry.hp.mp / stats.maxMp * 100) + '%';
-            if (pMpTx) pMpTx.textContent = `MP ${entry.hp.mp}/${stats.maxMp}`;
-          }
-          if (entry.hp.bloodPool != null) {
-            const bpBar = document.getElementById('bloodPoolBar');
-            const bpTx = document.getElementById('bloodPoolText');
-            if (bpBar) bpBar.style.width = Math.min(100, (entry.hp.bloodPool / Math.max(1, stats.maxHp)) * 100) + '%';
-            if (bpTx) bpTx.textContent = `🩸 血池 ${entry.hp.bloodPool}`;
-          }
-          // 浮動傷害 + 精靈動畫（舊版完整邏輯）
-          const _mDmg = _pbPrevMHp - entry.hp.monster;
-          const _pDmg = _pbPrevPHp - entry.hp.player;
-          if (_mDmg > 0) {
-            const _mEl = document.getElementById('combatMonster');
-            if (_mEl) showDamage(_mEl, _mDmg, entry.type === 'crit-player' ? 'crit' : 'normal');
-          }
-          if (_pDmg > 0) {
-            const _pEl = document.getElementById('combatPlayer');
-            if (_pEl) showDamage(_pEl, _pDmg, 'normal');
-          }
-          if (entry.hp.player > _pbPrevPHp) {
-            const _pEl = document.getElementById('combatPlayer');
-            if (_pEl) showDamage(_pEl, entry.hp.player - _pbPrevPHp, 'heal');
-          }
-          _pbPrevPHp = entry.hp.player;
-          _pbPrevMHp = entry.hp.monster;
-          // ⭐ 攻擊者 .attacking + 被攻擊者 .hurt（含 reflow 強制重啟）
-          if (entry.type === 'player' || entry.type === 'crit-player') {
-            const _mEl2 = document.getElementById('combatMonster');
-            const _pEl2 = document.getElementById('combatPlayer');
-            if (_mEl2) { _mEl2.classList.remove('hurt'); void _mEl2.offsetWidth; _mEl2.classList.add('hurt'); }
-            if (_pEl2) { _pEl2.classList.remove('attacking'); void _pEl2.offsetWidth; _pEl2.classList.add('attacking'); setTimeout(() => _pEl2.classList.remove('attacking'), 500); }
-          } else if (entry.type === 'monster') {
-            const _pEl2 = document.getElementById('combatPlayer');
-            const _mEl2 = document.getElementById('combatMonster');
-            if (_pEl2) { _pEl2.classList.remove('hurt'); void _pEl2.offsetWidth; _pEl2.classList.add('hurt'); }
-            if (_mEl2) { _mEl2.classList.remove('attacking'); void _mEl2.offsetWidth; _mEl2.classList.add('attacking'); setTimeout(() => _mEl2.classList.remove('attacking'), 500); }
-          }
-        }
-        if (entry.gauge && typeof updateSpdBar === 'function') {
-          updateSpdBar('pSpdBar', 'pSpdText', entry.gauge.p, '我的行動條');
-          updateSpdBar('mSpdBar', 'mSpdText', entry.gauge.m, '怪行動條');
-        }
-        const _nx = result.log[_pbi];
-        const _sr = _nx && entry.round !== undefined && entry.round === _nx.round;
-        setTimeout(pbPlayStep, _sr ? 80 : 550);
-      };
-      pbPlayStep();
+      snapshotLastFight(monster, result);
+      me.lastTouchedAt = Date.now();
+      __persistLocalSnapshot();
+      saveData();
+      renderCharCard();
+      renderEquipment();
+      renderRpgStats();
+      renderPersonalBoss();
+      renderPersonalBossHistory();
+      __personalBossInProgress = false;
+      if (typeof updateStaminaUI === 'function') updateStaminaUI();
     }
   }
   window.attackPersonalBoss = attackPersonalBoss;
@@ -19594,6 +19491,16 @@ ${b.text}
   // ⭐ 分頁切換（詛咒模式）
   window.hellTab = function(tab) { window._hellActiveTab = tab; window._hellMode = 'curse'; renderHellMessenger(); };
 
+  // ⭐ 設定地獄使者預設規則頁（用於被人攻打時）
+  window.hellSetPatternPage = function(page) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    rpg.activePatternPage = page;
+    saveData(); renderHellMessenger();
+    const names = rpg.patternPageNames || ['頁 1', '頁 2', '頁 3', '頁 4'];
+    showToast(`✅ 預設規則頁已設為「${names[page] || '頁 '+(page+1)}」`);
+  };
+
   // --- 建立地獄使者角色（DEBUG 限定）---
   function pickHellMessenger() {
     const me = getMe(); if (!me) return;
@@ -20278,8 +20185,41 @@ ${b.text}
       {id:'skills',lbl:'🔮 技能',c:'#7c3aed'},
       {id:'equip', lbl:'⚔️ 裝備',c:'#0891b2'},
       {id:'gacha', lbl:'🎰 扭蛋',c:'#d97706'},
+      {id:'rules', lbl:'📋 規則',c:'#059669'},
     ];
-    const tabNav = `<div style="display:flex;gap:3px;margin-bottom:10px;">${TABS.map(t=>`<button onclick="hellTab('${t.id}')" style="flex:1;padding:7px 2px;border:none;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;background:${activeTab===t.id?`linear-gradient(135deg,${t.c}99,${t.c})`:'#1a0000'};color:${activeTab===t.id?'#fff':'#9ca3af'};border:1px solid ${activeTab===t.id?t.c:'#3f0000'};">${t.lbl}</button>`).join('')}</div>`;
+    const tabNav = `<div style="display:flex;gap:3px;margin-bottom:10px;flex-wrap:wrap;">${TABS.map(t=>`<button onclick="hellTab('${t.id}')" style="flex:1;min-width:56px;padding:7px 2px;border:none;border-radius:7px;cursor:pointer;font-size:10px;font-weight:700;background:${activeTab===t.id?`linear-gradient(135deg,${t.c}99,${t.c})`:'#1a0000'};color:${activeTab===t.id?'#fff':'#9ca3af'};border:1px solid ${activeTab===t.id?t.c:'#3f0000'};">${t.lbl}</button>`).join('')}</div>`;
+
+    // ===== TAB: 規則頁 =====
+    const _pNames = rpg.patternPageNames || ['頁 1', '頁 2', '頁 3', '頁 4'];
+    const _curPatPage = rpg.activePatternPage ?? 0;
+    const rulesTabHtml = `
+      <div style="background:#001a08;border:1px solid #14532d;border-radius:9px;padding:9px 11px;margin-bottom:10px;">
+        <div style="font-size:11px;font-weight:700;color:#86efac;margin-bottom:4px;">⚔️ 決鬥自動規則</div>
+        <div style="font-size:10px;color:#9ca3af;line-height:1.6;">向玩家發起決鬥時，自動套用<b style="color:#fbbf24;">對方的第一頁規則</b>作為本場戰鬥的技能策略。<br>（模擬對手的應戰方式來制定攻勢）</div>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:#c084fc;margin-bottom:6px;">📄 我的規則頁（供他人攻打時使用）</div>
+      ${[0,1,2,3].map(i=>{
+        const pats = rpg.actionPatterns?.[i];
+        const count = Array.isArray(pats) ? pats.length : 0;
+        const isActive = _curPatPage === i;
+        return `<div style="background:#0d0020;border:1px solid ${isActive?'#7c3aed':'#2a0040'};border-radius:8px;padding:7px 10px;margin-bottom:5px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <span style="font-size:11px;font-weight:700;color:${isActive?'#c084fc':'#9ca3af'};">${escapeHtml(_pNames[i]||'頁 '+(i+1))}</span>
+              <span style="font-size:10px;color:#6b7280;margin-left:6px;">${count} 條規則</span>
+            </div>
+            <button onclick="hellSetPatternPage(${i})" ${isActive?'disabled':''} style="padding:3px 8px;border:none;border-radius:5px;cursor:pointer;font-size:9px;font-weight:700;background:${isActive?'#374151':'linear-gradient(135deg,#1a0040,#7c3aed)'};color:${isActive?'#6b7280':'#e9d5ff'};">${isActive?'✅ 使用中':'設為預設'}</button>
+          </div>
+          ${count===0?`<div style="font-size:9px;color:#4b5563;margin-top:2px;">（尚未設定規則，使用預設動作）</div>`:
+            `<div style="font-size:9px;color:#6b7280;margin-top:2px;">${(pats||[]).slice(0,3).map(r=>escapeHtml((r.skillName||r.action||r.verb||'?'))).join(' · ')}${count>3?` · …+${count-3}`:''}
+            </div>`
+          }
+        </div>`;
+      }).join('')}
+      <div style="font-size:10px;color:#4b5563;text-align:center;margin-top:8px;padding:6px;background:#0d0000;border-radius:6px;">
+        💡 如需編輯規則頁內容，請切換至 HOF 戰鬥介面的規則頁設定
+      </div>`;
+
 
     // ===== 戰鬥模式 HTML =====
     const hbCls   = rpg.hellBattleClass;
@@ -20329,6 +20269,17 @@ ${b.text}
                 :`<button onclick="hellChallengePlayer('${t.id}')" style="padding:5px 10px;border:none;border-radius:6px;background:linear-gradient(135deg,#1a003a,#7c3aed);color:#e9d5ff;font-size:10px;font-weight:700;cursor:pointer;">⚔️ 挑戰</button>`}
             </div>`;
           }).join('');
+      // 技能解鎖進度
+      const _hmAllSkills = CLASSES['hellmessenger']?.skills || [];
+      const _unlockedSkills = _hmAllSkills.filter(s => (s.unlockLv||1) <= hbLv);
+      const _nextSkill = _hmAllSkills.filter(s => (s.unlockLv||1) > hbLv).sort((a,b)=>(a.unlockLv||1)-(b.unlockLv||1))[0];
+      const skillUnlockRow = `<div style="margin-top:5px;padding:5px 7px;background:#0d0030;border-radius:6px;">
+        <div style="font-size:10px;color:#c084fc;font-weight:700;margin-bottom:3px;">⚡ 已解鎖技能（${_unlockedSkills.length}/${_hmAllSkills.length}）</div>
+        <div style="display:flex;flex-wrap:wrap;gap:3px;">
+          ${_unlockedSkills.map(s=>`<span title="${escapeHtml(s.desc||s.name)}" style="font-size:10px;background:#1a0040;color:#e9d5ff;padding:2px 5px;border-radius:3px;cursor:default;">${s.icon} ${s.name}</span>`).join('')}
+          ${_nextSkill?`<span style="font-size:10px;color:#4b5563;padding:2px 5px;">🔒 Lv${_nextSkill.unlockLv} ${_nextSkill.icon}${_nextSkill.name}</span>`:''}
+        </div>
+      </div>`;
       return `
         <!-- 戰鬥資訊卡 -->
         <div style="background:#0d0020;border:1px solid #4c1d95;border-radius:10px;padding:10px 12px;margin-bottom:10px;">
@@ -20338,11 +20289,12 @@ ${b.text}
           <div style="font-size:11px;color:#fbbf24;">🎯 技能點 <b>${hbSP} SP</b>
             <button onclick="hellShowBattleSkillModal()" style="margin-left:8px;padding:2px 8px;border:none;border-radius:5px;background:${hbSP>0?'linear-gradient(135deg,#4c1d95,#7c3aed)':'#374151'};color:#fff;font-size:9px;font-weight:700;cursor:pointer;">分配技能</button>
           </div>
+          ${skillUnlockRow}
           ${battleStatsRow}
           <div style="font-size:9px;color:#4b5563;margin-top:4px;">※ 裝備欄（詛咒模式）的 bat* 屬性加成於戰鬥中生效</div>
         </div>
         <!-- 挑戰目標 -->
-        <div style="font-size:12px;font-weight:700;color:#c084fc;margin-bottom:6px;">⚔️ 可挑戰玩家</div>
+        <div style="font-size:12px;font-weight:700;color:#c084fc;margin-bottom:6px;">⚔️ 可挑戰玩家 <span style="font-size:9px;color:#6b7280;font-weight:400;">（自動套用對方第一頁規則應戰）</span></div>
         ${targetListHtml}
         <div style="font-size:10px;color:#4b0000;text-align:center;margin-top:8px;">勝利 EXP 較低・落敗獲 2 倍 EXP（越挫越勇）</div>
       `;
@@ -20381,12 +20333,13 @@ ${b.text}
         ${modeSwitchHtml}
 
         ${hellMode==='curse'?`
-        <!-- 詛咒模式：4 分頁 -->
+        <!-- 詛咒模式：5 分頁 -->
         ${tabNav}
         ${activeTab==='action'?actionTabHtml:''}
         ${activeTab==='skills'?skillsTabHtml:''}
         ${activeTab==='equip' ?equipTabHtml :''}
         ${activeTab==='gacha' ?gachaTabHtml :''}
+        ${activeTab==='rules' ?rulesTabHtml :''}
         `:`
         <!-- 戰鬥模式 -->
         ${battleModeHtml}
@@ -20451,6 +20404,7 @@ ${b.text}
     rpg.hellBattleXp  = (rpg.hellBattleXp || 0) + amount;
     const xpPerLv = (lv) => 100 + (lv - 1) * 80;
     let leveled = false;
+    const prevLv = rpg.hellBattleLv;
     while (rpg.hellBattleLv < 20) {
       const needed = xpPerLv(rpg.hellBattleLv);
       if (rpg.hellBattleXp >= needed) {
@@ -20460,7 +20414,18 @@ ${b.text}
         leveled = true;
       } else break;
     }
-    if (leveled) showToast(`⚔️ 戰鬥等級升至 Lv${rpg.hellBattleLv}！+${POINTS_PER_LEVEL.skill} 技能點`);
+    if (leveled) {
+      // ⭐ 同步主職業等級（讓地獄使者像其他職業一樣升等）
+      rpg.level = rpg.hellBattleLv;
+      showToast(`⚔️ 戰鬥等級升至 Lv${rpg.hellBattleLv}！+${POINTS_PER_LEVEL.skill} 技能點`);
+      // ⭐ 提示新解鎖的戰鬥技能
+      const hmCls2 = CLASSES['hellmessenger'];
+      const newSkills = (hmCls2?.skills || []).filter(s =>
+        (s.unlockLv || 1) > prevLv && (s.unlockLv || 1) <= rpg.hellBattleLv);
+      if (newSkills.length) {
+        setTimeout(() => showToast(`🔓 新技能解鎖：${newSkills.map(s => s.icon + s.name).join('、')}`), 600);
+      }
+    }
   }
 
   // 選擇戰鬥職業
@@ -20544,6 +20509,7 @@ ${b.text}
           <span style="font-size:12px;color:#c084fc;">${s.icon} ${s.name} <span style="color:#6b7280;font-size:10px;">Lv${sLv}/${sMax}</span></span>
           <button onclick="hellBattleLearnActiveSkill('${s.id}')" ${canUp?'':'disabled'} style="padding:2px 9px;border:none;border-radius:5px;background:${canUp?'linear-gradient(135deg,#4c1d95,#7c3aed)':'#374151'};color:#fff;font-size:10px;font-weight:700;cursor:pointer;">+</button>
         </div>
+        ${s.desc?`<div style="font-size:10px;color:#9ca3af;margin-top:2px;">${escapeHtml(s.desc)}</div>`:''}
         ${locked?`<div style="font-size:10px;color:#4b0000;">🔒 需戰鬥 Lv${s.unlockLv}</div>`:''}
       </div>`;
     }).join('');
@@ -20584,6 +20550,8 @@ ${b.text}
 
     // 建立戰鬥替身（複製，不動真實 rpg）
     const batBonus = computeHellBattleStats(rpg);
+    // ⭐ 套用對方第一頁規則：自動使用目標玩家的 actionPatterns[0] 作為攻擊策略
+    const targetRpg2 = getRpg(target);
     const battleRpg = {
       class:            'hellmessenger',
       level:            rpg.hellBattleLv || 1,
@@ -20594,6 +20562,9 @@ ${b.text}
       equipment: {}, equippedGems: {}, gems: {},
       spirits: [], spiritBag: [], treasure: [],
       _hellBattleBonusStats: batBonus,
+      // 使用目標的規則頁 0（「跟那個人的第一頁規則打架」）
+      actionPatterns:   targetRpg2.actionPatterns || [],
+      activePatternPage: 0,
     };
     const battlePlayer = { id: me.id, name: me.name, rpg: battleRpg };
     const bStats = computeStats(battlePlayer);
