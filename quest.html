@@ -2574,6 +2574,39 @@
     legendary: { label:'傳說', color:'#f97316', bg:'#431407' },
   };
 
+  // ── 技能元素 → V3 像素圖示路徑 ──
+  const SKILL_ELEMENTS = {
+    fire:      'art/png/modern_v3/skills/skill_fire.png',
+    lightning: 'art/png/modern_v3/skills/skill_lightning.png',
+    ice:       'art/png/modern_v3/skills/skill_ice.png',
+    blood:     'art/png/modern_v3/skills/skill_blood.png',
+    holy:      'art/png/modern_v3/skills/skill_holy.png',
+    death:     'art/png/modern_v3/skills/skill_death.png',
+  };
+  // 技能 ID → 元素對應（有對應的才顯示圖示，無對應降回 emoji）
+  const SKILL_ELEMENT_MAP = {
+    // 戰士
+    w_rage_flame:'fire',   w_rage_slash:'fire',
+    w_heavy_strike:'lightning',
+    w_blood_slash:'blood', w_blood_burst:'blood', w_blood_explode:'blood', w_bleed_sword:'blood',
+    w_death_rage:'death',
+    // 弓手
+    a_god_arrow:'lightning', a_precise_shot:'lightning',
+    a_barrage:'lightning',   a_arrow_storm:'lightning',
+    a_lethal_aim:'death',    a_poison_arrow:'death',
+    a_lifesteal_arrow:'blood',
+    // 法師
+    m_fireball:'fire',    m_firestorm:'fire',
+    m_chain_lightning:'lightning', m_thunder_storm:'lightning',
+    m_ice_lance:'ice',
+    m_blood_drain:'blood',
+    m_poison_cloud:'death', m_destruction:'death',
+    // 聖騎
+    p_judgment:'holy',  p_holy_slash:'holy', p_holy_heal:'holy',  p_pray:'holy',
+    p_holy_smite:'holy', p_godfist:'holy',   p_blessing:'holy',   p_aegis:'holy',
+    p_shield_charge:'holy',
+  };
+
   // 地獄使者能力點（自訂縮放，由 computeHellBattleStats 計算，不走標準 computeAbilityBonuses）
   const HM_ABILITIES = [
     { id:'str', name:'邪力',     short:'STR', icon:'💀', desc:'+1% ATK / 點（百分比加成）' },
@@ -12401,7 +12434,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508142739';
+  const APP_VERSION = '20260508152624';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13795,10 +13828,15 @@ ${b.text}
       buffPairs.push('　傷害 = (ATK+MARK+DEF)×(1+擊中數÷10+被擊數÷10)×剩餘次數 × critMult（必暴）');
     }
 
+    // ⭐ 技能詳情大圖示：V3 像素 icon 優先，無對應則降回 emoji
+    const _sdElem = SKILL_ELEMENT_MAP[skill.id];
+    const _sdIconHtml = _sdElem
+      ? `<img class="skill-art" src="${SKILL_ELEMENTS[_sdElem]}" style="width:64px;height:64px;border-radius:50%;display:inline-block;box-shadow:0 0 16px rgba(124,58,237,0.5);">`
+      : `<div style="font-size:48px;line-height:1;">${skill.icon}</div>`;
     const html = `
       <div style="text-align:center; padding:4px 0;">
-        <div style="font-size:48px; line-height:1; margin-bottom:4px;">${skill.icon}</div>
-        <div style="font-weight:700; font-size:16px; color:#5b3d62;">${escapeHtml(skill.name)}</div>
+        ${_sdIconHtml}
+        <div style="font-weight:700; font-size:16px; color:#5b3d62; margin-top:4px;">${escapeHtml(skill.name)}</div>
         <div style="font-size:11px; color:#8b6f9b; margin-top:2px;">
           ${isLocked ? `🔒 Lv ${skill.unlockLv} 解鎖` : noUpgrade ? `固定效果（不可升級）` : `等級 <b style="color:#7c3aed;">${lv}/${skillMax}</b>`}
           　·　硬值 ${getEffectiveCast(skill)}　·　${formatSkillCost(skill)}
@@ -13878,8 +13916,13 @@ ${b.text}
       const sMax = s.maxLv || SKILL_MAX_LEVEL;
       const sNoUp = sMax <= 1;
       const canUp = !locked && !sNoUp && sLv < sMax && points >= 1;
+      // ⭐ 優先用 V3 像素圖示，無對應則降回 emoji
+      const _elem = SKILL_ELEMENT_MAP[s.id];
+      const _sIconHtml = _elem
+        ? `<img class="skill-art" src="${SKILL_ELEMENTS[_elem]}" style="width:22px;height:22px;border-radius:50%;vertical-align:middle;margin-right:3px;">`
+        : `${s.icon} `;
       return `<div class="skill-row${locked ? ' locked' : ''}" onclick="hideModal(); showSkillDetailModal('${s.id}')">
-        <span>${locked ? '🔒' : '✓'} <b>${s.icon} ${s.name}</b>${!sNoUp && sLv > 0 ? ` <span class="skill-row-lv">Lv ${sLv}/${sMax}</span>` : ''}${locked ? ` <span style="font-size:10px;">(${s.unlockLv})</span>` : ''}${canUp ? ` <span style="font-size:9px; color:#7c3aed; font-weight:700;">⬆ 可升級</span>` : ''}</span>
+        <span>${locked ? '🔒' : '✓'} <b>${_sIconHtml}${s.name}</b>${!sNoUp && sLv > 0 ? ` <span class="skill-row-lv">Lv ${sLv}/${sMax}</span>` : ''}${locked ? ` <span style="font-size:10px;">(${s.unlockLv})</span>` : ''}${canUp ? ` <span style="font-size:9px; color:#7c3aed; font-weight:700;">⬆ 可升級</span>` : ''}</span>
         <span style="opacity:0.85; font-size:10px; white-space:nowrap;">硬值 ${getEffectiveCast(s)} · ${formatSkillCost(s)}</span>
       </div>`;
     }).join('');
