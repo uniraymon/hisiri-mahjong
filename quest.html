@@ -2571,11 +2571,11 @@
   // 地獄使者能力點（自訂縮放，由 computeHellBattleStats 計算，不走標準 computeAbilityBonuses）
   const HM_ABILITIES = [
     { id:'str', name:'邪力',     short:'STR', icon:'💀', desc:'+1% ATK / 點（百分比加成）' },
-    { id:'vit', name:'魔體',     short:'VIT', icon:'🩸', desc:'+6 HP / 點，+1 DEF / 點' },
+    { id:'vit', name:'魔體',     short:'VIT', icon:'🩸', desc:'+1 HP / 點，+1 DEF / 點' },
     { id:'agi', name:'冥速',     short:'AGI', icon:'👁️', desc:'+1 SPD / 點' },
-    { id:'dex', name:'業力',     short:'DEX', icon:'⚖️', desc:'+0.4% 暴擊率 / 點' },
-    { id:'int', name:'靈力精通', short:'INT', icon:'🌑', desc:'+3 MP / 點，+2.5 MARK / 點，+1.5 技能傷害' },
-    { id:'luk', name:'命運之輪', short:'LUK', icon:'🎴', desc:'+0.2% 暴擊率 / 點，+2% 暴擊傷害 / 點' },
+    { id:'dex', name:'業力',     short:'DEX', icon:'⚖️', desc:'+1% 暴擊率 / 點' },
+    { id:'int', name:'靈力精通', short:'INT', icon:'🌑', desc:'+1 MP / 點，+1 MARK / 點，+1 技能傷害 / 點' },
+    { id:'luk', name:'命運之輪', short:'LUK', icon:'🎴', desc:'+1% 暴擊率 / 點，+1% 暴擊傷害 / 點' },
   ];
 
   // 鵝鵝怪物全名單（5 階、特殊能力：multiHit / steal / reflect / physRes / magRes）
@@ -12395,7 +12395,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508125933';
+  const APP_VERSION = '20260508130834';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -20556,7 +20556,7 @@ ${b.text}
     // ⭐ 舊存檔補能力點（起手 5 + 每升一等 +3，扣掉已花費）
     if (rpg.hellBattleAbilityPoints == null) {
       const _usedAb = Object.values(rpg.hellBattleAbilities || {}).reduce((a, b) => a + (b || 0), 0);
-      rpg.hellBattleAbilityPoints = Math.max(0, 5 + (hbLv - 1) * POINTS_PER_LEVEL.ability - _usedAb);
+      rpg.hellBattleAbilityPoints = Math.max(0, 5 + (hbLv - 1) * (POINTS_PER_LEVEL.ability + 1) - _usedAb);
     }
     rpg.hellBattleAbilities = rpg.hellBattleAbilities || { str:0, vit:0, agi:0, dex:0, int:0, luk:0 };
     const hbAP    = rpg.hellBattleAbilityPoints;
@@ -20740,15 +20740,15 @@ ${b.text}
     const int_ = ab.int || 0;
     const luk = ab.luk || 0;
     s.atkPct       += str  * 0.01;          // +1% ATK / 點（百分比）
-    s.hp           += vit  * 6;             // +6 HP / 點
+    s.hp           += vit  * 1;             // +1 HP / 點
     s.def          += vit  * 1;             // +1 DEF / 點
     s.spd          += agi  * 1;             // +1 SPD / 點
-    s.critChance   += dex  * 0.004;         // +0.4% 暴擊率 / 點
-    s.mp           += int_ * 3;             // +3 MP / 點
-    s.mark         += int_ * 2.5;           // +2.5 MARK / 點
-    s.skillFlat    += int_ * 1.5;           // +1.5 技能傷害 / 點
-    s.critChance   += luk  * 0.002;         // +0.2% 暴擊率 / 點
-    s.critDmgBonus += luk  * 0.02;          // +2% 暴擊傷害 / 點
+    s.critChance   += dex  * 0.01;          // +1% 暴擊率 / 點
+    s.mp           += int_ * 1;             // +1 MP / 點
+    s.mark         += int_ * 1;             // +1 MARK / 點
+    s.skillFlat    += int_ * 1;             // +1 技能傷害 / 點
+    s.critChance   += luk  * 0.01;          // +1% 暴擊率 / 點
+    s.critDmgBonus += luk  * 0.01;          // +1% 暴擊傷害 / 點
     return s;
   }
   window.computeHellBattleStats = computeHellBattleStats;
@@ -20767,7 +20767,7 @@ ${b.text}
         rpg.hellBattleXp -= needed;
         rpg.hellBattleLv++;
         rpg.hellBattleSkillPoints   = (rpg.hellBattleSkillPoints   || 0) + POINTS_PER_LEVEL.skill;
-        rpg.hellBattleAbilityPoints = (rpg.hellBattleAbilityPoints || 0) + POINTS_PER_LEVEL.ability;
+        rpg.hellBattleAbilityPoints = (rpg.hellBattleAbilityPoints || 0) + POINTS_PER_LEVEL.ability + 1; // +4 / lv
         leveled = true;
       } else break;
     }
@@ -20903,7 +20903,7 @@ ${b.text}
     if (rpg.hellBattleAbilityPoints == null) {
       const lv  = rpg.hellBattleLv || 1;
       const usedAb = Object.values(rpg.hellBattleAbilities || {}).reduce((a, b) => a + (b || 0), 0);
-      rpg.hellBattleAbilityPoints = Math.max(0, 5 + (lv - 1) * POINTS_PER_LEVEL.ability - usedAb);
+      rpg.hellBattleAbilityPoints = Math.max(0, 5 + (lv - 1) * (POINTS_PER_LEVEL.ability + 1) - usedAb);
     }
     rpg.hellBattleAbilities = rpg.hellBattleAbilities || { str:0, vit:0, agi:0, dex:0, int:0, luk:0 };
     const pts = rpg.hellBattleAbilityPoints || 0;
