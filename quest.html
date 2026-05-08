@@ -3119,6 +3119,7 @@
   // ⭐ Phase B：雲端 state 改用 rooms/{ROOM_ID}/wb9/{bossId}（每王一份獨立 doc）
   window.__wb9BossIds = WB9_BOSSES.map(b => b.id);
   let wb9 = {};
+  let _lastWb9FightData = null; // ⭐ 儲存最後一場戰鬥資料，供「回放」按鈕使用
 
   // 取得 / 初始化單一 boss 的 state
   function wb9GetState(bossId) {
@@ -3333,10 +3334,11 @@
     wb9Render({ force: true });
     if (typeof renderWbHistory === 'function') renderWbHistory();
 
-    // 顯示本場結果（動畫）
-    wb9ShowFightResult({ boss, dmgDealt: actualDmg, killed, xpGain, coinGain,
+    // ⭐ 儲存戰鬥資料，顯示即時結果（按「回放」才播動畫）
+    _lastWb9FightData = window._lastWb9FightData = { boss, dmgDealt: actualDmg, killed, xpGain, coinGain,
       won: result.pHpFinal > 0, log: result.log, snapId: _wbSnapId,
-      me, stats, monster });
+      me, stats, monster };
+    wb9ShowQuickResult(_lastWb9FightData);
   }
   window.wb9Attack = wb9Attack;
 
@@ -3539,6 +3541,37 @@
       setTimeout(wbPlayStep, _sr ? 80 : 550);
     };
     wbPlayStep();
+  }
+  window.wb9ShowFightResult = wb9ShowFightResult;
+
+  // ⭐ 即時結果卡片（不播動畫）；按「▶ 回放」才呼叫 wb9ShowFightResult
+  function wb9ShowQuickResult({ boss, dmgDealt, killed, xpGain, coinGain, won, snapId, me, stats, monster }) {
+    const fr = document.getElementById('fightResult');
+    if (!fr) return;
+
+    const killLine = killed
+      ? `<div style="font-size:15px;font-weight:700;color:#dc2626;text-align:center;padding:6px 0;">💥 尾刀！${escapeHtml(boss.name)} 倒下了！</div>`
+      : '';
+    const defeatLine = !won
+      ? `<div style="font-size:13px;color:#dc2626;text-align:center;">💀 你被打倒了（HP 歸 0）</div>`
+      : '';
+    const killRewardLine = killed
+      ? `<div style="font-size:11px;color:#92400e;text-align:center;margin-top:2px;">🏆 擊殺獎勵已發放（原石 + 扭蛋幣）</div>`
+      : '';
+    const rewardLine = `<div style="font-size:12px;text-align:center;">+${xpGain.toLocaleString()} XP　·　+${coinGain.toLocaleString()} 鵝鵝幣</div>${killRewardLine}`;
+
+    fr.innerHTML = `
+      <div class="card" style="border-color:#f59e0b;margin-top:10px;">
+        <h2>⚔️ ${escapeHtml(boss.name)} — 攻擊結果</h2>
+        ${killLine}${defeatLine}
+        <div style="font-size:14px;text-align:center;padding:4px 0;">💢 造成傷害 <b>${dmgDealt.toLocaleString()}</b></div>
+        ${rewardLine}
+        <div style="text-align:center;margin-top:10px;">
+          <button class="btn" style="background:#7c3aed;color:#fff;padding:6px 18px;font-size:13px;"
+            onclick="if(window._lastWb9FightData){wb9ShowFightResult(window._lastWb9FightData);}">▶ 回放戰鬥</button>
+        </div>
+      </div>`;
+    fr.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   // ⭐ 結構性雜湊：HP / 排隊頭 pid / 排隊長度 / killCount / cd 開關
@@ -12434,7 +12467,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508152624';
+  const APP_VERSION = '20260508155141';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
