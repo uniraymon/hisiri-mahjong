@@ -4961,7 +4961,7 @@
     // ⭐ 奈落精英：奈落支配者（Lv 30 頂階，hpBase 直接設高層值，不用 deepBase）
     {
       id: 'elite_nabyss', zone: 'nabyss', name: '★ 奈落支配者', icon: '👁️',
-      fixedHp: 1800000, hpBase: 3600, atkBase: 155, defBase: 480, spdBase: 95,
+      fixedHp: 800000, hpBase: 3600, atkBase: 155, defBase: 480, spdBase: 95,
       goldBase: 600, xpBase: 1400,
       verb: '奈落審判',
       ability: { type: 'multiHit', hits: 2 },
@@ -12395,7 +12395,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508130834';
+  const APP_VERSION = '20260508135238';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -16216,10 +16216,12 @@ ${b.text}
       () => {
         if (!spendCoins(me.id, cosm.price)) { showToast('❌ 購買失敗：鵝鵝幣不足'); return; }
         rpg.ownedCosmetics = [...(rpg.ownedCosmetics || []), id];
+        rpg.equippedCosmetic = id; // ⭐ 購買後自動裝備
         saveData();
-        showToast(`✅ 購買成功！${cosm.icon} ${cosm.name}`);
+        showToast(`✅ 購買成功並裝備！${cosm.icon} ${cosm.name}`);
         const el2 = document.getElementById('cosmeticShopModal');
         if (el2) el2.innerHTML = _renderCosmeticShop(id);
+        render(); // ⭐ 更新主畫面 badge
       }
     );
   };
@@ -16235,6 +16237,7 @@ ${b.text}
     showToast(`🎭 已裝備「${cosm.icon} ${cosm.name}」！`);
     const el = document.getElementById('cosmeticShopModal');
     if (el) el.innerHTML = _renderCosmeticShop(id);
+    render(); // ⭐ 更新主畫面 badge
   };
 
   window.cosmUnequip = function() {
@@ -16246,6 +16249,7 @@ ${b.text}
     showToast('已取消裝備外觀');
     const el = document.getElementById('cosmeticShopModal');
     if (el) el.innerHTML = _renderCosmeticShop(prev || null);
+    render(); // ⭐ 更新主畫面 badge
   };
 
   function setGemTab(tab) {
