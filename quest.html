@@ -3250,6 +3250,8 @@
     };
     // ⭐ log 另存 localStorage（Firestore snap 可能會被剝掉 log 欄位）
     try { localStorage.setItem('wbLog_' + _wbSnapId, JSON.stringify((result.log || []).slice(0, 1000))); } catch(e) {}
+    // ⭐ 移除 log，不存入 Firestore（避免 recentBattles 撐爆 1MB 文件上限）
+    delete snap_.log;
     // ⭐ 存到自己的 wbBattleHistory（最多 5 筆，供之後重播）
     try {
       const _wbSnap = { ...snap_ }; delete _wbSnap.log; // 不存 log，從 localStorage 讀
@@ -12467,7 +12469,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508160739';
+  const APP_VERSION = '20260508162242';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -23791,6 +23793,34 @@ ${b.text}
     showToast('🗑 雲端 worldBoss 已清空');
   }
   window.adminClearWorldBossCloud = adminClearWorldBossCloud;
+
+  // ⭐ 清除 recentBattles 裡的 log 欄位（修復文件超 1MB 無法寫入）
+  async function adminPruneWb9BossLogs() {
+    if (!window.__firebaseSync?.wb9SaveBoss) { showToast('☁️ 雲端尚未連線'); return; }
+    let pruned = 0;
+    for (const boss of WB9_BOSSES) {
+      const cur = wb9 && wb9[boss.id];
+      if (!cur) { showToast(`⚠️ ${boss.name} 本地無資料，跳過`); continue; }
+      // 把每筆 recentBattles 裡的 log 欄位刪掉
+      const newRecentBattles = (cur.recentBattles || []).map(b => {
+        if (!b) return b;
+        const cleaned = { ...b };
+        delete cleaned.log;
+        return cleaned;
+      });
+      const newState = { ...cur, recentBattles: newRecentBattles };
+      wb9[boss.id] = newState;
+      try {
+        await window.__firebaseSync.wb9SaveBoss(boss.id, newState);
+        pruned++;
+      } catch (e) {
+        showToast(`❌ ${boss.name} 失敗：${String(e?.message || e).slice(0, 60)}`);
+        console.error('adminPruneWb9BossLogs failed:', boss.id, e);
+      }
+    }
+    if (pruned > 0) showToast(`🧹 已清理 ${pruned} 隻世界王的過大戰報（文件已縮減）`);
+  }
+  window.adminPruneWb9BossLogs = adminPruneWb9BossLogs;
 
   // ⭐ commit 7：v9 版 adminRefillBosses — 透過 wb9SaveBoss 把每王 HP 補滿
   async function adminRefillBosses() {
