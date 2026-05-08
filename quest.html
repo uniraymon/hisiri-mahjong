@@ -12302,7 +12302,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508110944';
+  const APP_VERSION = '20260508120043';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -17962,10 +17962,12 @@ ${b.text}
     const _isArcher  = ps.class === 'archer'  || (snap.log || []).some(e => e.stacks);
     // 檢查是否為聖騎（有 HMG 計數資料）
     const _isPaladinR = ps.class === 'paladin' || (snap.log || []).some(e => e.hmgCounters);
+    // ⭐ classImage fallback：舊 snap 可能沒有此欄，改從 ps.class 補查
+    const _psClassImg = ps.classImage || CLASSES[ps.class]?.image || null;
     const arenaHtml = `
       <div class="battle-arena" id="replayArena">
         <div class="combatant" id="replayPlayer">
-          <div class="combatant-icon">${ps.classImage ? `<img class="class-art" src="${ps.classImage}" alt="${escapeHtml(ps.name||'?')}" style="image-rendering:pixelated;image-rendering:crisp-edges;">` : (ps.avatar || '🎴')}</div>
+          <div class="combatant-icon">${_psClassImg ? `<img class="class-art" src="${_psClassImg}" alt="${escapeHtml(ps.name||'?')}" style="image-rendering:pixelated;image-rendering:crisp-edges;">` : (ps.avatar || '🎴')}</div>
           <div class="combatant-name">${escapeHtml(ps.name || '?')} Lv${ps.level || '?'}</div>
           <div class="combatant-hp-track"><div class="combatant-hp-fill" id="replayPHpBar" style="width:100%"></div></div>
           <div class="combatant-hp-text" id="replayPHpText">${maxHp}/${maxHp}</div>
@@ -21376,8 +21378,8 @@ ${b.text}
           return s + Math.max(0, (m.maxHp || 0) - (sum?.hp || 0));
         }, 0),
         killed: !!result.won,
-        playerSnap: { name: player.name, avatar: CLASSES[rpg.class]?.icon || '🎴', level: rpg.level, maxHp: stats.maxHp, maxMp: stats.maxMp, class: rpg.class, baseCrit: result.archerStats?.baseCrit },
-        monsterSnap: { name: monsters.map(m => m.name).join(' + '), icon: monsters[0].icon, level: monsters[0].level, maxHp: monsters.reduce((s, m) => s + (m.maxHp || 0), 0) },
+        playerSnap: { name: player.name, avatar: CLASSES[rpg.class]?.icon || '🎴', classImage: CLASSES[rpg.class]?.image || null, level: rpg.level, maxHp: stats.maxHp, maxMp: stats.maxMp, class: rpg.class, baseCrit: result.archerStats?.baseCrit },
+        monsterSnap: { name: monsters.map(m => m.name).join(' + '), icon: monsters[0].icon, art: monsters[0].art || null, level: monsters[0].level, maxHp: monsters.reduce((s, m) => s + (m.maxHp || 0), 0) },
         log: (result.log || []).slice(0, 1000),
         zoneId: ctx?.zoneId, layerId: ctx?.layerId,
         isForage: true,
