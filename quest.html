@@ -3246,10 +3246,18 @@
       attackerAvatar: me.avatar || cls?.icon || '🎴',
       playerSnap: { name: me.name, avatar: cls?.icon || '🎴', level: r.level, maxHp: stats.maxHp, maxMp: stats.maxMp, class: r.class, baseCrit: result.archerStats?.baseCrit, classImage: cls?.image || null, equippedCosmetic: r.equippedCosmetic || null },
       monsterSnap: { name: monster.name, icon: monster.icon, level: monster.level, maxHp: monster.maxHp, ability: monster.ability, art: boss.art || null },
-      log: (result.log || []).slice(0, 80), // ⭐ Firestore 限 80 條（防 1MB 爆炸），完整 log 在 localStorage
+      log: (result.log || []).slice(0, 400), // ⭐ Firestore 每場限 400 條，recentBattles 限 5 筆 → ~300KB
     };
-    // ⭐ 完整 log 另存 localStorage（供本人完整回放，最多 1000 條）
-    try { localStorage.setItem('wbLog_' + _wbSnapId, JSON.stringify((result.log || []).slice(0, 1000))); } catch(e) {}
+    // ⭐ 完整 log 分塊存 localStorage（每塊 400 條，超過自動開新 key）
+    try {
+      const _logFull = (result.log || []);
+      const _chunkSize = 400;
+      for (let _ci = 0; _ci * _chunkSize < _logFull.length; _ci++) {
+        const _chunk = _logFull.slice(_ci * _chunkSize, (_ci + 1) * _chunkSize);
+        const _key = _ci === 0 ? ('wbLog_' + _wbSnapId) : ('wbLog_' + _wbSnapId + '_' + _ci);
+        localStorage.setItem(_key, JSON.stringify(_chunk));
+      }
+    } catch(e) {}
     // ⭐ 存到自己的 wbBattleHistory（最多 5 筆，供之後重播）
     try {
       const _wbSnap = { ...snap_ }; delete _wbSnap.log; // 不存 log，從 localStorage 讀
@@ -3257,7 +3265,17 @@
       r.wbBattleHistory.unshift(_wbSnap);
       if (r.wbBattleHistory.length > 5) {
         const _dropped = r.wbBattleHistory.splice(5);
-        for (const _d of _dropped) { try { localStorage.removeItem('wbLog_' + _d.id); } catch(e) {} }
+        for (const _d of _dropped) {
+          try {
+            localStorage.removeItem('wbLog_' + _d.id);
+            // 同時清除所有分塊
+            for (let _ci = 1; _ci <= 20; _ci++) {
+              const _k = 'wbLog_' + _d.id + '_' + _ci;
+              if (localStorage.getItem(_k) === null) break;
+              localStorage.removeItem(_k);
+            }
+          } catch(e) {}
+        }
       }
     } catch(e) {}
 
@@ -12467,7 +12485,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508171026';
+  const APP_VERSION = '20260508171401';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -18346,17 +18364,28 @@ ${b.text}
   }
   window.replayPersonalBossFight = replayPersonalBossFight;
 
-  // ⭐ 世界王戰報重播
+  // ⭐ 世界王戰報重播（支援分塊 localStorage log）
   function replayWbFight(historyId) {
     const me = getMe(); if (!me) return;
     const r = getRpg(me);
     const list = Array.isArray(r.wbBattleHistory) ? r.wbBattleHistory : [];
     const snap = list.find(h => h.id === historyId);
     if (!snap) { showToast('找不到該戰報'); return; }
-    let log = snap.log || [];
-    if (!log.length) {
-      try { log = JSON.parse(localStorage.getItem('wbLog_' + historyId) || '[]'); } catch(e) { log = []; }
-    }
+    // 優先從 localStorage 讀完整分塊 log（最多 20 塊 × 400 條 = 8000 條）
+    let log = [];
+    try {
+      const _c0 = localStorage.getItem('wbLog_' + historyId);
+      if (_c0) {
+        log = JSON.parse(_c0);
+        for (let _ci = 1; _ci <= 20; _ci++) {
+          const _v = localStorage.getItem('wbLog_' + historyId + '_' + _ci);
+          if (_v === null) break;
+          log = log.concat(JSON.parse(_v));
+        }
+      }
+    } catch(e) { log = []; }
+    // fallback：用 snap 內的 Firestore log（其他玩家或 localStorage 被清除時）
+    if (!log.length) log = snap.log || [];
     return _doReplay({ ...snap, log });
   }
   window.replayWbFight = replayWbFight;
@@ -24863,10 +24892,10 @@ ${b.text}
           for (const _pid of Object.keys(state.attackCooldowns)) {
             if (state.attackCooldowns[_pid] < _cdCutoff) delete state.attackCooldowns[_pid];
           }
-          // 最近戰報（最多 10 筆）
+          // 最近戰報（最多 5 筆，400條log×5筆×150B ≈ 300KB，安全低於 1MB）
           if (partialBattleSnap) {
             const entry = { ...partialBattleSnap, dmgDealt: actualDmg, killed };
-            state.recentBattles = [entry, ...(state.recentBattles || [])].slice(0, 10);
+            state.recentBattles = [entry, ...(state.recentBattles || [])].slice(0, 5);
           }
           // 尾刀：重置王、清隊列、記錄
           if (killed) {
