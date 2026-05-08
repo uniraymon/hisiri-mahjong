@@ -2429,6 +2429,11 @@
         { id: 'p_aegis',         name: '反傷護盾', icon: '🪞', unlockLv: 8,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.50, turns: 3 } },
         // ⭐ 新增：神聖奪魂 — 0.8× ATK 傷害 + 回 4 MP（聖騎回魔多一倍）
         { id: 'p_mana_drain',    name: '神聖奪魂', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 0.8, mpRestore: 4 },
+        // ⭐ 鵝鵝的刀盾：buff 持續 10 次自身行動（playerTurnOnly）
+        //    啟動後：① 普攻追加 當前HP×3 真傷  ② 每次護盾衝鋒後自動補一次免費普攻
+        { id: 'p_sword_shield',  name: '鵝鵝的刀盾', icon: '⚔🛡', unlockLv: 5, cooldown: 0, mpCost: 55, type: 'buff',
+          selfBuff: { stat: 'swordShield', amount: 1, turns: 10, key: 'p_sword_shield', playerTurnOnly: true },
+          maxLv: 1 },
         // ⭐ 聖母鵝招喚：召喚聖母鵝（持續 floor(round/5) 次行動）；計數器在召喚後凍結；不可升級
         { id: 'p_holy_mother',   name: '聖母鵝招喚', icon: '🕊️', unlockLv: 10, cooldown: 0, mpCost: 50, type: 'summon', maxLv: 1 },
       ],
@@ -2604,7 +2609,7 @@
     // 聖騎
     p_judgment:'holy',  p_holy_slash:'holy', p_holy_heal:'holy',  p_pray:'holy',
     p_holy_smite:'holy', p_godfist:'holy',   p_blessing:'holy',   p_aegis:'holy',
-    p_shield_charge:'holy',
+    p_shield_charge:'holy', p_sword_shield:'holy',
   };
 
   // ⭐ 裝備外觀（帽子 / 衣服 / 武器圖層）
@@ -3109,7 +3114,7 @@
     },
     {
       id: 'pebble_goose',
-      name: '🪨 鵝卵石', icon: '🪨',
+      name: '🪨 鵝卵石', icon: '🪨', art: 'art/png/modern_v3/bosses/boss_pebble.png',
       maxHp: 10000000,
       atk: 350, def: 350, spd: 50, defPen: 0.30,
       level: 55,
@@ -3129,7 +3134,7 @@
     },
     {
       id: 'storm_goose',
-      name: '⚡ 風中殘鵝', icon: '⚡',
+      name: '⚡ 風中殘鵝', icon: '⚡', art: 'art/png/modern_v3/bosses/boss_storm.png',
       maxHp: 20000000,
       atk: 490, def: 170, spd: 120, defPen: 0.40,
       level: 70,
@@ -3614,9 +3619,13 @@
       : '';
     const rewardLine = `<div style="font-size:12px;text-align:center;">+${xpGain.toLocaleString()} XP　·　+${coinGain.toLocaleString()} 鵝鵝幣</div>${killRewardLine}`;
 
+    const _qrBossArt = monster?.art
+      ? `<img src="${monster.art}" alt="${escapeHtml(boss.name)}" style="display:block;margin:6px auto 2px;width:80px;height:80px;image-rendering:pixelated;image-rendering:crisp-edges;" onerror="this.style.display='none';">`
+      : `<div style="font-size:52px;text-align:center;line-height:1.1;margin:4px 0;">${boss.icon}</div>`;
     fr.innerHTML = `
       <div class="card" style="border-color:#f59e0b;margin-top:10px;">
         <h2>⚔️ ${escapeHtml(boss.name)} — 攻擊結果</h2>
+        ${_qrBossArt}
         ${killLine}${defeatLine}
         <div style="font-size:14px;text-align:center;padding:4px 0;">💢 造成傷害 <b>${dmgDealt.toLocaleString()}</b></div>
         ${rewardLine}
@@ -5011,6 +5020,7 @@
         return [
           { judgeId: 1101, param: 60, skillId: 'p_holy_heal' },
           { judgeId: 1910, param: 4,  skillId: 'p_aegis' },           // 每4回合用一次反傷護盾（含麻痺，優先於神聖祝福）
+          { judgeId: 1000, param: 0,  skillId: 'p_sword_shield' },    // 鵝鵝的刀盾（普攻+HP×3真傷、盾衝補攻；10回buff）
           { judgeId: 1000, param: 0,  skillId: 'p_blessing' },        // 神聖祝福（DEF +40% + 最大HP +20% buff）
           { judgeId: 1201, param: 25, skillId: 'p_pray' },
           { judgeId: 1450, param: 2,  skillId: 'p_judgment' },        // 多隻怪 → 審判（魔傷 2× ATK 全體）
@@ -8239,6 +8249,25 @@
               applyStatus(monster, skill.applyStatus);
               log.push({ type: 'system', text: `回合 ${round}：${monster.name} 進入 ${statusEmoji(skill.applyStatus.type)}${statusLabel(skill.applyStatus.type)} 狀態`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
             }
+            // ⭐ 鵝鵝的刀盾：護盾衝鋒後追加免費普攻（正常傷害 + 當前HP×3 真傷）
+            if (skill.id === 'p_shield_charge' && pBuff.swordShield > 0 && mHp > 0) {
+              let _ssDmg = Math.max(0, effAtk) * (0.85 + Math.random() * 0.3);
+              _ssDmg *= DEF_PIERCE_K / (monDef + DEF_PIERCE_K);
+              const _ssCrit = Math.random() < baseCritChance;
+              if (_ssCrit) { _ssDmg *= critMult; critCount++; }
+              _ssDmg = Math.max(1, Math.round(_ssDmg));
+              let _ssTrueDmg = pHp * 3;
+              if (_ssCrit) _ssTrueDmg = Math.round(_ssTrueDmg * critMult);
+              else _ssTrueDmg = Math.round(_ssTrueDmg);
+              mHp = Math.max(0, mHp - _ssDmg - _ssTrueDmg);
+              if (_isPaladin && !_hmgFrozen) _hmgHitCount++;
+              log.push({
+                type: _ssCrit ? 'crit-player' : 'player',
+                text: `回合 ${round}：⚔🛡 刀盾補攻${_ssCrit ? '【暴擊】' : ''} → ${monster.name} -${_ssDmg} HP + ${_ssTrueDmg.toLocaleString()} 真傷`,
+                hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp },
+              });
+              if (mHp <= 0) { pushDeathLine(); break; }
+            }
             if (mHp <= 0) { pushDeathLine(); break; }
           } else if (skill.type === 'buff' && (skill.selfBuff || skill.applyPartialShield)) {
             const extraNote = [];
@@ -8482,7 +8511,18 @@
             dmg = Math.max(1, Math.round(dmg));
             if (mAbility?.type === 'flatCapDmg') dmg = Math.min(dmg, mAbility.cap || 1);
             dmg = monShield0(dmg);
+            // ⭐ 鵝鵝的刀盾：普攻追加 HP×3 真傷（吃爆擊/爆頭倍率，不過盾）
+            let _ssBonusTrueDmg = (_isPaladin && pBuff.swordShield > 0) ? pHp * 3 : 0;
+            if (_ssBonusTrueDmg > 0) {
+              if (isCrit2) {
+                const _effCritSS = (_fcB || !monster.critDmgReduct) ? critMult2 : 1.0 + (critMult2 - 1.0) * (1 - monster.critDmgReduct);
+                _ssBonusTrueDmg *= _effCritSS;
+              }
+              if (_nonArcHs) _ssBonusTrueDmg *= 3;
+              _ssBonusTrueDmg = Math.round(_ssBonusTrueDmg);
+            }
             mHp -= dmg;
+            if (_ssBonusTrueDmg > 0) mHp = Math.max(0, mHp - _ssBonusTrueDmg);
             // ⭐ 合成效果：fx_vamp（普攻吸血：傷害×3%/層）
             if (_fxVamp > 0 && dmg > 0) {
               const vampHeal = Math.max(1, Math.round(dmg * _fxVamp * 0.03));
@@ -8495,7 +8535,7 @@
             const _hsLabel = _nonArcHs ? '🎯【爆頭】' : '';
             log.push({
               type: (_nonArcHs || isCrit2) ? 'crit-player' : 'player',
-              text: `回合 ${round}：${cls.attackVerb}${_hsLabel}${isCrit2 ? '【暴擊】' : ''} → ${monster.name} -${dmg} HP`,
+              text: `回合 ${round}：${cls.attackVerb}${_hsLabel}${isCrit2 ? '【暴擊】' : ''} → ${monster.name} -${dmg} HP${_ssBonusTrueDmg > 0 ? ` + ${_ssBonusTrueDmg.toLocaleString()} 真傷` : ''}`,
               hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp },
               hmgCounters: _isPaladin ? { hit: _hmgHitCount, taken: _hmgTakenCount, heal: _hmgHealCount, active: _hmgActive, actionsLeft: _hmgActionsLeft } : undefined,
             });
@@ -8934,7 +8974,7 @@
   }
   // 把目前生效的 buff 加總（atkPct/defPct/spd/critChance/critDmg/reflectPct/maxHpPct）
   function getBuffBonus(target) {
-    const out = { atkPct: 0, defPct: 0, def: 0, spd: 0, critChance: 0, critDmg: 0, reflectPct: 0, maxHpPct: 0, markPct: 0, dmgReducePct: 0, spdPct: 0, extraHits: 0, headshotChance: 0 };
+    const out = { atkPct: 0, defPct: 0, def: 0, spd: 0, critChance: 0, critDmg: 0, reflectPct: 0, maxHpPct: 0, markPct: 0, dmgReducePct: 0, spdPct: 0, extraHits: 0, headshotChance: 0, swordShield: 0 };
     if (!target || !target.statuses) return out;
     for (const s of target.statuses) {
       if (s.type !== 'buff' || !s.stat) continue;
@@ -8957,6 +8997,7 @@
     if (buff.stat === 'spdPct')          return buff.amount < 0 ? `💨 SPD ${Math.round(buff.amount * 100)}%` : `💨 SPD +${Math.round(buff.amount * 100)}%`;
     if (buff.stat === 'extraHits')       return `🪿 普攻段數 +${buff.amount}`;
     if (buff.stat === 'headshotChance')  return `🎯 爆頭率 +${Math.round(buff.amount * 100)}%`;
+    if (buff.stat === 'swordShield')     return `⚔🛡 鵝鵝的刀盾（普攻+HP×3真傷、盾衝補攻，10回）`;
     return `✨ ${buff.stat} ${buff.amount >= 0 ? '+' : ''}${buff.amount}`;
   }
   function statusEmoji(type) {
@@ -9509,6 +9550,30 @@
                 log.push({ type: 'system', text: `${stuck.map(h => h.tgt.name).join(' / ')} 進入 ${statusEmoji(skill.applyStatus.type)}${statusLabel(skill.applyStatus.type)} 狀態`, hp: hpsSnapshot() });
               }
             }
+            // ⭐ 鵝鵝的刀盾：護盾衝鋒後追加免費普攻（正常傷害 + 當前HP×3 真傷）
+            if (skill.id === 'p_shield_charge' && pBuff.swordShield > 0 && targets.length > 0) {
+              const _ssTgt = targets[0];
+              if (_ssTgt.alive && _ssTgt.hp > 0) {
+                const _ssEffAtk = stats.atk * (1 + (pBuff.atkPct || 0));
+                const _ssTgtDef = (_ssTgt.def || 0);
+                let _ssDmg = Math.max(0, _ssEffAtk) * (0.85 + Math.random() * 0.3);
+                _ssDmg *= DEF_PIERCE_K / (_ssTgtDef + DEF_PIERCE_K);
+                const _ssCrit = Math.random() < baseCritChance;
+                if (_ssCrit) { _ssDmg *= critMult; critCount++; }
+                _ssDmg = Math.max(1, Math.round(_ssDmg));
+                let _ssTrueDmg = pHp * 3;
+                if (_ssCrit) _ssTrueDmg = Math.round(_ssTrueDmg * critMult);
+                else _ssTrueDmg = Math.round(_ssTrueDmg);
+                _ssTgt.hp = Math.max(0, _ssTgt.hp - _ssDmg - _ssTrueDmg);
+                if (_ssTgt.hp <= 0) _ssTgt.alive = false;
+                if (_isPaladinM && !_hmgFrozenM) _hmgHitCountM++;
+                log.push({
+                  type: _ssCrit ? 'crit-player' : 'player',
+                  text: `回合 ${round}：⚔🛡 刀盾補攻${_ssCrit ? '【暴擊】' : ''} → ${_ssTgt.icon}${_ssTgt.name} -${_ssDmg} HP + ${_ssTrueDmg.toLocaleString()} 真傷`,
+                  hp: hpsSnapshot(),
+                });
+              }
+            }
           } else if (skill.type === 'buff' && (skill.selfBuff || skill.applyPartialShield)) {
             const extraNote = [];
             if (skill.selfBuff) {
@@ -9733,7 +9798,17 @@
             dmg *= consumeVulnerable(tgt); // ⭐ 易傷（hit-based）
             dmg = Math.max(1, Math.round(dmg));
             if (tgt.ability?.type === 'flatCapDmg') dmg = Math.min(dmg, tgt.ability.cap || 1);
-            tgt.hp = Math.max(0, tgt.hp - dmg);
+            // ⭐ 鵝鵝的刀盾：普攻追加 HP×3 真傷（不過盾，吃爆擊/爆頭）
+            let _ssBonusTrueDmgM = (_isPaladinM && pBuff.swordShield > 0) ? pHp * 3 : 0;
+            if (_ssBonusTrueDmgM > 0) {
+              if (isCrit) {
+                const _effCritSSM = (_fcBM || !tgt.critDmgReduct) ? critMult2 : 1.0 + (critMult2 - 1.0) * (1 - tgt.critDmgReduct);
+                _ssBonusTrueDmgM *= _effCritSSM;
+              }
+              if (_nonArcHsM) _ssBonusTrueDmgM *= 3;
+              _ssBonusTrueDmgM = Math.round(_ssBonusTrueDmgM);
+            }
+            tgt.hp = Math.max(0, tgt.hp - dmg - _ssBonusTrueDmgM);
             if (tgt.hp <= 0) tgt.alive = false;
             // ⭐ 合成效果：fx_vamp（普攻吸血：傷害×3%/層）
             if (_fxVamp > 0 && dmg > 0) {
@@ -9753,7 +9828,7 @@
             const _hsLabelM = _nonArcHsM ? '🎯【爆頭】' : '';
             log.push({
               type: (_nonArcHsM || isCrit) ? 'crit-player' : 'player',
-              text: `回合 ${round}：${cls.attackVerb}${_hsLabelM}${isCrit ? '【暴擊】' : ''} → ${tgt.icon}${tgt.name} -${dmg} HP`,
+              text: `回合 ${round}：${cls.attackVerb}${_hsLabelM}${isCrit ? '【暴擊】' : ''} → ${tgt.icon}${tgt.name} -${dmg} HP${_ssBonusTrueDmgM > 0 ? ` + ${_ssBonusTrueDmgM.toLocaleString()} 真傷` : ''}`,
               hp: hpsSnapshot(),
             });
             if (_normReflect > 0) {
@@ -12521,7 +12596,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508200252';
+  const APP_VERSION = '20260509024935';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -12597,6 +12672,28 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#0c2340,#1e4d8c); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">⚔🛡 聖騎強化 ＋ 王的美工圖　<span style="font-size:11px; opacity:0.85;">2026-05-09</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#60a5fa; margin:6px 0 4px;">⚔🛡 新技能：鵝鵝的刀盾（聖騎 Lv 5）</div>
+        <div>・消耗 55 MP，持續 <b>10 回合</b>（只計玩家行動）</div>
+        <div>・效果①：普攻額外追加 <b>當前HP × 3</b> 真傷</div>
+        <div>・效果②：盾牌衝鋒命中後<b>免費補一次普攻</b>（含真傷）</div>
+
+        <div style="font-weight:700; color:#60a5fa; margin:10px 0 4px;">💥 真傷吃爆擊 ／ 爆頭加成</div>
+        <div>・<b>刀盾真傷</b>現在同樣受<b>爆擊倍率</b>加成（考慮怪物爆傷減免）</div>
+        <div>・裝備<b>虛空長弓</b>觸發爆頭時，真傷亦追加 <b>× 3</b></div>
+        <div>・補攻真傷同樣吃爆擊，讓聖騎爆發上限更高</div>
+
+        <div style="font-weight:700; color:#60a5fa; margin:10px 0 4px;">🎨 王戰美工圖</div>
+        <div>・單挑王、Party Boss 戰鬥介面現已顯示<b>王的美工立繪</b></div>
+        <div>・圖片未就緒時自動退回圖示顯示，相容舊環境</div>
+
+        <div style="background:#0f1f3d; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#93c5fd;">
+          💡 刀盾 + 盾衝組合：一次行動可造成「技能傷害 → 補攻普傷 → 雙份真傷」三段輸出，搭配爆擊裝備效果驚人！
+        </div>
 
         <div style="background:linear-gradient(135deg,#1a0033,#4c1d95); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🎭 外觀系統升級 ＋ 地獄使者強化　<span style="font-size:11px; opacity:0.85;">2026-05-08</span></div>
@@ -17228,7 +17325,7 @@ ${b.text}
   // --- PARTY_BOSSES: 3 fixed challenge bosses ---
   const PARTY_BOSSES = [
     {
-      id: 'pr_inferno', name: '煉獄鵝皇', icon: '🌋', level: 35,
+      id: 'pr_inferno', name: '煉獄鵝皇', icon: '🌋', art: 'art/png/modern_v3/bosses/boss_inferno.png', level: 35,
       maxHp: 1200000, atk: 320, def: 220, spd: 55, defPen: 0.1,
       isTwoBosses: false,
       skills: [
@@ -17239,11 +17336,11 @@ ${b.text}
       desc: '烈焰 AOE、高防禦、需 2-3 人',
     },
     {
-      id: 'pr_twins', name: '雙影刺客', icon: '🗡️', level: 40,
+      id: 'pr_twins', name: '雙影刺客', icon: '🗡️', art: 'art/png/modern_v3/bosses/boss_twins.png', level: 40,
       isTwoBosses: true,
       bossPair: [
-        { id: 'pr_twins_a', name: '暗影甲', icon: '🗡️', maxHp: 450000, atk: 280, def: 160, spd: 75, defPen: 0.05 },
-        { id: 'pr_twins_b', name: '幻影乙', icon: '👤', maxHp: 380000, atk: 250, def: 130, spd: 90, defPen: 0.08 },
+        { id: 'pr_twins_a', name: '暗影甲', icon: '🗡️', art: 'art/png/modern_v3/bosses/boss_twins_a.png', maxHp: 450000, atk: 280, def: 160, spd: 75, defPen: 0.05 },
+        { id: 'pr_twins_b', name: '幻影乙', icon: '👤', art: 'art/png/modern_v3/bosses/boss_twins_b.png', maxHp: 380000, atk: 250, def: 130, spd: 90, defPen: 0.08 },
       ],
       skills: [],
       reward: { coins: 4000, xp: 10000 },
@@ -17251,7 +17348,7 @@ ${b.text}
       desc: '兩隻高速刺客、AOE 能打雙目標',
     },
     {
-      id: 'pr_ancient', name: '遠古鵝神', icon: '⚱️', level: 50,
+      id: 'pr_ancient', name: '遠古鵝神', icon: '⚱️', art: 'art/png/modern_v3/bosses/boss_ancient.png', level: 50,
       maxHp: 3000000, atk: 450, def: 350, spd: 45, defPen: 0.3,
       isTwoBosses: false,
       skills: [
@@ -17879,16 +17976,23 @@ ${b.text}
       `;
     }).join('');
 
-    const bossCardsHtml = bossList.map((b, idx) => `
+    const bossCardsHtml = bossList.map((b, idx) => {
+      const _bArt = b.art || boss.art || null;
+      const _bIcon = b.icon || boss.icon;
+      const _bIconHtml = _bArt
+        ? `<img class="boss-art" src="${_bArt}" alt="${escapeHtml(b.name)}" style="width:64px;height:64px;" onerror="this.onerror=null;this.style.display='none';document.getElementById('pbi_fb_${idx}').style.display='';">` +
+          `<span id="pbi_fb_${idx}" style="font-size:36px;display:none;">${_bIcon}</span>`
+        : _bIcon;
+      return `
       <div class="party-boss-card" id="pbc_${idx}">
-        <div class="party-boss-icon">${b.icon || boss.icon}</div>
+        <div class="party-boss-icon">${_bIconHtml}</div>
         <div class="party-name">${escapeHtml(b.name)}</div>
         <div class="party-hp-bar" style="margin-top:4px;">
           <div class="party-hp-fill party-boss-hp" id="pbHpFill_${idx}" style="width:100%;"></div>
         </div>
         <div class="party-hp-text" id="pbHpText_${idx}">${b.maxHp}/${b.maxHp}</div>
       </div>
-    `).join('');
+    `; }).join('');
 
     area.innerHTML = `
       <div class="party-arena" style="margin-top:8px;">
