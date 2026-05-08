@@ -2607,6 +2607,42 @@
     p_shield_charge:'holy',
   };
 
+  // ⭐ 裝備外觀（帽子 / 衣服 / 武器圖層）
+  const EQUIP_ITEMS = [
+    // ── 帽子 ──
+    { id:'hat_straw',      slot:'hat',    name:'草帽',     icon:'🌾', rarity:'common',    price:100000,  src:'art/png/modern/layers/head/hat_straw.png',      desc:'一頂平凡的草帽，田園氣息十足。' },
+    { id:'hat_flower',     slot:'hat',    name:'花冠',     icon:'🌸', rarity:'common',    price:100000,  src:'art/png/modern/layers/head/hat_flower.png',     desc:'繁花編成的花冠，散發春天氣息。' },
+    { id:'hat_bunny_ears', slot:'hat',    name:'兔耳',     icon:'🐰', rarity:'rare',      price:250000,  src:'art/png/modern/layers/head/hat_bunny_ears.png', desc:'柔軟的兔耳頭飾，可愛又搶眼。' },
+    { id:'hat_pumpkin',    slot:'hat',    name:'南瓜頭',   icon:'🎃', rarity:'rare',      price:250000,  src:'art/png/modern/layers/head/hat_pumpkin.png',    desc:'萬聖節限定！掏空的南瓜帽。' },
+    { id:'hat_mage',       slot:'hat',    name:'法師帽',   icon:'🎩', rarity:'rare',      price:300000,  src:'art/png/modern/layers/head/hat_mage.png',       desc:'尖頂法師帽，魔力加成滿滿。' },
+    { id:'hat_top_hat',    slot:'hat',    name:'紳士帽',   icon:'🎩', rarity:'rare',      price:300000,  src:'art/png/modern/layers/head/hat_top_hat.png',    desc:'黑色高帽，優雅紳士的象徵。' },
+    { id:'hat_knight',     slot:'hat',    name:'騎士盔',   icon:'⚔️', rarity:'epic',      price:500000,  src:'art/png/modern/layers/head/hat_knight.png',     desc:'沉重的騎士頭盔，守護的象徵。' },
+    { id:'hat_demon',      slot:'hat',    name:'惡魔角',   icon:'😈', rarity:'epic',      price:500000,  src:'art/png/modern/layers/head/hat_demon.png',      desc:'邪惡的惡魔角，散發暗黑氣場。' },
+    { id:'hat_halo_dark',  slot:'hat',    name:'暗黑光環', icon:'🌑', rarity:'legendary', price:800000,  src:'art/png/modern/layers/head/hat_halo_dark.png',  desc:'墮落天使的黑暗光環，神秘而強大。' },
+    { id:'hat_crown',      slot:'hat',    name:'皇冠',     icon:'👑', rarity:'legendary', price:800000,  src:'art/png/modern/layers/head/hat_crown.png',      desc:'王者之冠，彰顯無上權威。' },
+    // ── 衣服 ──
+    { id:'body_casual',      slot:'body', name:'便服',     icon:'👕', rarity:'common',    price:120000,  src:'art/png/modern/layers/body/body_casual.png',      desc:'日常休閒穿搭，輕鬆自在。' },
+    { id:'body_beach',       slot:'body', name:'海灘裝',   icon:'🏖️', rarity:'common',    price:120000,  src:'art/png/modern/layers/body/body_beach.png',       desc:'夏日海灘風格，陽光滿滿。' },
+    { id:'body_doctor',      slot:'body', name:'醫師袍',   icon:'🩺', rarity:'rare',      price:280000,  src:'art/png/modern/layers/body/body_doctor.png',      desc:'白色醫師長袍，嚴肅專業。' },
+    { id:'body_tuxedo',      slot:'body', name:'燕尾服',   icon:'🤵', rarity:'rare',      price:280000,  src:'art/png/modern/layers/body/body_tuxedo.png',      desc:'正式燕尾服，高雅出眾。' },
+    { id:'body_kimono',      slot:'body', name:'和服',     icon:'👘', rarity:'rare',      price:300000,  src:'art/png/modern/layers/body/body_kimono.png',      desc:'日式傳統和服，優美端莊。' },
+    { id:'body_ninja',       slot:'body', name:'忍者服',   icon:'🥷', rarity:'epic',      price:500000,  src:'art/png/modern/layers/body/body_ninja.png',       desc:'黑色忍者裝束，神出鬼沒。' },
+    { id:'body_robe_mage',   slot:'body', name:'法師長袍', icon:'🔮', rarity:'epic',      price:500000,  src:'art/png/modern/layers/body/body_robe_mage.png',   desc:'星空法師長袍，魔力澎湃。' },
+    { id:'body_knight_plate',slot:'body', name:'騎士板甲', icon:'🛡️', rarity:'epic',      price:550000,  src:'art/png/modern/layers/body/body_knight_plate.png',desc:'全套騎士板甲，固若金湯。' },
+    { id:'body_demon_lord',  slot:'body', name:'魔王戰衣', icon:'👿', rarity:'legendary', price:900000,  src:'art/png/modern/layers/body/body_demon_lord.png',  desc:'魔王專屬戰衣，震懾萬邦。' },
+    // ── 武器 ──
+    { id:'wpn_fishing_rod', slot:'weapon', name:'釣魚竿', icon:'🎣', rarity:'common',    price:100000,  src:'art/png/modern/layers/hand_r/wpn_fishing_rod.png', desc:'悠閒的釣魚竿，偶爾打個王。' },
+    { id:'wpn_umbrella',    slot:'weapon', name:'雨傘',   icon:'☂️', rarity:'common',    price:100000,  src:'art/png/modern/layers/hand_r/wpn_umbrella.png',   desc:'普通雨傘，下雨天戰鬥用。' },
+    { id:'wpn_dagger',      slot:'weapon', name:'匕首',   icon:'🗡️', rarity:'rare',      price:250000,  src:'art/png/modern/layers/hand_r/wpn_dagger.png',     desc:'輕巧的匕首，快如閃電。' },
+    { id:'wpn_wand',        slot:'weapon', name:'魔法棒', icon:'✨', rarity:'rare',      price:280000,  src:'art/png/modern/layers/hand_r/wpn_wand.png',       desc:'閃爍星光的魔法棒，奧術滿溢。' },
+    { id:'wpn_axe',         slot:'weapon', name:'斧頭',   icon:'🪓', rarity:'rare',      price:280000,  src:'art/png/modern/layers/hand_r/wpn_axe.png',        desc:'沉重的戰斧，開山劈石。' },
+    { id:'wpn_bow_flame',   slot:'weapon', name:'烈焰弓', icon:'🔥', rarity:'epic',      price:500000,  src:'art/png/modern/layers/hand_r/wpn_bow_flame.png',  desc:'燃燒烈焰的弓，箭箭灼熱。' },
+    { id:'wpn_sword_gold',  slot:'weapon', name:'黃金劍', icon:'⚔️', rarity:'epic',      price:500000,  src:'art/png/modern/layers/hand_r/wpn_sword_gold.png', desc:'純金打造的劍，璀璨耀眼。' },
+    { id:'wpn_warhammer',   slot:'weapon', name:'戰鎚',   icon:'🔨', rarity:'epic',      price:520000,  src:'art/png/modern/layers/hand_r/wpn_warhammer.png',  desc:'巨大的戰鎚，一擊粉碎一切。' },
+    { id:'wpn_scythe',      slot:'weapon', name:'大鐮刀', icon:'☠️', rarity:'legendary', price:850000,  src:'art/png/modern/layers/hand_r/wpn_scythe.png',    desc:'死神的鐮刀，收割生命。' },
+    { id:'wpn_staff_void',  slot:'weapon', name:'虛空法杖',icon:'🌑',rarity:'legendary', price:850000,  src:'art/png/modern/layers/hand_r/wpn_staff_void.png', desc:'吸收虛空之力的法杖，奧義無窮。' },
+  ];
+
   // 地獄使者能力點（自訂縮放，由 computeHellBattleStats 計算，不走標準 computeAbilityBonuses）
   const HM_ABILITIES = [
     { id:'str', name:'邪力',     short:'STR', icon:'💀', desc:'+1% ATK / 點（百分比加成）' },
@@ -3244,7 +3280,7 @@
       bossId:  boss.id, bossName: boss.name, bossIcon: boss.icon, bossLevel: boss.level,
       attackerId: me.id, attackerName: me.name,
       attackerAvatar: me.avatar || cls?.icon || '🎴',
-      playerSnap: { name: me.name, avatar: cls?.icon || '🎴', level: r.level, maxHp: stats.maxHp, maxMp: stats.maxMp, class: r.class, baseCrit: result.archerStats?.baseCrit, classImage: cls?.image || null, equippedCosmetic: r.equippedCosmetic || null },
+      playerSnap: { name: me.name, avatar: cls?.icon || '🎴', level: r.level, maxHp: stats.maxHp, maxMp: stats.maxMp, class: r.class, baseCrit: result.archerStats?.baseCrit, classImage: cls?.image || null, equippedCosmetic: r.equippedCosmetic || null, equippedHat: r.equippedHat || null, equippedBody: r.equippedBody || null, equippedWeapon: r.equippedWeapon || null },
       monsterSnap: { name: monster.name, icon: monster.icon, level: monster.level, maxHp: monster.maxHp, ability: monster.ability, art: boss.art || null },
       log: (result.log || []).slice(0, 400), // ⭐ Firestore 每場限 400 條，recentBattles 限 5 筆 → ~300KB
     };
@@ -12485,7 +12521,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508171535';
+  const APP_VERSION = '20260508195634';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -16159,6 +16195,10 @@ ${b.text}
     if (!rpg || !rpg.equippedCosmetic) return null;
     return COSMETICS.find(c => c.id === rpg.equippedCosmetic) || null;
   }
+  function getEquippedEquip(rpg, slot) {
+    const id = slot === 'hat' ? rpg?.equippedHat : slot === 'body' ? rpg?.equippedBody : rpg?.equippedWeapon;
+    return id ? (EQUIP_ITEMS.find(e => e.id === id) || null) : null;
+  }
 
   // 回傳完整的戰鬥圖示 HTML，含外觀分層效果：
   //   cosm-wrap（最外層，不受攻擊動畫影響）
@@ -16169,25 +16209,38 @@ ${b.text}
     const cosm = getEquippedCosmetic(rpg);
     const cls  = CLASSES[rpg && rpg.class];
     const sty  = imgSizeStyle ? ` style="${imgSizeStyle}"` : '';
-    const imgHTML = cls && cls.image
-      ? `<img class="class-art" src="${cls.image}" alt="${escapeHtml(cls.name || '')}"${sty}>`
-      : (cls && cls.icon || '🎴');
     const outerClass = divClass || 'combatant-icon';
+
+    // ⭐ 裝備圖層（帽子 / 衣服 / 武器）
+    const _hat  = getEquippedEquip(rpg, 'hat');
+    const _body = getEquippedEquip(rpg, 'body');
+    const _wpn  = getEquippedEquip(rpg, 'weapon');
+    const _lSty = `position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;image-rendering:pixelated;image-rendering:crisp-edges;`;
+    const _layers = cls && cls.image ? [
+      _body ? `<img src="${_body.src}" style="${_lSty}" alt="">` : '',
+      _wpn  ? `<img src="${_wpn.src}"  style="${_lSty}" alt="">` : '',
+      _hat  ? `<img src="${_hat.src}"  style="${_lSty}" alt="">` : '',
+    ].join('') : '';
+
+    const imgHTML = cls && cls.image
+      ? `<div style="position:relative;display:inline-block;">` +
+          `<img class="class-art" src="${cls.image}" alt="${escapeHtml(cls.name || '')}"${sty}>` +
+          _layers +
+        `</div>`
+      : (cls && cls.icon || '🎴');
+
     if (!cosm) return `<div class="${outerClass}">${imgHTML}</div>`;
 
-    // 小尺寸（多人戰鬥傳 imgSizeStyle）用較小公轉半徑
     const isMini   = !!imgSizeStyle;
     const orbitR   = isMini ? '24px' : '38px';
     const iconSize = isMini ? '11px' : '14px';
     const orbitDur = isMini ? '3s'   : '4s';
 
-    // 圖層 0：靜態外框（position:absolute，inset 撐出 4px 外圍）
     const frameSty =
       `position:absolute;inset:-4px;border:3px solid ${cosm.frameColor};border-radius:10px;` +
       `box-shadow:0 0 18px ${cosm.glowColor},0 0 5px ${cosm.frameColor}88;` +
       `background:${cosm.bgGradient};z-index:0;pointer-events:none;`;
 
-    // 圖層 2：公轉圖示（top/left 50% 定位在中心，用 CSS var 控制半徑）
     const orbitSty =
       `position:absolute;top:50%;left:50%;z-index:2;pointer-events:none;` +
       `font-size:${iconSize};text-shadow:0 1px 6px #000,0 0 10px ${cosm.glowColor};` +
@@ -16217,131 +16270,164 @@ ${b.text}
   }
   window.showCosmeticShop = showCosmeticShop;
 
-  function _renderCosmeticShop(previewId) {
-    const me = getMe(); if (!me) return '';
-    const rpg      = getRpg(me);
-    const coins    = getCoins(me.id);
-    const owned    = rpg.ownedCosmetics || [];
-    const equipped = rpg.equippedCosmetic || null;
-    const previewCosm = previewId ? COSMETICS.find(c => c.id === previewId) : null;
-    const cls = CLASSES[rpg.class];
-
-    // ── 預覽面板 ──
-    const previewHtml = `
-      <div style="background:#0a0a1a;border:2px solid ${previewCosm ? previewCosm.frameColor : '#2a2a3a'};
-          border-radius:12px;padding:12px;text-align:center;min-height:180px;transition:all 0.3s;">
-        <div style="font-size:10px;color:#6b7280;margin-bottom:8px;">⚡ 戰鬥預覽</div>
-        <div style="display:inline-block;position:relative;
-            ${previewCosm ? `border:3px solid ${previewCosm.frameColor};border-radius:10px;` +
-              `box-shadow:0 0 20px ${previewCosm.glowColor};background:${previewCosm.bgGradient};padding:4px;` : ''}">
-          ${cls && cls.image
-            ? `<img src="${cls.image}" alt="${escapeHtml(cls.name||'')}" style="width:64px;height:64px;image-rendering:pixelated;display:block;">`
-            : `<div style="width:64px;height:64px;display:flex;align-items:center;justify-content:center;font-size:40px;">${cls && cls.icon || '🎴'}</div>`}
-          ${previewCosm ? `<span style="position:absolute;bottom:-7px;right:-7px;font-size:18px;
-              text-shadow:0 1px 4px #000;">${previewCosm.icon}</span>` : ''}
+  function _cosmeticShopWrapper(tabBarHtml, previewHtml, cardsHtml, footerLines) {
+    return `
+      <div style="background:linear-gradient(135deg,#0a0014,#10001f);border:2px solid #7c3aed;border-radius:16px;padding:0;overflow:hidden;max-width:420px;margin:0 auto;">
+        <div style="background:linear-gradient(135deg,#4c0080,#7c3aed);padding:12px;text-align:center;">
+          <div style="font-size:14px;font-weight:900;color:#fff;letter-spacing:1px;">🎭 衣鑒外觀商店</div>
         </div>
-        ${previewCosm ? `
-          <div style="margin-top:12px;">
-            <div style="color:${previewCosm.frameColor};font-weight:700;font-size:12px;">
-              ${previewCosm.icon} ${escapeHtml(previewCosm.name)}</div>
-            <div style="color:${COSM_RARITY[previewCosm.rarity].color};font-size:10px;margin-top:2px;">
-              ✦ ${COSM_RARITY[previewCosm.rarity].label}</div>
-            <div style="color:#9ca3af;font-size:10px;margin-top:5px;line-height:1.4;">
-              ${escapeHtml(previewCosm.desc)}</div>
-            <div style="color:#fbbf24;font-size:10px;margin-top:5px;font-weight:700;">
-              🪙 ${previewCosm.price.toLocaleString()}</div>
-          </div>
-        ` : `<div style="color:#4b5563;font-size:11px;margin-top:14px;">← 點選外觀可預覽</div>`}
+        ${tabBarHtml}
+        <div style="padding:10px 12px;display:grid;grid-template-columns:130px 1fr;gap:10px;">
+          ${previewHtml}
+          <div style="max-height:350px;overflow-y:auto;">${cardsHtml}</div>
+        </div>
+        ${footerLines.length ? `<div style="padding:8px 12px;border-top:1px solid #2a2a3a;font-size:10px;color:#6b7280;text-align:center;">${footerLines.join(' ｜ ')}</div>` : ''}
+      </div>`;
+  }
+
+  function _renderCosmeticShop(previewId, activeTab) {
+    const me = getMe(); if (!me) return '';
+    const rpg   = getRpg(me);
+    const coins = getCoins(me.id);
+    const tab   = activeTab || window.__cosmeticTab || 'frame';
+    window.__cosmeticTab = tab;
+    const cls   = CLASSES[rpg.class];
+    const rarityOrder = ['legendary', 'epic', 'rare', 'common'];
+
+    // ── Tab bar ──
+    const tabDefs = [
+      { id:'frame',  label:'🖼 框架', badge: rpg.equippedCosmetic ? '✦' : '' },
+      { id:'hat',    label:'🎩 帽子', badge: rpg.equippedHat    ? '✦' : '' },
+      { id:'body',   label:'👘 衣服', badge: rpg.equippedBody   ? '✦' : '' },
+      { id:'weapon', label:'⚔️ 武器', badge: rpg.equippedWeapon ? '✦' : '' },
+    ];
+    const tabBarHtml = `
+      <div style="display:flex;gap:3px;padding:8px 10px 0;">
+        ${tabDefs.map(t => `
+          <button onclick="cosmeticShopTab('${t.id}')"
+            style="flex:1;padding:5px 2px;border:none;border-radius:6px 6px 0 0;font-size:10px;font-weight:700;cursor:pointer;
+            background:${tab===t.id?'#7c3aed':'#1a0030'};color:${tab===t.id?'#fff':'#9ca3af'};
+            border-bottom:2px solid ${tab===t.id?'#7c3aed':'#2a2a3a'};">
+            ${t.label}${t.badge?` <span style="color:#f59e0b;">${t.badge}</span>`:''}
+          </button>`).join('')}
       </div>`;
 
-    // ── 外觀卡片列表 ──
-    const rarityOrder = ['legendary', 'epic', 'rare', 'common'];
-    const cardsHtml = rarityOrder.map(rar => {
-      const items = COSMETICS.filter(c => c.rarity === rar);
-      if (!items.length) return '';
-      const rs = COSM_RARITY[rar];
+    // ── Shared card renderer ──
+    const _card = (item, isOwned, isEquipped, isPrev, canBuy, onPreview, onUnequip, onEquip, onBuy, accentColor) => {
+      const rs = COSM_RARITY[item.rarity];
       return `
-        <div style="margin-bottom:10px;">
-          <div style="font-size:10px;color:${rs.color};font-weight:700;margin-bottom:5px;
-              padding:2px 8px;background:${rs.bg}55;border-radius:4px;display:inline-block;">
-            ${rs.label} ✦</div>
-          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;">
-            ${items.map(c => {
-              const isOwned    = owned.includes(c.id);
-              const isEquipped = equipped === c.id;
-              const isPrev     = previewId === c.id;
-              const canBuy     = !isOwned && coins >= c.price;
-              return `
-                <div onclick="cosmeticPreview('${c.id}')"
-                    style="background:${isPrev ? c.bgGradient : '#0d0d1a'};
-                    border:2px solid ${isPrev ? c.frameColor : (isOwned ? c.frameColor + '88' : '#2a2a3a')};
-                    border-radius:8px;padding:8px;cursor:pointer;position:relative;
-                    transition:border-color 0.2s,background 0.2s;">
-                  ${isEquipped ? `<div style="position:absolute;top:3px;right:3px;font-size:8px;
-                      background:${c.frameColor};color:#000;border-radius:3px;padding:1px 4px;
-                      font-weight:700;">裝備中</div>` : ''}
-                  <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-                    <span style="font-size:22px;">${c.icon}</span>
-                    <div>
-                      <div style="color:${isOwned ? c.frameColor : '#e5e7eb'};font-size:11px;
-                          font-weight:700;">${escapeHtml(c.name)}</div>
-                      <div style="color:${rs.color};font-size:9px;">${rs.label}</div>
-                    </div>
-                  </div>
-                  ${isEquipped
-                    ? `<button onclick="event.stopPropagation();cosmUnequip()"
-                          style="width:100%;padding:3px;background:#374151;border:none;
-                          border-radius:5px;color:#9ca3af;font-size:9px;cursor:pointer;">
-                          取消裝備</button>`
-                    : isOwned
-                    ? `<button onclick="event.stopPropagation();cosmEquip('${c.id}')"
-                          style="width:100%;padding:3px;
-                          background:linear-gradient(135deg,${c.frameColor}44,${c.frameColor}88);
-                          border:1px solid ${c.frameColor};border-radius:5px;
-                          color:${c.frameColor};font-size:9px;font-weight:700;cursor:pointer;">
-                          ✅ 裝備</button>`
-                    : `<button onclick="event.stopPropagation();cosmBuy('${c.id}')" ${!canBuy ? 'disabled' : ''}
-                          style="width:100%;padding:3px;
-                          background:${canBuy ? 'linear-gradient(135deg,#fbbf24,#f59e0b)' : '#1f2937'};
-                          border:none;border-radius:5px;
-                          color:${canBuy ? '#000' : '#4b5563'};font-size:9px;font-weight:700;
-                          cursor:${canBuy ? 'pointer' : 'not-allowed'};">
-                          🪙 ${(c.price / 10000).toFixed(0)}萬</button>`}
-                </div>`;
-            }).join('')}
-          </div>
-        </div>`;
-    }).join('');
-
-    const equippedCosm = equipped ? COSMETICS.find(c => c.id === equipped) : null;
-    return `
-      <div style="background:linear-gradient(135deg,#0a0014,#10001f);
-          border:2px solid #7c3aed;border-radius:16px;padding:0;
-          max-width:520px;width:95%;max-height:90vh;display:flex;flex-direction:column;
-          box-shadow:0 0 40px rgba(124,58,237,0.4);">
-        <div style="padding:14px 16px;border-bottom:1px solid #1f1040;
-            display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-          <div>
-            <div style="font-size:16px;font-weight:900;color:#c084fc;">🎭 外觀商店</div>
-            <div style="font-size:10px;color:#6b7280;margin-top:2px;">
-              購買外觀以改變戰鬥造型 · 持有：<span style="color:#fbbf24;">🪙 ${coins.toLocaleString()}</span>
+        <div onclick="${onPreview}"
+            style="background:${isPrev?'#1a0040':'#0d0d1a'};
+            border:2px solid ${isPrev?accentColor:(isOwned?accentColor+'88':'#2a2a3a')};
+            border-radius:8px;padding:8px;cursor:pointer;position:relative;transition:border-color 0.2s,background 0.2s;">
+          ${isEquipped?`<div style="position:absolute;top:3px;right:3px;font-size:8px;background:${accentColor};color:#000;border-radius:3px;padding:1px 4px;font-weight:700;">裝備中</div>`:''}
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+            <span style="font-size:22px;">${item.icon}</span>
+            <div>
+              <div style="color:${isOwned?accentColor:'#e5e7eb'};font-size:11px;font-weight:700;">${escapeHtml(item.name)}</div>
+              <div style="color:${rs.color};font-size:9px;">${rs.label}</div>
             </div>
           </div>
-          <button onclick="document.getElementById('cosmeticShopModal').style.display='none'"
-              style="background:#1f1040;border:1px solid #374151;color:#9ca3af;
-              border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;">✕ 關閉</button>
-        </div>
-        <div style="display:flex;gap:10px;padding:14px;overflow:hidden;flex:1;min-height:0;">
-          <div style="width:150px;flex-shrink:0;">${previewHtml}</div>
-          <div style="flex:1;overflow-y:auto;padding-right:2px;">${cardsHtml}</div>
-        </div>
-        ${equippedCosm ? `
-        <div style="padding:8px 16px;border-top:1px solid #1f1040;font-size:10px;
-            color:#9ca3af;flex-shrink:0;">
-          目前裝備：<span style="color:${equippedCosm.frameColor};font-weight:700;">
-            ${equippedCosm.icon} ${escapeHtml(equippedCosm.name)}</span>
-        </div>` : ''}
-      </div>`;
+          ${isEquipped
+            ?`<button onclick="event.stopPropagation();${onUnequip}" style="width:100%;padding:3px;background:#374151;border:none;border-radius:5px;color:#9ca3af;font-size:9px;cursor:pointer;">取消裝備</button>`
+            :isOwned
+            ?`<button onclick="event.stopPropagation();${onEquip}" style="width:100%;padding:3px;background:linear-gradient(135deg,${accentColor}44,${accentColor}88);border:1px solid ${accentColor};border-radius:5px;color:${accentColor};font-size:9px;font-weight:700;cursor:pointer;">✅ 裝備</button>`
+            :`<button onclick="event.stopPropagation();${onBuy}" ${!canBuy?'disabled':''} style="width:100%;padding:3px;background:${canBuy?'linear-gradient(135deg,#fbbf24,#f59e0b)':'#1f2937'};border:none;border-radius:5px;color:${canBuy?'#000':'#4b5563'};font-size:9px;font-weight:700;cursor:${canBuy?'pointer':'not-allowed'};">🪙 ${(item.price/10000).toFixed(0)}萬</button>`}
+        </div>`;
+    };
+
+    if (tab === 'frame') {
+      // ── 框架頁 ──
+      const owned    = rpg.ownedCosmetics || [];
+      const equipped = rpg.equippedCosmetic || null;
+      const previewCosm = previewId ? COSMETICS.find(c => c.id === previewId) : null;
+
+      const previewHtml = `
+        <div style="background:#0a0a1a;border:2px solid ${previewCosm?previewCosm.frameColor:'#2a2a3a'};
+            border-radius:12px;padding:12px;text-align:center;min-height:180px;transition:all 0.3s;">
+          <div style="font-size:10px;color:#6b7280;margin-bottom:8px;">⚡ 戰鬥預覽</div>
+          <div style="display:inline-block;position:relative;
+              ${previewCosm?`border:3px solid ${previewCosm.frameColor};border-radius:10px;box-shadow:0 0 20px ${previewCosm.glowColor};background:${previewCosm.bgGradient};padding:4px;`:''}">
+            ${cls&&cls.image?`<img src="${cls.image}" alt="${escapeHtml(cls.name||'')}" style="width:64px;height:64px;image-rendering:pixelated;display:block;">`
+              :`<div style="width:64px;height:64px;display:flex;align-items:center;justify-content:center;font-size:40px;">${cls&&cls.icon||'🎴'}</div>`}
+            ${previewCosm?`<span style="position:absolute;bottom:-7px;right:-7px;font-size:18px;text-shadow:0 1px 4px #000;">${previewCosm.icon}</span>`:''}
+          </div>
+          ${previewCosm?`
+            <div style="margin-top:12px;">
+              <div style="color:${previewCosm.frameColor};font-weight:700;font-size:12px;">${previewCosm.icon} ${escapeHtml(previewCosm.name)}</div>
+              <div style="color:${COSM_RARITY[previewCosm.rarity].color};font-size:10px;margin-top:2px;">✦ ${COSM_RARITY[previewCosm.rarity].label}</div>
+              <div style="color:#9ca3af;font-size:10px;margin-top:5px;line-height:1.4;">${escapeHtml(previewCosm.desc)}</div>
+              <div style="color:#fbbf24;font-size:10px;margin-top:5px;font-weight:700;">🪙 ${previewCosm.price.toLocaleString()}</div>
+            </div>`
+          :`<div style="color:#4b5563;font-size:11px;margin-top:14px;">← 點選外觀可預覽</div>`}
+        </div>`;
+
+      const cardsHtml = rarityOrder.map(rar => {
+        const items = COSMETICS.filter(c => c.rarity === rar);
+        if (!items.length) return '';
+        const rs = COSM_RARITY[rar];
+        return `<div style="margin-bottom:10px;">
+          <div style="font-size:10px;color:${rs.color};font-weight:700;margin-bottom:5px;padding:2px 8px;background:${rs.bg}55;border-radius:4px;display:inline-block;">${rs.label} ✦</div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;">
+            ${items.map(c => _card(c, owned.includes(c.id), equipped===c.id, previewId===c.id, coins>=c.price,
+              `cosmeticPreview('${c.id}')`, `cosmUnequip()`, `cosmEquip('${c.id}')`, `cosmBuy('${c.id}')`, c.frameColor
+            )).join('')}
+          </div></div>`;
+      }).join('');
+
+      const equippedCosm = equipped ? COSMETICS.find(c => c.id === equipped) : null;
+      const footer = equippedCosm ? [`框架：<span style="color:${equippedCosm.frameColor};font-weight:700;">${equippedCosm.icon} ${escapeHtml(equippedCosm.name)}</span>`] : [];
+      return _cosmeticShopWrapper(tabBarHtml, previewHtml, cardsHtml, footer);
+
+    } else {
+      // ── 裝備頁 (hat / body / weapon) ──
+      const slotKey  = tab==='hat' ? 'equippedHat' : tab==='body' ? 'equippedBody' : 'equippedWeapon';
+      const ownedEquip = rpg.ownedEquipment || [];
+      const equippedId = rpg[slotKey] || null;
+      const items      = EQUIP_ITEMS.filter(e => e.slot === tab);
+      const previewEquip = previewId ? EQUIP_ITEMS.find(e => e.id === previewId) : null;
+      const lSty = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;image-rendering:pixelated;image-rendering:crisp-edges;';
+
+      const previewHtml = `
+        <div style="background:#0a0a1a;border:2px solid ${previewEquip?COSM_RARITY[previewEquip.rarity].color:'#2a2a3a'};
+            border-radius:12px;padding:12px;text-align:center;min-height:180px;transition:all 0.3s;">
+          <div style="font-size:10px;color:#6b7280;margin-bottom:8px;">⚡ 裝備預覽</div>
+          <div style="display:inline-block;">
+            ${cls&&cls.image
+              ?`<div style="position:relative;display:inline-block;">` +
+                `<img src="${cls.image}" style="width:64px;height:64px;image-rendering:pixelated;display:block;">` +
+                (previewEquip?`<img src="${previewEquip.src}" style="${lSty}width:64px;height:64px;">`:'') +
+                `</div>`
+              :`<div style="width:64px;height:64px;display:flex;align-items:center;justify-content:center;font-size:40px;">${cls&&cls.icon||'🎴'}</div>`}
+          </div>
+          ${previewEquip?`
+            <div style="margin-top:12px;">
+              <div style="color:${COSM_RARITY[previewEquip.rarity].color};font-weight:700;font-size:12px;">${previewEquip.icon} ${escapeHtml(previewEquip.name)}</div>
+              <div style="color:${COSM_RARITY[previewEquip.rarity].color};font-size:10px;margin-top:2px;">✦ ${COSM_RARITY[previewEquip.rarity].label}</div>
+              <div style="color:#9ca3af;font-size:10px;margin-top:5px;line-height:1.4;">${escapeHtml(previewEquip.desc)}</div>
+              <div style="color:#fbbf24;font-size:10px;margin-top:5px;font-weight:700;">🪙 ${previewEquip.price.toLocaleString()}</div>
+            </div>`
+          :`<div style="color:#4b5563;font-size:11px;margin-top:14px;">← 點選裝備可預覽</div>`}
+        </div>`;
+
+      const cardsHtml = rarityOrder.map(rar => {
+        const rarItems = items.filter(e => e.rarity === rar);
+        if (!rarItems.length) return '';
+        const rs = COSM_RARITY[rar];
+        return `<div style="margin-bottom:10px;">
+          <div style="font-size:10px;color:${rs.color};font-weight:700;margin-bottom:5px;padding:2px 8px;background:${rs.bg}55;border-radius:4px;display:inline-block;">${rs.label} ✦</div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;">
+            ${rarItems.map(e => _card(e, ownedEquip.includes(e.id), equippedId===e.id, previewId===e.id, coins>=e.price,
+              `equipPreview('${e.id}')`, `equipUnequip('${tab}')`, `equipEquip('${e.id}')`, `equipBuy('${e.id}')`,
+              COSM_RARITY[e.rarity].color
+            )).join('')}
+          </div></div>`;
+      }).join('');
+
+      const equippedItem = equippedId ? EQUIP_ITEMS.find(e => e.id === equippedId) : null;
+      const footer = equippedItem ? [`${tab==='hat'?'帽子':tab==='body'?'衣服':'武器'}：<span style="color:${COSM_RARITY[equippedItem.rarity].color};font-weight:700;">${equippedItem.icon} ${escapeHtml(equippedItem.name)}</span>`] : [];
+      return _cosmeticShopWrapper(tabBarHtml, previewHtml, cardsHtml, footer);
+    }
   }
 
   window.cosmeticPreview = function(id) {
@@ -16400,6 +16486,69 @@ ${b.text}
     const el = document.getElementById('cosmeticShopModal');
     if (el) el.innerHTML = _renderCosmeticShop(prev || null);
     render(); // ⭐ 更新主畫面 badge
+  };
+
+  window.cosmeticShopTab = function(tab) {
+    window.__cosmeticTab = tab;
+    const el = document.getElementById('cosmeticShopModal');
+    if (el) el.innerHTML = _renderCosmeticShop(null, tab);
+  };
+
+  window.equipPreview = function(id) {
+    const el = document.getElementById('cosmeticShopModal');
+    if (el) el.innerHTML = _renderCosmeticShop(id, window.__cosmeticTab || 'hat');
+  };
+
+  window.equipBuy = function(id) {
+    const me = getMe(); if (!me) return;
+    const rpg  = getRpg(me);
+    const item = EQUIP_ITEMS.find(e => e.id === id);
+    if (!item) return;
+    if ((rpg.ownedEquipment || []).includes(id)) { showToast('你已擁有此裝備！'); return; }
+    const coins = getCoins(me.id);
+    if (coins < item.price) { showToast(`❌ 鵝鵝幣不足！需要 ${item.price.toLocaleString()}，現有 ${coins.toLocaleString()}`); return; }
+    safeConfirm(`確定購買「${item.icon} ${item.name}」？\n費用：${item.price.toLocaleString()} 鵝鵝幣`, () => {
+      if (!spendCoins(me.id, item.price)) { showToast('❌ 購買失敗：鵝鵝幣不足'); return; }
+      rpg.ownedEquipment = [...(rpg.ownedEquipment || []), id];
+      // 自動裝備
+      if (item.slot === 'hat')    rpg.equippedHat    = id;
+      if (item.slot === 'body')   rpg.equippedBody   = id;
+      if (item.slot === 'weapon') rpg.equippedWeapon = id;
+      saveData();
+      showToast(`✅ 購買成功並裝備！${item.icon} ${item.name}`);
+      const el = document.getElementById('cosmeticShopModal');
+      if (el) el.innerHTML = _renderCosmeticShop(id, item.slot);
+      render();
+    });
+  };
+
+  window.equipEquip = function(id) {
+    const me = getMe(); if (!me) return;
+    const rpg  = getRpg(me);
+    const item = EQUIP_ITEMS.find(e => e.id === id);
+    if (!item) return;
+    if (!(rpg.ownedEquipment || []).includes(id)) { showToast('你尚未擁有此裝備！'); return; }
+    if (item.slot === 'hat')    rpg.equippedHat    = id;
+    if (item.slot === 'body')   rpg.equippedBody   = id;
+    if (item.slot === 'weapon') rpg.equippedWeapon = id;
+    saveData();
+    showToast(`🎽 已裝備「${item.icon} ${item.name}」！`);
+    const el = document.getElementById('cosmeticShopModal');
+    if (el) el.innerHTML = _renderCosmeticShop(id, item.slot);
+    render();
+  };
+
+  window.equipUnequip = function(slot) {
+    const me = getMe(); if (!me) return;
+    const rpg  = getRpg(me);
+    if (slot === 'hat')    rpg.equippedHat    = null;
+    if (slot === 'body')   rpg.equippedBody   = null;
+    if (slot === 'weapon') rpg.equippedWeapon = null;
+    saveData();
+    showToast('已取消裝備');
+    const el = document.getElementById('cosmeticShopModal');
+    if (el) el.innerHTML = _renderCosmeticShop(null, slot);
+    render();
   };
 
   function setGemTab(tab) {
@@ -18470,7 +18619,7 @@ ${b.text}
     const arenaHtml = `
       <div class="battle-arena" id="replayArena">
         <div class="combatant" id="replayPlayer">
-          ${_playerCombatIconHTML({ class: ps.class, equippedCosmetic: ps.equippedCosmetic || null }, 'combatant-icon')}
+          ${_playerCombatIconHTML({ class: ps.class, equippedCosmetic: ps.equippedCosmetic || null, equippedHat: ps.equippedHat || null, equippedBody: ps.equippedBody || null, equippedWeapon: ps.equippedWeapon || null }, 'combatant-icon')}
           <div class="combatant-name">${escapeHtml(ps.name || '?')} Lv${ps.level || '?'}</div>
           <div class="combatant-hp-track"><div class="combatant-hp-fill" id="replayPHpBar" style="width:100%"></div></div>
           <div class="combatant-hp-text" id="replayPHpText">${maxHp}/${maxHp}</div>
