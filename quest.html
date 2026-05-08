@@ -2568,6 +2568,16 @@
     legendary: { label:'傳說', color:'#f97316', bg:'#431407' },
   };
 
+  // 地獄使者能力點（複用標準 ABILITIES 的 id，讓 computeAbilityBonuses 自動計算）
+  const HM_ABILITIES = [
+    { id:'str', name:'邪力',     short:'STR', icon:'💀', desc:'+1 ATK / 點' },
+    { id:'vit', name:'魔體',     short:'VIT', icon:'🩸', desc:'+5 HP / 點，每 2 點 +1 DEF' },
+    { id:'agi', name:'冥速',     short:'AGI', icon:'👁️', desc:'每 2 點 +1 SPD' },
+    { id:'dex', name:'業力',     short:'DEX', icon:'⚖️', desc:'+0.4% 暴擊率 / 點' },
+    { id:'int', name:'靈力精通', short:'INT', icon:'🌑', desc:'+2 MP / 點，+1.5 MARK，+0.5 技能傷害' },
+    { id:'luk', name:'命運之輪', short:'LUK', icon:'🎴', desc:'+0.2% 暴擊率 / 點，+1% 暴擊傷害 / 點' },
+  ];
+
   // 鵝鵝怪物全名單（5 階、特殊能力：multiHit / steal / reflect / physRes / magRes）
   const MONSTERS = [
     // tier 1（玩家 Lv 1-4）
@@ -12376,7 +12386,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260508123320';
+  const APP_VERSION = '20260508124631';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -19853,15 +19863,16 @@ ${b.text}
     rpg.hellEquip = {};
     rpg.hellInventory = [];
     rpg.hellSkillCd = {};
-    // ⭐ 戰鬥模式初始值（5 技能點起手）
-    rpg.hellBattleLv          = 1;
-    rpg.hellBattleXp          = 0;
-    rpg.hellBattleSkillPoints = 5;
-    rpg.hellBattleSkills      = {};
-    rpg.hellBattleSkillLevels = {};
-    rpg.hellBattleAbilities   = {};
-    rpg.hellBattleAbilityTree = {};
-    rpg.hellBattleCd          = {};
+    // ⭐ 戰鬥模式初始值（5 技能點 + 5 能力點起手）
+    rpg.hellBattleLv            = 1;
+    rpg.hellBattleXp            = 0;
+    rpg.hellBattleSkillPoints   = 5;
+    rpg.hellBattleAbilityPoints = 5;
+    rpg.hellBattleSkills        = {};
+    rpg.hellBattleSkillLevels   = {};
+    rpg.hellBattleAbilities     = { str:0, vit:0, agi:0, dex:0, int:0, luk:0 };
+    rpg.hellBattleAbilityTree   = {};
+    rpg.hellBattleCd            = {};
     saveData();
     hideModal();
     render();
@@ -20532,7 +20543,14 @@ ${b.text}
     const hbClsDef= hbCls ? CLASSES[hbCls] : null;
     const hbLv    = rpg.hellBattleLv  || 1;
     const hbXp    = rpg.hellBattleXp  || 0;
-    const hbSP    = rpg.hellBattleSkillPoints || 0;
+    const hbSP    = rpg.hellBattleSkillPoints   || 0;
+    // ⭐ 舊存檔補能力點（起手 5 + 每升一等 +3，扣掉已花費）
+    if (rpg.hellBattleAbilityPoints == null) {
+      const _usedAb = Object.values(rpg.hellBattleAbilities || {}).reduce((a, b) => a + (b || 0), 0);
+      rpg.hellBattleAbilityPoints = Math.max(0, 5 + (hbLv - 1) * POINTS_PER_LEVEL.ability - _usedAb);
+    }
+    rpg.hellBattleAbilities = rpg.hellBattleAbilities || { str:0, vit:0, agi:0, dex:0, int:0, luk:0 };
+    const hbAP    = rpg.hellBattleAbilityPoints;
     const hbXpMax = 100 + (hbLv - 1) * 80;
     const hbXpPct = Math.min(100, Math.round(hbXp / hbXpMax * 100));
     const hbBatStats = computeHellBattleStats(rpg);
@@ -20592,8 +20610,11 @@ ${b.text}
           <div style="font-size:13px;font-weight:800;color:#c084fc;margin-bottom:4px;">💀 地獄使者 戰鬥模式</div>
           <div style="font-size:11px;color:#9ca3af;">戰鬥 Lv ${hbLv}　${hbLv<20?hbXp+' / '+hbXpMax+' EXP':'✨ MAX'}</div>
           <div style="background:#1a003a;border-radius:3px;height:4px;margin:4px 0;"><div style="height:100%;width:${hbXpPct}%;background:linear-gradient(90deg,#7c3aed,#a855f7);border-radius:3px;"></div></div>
-          <div style="font-size:11px;color:#fbbf24;">🎯 技能點 <b>${hbSP} SP</b>
-            <button onclick="hellShowBattleSkillModal()" style="margin-left:8px;padding:2px 8px;border:none;border-radius:5px;background:${hbSP>0?'linear-gradient(135deg,#4c1d95,#7c3aed)':'#374151'};color:#fff;font-size:9px;font-weight:700;cursor:pointer;">分配技能</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:2px;">
+            <span style="font-size:11px;color:#fbbf24;">🎯 技能點 <b>${hbSP} SP</b></span>
+            <button onclick="hellShowBattleSkillModal()" style="padding:2px 8px;border:none;border-radius:5px;background:${hbSP>0?'linear-gradient(135deg,#4c1d95,#7c3aed)':'#374151'};color:#fff;font-size:9px;font-weight:700;cursor:pointer;">分配技能</button>
+            <span style="font-size:11px;color:#34d399;">⚡ 能力點 <b>${hbAP}</b></span>
+            <button onclick="hellShowAbilityModal()" style="padding:2px 8px;border:none;border-radius:5px;background:${hbAP>0?'linear-gradient(135deg,#065f46,#10b981)':'#374151'};color:#fff;font-size:9px;font-weight:700;cursor:pointer;">分配能力</button>
           </div>
           ${skillUnlockRow}
           ${battleStatsRow}
@@ -20716,14 +20737,15 @@ ${b.text}
       if (rpg.hellBattleXp >= needed) {
         rpg.hellBattleXp -= needed;
         rpg.hellBattleLv++;
-        rpg.hellBattleSkillPoints = (rpg.hellBattleSkillPoints || 0) + POINTS_PER_LEVEL.skill;
+        rpg.hellBattleSkillPoints   = (rpg.hellBattleSkillPoints   || 0) + POINTS_PER_LEVEL.skill;
+        rpg.hellBattleAbilityPoints = (rpg.hellBattleAbilityPoints || 0) + POINTS_PER_LEVEL.ability;
         leveled = true;
       } else break;
     }
     if (leveled) {
       // ⭐ 同步主職業等級（讓地獄使者像其他職業一樣升等）
       rpg.level = rpg.hellBattleLv;
-      showToast(`⚔️ 戰鬥等級升至 Lv${rpg.hellBattleLv}！+${POINTS_PER_LEVEL.skill} 技能點`);
+      showToast(`⚔️ 戰鬥等級升至 Lv${rpg.hellBattleLv}！+${POINTS_PER_LEVEL.skill} 技能點 +${POINTS_PER_LEVEL.ability} 能力點`);
       // ⭐ 提示新解鎖的戰鬥技能
       const hmCls2 = CLASSES['hellmessenger'];
       const newSkills = (hmCls2?.skills || []).filter(s =>
@@ -20747,14 +20769,15 @@ ${b.text}
     rpg.hellBattleClass         = cls;
     rpg.hellBattleLv            = rpg.hellBattleLv || 1;
     rpg.hellBattleXp            = rpg.hellBattleXp || 0;
-    if (rpg.hellBattleSkillPoints == null) rpg.hellBattleSkillPoints = 5;
+    if (rpg.hellBattleSkillPoints   == null) rpg.hellBattleSkillPoints   = 5;
+    if (rpg.hellBattleAbilityPoints == null) rpg.hellBattleAbilityPoints = 5;
     rpg.hellBattleSkills        = rpg.hellBattleSkills        || {};
     rpg.hellBattleSkillLevels   = rpg.hellBattleSkillLevels   || {};
-    rpg.hellBattleAbilities     = rpg.hellBattleAbilities     || {};
+    rpg.hellBattleAbilities     = rpg.hellBattleAbilities     || { str:0, vit:0, agi:0, dex:0, int:0, luk:0 };
     rpg.hellBattleAbilityTree   = rpg.hellBattleAbilityTree   || {};
     rpg.hellBattleCd            = rpg.hellBattleCd            || {};
     saveData(); renderHellMessenger();
-    showToast(`⚔️ 選擇了【${CLASSES[cls].name}】！起手 5 技能點可分配。`);
+    showToast(`⚔️ 選擇了【${CLASSES[cls].name}】！起手 5 技能點 + 5 能力點可分配。`);
   }
   window.hellSelectBattleClass = hellSelectBattleClass;
 
@@ -20842,6 +20865,86 @@ ${b.text}
     `);
   }
   window.hellShowBattleSkillModal = hellShowBattleSkillModal;
+
+  // ===== 🌑 地獄使者能力分配 =====
+  function hellShowAbilityModal() {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    // 初始化（舊存檔補點）
+    if (rpg.hellBattleAbilityPoints == null) {
+      const lv  = rpg.hellBattleLv || 1;
+      const usedAb = Object.values(rpg.hellBattleAbilities || {}).reduce((a, b) => a + (b || 0), 0);
+      rpg.hellBattleAbilityPoints = Math.max(0, 5 + (lv - 1) * POINTS_PER_LEVEL.ability - usedAb);
+    }
+    rpg.hellBattleAbilities = rpg.hellBattleAbilities || { str:0, vit:0, agi:0, dex:0, int:0, luk:0 };
+    const pts = rpg.hellBattleAbilityPoints || 0;
+    const RESET_HM_AB_COST = 3000;
+    const abilHtml = HM_ABILITIES.map(ab => {
+      const cur    = (rpg.hellBattleAbilities)[ab.id] || 0;
+      const canAdd = pts >= 1;
+      return `
+        <div style="background:#001a0a;border:1px solid #065f46;border-radius:8px;padding:8px 10px;margin-bottom:5px;
+            display:flex;align-items:center;gap:8px;">
+          <span style="font-size:20px;">${ab.icon}</span>
+          <div style="flex:1;">
+            <div style="font-size:12px;font-weight:700;color:#34d399;">
+              ${ab.name} <span style="color:#6b7280;font-size:10px;">(${ab.short})</span>
+              <span style="color:#fbbf24;font-size:11px;margin-left:6px;">${cur}</span>
+            </div>
+            <div style="font-size:10px;color:#9ca3af;">${ab.desc}</div>
+          </div>
+          <button onclick="hellLearnBattleAbility('${ab.id}')" ${canAdd ? '' : 'disabled'}
+              style="padding:3px 12px;border:none;border-radius:6px;font-size:12px;font-weight:800;cursor:pointer;
+              background:${canAdd ? 'linear-gradient(135deg,#065f46,#10b981)' : '#374151'};
+              color:${canAdd ? '#fff' : '#6b7280'};">+</button>
+        </div>`;
+    }).join('');
+    showModal('🌑 地獄使者 能力分配', `
+      <div style="background:#001a0a;border:1px solid #065f46;border-radius:8px;padding:8px 12px;margin-bottom:12px;">
+        <div style="font-size:13px;color:#34d399;font-weight:700;">
+          可用能力點：<span style="color:#fbbf24;font-size:16px;">${pts}</span>
+        </div>
+        <div style="font-size:10px;color:#6b7280;margin-top:2px;">每升 1 等 +${POINTS_PER_LEVEL.ability} 能力點　·　起手 +5 點</div>
+      </div>
+      ${abilHtml}
+      <button onclick="hellResetBattleAbilities()" style="width:100%;margin-top:8px;padding:6px;background:#1f2937;border:1px solid #374151;
+          border-radius:8px;color:#9ca3af;font-size:11px;cursor:pointer;">
+        🔄 重置能力（🪙 ${RESET_HM_AB_COST}）</button>
+      <div style="font-size:10px;color:#4b5563;text-align:center;margin-top:6px;">
+        能力直接影響地獄戰鬥屬性（ATK / HP / DEF / SPD / 暴擊 / MP）
+      </div>
+    `);
+  }
+  window.hellShowAbilityModal = hellShowAbilityModal;
+
+  window.hellLearnBattleAbility = function(id) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if ((rpg.hellBattleAbilityPoints || 0) < 1) { showToast('沒有可用能力點'); return; }
+    rpg.hellBattleAbilities = rpg.hellBattleAbilities || { str:0, vit:0, agi:0, dex:0, int:0, luk:0 };
+    rpg.hellBattleAbilities[id] = (rpg.hellBattleAbilities[id] || 0) + 1;
+    rpg.hellBattleAbilityPoints -= 1;
+    saveData();
+    const ab = HM_ABILITIES.find(a => a.id === id);
+    showToast(`✨ ${ab ? ab.name : id} +1 → ${rpg.hellBattleAbilities[id]}`);
+    hellShowAbilityModal();
+  };
+
+  window.hellResetBattleAbilities = function() {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const COST = 3000;
+    if (getCoins(me.id) < COST) { showToast(`❌ 鵝鵝幣不足（需 ${COST}）`); return; }
+    safeConfirm(`確定要重置所有能力點嗎？（消耗 🪙 ${COST}）`, () => {
+      if (!spendCoins(me.id, COST)) { showToast('❌ 鵝鵝幣不足'); return; }
+      const used = Object.values(rpg.hellBattleAbilities || {}).reduce((a, b) => a + (b || 0), 0);
+      rpg.hellBattleAbilities     = { str:0, vit:0, agi:0, dex:0, int:0, luk:0 };
+      rpg.hellBattleAbilityPoints = (rpg.hellBattleAbilityPoints || 0) + used;
+      saveData();
+      showToast(`🔄 已重置 ${used} 點能力，點數返還`);
+      hellShowAbilityModal();
+    });
+  };
 
   // 挑戰玩家（戰鬥模式核心）
   function hellChallengePlayer(targetId) {
