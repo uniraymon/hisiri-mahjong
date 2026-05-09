@@ -4823,7 +4823,7 @@
       affixDesc: '攻擊有 10% 機率使敵人「麻痺」（靈噬之印）' },
     { id: 'bg_sd_corrode', name: '異蝕之印', icon: '☣️', slot: 'accessory', lv: 1, atk: 12, mark: 8, critChance: 0.03,
       isBossGift: true, sourceBossId: 'soul_devourer', rarity: 'gold', fusionEffect: 'fx_sd_corrode',
-      affixDesc: '異常狀態施加成功率 +25%（可疊加；異蝕之印）' },
+      affixDesc: '異常狀態抗性 +25%（可疊加；抵擋王的異常；異蝕之印）' },
     { id: 'bg_sd_void',    name: '冥魂之印', icon: '🌑', slot: 'accessory', lv: 1, mark: 12, hp: 80, mpRegen: 2,
       isBossGift: true, sourceBossId: 'soul_devourer', rarity: 'gold', fusionEffect: 'fx_sd_void',
       affixDesc: '技能後下次技能傷害 +20%（觸發次不重計；冥魂之印）' },
@@ -7960,7 +7960,7 @@
     const _fxStatusRes  = getFusionEffectCount(player, 'fx_sg_statusres');
     // ⭐ 靈噬印記效果
     const _fxSdDrain   = getFusionEffectCount(player, 'fx_sd_drain');   // 靈噬之印：攻擊 10% 麻痺
-    const _fxSdCorrode = getFusionEffectCount(player, 'fx_sd_corrode'); // 異蝕之印：狀態成功率 +25%/層
+    const _fxSdCorrode = getFusionEffectCount(player, 'fx_sd_corrode'); // 異蝕之印：玩家異常狀態抗性 +25%/層
     const _fxSdVoid    = getFusionEffectCount(player, 'fx_sd_void');    // 冥魂之印：技能後下次 +20%
     const _fxSdLife    = getFusionEffectCount(player, 'fx_sd_life');    // 噬命之印：ATK/DEF +20%，HP -50%
     // 派生值
@@ -7968,9 +7968,9 @@
     const _fusionMpDiscount = Math.min(_fxMage * 0.20, 0.80);
     // fx_dg_crit: 暴擊後必爆+爆頭+30%（不連鎖）；合入自身堆疊至 2 次
     const _dgCritCount = getFusionEffectCount(player, 'fx_dg_crit');
-    // ⭐ 風鵝護符效果
+    // ⭐ 風鵝護符 + 異蝕之印：玩家異常狀態抗性（上限 95%）
     const _earlyDefStacks = getFusionEffectCount(player, 'fx_sg_earlydef');
-    const _statusResist   = Math.min(_fxStatusRes * 0.25, 0.75);
+    const _statusResist   = Math.min(_fxStatusRes * 0.25 + _fxSdCorrode * 0.25, 0.95);
     let _nextForceCrit = 0; // 剩餘必爆次數
     // 弓手普攻流疊加（本場累積，回合間持續）
     let _aHit = 0;       // 命中數 → 普攻傷害 +1%/層
@@ -8551,10 +8551,17 @@
               log.push({ type: 'monster', text: `回合 ${round}：🪞 ${monster.name} 反射光芒 ${_reflStr}`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
             }
             // 對怪物上狀態（毒箭、冰錐術…）
-            // ⭐ 異蝕之印（fx_sd_corrode）：狀態施加成功率 +25%/層
-            if (skill.applyStatus && Math.random() < Math.min(1, (skill.applyStatus.chance || 1) * (1 + _fxSdCorrode * 0.25))) {
+            if (skill.applyStatus && Math.random() < (skill.applyStatus.chance || 1)) {
               applyStatus(monster, skill.applyStatus);
               log.push({ type: 'system', text: `回合 ${round}：${monster.name} 進入 ${statusEmoji(skill.applyStatus.type)}${statusLabel(skill.applyStatus.type)} 狀態`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+            }
+            // ⭐ 靈噬之印（fx_sd_drain）：技能攻擊後 10%/層 機率使敵人麻痺
+            if (_fxSdDrain > 0 && mHp > 0 && Math.random() < Math.min(1, _fxSdDrain * 0.10)) {
+              monster.statuses = monster.statuses || [];
+              if (!hasStatus(monster, 'paralyze')) {
+                applyStatus(monster, { type: 'paralyze', charges: 2 });
+                log.push({ type: 'player', text: `回合 ${round}：👁️ 靈噬之印 → ${monster.name} 陷入⚡麻痺！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+              }
             }
             // ⭐ 鵝鵝的刀盾：護盾衝鋒後追加免費普攻（正常傷害 + 當前HP×3 真傷）
             if (skill.id === 'p_shield_charge' && pBuff.swordShield > 0 && mHp > 0) {
@@ -9118,13 +9125,14 @@
             log.push({ type: 'monster', text: `回合 ${round}：${monster.icon}${monster.name} 🫙 ${mSkill.verb} → 無視下 ${mSkill.charges} 次傷害！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
           } else if (mSkill.type === 'debuff') {
             // ⭐ 怪物對玩家施加 debuff（降低 ATK / DEF / SPD）
-            const debuffHit = !mSkill.chance || Math.random() < mSkill.chance;
+            // ⭐ 異蝕之印（fx_sd_corrode）：玩家異常抗性 +25%/層，含 debuff 抵抗
+            const debuffHit = !mSkill.chance || Math.random() < mSkill.chance * (1 - _statusResist);
             if (debuffHit) {
               applyStatus(playerObj, { type: 'buff', stat: mSkill.stat, amount: mSkill.amount, turns: mSkill.turns || 3 });
             }
             const _dLabel = { atkPct: 'ATK', defPct: 'DEF', spdPct: 'SPD' }[mSkill.stat] || mSkill.stat;
             const _dPct = Math.round(Math.abs(mSkill.amount || 0) * 100);
-            log.push({ type: 'monster', text: `回合 ${round}：${monster.icon}${monster.name} 💀 ${mSkill.verb} → ${debuffHit ? `${player.name} ${_dLabel} -${_dPct}%（${mSkill.turns || 3} 回合）` : '未命中！'}`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+            log.push({ type: 'monster', text: `回合 ${round}：${monster.icon}${monster.name} 💀 ${mSkill.verb} → ${debuffHit ? `${player.name} ${_dLabel} -${_dPct}%（${mSkill.turns || 3} 回合）` : '抵抗！'}`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
           } else if (mSkill.mpDrainAll) {
             // ⭐ 靈魂汲取：魔法傷害 + 吸光玩家 MP + 吸血回血
             const _monAtkBuff_drain = 1 + (getBuffBonus(monster).atkPct || 0);
@@ -9469,7 +9477,8 @@
     let _nextForceCrit = 0;
     // ⭐ 風鵝護符效果
     const _earlyDefStacksM = getFusionEffectCount(player, 'fx_sg_earlydef');
-    const _statusResistM   = Math.min(_fxStatusRes * 0.25, 0.75);
+    // ⭐ 風鵝護符 + 異蝕之印：玩家異常狀態抗性（上限 95%）
+    const _statusResistM   = Math.min(_fxStatusRes * 0.25 + _fxSdCorrode * 0.25, 0.95);
     // 弓手普攻流疊加（本場累積）
     let _aHit = 0;
     let _aCrit = 0;      // 暴擊計數（UI 顯示）
@@ -9909,9 +9918,15 @@
                 pHp = Math.max(0, pHp - Math.min(tgt.ability.cap || 300, Math.max(1, Math.round(dmg * tgt.ability.resist))));
               }
               // 套用狀態
-              // ⭐ 異蝕之印（fx_sd_corrode）：狀態施加成功率 +25%/層
-              if (skill.applyStatus && Math.random() < Math.min(1, (skill.applyStatus.chance || 1) * (1 + _fxSdCorrode * 0.25))) {
+              if (skill.applyStatus && Math.random() < (skill.applyStatus.chance || 1)) {
                 applyStatus(tgt, skill.applyStatus);
+              }
+              // ⭐ 靈噬之印（fx_sd_drain）：技能攻擊後 10%/層 機率使敵人麻痺
+              if (_fxSdDrain > 0 && tgt.hp > 0 && Math.random() < Math.min(1, _fxSdDrain * 0.10)) {
+                tgt.statuses = tgt.statuses || [];
+                if (!hasStatus(tgt, 'paralyze')) {
+                  applyStatus(tgt, { type: 'paralyze', charges: 2 });
+                }
               }
             }
             // ⭐ 反彈傷害在技能 log 後統一顯示（計算已在迴圈內套用）
@@ -10541,13 +10556,14 @@
             log.push({ type: 'monster', text: `回合 ${round}：${m.icon}${m.name} ✨${mSkill.verb || '護盾'} → 無視下 ${mSkill.charges || 1} 次傷害！`, hp: hpsSnapshot() });
           } else if (mSkill.type === 'debuff') {
             // ⭐ 怪物對玩家施加 debuff（降低 ATK / DEF / SPD）
-            const debuffHit = !mSkill.chance || Math.random() < mSkill.chance;
+            // ⭐ 異蝕之印（fx_sd_corrode）：玩家異常抗性 +25%/層，含 debuff 抵抗
+            const debuffHit = !mSkill.chance || Math.random() < mSkill.chance * (1 - _statusResistM);
             if (debuffHit) {
               applyStatus(playerObj, { type: 'buff', stat: mSkill.stat, amount: mSkill.amount, turns: mSkill.turns || 3 });
             }
             const _dLabel = { atkPct: 'ATK', defPct: 'DEF', spdPct: 'SPD' }[mSkill.stat] || mSkill.stat;
             const _dPct = Math.round(Math.abs(mSkill.amount || 0) * 100);
-            log.push({ type: 'monster', text: `回合 ${round}：${m.icon}${m.name} 💀 ${mSkill.verb} → ${debuffHit ? `${player.name} ${_dLabel} -${_dPct}%（${mSkill.turns || 3} 回合）` : '未命中！'}`, hp: hpsSnapshot() });
+            log.push({ type: 'monster', text: `回合 ${round}：${m.icon}${m.name} 💀 ${mSkill.verb} → ${debuffHit ? `${player.name} ${_dLabel} -${_dPct}%（${mSkill.turns || 3} 回合）` : '抵抗！'}`, hp: hpsSnapshot() });
           } else {
             // ⭐ 30% DEF 穿透（試煉場）
             const _mPen3 = m.defPen || 0;
@@ -13487,7 +13503,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510040853';
+  const APP_VERSION = '20260510041414';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13543,7 +13559,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260510_mad_goose';
+  const NEWS_LATEST_ID = 'patch_20260510_corrode_fix';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -13565,7 +13581,7 @@ ${b.text}
       <div style="line-height:1.7; font-size:13px; color:#374151;">
 
         <div style="background:linear-gradient(135deg,#14532d,#166534); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
-          <div style="font-size:15px; font-weight:800; color:#fff;">🪿 弓手瘋鵝術大改版　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
+          <div style="font-size:15px; font-weight:800; color:#fff;">🪿 弓手瘋鵝術大改版 ＋ 靈噬印記修正　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
         </div>
 
         <div style="font-weight:700; color:#4ade80; margin:6px 0 4px;">🪿 瘋鵝術 → 四式招法</div>
@@ -13581,6 +13597,10 @@ ${b.text}
         <div style="background:#052e16; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#86efac;">
           💡 四式均在 Lv.6 解鎖，可自由切換搭配不同玩法。聚擊適合高疊層爆發；異擊適合控制；六連適合散傷清場！
         </div>
+
+        <div style="font-weight:700; color:#a855f7; margin:6px 0 4px;">👁️ 靈噬印記效果修正</div>
+        <div>・<b>靈噬之印</b>：10% 麻痺觸發範圍從「普攻」→ <b>所有攻擊（含技能）</b></div>
+        <div>・<b>異蝕之印</b>：效果從「施加異常成功率+25%」→ <b>玩家異常狀態抗性+25%</b>（抵擋王的 debuff / 異常技能；可疊加，上限 95%）</div>
 
         <div style="background:linear-gradient(135deg,#0c1f3d,#1a3a6b); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🎒 背包 UI 升級 ＋ 靈噬扭蛋上線　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
