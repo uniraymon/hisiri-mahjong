@@ -1980,22 +1980,36 @@
   #loginOverlay {
     position: fixed; inset: 0; z-index: 9999;
     background: linear-gradient(160deg, #0d0025 0%, #1e0050 50%, #0d0820 100%);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 20px; overflow-y: auto;
+    display: flex; flex-direction: column; align-items: center;
+    /* ⭐ 改 flex-start：內容從頂端開始，玩家多時可捲到最上方 */
+    justify-content: flex-start;
+    padding: env(safe-area-inset-top, 20px) 20px 40px;
+    padding-top: max(24px, env(safe-area-inset-top, 24px));
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
   }
   #loginOverlay .lo-box {
-    max-width: 380px; width: 100%;
+    max-width: 420px; width: 100%;
     animation: loFadeIn 0.3s ease-out;
+    /* 讓短列表在大螢幕上保持接近垂直居中 */
+    margin: auto;
   }
   @keyframes loFadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+  /* ⭐ 玩家格線：一行顯示 2～3 顆（靠 minmax 自適應寬度） */
+  #loPlayerList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+  }
   .lo-player-btn {
-    display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 4px; padding: 12px 8px;
     border-radius: 12px; border: 2px solid rgba(167,139,250,0.25);
-    background: rgba(255,255,255,0.05); color: #fff; cursor: pointer; width: 100%;
-    text-align: left; margin-bottom: 8px; transition: background 0.15s, border-color 0.15s;
-    font-family: inherit;
+    background: rgba(255,255,255,0.05); color: #fff; cursor: pointer;
+    text-align: center; transition: background 0.15s, border-color 0.15s;
+    font-family: inherit; width: 100%;
   }
   .lo-player-btn:hover { background: rgba(124,58,237,0.3); border-color: rgba(167,139,250,0.6); }
+  .lo-player-btn:active { transform: scale(0.96); }
   .lo-input {
     width: 100%; box-sizing: border-box; padding: 12px 14px;
     border-radius: 10px; border: 2px solid rgba(124,58,237,0.5);
@@ -10288,12 +10302,12 @@
       const r = p.rpg || {};
       const cls = CLASSES[r.class] || null;
       const icon = cls?.icon || p.avatar || '🎴';
+      // 截短名字避免卡片過寬
+      const shortName = p.name && p.name.length > 6 ? p.name.slice(0, 5) + '…' : (p.name || p.id);
       return `<button class="lo-player-btn" onclick="window.selectLoginPlayer('${escapeHtml(p.id)}')">
-        <span style="font-size:30px;line-height:1;">${icon}</span>
-        <div>
-          <div style="font-size:14px;font-weight:700;">${escapeHtml(p.name)}</div>
-          <div style="font-size:11px;color:#c4b5fd;">Lv ${r.level || 1} ${cls?.name || '未選職業'}</div>
-        </div>
+        <span style="font-size:36px;line-height:1.1;">${icon}</span>
+        <div style="font-size:12px;font-weight:700;line-height:1.3;word-break:break-all;">${escapeHtml(shortName)}</div>
+        <div style="font-size:10px;color:#a78bfa;">Lv${r.level || 1}</div>
       </button>`;
     }).join('');
   }
@@ -13043,7 +13057,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260509145522';
+  const APP_VERSION = '20260509160929';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
