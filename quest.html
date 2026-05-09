@@ -13786,7 +13786,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510051719';
+  const APP_VERSION = '20260510052046';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13872,7 +13872,7 @@ ${b.text}
         <div>・5 種元素：🔥 火 / 🧊 冰 / ⚡ 雷 / ☠️ 毒 / 🩸 血，對應現有各技能</div>
 
         <div style="font-weight:700; color:#a5b4fc; margin:10px 0 4px;">📖 自動唸咒（Lv.5，20 MP）</div>
-        <div>・持續 <b>6 回合</b>，每次普攻後自動施放一次隨機元素小咒（傷害約 MARK×10%）</div>
+        <div>・持續 <b>6 回合</b>，每次角色行動回合（普攻 / 使用技能）自動施放一次隨機元素小咒（傷害約 MARK×10%）</div>
         <div style="font-size:11px; padding-left:8px;">
           <div>🧊 冰：×1.6　25% 附加麻痺 1 回合</div>
           <div>🔥 火：×2.0</div>
@@ -15316,7 +15316,7 @@ ${b.text}
     if (skill.id === 'm_auto_chant') {
       buffPairs.push('─────────────');
       buffPairs.push('📖 持續 6 回合（玩家行動計算）');
-      buffPairs.push('🔄 每次普攻後自動施放一次隨機元素小咒（傷害約 MARK×10%）：');
+      buffPairs.push('🔄 每次角色行動回合（普攻或使用技能）自動施放一次隨機元素小咒（傷害約 MARK×10%）：');
       buffPairs.push('　🧊 冰：MARK×1.6，25% 機率附加麻痺 1 回合');
       buffPairs.push('　🔥 火：MARK×2.0');
       buffPairs.push('　⚡ 雷：3 連打，每段 MARK×0.8');
