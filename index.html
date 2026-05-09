@@ -1896,20 +1896,25 @@
     document.getElementById('rateDetail').textContent =
       `1 分 ≈ ${(baseMoney/basePoint).toFixed(4)} 萬基納 ✨`;
 
-    // 我是誰 selector
+    // 我是誰 selector（只顯示，不再允許從麻將頁選角色，改由冒險頁面登入）
     const me = getMe();
     const myCoins = me ? getCoins(me.id) : 0;
-    const verified = isPassVerified();
-    document.getElementById('meSelector').innerHTML = `
-      <div class="me-selector" onclick="openMePicker()">
-        <div class="me-avatar">${me ? me.avatar : (verified ? '🪞' : '🔐')}</div>
-        <div class="me-info">
-          <div class="me-label">這個裝置目前是…</div>
-          <div class="me-name">${me ? escapeHtml(me.name) : (verified ? '已通過驗證，點擊選身份' : '未登入，點擊輸入密碼')}</div>
-        </div>
-        ${me ? `<span class="coin-badge">🪙 ${myCoins}</span><span class="coin-badge" style="background:linear-gradient(135deg,#fef3c7,#fde047); color:#7c2d12; margin-left:4px;">🥚 ${getEggCoins(me.id)}</span>` : ''}
-      </div>
-    `;
+    document.getElementById('meSelector').innerHTML = me
+      ? `<div class="me-selector" style="cursor:default;">
+           <div class="me-avatar">${me.avatar}</div>
+           <div class="me-info">
+             <div class="me-label">目前身份</div>
+             <div class="me-name">${escapeHtml(me.name)}</div>
+           </div>
+           <span class="coin-badge">🪙 ${myCoins}</span><span class="coin-badge" style="background:linear-gradient(135deg,#fef3c7,#fde047); color:#7c2d12; margin-left:4px;">🥚 ${getEggCoins(me.id)}</span>
+         </div>`
+      : `<div class="me-selector" style="cursor:default; justify-content:center;">
+           <div class="me-avatar">🔐</div>
+           <div class="me-info">
+             <div class="me-label">尚未登入</div>
+             <div class="me-name" style="font-size:12px; color:#b88a8a;">請先前往<a href="quest.html" style="color:#d4806b; font-weight:700;">冒險頁面</a>登入</div>
+           </div>
+         </div>`;
 
     // 押注 / 抽蛋 / 送禮提示卡
     const myBet = me ? pendingBets.find(b => b.better === me.id) : null;
@@ -2655,7 +2660,7 @@
   }
   function ensureMe(actionLabel) {
     if (getMe()) return true;
-    showToast(`先在首頁點「我是誰」選一個身份才能${actionLabel || '操作'} ♡`);
+    showToast(`請先前往冒險頁面登入才能${actionLabel || '操作'} ♡`);
     return false;
   }
   function openMePicker() {
@@ -3071,7 +3076,7 @@
           <textarea class="comment-input" id="commentInput-${pid}" rows="2" placeholder="留言給 ${escapeHtml(getPlayer(pid)?.name || '')}（${COMMENT_COST} 幣 / 200 字）" maxlength="200"></textarea>
           <button class="btn btn-primary" style="width:auto; padding:8px 14px;" onclick="postComment('${pid}')">送出</button>
         </div>
-      ` : `<div style="font-size:11px; color:#b88a8a; text-align:center; padding:6px;">點首頁「我是誰」選身份才能留言</div>`}
+      ` : `<div style="font-size:11px; color:#b88a8a; text-align:center; padding:6px;">請先前往<a href="quest.html" style="color:#d4806b;">冒險頁面</a>登入才能留言</div>`}
     `;
   }
 
@@ -3579,8 +3584,7 @@
     const me = getMe();
     if (!me) {
       area.innerHTML = `
-        <div class="empty">請先在頁首點「我是誰」選一個身份 ♡<br>
-        <button class="btn btn-secondary" style="margin-top:8px;" onclick="openMePicker()">🪞 選身份</button></div>
+        <div class="empty">請先前往<a href="quest.html" style="color:#d4806b; font-weight:700;">冒險頁面</a>登入後再回來操作 ♡</div>
       `;
       return;
     }

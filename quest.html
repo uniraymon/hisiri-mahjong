@@ -2208,8 +2208,8 @@
   <div id="stageNoMe" class="card hidden">
     <div style="text-align:center; padding:14px 0;">
       <div style="font-size:48px; margin-bottom:8px;">🪞</div>
-      <p style="font-size:13px; color:#8b6f9b; margin-bottom:14px;">先到首頁選身份才能冒險 ♡</p>
-      <a href="index.html" class="btn btn-primary" style="display:inline-block; text-decoration:none; padding:12px 24px;">回首頁</a>
+      <p style="font-size:13px; color:#8b6f9b; margin-bottom:14px;">先登入選身份才能冒險 ♡</p>
+      <button class="btn btn-primary" onclick="showLoginOverlay()" style="padding:12px 24px;">🔑 登入 / 選擇角色</button>
     </div>
   </div>
 
@@ -10282,7 +10282,7 @@
     }
     list.innerHTML = players.map(p => {
       const r = p.rpg || {};
-      const cls = (typeof CLASSES !== 'undefined' ? CLASSES : []).find(c => c.id === r.class);
+      const cls = CLASSES[r.class] || null;
       const icon = cls?.icon || p.avatar || '🎴';
       return `<button class="lo-player-btn" onclick="window.selectLoginPlayer('${escapeHtml(p.id)}')">
         <span style="font-size:30px;line-height:1;">${icon}</span>
@@ -10300,7 +10300,7 @@
     if (!p) return;
     _loginSelectedPid = pid;
     const r = p.rpg || {};
-    const cls = (typeof CLASSES !== 'undefined' ? CLASSES : []).find(c => c.id === r.class);
+    const cls = CLASSES[r.class] || null;
     const icon = cls?.icon || p.avatar || '🎴';
     document.getElementById('loStep1').style.display = 'none';
     document.getElementById('loStep2').style.display = '';
@@ -12981,7 +12981,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260509135549';
+  const APP_VERSION = '20260509140711';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
