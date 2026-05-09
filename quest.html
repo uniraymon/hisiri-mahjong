@@ -13060,7 +13060,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260509170905';
+  const APP_VERSION = '20260509171115';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -21524,8 +21524,9 @@ ${b.text}
           const tCls  = CLASSES[tRpg.class] || { icon:'👤', name:'冒險者' };
           const tStats= computeStats(t) || {};
           rpg.hellDuelCd = rpg.hellDuelCd || {};
-          const cdRem = Math.max(0, (rpg.hellDuelCd[t.id] || 0) + 30*60*1000 - Date.now());
-          const cdMin = Math.ceil(cdRem / 60000);
+          // const cdRem = Math.max(0, (rpg.hellDuelCd[t.id] || 0) + 30*60*1000 - Date.now());
+          const cdRem = 0; // 測試期間冷卻關閉
+          const cdMin = 0;
           // 是否有防護符
           const hasProtect = tRpg.hellProtect && Date.now() < (tRpg.hellProtect.endAt || 0);
           const hasSeal    = tRpg.hellSeal    && Date.now() < (tRpg.hellSeal.endAt    || 0);
@@ -21588,10 +21589,10 @@ ${b.text}
     const rpg = getRpg(me);
     const target = players.find(p => p && p.id === targetId);
     if (!target) { showToast('找不到目標'); return; }
-    // CD 30 min
+    // CD 30 min（測試期間暫停冷卻）
     rpg.hellDuelCd = rpg.hellDuelCd || {};
-    const cdRem = Math.max(0, (rpg.hellDuelCd[targetId] || 0) + 30*60*1000 - Date.now());
-    if (cdRem > 0) { showToast(`⏳ 冷卻中（剩 ${Math.ceil(cdRem/60000)} min）`); return; }
+    // const cdRem = Math.max(0, (rpg.hellDuelCd[targetId] || 0) + 30*60*1000 - Date.now());
+    // if (cdRem > 0) { showToast(`⏳ 冷卻中（剩 ${Math.ceil(cdRem/60000)} min）`); return; }
 
     // ⭐ 直接用真實玩家物件出戰（共用標準系統）
     const meStats = computeStats(me);
