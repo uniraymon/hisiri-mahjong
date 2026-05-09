@@ -3295,6 +3295,40 @@
         killer:      { bossCoinQty:  5, gooseCoins:  50000 },  // 尾刀額外
       },
     },
+    // ⭐ 靈噬魔皇
+    {
+      id: 'soul_devourer',
+      name: '👁️ 靈噬魔皇', icon: '👁️', art: 'art/png/modern_v3/bosses/boss_soul.png',
+      maxHp: 50000000,
+      atk: 800, def: 1200, spd: 110,
+      physRes: 0.50, magRes: 0.50,
+      defPen: 0,
+      level: 90,
+      verb: '靈魂侵蝕',
+      skills: [
+        // ① 靈魂汲取：ATK×1.5 魔法傷害 + 清空玩家MP + 吸血×100
+        { verb: '靈魂汲取', mult: 1.5, ignoreDef: true, mpDrainAll: true, lifestealMult: 100, cooldown: 3 },
+        // ② 噬魂爪擊：ATK×1.8（模擬2段）+ 40%機率 ATK -25%（8回）
+        { verb: '噬魂爪擊', mult: 1.8, applyStatus: { type: 'buff', stat: 'atkPct', amount: -0.25, turns: 8, chance: 0.40 }, cooldown: 4 },
+        // ③ 腐蝕之息：ATK×0.7 無視防禦 + DEF -35%（8回）
+        { verb: '腐蝕之息', mult: 0.7, ignoreDef: true, applyStatus: { type: 'buff', stat: 'defPct', amount: -0.35, turns: 8, chance: 1.0 }, cooldown: 5 },
+        // ④ 冥界護壁：自身 DEF +480（≈40%）10回合
+        { verb: '冥界護壁', type: 'monsterSelfBuff', stat: 'def', amount: 480, turns: 10, cooldown: 9 },
+        // ⑤ 混沌一撞：ATK×2.2 重擊
+        { verb: '混沌一撞', mult: 2.2, cooldown: 6 },
+        // ☠ 吸大麻：中毒時優先觸發，ATK/DEF/SPD +800（30回）
+        { verb: '吸大麻', type: 'poisonCounter' },
+      ],
+      bossCoin: { id: 'bc_soul_devourer', name: '靈噬硬幣', icon: '👁️' },
+      killRewards: {
+        top:         { bossCoinQty: 20 },
+        second:      { bossCoinQty: 16 },
+        third:       { bossCoinQty: 12 },
+        fourth:      { bossCoinQty: 12 },
+        participant: { bossCoinQty: 10 },
+        killer:      { bossCoinQty: 10 },
+      },
+    },
   ];
 
   // ⭐ Phase B：雲端 state 改用 rooms/{ROOM_ID}/wb9/{bossId}（每王一份獨立 doc）
@@ -3404,6 +3438,7 @@
       name: boss.name, icon: boss.icon, level: boss.level,
       hp: state.hp, maxHp: boss.maxHp,
       atk: boss.atk, def: boss.def, spd: boss.spd,
+      physRes: boss.physRes || 0, magRes: boss.magRes || 0,
       defPen: boss.defPen,
       verb: boss.verb,
       ability: boss.ability,
@@ -7890,6 +7925,9 @@
     let _hmgHealCount = 0;       // 玩家使用補血技能次數（不含每回再生）
     let _hmgFrozen = false;      // 計數是否已凍結（召喚後停止增加）
     let _hmgLastSkill = null;    // 上次 HMG 技能 id（不連放）
+    // ⭐ 靈噬魔皇：吸大麻狀態追蹤
+    let _daMaActive = false;
+    let _daMaActiveUntil = -1;
     const mAbility = monster.ability;
     // ⭐ 物理/法術抗性：優先用 physRes/magRes 欄位，舊版 ability 格式仍向下相容
     const _monPhysRes = monster.physRes ?? (mAbility?.type === 'physResist' ? (mAbility.resist || 0) : 0);
@@ -8786,6 +8824,26 @@
           log.push({ type: 'system', text: `回合 ${round}：${monster.name} ⚡麻痺，行動被取消`, hp: { player: pHp, monster: mHp, mp: pMp } });
           continue;
         }
+        // ⭐ 靈噬魔皇：中毒反制 → 吸大麻（優先插隊，清除中毒後大幅強化）
+        {
+          const _pcSkill = Array.isArray(monster.skills) ? monster.skills.find(s => s.type === 'poisonCounter') : null;
+          if (_pcSkill && hasStatus(monster, 'poison') && !_daMaActive) {
+            _daMaActive = true;
+            _daMaActiveUntil = round + 30;
+            monster.statuses = (monster.statuses || []).filter(s => s.type !== 'poison');
+            monster.atk = (monster.atk || 0) + 800;
+            monster.def = (monster.def || 0) + 800;
+            monster.spd = (monster.spd || 0) + 800;
+            log.push({ type: 'monster', text: `回合 ${round}：${monster.icon}${monster.name} ☠️ 吸大麻發動！吸收中毒→ ATK/DEF/SPD 各 +800（30 回合）！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+          }
+          if (_daMaActive && round >= _daMaActiveUntil) {
+            _daMaActive = false;
+            monster.atk = Math.max(1, monster.atk - 800);
+            monster.def = Math.max(0, monster.def - 800);
+            monster.spd = Math.max(1, monster.spd - 800);
+            log.push({ type: 'system', text: `回合 ${round}：${monster.icon}${monster.name} 吸大麻效果消退`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+          }
+        }
         // 怪物技能挑選（fixedSkillOrder 需間隔 ≥ 2 回合，確保兩技能間至少有一次普攻）
         let mSkill = null;
         const minSkillGap = monster.fixedSkillOrder ? 2 : 1;
@@ -8807,6 +8865,7 @@
             const ready = [];
             for (let si = 0; si < monster.skills.length; si++) {
               const s = monster.skills[si];
+              if (s.type === 'poisonCounter') continue; // 吸大麻不參與隨機挑選
               const last = mSkillLast[si] ?? -999;
               if (round - last >= (s.cooldown || 3)) ready.push({ s, si });
             }
@@ -8871,6 +8930,35 @@
             const _dLabel = { atkPct: 'ATK', defPct: 'DEF', spdPct: 'SPD' }[mSkill.stat] || mSkill.stat;
             const _dPct = Math.round(Math.abs(mSkill.amount || 0) * 100);
             log.push({ type: 'monster', text: `回合 ${round}：${monster.icon}${monster.name} 💀 ${mSkill.verb} → ${debuffHit ? `${player.name} ${_dLabel} -${_dPct}%（${mSkill.turns || 3} 回合）` : '未命中！'}`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+          } else if (mSkill.mpDrainAll) {
+            // ⭐ 靈魂汲取：魔法傷害 + 吸光玩家 MP + 吸血回血
+            const _monAtkBuff_drain = 1 + (getBuffBonus(monster).atkPct || 0);
+            let _drainDmg = Math.max(1, monster.atk * _monAtkBuff_drain * (mSkill.mult || 1.5) - Math.floor(effDef / 4));
+            _drainDmg *= (0.85 + Math.random() * 0.3);
+            _drainDmg *= (1 - (passive.dmgReduction || 0));
+            _drainDmg *= (1 - (pBuff.dmgReducePct || 0));
+            _drainDmg = Math.max(1, Math.round(_drainDmg));
+            _drainDmg = consumeShield(_drainDmg);
+            _drainDmg = consumePartialShield(_drainDmg);
+            if (_fxMagShield > 0)   _drainDmg = Math.max(1, Math.round(_drainDmg * Math.max(0.40, 1 - _fxMagShield * 0.20)));
+            if (_weaponMagShield > 0) _drainDmg = Math.max(1, Math.round(_drainDmg * (1 - Math.min(0.5, _weaponMagShield))));
+            // 吸光 MP
+            const _drainedMp = pMp;
+            pMp = 0;
+            // 吸血回血（傷害 × lifestealMult，上限不超過 maxHp）
+            const _lifeHeal = Math.min(monster.maxHp - mHp, _drainDmg * (mSkill.lifestealMult || 100));
+            if (_lifeHeal > 0) mHp = Math.min(monster.maxHp, mHp + _lifeHeal);
+            // 扣血
+            if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, _drainDmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1) * (_weaponBpBoostMult || 1);
+            pHp = Math.max(0, pHp - _drainDmg);
+            if (_isPaladin && !_hmgFrozen) _hmgTakenCount++;
+            log.push({ type: 'monster', text: `回合 ${round}：${monster.icon}${monster.name} 💜 靈魂汲取 → ${player.name} -${_drainDmg} HP、MP 清空（-${_drainedMp}）；魔皇回血 +${_lifeHeal.toLocaleString()}！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+            applyReflect(_drainDmg);
+            if (pHp <= 0 && _spiritSpecials.has('tenacious') && !_tenaciousUsed) {
+              _tenaciousUsed = true; pHp = 1;
+              log.push({ type: 'system', text: `🛡 不屈發動！${player.name} 以 1 HP 撐過靈魂汲取！`, hp: { player: pHp, monster: mHp, mp: pMp } });
+            }
+            if (pHp <= 0) dead = true;
           } else {
             // ⭐ 30% DEF 穿透：boss 有 defPen 屬性時，部分 ATK 直接無視防禦
             const _mPen = monster.defPen || 0;
@@ -13078,7 +13166,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260509174603';
+  const APP_VERSION = '20260510010755';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -25517,7 +25605,7 @@ ${b.text}
             const _zeroBonus = { gemRaw: 0, bossCoinQty: 0, gem2Qty: 0, gem3Qty: 0, gooseCoins: 0 };
             const _settlement = _sortedDmg.map((entry, i) => {
               const rank = i + 1;
-              const rankKey = rank === 1 ? 'top' : rank === 2 ? 'second' : (rank === 3 && _kr.third) ? 'third' : 'participant';
+              const rankKey = rank === 1 ? 'top' : rank === 2 ? 'second' : (rank === 3 && _kr.third) ? 'third' : (rank === 4 && _kr.fourth) ? 'fourth' : 'participant';
               const base  = _kr[rankKey] || _kr.participant || {};
               const isKiller = entry.pid === attackerId;
               const bonus = isKiller ? (_kr.killer || _zeroBonus) : _zeroBonus;
