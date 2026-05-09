@@ -13786,7 +13786,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510052046';
+  const APP_VERSION = '20260510053806';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -15646,6 +15646,7 @@ ${b.text}
           🎒 點裝備格 = 查看詳情 / 鑲嵌寶石；點背包物品 = 裝備 / 賣掉。滑鼠懸停道具 = 快速預覽。
         </div>
         <div class="equip-row" id="equipRow"></div>
+        <div id="equipLoadoutBar"></div>
         <div style="display:flex; gap:6px; margin:8px 0 4px;">
           <button onclick="showGemModal()" style="flex:1; padding:7px 0; background:linear-gradient(135deg,#7c3aed,#c026d3); color:#fff; font-weight:700; font-size:12px; border:none; border-radius:10px; cursor:pointer;">💎 寶石系統</button>
           <button onclick="showFusionBaseSelector()" style="flex:1; padding:7px 0; background:linear-gradient(135deg,#d97706,#b45309); color:#fff; font-weight:700; font-size:12px; border:none; border-radius:10px; cursor:pointer;">⚗️ 印記合成</button>
@@ -16752,6 +16753,7 @@ ${b.text}
     }
 
     // 該頁格子（固定 INV_PAGE_SIZE 格，不足補空格）
+    const _invLoadoutLocked = getLoadoutLockedIds(rpg); // ⭐ 裝備記錄保護集合
     const pageSlice = displayItems.slice(__invPage * INV_PAGE_SIZE, (__invPage + 1) * INV_PAGE_SIZE);
     const cells = [];
     for (let i = 0; i < INV_PAGE_SIZE; i++) {
@@ -16780,8 +16782,11 @@ ${b.text}
       const fusionBadge = fusedCount > 0
         ? `<div style="position:absolute;bottom:1px;left:1px;font-size:7px;background:#d97706;color:#fff;border-radius:3px;padding:0 3px;line-height:1.5;font-weight:700;">⚗️${fusedCount}</div>`
         : '';
+      const _itemId = typeof entry === 'string' ? entry : (entry?.id || null);
+      const _lockedByLoadout = _itemId && _invLoadoutLocked && _invLoadoutLocked.has(_itemId);
+      const lockBadge = _lockedByLoadout ? `<div style="position:absolute;top:1px;right:1px;font-size:8px;background:#1d4ed8;color:#fff;border-radius:3px;padding:0 3px;line-height:1.5;font-weight:700;">🔒</div>` : '';
       cells.push(`<button
-          class="inv-cell has-item ${__invBulkMode ? 'bulk-on' : ''} ${selected ? 'selected' : ''} ${isPinned ? 'is-pinned' : ''}"
+          class="inv-cell has-item ${__invBulkMode ? 'bulk-on' : ''} ${selected ? 'selected' : ''} ${isPinned ? 'is-pinned' : ''} ${_lockedByLoadout ? 'is-pinned' : ''}"
           style="${bgStyle}"
           onclick="onInvCellClick(${globalIdx})"
           onmouseenter="showInvPreview(${globalIdx}, event)"
@@ -16789,11 +16794,12 @@ ${b.text}
         <span class="ic-pin ${isPinned ? 'pinned' : ''}" onclick="toggleInvItemPin(${globalIdx}, event)" title="${isPinned ? '取消釘選' : '釘選（不會被批量賣掉）'}">${isPinned ? '⭐' : '☆'}</span>
         <div class="ic-icon">${item.icon}</div>
         <div class="ic-name" style="${rarColor && !selected ? `color:${rarColor};` : ''}">${escapeHtml(item.name)}</div>
-        ${qtyBadge}${fusionBadge}
+        ${qtyBadge}${fusionBadge}${lockBadge}
         ${__invBulkMode ? `<div class="ic-check">${selected ? '✓' : ''}</div>` : ''}
       </button>`);
     }
     invGridEl.innerHTML = cells.join('');
+    renderLoadoutBar();
   }
 
   // === 背包：分頁、篩選、批量出售操作 ===
@@ -16912,9 +16918,15 @@ ${b.text}
   function onInvCellClick(globalIdx) {
     if (__invBulkMode) {
       const me = getMe(); if (!me) return;
-      const entry = getRpg(me).inventory[globalIdx];
+      const rpg = getRpg(me);
+      const entry = rpg.inventory[globalIdx];
       if (entry?.pinned || (typeof entry === 'object' && entry?.pinned)) {
         showToast('⭐ 已釘選，先取消釘選才能選取');
+        return;
+      }
+      const _clickId = typeof entry === 'string' ? entry : entry?.id;
+      if (_clickId && getLoadoutLockedIds(rpg).has(_clickId)) {
+        showToast('🔒 此物品已記錄在裝備套裝中，無法批量選取');
         return;
       }
       if (__invSelected.has(globalIdx)) __invSelected.delete(globalIdx);
@@ -16954,9 +16966,13 @@ ${b.text}
     const inv = r.inventory || [];
     const start = __invPage * INV_PAGE_SIZE;
     const end = Math.min(start + INV_PAGE_SIZE, inv.length);
-    // ⭐ 跳過已釘選的物品
+    // ⭐ 跳過已釘選 + 裝備套裝記錄的物品
+    const _saLocked = getLoadoutLockedIds(r);
     for (let i = start; i < end; i++) {
-      if (!inv[i]?.pinned) __invSelected.add(i);
+      if (inv[i]?.pinned) continue;
+      const _saId = typeof inv[i] === 'string' ? inv[i] : inv[i]?.id;
+      if (_saId && _saLocked.has(_saId)) continue;
+      __invSelected.add(i);
     }
     renderEquipment();
   }
@@ -16978,12 +16994,16 @@ ${b.text}
     let total = 0;
     let skippedCoin = 0;
     let skippedPinned = 0;
+    let skippedLoadout = 0;
+    const _bsLocked = getLoadoutLockedIds(r);
     for (const idx of idxs) {
       const entry = r.inventory[idx];
       const item = resolveItem(entry);
       if (!item) continue;
       if (item.isBossCoin) { skippedCoin++; continue; } // 王硬幣不能賣
       if (entry?.pinned) { skippedPinned++; continue; } // ⭐ 釘選物品不能批量賣
+      const _bsId = typeof entry === 'string' ? entry : entry?.id;
+      if (_bsId && _bsLocked.has(_bsId)) { skippedLoadout++; continue; } // ⭐ 裝備記錄物品不能批量賣
       valid.push({ idx, value: getSellValue(item) });
       total += getSellValue(item);
     }
@@ -16991,6 +17011,7 @@ ${b.text}
       const reasons = [];
       if (skippedCoin > 0) reasons.push(`${skippedCoin} 個王硬幣`);
       if (skippedPinned > 0) reasons.push(`${skippedPinned} 個釘選物品`);
+      if (skippedLoadout > 0) reasons.push(`${skippedLoadout} 個套裝記錄物品`);
       showToast(`無法賣出：${reasons.join('、')} ♡`);
       __invSelected.clear();
       renderEquipment();
@@ -16999,6 +17020,7 @@ ${b.text}
     const skipParts = [];
     if (skippedCoin > 0) skipParts.push(`${skippedCoin} 個王硬幣`);
     if (skippedPinned > 0) skipParts.push(`${skippedPinned} 個釘選物品`);
+    if (skippedLoadout > 0) skipParts.push(`${skippedLoadout} 個套裝記錄物品`);
     const confirmMsg = skipParts.length > 0
       ? `確定賣掉這 ${valid.length} 件（跳過 ${skipParts.join('、')}），共 ${total} 鵝鵝幣？`
       : `確定賣掉這 ${valid.length} 件，共 ${total} 鵝鵝幣？`;
@@ -17014,6 +17036,170 @@ ${b.text}
     showToast(`💰 一次賣出 ${valid.length} 件 +${total} 鵝鵝幣`);
   }
   window.bulkSellInv = bulkSellInv;
+
+  // ⭐ 裝備套裝記錄系統
+  let __loadoutOpenSlot = -1; // 當前展開的套裝面板（-1=全收）
+
+  function getLoadoutLockedIds(rpg) {
+    const ids = new Set();
+    for (const s of (rpg.equipLoadouts || [])) {
+      if (!s) continue;
+      for (const v of Object.values(s.equipment || {})) {
+        const id = typeof v === 'string' ? v : v?.id;
+        if (id) ids.add(id);
+      }
+    }
+    return ids;
+  }
+  window.getLoadoutLockedIds = getLoadoutLockedIds;
+
+  function renderLoadoutBar() {
+    const el = document.getElementById('equipLoadoutBar');
+    if (!el) return;
+    const me = getMe(); if (!me) { el.innerHTML = ''; return; }
+    const rpg = getRpg(me);
+    const loadouts = rpg.equipLoadouts || [null, null, null];
+    const slots = ['weapon','armor','accessory','helmet','gloves','boots','cape','wings','pet','guide','ring1','ring2'];
+    const slotLabels = { weapon:'武器', armor:'防具', accessory:'飾品', helmet:'頭盔', gloves:'手套', boots:'鞋子', cape:'披風', wings:'翅膀', pet:'寵物', guide:'指南書', ring1:'戒指1', ring2:'戒指2' };
+
+    const slotsHtml = [0,1,2].map(i => {
+      const s = loadouts[i] || null;
+      const hasData = !!s;
+      const isOpen = __loadoutOpenSlot === i;
+      const itemCount = hasData ? Object.values(s.equipment || {}).filter(Boolean).length : 0;
+      const btnStyle = hasData
+        ? 'background:linear-gradient(135deg,#1e40af,#2563eb);color:#fff;border:1.5px solid #3b82f6;'
+        : 'background:#f3f4f6;color:#6b7280;border:1.5px solid #d1d5db;';
+
+      let panelHtml = '';
+      if (isOpen) {
+        // Show saved item icons preview
+        let previewHtml = '';
+        if (hasData) {
+          const items = slots.map(sl => {
+            const e = s.equipment[sl];
+            const it = e ? resolveItem(e) : null;
+            return it ? `<span title="${escapeHtml(it.name)}">${it.icon}</span>` : '';
+          }).filter(Boolean).join('');
+          previewHtml = `<div style="font-size:16px;margin:6px 0;letter-spacing:2px;min-height:20px;">${items || '（空）'}</div>`;
+        }
+        panelHtml = `
+          <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 10px;margin-top:6px;font-size:12px;">
+            ${hasData ? previewHtml : '<div style="color:#9ca3af;margin:4px 0;">尚未儲存</div>'}
+            <div style="display:flex;gap:6px;margin-top:6px;">
+              <button onclick="saveLoadout(${i})" style="flex:1;padding:5px 0;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">💾 儲存目前</button>
+              ${hasData ? `<button onclick="loadLoadout(${i})" style="flex:1;padding:5px 0;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">📥 載入套裝</button>` : ''}
+              ${hasData ? `<button onclick="clearLoadout(${i})" style="flex:1;padding:5px 0;background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">🗑 清除</button>` : ''}
+            </div>
+          </div>`;
+      }
+
+      return `
+        <div style="flex:1;">
+          <button onclick="toggleLoadoutPanel(${i})" style="width:100%;padding:6px 4px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;${btnStyle}">
+            套裝 ${i+1}${hasData ? ` (${itemCount}件)` : ''}
+          </button>
+          ${panelHtml}
+        </div>`;
+    }).join('');
+
+    el.innerHTML = `
+      <div style="margin:8px 0 4px;">
+        <div style="font-size:11px;font-weight:700;color:#1d4ed8;margin-bottom:5px;">📦 裝備套裝記錄 <span style="font-weight:400;color:#6b7280;">— 儲存三套裝備配置，隨時切換</span></div>
+        <div style="display:flex;gap:6px;">${slotsHtml}</div>
+        <div style="font-size:10px;color:#9ca3af;margin-top:4px;">🔒 已記錄套裝內的物品無法被批量賣出或選取</div>
+      </div>`;
+  }
+  window.renderLoadoutBar = renderLoadoutBar;
+
+  function toggleLoadoutPanel(i) {
+    __loadoutOpenSlot = (__loadoutOpenSlot === i) ? -1 : i;
+    renderEquipment();
+  }
+  window.toggleLoadoutPanel = toggleLoadoutPanel;
+
+  function saveLoadout(slotIdx) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (!rpg.equipLoadouts) rpg.equipLoadouts = [null, null, null];
+    const eqSnap = {};
+    for (const [k, v] of Object.entries(rpg.equipment || {})) {
+      if (v) eqSnap[k] = typeof v === 'string' ? v : { ...v };
+    }
+    if (!Object.keys(eqSnap).length) { showToast('目前沒有任何裝備可儲存'); return; }
+    rpg.equipLoadouts[slotIdx] = { name: `套裝 ${slotIdx + 1}`, equipment: eqSnap, savedAt: Date.now() };
+    saveData();
+    renderEquipment();
+    showToast(`✅ 套裝 ${slotIdx + 1} 已儲存（${Object.keys(eqSnap).length} 件）`);
+  }
+  window.saveLoadout = saveLoadout;
+
+  function loadLoadout(slotIdx) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const saved = (rpg.equipLoadouts || [])[slotIdx];
+    if (!saved) { showToast('此套裝尚未儲存'); return; }
+    const targetEq = saved.equipment || {};
+    const ALL_SLOTS = ['weapon','armor','accessory','helmet','gloves','boots','cape','wings','pet','guide','ring1','ring2'];
+    const getId = e => typeof e === 'string' ? e : (e?.id || null);
+    const missing = [];
+    for (const eqSlot of ALL_SLOTS) {
+      const wantEntry = targetEq[eqSlot] || null;
+      const wantId = wantEntry ? getId(wantEntry) : null;
+      const curId = getId(rpg.equipment?.[eqSlot]);
+      if (wantId === curId) continue;
+      if (!wantId) {
+        if (rpg.equipment[eqSlot]) { clearSlotGems(rpg, eqSlot); rpg.inventory.push(rpg.equipment[eqSlot]); rpg.equipment[eqSlot] = null; }
+        continue;
+      }
+      // Check if target item is in another slot
+      let foundInSlot = null;
+      for (const s of ALL_SLOTS) {
+        if (s !== eqSlot && getId(rpg.equipment[s]) === wantId) { foundInSlot = s; break; }
+      }
+      if (foundInSlot) {
+        if (rpg.equipment[eqSlot]) { clearSlotGems(rpg, eqSlot); rpg.inventory.push(rpg.equipment[eqSlot]); }
+        clearSlotGems(rpg, foundInSlot);
+        rpg.equipment[eqSlot] = rpg.equipment[foundInSlot];
+        rpg.equipment[foundInSlot] = null;
+        continue;
+      }
+      // Find in inventory
+      const inv = rpg.inventory || [];
+      const invIdx = inv.findIndex(e => getId(e) === wantId);
+      if (invIdx === -1) { missing.push(wantId); continue; }
+      const entry = inv[invIdx];
+      if (rpg.equipment[eqSlot]) { clearSlotGems(rpg, eqSlot); rpg.inventory.push(rpg.equipment[eqSlot]); }
+      rpg.equipment[eqSlot] = entry;
+      const newIdx = rpg.inventory.indexOf(entry);
+      if (newIdx !== -1) rpg.inventory.splice(newIdx, 1);
+    }
+    rpg.equipmentLastChanged = Date.now();
+    if (typeof syncEquipped === 'function') syncEquipped(me);
+    saveData();
+    if (typeof renderCharCard === 'function') renderCharCard();
+    renderEquipment();
+    if (missing.length > 0) {
+      const names = missing.map(id => { const it = resolveItem(id); return it ? it.name : id; });
+      showToast(`⚠️ 套裝 ${slotIdx+1} 已載入，缺少 ${missing.length} 件：${names.slice(0,2).join('、')}${names.length>2?'…':''}`);
+    } else {
+      showToast(`✅ 套裝 ${slotIdx+1} 已載入`);
+    }
+  }
+  window.loadLoadout = loadLoadout;
+
+  function clearLoadout(slotIdx) {
+    if (!confirm(`確定清除套裝 ${slotIdx+1} 的記錄？`)) return;
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (!rpg.equipLoadouts) rpg.equipLoadouts = [null, null, null];
+    rpg.equipLoadouts[slotIdx] = null;
+    if (__loadoutOpenSlot === slotIdx) __loadoutOpenSlot = -1;
+    saveData();
+    renderEquipment();
+    showToast(`套裝 ${slotIdx+1} 記錄已清除`);
+  }
+  window.clearLoadout = clearLoadout;
 
   function openInvItemActions(idx) {
     const me = getMe(); if (!me) return;
@@ -17040,6 +17226,8 @@ ${b.text}
     }
     const sellValue = getSellValue(item);
     const canEquip = true; // ⭐ 裝備不再有等級限制
+    const _itemEntryId = typeof entry === 'string' ? entry : entry?.id;
+    const _isLoadoutLocked = _itemEntryId && getLoadoutLockedIds(r).has(_itemEntryId);
     const rarColor = item.rarity ? RARITY[item.rarity]?.color : (item.setId ? (SETS[item.setId]?.color || '#f59e0b') : '#7c3aed');
     const rarLabel = item.rarity ? RARITY[item.rarity]?.label : (item.setId ? '套裝' : '');
     const affixHtml = item.affixes && item.affixes.length
@@ -17151,6 +17339,7 @@ ${b.text}
         })() : ''}
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:14px;">
           <button class="btn btn-primary" onclick="equipFromInvAndClose(${idx})" ${canEquip ? '' : 'disabled'}>裝備</button>
+          ${_isLoadoutLocked ? `<div style="font-size:11px;color:#1d4ed8;background:#dbeafe;border:1px solid #3b82f6;border-radius:6px;padding:5px 8px;margin-bottom:6px;">🔒 此物品已記錄在裝備套裝中，賣出後套裝將無法完整載入</div>` : ''}
           <button class="btn btn-warning" onclick="sellInvItem(${idx})">賣掉（🪙 ${sellValue}）</button>
         </div>
         <button class="btn btn-secondary" onclick="backToBackpack()" style="margin-top:6px;">← 回背包</button>
@@ -17851,6 +18040,7 @@ ${b.text}
       document.body.appendChild(el);
     }
     el.style.display = 'flex';
+    el.onclick = (e) => { if (e.target === el) el.style.display = 'none'; };
     el.innerHTML = _renderCosmeticShop(null);
   }
   window.showCosmeticShop = showCosmeticShop;
@@ -17858,8 +18048,9 @@ ${b.text}
   function _cosmeticShopWrapper(tabBarHtml, previewHtml, cardsHtml, footerLines) {
     return `
       <div style="background:linear-gradient(135deg,#0a0014,#10001f);border:2px solid #7c3aed;border-radius:16px;padding:0;overflow:hidden;max-width:420px;margin:0 auto;">
-        <div style="background:linear-gradient(135deg,#4c0080,#7c3aed);padding:12px;text-align:center;">
+        <div style="background:linear-gradient(135deg,#4c0080,#7c3aed);padding:12px;text-align:center;position:relative;">
           <div style="font-size:14px;font-weight:900;color:#fff;letter-spacing:1px;">🎭 衣鑒外觀商店</div>
+          <button onclick="document.getElementById('cosmeticShopModal').style.display='none'" style="position:absolute;top:8px;right:10px;background:rgba(255,255,255,0.15);border:none;border-radius:50%;width:26px;height:26px;font-size:14px;color:#fff;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button>
         </div>
         ${tabBarHtml}
         <div style="padding:10px 12px;display:grid;grid-template-columns:130px 1fr;gap:10px;">
