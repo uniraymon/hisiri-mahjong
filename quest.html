@@ -8086,8 +8086,18 @@
         const _hadMaxHpPct = (playerObj.statuses || []).some(s => s.type === 'buff' && s.stat === 'maxHpPct');
         const pevs = tickStatuses(playerObj, stats.maxHp, true); // 玩家回合
         for (const ev of pevs) {
-          pHp = Math.max(0, pHp - ev.dmg);
-          log.push({ type: 'monster', text: `回合 ${round}：${player.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${ev.dmg} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
+          let _tickDmg = ev.dmg;
+          // ⭐ 毒傷扣除魔坑（partialShield）
+          if (ev.type === 'poison') {
+            const _ps = (playerObj.statuses || []).find(x => x.type === 'partialShield' && (x.hitsLeft || 0) > 0);
+            if (_ps) {
+              _tickDmg = Math.max(1, Math.round(_tickDmg * (1 - (_ps.reducePct || 0))));
+              _ps.hitsLeft -= 1;
+              if (_ps.hitsLeft <= 0) playerObj.statuses = playerObj.statuses.filter(x => x !== _ps);
+            }
+          }
+          pHp = Math.max(0, pHp - _tickDmg);
+          log.push({ type: 'monster', text: `回合 ${round}：${player.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${_tickDmg} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
         }
         // ⭐ 神聖祝福 maxHpPct 到期：HP 壓回 base maxHp，確保再施放時看得到加血效果
         const _nowHasMaxHpPct = (playerObj.statuses || []).some(s => s.type === 'buff' && s.stat === 'maxHpPct');
@@ -9441,8 +9451,18 @@
         const _hadMaxHpPct2 = (playerObj.statuses || []).some(s => s.type === 'buff' && s.stat === 'maxHpPct');
         const evs = tickStatuses(playerObj, stats.maxHp, true); // 玩家回合
         for (const ev of evs) {
-          pHp = Math.max(0, pHp - ev.dmg);
-          log.push({ type: 'monster', text: `回合 ${round}：${player.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${ev.dmg} HP`, hp: hpsSnapshot() });
+          let _tickDmg2 = ev.dmg;
+          // ⭐ 毒傷扣除魔坑（partialShield）
+          if (ev.type === 'poison') {
+            const _ps2 = (playerObj.statuses || []).find(x => x.type === 'partialShield' && (x.hitsLeft || 0) > 0);
+            if (_ps2) {
+              _tickDmg2 = Math.max(1, Math.round(_tickDmg2 * (1 - (_ps2.reducePct || 0))));
+              _ps2.hitsLeft -= 1;
+              if (_ps2.hitsLeft <= 0) playerObj.statuses = playerObj.statuses.filter(x => x !== _ps2);
+            }
+          }
+          pHp = Math.max(0, pHp - _tickDmg2);
+          log.push({ type: 'monster', text: `回合 ${round}：${player.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${_tickDmg2} HP`, hp: hpsSnapshot() });
         }
         // ⭐ 神聖祝福 maxHpPct 到期：HP 壓回 base maxHp
         const _nowHasMaxHpPct2 = (playerObj.statuses || []).some(s => s.type === 'buff' && s.stat === 'maxHpPct');
@@ -13170,7 +13190,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510014721';
+  const APP_VERSION = '20260510015237';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
