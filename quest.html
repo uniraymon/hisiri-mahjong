@@ -10316,13 +10316,31 @@
   }
 
   // ---------- 選角色 ----------
-  window.selectLoginPlayer = function(pid) {
+  window.selectLoginPlayer = async function(pid) {
     const p = getPlayer(pid);
     if (!p) return;
     _loginSelectedPid = pid;
     const r = p.rpg || {};
     const cls = CLASSES[r.class] || null;
     const icon = cls?.icon || p.avatar || '🎴';
+
+    // 新玩家偵測：auth doc 不存在 → 直接自動登入，免輸密碼
+    if (window.__firebaseSync?.autoLoginIfNew) {
+      document.getElementById('loMsg').textContent = '⏳ 連線中...';
+      try {
+        const token = await window.__firebaseSync.autoLoginIfNew(pid);
+        if (token) {
+          document.getElementById('loMsg').textContent = '';
+          await _doCompleteLogin(pid, token, false);
+          return;
+        }
+      } catch(e) {
+        console.warn('autoLoginIfNew error', e);
+      }
+      document.getElementById('loMsg').textContent = '';
+    }
+
+    // 舊玩家：顯示密碼輸入
     document.getElementById('loStep1').style.display = 'none';
     document.getElementById('loStep2').style.display = '';
     document.getElementById('loPlayerInfo').innerHTML =
@@ -13060,7 +13078,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260509171115';
+  const APP_VERSION = '20260509174603';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -25200,14 +25218,25 @@ ${b.text}
       // 🔐 登入驗證 / 會話管理 / 備份
       // ============================================================
 
+      // 新玩家自動登入（auth doc 不存在才通過，否則回傳 null 走密碼流程）
+      autoLoginIfNew: async (pid) => {
+        const ref = doc(authCol, pid);
+        const snap = await getDoc(ref);
+        if (snap.exists()) return null; // 舊玩家：走正常密碼登入
+        // 全新玩家：建立 auth doc + 自動登入（密碼預設 123456，可之後改）
+        const authData = { password: '123456', sessionToken: '', sessionAt: 0, isNew: true };
+        const token = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        await setDoc(ref, { ...authData, sessionToken: token, sessionAt: Date.now() });
+        return token;
+      },
+
       // 驗密碼 + 建立新 session token（回傳 token）
-      // 若 auth doc 不存在 → 自動初始化 default password '123456'
       loginCheck: async (pid, password) => {
         const ref = doc(authCol, pid);
         const snap = await getDoc(ref);
         let authData;
         if (!snap.exists()) {
-          // 首次登入：建立預設密碼
+          // auth doc 消失的情況（理論上 autoLoginIfNew 已處理新玩家）
           authData = { password: '123456', sessionToken: '', sessionAt: 0 };
           if (password !== '123456') throw new Error('wrong-password');
         } else {
