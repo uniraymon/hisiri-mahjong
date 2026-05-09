@@ -3300,7 +3300,7 @@
       id: 'soul_devourer',
       name: '👁️ 靈噬魔皇', icon: '👁️', art: 'art/png/modern_v3/bosses/boss_soul.png',
       maxHp: 50000000,
-      atk: 800, def: 1200, spd: 110,
+      atk: 1500, def: 2000, spd: 170,
       physRes: 0.50, magRes: 0.50,
       defPen: 0,
       level: 90,
@@ -8825,6 +8825,7 @@
           continue;
         }
         // ⭐ 靈噬魔皇：中毒反制 → 吸大麻（優先插隊，清除中毒後大幅強化）
+        let _daMaSkipAtk = false;
         {
           const _pcSkill = Array.isArray(monster.skills) ? monster.skills.find(s => s.type === 'poisonCounter') : null;
           if (_pcSkill && hasStatus(monster, 'poison') && !_daMaActive) {
@@ -8835,7 +8836,7 @@
             monster.def = (monster.def || 0) + 800;
             monster.spd = (monster.spd || 0) + 800;
             log.push({ type: 'monster', text: `回合 ${round}：${monster.icon}${monster.name} ☠️ 吸大麻發動！吸收中毒 → ATK/DEF/SPD 各 +800（30 回合）！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
-            continue; // ⭐ 吸大麻消耗本回合，不再追加普通攻擊
+            _daMaSkipAtk = true; // ⭐ 吸大麻消耗本回合，不再追加普通攻擊
           }
           if (_daMaActive && round >= _daMaActiveUntil) {
             _daMaActive = false;
@@ -8845,6 +8846,7 @@
             log.push({ type: 'system', text: `回合 ${round}：${monster.icon}${monster.name} 吸大麻效果消退`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
           }
         }
+        if (!_daMaSkipAtk) {
         // 怪物技能挑選（fixedSkillOrder 需間隔 ≥ 2 回合，確保兩技能間至少有一次普攻）
         let mSkill = null;
         const minSkillGap = monster.fixedSkillOrder ? 2 : 1;
@@ -9066,6 +9068,7 @@
           });
         }
         if (pHp <= 0) break;
+        } // end if (!_daMaSkipAtk)
       }
     }
     const won = pHp > 0 && mHp <= 0;
@@ -13167,7 +13170,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510012623';
+  const APP_VERSION = '20260510014721';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
