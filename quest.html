@@ -13786,7 +13786,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510050445';
+  const APP_VERSION = '20260510051719';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -15298,6 +15298,11 @@ ${b.text}
     if (eff.mpCostMult && eff.mpCostMult < 1) buffPairs.push(`💙 MP 消耗 -${Math.round((1 - eff.mpCostMult) * 100)}%`);
     if (eff.magic) buffPairs.push('🔮 魔攻（吃法抗）');
     if (eff.ignoreDef) buffPairs.push('🗡 無視防禦');
+    if (skill.spellElement) {
+      const _elIcon = { fire:'🔥', ice:'🧊', thunder:'⚡', poison:'☠️', blood:'🩸' }[skill.spellElement] || '✨';
+      const _elName = { fire:'火', ice:'冰', thunder:'雷', poison:'毒', blood:'血' }[skill.spellElement] || skill.spellElement;
+      buffPairs.push(`${_elIcon} 施放後將【${_elName}】元素記入魔法書`);
+    }
     if (skill.applyShield)   buffPairs.push('🛡 免疫一次傷害');
     if (skill.usesBloodPool) {
       buffPairs.push('🩸 傷害 = 血池 × 3（固定，無隨機變異）');
@@ -15306,6 +15311,43 @@ ${b.text}
       buffPairs.push('💥 暴擊正常計算');
       buffPairs.push('🩸 血池來源：血祭斬 / 死戰之怒（扣10% maxHP）/ 嗜血怒嚎（扣20% 當前HP）');
       buffPairs.push('💀 施放後血池歸零，冷卻 1 回合');
+    }
+    // ⭐ 自動唸咒
+    if (skill.id === 'm_auto_chant') {
+      buffPairs.push('─────────────');
+      buffPairs.push('📖 持續 6 回合（玩家行動計算）');
+      buffPairs.push('🔄 每次普攻後自動施放一次隨機元素小咒（傷害約 MARK×10%）：');
+      buffPairs.push('　🧊 冰：MARK×1.6，25% 機率附加麻痺 1 回合');
+      buffPairs.push('　🔥 火：MARK×2.0');
+      buffPairs.push('　⚡ 雷：3 連打，每段 MARK×0.8');
+      buffPairs.push('　🩸 血：MARK×1.4，並吸血（傷害的 10%）');
+      buffPairs.push('📚 唸咒的元素會同步記入魔法書');
+      buffPairs.push('─────────────');
+    }
+    // ⭐ 元素爆發
+    if (skill.isSpellBurst) {
+      buffPairs.push('─────────────');
+      buffPairs.push('📚 消耗魔法書中所有元素進行爆發（傷害無視防禦，以 MARK 為基底）：');
+      buffPairs.push('　🔥 火 ×N：MARK × 2.0 × N　≥4 顆附加燃燒（中毒 ×3）');
+      buffPairs.push('　🧊 冰 ×N：MARK × 1.7 × N　≥3 顆附加凍結（麻痺 ×1）');
+      buffPairs.push('　⚡ 雷 ×N：MARK × 1.8 × N　每顆爆擊率 +8%');
+      buffPairs.push('　☠️ 毒 ×N：MARK × 1.3 × N　附加中毒 N 層');
+      buffPairs.push('　🩸 血 ×N：MARK × 1.5 × N　附加易傷 N 層（×1.5/層）');
+      buffPairs.push('💥 爆傷跟隨角色爆傷屬性');
+      buffPairs.push('📭 爆發後魔法書清空');
+      buffPairs.push('─────────────');
+    }
+    // ⭐ 元素吸收
+    if (skill.isSpellAbsorb) {
+      buffPairs.push('─────────────');
+      buffPairs.push('📚 將魔法書中所有元素轉化為 5 回合持續 buff：');
+      buffPairs.push('　🔥 火 ×N：MARK +12% × N（攻擊力提升）');
+      buffPairs.push('　🧊 冰 ×N：DEF +20% × N（上限 +50%）');
+      buffPairs.push('　⚡ 雷 ×N：爆傷 +10% × N');
+      buffPairs.push('　☠️ 毒 ×N：每玩家回合自動對敵施加 1 充能毒，持續 N 回合');
+      buffPairs.push('　🩸 血 ×N：立即回 HP = MARK×N×2；MaxHP +4%×N（5回）；每回 MP +3×N（5回）');
+      buffPairs.push('📭 吸收後魔法書清空');
+      buffPairs.push('─────────────');
     }
     if (skill.type === 'summon') {
       buffPairs.push('─────────────');
