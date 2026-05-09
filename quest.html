@@ -8585,6 +8585,11 @@
             if (mHp <= 0) { pushDeathLine(); break; }
           } else if (skill.type === 'buff' && (skill.selfBuff || skill.applyPartialShield)) {
             const extraNote = [];
+            // ⭐ 瘋鵝術互斥：任一瘋鵝術使用時，先清除其他瘋鵝術 buff（同時只能有一種）
+            if (skill.id && skill.id.startsWith('a_mad_goose')) {
+              const _mgClearStats = new Set(['extraHits', 'headshotChance', 'madGooseFocus', 'madGooseStatus', 'madGooseSix']);
+              playerObj.statuses = (playerObj.statuses || []).filter(s => !(s.type === 'buff' && _mgClearStats.has(s.stat)));
+            }
             if (skill.selfBuff) {
               applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff.stat, amount: skill.selfBuff.amount, turns: skill.selfBuff.turns, playerTurnOnly: !!skill.selfBuff.playerTurnOnly });
             }
@@ -10068,6 +10073,11 @@
             }
           } else if (skill.type === 'buff' && (skill.selfBuff || skill.applyPartialShield)) {
             const extraNote = [];
+            // ⭐ 瘋鵝術互斥：任一瘋鵝術使用時，先清除其他瘋鵝術 buff（同時只能有一種）
+            if (skill.id && skill.id.startsWith('a_mad_goose')) {
+              const _mgClearStats = new Set(['extraHits', 'headshotChance', 'madGooseFocus', 'madGooseStatus', 'madGooseSix']);
+              playerObj.statuses = (playerObj.statuses || []).filter(s => !(s.type === 'buff' && _mgClearStats.has(s.stat)));
+            }
             if (skill.selfBuff) {
               applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff.stat, amount: skill.selfBuff.amount, turns: skill.selfBuff.turns, playerTurnOnly: !!skill.selfBuff.playerTurnOnly });
             }
@@ -13503,7 +13513,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510041414';
+  const APP_VERSION = '20260510041605';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13559,7 +13569,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260510_corrode_fix';
+  const NEWS_LATEST_ID = 'patch_20260510_mad_goose_excl';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -13583,6 +13593,10 @@ ${b.text}
         <div style="background:linear-gradient(135deg,#14532d,#166534); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🪿 弓手瘋鵝術大改版 ＋ 靈噬印記修正　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
         </div>
+
+        <div style="font-weight:700; color:#4ade80; margin:6px 0 4px;">🔒 瘋鵝術互斥限制</div>
+        <div>・四式瘋鵝術<b>同時只能有一種</b>生效</div>
+        <div>・使用新的瘋鵝術時，舊的 buff 會立即被取代（不論剩餘回合數）</div>
 
         <div style="font-weight:700; color:#4ade80; margin:6px 0 4px;">🪿 瘋鵝術 → 四式招法</div>
         <div>・原「瘋鵝術」更名為 <b>瘋鵝術(連擊)</b>，效果不變（普攻+1段、爆頭率+2%，持續10回合）</div>
