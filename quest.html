@@ -13208,7 +13208,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510015833';
+  const APP_VERSION = '20260510020250';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -21035,8 +21035,8 @@ ${b.text}
     const target = players.find(p => p && p.id === targetId);
     if (!target) { showToast('找不到目標'); return; }
     const targetRpgP = getRpg(target);
-    if (targetRpgP.hellProtect && Date.now() < targetRpgP.hellProtect.endAt) { showToast(`🛡️ ${escapeHtml(target.name)} 持有防護符！`); return; }
-    if (targetRpgP.hellProtect) delete targetRpgP.hellProtect;
+    // ⭐ 偷錢不受防護符（hellProtect）保護影響
+    if (targetRpgP.hellProtect && Date.now() >= targetRpgP.hellProtect.endAt) delete targetRpgP.hellProtect; // 過期才清除
     const targetCoins = getCoins(target.id);
     if (targetCoins <= 0) { showToast('目標身無分文'); return; }
     const _hStP = computeHellStats(myRpg);
