@@ -8834,7 +8834,8 @@
             monster.atk = (monster.atk || 0) + 800;
             monster.def = (monster.def || 0) + 800;
             monster.spd = (monster.spd || 0) + 800;
-            log.push({ type: 'monster', text: `回合 ${round}：${monster.icon}${monster.name} ☠️ 吸大麻發動！吸收中毒→ ATK/DEF/SPD 各 +800（30 回合）！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+            log.push({ type: 'monster', text: `回合 ${round}：${monster.icon}${monster.name} ☠️ 吸大麻發動！吸收中毒 → ATK/DEF/SPD 各 +800（30 回合）！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+            continue; // ⭐ 吸大麻消耗本回合，不再追加普通攻擊
           }
           if (_daMaActive && round >= _daMaActiveUntil) {
             _daMaActive = false;
@@ -13166,7 +13167,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510010755';
+  const APP_VERSION = '20260510011044';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13242,6 +13243,30 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#1a0030,#3b0764); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">👁️ 新世界王上線 ＋ 登入優化　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#c084fc; margin:6px 0 4px;">👁️ 新世界王：靈噬魔皇</div>
+        <div>・血量 <b>5,000 萬</b>、ATK 800、DEF 1200、<b>物魔抗性各 50%</b></div>
+        <div>・招牌技 <b>靈魂汲取</b>：ATK×1.5魔法傷害 + 吸光玩家全部 MP + <b>吸血×100</b>（幾乎直接回滿血）</div>
+        <div>・<b>特殊機制</b>：身上有中毒狀態時優先觸發「吸大麻」→ ATK/DEF/SPD 各 +800（30 回合）</div>
+        <div style="font-size:11px; color:#e879f9; margin-top:2px; padding-left:8px;">⚠ 毒傷戰術無效，請用直傷爆發！</div>
+        <div>・傷害排名計算已扣除魔皇吸血量（回血多於造傷 → 該場算 0）</div>
+        <div>・擊殺獎勵：靈噬硬幣（1st:20 / 2nd:16 / 3-4th:12 / 其他:10 / 尾刀+10）</div>
+
+        <div style="font-weight:700; color:#c084fc; margin:10px 0 4px;">🔑 登入優化</div>
+        <div>・<b>新玩家</b>點選角色後直接登入，無需輸入密碼</div>
+        <div>・舊玩家登入流程不變，仍需輸入密碼</div>
+        <div>・可於右上角 🔐 自行設定個人密碼</div>
+
+        <div style="font-weight:700; color:#c084fc; margin:10px 0 4px;">⚔️ 地獄使者更新</div>
+        <div>・新技能 <b>冥力汲取</b>（Lv1）：0.8× ATK 無視防禦 + 回復 12% 最大 MP，免費施放</div>
+
+        <div style="background:#1e0040; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#e879f9;">
+          💡 靈噬魔皇需要全服玩家合力擊殺！每場打完等冷卻再挑戰，最終結算依傷害排名發幣
+        </div>
 
         <div style="background:linear-gradient(135deg,#0c2340,#1e4d8c); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">⚔🛡 聖騎強化 ＋ 王的美工圖　<span style="font-size:11px; opacity:0.85;">2026-05-09</span></div>
