@@ -880,6 +880,54 @@
     font-weight: 700;
     margin-left: auto;
   }
+  /* ── 背包分類篩選列 ── */
+  .inv-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px 0 6px;
+  }
+  .inv-filter-btn {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    border: 1px solid #5b21b6;
+    background: #2d1b69;
+    color: #c4b5fd;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .inv-filter-btn:hover { background: #4c1d95; }
+  .inv-filter-btn.active {
+    background: #7c3aed;
+    color: #fff;
+    border-color: #a78bfa;
+    font-weight: 700;
+  }
+  /* ── 道具懸停預覽卡 ── */
+  #invHoverPreview {
+    position: fixed;
+    z-index: 9999;
+    width: 200px;
+    background: linear-gradient(160deg, #1e0a3c, #2d1b69);
+    border: 1.5px solid #7c3aed;
+    border-radius: 12px;
+    padding: 10px 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+    pointer-events: none;
+    display: none;
+  }
+  #invHoverPreview .hp-icon { font-size: 28px; text-align: center; margin-bottom: 4px; }
+  #invHoverPreview .hp-name { font-size: 13px; font-weight: 800; text-align: center; margin-bottom: 2px; }
+  #invHoverPreview .hp-rarity { font-size: 10px; text-align: center; margin-bottom: 6px; opacity: 0.85; }
+  #invHoverPreview .hp-stats { font-size: 11px; color: #c4b5fd; margin-bottom: 4px; line-height: 1.6; }
+  #invHoverPreview .hp-affix { font-size: 10px; color: #f0abfc; font-style: italic; margin-top: 4px; border-top: 1px solid #4c1d95; padding-top: 4px; }
+  #invHoverPreview .hp-diff { font-size: 10px; margin-top: 5px; border-top: 1px solid #4c1d95; padding-top: 4px; color: #94a3b8; }
+  #invHoverPreview .hp-diff .up   { color: #4ade80; }
+  #invHoverPreview .hp-diff .down { color: #f87171; }
+  #invHoverPreview .hp-pet { font-size: 10px; color: #e879f9; margin-top: 4px; border-top: 1px solid #4c1d95; padding-top: 4px; }
   .inv-page-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -4762,6 +4810,20 @@
     { id: 'bg_sg_earlydef',   name: '風鵝護符', icon: '⚡', slot: 'accessory', lv: 1, def: 15,
       isBossGift: true, sourceBossId: 'storm_goose', rarity: 'gold', fusionEffect: 'fx_sg_earlydef',
       affixDesc: '前 20 回合 DEF +50%（疊裝延長至 40 回合；風鵝護符）' },
+
+    // ── 靈噬魔皇印記（靈噬扭蛋獎勵，合成用）─────────────────────────
+    { id: 'bg_sd_drain',   name: '靈噬之印', icon: '👁️', slot: 'accessory', lv: 1, atk: 10, mark: 10, mp: 12,
+      isBossGift: true, sourceBossId: 'soul_devourer', rarity: 'gold', fusionEffect: 'fx_sd_drain',
+      affixDesc: '攻擊有 10% 機率使敵人「麻痺」（靈噬之印）' },
+    { id: 'bg_sd_corrode', name: '異蝕之印', icon: '☣️', slot: 'accessory', lv: 1, atk: 12, mark: 8, critChance: 0.03,
+      isBossGift: true, sourceBossId: 'soul_devourer', rarity: 'gold', fusionEffect: 'fx_sd_corrode',
+      affixDesc: '異常狀態施加成功率 +25%（可疊加；異蝕之印）' },
+    { id: 'bg_sd_void',    name: '冥魂之印', icon: '🌑', slot: 'accessory', lv: 1, mark: 12, hp: 80, mpRegen: 2,
+      isBossGift: true, sourceBossId: 'soul_devourer', rarity: 'gold', fusionEffect: 'fx_sd_void',
+      affixDesc: '技能後下次技能傷害 +20%（觸發次不重計；冥魂之印）' },
+    { id: 'bg_sd_life',    name: '噬命之印', icon: '💀', slot: 'accessory', lv: 1,
+      isBossGift: true, sourceBossId: 'soul_devourer', rarity: 'gold', fusionEffect: 'fx_sd_life',
+      affixDesc: 'ATK +20%、DEF +20%、最大 HP -50%（噬命之印）' },
   ];
 
   // ============================================================
@@ -5818,6 +5880,16 @@
     { id: 'gt_50',  name: '綠茶天命書',     icon: '📖', slot: 'guide', atk: 15, spd: 9,  hp: 50, def: 5,  lv: 1, gtReq: 50  },
     { id: 'gt_75',  name: '綠茶禁術全集',   icon: '🌿', slot: 'guide', atk: 22, spd: 12, hp: 80, def: 8,  lv: 1, gtReq: 75  },
     { id: 'gt_100', name: '綠茶終極奧義書', icon: '💀', slot: 'guide', atk: 30, spd: 16, hp: 120, def: 12, lv: 1, gtReq: 100 },
+    // ── 靈噬魔皇寵物（靈噬扭蛋獎勵）─────────────────────────────────
+    { id: 'pet_soul_eye',     name: '靈眼幼魂', icon: '👁️', slot: 'pet', hp: 100, atk: 10, mark: 10, mp: 10, spd: 10, lv: 1, rarity: 'gold',
+      petAbility: { type: 'vulnerable', interval: 10, label: '靈魂凝視' },
+      affixDesc: '每 10 回合：對敵人施加易傷（1 層）' },
+    { id: 'pet_soul_corrode', name: '腐蝕小魘', icon: '🫧', slot: 'pet', hp: 100, atk: 10, mark: 10, mp: 10, spd: 10, lv: 1, rarity: 'gold',
+      petAbility: { type: 'fullRestore', interval: 10, label: '腐蝕淨化' },
+      affixDesc: '每 10 回合：HP＆MP 完全回復' },
+    { id: 'pet_soul_ghost',   name: '冥界幼靈', icon: '👻', slot: 'pet', hp: 100, atk: 10, mark: 10, mp: 10, spd: 10, lv: 1, rarity: 'gold',
+      petAbility: { type: 'tripleAttack', interval: 5, dmgMult: 20, label: '冥界三連擊' },
+      affixDesc: '每 5 回合：3 段攻擊，每段 (ATK+MARK)×20 傷害' },
   ];
 
   // 綠茶指南書門檻表（給後面 grant 邏輯用）
@@ -7880,6 +7952,11 @@
     const _fxPhysShield = getFusionEffectCount(player, 'fx_sg_physshield');
     const _fxMagShield  = getFusionEffectCount(player, 'fx_sg_magshield');
     const _fxStatusRes  = getFusionEffectCount(player, 'fx_sg_statusres');
+    // ⭐ 靈噬印記效果
+    const _fxSdDrain   = getFusionEffectCount(player, 'fx_sd_drain');   // 靈噬之印：攻擊 10% 麻痺
+    const _fxSdCorrode = getFusionEffectCount(player, 'fx_sd_corrode'); // 異蝕之印：狀態成功率 +25%/層
+    const _fxSdVoid    = getFusionEffectCount(player, 'fx_sd_void');    // 冥魂之印：技能後下次 +20%
+    const _fxSdLife    = getFusionEffectCount(player, 'fx_sd_life');    // 噬命之印：ATK/DEF +20%，HP -50%
     // 派生值
     const regenPer = (cls.regenPer || 0) + (bonus.regen || 0) + _fxGuardian * 0.03;
     const _fusionMpDiscount = Math.min(_fxMage * 0.20, 0.80);
@@ -7908,8 +7985,17 @@
     let _tenaciousUsed = false;           // 不屈：每場限一次
     let _perfectTempoStreak = 0;          // 完美節拍：連續暴擊層數 0-4
     let _midnightLateActivated = false;   // 最後的宵夜：每場限一次
+    let _sdVoidBuff = false;              // 冥魂之印：下次技能 +20% 旗標
+    let _petTurnCount = 0;               // 寵物觸發計數（實際行動次數）
     let pHp = stats.maxHp; // ⭐ 每場戰鬥 HP 自動回滿（HP 變成屬性，不是耗材）
     let pMp = stats.maxMp; // ⭐ 每場戰鬥 MP 自動回滿
+    // ⭐ 噬命之印（fx_sd_life）：ATK/DEF +20%、最大HP -50%
+    if (_fxSdLife > 0) {
+      stats.atk  = Math.round(stats.atk  * (1 + 0.20 * _fxSdLife));
+      stats.mark = Math.round((stats.mark || 0) * (1 + 0.20 * _fxSdLife));
+      stats.def  = Math.round(stats.def  * (1 + 0.20 * _fxSdLife));
+      pHp = Math.max(1, Math.floor(pHp * 0.50));
+    }
     let mHp = monster.hp;
     let round = 0;
     let playerActions = 0;
@@ -8113,6 +8199,36 @@
         }
         // ⭐ 實際行動計數（judge 1912 用）：麻痺後 continue，此行不執行，故不含被吃掉回合
         behaviorCount++;
+        // ⭐ 寵物觸發（每 N 次實際行動）
+        _petTurnCount++;
+        {
+          const _petItem = resolveItem(player.rpg?.equipment?.pet);
+          if (_petItem?.petAbility) {
+            const _pa = _petItem.petAbility;
+            if (_petTurnCount % _pa.interval === 0) {
+              if (_pa.type === 'vulnerable') {
+                monster.statuses = monster.statuses || [];
+                monster.statuses.push({ type: 'vulnerable', amount: 0.50, hits: 1 });
+                log.push({ type: 'player', text: `回合 ${round}：${_petItem.icon} 【${_petItem.name}】「${_pa.label}」！${monster.name} 進入易傷狀態！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+              } else if (_pa.type === 'fullRestore') {
+                const _hpGain = Math.max(0, stats.maxHp - pHp);
+                const _mpGain = Math.max(0, stats.maxMp - pMp);
+                pHp = stats.maxHp;
+                pMp = stats.maxMp;
+                log.push({ type: 'player', text: `回合 ${round}：${_petItem.icon} 【${_petItem.name}】「${_pa.label}」！HP +${_hpGain}、MP +${_mpGain}（全回）！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+              } else if (_pa.type === 'tripleAttack') {
+                log.push({ type: 'player', text: `回合 ${round}：${_petItem.icon} 【${_petItem.name}】「${_pa.label}」！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+                for (let _ph = 1; _ph <= 3; _ph++) {
+                  const _petDmg = Math.round((stats.atk + (stats.mark || 0)) * (_pa.dmgMult || 20));
+                  mHp = Math.max(0, mHp - _petDmg);
+                  log.push({ type: 'player', text: `　　↳ 第 ${_ph} 擊 -${_petDmg} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+                  if (mHp <= 0) break;
+                }
+                if (mHp <= 0) break;
+              }
+            }
+          }
+        }
         const _ptCritCountBefore = critCount; // 完美節拍用：本回合行動前的暴擊數
         // ⭐ HOF：依玩家的 actionPattern 規則表決定動作
         // 從上到下評估每條規則，第一條 judge 成立 + 技能可用就放；都不成立 → 普攻
@@ -8270,6 +8386,15 @@
               if (isMagic) dmg *= (1 + (passive.flatPct || 0));
               else         dmg *= (1 + (passive.physPct || 0));
             }
+            // ⭐ 冥魂之印（fx_sd_void）：技能後下次技能傷害 +20%/層；觸發次不重計
+            if (_fxSdVoid > 0 && !skill.usesBloodPool) {
+              if (_sdVoidBuff) {
+                dmg *= (1 + 0.20 * _fxSdVoid);
+                _sdVoidBuff = false; // 消耗後不重新觸發
+              } else {
+                _sdVoidBuff = true;
+              }
+            }
             // ⭐ 聖騎 bonusMaxHpPct：純加值（maxHp × X），不吃怪 DEF
             //    例：聖光斬 1.2× ATK + 5% maxHp → 200 maxHp 玩家額外 +10 傷害
             //    ATK 部分被高 DEF 壓到負值時，先 clamp 0 再加 maxHp，避免被 Math.max(1) 蓋掉
@@ -8420,7 +8545,8 @@
               log.push({ type: 'monster', text: `回合 ${round}：🪞 ${monster.name} 反射光芒 ${_reflStr}`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
             }
             // 對怪物上狀態（毒箭、冰錐術…）
-            if (skill.applyStatus && Math.random() < (skill.applyStatus.chance || 1)) {
+            // ⭐ 異蝕之印（fx_sd_corrode）：狀態施加成功率 +25%/層
+            if (skill.applyStatus && Math.random() < Math.min(1, (skill.applyStatus.chance || 1) * (1 + _fxSdCorrode * 0.25))) {
               applyStatus(monster, skill.applyStatus);
               log.push({ type: 'system', text: `回合 ${round}：${monster.name} 進入 ${statusEmoji(skill.applyStatus.type)}${statusLabel(skill.applyStatus.type)} 狀態`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
             }
@@ -8725,6 +8851,14 @@
           if (weaponBloodEffect && hasStatus(monster, 'bleed') && mHp > 0) {
             applyStatus(playerObj, { type: 'buff', stat: 'atkPct', amount: 0.20, turns: 3 });
             log.push({ type: 'system', text: `回合 ${round}：🗡️ 嗜血劍觸發 → ATK +20%（3 回合）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+          }
+          // ⭐ 靈噬之印（fx_sd_drain）：普攻後 10%/層 機率使敵人麻痺
+          if (_fxSdDrain > 0 && mHp > 0 && Math.random() < Math.min(1, _fxSdDrain * 0.10)) {
+            monster.statuses = monster.statuses || [];
+            if (!hasStatus(monster, 'paralyze')) {
+              applyStatus(monster, { type: 'paralyze', charges: 2 });
+              log.push({ type: 'player', text: `回合 ${round}：👁️ 靈噬之印 → ${monster.name} 陷入⚡麻痺！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+            }
           }
         }
         // ⭐ 完美節拍（晚餐鵝精魂刻印特殊）：追蹤連爆計數
@@ -9283,6 +9417,11 @@
     const _fxPhysShield = getFusionEffectCount(player, 'fx_sg_physshield');
     const _fxMagShield  = getFusionEffectCount(player, 'fx_sg_magshield');
     const _fxStatusRes  = getFusionEffectCount(player, 'fx_sg_statusres');
+    // ⭐ 靈噬印記效果
+    const _fxSdDrain   = getFusionEffectCount(player, 'fx_sd_drain');
+    const _fxSdCorrode = getFusionEffectCount(player, 'fx_sd_corrode');
+    const _fxSdVoid    = getFusionEffectCount(player, 'fx_sd_void');
+    const _fxSdLife    = getFusionEffectCount(player, 'fx_sd_life');
     const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0) + (setB.critChance || 0);
     let critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
     // fx_guardian: 每回合 HP 回復最大值 3%/層
@@ -9314,9 +9453,18 @@
     let _tenaciousUsed = false;
     let _perfectTempoStreak = 0;
     let _midnightLateActivated = false;   // 最後的宵夜：每場限一次
+    let _sdVoidBuff = false;              // 冥魂之印：下次技能 +20% 旗標
+    let _petTurnCount = 0;               // 寵物觸發計數
 
     let pHp = stats.maxHp; // ⭐ 每場戰鬥 HP 自動回滿（HP 變成屬性，不是耗材）
     let pMp = stats.maxMp; // ⭐ 每場戰鬥 MP 自動回滿
+    // ⭐ 噬命之印（fx_sd_life）：ATK/DEF +20%、最大HP -50%
+    if (_fxSdLife > 0) {
+      stats.atk  = Math.round(stats.atk  * (1 + 0.20 * _fxSdLife));
+      stats.mark = Math.round((stats.mark || 0) * (1 + 0.20 * _fxSdLife));
+      stats.def  = Math.round(stats.def  * (1 + 0.20 * _fxSdLife));
+      pHp = Math.max(1, Math.floor(pHp * 0.50));
+    }
     let bloodPool = 0; // ⭐ 血池：累積所有 HP 代價技能扣的血，供「爆血」技能使用
     const playerObj = { statuses: [] };
     // ⭐ 聖母鵝（HMG）系統 — 聖騎專屬
@@ -9493,6 +9641,36 @@
         }
         // ⭐ 實際行動計數（judge 1912 用）：麻痺後 continue，此行不執行
         behaviorCountM++;
+        // ⭐ 寵物觸發（每 N 次實際行動）
+        _petTurnCount++;
+        {
+          const _petItem = resolveItem(player.rpg?.equipment?.pet);
+          if (_petItem?.petAbility) {
+            const _pa = _petItem.petAbility;
+            if (_petTurnCount % _pa.interval === 0) {
+              if (_pa.type === 'vulnerable') {
+                monster.statuses = monster.statuses || [];
+                monster.statuses.push({ type: 'vulnerable', amount: 0.50, hits: 1 });
+                log.push({ type: 'player', text: `回合 ${round}：${_petItem.icon} 【${_petItem.name}】「${_pa.label}」！${monster.name} 進入易傷狀態！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+              } else if (_pa.type === 'fullRestore') {
+                const _hpGain = Math.max(0, stats.maxHp - pHp);
+                const _mpGain = Math.max(0, stats.maxMp - pMp);
+                pHp = stats.maxHp;
+                pMp = stats.maxMp;
+                log.push({ type: 'player', text: `回合 ${round}：${_petItem.icon} 【${_petItem.name}】「${_pa.label}」！HP +${_hpGain}、MP +${_mpGain}（全回）！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+              } else if (_pa.type === 'tripleAttack') {
+                log.push({ type: 'player', text: `回合 ${round}：${_petItem.icon} 【${_petItem.name}】「${_pa.label}」！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+                for (let _ph = 1; _ph <= 3; _ph++) {
+                  const _petDmg = Math.round((stats.atk + (stats.mark || 0)) * (_pa.dmgMult || 20));
+                  mHp = Math.max(0, mHp - _petDmg);
+                  log.push({ type: 'player', text: `　　↳ 第 ${_ph} 擊 -${_petDmg} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+                  if (mHp <= 0) break;
+                }
+                if (mHp <= 0) break;
+              }
+            }
+          }
+        }
         const _ptCritCountBefore = critCount; // 完美節拍用：本回合行動前的暴擊數
         // 自癒
         if (regenPer > 0 && pHp < stats.maxHp) {
@@ -9655,6 +9833,15 @@
               if (skill.bleedBonus && hasStatus(tgt, 'bleed')) {
                 dmg *= (1 + skill.bleedBonus);
               }
+              // ⭐ 冥魂之印（fx_sd_void）：技能後下次技能傷害 +20%/層；觸發次不重計
+              if (_fxSdVoid > 0 && !skill.usesBloodPool) {
+                if (_sdVoidBuff) {
+                  dmg *= (1 + 0.20 * _fxSdVoid);
+                  _sdVoidBuff = false;
+                } else {
+                  _sdVoidBuff = true;
+                }
+              }
               // ⭐ 合成效果：fx_dg_mp（MP≥90%時技能傷害+25%/層）
               if (_fxDgMp > 0 && pMp >= stats.maxMp * 0.9) dmg *= (1 + _fxDgMp * 0.25);
               // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%/層）
@@ -9686,7 +9873,8 @@
                 pHp = Math.max(0, pHp - Math.min(tgt.ability.cap || 300, Math.max(1, Math.round(dmg * tgt.ability.resist))));
               }
               // 套用狀態
-              if (skill.applyStatus && Math.random() < (skill.applyStatus.chance || 1)) {
+              // ⭐ 異蝕之印（fx_sd_corrode）：狀態施加成功率 +25%/層
+              if (skill.applyStatus && Math.random() < Math.min(1, (skill.applyStatus.chance || 1) * (1 + _fxSdCorrode * 0.25))) {
                 applyStatus(tgt, skill.applyStatus);
               }
             }
@@ -10092,6 +10280,13 @@
           if (weaponBloodEffect && hasStatus(tgt, 'bleed') && tgt.hp > 0) {
             applyStatus(playerObj, { type: 'buff', stat: 'atkPct', amount: 0.20, turns: 3 });
             log.push({ type: 'system', text: `回合 ${round}：🗡️ 嗜血劍觸發 → ATK +20%（3 回合）`, hp: hpsSnapshot() });
+          }
+          // ⭐ 靈噬之印（fx_sd_drain）：普攻後 10%/層 機率使敵人麻痺
+          if (_fxSdDrain > 0 && tgt.hp > 0 && Math.random() < Math.min(1, _fxSdDrain * 0.10)) {
+            if (!hasStatus(tgt, 'paralyze')) {
+              applyStatus(tgt, { type: 'paralyze', charges: 2 });
+              log.push({ type: 'player', text: `回合 ${round}：👁️ 靈噬之印 → ${tgt.icon}${tgt.name} 陷入⚡麻痺！`, hp: hpsSnapshot() });
+            }
           }
         }
         // ⭐ 聖母鵝行動（試煉場）
@@ -12050,6 +12245,29 @@
       ],
     },
     {
+    {
+      id: 'boss_soul', icon: '👁️', name: '靈噬扭蛋',
+      desc: '消耗 3 顆靈噬硬幣抽靈噬印記（效果型金飾品）/ 靈噬寵物 / 體力 / EXP',
+      cost: 3,
+      isBossCoin: true,
+      coinFilter: 'bc_soul_devourer',
+      currencyIcon: '👁️',
+      currencyName: '靈噬硬幣',
+      status: 'open',
+      pool: [
+        { type: 'item', id: 'bg_sd_drain',        weight: 10 },
+        { type: 'item', id: 'bg_sd_corrode',       weight: 10 },
+        { type: 'item', id: 'bg_sd_void',          weight: 10 },
+        { type: 'item', id: 'bg_sd_life',          weight: 8  },
+        { type: 'item', id: 'pet_soul_eye',        weight: 7  },
+        { type: 'item', id: 'pet_soul_corrode',    weight: 7  },
+        { type: 'item', id: 'pet_soul_ghost',      weight: 7  },
+        { type: 'stamina', amount: 80,  weight: 20, label: '體力 +80',   icon: '⚡' },
+        { type: 'stamina', amount: 150, weight: 10, label: '體力 +150',  icon: '⚡' },
+        { type: 'xp',      amount: 1000,weight: 11, label: 'EXP +1000',  icon: '✨' },
+      ],
+    },
+    {
       id: 'egg', icon: '🥚', name: '鵝蛋扭蛋', desc: '用鵝蛋幣抽頭像 / 稱號 / 翅膀寵物',
       status: 'locked', // 之後做（目前在 index.html）
     },
@@ -13204,7 +13422,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510022625';
+  const APP_VERSION = '20260510034559';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13260,7 +13478,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260508_cosmetic_layer';
+  const NEWS_LATEST_ID = 'patch_20260510_inv_ui';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -13281,25 +13499,62 @@ ${b.text}
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
 
-        <div style="background:linear-gradient(135deg,#1a0030,#3b0764); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
-          <div style="font-size:15px; font-weight:800; color:#fff;">👁️ 新世界王上線 ＋ 登入優化　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
+        <div style="background:linear-gradient(135deg,#0c1f3d,#1a3a6b); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🎒 背包 UI 升級 ＋ 靈噬扭蛋上線　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
         </div>
 
-        <div style="font-weight:700; color:#c084fc; margin:6px 0 4px;">👁️ 新世界王：靈噬魔皇</div>
-        <div>・血量 <b>5,000 萬</b>、ATK 800、DEF 1200、<b>物魔抗性各 50%</b></div>
-        <div>・招牌技 <b>靈魂汲取</b>：ATK×1.5魔法傷害 + 吸光玩家全部 MP + <b>吸血×100</b>（幾乎直接回滿血）</div>
-        <div>・<b>特殊機制</b>：身上有中毒狀態時優先觸發「吸大麻」→ ATK/DEF/SPD 各 +800（30 回合）</div>
-        <div style="font-size:11px; color:#e879f9; margin-top:2px; padding-left:8px;">⚠ 毒傷戰術無效，請用直傷爆發！</div>
-        <div>・傷害排名計算已扣除魔皇吸血量（回血多於造傷 → 該場算 0）</div>
-        <div>・擊殺獎勵：靈噬硬幣（1st:20 / 2nd:16 / 3-4th:12 / 其他:10 / 尾刀+10）</div>
+        <div style="font-weight:700; color:#60a5fa; margin:6px 0 4px;">🎒 背包介面升級</div>
+        <div>・新增<b>分類篩選列</b>：可按武器 / 防具 / 飾品 / 寵物 / 王硬幣等類型快速篩選道具</div>
+        <div>・新增<b>懸停預覽卡</b>：滑鼠移到道具上即彈出詳細屬性小視窗，不用點進去就能換裝比較</div>
+        <div>・預覽卡顯示與目前裝備的屬性差值（綠色 = 提升 / 紅色 = 下降）</div>
+
+        <div style="font-weight:700; color:#a855f7; margin:10px 0 4px;">👁️ 靈噬扭蛋上線</div>
+        <div>・消耗 <b>靈噬硬幣 ×3</b> 可抽：靈噬印記 / 靈噬寵物 / 體力 / EXP</div>
+        <div>・<b>4 種靈噬印記</b>（飾品）：</div>
+        <div style="font-size:11px; padding-left:8px;">
+          <div>👁️ 靈噬之印：普攻 10% 機率麻痺敵人</div>
+          <div>☣️ 異蝕之印：異常狀態施加率 +25%（可疊加）</div>
+          <div>🌑 冥魂之印：技能後下次技能傷害 +20%</div>
+          <div>💀 噬命之印：ATK/DEF +20%、最大 HP -50%（高風險高回報）</div>
+        </div>
+        <div>・<b>3 種靈噬寵物</b>（寵物格裝備）：</div>
+        <div style="font-size:11px; padding-left:8px;">
+          <div>👁️ 靈眼幼魂：每 10 回合對敵施加易傷</div>
+          <div>🫧 腐蝕小魘：每 10 回合 HP＆MP 完全回復</div>
+          <div>👻 冥界幼靈：每 5 回合 3 段攻擊，每段 (ATK+MARK)×20</div>
+        </div>
+        <div>・<b>印記合成</b>新增第 5 槽「👁️ 靈噬槽」，靈噬印記可作材料合入任何基底印記</div>
+
+        <div style="background:#0a1628; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#93c5fd;">
+          💡 靈噬印記與寵物統一底色 HP+100·ATK+10·MARK+10·MP+10·SPD+10，在裝備頁懸停即可快速比較！
+        </div>
+
+        <div style="background:linear-gradient(135deg,#1a0030,#3b0764); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">⚖️ 靈噬魔皇平衡調整 ＋ 系統修正　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#c084fc; margin:6px 0 4px;">👁️ 靈噬魔皇數值調整</div>
+        <div>・ATK <b>800 → 1000</b>、DEF <b>1200 → 1800</b>（基礎戰力調高）</div>
+        <div>・<b>靈魂汲取</b> 吸血倍率 <b>×100 → ×7</b>（大幅削弱，不再幾乎直接回滿血）</div>
+        <div>・<b>吸大麻</b> 強化數值上調：ATK/DEF <b>各 +800 → +1600</b>、SPD <b>+800 → +1000</b></div>
+        <div>・吸大麻觸發後 SPD 加速現在<b>真的立即生效</b>（ATB 出手間隔同步縮短）</div>
+        <div style="font-size:11px; color:#e879f9; margin-top:2px; padding-left:8px;">⚠ 吸大麻期間魔皇大幅加速，毒傷戰術依然無效！</div>
+
+        <div style="font-weight:700; color:#c084fc; margin:10px 0 4px;">🧪 中毒 / 流血傷害修正</div>
+        <div>・修正靈噬魔皇中毒傷害計算錯誤：<b>0.5% → 0.05% maxHP / tick</b>（世界王正確公式）</div>
+        <div>・玩家與怪物受到<b>中毒傷害時，魔坑（partialShield）現在正確扣除減傷</b></div>
+
+        <div style="font-weight:700; color:#c084fc; margin:10px 0 4px;">🏹 弓手調整</div>
+        <div>・<b>隱身</b>回復為 <b>100% 免疫</b>（先前短暫改為 70% 已還原）</div>
+        <div>・弓手 SPD 上限從 <b>2.5:1 → 2.25:1</b>（軟上限微幅調低）</div>
+
+        <div style="font-weight:700; color:#c084fc; margin:10px 0 4px;">😈 地獄使者調整</div>
+        <div>・<b>洗劫</b>（地獄使者偷錢技能）不再受<b>防護符</b>保護影響，必定成功偷取金幣</div>
 
         <div style="font-weight:700; color:#c084fc; margin:10px 0 4px;">🔑 登入優化</div>
         <div>・<b>新玩家</b>點選角色後直接登入，無需輸入密碼</div>
         <div>・舊玩家登入流程不變，仍需輸入密碼</div>
         <div>・可於右上角 🔐 自行設定個人密碼</div>
-
-        <div style="font-weight:700; color:#c084fc; margin:10px 0 4px;">⚔️ 地獄使者更新</div>
-        <div>・新技能 <b>冥力汲取</b>（Lv1）：0.8× ATK 無視防禦 + 回復 12% 最大 MP，免費施放</div>
 
         <div style="background:#1e0040; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#e879f9;">
           💡 靈噬魔皇需要全服玩家合力擊殺！每場打完等冷卻再挑戰，最終結算依傷害排名發幣
@@ -14894,6 +15149,7 @@ ${b.text}
   let __invPage = 0;
   let __invBulkMode = false;
   let __invSelected = new Set();   // 內容是 inventory 的「全域 idx」
+  let __invFilter = 'all';         // 背包分類篩選
 
   // ── 精魂背包批量模式 ──
   let __spiritBulkMode = false;
@@ -14907,22 +15163,25 @@ ${b.text}
     // 每次打開重置批量選取（避免上次的選取殘留）
     __invSelected = new Set();
     __invBulkMode = false;
+    __invFilter = 'all';
     const html = `
       <div>
         <div style="font-size:11px; color:#5b3d62; padding:6px 10px; background:#fef3c7; border-radius:8px; margin-bottom:8px; border:1px dashed #f59e0b;">
-          🎒 點裝備格 = 查看詳情 / 鑲嵌寶石；點背包物品 = 裝備 / 賣掉。
+          🎒 點裝備格 = 查看詳情 / 鑲嵌寶石；點背包物品 = 裝備 / 賣掉。滑鼠懸停道具 = 快速預覽。
         </div>
         <div class="equip-row" id="equipRow"></div>
         <div style="display:flex; gap:6px; margin:8px 0 4px;">
           <button onclick="showGemModal()" style="flex:1; padding:7px 0; background:linear-gradient(135deg,#7c3aed,#c026d3); color:#fff; font-weight:700; font-size:12px; border:none; border-radius:10px; cursor:pointer;">💎 寶石系統</button>
           <button onclick="showFusionBaseSelector()" style="flex:1; padding:7px 0; background:linear-gradient(135deg,#d97706,#b45309); color:#fff; font-weight:700; font-size:12px; border:none; border-radius:10px; cursor:pointer;">⚗️ 印記合成</button>
         </div>
-        <div style="font-size:12px; color:#8b6f9b; margin:8px 0 6px; font-weight:600;">背包</div>
+        <div style="font-size:12px; color:#8b6f9b; margin:8px 0 4px; font-weight:600;">背包</div>
+        <div id="invFilterBar" class="inv-filter-bar"></div>
         <div id="invPageTabs" class="inv-page-tabs"></div>
         <div id="invToolbar" class="inv-toolbar"></div>
         <div id="invGrid" class="inv-page-grid"></div>
         <button class="btn btn-secondary" onclick="hideModal()" style="margin-top:10px;">關閉</button>
       </div>
+      <div id="invHoverPreview"></div>
     `;
     showModal('🎒 裝備 / 背包', html);
     if (typeof renderEquipment === 'function') renderEquipment();
@@ -15946,13 +16205,46 @@ ${b.text}
       </button>`;
     }).join('');
 
-    // 背包：分頁 + 可批量選取
+    // 背包：分類篩選
     const inv = (rpg.inventory || []);
-    const pageCount = Math.max(1, Math.ceil(inv.length / INV_PAGE_SIZE));
+    const INV_FILTERS = [
+      { key: 'all',       label: '全部' },
+      { key: 'weapon',    label: '⚔️ 武器' },
+      { key: 'armor',     label: '🛡 防具' },
+      { key: 'helmet',    label: '⛑ 頭盔' },
+      { key: 'gloves',    label: '🧤 手套' },
+      { key: 'boots',     label: '👟 鞋子' },
+      { key: 'cape',      label: '🧣 披風' },
+      { key: 'accessory', label: '💍 飾品' },
+      { key: 'ring',      label: '💍 戒指' },
+      { key: 'wings',     label: '🪶 翅膀' },
+      { key: 'pet',       label: '🐾 寵物' },
+      { key: 'guide',     label: '📖 指南書' },
+      { key: 'coin',      label: '🏆 王硬幣' },
+    ];
+    const filterBarEl = document.getElementById('invFilterBar');
+    if (filterBarEl) {
+      filterBarEl.innerHTML = INV_FILTERS.map(f =>
+        `<button class="inv-filter-btn ${__invFilter === f.key ? 'active' : ''}" onclick="setInvFilter('${f.key}')">${f.label}</button>`
+      ).join('');
+    }
+
+    // 篩選後的物品列表（保留 globalIdx 對應到原始 inventory）
+    const displayItems = [];
+    inv.forEach((entry, idx) => {
+      const item = resolveItem(entry);
+      if (!item) { if (__invFilter === 'all') displayItems.push({ entry, globalIdx: idx, item: null }); return; }
+      if (__invFilter === 'all') { displayItems.push({ entry, globalIdx: idx, item }); return; }
+      if (__invFilter === 'coin' && item.isBossCoin) { displayItems.push({ entry, globalIdx: idx, item }); return; }
+      if (__invFilter === 'ring' && (item.slot === 'ring' || item.slot === 'ring1' || item.slot === 'ring2')) { displayItems.push({ entry, globalIdx: idx, item }); return; }
+      if (item.slot === __invFilter) displayItems.push({ entry, globalIdx: idx, item });
+    });
+
+    const pageCount = Math.max(1, Math.ceil(displayItems.length / INV_PAGE_SIZE));
     if (__invPage >= pageCount) __invPage = pageCount - 1;
     if (__invPage < 0) __invPage = 0;
 
-    // 分頁 tabs（至少顯示 1 個）
+    // 分頁 tabs
     const tabsEl = document.getElementById('invPageTabs');
     if (tabsEl) {
       tabsEl.innerHTML = Array.from({ length: pageCount }, (_, p) => `
@@ -15963,7 +16255,6 @@ ${b.text}
     // 工具列：批量模式 + 全選 + 取消選取 + 賣出
     const tbEl = document.getElementById('invToolbar');
     if (tbEl) {
-      // 計算已選的賣價總和
       let selValue = 0;
       __invSelected.forEach(i => {
         const it = resolveItem(inv[i]);
@@ -15980,32 +16271,26 @@ ${b.text}
             賣掉選取（${__invSelected.size}件 +${selValue}🪙）
           </button>
         ` : ''}
-        <span class="it-info">背包 ${inv.length} 件 · 第 ${__invPage + 1}/${pageCount} 頁</span>
+        <span class="it-info">顯示 ${displayItems.length}/${inv.length} 件 · 第 ${__invPage + 1}/${pageCount} 頁</span>
       `;
     }
 
-    // 該頁的格子（固定 INV_PAGE_SIZE 個 cell，沒物品就空格）
-    const start = __invPage * INV_PAGE_SIZE;
+    // 該頁格子（固定 INV_PAGE_SIZE 格，不足補空格）
+    const pageSlice = displayItems.slice(__invPage * INV_PAGE_SIZE, (__invPage + 1) * INV_PAGE_SIZE);
     const cells = [];
     for (let i = 0; i < INV_PAGE_SIZE; i++) {
-      const globalIdx = start + i;
-      const entry = inv[globalIdx];
-      if (entry === undefined) {
-        cells.push(`<div class="inv-cell empty"></div>`);
-        continue;
-      }
-      const item = resolveItem(entry);
+      const slot = pageSlice[i];
+      if (!slot) { cells.push(`<div class="inv-cell empty"></div>`); continue; }
+      const { entry, globalIdx, item } = slot;
       if (!item) {
         cells.push(`<button class="inv-cell has-item" onclick="onInvCellClick(${globalIdx})" style="border-color:#dc2626; background:#7f1d1d;" title="未知物品">
-          <div class="ic-icon">❓</div>
-          <div class="ic-name">未知</div>
+          <div class="ic-icon">❓</div><div class="ic-name">未知</div>
           ${__invBulkMode ? `<div class="ic-check">${__invSelected.has(globalIdx) ? '✓' : ''}</div>` : ''}
         </button>`);
         continue;
       }
       const isBossCoin = !!item.isBossCoin;
-      const rarColor = isBossCoin
-        ? '#fbbf24'
+      const rarColor = isBossCoin ? '#fbbf24'
         : item.rarity ? RARITY[item.rarity]?.color
         : item.setId ? (SETS[item.setId]?.color || '#f59e0b')
         : null;
@@ -16013,16 +16298,8 @@ ${b.text}
       const isPinned = !!(entry?.pinned || item?.pinned);
       const bgStyle = isBossCoin
         ? `border-color:#fbbf24; background:linear-gradient(135deg,#7c2d12,#b45309);`
-        : (rarColor
-          ? `border-color:${rarColor}; background:linear-gradient(135deg,#2d1b69,${rarColor}40);`
-          : '');
-      const tooltip = isBossCoin
-        ? `${item.name} ×${item.qty || 1}（王硬幣 / 結算用）`
-        : buildItemTooltipText(item);
-      const qtyBadge = (item.qty && item.qty > 1)
-        ? `<div class="ic-qty">×${item.qty}</div>`
-        : '';
-      // ⚗️ 印記合成標記
+        : (rarColor ? `border-color:${rarColor}; background:linear-gradient(135deg,#2d1b69,${rarColor}40);` : '');
+      const qtyBadge = (item.qty && item.qty > 1) ? `<div class="ic-qty">×${item.qty}</div>` : '';
       const fusedCount = (item.isBossGift && Array.isArray(item.fusedComponents)) ? item.fusedComponents.length : 0;
       const fusionBadge = fusedCount > 0
         ? `<div style="position:absolute;bottom:1px;left:1px;font-size:7px;background:#d97706;color:#fff;border-radius:3px;padding:0 3px;line-height:1.5;font-weight:700;">⚗️${fusedCount}</div>`
@@ -16030,8 +16307,9 @@ ${b.text}
       cells.push(`<button
           class="inv-cell has-item ${__invBulkMode ? 'bulk-on' : ''} ${selected ? 'selected' : ''} ${isPinned ? 'is-pinned' : ''}"
           style="${bgStyle}"
-          title="${escapeHtml(tooltip)}"
-          onclick="onInvCellClick(${globalIdx})">
+          onclick="onInvCellClick(${globalIdx})"
+          onmouseenter="showInvPreview(${globalIdx}, event)"
+          onmouseleave="hideInvPreview()">
         <span class="ic-pin ${isPinned ? 'pinned' : ''}" onclick="toggleInvItemPin(${globalIdx}, event)" title="${isPinned ? '取消釘選' : '釘選（不會被批量賣掉）'}">${isPinned ? '⭐' : '☆'}</span>
         <div class="ic-icon">${item.icon}</div>
         <div class="ic-name" style="${rarColor && !selected ? `color:${rarColor};` : ''}">${escapeHtml(item.name)}</div>
@@ -16042,12 +16320,111 @@ ${b.text}
     invGridEl.innerHTML = cells.join('');
   }
 
-  // === 背包：分頁、批量出售操作 ===
+  // === 背包：分頁、篩選、批量出售操作 ===
   function setInvPage(p) {
     __invPage = Math.max(0, p | 0);
     renderEquipment();
   }
   window.setInvPage = setInvPage;
+
+  function setInvFilter(key) {
+    __invFilter = key;
+    __invPage = 0;
+    renderEquipment();
+  }
+  window.setInvFilter = setInvFilter;
+
+  // ── 懸停預覽 ──
+  function showInvPreview(globalIdx, evt) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const inv = rpg.inventory || [];
+    const entry = inv[globalIdx];
+    const item = resolveItem(entry);
+    const el = document.getElementById('invHoverPreview');
+    if (!el || !item) return;
+
+    const rarColor = item.isBossCoin ? '#fbbf24'
+      : item.rarity ? RARITY[item.rarity]?.color
+      : item.setId  ? (SETS[item.setId]?.color || '#f59e0b')
+      : '#c4b5fd';
+    const rarLabel = item.rarity ? (RARITY[item.rarity]?.label || '') : (item.setId ? '套裝' : '');
+
+    // 基礎屬性
+    const statParts = [];
+    if (item.atk)       statParts.push(`⚔️ ATK +${item.atk}`);
+    if (item.mark)      statParts.push(`✨ MARK +${item.mark}`);
+    if (item.def)       statParts.push(`🛡 DEF +${item.def}`);
+    if (item.hp)        statParts.push(`❤️ HP +${item.hp}`);
+    if (item.mp)        statParts.push(`💙 MP +${item.mp}`);
+    if (item.spd)       statParts.push(`💨 SPD +${item.spd}`);
+    if (item.critChance)statParts.push(`🎯 暴擊 +${Math.round(item.critChance * 100)}%`);
+    if (item.critDmg)   statParts.push(`💥 爆傷 +${Math.round(item.critDmg * 100)}%`);
+    if (item.mpRegen)   statParts.push(`🔵 MP回 +${item.mpRegen}/回`);
+    if (item.affixes)   item.affixes.forEach(a => statParts.push(`✦ +${a.val} ${a.type.toUpperCase()}（${a.name}）`));
+
+    // 與當前裝備比較
+    let diffHtml = '';
+    const eqSlot = item.slot === 'ring' ? (rpg.equipment?.ring1 ? 'ring2' : 'ring1') : item.slot;
+    const equipped = eqSlot ? resolveItem(rpg.equipment?.[eqSlot]) : null;
+    if (equipped && equipped.id !== (entry?.id || entry)) {
+      const diffs = [];
+      const cmp = (label, a, b) => {
+        const d = (a || 0) - (b || 0);
+        if (d === 0) return;
+        const cls = d > 0 ? 'up' : 'down';
+        const sign = d > 0 ? '+' : '';
+        diffs.push(`<span class="${cls}">${label} ${sign}${d}</span>`);
+      };
+      cmp('ATK', item.atk, equipped.atk);
+      cmp('DEF', item.def, equipped.def);
+      cmp('HP',  item.hp,  equipped.hp);
+      cmp('MP',  item.mp,  equipped.mp);
+      cmp('SPD', item.spd, equipped.spd);
+      cmp('MARK',item.mark,equipped.mark);
+      if (diffs.length) {
+        diffHtml = `<div class="hp-diff">vs ${equipped.icon}${escapeHtml(equipped.name)}：${diffs.join(' ')}</div>`;
+      }
+    }
+
+    // 寵物技能
+    let petHtml = '';
+    if (item.petAbility) {
+      const pa = item.petAbility;
+      petHtml = `<div class="hp-pet">🐾 每 ${pa.interval} 回合：${pa.label}</div>`;
+    }
+
+    // affixDesc（印記特效等）
+    let affixHtml = '';
+    if (item.affixDesc) affixHtml = `<div class="hp-affix">✦ ${escapeHtml(item.affixDesc)}</div>`;
+
+    el.innerHTML = `
+      <div class="hp-icon">${item.icon}</div>
+      <div class="hp-name" style="color:${rarColor}">${escapeHtml(item.name)}</div>
+      <div class="hp-rarity" style="color:${rarColor}">${rarLabel}${item.lv ? `  Lv ${item.lv}` : ''}</div>
+      <div class="hp-stats">${statParts.join('<br>') || '—'}</div>
+      ${affixHtml}${petHtml}${diffHtml}
+    `;
+
+    // 定位：優先在右邊，靠近螢幕邊則翻到左邊
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const pw = 208, ph = 260; // 預覽卡估計寬高
+    let left = evt.clientX + 14;
+    let top  = evt.clientY - 20;
+    if (left + pw > vw - 10) left = evt.clientX - pw - 14;
+    if (top  + ph > vh - 10) top  = vh - ph - 10;
+    el.style.left = left + 'px';
+    el.style.top  = top  + 'px';
+    el.style.display = 'block';
+  }
+  window.showInvPreview = showInvPreview;
+
+  function hideInvPreview() {
+    const el = document.getElementById('invHoverPreview');
+    if (el) el.style.display = 'none';
+  }
+  window.hideInvPreview = hideInvPreview;
 
   function toggleInvBulk() {
     __invBulkMode = !__invBulkMode;
@@ -16402,11 +16779,11 @@ ${b.text}
     }
     __fusionBaseIdx = baseIdx;
 
-    const slotColor = { king: '#f59e0b', dragon: '#06b6d4', pebble: '#94a3b8', storm: '#ca8a04' };
-    const slotBg    = { king: '#fef9c3', dragon: '#ecfeff', pebble: '#f1f5f9', storm: '#fefce8' };
-    const slotIcon  = { king: '👑', dragon: '🐉', pebble: '🪨', storm: '⚡' };
-    const slotLabel = { king: '鵝王槽', dragon: '古龍槽', pebble: '鵝卵石槽', storm: '風鵝槽' };
-    const ALL_SLOTS = ['king', 'dragon', 'pebble', 'storm'];
+    const slotColor = { king: '#f59e0b', dragon: '#06b6d4', pebble: '#94a3b8', storm: '#ca8a04', soul: '#a855f7' };
+    const slotBg    = { king: '#fef9c3', dragon: '#ecfeff', pebble: '#f1f5f9', storm: '#fefce8', soul: '#fdf4ff' };
+    const slotIcon  = { king: '👑', dragon: '🐉', pebble: '🪨', storm: '⚡', soul: '👁️' };
+    const slotLabel = { king: '鵝王槽', dragon: '古龍槽', pebble: '鵝卵石槽', storm: '風鵝槽', soul: '靈噬槽' };
+    const ALL_SLOTS = ['king', 'dragon', 'pebble', 'storm', 'soul'];
 
     // ── 基底選擇：橫向滾動 chips ──
     const baseChips = allGifts.length === 0
@@ -16418,7 +16795,7 @@ ${b.text}
           return `<div onclick="showFusionHub(${idx})" style="display:inline-flex; flex-direction:column; align-items:center; padding:6px 10px; border-radius:10px; cursor:pointer; border:2px solid ${isActive ? '#d97706' : '#e5e7eb'}; background:${isActive ? '#fef3c7' : '#f9fafb'}; margin-right:6px; flex-shrink:0; min-width:64px; text-align:center;">
             <span style="font-size:22px;">${item.icon}</span>
             <span style="font-size:9px; font-weight:700; color:${isActive ? '#92400e' : '#374151'}; margin-top:2px; max-width:72px; word-break:break-all;">${escapeHtml(item.name)}</span>
-            <span style="font-size:9px; color:${isActive ? '#b45309' : '#9ca3af'};">${filled}/4 槽</span>
+            <span style="font-size:9px; color:${isActive ? '#b45309' : '#9ca3af'};">${filled}/${ALL_SLOTS.length} 槽</span>
           </div>`;
         }).join('');
 
@@ -16541,17 +16918,20 @@ ${b.text}
   function _fusionSlotOf(item) {
     if (!item) return null;
     const s = item.sourceBossId;
-    if (s === 'dragon_goose') return 'dragon';
-    if (s === 'pebble_goose') return 'pebble';
-    if (s === 'storm_goose')  return 'storm';
-    if (s === 'goose_king')   return 'king';
+    if (s === 'dragon_goose')  return 'dragon';
+    if (s === 'pebble_goose')  return 'pebble';
+    if (s === 'storm_goose')   return 'storm';
+    if (s === 'soul_devourer') return 'soul';
+    if (s === 'goose_king')    return 'king';
     // fallback by baseId prefix（舊物件可能沒有 sourceBossId）
     if ((item.baseId || '').startsWith('bg_dg'))  return 'dragon';
     if ((item.baseId || '').startsWith('bg_pg'))  return 'pebble';
     if ((item.baseId || '').startsWith('bg_sg'))  return 'storm';
+    if ((item.baseId || '').startsWith('bg_sd'))  return 'soul';
     if ((item.id    || '').startsWith('bg_dg'))   return 'dragon';
     if ((item.id    || '').startsWith('bg_pg'))   return 'pebble';
     if ((item.id    || '').startsWith('bg_sg'))   return 'storm';
+    if ((item.id    || '').startsWith('bg_sd'))   return 'soul';
     return 'king';
   }
 
