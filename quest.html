@@ -7952,7 +7952,7 @@
     const ATB_THRESHOLD = 100;
     const SPD_BASE = 30;
     let pSpd = Math.max(1, SPD_BASE + effectiveSpd);   // 受 buff 影響，每回合會重算
-    const mSpd = Math.max(1, SPD_BASE + monster.spd);
+    let mSpd = Math.max(1, SPD_BASE + monster.spd);
     // ⭐ SPD 軟上限 + 軟下限
     //   軟上限：行動比率 > 1.5:1 後遞減，弓手極限 2.5（係數 1.0）、其他 2.0（係數 0.5）
     //   軟下限：行動比率 < 1/1.5 後遞增，所有職業趨近 0.5:1（係數固定 0.5）
@@ -8855,6 +8855,7 @@
             monster.atk = (monster.atk || 0) + 1600;
             monster.def = (monster.def || 0) + 1600;
             monster.spd = (monster.spd || 0) + 1000;
+            mSpd = Math.max(1, SPD_BASE + monster.spd); // ⭐ 同步更新 ATB 速度
             log.push({ type: 'monster', text: `回合 ${round}：${monster.icon}${monster.name} ☠️ 吸大麻發動！吸收中毒 → ATK/DEF +1600、SPD +1000（30 回合）！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
             _daMaSkipAtk = true; // ⭐ 吸大麻消耗本回合，不再追加普通攻擊
           }
@@ -8863,6 +8864,7 @@
             monster.atk = Math.max(1, monster.atk - 1600);
             monster.def = Math.max(0, monster.def - 1600);
             monster.spd = Math.max(1, monster.spd - 1000);
+            mSpd = Math.max(1, SPD_BASE + monster.spd); // ⭐ 同步還原 ATB 速度
             log.push({ type: 'system', text: `回合 ${round}：${monster.icon}${monster.name} 吸大麻效果消退`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
           }
         }
@@ -13210,7 +13212,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510021002';
+  const APP_VERSION = '20260510021309';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
