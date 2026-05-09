@@ -5510,13 +5510,13 @@
     if (!window.__firebaseSync || !window.__firebaseSync.consumeSpecificBossCoinsTx) {
       throw new Error('cloud-not-ready');
     }
+    // ⭐ 雲端 tx 已驗證足夠才會 resolve；await 期間 Firebase 快照可能先到
+    //    所以本地更新不再重複檢查（避免快照搶先把本地扣成 0，導致誤判不足而取消獎品）
     await window.__firebaseSync.consumeSpecificBossCoinsTx(pid, coinId, qty);
-    // 樂觀本地更新
+    // 樂觀本地更新：用 Math.max(0,...) 防止負數
     const player = getPlayer(pid);
-    if (player && player.rpg && player.rpg.bossCoins) {
-      const have = Number(player.rpg.bossCoins[coinId] || 0);
-      if (have < qty) throw new Error('insufficient-specific-coins');
-      player.rpg.bossCoins[coinId] = have - qty;
+    if (player?.rpg?.bossCoins) {
+      player.rpg.bossCoins[coinId] = Math.max(0, Number(player.rpg.bossCoins[coinId] || 0) - qty);
       player.lastTouchedAt = Date.now();
       __persistLocalSnapshot();
     }
@@ -5529,14 +5529,16 @@
     // 雲端先扣（如果不夠會 throw）
     await window.__firebaseSync.consumeBossCoinsTx(pid, totalQty);
     // 雲端扣完後，樂觀更新本地（讓 UI 立刻反應；下個 snapshot 會校正）
+    // ⭐ 快照可能在 await 期間先到，本地值可能已被更新；用當前值安全扣，不超過現有量
     const player = getPlayer(pid);
-    if (player && player.rpg && player.rpg.bossCoins) {
+    if (player?.rpg?.bossCoins) {
       const entries = Object.entries(player.rpg.bossCoins).sort((a, b) => (b[1] || 0) - (a[1] || 0));
       let need = totalQty;
       for (const [coinId, have] of entries) {
         if (need <= 0) break;
-        const take = Math.min(have, need);
-        player.rpg.bossCoins[coinId] = have - take;
+        const cur = Number(player.rpg.bossCoins[coinId] || 0); // 重新讀（可能快照已更新）
+        const take = Math.min(cur, need);
+        player.rpg.bossCoins[coinId] = Math.max(0, cur - take);
         need -= take;
       }
       player.lastTouchedAt = Date.now();
@@ -12598,7 +12600,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260509133327';
+  const APP_VERSION = '20260509134213';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
