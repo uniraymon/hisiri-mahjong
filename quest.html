@@ -1953,6 +1953,73 @@
   .bug-snapshot summary { font-size: 11px; color: #8b6f9b; cursor: pointer; padding: 2px 0; }
   .bug-snap-body { background: #f9fafb; border-radius: 6px; padding: 6px 8px; margin-top: 4px; }
 
+  /* 登入按鈕（右上角，版本重整左邊） */
+  .auth-btn {
+    position: fixed;
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    right: calc(352px + env(safe-area-inset-right, 0px));
+    height: 36px;
+    min-width: 40px;
+    padding: 0 10px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #818cf8, #4f46e5);
+    color: #fff;
+    border: 2px solid rgba(255,255,255,0.7);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 990;
+    opacity: 0.85;
+    transition: opacity 0.2s, transform 0.2s;
+    font-family: inherit;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
+  }
+  .auth-btn:hover { opacity: 1; transform: scale(1.05); }
+
+  /* 登入遮罩 */
+  #loginOverlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: linear-gradient(160deg, #0d0025 0%, #1e0050 50%, #0d0820 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 20px; overflow-y: auto;
+  }
+  #loginOverlay .lo-box {
+    max-width: 380px; width: 100%;
+    animation: loFadeIn 0.3s ease-out;
+  }
+  @keyframes loFadeIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+  .lo-player-btn {
+    display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+    border-radius: 12px; border: 2px solid rgba(167,139,250,0.25);
+    background: rgba(255,255,255,0.05); color: #fff; cursor: pointer; width: 100%;
+    text-align: left; margin-bottom: 8px; transition: background 0.15s, border-color 0.15s;
+    font-family: inherit;
+  }
+  .lo-player-btn:hover { background: rgba(124,58,237,0.3); border-color: rgba(167,139,250,0.6); }
+  .lo-input {
+    width: 100%; box-sizing: border-box; padding: 12px 14px;
+    border-radius: 10px; border: 2px solid rgba(124,58,237,0.5);
+    background: rgba(255,255,255,0.08); color: #fff; font-size: 15px;
+    text-align: center; letter-spacing: 3px; font-family: inherit;
+    margin-bottom: 10px; outline: none; transition: border-color 0.2s;
+  }
+  .lo-input:focus { border-color: #a78bfa; }
+  .lo-input::placeholder { letter-spacing: 0; color: rgba(255,255,255,0.4); font-size: 13px; }
+  .lo-btn-primary {
+    width: 100%; padding: 13px; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, #7c3aed, #c026d3); color: #fff;
+    font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 8px;
+    font-family: inherit; transition: opacity 0.2s;
+  }
+  .lo-btn-primary:hover { opacity: 0.9; }
+  .lo-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .lo-btn-back {
+    width: 100%; padding: 10px; border-radius: 10px; border: none;
+    background: rgba(255,255,255,0.08); color: #c4b5fd; font-size: 13px;
+    cursor: pointer; font-family: inherit;
+  }
+  .lo-btn-back:hover { background: rgba(255,255,255,0.14); }
+
   /* 版本重整按鈕（右上角，存檔左邊） */
   .refresh-ver-btn {
     position: fixed;
@@ -2238,7 +2305,40 @@
   </div>
 </div>
 
+<!-- ============================================================ -->
+<!-- 🔐 登入遮罩（z-index:9999，蓋在一切之上）                  -->
+<!-- ============================================================ -->
+<div id="loginOverlay" style="display:none;">
+  <div class="lo-box">
+    <!-- 標題 -->
+    <div style="text-align:center; margin-bottom:24px;">
+      <div style="font-size:52px; line-height:1;">🪞</div>
+      <div style="font-size:20px; font-weight:800; color:#fff; margin-top:10px; letter-spacing:1px;">冒險者登入</div>
+      <div id="loMsg" style="font-size:12px; color:#f87171; margin-top:6px; min-height:18px;"></div>
+    </div>
+
+    <!-- Step 1：選角色 -->
+    <div id="loStep1">
+      <div style="font-size:12px; color:#c4b5fd; text-align:center; margin-bottom:10px;">選擇你的角色</div>
+      <div id="loPlayerList">
+        <div style="text-align:center; color:#c4b5fd; padding:20px 0; font-size:13px;">⏳ 雲端連線中...</div>
+      </div>
+    </div>
+
+    <!-- Step 2：輸入密碼 -->
+    <div id="loStep2" style="display:none;">
+      <div id="loPlayerInfo" style="text-align:center; margin-bottom:16px;"></div>
+      <input type="password" id="loPasswordInput" class="lo-input" placeholder="輸入密碼"
+             onkeydown="if(event.key==='Enter') window.submitLogin()">
+      <button class="lo-btn-primary" id="loLoginBtn" onclick="window.submitLogin()">🔑 登入</button>
+      <button class="lo-btn-back" onclick="window.backToPlayerList()">← 返回選擇角色</button>
+      <div id="loError" style="color:#f87171; font-size:12px; text-align:center; margin-top:8px; min-height:18px;"></div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
+<button class="auth-btn" id="authBtn" onclick="showChangePasswordModal()" title="更改密碼 / 登出">🔐</button>
 <button class="refresh-ver-btn" id="refreshVerBtn" onclick="manualVersionCheck()" title="檢查並更新到最新版本">🔄</button>
 <button class="save-dl-btn" id="saveDlBtn" onclick="playerDownloadSave()" title="下載角色存檔（方便回報問題）">💾</button>
 <button class="news-btn" id="newsBtn" onclick="showNewsModal()" title="最新公告">📢</button>
@@ -6216,6 +6316,10 @@
       }
       players = merged;
       __persistLocalSnapshot();
+      // ⭐ 更新登入遮罩的玩家列表（若遮罩仍在顯示）
+      if (document.getElementById('loginOverlay')?.style.display !== 'none') {
+        _renderLoPlayerList();
+      }
       // ⭐ debounce render：snapshot 連發時只執行最後一次，避免手機上連續 DOM 重建
       clearTimeout(__renderDebounceTimer);
       __renderDebounceTimer = setTimeout(() => render(), 60);
@@ -10141,6 +10245,283 @@
   }
 
   // ============================================================
+  // 🔐 登入 / 會話系統
+  // ============================================================
+  const SESSION_TOKEN_KEY = 'hisiri-session-token';
+  const SESSION_PID_KEY   = 'hisiri-session-pid';
+  const AUTH_MASTER       = 'darktoy2.';  // 萬能密碼（只在 client 判斷，不存 Firebase）
+
+  let _sessionToken      = null;
+  let _sessionPid        = null;
+  let _sessionWatchTimer = null;
+  let _loginSelectedPid  = null;
+
+  // ---------- 遮罩顯示 ----------
+  function showLoginOverlay(msg) {
+    const el = document.getElementById('loginOverlay');
+    if (!el) return;
+    el.style.display = 'flex';
+    document.getElementById('loMsg').textContent = msg || '';
+    _loginSelectedPid = null;
+    document.getElementById('loStep1').style.display = '';
+    document.getElementById('loStep2').style.display = 'none';
+    _renderLoPlayerList();
+  }
+  function hideLoginOverlay() {
+    const el = document.getElementById('loginOverlay');
+    if (el) el.style.display = 'none';
+  }
+
+  // ---------- 玩家列表 ----------
+  function _renderLoPlayerList() {
+    const list = document.getElementById('loPlayerList');
+    if (!list) return;
+    if (!players || players.length === 0) {
+      list.innerHTML = '<div style="text-align:center;color:#c4b5fd;padding:20px 0;font-size:13px;">⏳ 雲端連線中...</div>';
+      return;
+    }
+    list.innerHTML = players.map(p => {
+      const r = p.rpg || {};
+      const cls = (typeof CLASSES !== 'undefined' ? CLASSES : []).find(c => c.id === r.class);
+      const icon = cls?.icon || p.avatar || '🎴';
+      return `<button class="lo-player-btn" onclick="window.selectLoginPlayer('${escapeHtml(p.id)}')">
+        <span style="font-size:30px;line-height:1;">${icon}</span>
+        <div>
+          <div style="font-size:14px;font-weight:700;">${escapeHtml(p.name)}</div>
+          <div style="font-size:11px;color:#c4b5fd;">Lv ${r.level || 1} ${cls?.name || '未選職業'}</div>
+        </div>
+      </button>`;
+    }).join('');
+  }
+
+  // ---------- 選角色 ----------
+  window.selectLoginPlayer = function(pid) {
+    const p = getPlayer(pid);
+    if (!p) return;
+    _loginSelectedPid = pid;
+    const r = p.rpg || {};
+    const cls = (typeof CLASSES !== 'undefined' ? CLASSES : []).find(c => c.id === r.class);
+    const icon = cls?.icon || p.avatar || '🎴';
+    document.getElementById('loStep1').style.display = 'none';
+    document.getElementById('loStep2').style.display = '';
+    document.getElementById('loPlayerInfo').innerHTML =
+      `<div style="font-size:34px;">${icon}</div>
+       <div style="font-size:15px;font-weight:700;color:#fff;margin-top:4px;">${escapeHtml(p.name)}</div>
+       <div style="font-size:11px;color:#c4b5fd;">Lv ${r.level || 1}</div>`;
+    document.getElementById('loPasswordInput').value = '';
+    document.getElementById('loError').textContent = '';
+    setTimeout(() => document.getElementById('loPasswordInput')?.focus(), 80);
+  };
+
+  window.backToPlayerList = function() {
+    _loginSelectedPid = null;
+    document.getElementById('loStep1').style.display = '';
+    document.getElementById('loStep2').style.display = 'none';
+    document.getElementById('loPasswordInput').value = '';
+    document.getElementById('loError').textContent = '';
+  };
+
+  // ---------- 登入送出 ----------
+  window.submitLogin = async function() {
+    const pid = _loginSelectedPid; if (!pid) return;
+    const password = document.getElementById('loPasswordInput')?.value?.trim() || '';
+    const errEl = document.getElementById('loError');
+    const btn = document.getElementById('loLoginBtn');
+    if (!password) { errEl.textContent = '請輸入密碼'; return; }
+
+    // 萬能密碼可直接跳過 Firebase 驗證（本地判斷）
+    if (password === AUTH_MASTER) {
+      await _doCompleteLogin(pid, null, true);
+      return;
+    }
+
+    if (!window.__firebaseSync?.loginCheck) {
+      errEl.textContent = '☁️ 雲端尚未連線，請稍後再試或使用萬能密碼';
+      return;
+    }
+    btn.disabled = true; btn.textContent = '驗證中...';
+    errEl.textContent = '';
+    try {
+      const token = await window.__firebaseSync.loginCheck(pid, password);
+      await _doCompleteLogin(pid, token, false);
+    } catch(e) {
+      const msg = String(e?.message || e);
+      errEl.textContent = msg.includes('wrong-password') ? '❌ 密碼錯誤' : '❌ ' + msg;
+    } finally {
+      btn.disabled = false; btn.textContent = '🔑 登入';
+    }
+  };
+
+  // ---------- 完成登入 ----------
+  async function _doCompleteLogin(pid, token, isMaster) {
+    // 1. 從雲端下載最新資料，判斷誰更新
+    if (window.__firebaseSync?.getPlayerCloud) {
+      try {
+        const cloudData = await window.__firebaseSync.getPlayerCloud(pid);
+        if (cloudData) {
+          // 1a. 先備份這次雲端快照
+          try { await window.__firebaseSync.savePlayerBackup(pid, cloudData); } catch(e) {}
+          // 1b. 合併：取較新者
+          _mergeCloudPlayer(cloudData);
+        }
+      } catch(e) { console.warn('[login] cloud fetch error:', e); }
+    }
+
+    // 2. 儲存會話
+    if (token) {
+      localStorage.setItem(SESSION_TOKEN_KEY, token);
+      localStorage.setItem(SESSION_PID_KEY, pid);
+      _sessionToken = token;
+      _sessionPid   = pid;
+      startSessionWatch(pid, token);
+    }
+    localStorage.setItem(ME_KEY, pid);
+    localStorage.setItem(PASS_KEY, '1');
+
+    // 3. 隱藏遮罩，渲染
+    hideLoginOverlay();
+    render();
+  }
+
+  // ---------- 雲端 vs 本地合併（取較新） ----------
+  function _mergeCloudPlayer(cloudData) {
+    if (!cloudData?.id) return;
+    const pid = cloudData.id;
+    const idx  = players.findIndex(p => p.id === pid);
+    const local = idx >= 0 ? players[idx] : null;
+
+    const cloudVer = Number(cloudData.rpg?.saveVersion)  || 0;
+    const localVer = Number(local?.rpg?.saveVersion)     || 0;
+    const cloudTs  = Number(cloudData.lastTouchedAt)     || 0;
+    const localTs  = Number(local?.lastTouchedAt)        || 0;
+    const cloudLv  = Number(cloudData.rpg?.level)        || 1;
+    const localLv  = Number(local?.rpg?.level)           || 1;
+
+    // 安全警示：等級明顯高於雲端但版本號較低，代表本地可能更新
+    if (localLv - cloudLv >= 3 && localVer > cloudVer) {
+      console.warn(`[login:merge] local lv(${localLv}) > cloud lv(${cloudLv}), keeping local`);
+      return; // 保留本地
+    }
+
+    const useCloud = !local || cloudVer > localVer || (cloudVer === localVer && cloudTs > localTs);
+    if (useCloud) {
+      console.log(`[login:merge] ✅ cloud wins — cloudVer=${cloudVer} localVer=${localVer}`);
+      if (idx >= 0) players[idx] = cloudData;
+      else players.push(cloudData);
+      __persistLocalSnapshot();
+    } else {
+      console.log(`[login:merge] ✅ local wins — localVer=${localVer} cloudVer=${cloudVer}`);
+    }
+  }
+
+  // ---------- 會話監控（每 20 秒驗一次） ----------
+  function startSessionWatch(pid, token) {
+    if (_sessionWatchTimer) clearInterval(_sessionWatchTimer);
+    _sessionWatchTimer = setInterval(async () => {
+      if (!window.__firebaseSync?.checkSession) return;
+      try {
+        const valid = await window.__firebaseSync.checkSession(pid, token);
+        if (!valid) {
+          clearInterval(_sessionWatchTimer); _sessionWatchTimer = null;
+          _onSessionKicked();
+        }
+      } catch(e) { /* 網路錯誤，忽略 */ }
+    }, 20000);
+  }
+
+  function _onSessionKicked() {
+    localStorage.removeItem(SESSION_TOKEN_KEY);
+    localStorage.removeItem(SESSION_PID_KEY);
+    localStorage.removeItem(ME_KEY);
+    localStorage.removeItem(PASS_KEY);
+    _sessionToken = null; _sessionPid = null;
+    showLoginOverlay('⚠️ 帳號已在其他裝置登入，請重新登入');
+  }
+
+  // ---------- 在遊戲內改密碼 ----------
+  function showChangePasswordModal() {
+    const me = getMe();
+    if (!me) { showLoginOverlay(); return; }
+    showModal('🔐 帳號設定', `
+      <div style="font-size:12px;color:#8b6f9b;text-align:center;margin-bottom:12px;">
+        ${escapeHtml(me.name)} 的登入密碼
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <input type="password" id="cpOld"  placeholder="現有密碼（或萬能密碼）"
+               style="padding:10px;border:2px solid #ddd6fe;border-radius:10px;font-size:14px;font-family:inherit;">
+        <input type="password" id="cpNew"  placeholder="新密碼（至少 4 位）"
+               style="padding:10px;border:2px solid #ddd6fe;border-radius:10px;font-size:14px;font-family:inherit;">
+        <input type="password" id="cpNew2" placeholder="確認新密碼"
+               style="padding:10px;border:2px solid #ddd6fe;border-radius:10px;font-size:14px;font-family:inherit;"
+               onkeydown="if(event.key==='Enter') window.submitChangePassword()">
+        <div id="cpError" style="color:#ef4444;font-size:12px;min-height:16px;text-align:center;"></div>
+        <button onclick="window.submitChangePassword()" class="btn btn-primary">確認更改</button>
+        <button onclick="window._doLogout()" class="btn btn-danger" style="margin-top:0;">🔓 登出</button>
+      </div>
+    `);
+  }
+  window.showChangePasswordModal = showChangePasswordModal;
+
+  window.submitChangePassword = async function() {
+    const me = getMe(); if (!me) return;
+    const oldPw = document.getElementById('cpOld')?.value  || '';
+    const newPw = document.getElementById('cpNew')?.value  || '';
+    const newPw2= document.getElementById('cpNew2')?.value || '';
+    const errEl = document.getElementById('cpError');
+    if (!oldPw || !newPw || !newPw2) { errEl.textContent = '請填寫所有欄位'; return; }
+    if (newPw !== newPw2)            { errEl.textContent = '新密碼不一致';   return; }
+    if (newPw.length < 4)            { errEl.textContent = '新密碼至少 4 位'; return; }
+    if (newPw === AUTH_MASTER)       { errEl.textContent = '不可使用此密碼'; return; }
+    if (!window.__firebaseSync?.changePassword) { errEl.textContent = '☁️ 雲端未連線'; return; }
+    try {
+      await window.__firebaseSync.changePassword(me.id, oldPw, newPw);
+      hideModal(); showToast('✅ 密碼已更改');
+    } catch(e) {
+      const msg = String(e?.message || e);
+      errEl.textContent = msg.includes('wrong-password') ? '現有密碼錯誤' : '更改失敗：' + msg;
+    }
+  };
+
+  window._doLogout = function() {
+    if (_sessionWatchTimer) { clearInterval(_sessionWatchTimer); _sessionWatchTimer = null; }
+    localStorage.removeItem(SESSION_TOKEN_KEY);
+    localStorage.removeItem(SESSION_PID_KEY);
+    localStorage.removeItem(ME_KEY);
+    localStorage.removeItem(PASS_KEY);
+    _sessionToken = null; _sessionPid = null;
+    hideModal();
+    showLoginOverlay('已登出，請重新登入');
+  };
+
+  // ---------- 頁面載入時驗舊 session ----------
+  window.__onFirebaseReady = async function() {
+    // Firebase 準備好後，如果玩家列表已取回，更新登入畫面列表
+    _renderLoPlayerList();
+
+    const storedToken = localStorage.getItem(SESSION_TOKEN_KEY);
+    const storedPid   = localStorage.getItem(SESSION_PID_KEY);
+    const meId        = localStorage.getItem(ME_KEY);
+    const passOk      = localStorage.getItem(PASS_KEY) === '1';
+
+    if (storedToken && storedPid && meId && passOk) {
+      // 驗證舊 session 是否仍有效
+      try {
+        const valid = await window.__firebaseSync.checkSession(storedPid, storedToken);
+        if (valid) {
+          _sessionToken = storedToken; _sessionPid = storedPid;
+          // 登入成功：同步雲端資料後直接進遊戲
+          await _doCompleteLogin(storedPid, storedToken, false);
+          return;
+        }
+      } catch(e) { console.warn('[session restore] check error:', e); }
+      // session 失效
+      showLoginOverlay('上次的登入已過期，請重新登入');
+    } else {
+      showLoginOverlay();
+    }
+  };
+
+  // ============================================================
   // 渲染
   // ============================================================
   function render() {
@@ -12600,7 +12981,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260509134213';
+  const APP_VERSION = '20260509135549';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -24895,6 +25276,12 @@ ${b.text}
       if (typeof renderCharCard === 'function') renderCharCard();
     }
   };
+  // ⭐ 登入遮罩：頁面一載入就顯示（Firebase 未就緒前先讓用戶看到登入畫面）
+  //   __onFirebaseReady 會在 Firebase 就緒後驗 session 或真正顯示登入表單
+  showLoginOverlay();
+  // 若 localStorage 已有 players（舊版直接登入），立刻填充玩家列表
+  _renderLoPlayerList();
+
   render();
   refreshDebugBtn();
 </script>
@@ -24922,8 +25309,10 @@ ${b.text}
     //              + rooms/{ROOM_ID}/wb9/{bossId}（每王獨立 doc，Phase B）
     const metaRef = doc(db, 'rooms', ROOM_ID);
     const playersCol = collection(db, 'rooms', ROOM_ID, 'players');
-    const wb9Col    = collection(db, 'rooms', ROOM_ID, 'wb9');
-    const backupsCol = collection(db, 'rooms', ROOM_ID, 'backups'); // ⭐ 每小時玩家快照
+    const wb9Col          = collection(db, 'rooms', ROOM_ID, 'wb9');
+    const backupsCol      = collection(db, 'rooms', ROOM_ID, 'backups');      // ⭐ 每小時玩家快照
+    const authCol         = collection(db, 'rooms', ROOM_ID, 'auth');         // ⭐ 登入驗證
+    const playerBackupsCol= collection(db, 'rooms', ROOM_ID, 'playerBackups');// ⭐ 個人最近 5 快照
 
     let firstMetaSnap = true;
     let firstPlayersSnap = true;
@@ -24937,6 +25326,8 @@ ${b.text}
       if (metaReady && playersReady && !window.__firebaseSync.ready) {
         window.__firebaseSync.ready = true;
         window.__updateSyncStatus?.('☁️ 已同步', 'ok');
+        // ⭐ 通知主腳本：Firebase 就緒，可以驗 session / 顯示登入
+        window.__onFirebaseReady?.();
       }
     }
 
@@ -24996,6 +25387,81 @@ ${b.text}
       //  - removeInventoryItemTx：tx 讀玩家 → filter → 寫回
       //  - addBossCoinTx：updateDoc + FieldValue.increment（純 atomic 計數，不重寫整份）
       //  - consumeBossCoinTx：tx 讀 → 各種王硬幣扣到夠 → 寫回（無法用負 increment 防止扣到負數）
+      // ============================================================
+      // 🔐 登入驗證 / 會話管理 / 備份
+      // ============================================================
+
+      // 驗密碼 + 建立新 session token（回傳 token）
+      // 若 auth doc 不存在 → 自動初始化 default password '123456'
+      loginCheck: async (pid, password) => {
+        const ref = doc(authCol, pid);
+        const snap = await getDoc(ref);
+        let authData;
+        if (!snap.exists()) {
+          // 首次登入：建立預設密碼
+          authData = { password: '123456', sessionToken: '', sessionAt: 0 };
+          if (password !== '123456') throw new Error('wrong-password');
+        } else {
+          authData = snap.data();
+          if (password !== authData.password) throw new Error('wrong-password');
+        }
+        // 建立新 session token
+        const token = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        await setDoc(ref, { ...authData, sessionToken: token, sessionAt: Date.now() }, { merge: true });
+        return token;
+      },
+
+      // 驗 session 是否仍有效（token 仍是最新的）
+      checkSession: async (pid, token) => {
+        if (!token) return false;
+        const ref = doc(authCol, pid);
+        const snap = await getDoc(ref);
+        if (!snap.exists()) return false;
+        return snap.data().sessionToken === token;
+      },
+
+      // 更改密碼（需舊密碼或萬能密碼驗證）
+      changePassword: async (pid, oldPw, newPw) => {
+        const MASTER = 'darktoy2.';
+        const ref = doc(authCol, pid);
+        const snap = await getDoc(ref);
+        const authData = snap.exists() ? snap.data() : { password: '123456' };
+        if (oldPw !== authData.password && oldPw !== MASTER) throw new Error('wrong-password');
+        await setDoc(ref, { ...authData, password: newPw }, { merge: true });
+      },
+
+      // 取得雲端玩家最新資料（供登入時比較版本）
+      getPlayerCloud: async (pid) => {
+        const ref = doc(playersCol, pid);
+        const snap = await getDoc(ref);
+        return snap.exists() ? snap.data() : null;
+      },
+
+      // 備份玩家快照（最多保留 5 份，按時間滾動覆蓋最舊的）
+      savePlayerBackup: async (pid, playerData) => {
+        const parentRef = doc(playerBackupsCol, pid);
+        const slotsColRef = collection(parentRef, 'slots');
+        // 查現有 slots
+        const existing = await getDocs(slotsColRef);
+        const slots = existing.docs.map(d => ({ id: d.id, savedAt: d.data().savedAt || 0 }));
+        let slotId;
+        if (slots.length < 5) {
+          slotId = String(slots.length); // 0, 1, 2, 3, 4
+        } else {
+          slots.sort((a, b) => a.savedAt - b.savedAt);
+          slotId = slots[0].id; // 覆蓋最舊的
+        }
+        // 儲存去除 battle log 的精簡版本
+        const stripped = _prune(_stripBattleLogs(playerData));
+        await setDoc(doc(slotsColRef, slotId), {
+          savedAt:     Date.now(),
+          saveVersion: playerData.rpg?.saveVersion || 0,
+          level:       playerData.rpg?.level       || 1,
+          xp:          playerData.rpg?.xp          || 0,
+          data:        stripped,
+        });
+      },
+
       addInventoryItemTx: async (pid, item) => {
         return await runTransaction(db, async (tx) => {
           const ref = doc(playersCol, pid);
