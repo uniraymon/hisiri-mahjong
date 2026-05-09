@@ -2517,7 +2517,13 @@
         // ⭐ v1.1：新增即時回血 50% maxHp（弓手唯一回血手段）；不可升級
         { id: 'a_stealth',         name: '隱身',   icon: '🌫', unlockLv: 5,  cooldown: 0, mpCost: 15, type: 'buff', selfBuff: { stat: 'critChance', amount: 1.0, turns: 1 }, applyShield: 1, bonusHealPct: 0.50, maxLv: 1 },
         // ⭐ 瘋鵝術：普攻段數+1（4連射）+ 爆頭率+2%，持續 10 玩家回合，不可升級
-        { id: 'a_mad_goose',       name: '瘋鵝術', icon: '🪿', unlockLv: 6,  cooldown: 0, mpCost: 12, type: 'buff', selfBuff: { stat: 'extraHits', amount: 1, turns: 10, playerTurnOnly: true }, selfBuff2: { stat: 'headshotChance', amount: 0.02, turns: 10, playerTurnOnly: true }, maxLv: 1 },
+        { id: 'a_mad_goose',       name: '瘋鵝術(連擊)', icon: '🪿', unlockLv: 6,  cooldown: 0, mpCost: 12, type: 'buff', selfBuff: { stat: 'extraHits', amount: 1, turns: 10, playerTurnOnly: true }, selfBuff2: { stat: 'headshotChance', amount: 0.02, turns: 10, playerTurnOnly: true }, maxLv: 1 },
+        // ⭐ 瘋鵝術(聚擊)：3 回合，普攻變 1 段 ATK×2.5，保留疊層加成
+        { id: 'a_mad_goose_focus', name: '瘋鵝術(聚擊)', icon: '🪿', unlockLv: 6,  cooldown: 0, mpCost: 15, type: 'buff', selfBuff: { stat: 'madGooseFocus', amount: 1, turns: 3, playerTurnOnly: true }, maxLv: 1 },
+        // ⭐ 瘋鵝術(異擊)：3 回合，每箭命中後隨機施加異常（50%無/5%麻痺/10%中毒/10%流血/10%防禦↓/10%攻擊↓）
+        { id: 'a_mad_goose_status', name: '瘋鵝術(異擊)', icon: '🪿', unlockLv: 6,  cooldown: 0, mpCost: 15, type: 'buff', selfBuff: { stat: 'madGooseStatus', amount: 1, turns: 3, playerTurnOnly: true }, maxLv: 1 },
+        // ⭐ 瘋鵝術(六連)：5 回合，段數固定 6 連（不與其他段數疊加），爆頭率-5%，不累積疊層
+        { id: 'a_mad_goose_six',   name: '瘋鵝術(六連)', icon: '🪿', unlockLv: 6,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'madGooseSix', amount: 1, turns: 5, playerTurnOnly: true }, selfBuff2: { stat: 'headshotChance', amount: -0.05, turns: 5, playerTurnOnly: true }, maxLv: 1 },
         { id: 'a_wind_song',       name: '風之歌', icon: '🎵', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true },
         { id: 'a_arrow_storm',     name: '箭雨',   icon: '🌧', unlockLv: 6,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.5, targetCount: 'all' },
         // 奪魂箭：0.8× ATK 傷害 + 回 2 MP（免費，每次攻擊都能補魔）
@@ -8713,9 +8719,14 @@
           const critMult2 = critMult + (pBuff.critDmg || 0) + _pgCritBonus2 + _ptBonus2;
 
           if (player.rpg.class === 'archer') {
-            // ⭐ 弓手三連射：每發 0.30×ATK，獨立爆擊，爆頭率 5%+爆擊率×20%（無視防禦×3傷，可疊爆擊）
+            // ⭐ 瘋鵝術模式判定（六連優先於聚擊）
+            const _madSix    = (pBuff.madGooseSix    || 0) > 0;
+            const _madFocus  = !_madSix && (pBuff.madGooseFocus  || 0) > 0;
+            const _madStatus = (pBuff.madGooseStatus || 0) > 0;
+            // ⭐ 弓手多連射：每發 0.30×ATK，獨立爆擊，爆頭率 5%+爆擊率×20%
             const HEADSHOT_CHANCE = 0.05 + baseCrit2 * 0.2 + (pBuff.headshotChance || 0);
-            const totalHits = 3 + Math.round(pBuff.extraHits || 0);
+            // 六連固定 6 段（不與其他段數疊加）；聚擊 1 段；其他正常
+            const totalHits = _madSix ? 6 : _madFocus ? 1 : 3 + Math.round(pBuff.extraHits || 0);
             // 隱身爆頭保證：消耗後第一箭必中爆頭
             const _stealthHsSt = (playerObj.statuses || []).find(s => s.type === 'stealthHeadshot');
             let lastDmg = 0;
@@ -8728,7 +8739,8 @@
               if (_fcA) _nextForceCrit--;
               const isHs   = forceHs || _fcA || Math.random() < HEADSHOT_CHANCE;
               // ⭐ DEF 百分比公式：爆頭無視防禦；普攻依 monDef 減傷
-              let dmg = effAtk * 0.30;
+              // 聚擊：1 段 ATK×2.5；其他：0.30×ATK/段
+              let dmg = _madFocus ? effAtk * 2.5 : effAtk * 0.30;
               dmg *= (0.85 + Math.random() * 0.3);
               // ⭐ 弓手普攻流疊加：命中 +1%（使用上一箭累積的層數）
               dmg *= (1 + _aHit * 0.01);
@@ -8754,15 +8766,18 @@
               dmg = monShield0(dmg);
               mHp -= dmg;
               lastDmg = dmg;
-              // ⭐ 弓手普攻流：本箭命中後疊層（計數 + 隨機累積bonus）
-              _aHit++;
-              if (isCrit) { _aCrit++; _aCritBonus += 0.01 + Math.random() * 0.03; }
-              if (isHs)   { _aHs++;   _aHsBonus   += 0.05 + Math.random() * 0.08; }
+              // ⭐ 弓手普攻流：本箭命中後疊層（六連模式下不累積）
+              if (!_madSix) {
+                _aHit++;
+                if (isCrit) { _aCrit++; _aCritBonus += 0.01 + Math.random() * 0.03; }
+                if (isHs)   { _aHs++;   _aHsBonus   += 0.05 + Math.random() * 0.08; }
+              }
               const _stackHint = (_aHit > 1) ? ` [命${_aHit}暴${_aCrit}頭${_aHs}]` : '';
               const label = (isHs && isCrit) ? '🎯【爆頭+暴擊】' : isHs ? '🎯【爆頭】' : isCrit ? '【暴擊】' : '';
+              const _modeTag = _madSix ? '【六連】' : _madFocus ? '【聚擊】' : _madStatus ? '【異擊】' : '';
               log.push({
                 type: (isHs || isCrit) ? 'crit-player' : 'player',
-                text: `回合 ${round}（${hit}/${totalHits}）：${cls.attackVerb}${label}${_stackHint} → ${monster.name} -${dmg} HP`,
+                text: `回合 ${round}（${hit}/${totalHits}）：${cls.attackVerb}${_modeTag}${label}${_stackHint} → ${monster.name} -${dmg} HP`,
                 hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp },
                 stacks: { hit: _aHit, crit: _aCrit, hs: _aHs, critBonus: _aCritBonus, hsBonus: _aHsBonus },
               });
@@ -8777,6 +8792,27 @@
                 const r = Math.min(mAbility.cap || 300, Math.max(1, Math.round(dmg * mAbility.resist)));
                 pHp = Math.max(0, pHp - r);
                 log.push({ type: 'monster', text: `回合 ${round}：🪞 ${monster.name} 反射光芒 → ${player.name} -${r} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+              }
+              // ⭐ 瘋鵝術(異擊)：每箭命中後隨機施加異常
+              if (_madStatus && mHp > 0) {
+                const _sr = Math.random();
+                if (_sr < 0.05) {
+                  applyStatus(monster, { type: 'paralyze', charges: 1 });
+                  log.push({ type: 'player', text: `回合 ${round}（${hit}/${totalHits}）：🪿【異擊】→ ${monster.name} ⚡麻痺！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+                } else if (_sr < 0.15) {
+                  applyStatus(monster, { type: 'poison', charges: 3 });
+                  log.push({ type: 'player', text: `回合 ${round}（${hit}/${totalHits}）：🪿【異擊】→ ${monster.name} ☠️中毒！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+                } else if (_sr < 0.25) {
+                  applyStatus(monster, { type: 'bleed', charges: 3 });
+                  log.push({ type: 'player', text: `回合 ${round}（${hit}/${totalHits}）：🪿【異擊】→ ${monster.name} 🩸流血！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+                } else if (_sr < 0.35) {
+                  applyStatus(monster, { type: 'buff', stat: 'defPct', amount: -0.30, turns: 5 });
+                  log.push({ type: 'player', text: `回合 ${round}（${hit}/${totalHits}）：🪿【異擊】→ ${monster.name} 🛡️DEF↓30%！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+                } else if (_sr < 0.45) {
+                  applyStatus(monster, { type: 'buff', stat: 'atkPct', amount: -0.30, turns: 5 });
+                  log.push({ type: 'player', text: `回合 ${round}（${hit}/${totalHits}）：🪿【異擊】→ ${monster.name} ⚔️ATK↓30%！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+                }
+                // 55%：無異常
               }
               if (mHp <= 0) { pushDeathLine(); break; }
             }
@@ -10139,9 +10175,14 @@
           const _ptBonusM2 = _spiritSpecials.has('perfect_tempo') ? _perfectTempoStreak * 0.08 : 0;
           const critMult2 = critMult + (pBuff.critDmg || 0) + _pgCritBonusM2 + _ptBonusM2;
           if (player.rpg.class === 'archer') {
-            // ⭐ 弓手三連射：每發 0.30×ATK，獨立爆擊，爆頭率 5%+爆擊率×20%（無視防禦×3傷，可疊爆擊）
+            // ⭐ 瘋鵝術模式判定（六連優先於聚擊）
+            const _madSixM    = (pBuff.madGooseSix    || 0) > 0;
+            const _madFocusM  = !_madSixM && (pBuff.madGooseFocus  || 0) > 0;
+            const _madStatusM = (pBuff.madGooseStatus || 0) > 0;
+            // ⭐ 弓手多連射：每發 0.30×ATK，獨立爆擊，爆頭率 5%+爆擊率×20%
             const HEADSHOT_CHANCE = 0.05 + baseCrit2 * 0.2 + (pBuff.headshotChance || 0);
-            const totalHits = 3 + Math.round(pBuff.extraHits || 0);
+            // 六連固定 6 段；聚擊 1 段；其他正常
+            const totalHits = _madSixM ? 6 : _madFocusM ? 1 : 3 + Math.round(pBuff.extraHits || 0);
             const _stealthHsSt = (playerObj.statuses || []).find(s => s.type === 'stealthHeadshot');
             // ⭐ 合成效果：fx_dg_def（攻擊無視 DEF 15%/層）
             const _tgtDef = tgt.def * Math.max(0.40, 1 - _fxDgDef * 0.15);
@@ -10155,7 +10196,8 @@
               if (_fcAM) _nextForceCrit--;
               const isHs   = forceHs || _fcAM || Math.random() < HEADSHOT_CHANCE;
               // ⭐ DEF 百分比公式：爆頭無視防禦；普攻依 _tgtDef 減傷
-              let dmg = effAtk * 0.30;
+              // 聚擊：1 段 ATK×2.5；其他：0.30×ATK/段
+              let dmg = _madFocusM ? effAtk * 2.5 : effAtk * 0.30;
               dmg *= (0.85 + Math.random() * 0.3);
               // ⭐ 弓手普攻流疊加：命中 +1%
               dmg *= (1 + _aHit * 0.01);
@@ -10181,15 +10223,18 @@
               tgt.hp = Math.max(0, tgt.hp - dmg);
               if (tgt.hp <= 0) tgt.alive = false;
               _lastDmgM = dmg;
-              // ⭐ 弓手普攻流：本箭命中後疊層（計數 + 隨機累積bonus）
-              _aHit++;
-              if (isCrit) { _aCrit++; _aCritBonus += 0.01 + Math.random() * 0.03; }
-              if (isHs)   { _aHs++;   _aHsBonus   += 0.05 + Math.random() * 0.08; }
+              // ⭐ 弓手普攻流：本箭命中後疊層（六連模式下不累積）
+              if (!_madSixM) {
+                _aHit++;
+                if (isCrit) { _aCrit++; _aCritBonus += 0.01 + Math.random() * 0.03; }
+                if (isHs)   { _aHs++;   _aHsBonus   += 0.05 + Math.random() * 0.08; }
+              }
               const _stackHintM = (_aHit > 1) ? ` [命${_aHit}暴${_aCrit}頭${_aHs}]` : '';
               const label = (isHs && isCrit) ? '🎯【爆頭+暴擊】' : isHs ? '🎯【爆頭】' : isCrit ? '【暴擊】' : '';
+              const _modeTagM = _madSixM ? '【六連】' : _madFocusM ? '【聚擊】' : _madStatusM ? '【異擊】' : '';
               log.push({
                 type: (isHs || isCrit) ? 'crit-player' : 'player',
-                text: `回合 ${round}（${hit}/${totalHits}）：${cls.attackVerb}${label}${_stackHintM} → ${tgt.icon}${tgt.name} -${dmg} HP`,
+                text: `回合 ${round}（${hit}/${totalHits}）：${cls.attackVerb}${_modeTagM}${label}${_stackHintM} → ${tgt.icon}${tgt.name} -${dmg} HP`,
                 hp: hpsSnapshot(),
                 stacks: { hit: _aHit, crit: _aCrit, hs: _aHs, critBonus: _aCritBonus, hsBonus: _aHsBonus },
               });
@@ -10204,6 +10249,27 @@
                 const r = Math.min(tgt.ability.cap || 300, Math.max(1, Math.round(dmg * tgt.ability.resist)));
                 pHp = Math.max(0, pHp - r);
                 log.push({ type: 'monster', text: `回合 ${round}：🪞 ${tgt.icon}${tgt.name} 反射光芒 → ${player.name} -${r} HP`, hp: hpsSnapshot() });
+              }
+              // ⭐ 瘋鵝術(異擊)：每箭命中後隨機施加異常
+              if (_madStatusM && tgt.hp > 0) {
+                const _srM = Math.random();
+                if (_srM < 0.05) {
+                  applyStatus(tgt, { type: 'paralyze', charges: 1 });
+                  log.push({ type: 'player', text: `回合 ${round}（${hit}/${totalHits}）：🪿【異擊】→ ${tgt.icon}${tgt.name} ⚡麻痺！`, hp: hpsSnapshot() });
+                } else if (_srM < 0.15) {
+                  applyStatus(tgt, { type: 'poison', charges: 3 });
+                  log.push({ type: 'player', text: `回合 ${round}（${hit}/${totalHits}）：🪿【異擊】→ ${tgt.icon}${tgt.name} ☠️中毒！`, hp: hpsSnapshot() });
+                } else if (_srM < 0.25) {
+                  applyStatus(tgt, { type: 'bleed', charges: 3 });
+                  log.push({ type: 'player', text: `回合 ${round}（${hit}/${totalHits}）：🪿【異擊】→ ${tgt.icon}${tgt.name} 🩸流血！`, hp: hpsSnapshot() });
+                } else if (_srM < 0.35) {
+                  applyStatus(tgt, { type: 'buff', stat: 'defPct', amount: -0.30, turns: 5 });
+                  log.push({ type: 'player', text: `回合 ${round}（${hit}/${totalHits}）：🪿【異擊】→ ${tgt.icon}${tgt.name} 🛡️DEF↓30%！`, hp: hpsSnapshot() });
+                } else if (_srM < 0.45) {
+                  applyStatus(tgt, { type: 'buff', stat: 'atkPct', amount: -0.30, turns: 5 });
+                  log.push({ type: 'player', text: `回合 ${round}（${hit}/${totalHits}）：🪿【異擊】→ ${tgt.icon}${tgt.name} ⚔️ATK↓30%！`, hp: hpsSnapshot() });
+                }
+                // 55%：無異常
               }
               if (tgt.hp <= 0) break;
             }
@@ -13421,7 +13487,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510040154';
+  const APP_VERSION = '20260510040853';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13477,7 +13543,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260510_inv_ui';
+  const NEWS_LATEST_ID = 'patch_20260510_mad_goose';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -13497,6 +13563,24 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#14532d,#166534); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🪿 弓手瘋鵝術大改版　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#4ade80; margin:6px 0 4px;">🪿 瘋鵝術 → 四式招法</div>
+        <div>・原「瘋鵝術」更名為 <b>瘋鵝術(連擊)</b>，效果不變（普攻+1段、爆頭率+2%，持續10回合）</div>
+        <div>・新增 <b>瘋鵝術(聚擊)</b>：持續 3 回合，普攻變成 1 段 ATK×2.5，保留疊層加成</div>
+        <div>・新增 <b>瘋鵝術(異擊)</b>：持續 3 回合，每箭命中後隨機觸發異常</div>
+        <div style="font-size:11px; padding-left:8px;">
+          <div>50% 無效果　5% 麻痺1回合　10% 中毒3層　10% 流血3層</div>
+          <div>10% 目標 DEF↓30% (5回合)　10% 目標 ATK↓30% (5回合)</div>
+        </div>
+        <div>・新增 <b>瘋鵝術(六連)</b>：持續 5 回合，普攻固定 <b>6 連射</b>（不與其他段數疊加），爆頭率-5%，不累積疊層</div>
+
+        <div style="background:#052e16; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#86efac;">
+          💡 四式均在 Lv.6 解鎖，可自由切換搭配不同玩法。聚擊適合高疊層爆發；異擊適合控制；六連適合散傷清場！
+        </div>
 
         <div style="background:linear-gradient(135deg,#0c1f3d,#1a3a6b); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🎒 背包 UI 升級 ＋ 靈噬扭蛋上線　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
