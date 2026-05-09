@@ -3306,8 +3306,8 @@
       level: 90,
       verb: '靈魂侵蝕',
       skills: [
-        // ① 靈魂汲取：ATK×1.5 魔法傷害 + 清空玩家MP + 吸血×100
-        { verb: '靈魂汲取', mult: 1.5, ignoreDef: true, mpDrainAll: true, lifestealMult: 100, cooldown: 3 },
+        // ① 靈魂汲取：ATK×1.5 魔法傷害 + 清空玩家MP + 吸血×7
+        { verb: '靈魂汲取', mult: 1.5, ignoreDef: true, mpDrainAll: true, lifestealMult: 7, cooldown: 3 },
         // ② 噬魂爪擊：ATK×1.8（模擬2段）+ 40%機率 ATK -25%（8回）
         { verb: '噬魂爪擊', mult: 1.8, applyStatus: { type: 'buff', stat: 'atkPct', amount: -0.25, turns: 8, chance: 0.40 }, cooldown: 4 },
         // ③ 腐蝕之息：ATK×0.7 無視防禦 + DEF -35%（8回）
@@ -8920,12 +8920,8 @@
           if (!s) return incoming;
           s.charges -= 1;
           if (s.charges <= 0) playerObj.statuses = playerObj.statuses.filter(x => x !== s);
-          if (Math.random() < 0.70) {
-            log.push({ type: 'system', text: `回合 ${round}：🌫 ${player.name} 隱身閃避成功！免疫此次傷害`, hp: { player: pHp, monster: mHp, mp: pMp } });
-            return 0;
-          }
-          log.push({ type: 'system', text: `回合 ${round}：🌫 ${player.name} 隱身閃避失敗（30% 機率穿透）`, hp: { player: pHp, monster: mHp, mp: pMp } });
-          return incoming;
+          log.push({ type: 'system', text: `回合 ${round}：🌫 ${player.name} 隱身免疫此次傷害！`, hp: { player: pHp, monster: mHp, mp: pMp } });
+          return 0;
         };
         // ⭐ 魔坑：hit-based 減傷 reducePct，消耗 1 次
         const consumePartialShield = (incoming) => {
@@ -10258,12 +10254,8 @@
           if (!s) return incoming;
           s.charges -= 1;
           if (s.charges <= 0) playerObj.statuses = playerObj.statuses.filter(x => x !== s);
-          if (Math.random() < 0.70) {
-            log.push({ type: 'system', text: `回合 ${round}：🌫 ${player.name} 隱身閃避成功！免疫此次傷害`, hp: hpsSnapshot() });
-            return 0;
-          }
-          log.push({ type: 'system', text: `回合 ${round}：🌫 ${player.name} 隱身閃避失敗（30% 機率穿透）`, hp: hpsSnapshot() });
-          return incoming;
+          log.push({ type: 'system', text: `回合 ${round}：🌫 ${player.name} 隱身免疫此次傷害！`, hp: hpsSnapshot() });
+          return 0;
         };
         // ⭐ 試煉場魔坑
         const consumePartialShield2 = (incoming) => {
@@ -13212,7 +13204,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510021309';
+  const APP_VERSION = '20260510021919';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
