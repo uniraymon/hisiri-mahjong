@@ -2605,6 +2605,9 @@
         // 靈魂斬：1.8× ATK，無視 DEF，低 MP — 基礎輸出
         { id: 'hm_soul_slash',   name: '靈魂斬',   icon: '⚔️', unlockLv: 1,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.8, ignoreDef: true,
           desc: '以靈力斬擊貫穿防禦，無視目標 DEF。(1.8× ATK，無視防禦)' },
+        // 冥力汲取：攻擊 + 回魔（免費）— 主要回魔手段
+        { id: 'hm_mana_drain',   name: '冥力汲取', icon: '🔵', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 0.8, ignoreDef: true, mpRestorePct: 0.12,
+          desc: '吸取目標靈力補充自身，回復 12% 最大 MP。(0.8× ATK，無視防禦，免費)' },
         // 詛咒爆發：2.0× ATK + 強毒（4 charges, 55/回）
         { id: 'hm_curse_burst',  name: '詛咒爆發', icon: '💜', unlockLv: 2,  cooldown: 0, mpCost: 30, type: 'damage', mult: 2.0, applyStatus: { type: 'poison', charges: 4, dmg: 55, chance: 0.80 },
           desc: '業力爆發侵蝕對手，80% 機率施加劇毒（4 回合，每回 55 傷害）。(2.0× ATK)' },
@@ -13057,7 +13060,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260509161811';
+  const APP_VERSION = '20260509170905';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
