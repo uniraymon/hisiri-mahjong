@@ -2220,6 +2220,24 @@
     <div class="class-grid" id="classGrid"></div>
   </div>
 
+  <!-- 地獄使者：頁籤切換（詛咒 / 戰鬥）-->
+  <div id="hellTabBar" style="display:none; flex-direction:row; gap:6px; margin-bottom:8px;">
+    <button id="hmTabCurse"  onclick="window._hmTab='curse'; render()"
+      style="flex:1; padding:11px 6px; border:none; border-radius:10px; font-size:13px;
+             font-weight:800; cursor:pointer; letter-spacing:0.5px;
+             background:linear-gradient(135deg,#7f1d1d,#dc2626); color:#fff;
+             box-shadow:0 4px 0 #991b1b; transition:opacity .15s;">
+      😈 詛咒
+    </button>
+    <button id="hmTabBattle" onclick="window._hmTab='battle'; render()"
+      style="flex:1; padding:11px 6px; border:none; border-radius:10px; font-size:13px;
+             font-weight:800; cursor:pointer; letter-spacing:0.5px;
+             background:#2a003a; color:#9ca3af; border:2px solid #3b0764;
+             transition:opacity .15s;">
+      ⚔️ 戰鬥
+    </button>
+  </div>
+
   <!-- Stage D: 地獄使者專屬介面 -->
   <div id="stageHell" class="hidden"></div>
 
@@ -2239,6 +2257,11 @@
 
   <!-- Stage C: 主畫面 -->
   <div id="stageGame" class="hidden">
+
+    <!-- 地獄使者：主動 PvP 挑戰（只在戰鬥頁顯示）-->
+    <div id="hellPvpCard" class="card hidden" style="background:linear-gradient(135deg,#0d0020,#1a0030); border:2px solid #4c1d95; margin-bottom:0;">
+    </div>
+
     <div class="char-with-menu">
       <div class="char-quick-menu" id="charQuickMenu"></div>
       <div class="card char-card" id="charCard"></div>
@@ -10527,11 +10550,10 @@
       renderClassPicker();
       return;
     }
-    // ⭐ 地獄使者：咀咒面板（stageHell）+ 標準戰鬥面板（stageGame）並列
+    // ⭐ 地獄使者：頁籤切換（詛咒 / 戰鬥）
     if (rpg.class === 'hellmessenger') {
       document.getElementById('stageClassPick').classList.add('hidden');
-      document.getElementById('stageHell').classList.remove('hidden');
-      // ⭐ 舊存檔 migration：hellBattle* → 標準欄位
+      // ⭐ 舊存檔 migration：hellBattle* → 標準欄位（一次性）
       if (!rpg._hmMigrated) {
         const _hbLv = rpg.hellBattleLv || 1;
         if (_hbLv > (rpg.level || 1)) {
@@ -10553,10 +10575,47 @@
           if ((v||0) > (rpg.abilities[k]||0)) rpg.abilities[k] = v;
         rpg._hmMigrated = true;
       }
-      renderHellMessenger();
-      // ↓ fall through to also render stageGame
+      // ── 頁籤切換 ──
+      window._hmTab = window._hmTab || 'curse';
+      const hmTab = window._hmTab;
+      const htb = document.getElementById('hellTabBar');
+      if (htb) {
+        htb.style.display = 'flex';
+        const btnC = document.getElementById('hmTabCurse');
+        const btnB = document.getElementById('hmTabBattle');
+        if (btnC) {
+          btnC.style.background = hmTab === 'curse'
+            ? 'linear-gradient(135deg,#7f1d1d,#dc2626)' : '#1a0000';
+          btnC.style.color      = hmTab === 'curse' ? '#fff' : '#9ca3af';
+          btnC.style.border     = hmTab === 'curse' ? 'none' : '2px solid #3f0000';
+          btnC.style.boxShadow  = hmTab === 'curse' ? '0 4px 0 #991b1b' : 'none';
+        }
+        if (btnB) {
+          btnB.style.background = hmTab === 'battle'
+            ? 'linear-gradient(135deg,#1a003a,#7c3aed)' : '#2a003a';
+          btnB.style.color      = hmTab === 'battle' ? '#fff' : '#9ca3af';
+          btnB.style.border     = hmTab === 'battle' ? 'none' : '2px solid #3b0764';
+          btnB.style.boxShadow  = hmTab === 'battle' ? '0 4px 0 #4c1d95' : 'none';
+        }
+      }
+      if (hmTab === 'curse') {
+        document.getElementById('stageHell').classList.remove('hidden');
+        document.getElementById('stageGame').classList.add('hidden');
+        document.getElementById('hellPvpCard')?.classList.add('hidden');
+        renderHellMessenger();
+        return; // 詛咒頁只顯示 stageHell
+      } else {
+        // 戰鬥頁：stageGame + PvP 挑戰卡
+        document.getElementById('stageHell').classList.add('hidden');
+        document.getElementById('hellPvpCard')?.classList.remove('hidden');
+        renderHellPvpCard();
+        // fall through → render stageGame normally
+      }
     } else {
+      const htb = document.getElementById('hellTabBar');
+      if (htb) htb.style.display = 'none';
       document.getElementById('stageHell').classList.add('hidden');
+      document.getElementById('hellPvpCard')?.classList.add('hidden');
     }
     document.getElementById('stageClassPick').classList.add('hidden');
     document.getElementById('stageGame').classList.remove('hidden');
@@ -12984,7 +13043,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260509143839';
+  const APP_VERSION = '20260509145522';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -21391,7 +21450,7 @@ ${b.text}
           ${statBadges?`<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px;">${statBadges}</div>`:''}
         </div>
 
-        <!-- 詛咒面板（標準戰鬥介面已在下方 stageGame 顯示）-->
+        <!-- 詛咒面板（切換「⚔️ 戰鬥」頁可使用標準戰鬥介面）-->
         ${tabNav}
         ${activeTab==='action'?actionTabHtml:''}
         ${activeTab==='skills'?skillsTabHtml:''}
@@ -21425,10 +21484,86 @@ ${b.text}
         </div>
 
         <div style="font-size:10px;color:#4b0000;text-align:center;">所有行動皆廣播全服　·　靈力每分鐘 +${STAMINA_PER_TICK + Math.round(hStats.staminaRegen||0)} 回復</div>
-        <div style="font-size:11px;color:#6b4200;text-align:center;margin-top:4px;padding:4px;background:#1a0000;border-radius:6px;">⚔️ 戰鬥、裝備、技能、能力請往下使用標準介面</div>
+        <div style="font-size:11px;color:#6b4200;text-align:center;margin-top:4px;padding:4px;background:#1a0000;border-radius:6px;">⚔️ 戰鬥、裝備、技能、能力請切換至上方「⚔️ 戰鬥」頁籤</div>
       </div>`;
   }
   window.renderHellMessenger = renderHellMessenger;
+
+  // ── 戰鬥頁：PvP 挑戰卡 ──────────────────────────────────────
+  function renderHellPvpCard() {
+    const card = document.getElementById('hellPvpCard');
+    if (!card) return;
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const myStats = computeStats(me) || {};
+
+    const targets = (players || []).filter(p =>
+      p && p.id !== me.id && p.rpg?.class && p.rpg.class !== 'hellmessenger');
+
+    const targetHtml = targets.length === 0
+      ? `<div style="text-align:center;color:#6b7280;font-size:12px;padding:14px 0;">目前沒有可挑戰的玩家</div>`
+      : targets.map(t => {
+          const tRpg  = getRpg(t);
+          const tCls  = CLASSES[tRpg.class] || { icon:'👤', name:'冒險者' };
+          const tStats= computeStats(t) || {};
+          rpg.hellDuelCd = rpg.hellDuelCd || {};
+          const cdRem = Math.max(0, (rpg.hellDuelCd[t.id] || 0) + 30*60*1000 - Date.now());
+          const cdMin = Math.ceil(cdRem / 60000);
+          // 是否有防護符
+          const hasProtect = tRpg.hellProtect && Date.now() < (tRpg.hellProtect.endAt || 0);
+          const hasSeal    = tRpg.hellSeal    && Date.now() < (tRpg.hellSeal.endAt    || 0);
+          const canFight   = cdRem <= 0 && !hasProtect;
+          return `
+          <div style="background:#1a0030;border:1px solid #4c1d95;border-radius:10px;
+                      padding:10px 12px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:13px;font-weight:800;color:#e9d5ff;">
+                  ${escapeHtml(tCls.icon)} ${escapeHtml(t.name || t.id)}
+                  <span style="font-size:10px;color:#9ca3af;font-weight:400;">
+                    Lv${tRpg.level||1} ${escapeHtml(tCls.name)}
+                  </span>
+                </div>
+                <div style="font-size:10px;color:#818cf8;margin-top:2px;">
+                  ⚔️${tStats.atk||0}　🛡️${tStats.def||0}　❤️${tStats.maxHp||0}
+                  ${hasSeal    ? `<span style="color:#fde047;margin-left:6px;">🔒封印中</span>` : ''}
+                  ${hasProtect ? `<span style="color:#86efac;margin-left:6px;">🛡️防護符</span>` : ''}
+                </div>
+                ${cdRem > 0 ? `<div style="font-size:9px;color:#6b7280;margin-top:2px;">⏳ 冷卻 ${cdMin} min</div>` : ''}
+              </div>
+              <button onclick="hellChallengePlayer('${escapeHtml(t.id)}')"
+                ${canFight ? '' : 'disabled'}
+                style="padding:8px 14px;border:none;border-radius:8px;font-size:11px;
+                       font-weight:800;cursor:${canFight?'pointer':'not-allowed'};
+                       background:${canFight?'linear-gradient(135deg,#4c1d95,#7c3aed)':'#374151'};
+                       color:${canFight?'#e9d5ff':'#6b7280'};">
+                ${canFight ? '⚔️ 挑戰' : (hasProtect ? '🛡️ 防護' : '⏳ CD')}
+              </button>
+            </div>
+          </div>`;
+        }).join('');
+
+    card.innerHTML = `
+      <h2 style="color:#c084fc; margin-bottom:10px;">
+        <span>⚔️ 主動挑戰</span>
+        <span style="font-size:11px;color:#818cf8;font-weight:500;margin-left:6px;">
+          （勝利 +30 EXP・落敗 +60 EXP・30 分冷卻）
+        </span>
+      </h2>
+      <div style="font-size:11px;color:#818cf8;margin-bottom:10px;background:#0d0020;
+                  border-radius:8px;padding:7px 10px;line-height:1.7;">
+        ⚡ 你的 ATK <b style="color:#e9d5ff;">${myStats.atk||0}</b>
+        DEF <b style="color:#e9d5ff;">${myStats.def||0}</b>
+        HP <b style="color:#e9d5ff;">${myStats.maxHp||0}</b>
+        SPD <b style="color:#e9d5ff;">${myStats.spd||0}</b><br>
+        <span style="font-size:10px;color:#6b7280;">
+          ※ 你套用自己目前啟用的行動規則頁迎戰；對方以第一規則頁應戰
+        </span>
+      </div>
+      ${targetHtml}
+    `;
+  }
+  window.renderHellPvpCard = renderHellPvpCard;
 
   // 挑戰玩家（戰鬥模式核心）
   function hellChallengePlayer(targetId) {
