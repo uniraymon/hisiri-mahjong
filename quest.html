@@ -3316,7 +3316,7 @@
         { verb: '冥界護壁', type: 'monsterSelfBuff', stat: 'def', amount: 480, turns: 10, cooldown: 9 },
         // ⑤ 混沌一撞：ATK×2.2 重擊
         { verb: '混沌一撞', mult: 2.2, cooldown: 6 },
-        // ☠ 吸大麻：中毒時優先觸發，ATK/DEF/SPD +800（30回）
+        // ☠ 吸大麻：中毒時優先觸發，ATK/DEF +1600、SPD +1000（30回）
         { verb: '吸大麻', type: 'poisonCounter' },
       ],
       bossCoin: { id: 'bc_soul_devourer', name: '靈噬硬幣', icon: '👁️' },
@@ -8842,17 +8842,17 @@
             _daMaActive = true;
             _daMaActiveUntil = round + 30;
             monster.statuses = (monster.statuses || []).filter(s => s.type !== 'poison');
-            monster.atk = (monster.atk || 0) + 800;
-            monster.def = (monster.def || 0) + 800;
-            monster.spd = (monster.spd || 0) + 800;
-            log.push({ type: 'monster', text: `回合 ${round}：${monster.icon}${monster.name} ☠️ 吸大麻發動！吸收中毒 → ATK/DEF/SPD 各 +800（30 回合）！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+            monster.atk = (monster.atk || 0) + 1600;
+            monster.def = (monster.def || 0) + 1600;
+            monster.spd = (monster.spd || 0) + 1000;
+            log.push({ type: 'monster', text: `回合 ${round}：${monster.icon}${monster.name} ☠️ 吸大麻發動！吸收中毒 → ATK/DEF +1600、SPD +1000（30 回合）！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
             _daMaSkipAtk = true; // ⭐ 吸大麻消耗本回合，不再追加普通攻擊
           }
           if (_daMaActive && round >= _daMaActiveUntil) {
             _daMaActive = false;
-            monster.atk = Math.max(1, monster.atk - 800);
-            monster.def = Math.max(0, monster.def - 800);
-            monster.spd = Math.max(1, monster.spd - 800);
+            monster.atk = Math.max(1, monster.atk - 1600);
+            monster.def = Math.max(0, monster.def - 1600);
+            monster.spd = Math.max(1, monster.spd - 1000);
             log.push({ type: 'system', text: `回合 ${round}：${monster.icon}${monster.name} 吸大麻效果消退`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
           }
         }
@@ -8901,15 +8901,19 @@
           log.push({ type: 'crit-player', text: `回合 ${round}：🪞 反傷 → ${monster.name} -${r} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
         };
         let dead = false;
-        // ⭐ 共用：套用傷害前檢查 shield；有則吸收一次、回 0
+        // ⭐ 共用：套用傷害前檢查 shield；70% 機率免疫（消耗 1 層）
         const consumeShield = (incoming) => {
           if (incoming <= 0) return incoming;
           const s = (playerObj.statuses || []).find(x => x.type === 'shield' && (x.charges || 0) > 0);
           if (!s) return incoming;
           s.charges -= 1;
           if (s.charges <= 0) playerObj.statuses = playerObj.statuses.filter(x => x !== s);
-          log.push({ type: 'system', text: `回合 ${round}：🌫 ${player.name} 隱身免疫此次傷害！`, hp: { player: pHp, monster: mHp, mp: pMp } });
-          return 0;
+          if (Math.random() < 0.70) {
+            log.push({ type: 'system', text: `回合 ${round}：🌫 ${player.name} 隱身閃避成功！免疫此次傷害`, hp: { player: pHp, monster: mHp, mp: pMp } });
+            return 0;
+          }
+          log.push({ type: 'system', text: `回合 ${round}：🌫 ${player.name} 隱身閃避失敗（30% 機率穿透）`, hp: { player: pHp, monster: mHp, mp: pMp } });
+          return incoming;
         };
         // ⭐ 魔坑：hit-based 減傷 reducePct，消耗 1 次
         const consumePartialShield = (incoming) => {
@@ -10233,15 +10237,19 @@
           if (m.hp <= 0) m.alive = false;
           log.push({ type: 'crit-player', text: `回合 ${round}：🪞 反傷 → ${m.icon}${m.name} -${r} HP`, hp: hpsSnapshot() });
         };
-        // ⭐ 試煉場也支援 shield 吸傷
+        // ⭐ 試煉場也支援 shield 吸傷（70% 機率）
         const consumeShield2 = (incoming) => {
           if (incoming <= 0) return incoming;
           const s = (playerObj.statuses || []).find(x => x.type === 'shield' && (x.charges || 0) > 0);
           if (!s) return incoming;
           s.charges -= 1;
           if (s.charges <= 0) playerObj.statuses = playerObj.statuses.filter(x => x !== s);
-          log.push({ type: 'system', text: `回合 ${round}：🌫 ${player.name} 隱身免疫此次傷害！`, hp: hpsSnapshot() });
-          return 0;
+          if (Math.random() < 0.70) {
+            log.push({ type: 'system', text: `回合 ${round}：🌫 ${player.name} 隱身閃避成功！免疫此次傷害`, hp: hpsSnapshot() });
+            return 0;
+          }
+          log.push({ type: 'system', text: `回合 ${round}：🌫 ${player.name} 隱身閃避失敗（30% 機率穿透）`, hp: hpsSnapshot() });
+          return incoming;
         };
         // ⭐ 試煉場魔坑
         const consumePartialShield2 = (incoming) => {
@@ -13190,7 +13198,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510015237';
+  const APP_VERSION = '20260510015617';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
