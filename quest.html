@@ -9142,10 +9142,10 @@
         events.push({ type: 'poison', dmg });
         s.charges = (s.charges || 0) - 1; // ⭐ charge-based：每次觸發消耗 1 層
       }
-      // ⭐ 流血：每次觸發扣目標當前 HP 的 0.5%，消耗 1 層
+      // ⭐ 流血：每次觸發扣目標當前 HP 的 0.05%，消耗 1 層
       if (s.type === 'bleed') {
         const curHp = target._curHp !== undefined ? target._curHp : (target.hp || safeMax);
-        const dmg = Math.max(1, Math.round(curHp * 0.005));
+        const dmg = Math.max(1, Math.round(curHp * 0.0005));
         events.push({ type: 'bleed', dmg });
         s.charges = (s.charges || 0) - 1;
       }
@@ -13167,7 +13167,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510011044';
+  const APP_VERSION = '20260510012623';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
