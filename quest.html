@@ -8360,7 +8360,8 @@
           const _petItem = resolveItem(player.rpg?.equipment?.pet);
           if (_petItem?.petAbility) {
             const _pa = _petItem.petAbility;
-            if (_petTurnCount % _pa.interval === 0) {
+            // ⭐ fix：第 1 次行動立即觸發，之後每 interval 次觸發（確保短戰鬥也能發動）
+            if ((_petTurnCount - 1) % _pa.interval === 0) {
               if (_pa.type === 'vulnerable') {
                 monster.statuses = monster.statuses || [];
                 monster.statuses.push({ type: 'vulnerable', amount: 0.50, hits: 1 });
@@ -8523,9 +8524,10 @@
             mHp = Math.max(0, mHp - _burstDmg);
             // 附加效果
             const _burstFx = [];
-            if (_bc.fire >= 4) {
-              applyStatus(monster, { type: 'poison', charges: 3 }); // 灼燒以毒充能模擬
-              _burstFx.push('🔥灼燒3充');
+            if (_bc.fire >= 3) {
+              // ⭐ 灼燒（新狀態）：mark×15 真傷×3 tick + 每 tick 蝕掉魔坑 -15%
+              applyStatus(monster, { type: 'scorch', charges: 3, markDmg: Math.round(stats.mark * 15) });
+              _burstFx.push('🔥灼燒3充（真傷）');
             }
             if (_bc.ice >= 3) {
               applyStatus(monster, { type: 'paralyze', charges: 1 });
@@ -9372,17 +9374,29 @@
         const mevs = tickStatuses(monster, monster.maxHp, false); // 怪物回合
         for (const ev of mevs) {
           let _mTickDmg = ev.dmg;
-          // ⭐ 王中毒傷害扣除魔坑（partialShield）
-          if (ev.type === 'poison') {
-            const _mPs = (monster.statuses || []).find(x => x.type === 'partialShield' && (x.hitsLeft || 0) > 0);
-            if (_mPs) {
-              _mTickDmg = Math.max(1, Math.round(_mTickDmg * (1 - (_mPs.reducePct || 0))));
-              _mPs.hitsLeft -= 1;
-              if (_mPs.hitsLeft <= 0) monster.statuses = monster.statuses.filter(x => x !== _mPs);
+          if (ev.type === 'scorch') {
+            // ⭐ 灼燒：固定真傷（不受魔坑減傷）+ 每 tick 蝕掉魔坑 reducePct -15%
+            const _mScPs = (monster.statuses || []).find(x => x.type === 'partialShield' && (x.hitsLeft || 0) > 0 && (x.reducePct || 0) > 0);
+            let _scorchNote = '';
+            if (_mScPs) {
+              _mScPs.reducePct = Math.max(0, _mScPs.reducePct - 0.15);
+              _scorchNote = `　🛡魔坑 −15% → ${Math.round(_mScPs.reducePct * 100)}%`;
             }
+            mHp = Math.max(0, mHp - _mTickDmg);
+            log.push({ type: 'player', text: `回合 ${round}：${monster.name} 🔥灼燒 真傷 -${_mTickDmg} HP${_scorchNote}`, hp: { player: pHp, monster: mHp, mp: pMp } });
+          } else {
+            // ⭐ 王中毒傷害扣除魔坑（partialShield）
+            if (ev.type === 'poison') {
+              const _mPs = (monster.statuses || []).find(x => x.type === 'partialShield' && (x.hitsLeft || 0) > 0);
+              if (_mPs) {
+                _mTickDmg = Math.max(1, Math.round(_mTickDmg * (1 - (_mPs.reducePct || 0))));
+                _mPs.hitsLeft -= 1;
+                if (_mPs.hitsLeft <= 0) monster.statuses = monster.statuses.filter(x => x !== _mPs);
+              }
+            }
+            mHp = Math.max(0, mHp - _mTickDmg);
+            log.push({ type: 'player', text: `回合 ${round}：${monster.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${_mTickDmg} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
           }
-          mHp = Math.max(0, mHp - _mTickDmg);
-          log.push({ type: 'player', text: `回合 ${round}：${monster.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${_mTickDmg} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
         }
         if (mHp <= 0) { pushDeathLine(); break; }
         // ⭐ 麻痺（charge-based）：50% RNG 決定跳過，消耗 1 層
@@ -9703,10 +9717,11 @@
         // ⭐ 魔坑：hit-based，取較多次數 / 較高減傷
         existing.hitsLeft  = Math.max(existing.hitsLeft  || 0, status.hitsLeft  || 0);
         existing.reducePct = Math.max(existing.reducePct || 0, status.reducePct || 0);
-      } else if (status.type === 'shield' || status.type === 'paralyze' || status.type === 'poison' || status.type === 'bleed') {
-        // ⭐ charge-based：護盾/麻痺/中毒/流血均取較多層
+      } else if (status.type === 'shield' || status.type === 'paralyze' || status.type === 'poison' || status.type === 'bleed' || status.type === 'scorch') {
+        // ⭐ charge-based：護盾/麻痺/中毒/流血/灼燒均取較多層
         existing.charges = Math.max(existing.charges || 0, status.charges || 0);
         if (status.type === 'poison') existing.dmg = Math.max(existing.dmg || 0, status.dmg || 0);
+        if (status.type === 'scorch') existing.markDmg = Math.max(existing.markDmg || 0, status.markDmg || 0);
         // ⭐ 麻痺重疊時，skipChance 取較高值（確保終極技能的必定跳過效果不被覆蓋）
         if (status.type === 'paralyze' && status.skipChance !== undefined)
           existing.skipChance = Math.max(existing.skipChance || 0, status.skipChance);
@@ -9747,6 +9762,11 @@
         events.push({ type: 'bleed', dmg });
         s.charges = (s.charges || 0) - 1;
       }
+      // ⭐ 灼燒：mark×15 固定真傷，消耗 1 層（傷害在呼叫端處理，不受魔坑減傷）
+      if (s.type === 'scorch') {
+        events.push({ type: 'scorch', dmg: Math.max(1, s.markDmg || 0) });
+        s.charges = (s.charges || 0) - 1;
+      }
       // ⭐ 易傷/護盾/麻痺/中毒/流血/魔坑：全部 charge/hit-based，不計 turns
       if (s.type !== 'vulnerable' && s.type !== 'shield' && s.type !== 'paralyze' && s.type !== 'poison' && s.type !== 'partialShield' && s.type !== 'bleed') {
         // ⭐ playerTurnOnly buff（鷹眼/瘋鵝術）只在玩家回合倒數，怪物回合不消耗
@@ -9761,6 +9781,7 @@
       if (s.type === 'paralyze')      return (s.charges  || 0) > 0; // ⭐ charge-based
       if (s.type === 'poison')        return (s.charges  || 0) > 0; // ⭐ charge-based
       if (s.type === 'bleed')         return (s.charges  || 0) > 0; // ⭐ charge-based
+      if (s.type === 'scorch')        return (s.charges  || 0) > 0; // ⭐ charge-based 灼燒
       if (s.type === 'partialShield') return (s.hitsLeft || 0) > 0; // ⭐ hit-based
       return s.turns > 0;
     });
@@ -9820,10 +9841,10 @@
     return `✨ ${buff.stat} ${buff.amount >= 0 ? '+' : ''}${buff.amount}`;
   }
   function statusEmoji(type) {
-    return type === 'poison' ? '☠️' : type === 'paralyze' ? '⚡' : type === 'vulnerable' ? '🎯' : type === 'bleed' ? '🩸' : type === 'buff' ? '✨' : '✨';
+    return type === 'poison' ? '☠️' : type === 'paralyze' ? '⚡' : type === 'vulnerable' ? '🎯' : type === 'bleed' ? '🩸' : type === 'scorch' ? '🔥' : type === 'buff' ? '✨' : '✨';
   }
   function statusLabel(type) {
-    return type === 'poison' ? '中毒' : type === 'paralyze' ? '麻痺' : type === 'vulnerable' ? '易傷' : type === 'bleed' ? '流血' : type === 'buff' ? '增益' : type;
+    return type === 'poison' ? '中毒' : type === 'paralyze' ? '麻痺' : type === 'vulnerable' ? '易傷' : type === 'bleed' ? '流血' : type === 'scorch' ? '灼燒' : type === 'buff' ? '增益' : type;
   }
 
   // 多目標戰鬥（最多 N 隻怪物 vs 玩家），用在「試煉戰場」
@@ -10092,7 +10113,8 @@
           const _petItem = resolveItem(player.rpg?.equipment?.pet);
           if (_petItem?.petAbility) {
             const _pa = _petItem.petAbility;
-            if (_petTurnCount % _pa.interval === 0) {
+            // ⭐ fix：第 1 次行動立即觸發，之後每 interval 次觸發
+            if ((_petTurnCount - 1) % _pa.interval === 0) {
               const _petTgt = mList.find(m => m.alive && m.hp > 0); // ⭐ fix: 多目標要找存活怪
               if (_pa.type === 'vulnerable' && _petTgt) {
                 _petTgt.statuses = _petTgt.statuses || [];
@@ -10263,7 +10285,7 @@
             if (tgt.hp <= 0) tgt.alive = false;
             // 附加效果
             const _burstFxM = [];
-            if (_bcM.fire >= 4)   { applyStatus(tgt, { type: 'poison', charges: 3 }); _burstFxM.push('🔥灼燒3充'); }
+            if (_bcM.fire >= 3)   { applyStatus(tgt, { type: 'scorch', charges: 3, markDmg: Math.round(stats.mark * 15) }); _burstFxM.push('🔥灼燒3充（真傷）'); } // ⭐ 灼燒新狀態
             if (_bcM.ice >= 3)    { applyStatus(tgt, { type: 'paralyze', charges: 1 }); _burstFxM.push('🧊麻痺1回'); }
             if (_bcM.poison > 0)  { applyStatus(tgt, { type: 'poison', charges: _bcM.poison }); _burstFxM.push(`☠️毒×${_bcM.poison}`); }
             if (_bcM.blood > 0)   { applyStatus(tgt, { type: 'vulnerable', amount: 0.5, hits: _bcM.blood }); _burstFxM.push(`🩸易傷×${_bcM.blood}`); }
@@ -11035,9 +11057,22 @@
         // 怪物中毒等狀態 tick
         const evs = tickStatuses(m, m.maxHp, false); // 怪物回合
         for (const ev of evs) {
-          m.hp = Math.max(0, m.hp - ev.dmg);
-          if (m.hp <= 0) m.alive = false;
-          log.push({ type: 'player', text: `回合 ${round}：${m.icon}${m.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${ev.dmg} HP`, hp: hpsSnapshot() });
+          if (ev.type === 'scorch') {
+            // ⭐ 灼燒：固定真傷 + 蝕掉魔坑 -15%
+            const _mScPs = (m.statuses || []).find(x => x.type === 'partialShield' && (x.hitsLeft || 0) > 0 && (x.reducePct || 0) > 0);
+            let _scorchNote = '';
+            if (_mScPs) {
+              _mScPs.reducePct = Math.max(0, _mScPs.reducePct - 0.15);
+              _scorchNote = `　🛡魔坑 −15% → ${Math.round(_mScPs.reducePct * 100)}%`;
+            }
+            m.hp = Math.max(0, m.hp - ev.dmg);
+            if (m.hp <= 0) m.alive = false;
+            log.push({ type: 'player', text: `回合 ${round}：${m.icon}${m.name} 🔥灼燒 真傷 -${ev.dmg} HP${_scorchNote}`, hp: hpsSnapshot() });
+          } else {
+            m.hp = Math.max(0, m.hp - ev.dmg);
+            if (m.hp <= 0) m.alive = false;
+            log.push({ type: 'player', text: `回合 ${round}：${m.icon}${m.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${ev.dmg} HP`, hp: hpsSnapshot() });
+          }
         }
         if (!m.alive) continue;
         // ⭐ 麻痺（charge-based）：50% RNG 決定跳過，消耗 1 層
@@ -14070,7 +14105,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510204035';
+  const APP_VERSION = '20260510205650';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -14126,7 +14161,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260510_petfix';
+  const NEWS_LATEST_ID = 'patch_20260510_scorch';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -14146,6 +14181,27 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#3b0a00,#7c1a00); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🔥 法師元素爆發 — 灼燒新狀態 ＋ 寵物易傷修正　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#fca5a5; margin:6px 0 4px;">🔥 灼燒（全新狀態，取代舊版燃燒）</div>
+        <div>・元素爆發觸發條件：<b>火 ≥3 顆</b>（原本 ≥4 顆）</div>
+        <div>・效果：施加 <b>灼燒×3</b>（3 次 tick）</div>
+        <div style="font-size:12px; padding-left:8px; margin:4px 0;">
+          <div>💥 每 tick：<b>MARK × 15</b> 固定真傷（不暴擊、不被任何減傷抵擋）</div>
+          <div>🛡 每 tick：目標 <b>魔坑護盾 −15%</b>（3 tick 共 −45%，逐步破解魔坑）</div>
+        </div>
+
+        <div style="font-weight:700; color:#fca5a5; margin:10px 0 4px;">🐾 寵物靈魂凝視 — 世界王易傷修正</div>
+        <div>・修正世界王戰鬥中<b>靈魂凝視（易傷）未發動</b>的問題</div>
+        <div>・根本原因：原本第 10 次行動才觸發，世界王戰鬥通常不足 10 次玩家行動</div>
+        <div>・修正後：<b>第 1 次行動立即觸發</b>，之後每 10 次行動再觸發一次</div>
+
+        <div style="background:#3b0a00; border-radius:8px; padding:8px 12px; margin:10px 0 16px; font-size:12px; color:#fca5a5;">
+          💡 法師火系爆發現在更容易觸發灼燒，且灼燒傷害完全穿透靈噬魔皇的魔坑護盾！
+        </div>
 
         <div style="background:linear-gradient(135deg,#1a2a00,#2a3a00); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🐾 寵物能力 Bug 修正（試煉戰場）　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
@@ -14399,7 +14455,7 @@ ${b.text}
         <div style="font-weight:700; color:#a5b4fc; margin:10px 0 4px;">💥 元素爆發（Lv.7，35 MP）</div>
         <div>・消耗魔法書中<b>所有元素</b>進行爆發，傷害無視防禦（MARK 為基底）</div>
         <div style="font-size:11px; padding-left:8px;">
-          <div>🔥 火 ×N：MARK × <b>2.3</b> × N　≥4顆附加燃燒（中毒 ×3）</div>
+          <div>🔥 火 ×N：MARK × <b>2.3</b> × N　≥3顆附加<b>灼燒</b>（真傷 MARK×15、×3 tick，蝕魔坑 −15%/tick）</div>
           <div>🧊 冰 ×N：MARK × <b>2.0</b> × N　≥3顆附加凍結（麻痺 ×1）</div>
           <div>⚡ 雷 ×N：MARK × <b>2.1</b> × N　每顆爆擊率 +8%，<b>≥4顆必爆！</b></div>
           <div>☠️ 毒 ×N：MARK × <b>1.6</b> × N　附加中毒 N 層</div>
@@ -15845,7 +15901,7 @@ ${b.text}
     if (skill.isSpellBurst) {
       buffPairs.push('─────────────');
       buffPairs.push('📚 消耗魔法書中所有元素進行爆發（傷害無視防禦，以 MARK 為基底）：');
-      buffPairs.push('　🔥 火 ×N：MARK × 2.3 × N　≥4 顆附加燃燒（中毒 ×3）');
+      buffPairs.push('　🔥 火 ×N：MARK × 2.3 × N　≥3 顆附加灼燒（真傷 MARK×15 ×3tick，蝕魔坑 −15%/tick）');
       buffPairs.push('　🧊 冰 ×N：MARK × 2.0 × N　≥3 顆附加凍結（麻痺 ×1）');
       buffPairs.push('　⚡ 雷 ×N：MARK × 2.1 × N　每顆爆擊率 +8%，≥4 顆必爆！');
       buffPairs.push('　☠️ 毒 ×N：MARK × 1.6 × N　附加中毒 N 層');
