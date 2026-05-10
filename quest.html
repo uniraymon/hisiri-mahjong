@@ -3762,6 +3762,7 @@
     const _monMaxHp = _wbMon.maxHp || 1;
     let _wbi = 0; let _wbLastRound;
     let _wbPrevPHp = _maxHp; let _wbPrevMHp = _wbMon.hp || _monMaxHp;
+    const _wbLogFmt = makeBattleLogFormatter(_wbMon.icon, _wbMon.name);
 
     const wbPlayStep = () => {
       if (_wbi >= _wbLogArr.length) {
@@ -3804,7 +3805,7 @@
         : 'log-system';
       const _ediv = document.createElement('div');
       _ediv.className = `log-line ${_ec}`;
-      _ediv.textContent = entry.text;
+      _ediv.textContent = _wbLogFmt.fmtEntry(entry);
       _wbLogEl?.appendChild(_ediv);
       if (_wbLogEl) _wbLogEl.scrollTop = _wbLogEl.scrollHeight;
       if (entry.hp) {
@@ -9763,6 +9764,60 @@
   }
 
   // ============================================================
+  // ⭐ 戰鬥 LOG 行動計數格式化（玩家回合 X / 怪物回合 X）
+  // ============================================================
+  // 返回一個 formatter 物件，包含 fmtEntry(entry) 和 pAct/mAct 計數
+  // monIcon/monName：單體戰鬥傳入；多目標傳入 null（自動從文字解析）
+  function makeBattleLogFormatter(monIcon, monName) {
+    let pAct = 0, mAct = 0;
+    // 這些 player-type 條目是被動/附帶效果，不計入玩家行動數
+    const _isPassive = (txt) =>
+      /：💚 生命湧現/.test(txt) ||
+      /：💙 自然回/.test(txt) ||
+      /^回合 \d+：自癒 \+/.test(txt) ||
+      /^回合 \d+：🦊【鵝暴化】/.test(txt) ||
+      /^回合 \d+：🪞 反傷/.test(txt) ||
+      /：.*?元素吸收 →/.test(txt) ||
+      /^　　↳/.test(txt) ||
+      /靈噬之印 → /.test(txt);
+
+    return {
+      get pAct() { return pAct; },
+      get mAct() { return mAct; },
+      fmtEntry(entry) {
+        const txt = entry.text;
+        const tp  = entry.type;
+        if (tp === 'player' || tp === 'crit-player') {
+          if (!_isPassive(txt)) {
+            pAct++;
+            // "回合 N（X/Y）：..." 或 "回合 N：..." 都處理
+            return txt.replace(/^回合 \d+[（(][^）)]*[）)]：|^回合 \d+：/, `玩家回合 ${pAct}：`);
+          }
+        } else if (tp === 'monster') {
+          // 找 "回合 N：[icon][name] [action]" → "[icon][name]回合 X：[action]"
+          const _mPfx = (monIcon ?? '') + (monName ?? '');
+          const _after = txt.replace(/^回合 \d+：/, '');
+          if (_mPfx && _after.startsWith(_mPfx)) {
+            mAct++;
+            const _action = _after.slice(_mPfx.length).replace(/^ /, '');
+            return `${_mPfx}回合 ${mAct}：${_action}`;
+          }
+          // 多目標：怪物名稱已在 _after 裡，直接抓 icon+name（到第一個動作描述詞前）
+          // 格式："ICON NAME VERB..." → 轉成 "ICON NAME回合 X：VERB..."
+          if (!_mPfx) {
+            const _m = _after.match(/^(.{1,30}?) ([\S].*)/);
+            if (_m) {
+              mAct++;
+              return `${_m[1]}回合 ${mAct}：${_m[2]}`;
+            }
+          }
+        }
+        return txt;
+      },
+    };
+  }
+
+  // ============================================================
   // 異常狀態系統 + 多目標戰鬥引擎（試煉戰場用）
   // ============================================================
   // 狀態結構（全部 charge-based）：
@@ -14216,7 +14271,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510225216';
+  const APP_VERSION = '20260510230021';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -21801,6 +21856,7 @@ ${b.text}
       const logEl = document.getElementById('battleLog');
       let i = 0; let _lastRound;
       let _dPrevPHp = stats.maxHp; let _dPrevMHp = monster.hp;
+      const _pbLogFmt = makeBattleLogFormatter(monster.icon, monster.name);
       const playStep = () => {
         if (__stopDummyBattle) {
           __stopDummyBattle = false;
@@ -21870,7 +21926,7 @@ ${b.text}
           : 'log-system';
         const div = document.createElement('div');
         div.className = `log-line ${cls}`;
-        div.textContent = entry.text;
+        div.textContent = _pbLogFmt.fmtEntry(entry);
         logEl.appendChild(div);
         logEl.scrollTop = logEl.scrollHeight;
         if (entry.hp) {
@@ -22094,6 +22150,7 @@ ${b.text}
       if (el) el.textContent = ['0','+0%','0','+0%','0','+0%'][k];
     });
     let i = 0; let _lastRound;
+    const _rdFmt = makeBattleLogFormatter(monster.icon, monster.name);
     const replayStep = () => {
       if (i >= result.log.length) return;
       const entry = result.log[i++];
@@ -22110,7 +22167,7 @@ ${b.text}
         : 'log-system';
       const div = document.createElement('div');
       div.className = `log-line ${cls}`;
-      div.textContent = entry.text;
+      div.textContent = _rdFmt.fmtEntry(entry);
       logEl.appendChild(div);
       logEl.scrollTop = logEl.scrollHeight;
       if (entry.hp) {
@@ -24630,6 +24687,7 @@ ${b.text}
     const logEl = document.getElementById('battleLog');
     let i = 0; let _lastRound;
     let _prevPHp = stats.maxHp; let _prevMHp = monster.maxHp;
+    const _logFmt = makeBattleLogFormatter(monster.icon, monster.name);
     const playStep = () => {
       if (i >= result.log.length) {
         try {
@@ -24697,7 +24755,7 @@ ${b.text}
         : 'log-system';
       const div = document.createElement('div');
       div.className = `log-line ${cls}`;
-      div.textContent = entry.text;
+      div.textContent = _logFmt.fmtEntry(entry);
       logEl.appendChild(div);
       logEl.scrollTop = logEl.scrollHeight;
       if (entry.hp) {
@@ -24800,6 +24858,7 @@ ${b.text}
     document.getElementById('fightResult').innerHTML = arenaHtml;
     const logEl = document.getElementById('battleLog');
     let i = 0; let _lastRound;
+    const _mfLogFmt = makeBattleLogFormatter(null, null); // 多目標：自動解析怪物名稱
     const playStep = () => {
       if (i >= result.log.length) {
         // ⭐ try-finally 保證 __fightInProgress 一定被解鎖
@@ -24838,7 +24897,7 @@ ${b.text}
         : 'log-system';
       const div = document.createElement('div');
       div.className = `log-line ${cls}`;
-      div.textContent = entry.text;
+      div.textContent = _mfLogFmt.fmtEntry(entry);
       logEl.appendChild(div);
       logEl.scrollTop = logEl.scrollHeight;
       if (entry.hp) {
