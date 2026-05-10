@@ -7937,13 +7937,29 @@
       };
     }
 
-    // ⭐ 地獄詛咒：DEF -30%（下一場戰鬥）
+    // ⭐ 地獄詛咒：多種類型（下一場戰鬥觸發，帶 endAt 到期則失效）
+    let _hellParalyzeCurseCharges = 0; // paralyze type 需在 playerObj 初始化後施加
     const _hellCurse = player.rpg.hellCurse;
     if (_hellCurse) {
-      const _cursePct = _hellCurse.defPct || 0.30;
-      stats.def = Math.round(stats.def * (1 - _cursePct));
-      log.push({ type: 'system', text: `😱 地獄詛咒發動！DEF -${Math.round(_cursePct * 100)}%（施加者：${_hellCurse.applier}）` });
-      delete player.rpg.hellCurse;
+      if (_hellCurse.endAt && Date.now() > _hellCurse.endAt) {
+        delete player.rpg.hellCurse; // 已過期，不觸發
+      } else {
+        const _curseType = _hellCurse.type || 'def';
+        if (_curseType === 'def') {
+          const _cursePct = _hellCurse.defPct || 0.25;
+          stats.def = Math.round(stats.def * (1 - _cursePct));
+          log.push({ type: 'system', text: `😱 軟雞雞之咒發動！DEF -${Math.round(_cursePct*100)}%（${_hellCurse.applier} 施加）` });
+        } else if (_curseType === 'atk') {
+          const _atkPct = _hellCurse.atkPct || 0.25;
+          stats.atk  = Math.round(stats.atk  * (1 - _atkPct));
+          stats.mark = Math.round((stats.mark||0) * (1 - _atkPct));
+          log.push({ type: 'system', text: `😱 弱雞雞之咒發動！ATK/MARK -${Math.round(_atkPct*100)}%（${_hellCurse.applier} 施加）` });
+        } else if (_curseType === 'paralyze') {
+          _hellParalyzeCurseCharges = _hellCurse.charges || 3;
+          log.push({ type: 'system', text: `😱 雞痳街之咒發動！開場 ${_hellParalyzeCurseCharges} 層麻痺！（${_hellCurse.applier} 施加）` });
+        }
+        delete player.rpg.hellCurse;
+      }
     }
     const bonus = computeSkillBonuses(player);
     const abil  = computeAbilityBonuses(player);
@@ -8095,6 +8111,10 @@
     };
     // 狀態追蹤（玩家身上的 buff/中毒/麻痺 + 怪物身上的中毒/麻痺）
     const playerObj = { statuses: [] };
+    // ⭐ 雞痳街之咒：開場麻痺
+    if (_hellParalyzeCurseCharges > 0) {
+      playerObj.statuses.push({ type: 'paralyze', charges: _hellParalyzeCurseCharges });
+    }
     monster.statuses = monster.statuses || [];
     // 怪物技能冷卻：lastUseRound[idx]
     const mSkillLast = {};
@@ -13786,7 +13806,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510094314';
+  const APP_VERSION = '20260510105234';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13842,7 +13862,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260510_spellbook';
+  const NEWS_LATEST_ID = 'patch_20260510_hell_pvp2';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -13862,6 +13882,37 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#200030,#4c1d95); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">⚔️ 地獄使者 PvP 大升級　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#c4b5fd; margin:6px 0 4px;">🛡 防守頁（所有玩家）</div>
+        <div>・行動規則新增第 5 頁「🛡 防守頁」，被地獄使者挑戰時<b>自動以此頁規則應戰</b></div>
+        <div>・若防守頁為空則自動 fallback 至第一頁規則</div>
+
+        <div style="font-weight:700; color:#c4b5fd; margin:10px 0 4px;">⚔️ 地獄使者挑戰升級</div>
+        <div>・每次挑戰消耗 <b>20 體力</b></div>
+        <div>・挑戰畫面使用<b>動畫回放</b>（角色美工圖 + HP 條即時更新）</div>
+        <div>・落敗可直接看完整戰鬥回放；勝利後進入<b>選咒環節</b></div>
+        <div>・挑戰記錄保留最近 <b>5 場</b>（可隨時點擊回播）</div>
+
+        <div style="font-weight:700; color:#c4b5fd; margin:10px 0 4px;">😱 勝利後下咒（4 選 1）</div>
+        <div style="font-size:11px; padding-left:8px;">
+          <div>🛁 <b>洗澡卡之咒</b>：封印對方 3 分鐘，期間無法做任何行動</div>
+          <div>🐔 <b>弱雞雞之咒</b>：ATK/MARK -25%，3 分鐘內進入任何戰鬥時發動</div>
+          <div>🐥 <b>軟雞雞之咒</b>：DEF -25%，3 分鐘內進入任何戰鬥時發動</div>
+          <div>⚡ <b>雞痳街之咒</b>：戰鬥開始獲得 3 層麻痺，3 分鐘內持續生效</div>
+        </div>
+        <div>・下咒後對該玩家冷卻 <b>30 分鐘</b>才能再挑戰</div>
+
+        <div style="font-weight:700; color:#c4b5fd; margin:10px 0 4px;">📋 被攻擊記錄</div>
+        <div>・被地獄使者挑戰後，角色卡顯示最近 5 場被攻擊記錄（攻擊者、勝敗、時間）</div>
+        <div>・點擊「回放」可看完整動畫戰鬥過程</div>
+
+        <div style="background:#1a0030; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#c4b5fd;">
+          💡 防護符（5000幣）可免疫詛咒與封印，建議在高風險時段購買！
+        </div>
 
         <div style="background:linear-gradient(135deg,#1e1b4b,#312e81); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">📖 法師魔法書系統　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
@@ -15809,15 +15860,15 @@ ${b.text}
     const cls = CLASSES[rpg.class];
     const skills = cls.skills || [];
     const names = rpg.patternPageNames || ['頁 1', '頁 2', '頁 3', '頁 4'];
-    const patterns = rpg.actionPatterns || [[], [], [], []];
-    // 確保 __apPage 合法
-    if (__apPage < 0 || __apPage > 3) __apPage = 0;
+    const patterns = rpg.actionPatterns || [[], [], [], [], []];
+    // 確保 __apPage 合法（0-3 普通頁，4 = 防守頁）
+    if (__apPage < 0 || __apPage > 4) __apPage = 0;
     const pattern = (patterns[__apPage] && patterns[__apPage].length)
       ? patterns[__apPage]
-      : getDefaultActionPattern(rpg.class);
+      : (__apPage === 4 ? [] : getDefaultActionPattern(rpg.class));
 
     // ── 頁籤列 ──
-    const tabsHtml = [0,1,2,3].map(i => {
+    const normalTabsHtml = [0,1,2,3].map(i => {
       const cnt = (patterns[i] || []).length;
       const isActive = i === rpg.activePatternPage;
       const isCur  = i === __apPage;
@@ -15831,6 +15882,17 @@ ${b.text}
         ${isActive ? '<span style="position:absolute;top:2px;right:3px;font-size:9px;color:#16a34a;" title="目前打怪使用此頁">✦</span>' : ''}
       </button>`;
     }).join('');
+    const defCnt = (patterns[4] || []).length;
+    const defCur = __apPage === 4;
+    const defTabHtml = `<button onclick="switchApPage(4)"
+      style="flex:1; padding:6px 4px; border:2px solid ${defCur ? '#dc2626' : '#fca5a5'};
+        background:${defCur ? '#fee2e2' : '#fff'}; border-radius:8px; cursor:pointer;
+        font-family:inherit; font-size:11px; font-weight:700; color:${defCur ? '#b91c1c' : '#9ca3af'};
+        position:relative;" title="被地獄使者挑戰時使用此頁應戰">
+      🛡 防守頁
+      <span style="font-size:9px; display:block; color:${defCur?'#dc2626':'#9ca3af'};">${defCnt} 條</span>
+    </button>`;
+    const tabsHtml = normalTabsHtml + defTabHtml;
 
     // ── 規則列 ──
     const skillOptions = (selectedId) => {
@@ -16582,7 +16644,15 @@ ${b.text}
       <div class="char-info">
         <div class="char-name">${escapeHtml(me.name)}</div>
         <div class="char-class">${cls.name} · Lv ${rpg.level}</div>
-        ${rpg.hellCurse ? `<div style="background:#7f1d1d; color:#fca5a5; font-size:11px; font-weight:700; padding:4px 8px; border-radius:6px; margin-top:4px; border:1px solid #dc2626;">😱 地獄詛咒 — 下場戰鬥 DEF -${Math.round((rpg.hellCurse.defPct||0.30)*100)}%（${escapeHtml(rpg.hellCurse.applier)} 施加）</div>` : ''}
+        ${rpg.hellCurse && !(rpg.hellCurse.endAt && Date.now() > rpg.hellCurse.endAt) ? (() => {
+          const _ct = rpg.hellCurse.type || 'def';
+          const _ca = escapeHtml(rpg.hellCurse.applier || '地獄使者');
+          const _rem = rpg.hellCurse.endAt ? Math.ceil((rpg.hellCurse.endAt - Date.now()) / 60000) : '?';
+          const _desc = _ct === 'atk' ? `弱雞雞之咒 — ATK/MARK -25%（剩 ${_rem} 分）`
+            : _ct === 'paralyze' ? `雞痳街之咒 — 下場戰鬥開場麻痺 3 層（剩 ${_rem} 分）`
+            : `軟雞雞之咒 — 下場戰鬥 DEF -25%（剩 ${_rem} 分）`;
+          return `<div style="background:#7f1d1d; color:#fca5a5; font-size:11px; font-weight:700; padding:4px 8px; border-radius:6px; margin-top:4px; border:1px solid #dc2626;">😱 地獄詛咒 — ${_desc}（${_ca} 施加）</div>`;
+        })() : ''}
         ${rpg.hellSeal && Date.now() < rpg.hellSeal.endAt ? `<div style="background:#1c1c00; color:#fef08a; font-size:11px; font-weight:700; padding:4px 8px; border-radius:6px; margin-top:4px; border:1px solid #ca8a04;">🔒 地獄封印 — 剩餘 ${Math.ceil((rpg.hellSeal.endAt-Date.now())/60000)} 分鐘無法探險/戰鬥（${escapeHtml(rpg.hellSeal.applier)} 施加）</div>` : ''}
         ${rpg.hellProtect && Date.now() < rpg.hellProtect.endAt ? `<div style="background:#001a00; color:#86efac; font-size:11px; font-weight:700; padding:4px 8px; border-radius:6px; margin-top:4px; border:1px solid #16a34a;">🛡️ 防護符生效中 — 剩餘 ${Math.ceil((rpg.hellProtect.endAt-Date.now())/60000)} 分鐘</div>` : ''}
         ${(() => {
@@ -16590,11 +16660,27 @@ ${b.text}
           if (!hellExists || rpg.class === 'hellmessenger') return '';
           const hasActiveEffect = (rpg.hellCurse) || (rpg.hellSeal && Date.now() < rpg.hellSeal.endAt);
           const hasProtect = rpg.hellProtect && Date.now() < rpg.hellProtect.endAt;
+          // ⭐ 被攻擊記錄（最多5筆）
+          const defReplays = rpg.hellPvpDefenseReplays || [];
+          const defHtml = defReplays.length === 0 ? '' : `
+            <div style="margin-top:6px;background:#0d0020;border-radius:8px;padding:7px 10px;border:1px solid #4c1d95;">
+              <div style="font-size:11px;font-weight:700;color:#a78bfa;margin-bottom:5px;">📋 被攻擊記錄（最近 ${defReplays.length} 場）</div>
+              ${defReplays.map((r,i) => {
+                const ago = typeof formatRelativeTime === 'function' ? formatRelativeTime(r.ts) : '';
+                return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-top:${i>0?'1px solid #1e1b4b':'none'};">
+                  <span style="font-size:12px;">${r.won?'🛡':'💀'}</span>
+                  <div style="flex:1;font-size:10px;color:${r.won?'#86efac':'#f87171'};">
+                    ${r.won?'防守成功':'防守失敗'} — ${escapeHtml(r.attackerIcon)} ${escapeHtml(r.attackerName||'???')} 挑戰　<span style="color:#6b7280;">${ago}</span>
+                  </div>
+                  <button onclick="showHellPvpDefenseReplay(${i})" style="padding:3px 8px;border:none;border-radius:5px;font-size:9px;font-weight:700;cursor:pointer;background:#2d1b69;color:#c4b5fd;">回放</button>
+                </div>`;
+              }).join('')}
+            </div>`;
           return `<div style="display:flex; gap:5px; flex-wrap:wrap; margin-top:5px;">
             ${hasActiveEffect ? `<button onclick="hellCounterAttack()" style="padding:4px 8px; border:none; border-radius:6px; cursor:pointer; font-size:11px; font-weight:700; background:linear-gradient(135deg,#3f0000,#dc2626); color:#fff;">🗡️ 反擊（-10體力）</button>` : ''}
             ${hasActiveEffect ? `<button onclick="hellCryForHelp()" style="padding:4px 8px; border:none; border-radius:6px; cursor:pointer; font-size:11px; font-weight:700; background:#1f2937; color:#d1d5db;">🆘 求援廣播</button>` : ''}
             ${!hasProtect ? `<button onclick="hellBuyProtect()" style="padding:4px 8px; border:none; border-radius:6px; cursor:pointer; font-size:11px; font-weight:700; background:linear-gradient(135deg,#001a00,#16a34a); color:#fff;">🛡️ 防護符 5000幣</button>` : ''}
-          </div>`;
+          </div>${defHtml}`;
         })()}
         <div class="char-coins">🪙 ${coins} 鵝鵝幣　·　🧭 ${rpg.exploreCoins || 0} 探險幣　·　🥚 ${me.eggCoins || 0} 鵝蛋幣</div>
         <div class="stat-bar">
@@ -21566,7 +21652,7 @@ ${b.text}
   // ⭐⭐⭐  地獄使者系統  ⭐⭐⭐
   // ============================================================
 
-  const HELL_STAMINA_COST = { stealStamina: 10, plunder: 20, duel: 15, curse: 25, seal: 30, drainXp: 20 };
+  const HELL_STAMINA_COST = { stealStamina: 10, plunder: 20, duel: 20, curse: 25, seal: 30, drainXp: 20 };
   const HELL_STEAL_STAMINA_AMOUNT = [10, 20]; // [min, max]
   const HELL_PLUNDER_AMOUNT = 50000;
   // ⭐ 地獄黑市品項
@@ -22739,9 +22825,8 @@ ${b.text}
           const tCls  = CLASSES[tRpg.class] || { icon:'👤', name:'冒險者' };
           const tStats= computeStats(t) || {};
           rpg.hellDuelCd = rpg.hellDuelCd || {};
-          // const cdRem = Math.max(0, (rpg.hellDuelCd[t.id] || 0) + 30*60*1000 - Date.now());
-          const cdRem = 0; // 測試期間冷卻關閉
-          const cdMin = 0;
+          const cdRem = Math.max(0, (rpg.hellDuelCd[t.id] || 0) + 30*60*1000 - Date.now());
+          const cdMin = cdRem > 0 ? Math.ceil(cdRem / 60000) : 0;
           // 是否有防護符
           const hasProtect = tRpg.hellProtect && Date.now() < (tRpg.hellProtect.endAt || 0);
           const hasSeal    = tRpg.hellSeal    && Date.now() < (tRpg.hellSeal.endAt    || 0);
@@ -22808,7 +22893,7 @@ ${b.text}
       <h2 style="color:#c084fc; margin-bottom:10px;">
         <span>⚔️ 主動挑戰</span>
         <span style="font-size:11px;color:#818cf8;font-weight:500;margin-left:6px;">
-          （勝利 +30 EXP・落敗 +60 EXP・30 分冷卻）
+          （勝利 +30 EXP・落敗 +60 EXP・每次 20 體力・下咒後 30 分冷卻）
         </span>
       </h2>
       <div style="font-size:11px;color:#818cf8;margin-bottom:10px;background:#0d0020;
@@ -22836,11 +22921,24 @@ ${b.text}
     const rpg = getRpg(me);
     const target = players.find(p => p && p.id === targetId);
     if (!target) { showToast('找不到目標'); return; }
-    rpg.hellDuelCd = rpg.hellDuelCd || {};
 
-    // ⭐ 直接用真實玩家物件出戰（共用標準系統）
+    // ⭐ 體力檢查（20 體力）
+    const _duelCost = getHellCost('duel', rpg);
+    if ((rpg.stamina || 0) < _duelCost) { showToast(`⚡ 靈力不足（需 ${_duelCost} 體力）`); return; }
+
+    // ⭐ 冷卻（30分鐘，僅在下咒後生效）
+    rpg.hellDuelCd = rpg.hellDuelCd || {};
+    const _cdRem = Math.max(0, (rpg.hellDuelCd[targetId] || 0) + 30*60*1000 - Date.now());
+    if (_cdRem > 0) { showToast(`⏳ 冷卻中（剩 ${Math.ceil(_cdRem/60000)} 分鐘，上次下咒後 30 分鐘才能再挑戰）`); return; }
+
+    // ⭐ 扣除體力
+    rpg.stamina = Math.max(0, (rpg.stamina || 0) - _duelCost);
+
     const meStats = computeStats(me);
     if (meStats) { rpg.hp = rpg.hp || meStats.maxHp; rpg.mp = rpg.mp || meStats.maxMp; }
+    const tRpg = getRpg(target);
+    const tCls = CLASSES[tRpg?.class] || { icon: '👤', name: '冒險者' };
+    const dStats = computeStats(target);
     const result = autoFightPvP(me, target);
 
     // XP：勝利 30，落敗 60（2 倍）
@@ -22852,29 +22950,54 @@ ${b.text}
       rpg.skillPoints   = (rpg.skillPoints   || 0) + POINTS_PER_LEVEL.skill;
       rpg.abilityPoints = (rpg.abilityPoints || 0) + POINTS_PER_LEVEL.ability;
     }
-    rpg.hellDuelCd[targetId] = Date.now();
     rpg.hellStats = rpg.hellStats || {};
     rpg.hellStats.duelCount = (rpg.hellStats.duelCount || 0) + 1;
 
-    // ⭐ 儲存回放（最多 5 場，精簡 log 只存 type/text/round）
-    const compactLog = result.log.map(({ type, text, round }) => ({ type, text, round }));
-    const tRpg = getRpg(target);
-    const tCls = CLASSES[tRpg?.class] || { icon: '👤', name: '冒險者' };
+    // ⭐ 全 log（含 hp 數據）存入攻方回放
+    const myCls = CLASSES[rpg.class] || { icon: '💀', name: '地獄使者' };
     const replayEntry = {
       ts: Date.now(),
+      isAttacker: true,
       targetId: target.id,
       targetName: target.name || '???',
       targetIcon: tCls.icon || '👤',
+      targetClassId: tRpg?.class || '',
       targetClass: tCls.name || '冒險者',
       targetLevel: tRpg?.level || 1,
+      attackerClassId: rpg.class || 'hellmessenger',
+      attackerIcon: myCls.icon || '💀',
       won: result.won,
       rounds: result.rounds || 0,
       xpGained,
-      log: compactLog,
+      attackerMaxHp: Math.round((meStats?.maxHp || 1) * PVP_HP_MULT),
+      defenderMaxHp: Math.round((dStats?.maxHp || 1) * PVP_HP_MULT),
+      log: (result.log || []).map(({ type, text, round, hp }) => ({ type, text, round, hp })),
     };
     if (!rpg.hellPvpReplays) rpg.hellPvpReplays = [];
     rpg.hellPvpReplays.unshift(replayEntry);
     if (rpg.hellPvpReplays.length > 5) rpg.hellPvpReplays = rpg.hellPvpReplays.slice(0, 5);
+
+    // ⭐ 被攻擊記錄寫入對方
+    const defReplay = {
+      ts: Date.now(),
+      isAttacker: false,
+      attackerName: me.name || '地獄使者',
+      attackerIcon: myCls.icon || '💀',
+      attackerClassId: rpg.class || 'hellmessenger',
+      attackerLevel: rpg.level || 1,
+      targetIcon: tCls.icon,
+      targetClassId: tRpg?.class || '',
+      won: !result.won, // 從防守方角度
+      rounds: result.rounds || 0,
+      attackerMaxHp: Math.round((meStats?.maxHp || 1) * PVP_HP_MULT),
+      defenderMaxHp: Math.round((dStats?.maxHp || 1) * PVP_HP_MULT),
+      log: (result.log || []).map(({ type, text, round, hp }) => ({ type, text, round, hp })),
+    };
+    if (!tRpg.hellPvpDefenseReplays) tRpg.hellPvpDefenseReplays = [];
+    tRpg.hellPvpDefenseReplays.unshift(defReplay);
+    if (tRpg.hellPvpDefenseReplays.length > 5) tRpg.hellPvpDefenseReplays = tRpg.hellPvpDefenseReplays.slice(0, 5);
+    tRpg.saveVersion = (tRpg.saveVersion || 0) + 1;
+    target.lastTouchedAt = Date.now() - 1;
 
     // 廣播
     if (result.won) {
@@ -22882,57 +23005,190 @@ ${b.text}
     } else {
       broadcastHellAction('💀', `地獄使者 【${escapeHtml(me.name||'???')}】 向 ${escapeHtml(target.name)} 發起決鬥落敗，越挫越勇！（+${xpGained} EXP）`);
     }
-    saveData();
 
-    // ⭐ 顯示完整戰鬥記錄 modal
-    showHellPvpResultModal(replayEntry);
+    saveData();
+    window.__firebaseSync?.forceWriteAllPlayers?.([target]).catch(() => {});
+
+    // ⭐ 勝利 → 選咒；落敗 → 直接看回放
+    if (result.won) {
+      showHellCurseSelectionModal(replayEntry, targetId);
+    } else {
+      showHellPvpAnimatedModal(replayEntry);
+    }
   }
   window.hellChallengePlayer = hellChallengePlayer;
 
-  // ⭐ 渲染 PvP 戰鬥 log HTML（共用：即時結果 & 回放）
-  function _renderPvpLogHtml(log) {
-    let lastRound = null;
-    return (log || []).map(e => {
-      let sep = '';
+
+  // ⭐ 地獄 PvP：動畫回放 modal（含美工圖 + HP 條動畫）
+  let _pvpAnimTimer = null;
+  function showHellPvpAnimatedModal(replay) {
+    if (_pvpAnimTimer) { clearTimeout(_pvpAnimTimer); _pvpAnimTimer = null; }
+    const aCls = CLASSES[replay.attackerClassId] || { icon: '💀', name: '地獄使者', image: null };
+    const dCls = CLASSES[replay.targetClassId]   || { icon: '👤', name: '冒險者',   image: null };
+    const aMaxHp = replay.attackerMaxHp || 1;
+    const dMaxHp = replay.defenderMaxHp || 1;
+
+    const _mkImg = (cls, side) => cls.image
+      ? `<img class="class-art" src="${cls.image}" alt="${escapeHtml(cls.name)}" style="width:56px;height:56px;image-rendering:pixelated;image-rendering:crisp-edges;">`
+      : `<div style="font-size:40px;line-height:1;">${cls.icon}</div>`;
+
+    const arenaHtml = `
+      <div class="battle-arena" style="margin-bottom:6px;">
+        <div class="combatant">
+          <div class="combatant-icon">${_mkImg(aCls,'atk')}</div>
+          <div class="combatant-name">${escapeHtml(replay.isAttacker ? '你（地獄使者）' : replay.attackerName)} Lv${replay.attackerLevel||'?'}</div>
+          <div class="combatant-hp-track"><div class="combatant-hp-fill" id="pvpHpA" style="width:100%"></div></div>
+          <div class="combatant-hp-text" id="pvpHpAtxt">${aMaxHp}/${aMaxHp}</div>
+        </div>
+        <div class="vs-icon">⚔️</div>
+        <div class="combatant">
+          <div class="combatant-icon">${_mkImg(dCls,'def')}</div>
+          <div class="combatant-name">${escapeHtml(replay.targetName||replay.attackerName||'???')} Lv${replay.targetLevel||'?'}</div>
+          <div class="combatant-hp-track"><div class="combatant-hp-fill" id="pvpHpD" style="width:100%"></div></div>
+          <div class="combatant-hp-text" id="pvpHpDtxt">${dMaxHp}/${dMaxHp}</div>
+        </div>
+      </div>
+      <div class="battle-log" id="pvpBattleLog" style="max-height:280px;overflow-y:auto;"></div>
+      <div style="font-size:11px;text-align:center;color:${replay.won?'#fde047':'#f87171'};font-weight:800;padding:6px 0;">
+        ${replay.won ? '⚔️ 地獄使者勝！' : '💀 地獄使者敗！'} 共 ${replay.rounds} 回合　+${replay.xpGained||0} EXP
+      </div>
+    `;
+
+    showModal(replay.won ? '⚔️ 決鬥勝利！' : '💀 決鬥落敗', arenaHtml + `<button onclick="hideModal();renderHellPvpCard();" style="margin-top:8px;width:100%;padding:10px;border:none;border-radius:8px;background:#374151;color:#fff;cursor:pointer;font-size:13px;font-weight:700;">關閉</button>`);
+
+    // 動畫播放
+    const logArr = replay.log || [];
+    const logEl  = document.getElementById('pvpBattleLog');
+    let idx = 0; let lastRound = null;
+    const step = () => {
+      if (idx >= logArr.length) return;
+      const e = logArr[idx++];
       if (e.round !== undefined && e.round !== lastRound) {
         lastRound = e.round;
-        sep = `<div style="text-align:center;color:#475569;font-size:10px;padding:2px 0;border-top:1px solid #1e293b;margin:2px 0;">── 回合 ${e.round} ──</div>`;
+        const sep = document.createElement('div');
+        sep.style.cssText = 'text-align:center;color:#475569;font-size:10px;padding:2px 0;border-top:1px solid #1e293b;margin:2px 0;';
+        sep.textContent = `── 回合 ${e.round} ──`;
+        logEl?.appendChild(sep);
       }
-      const col = e.type === 'crit-player' ? '#fde047'
-        : e.type === 'player'   ? '#93c5fd'
-        : e.type === 'monster'  ? '#fca5a5'
-        : '#c4b5fd';
-      return `${sep}<div style="font-size:11px;color:${col};padding:1px 0;">${escapeHtml(e.text || '')}</div>`;
-    }).join('');
+      const col = e.type === 'crit-player' ? '#fde047' : e.type === 'player' ? '#93c5fd' : e.type === 'monster' ? '#fca5a5' : '#c4b5fd';
+      const div = document.createElement('div');
+      div.style.cssText = `font-size:11px;color:${col};padding:1px 0;`;
+      div.textContent = e.text || '';
+      logEl?.appendChild(div);
+      if (logEl) logEl.scrollTop = logEl.scrollHeight;
+      // HP bars
+      if (e.hp) {
+        const pBar = document.getElementById('pvpHpA');
+        const mBar = document.getElementById('pvpHpD');
+        const pTxt = document.getElementById('pvpHpAtxt');
+        const mTxt = document.getElementById('pvpHpDtxt');
+        if (pBar) pBar.style.width = Math.max(0, Math.min(100, (e.hp.player / aMaxHp * 100))) + '%';
+        if (mBar) mBar.style.width = Math.max(0, Math.min(100, (e.hp.monster / dMaxHp * 100))) + '%';
+        if (pTxt) pTxt.textContent = `${Math.max(0,e.hp.player)}/${aMaxHp}`;
+        if (mTxt) mTxt.textContent = `${Math.max(0,e.hp.monster)}/${dMaxHp}`;
+      }
+      const isSameRound = idx < logArr.length && logArr[idx]?.round === e.round;
+      _pvpAnimTimer = setTimeout(step, isSameRound ? 80 : 550);
+    };
+    _pvpAnimTimer = setTimeout(step, 200);
   }
+  window.showHellPvpAnimatedModal = showHellPvpAnimatedModal;
 
-  // ⭐ 顯示決鬥結果 modal（含完整 log）
-  function showHellPvpResultModal(replay) {
-    const logHtml = _renderPvpLogHtml(replay.log);
-    showModal(replay.won ? '⚔️ 決鬥勝利！' : '💀 決鬥落敗', `
-      <div style="text-align:center;padding:6px 0 10px;">
-        <div style="font-size:28px;">${replay.won ? '⚔️' : '💀'}</div>
-        <div style="font-size:14px;font-weight:800;color:${replay.won?'#fde047':'#f87171'};margin-top:4px;">
-          vs ${escapeHtml(replay.targetIcon)} ${escapeHtml(replay.targetName)}
-          <span style="font-size:10px;font-weight:400;color:#9ca3af;">Lv${replay.targetLevel} ${escapeHtml(replay.targetClass)}</span>
-        </div>
-        <div style="font-size:11px;color:#9ca3af;margin-top:2px;">${replay.won?'⚔️ 地獄使者勝！':'💀 地獄使者敗！'}　共 ${replay.rounds} 回合　+${replay.xpGained} EXP</div>
+  // ⭐ 選咒 modal（勝利後 4 選 1）
+  function showHellCurseSelectionModal(replayEntry, targetId) {
+    const target = players.find(p => p && p.id === targetId);
+    const tName = target?.name || '對方';
+    const curses = [
+      { id: 'seal',     icon: '🛁', name: '洗澡卡之咒',  desc: `封印 ${escapeHtml(tName)} 3 分鐘，期間無法做任何行動` },
+      { id: 'atk',      icon: '🐔', name: '弱雞雞之咒',  desc: 'ATK/MARK -25%，3 分鐘內所有戰鬥開始時發動' },
+      { id: 'def',      icon: '🐥', name: '軟雞雞之咒',  desc: 'DEF -25%，3 分鐘內所有戰鬥開始時發動' },
+      { id: 'paralyze', icon: '⚡', name: '雞痳街之咒',  desc: '戰鬥開始時獲得 3 層麻痺，3 分鐘內持續生效' },
+    ];
+    const btnHtml = curses.map(c => `
+      <button onclick="applyHellPvpCurse('${targetId}','${c.id}',${JSON.stringify(replayEntry).replace(/'/g, "\\'")})"
+        style="width:100%;padding:10px 12px;border:none;border-radius:10px;cursor:pointer;
+               background:linear-gradient(135deg,#3b0764,#7c3aed);color:#e9d5ff;
+               font-size:12px;font-weight:700;text-align:left;margin-bottom:8px;line-height:1.5;">
+        ${c.icon} ${c.name}<br>
+        <span style="font-size:10px;font-weight:400;color:#c4b5fd;">${c.desc}</span>
+      </button>`).join('');
+
+    showModal('⚔️ 選擇詛咒', `
+      <div style="text-align:center;padding:6px 0 12px;">
+        <div style="font-size:13px;font-weight:800;color:#fde047;">擊敗了 ${escapeHtml(tName)}！選擇施加的詛咒：</div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:2px;">下咒後對此玩家冷卻 30 分鐘</div>
       </div>
-      <div class="battle-log" style="max-height:340px;overflow-y:auto;padding:8px;border-radius:8px;">${logHtml}</div>
-      <button onclick="hideModal();renderHellPvpCard();" style="margin-top:12px;width:100%;padding:10px;border:none;border-radius:8px;background:#374151;color:#fff;cursor:pointer;font-size:13px;font-weight:700;">關閉</button>
+      ${btnHtml}
+      <button onclick="applyHellPvpCurse('${targetId}','none',${JSON.stringify(replayEntry).replace(/'/g, "\\'")})"
+        style="width:100%;padding:8px;border:none;border-radius:8px;cursor:pointer;
+               background:#374151;color:#9ca3af;font-size:12px;font-weight:700;">
+        不施咒（直接看回放）
+      </button>
     `);
   }
-  window.showHellPvpResultModal = showHellPvpResultModal;
+  window.showHellCurseSelectionModal = showHellCurseSelectionModal;
 
-  // ⭐ 查看指定回放（索引 0 = 最新）
+  // ⭐ 施加詛咒並顯示回放
+  function applyHellPvpCurse(targetId, curseType, replayEntry) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const target = players.find(p => p && p.id === targetId);
+
+    if (curseType !== 'none' && target) {
+      const tRpg = getRpg(target);
+      if (tRpg.hellProtect && Date.now() < tRpg.hellProtect.endAt) {
+        showToast(`🛡️ ${escapeHtml(target.name)} 持有防護符！詛咒無效`);
+      } else {
+        const _endAt = Date.now() + 3 * 60 * 1000;
+        const _applier = me.name || '地獄使者';
+        if (curseType === 'seal') {
+          tRpg.hellSeal = { applier: _applier, ts: Date.now(), endAt: _endAt };
+          broadcastHellAction('🛁', `地獄使者 【${escapeHtml(me.name||'???')}】 對 ${escapeHtml(target.name)} 施加了【洗澡卡之咒】！3 分鐘內無法行動！`);
+        } else if (curseType === 'atk') {
+          tRpg.hellCurse = { applier: _applier, ts: Date.now(), endAt: _endAt, type: 'atk', atkPct: 0.25 };
+          broadcastHellAction('🐔', `地獄使者 【${escapeHtml(me.name||'???')}】 對 ${escapeHtml(target.name)} 施加了【弱雞雞之咒】！ATK/MARK -25%！`);
+        } else if (curseType === 'def') {
+          tRpg.hellCurse = { applier: _applier, ts: Date.now(), endAt: _endAt, type: 'def', defPct: 0.25 };
+          broadcastHellAction('🐥', `地獄使者 【${escapeHtml(me.name||'???')}】 對 ${escapeHtml(target.name)} 施加了【軟雞雞之咒】！DEF -25%！`);
+        } else if (curseType === 'paralyze') {
+          tRpg.hellCurse = { applier: _applier, ts: Date.now(), endAt: _endAt, type: 'paralyze', charges: 3 };
+          broadcastHellAction('⚡', `地獄使者 【${escapeHtml(me.name||'???')}】 對 ${escapeHtml(target.name)} 施加了【雞痳街之咒】！戰鬥開場 3 層麻痺！`);
+        }
+        tRpg.saveVersion = (tRpg.saveVersion || 0) + 1;
+        target.lastTouchedAt = Date.now() - 1;
+        window.__firebaseSync?.forceWriteAllPlayers?.([target]).catch(() => {});
+      }
+      // ⭐ 下咒後設 30 分鐘 CD
+      rpg.hellDuelCd = rpg.hellDuelCd || {};
+      rpg.hellDuelCd[targetId] = Date.now();
+    }
+
+    saveData();
+    // 顯示動畫回放
+    showHellPvpAnimatedModal(replayEntry);
+  }
+  window.applyHellPvpCurse = applyHellPvpCurse;
+
+  // ⭐ 查看指定攻方回放（索引 0 = 最新）
   function showHellPvpReplay(idx) {
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
     const replay = (rpg.hellPvpReplays || [])[idx];
     if (!replay) { showToast('找不到回放記錄'); return; }
-    showHellPvpResultModal(replay);
+    showHellPvpAnimatedModal(replay);
   }
   window.showHellPvpReplay = showHellPvpReplay;
+
+  // ⭐ 查看指定防守回放（被攻擊記錄，索引 0 = 最新）
+  function showHellPvpDefenseReplay(idx) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const replay = (rpg.hellPvpDefenseReplays || [])[idx];
+    if (!replay) { showToast('找不到回放記錄'); return; }
+    showHellPvpAnimatedModal(replay);
+  }
+  window.showHellPvpDefenseReplay = showHellPvpDefenseReplay;
+
 
   // ============================================================
   // ⭐⭐⭐  競技場系統（Arena / PvP）  ⭐⭐⭐
@@ -22999,7 +23255,9 @@ ${b.text}
     const cls  = CLASSES[rpg.class];
 
     // ── 從第一頁行動規則提取技能清單 ──
-    const page1 = Array.isArray(rpg.actionPatterns) ? (rpg.actionPatterns[0] || []) : [];
+    // ⭐ 防守頁（index 4）優先；若為空則 fallback 到第一頁
+    const _defPage = Array.isArray(rpg.actionPatterns) ? (rpg.actionPatterns[4] || []) : [];
+    const page1 = _defPage.length > 0 ? _defPage : (Array.isArray(rpg.actionPatterns) ? (rpg.actionPatterns[0] || []) : []);
     const seen  = new Set();
     const skillIds = [];
     for (const rule of page1) {
