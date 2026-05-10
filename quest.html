@@ -6731,6 +6731,7 @@
     // ⭐ 奈落專用詞條池（lv 28 裝備才會出）
     { type: 'hpRegen', name: '生命湧現', perLv: 0, fixedPct: 2, nabyssOnly: true },  // 每回合回血 2% maxHP（上限 10%，每件 +2%）
     { type: 'atk',     name: '虛空之力', perLv: 0.50, nabyssOnly: true },
+    { type: 'mark',    name: '奈落術印', perLv: 0.50, nabyssOnly: true },
     { type: 'def',     name: '深淵護盾', perLv: 0.45, nabyssOnly: true },
     { type: 'spd',     name: '混沌疾影', perLv: 0.35, nabyssOnly: true },
     { type: 'hp',      name: '奈落根基', perLv: 3.5,  nabyssOnly: true },
@@ -13806,7 +13807,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510110227';
+  const APP_VERSION = '20260510110712';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13862,7 +13863,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260510_affix_filter';
+  const NEWS_LATEST_ID = 'patch_20260510_nabyss_mark';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -13882,6 +13883,19 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#1e1b4b,#4c1d95); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">⚒️ 奈落鍛造 — 新增 MARK 詞條　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#c4b5fd; margin:6px 0 4px;">✨ 奈落術印（新詞條）</div>
+        <div>・奈落鍛造第 4 條詞條池新增「<b>奈落術印</b>」— MARK 強化</div>
+        <div>・強度與「虛空之力（ATK）」相同（perLv ×0.50，倍率 ×1.80）</div>
+        <div>・現在第 4 條可能出現：虛空之力 / <b>奈落術印</b> / 深淵護盾 / 混沌疾影 / 奈落根基 / 生命湧現</div>
+
+        <div style="background:#1e1b4b; border-radius:8px; padding:8px 12px; margin:10px 0 16px; font-size:12px; color:#c4b5fd;">
+          💡 法師 / 聖騎可透過奈落鍛造打出奈落術印，大幅提升 MARK 輸出！
+        </div>
 
         <div style="background:linear-gradient(135deg,#064e3b,#065f46); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🔍 背包詞條高級篩選　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
