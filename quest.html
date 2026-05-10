@@ -13924,7 +13924,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510142734';
+  const APP_VERSION = '20260510143401';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -16248,12 +16248,25 @@ ${b.text}
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
     const pat = _apCurrentPage(rpg);
-    if (!pat[idx]) return;
+    // ⭐ 若規則被 Firebase 同步覆蓋導致陣列為空，從 DOM 還原所有規則
+    if (!pat[idx]) {
+      const judgeEls = document.querySelectorAll('#actionPatternBody .ap-judge');
+      const skillEls = document.querySelectorAll('#actionPatternBody .ap-skill');
+      const paramEls = document.querySelectorAll('#actionPatternBody .ap-param');
+      for (let di = 0; di < judgeEls.length; di++) {
+        pat[di] = pat[di] || {
+          judgeId: Number(judgeEls[di]?.value) || 1000,
+          param:   Number(paramEls[di]?.value)  || 0,
+          skillId: String(skillEls[di]?.value   || 'basic'),
+        };
+      }
+      if (!pat[idx]) return; // DOM 也找不到，放棄
+    }
     const r = pat[idx];
     if (field === 'judgeId') r.judgeId = Number(value) || 1000;
     else if (field === 'skillId') r.skillId = String(value);
     saveData();
-    renderActionPattern(); // 只有 judgeId/skillId 變動才需整體重繪
+    renderActionPattern(); // judgeId/skillId 變動需整體重繪（顯示/隱藏 param 欄）
   }
   window.updateActionRule = updateActionRule;
 
