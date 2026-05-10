@@ -3860,7 +3860,7 @@
       }
       const _nx = _wbLogArr[_wbi];
       const _sr = _nx && entry.round !== undefined && entry.round === _nx.round;
-      setTimeout(wbPlayStep, _sr ? 80 : 550);
+      setTimeout(wbPlayStep, _sr ? 55 : 220);
     };
     wbPlayStep();
   }
@@ -14216,7 +14216,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510224338';
+  const APP_VERSION = '20260510225216';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -20659,7 +20659,7 @@ ${b.text}
           if (text) text.textContent = `${bh.hp}/${bh.maxHp}`;
         });
       }
-      setTimeout(playStep, 120);
+      setTimeout(playStep, 60);
     };
     playStep();
   }
@@ -20898,7 +20898,7 @@ ${b.text}
     const prog = document.getElementById('prProgress');
     if (prog) prog.textContent = `${st.i} / ${st.log.length}`;
 
-    const BASE_DELAY = entry.type === 'system' ? 300 : 120;
+    const BASE_DELAY = entry.type === 'system' ? 150 : 60;
     st.timer = setTimeout(() => _runPartyReplayStep(sessionId), Math.round(BASE_DELAY / st.speed));
   }
 
@@ -21569,7 +21569,7 @@ ${b.text}
     if (prog) prog.textContent = `${st.i} / ${st.log.length}`;
     const _nx = st.log[st.i];
     const _sr = _nx && entry.round !== undefined && entry.round === _nx.round;
-    const baseDelay = _sr ? 80 : 350;
+    const baseDelay = _sr ? 55 : 220;
     const sid = st.sessionId;
     st.timer = setTimeout(() => runReplayStep(sid), Math.max(60, baseDelay / st.speed));
   }
@@ -21951,7 +21951,7 @@ ${b.text}
         }
         const _nx = result.log[i];
         const _sr = _nx && entry.round !== undefined && entry.round === _nx.round;
-        setTimeout(playStep, _sr ? 80 : 350);
+        setTimeout(playStep, _sr ? 55 : 220);
       };
       playStep();
       return;
@@ -22154,7 +22154,7 @@ ${b.text}
       }
       const _nx = result.log[i];
       const _sr = _nx && entry.round !== undefined && entry.round === _nx.round;
-      setTimeout(replayStep, _sr ? 80 : 350);
+      setTimeout(replayStep, _sr ? 55 : 220);
     };
     replayStep();
   }
@@ -24751,7 +24751,10 @@ ${b.text}
         updateSpdBar('pSpdBar', 'pSpdText', entry.gauge.p, '行動條');
         updateSpdBar('mSpdBar', 'mSpdText', entry.gauge.m, '行動條');
       }
-      setTimeout(playStep, 550);
+      // ⭐ 同回合連續動作快跳（55ms），換回合才停頓（220ms）
+      const _nx = result.log[i];
+      const _sr = _nx && entry.round !== undefined && entry.round === _nx.round;
+      setTimeout(playStep, _sr ? 55 : 220);
     };
     playStep();
   }
@@ -24870,7 +24873,7 @@ ${b.text}
       }
       const _nx = result.log[i];
       const _sr = _nx && entry.round !== undefined && entry.round === _nx.round;
-      setTimeout(playStep, _sr ? 80 : 350);
+      setTimeout(playStep, _sr ? 55 : 220);
     };
     playStep();
   }
