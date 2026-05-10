@@ -13924,7 +13924,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510142503';
+  const APP_VERSION = '20260510142734';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -16091,7 +16091,8 @@ ${b.text}
   function setDexTab(slot) { __dexTab = slot; showItemDex(); }
   window.setDexTab = setDexTab;
 
-  let __apPage = 0; // 目前在規則 modal 中檢視的頁（0–3）
+  let __apPage = 0; // 目前在規則 modal 中檢視的頁（0–4，4=防守頁）
+  window._apShowCopyPicker = false; // 是否顯示「複製其他頁」選擇器
 
   // 用 modal 開行動規則編輯器（規則改完即時存）
   function showActionPatternModal(startPage) {
@@ -16213,7 +16214,25 @@ ${b.text}
       <div class="ap-controls">
         <button class="btn btn-primary ap-add" onclick="addActionRule()">+ 加一條規則</button>
         <button class="btn btn-secondary ap-reset" onclick="resetActionPattern()">↺ 重置為預設</button>
+        <button class="btn btn-secondary" onclick="toggleApCopyPicker()" style="background:#ede9fe; color:#5b21b6; border-color:#c4b5fd;">📋 複製其他頁</button>
       </div>
+      ${window._apShowCopyPicker ? (() => {
+        const _srcPages = [0,1,2,3,4].filter(i => i !== __apPage);
+        const _allNames = [...(names), '🛡 防守頁'];
+        const _srcBtns = _srcPages.map(i => {
+          const _cnt = (patterns[i] || []).length;
+          const _nm  = i === 4 ? '🛡 防守頁' : escapeHtml(_allNames[i] || '頁 '+(i+1));
+          const _dis  = _cnt === 0;
+          return `<button onclick="${_dis ? '' : `copyApPageFrom(${i})`}" style="flex:1; padding:7px 4px; border:2px solid ${_dis?'#e5e7eb':'#c4b5fd'}; border-radius:8px; background:${_dis?'#f9fafb':'#ede9fe'}; color:${_dis?'#9ca3af':'#5b21b6'}; font-size:11px; font-weight:700; cursor:${_dis?'default':'pointer'}; font-family:inherit;">
+            ${_nm}<br><span style="font-size:9px; color:${_dis?'#d1d5db':'#7c3aed'};">${_cnt} 條${_dis?' (空)':''}</span>
+          </button>`;
+        }).join('');
+        return `<div style="margin-top:6px; padding:8px 10px; background:#f5f3ff; border:1.5px dashed #c4b5fd; border-radius:10px;">
+          <div style="font-size:11px; font-weight:700; color:#5b21b6; margin-bottom:6px;">選擇來源頁（複製到「${pageName}」）：</div>
+          <div style="display:flex; gap:5px;">${_srcBtns}</div>
+          <div style="font-size:10px; color:#9ca3af; margin-top:5px;">⚠️ 複製會覆蓋當前頁所有規則</div>
+        </div>`;
+      })() : ''}
     `;
   }
   window.renderActionPattern = renderActionPattern;
@@ -16308,6 +16327,7 @@ ${b.text}
   // 切換 modal 內分頁
   function switchApPage(idx) {
     __apPage = idx;
+    window._apShowCopyPicker = false; // 切換分頁時收起選擇器
     renderActionPattern();
   }
   window.switchApPage = switchApPage;
@@ -16339,6 +16359,40 @@ ${b.text}
     showToast(`✦ 已將「${(rpg.patternPageNames||[])[idx]||'頁 '+(idx+1)}」設為打怪預設`);
   }
   window.setActivePatternPage = setActivePatternPage;
+
+  // 切換「複製其他頁」選擇器顯示
+  function toggleApCopyPicker() {
+    window._apShowCopyPicker = !window._apShowCopyPicker;
+    renderActionPattern();
+  }
+  window.toggleApCopyPicker = toggleApCopyPicker;
+
+  // 從指定頁複製規則到當前頁
+  function copyApPageFrom(fromIdx) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    rpg.actionPatterns = rpg.actionPatterns || [[], [], [], []];
+    const src = rpg.actionPatterns[fromIdx];
+    if (!Array.isArray(src) || src.length === 0) { showToast('來源頁沒有規則'); return; }
+    const allNames = [...(rpg.patternPageNames || []), '🛡 防守頁'];
+    const srcName  = fromIdx === 4 ? '🛡 防守頁' : (allNames[fromIdx] || '頁 '+(fromIdx+1));
+    const dstName  = __apPage  === 4 ? '🛡 防守頁' : (allNames[__apPage]  || '頁 '+(__apPage+1));
+    const dstHas   = Array.isArray(rpg.actionPatterns[__apPage]) && rpg.actionPatterns[__apPage].length > 0;
+    const doIt = () => {
+      if (!Array.isArray(rpg.actionPatterns[__apPage])) rpg.actionPatterns[__apPage] = [];
+      rpg.actionPatterns[__apPage] = src.map(r => ({ ...r })); // 深拷貝
+      window._apShowCopyPicker = false;
+      saveData();
+      renderActionPattern();
+      showToast(`✅ 已將「${srcName}」複製到「${dstName}」（${src.length} 條規則）`);
+    };
+    if (dstHas) {
+      safeConfirm(`「${dstName}」已有 ${rpg.actionPatterns[__apPage].length} 條規則，確定用「${srcName}」覆蓋？`, doIt);
+    } else {
+      doIt();
+    }
+  }
+  window.copyApPageFrom = copyApPageFrom;
 
   // 設定個人王用哪頁規則
   function setPersonalBossPatternPage(bossId, pageStr) {
