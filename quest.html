@@ -8712,10 +8712,23 @@
             }
             // ⭐ 法書記錄：法師施放帶元素標記的技能
             if (player.rpg.class === 'mage' && skill.spellElement && totalDmg > 0) {
+              const _sbOvfl1 = _spellBook.length >= 10 ? _spellBook[0] : null; // 溢出檢查
               _spellBook.push(skill.spellElement);
               if (_spellBook.length > 10) _spellBook.shift();
               // ⭐ 法書 UI 標記：把最新法書狀態附到剛推入的 log 條目
               if (log.length > 0 && log[log.length - 1].hp) log[log.length - 1].hp.spellBook = [..._spellBook];
+              // ⭐ 法書溢出：被推出的元素觸發 1 自身行動回合的元素吸收加成
+              if (_sbOvfl1) {
+                const _ovMk1 = (stats.mark||0)*(1+(pBuff.atkPct||0)+(pBuff.markPct||0));
+                const _ovIco = {fire:'🔥',ice:'🧊',thunder:'⚡',poison:'☠️',blood:'🩸'}[_sbOvfl1]||'✨';
+                let _ovNote1 = '';
+                if (_sbOvfl1==='fire')   { applyStatus(playerObj,{type:'buff',stat:'markPct',amount:0.12,turns:1,playerTurnOnly:true,key:'absorb_fire'});    _ovNote1='🔥MARK+12%'; }
+                else if (_sbOvfl1==='ice')    { applyStatus(playerObj,{type:'buff',stat:'defPct', amount:0.20,turns:1,playerTurnOnly:true,key:'absorb_ice'});     _ovNote1='🧊DEF+20%'; }
+                else if (_sbOvfl1==='thunder'){ applyStatus(playerObj,{type:'buff',stat:'critDmg',amount:0.10,turns:1,playerTurnOnly:true,key:'absorb_thunder'}); _ovNote1='⚡爆傷+10%'; }
+                else if (_sbOvfl1==='poison') { applyStatus(playerObj,{type:'buff',stat:'spellPoison',amount:1,turns:1,playerTurnOnly:true,key:'absorb_poison'}); _ovNote1='☠️毒吐息1行動'; }
+                else if (_sbOvfl1==='blood')  { const _ovH1=Math.round(_ovMk1*2); pHp=Math.min(stats.maxHp,pHp+_ovH1); applyStatus(playerObj,{type:'buff',stat:'maxHpPct',amount:0.04,turns:1,playerTurnOnly:true,key:'absorb_blood_hp'}); applyStatus(playerObj,{type:'buff',stat:'mpRegen',amount:3,turns:1,playerTurnOnly:true,key:'absorb_blood_mp'}); _ovNote1=`🩸回HP+${_ovH1}、MaxHP+4%、MP+3`; }
+                if (_ovNote1) log.push({type:'system',text:`💫 法書溢出（${_ovIco}）→ ${_ovNote1}（1自身行動）`,hp:{player:pHp,monster:Math.max(0,mHp),mp:pMp,spellBook:[..._spellBook]}});
+              }
             }
             // ⭐ 鵝鵝的刀盾：護盾衝鋒後追加免費普攻（正常傷害 + 當前HP×3 真傷）
             if (skill.id === 'p_shield_charge' && pBuff.swordShield > 0 && mHp > 0) {
@@ -9136,9 +9149,21 @@
           }
           const _chantIcon = { ice: '❄️冰錐術', fire: '🔥火球術', thunder: '⚡連環閃電', blood: '🩸血吸術' }[_chantEl];
           mHp = Math.max(0, mHp - _chantDmg);
+          const _cOvfl = _spellBook.length >= 10 ? _spellBook[0] : null;
           _spellBook.push(_chantEl);
           if (_spellBook.length > 10) _spellBook.shift();
           log.push({ type: 'player', text: `回合 ${round}：📖 自動唸咒 ${_chantIcon} → ${monster.name} -${_chantDmg} HP${_chantExtra}　[法書${_spellBook.length}/10]`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp, spellBook: [..._spellBook] } });
+          if (_cOvfl) {
+            const _ovMkC = (stats.mark||0)*(1+(pBuff.atkPct||0)+(pBuff.markPct||0));
+            const _ovIcoC = {fire:'🔥',ice:'🧊',thunder:'⚡',poison:'☠️',blood:'🩸'}[_cOvfl]||'✨';
+            let _ovNoteC = '';
+            if (_cOvfl==='fire')         { applyStatus(playerObj,{type:'buff',stat:'markPct',amount:0.12,turns:1,playerTurnOnly:true,key:'absorb_fire'}); _ovNoteC='🔥MARK+12%'; }
+            else if (_cOvfl==='ice')     { applyStatus(playerObj,{type:'buff',stat:'defPct', amount:0.20,turns:1,playerTurnOnly:true,key:'absorb_ice'}); _ovNoteC='🧊DEF+20%'; }
+            else if (_cOvfl==='thunder') { applyStatus(playerObj,{type:'buff',stat:'critDmg',amount:0.10,turns:1,playerTurnOnly:true,key:'absorb_thunder'}); _ovNoteC='⚡爆傷+10%'; }
+            else if (_cOvfl==='poison')  { applyStatus(playerObj,{type:'buff',stat:'spellPoison',amount:1,turns:1,playerTurnOnly:true,key:'absorb_poison'}); _ovNoteC='☠️毒吐息1行動'; }
+            else if (_cOvfl==='blood')   { const _ovHC=Math.round(_ovMkC*2); pHp=Math.min(stats.maxHp,pHp+_ovHC); applyStatus(playerObj,{type:'buff',stat:'maxHpPct',amount:0.04,turns:1,playerTurnOnly:true,key:'absorb_blood_hp'}); applyStatus(playerObj,{type:'buff',stat:'mpRegen',amount:3,turns:1,playerTurnOnly:true,key:'absorb_blood_mp'}); _ovNoteC=`🩸回HP+${_ovHC}、MaxHP+4%、MP+3`; }
+            if (_ovNoteC) log.push({type:'system',text:`💫 法書溢出（${_ovIcoC}）→ ${_ovNoteC}（1自身行動）`,hp:{player:pHp,monster:Math.max(0,mHp),mp:pMp,spellBook:[..._spellBook]}});
+          }
           if (mHp <= 0) { pushDeathLine(); }
         }
         // ⭐ 完美節拍（晚餐鵝精魂刻印特殊）：追蹤連爆計數
@@ -10221,8 +10246,20 @@
               }
               // ⭐ 法書記錄（組隊）
               if (player.rpg.class === 'mage' && skill.spellElement) {
+                const _sbOvflM1 = _spellBookM.length >= 10 ? _spellBookM[0] : null;
                 _spellBookM.push(skill.spellElement);
                 if (_spellBookM.length > 10) _spellBookM.shift();
+                if (_sbOvflM1) {
+                  const _ovMkM1 = (stats.mark||0)*(1+(pBuff.atkPct||0)+(pBuff.markPct||0));
+                  const _ovIcoM1 = {fire:'🔥',ice:'🧊',thunder:'⚡',poison:'☠️',blood:'🩸'}[_sbOvflM1]||'✨';
+                  let _ovNoteM1 = '';
+                  if (_sbOvflM1==='fire')         { applyStatus(playerObj,{type:'buff',stat:'markPct',amount:0.12,turns:1,playerTurnOnly:true,key:'absorb_fire'}); _ovNoteM1='🔥MARK+12%'; }
+                  else if (_sbOvflM1==='ice')     { applyStatus(playerObj,{type:'buff',stat:'defPct', amount:0.20,turns:1,playerTurnOnly:true,key:'absorb_ice'}); _ovNoteM1='🧊DEF+20%'; }
+                  else if (_sbOvflM1==='thunder') { applyStatus(playerObj,{type:'buff',stat:'critDmg',amount:0.10,turns:1,playerTurnOnly:true,key:'absorb_thunder'}); _ovNoteM1='⚡爆傷+10%'; }
+                  else if (_sbOvflM1==='poison')  { applyStatus(playerObj,{type:'buff',stat:'spellPoison',amount:1,turns:1,playerTurnOnly:true,key:'absorb_poison'}); _ovNoteM1='☠️毒吐息1行動'; }
+                  else if (_sbOvflM1==='blood')   { const _ovHM1=Math.round(_ovMkM1*2); pHp=Math.min(stats.maxHp,pHp+_ovHM1); applyStatus(playerObj,{type:'buff',stat:'maxHpPct',amount:0.04,turns:1,playerTurnOnly:true,key:'absorb_blood_hp'}); applyStatus(playerObj,{type:'buff',stat:'mpRegen',amount:3,turns:1,playerTurnOnly:true,key:'absorb_blood_mp'}); _ovNoteM1=`🩸回HP+${_ovHM1}、MaxHP+4%、MP+3`; }
+                  if (_ovNoteM1) log.push({type:'system',text:`💫 法書溢出（${_ovIcoM1}）→ ${_ovNoteM1}（1自身行動）`,hp:hpsSnapshot()});
+                }
               }
             }
             // ⭐ 反彈傷害在技能 log 後統一顯示（計算已在迴圈內套用）
@@ -10737,9 +10774,21 @@
             const _chantIconM = { ice: '❄️冰錐術', fire: '🔥火球術', thunder: '⚡連環閃電', blood: '🩸血吸術' }[_chantElM];
             _chantTgt.hp = Math.max(0, _chantTgt.hp - _chantDmgM);
             if (_chantTgt.hp <= 0) _chantTgt.alive = false;
+            const _cOvflM = _spellBookM.length >= 10 ? _spellBookM[0] : null;
             _spellBookM.push(_chantElM);
             if (_spellBookM.length > 10) _spellBookM.shift();
             log.push({ type: 'player', text: `回合 ${round}：📖 自動唸咒 ${_chantIconM} → ${_chantTgt.icon}${_chantTgt.name} -${_chantDmgM} HP${_chantExtraM}　[法書${_spellBookM.length}/10]`, hp: hpsSnapshot() });
+            if (_cOvflM) {
+              const _ovMkCM = (stats.mark||0)*(1+(pBuff.atkPct||0)+(pBuff.markPct||0));
+              const _ovIcoCM = {fire:'🔥',ice:'🧊',thunder:'⚡',poison:'☠️',blood:'🩸'}[_cOvflM]||'✨';
+              let _ovNoteCM = '';
+              if (_cOvflM==='fire')         { applyStatus(playerObj,{type:'buff',stat:'markPct',amount:0.12,turns:1,playerTurnOnly:true,key:'absorb_fire'}); _ovNoteCM='🔥MARK+12%'; }
+              else if (_cOvflM==='ice')     { applyStatus(playerObj,{type:'buff',stat:'defPct', amount:0.20,turns:1,playerTurnOnly:true,key:'absorb_ice'}); _ovNoteCM='🧊DEF+20%'; }
+              else if (_cOvflM==='thunder') { applyStatus(playerObj,{type:'buff',stat:'critDmg',amount:0.10,turns:1,playerTurnOnly:true,key:'absorb_thunder'}); _ovNoteCM='⚡爆傷+10%'; }
+              else if (_cOvflM==='poison')  { applyStatus(playerObj,{type:'buff',stat:'spellPoison',amount:1,turns:1,playerTurnOnly:true,key:'absorb_poison'}); _ovNoteCM='☠️毒吐息1行動'; }
+              else if (_cOvflM==='blood')   { const _ovHCM=Math.round(_ovMkCM*2); pHp=Math.min(stats.maxHp,pHp+_ovHCM); applyStatus(playerObj,{type:'buff',stat:'maxHpPct',amount:0.04,turns:1,playerTurnOnly:true,key:'absorb_blood_hp'}); applyStatus(playerObj,{type:'buff',stat:'mpRegen',amount:3,turns:1,playerTurnOnly:true,key:'absorb_blood_mp'}); _ovNoteCM=`🩸回HP+${_ovHCM}、MaxHP+4%、MP+3`; }
+              if (_ovNoteCM) log.push({type:'system',text:`💫 法書溢出（${_ovIcoCM}）→ ${_ovNoteCM}（1自身行動）`,hp:hpsSnapshot()});
+            }
           }
         }
         // ⭐ 聖母鵝行動（試煉場）
@@ -13875,7 +13924,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510122950';
+  const APP_VERSION = '20260510124810';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13931,7 +13980,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260510_absorb_ice';
+  const NEWS_LATEST_ID = 'patch_20260510_spellbook_overflow';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -13951,6 +14000,26 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#3b1a6b,#1e1b4b); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">💫 法書溢出 — 自動觸發元素吸收　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#c4b5fd; margin:6px 0 4px;">📖 法書滿格時新增機制</div>
+        <div>・法書已滿（10格）時繼續施放元素技能，最舊的元素被擠出</div>
+        <div>・<b>被擠出的元素</b>自動觸發對應的元素吸收效果，持續 <b>1 次自身行動回合</b></div>
+        <div style="font-size:12px; padding-left:8px; margin:4px 0;">
+          <div>🔥 火溢出 → MARK +12%（1行動）</div>
+          <div>🧊 冰溢出 → DEF +20%（1行動）</div>
+          <div>⚡ 雷溢出 → 爆傷 +10%（1行動）</div>
+          <div>☠️ 毒溢出 → 自動毒吐息（1行動）</div>
+          <div>🩸 血溢出 → 立即回HP（MARK×2）+ MaxHP+4% + MP+3（1行動）</div>
+        </div>
+        <div>・適用於：技能施放、自動唸咒（單體＆組隊戰皆適用）</div>
+
+        <div style="background:#1e0a3c; border-radius:8px; padding:8px 12px; margin:10px 0 16px; font-size:12px; color:#c4b5fd;">
+          💡 法書持續循環施法時，溢出效果讓法師在全速運轉時也能持續獲得增益！
+        </div>
 
         <div style="background:linear-gradient(135deg,#1e3a5f,#1e1b4b); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🌀 元素吸收 — 冰系解除上限　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
@@ -15563,6 +15632,8 @@ ${b.text}
       buffPairs.push('　🩸 血 ×N：立即回 HP = MARK×N×2；MaxHP +4%×N（5回）；每回 MP +3×N（5回）');
       buffPairs.push('⏱ 所有 buff 持續 5 次自身行動回合（怪物行動不消耗）');
       buffPairs.push('📭 吸收後魔法書清空');
+      buffPairs.push('─────────────');
+      buffPairs.push('💫 【法書溢出】：法書滿10格時，新元素加入會將最舊的元素擠出，擠出的元素自動觸發對應元素吸收效果（持續 1 自身行動回合）');
       buffPairs.push('─────────────');
     }
     if (skill.type === 'summon') {
