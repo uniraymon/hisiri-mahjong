@@ -13816,7 +13816,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510112500';
+  const APP_VERSION = '20260510112639';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13872,7 +13872,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260510_nabyss_mark';
+  const NEWS_LATEST_ID = 'patch_20260510_judge1913';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -13892,6 +13892,25 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#0f172a,#1e3a5f); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">📋 行動規則新增判斷條件　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#93c5fd; margin:6px 0 4px;">🔁 新條件：擊出後隔 X 次自己行動再放（麻痺跳過）</div>
+        <div>・規則下拉新增「<b>擊出後隔 X 次自己行動再放（麻痺跳過）</b>」</div>
+        <div>・首次到達規則就觸發，之後每隔 <b>X 次自己的實際行動</b>（不含麻痺回合）重覆施放</div>
+        <div>・若被麻痺，該回合不計入倒數，等於直接跳過</div>
+        <div style="font-size:11px; color:#6b7280; margin-top:4px; padding-left:8px;">
+          對比參考：<br>
+          ・每 X 次行動後重覆（1911）= 含麻痺、從上次觸發算<br>
+          ・每 X 次固定回數（1912）= 麻痺跳過、但用固定格數 modulo<br>
+          ・<b>新（1913）= 麻痺跳過 + 從上次觸發起算</b>
+        </div>
+
+        <div style="background:#0f172a; border-radius:8px; padding:8px 12px; margin:10px 0 16px; font-size:12px; color:#93c5fd;">
+          💡 適合需要精確控制技能間隔、且不希望被麻痺打亂節奏的規則設定！
+        </div>
 
         <div style="background:linear-gradient(135deg,#1e1b4b,#4c1d95); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">⚒️ 奈落鍛造 — 新增 MARK 詞條　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
