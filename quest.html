@@ -13943,7 +13943,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510145644';
+  const APP_VERSION = '20260510151423';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -23260,7 +23260,7 @@ ${b.text}
           const tCls  = CLASSES[tRpg.class] || { icon:'👤', name:'冒險者' };
           const tStats= computeStats(t) || {};
           rpg.hellDuelCd = rpg.hellDuelCd || {};
-          const cdRem = Math.max(0, (rpg.hellDuelCd[t.id] || 0) + 30*60*1000 - Date.now());
+          const cdRem = Math.max(0, (rpg.hellDuelCd[t.id] || 0) + 15*60*1000 - Date.now());
           const cdMin = cdRem > 0 ? Math.ceil(cdRem / 60000) : 0;
           // 是否有防護符
           const hasProtect = tRpg.hellProtect && Date.now() < (tRpg.hellProtect.endAt || 0);
@@ -23366,10 +23366,10 @@ ${b.text}
     if (tRpgPre.hellProtect && Date.now() < tRpgPre.hellProtect.endAt) { showToast(`🛡️ ${escapeHtml(target.name)} 持有防護符，無法挑戰！`); return; }
     if (tRpgPre.hellProtect) delete tRpgPre.hellProtect; // 已過期則清除
 
-    // ⭐ 冷卻（30分鐘，僅在下咒後生效）
+    // ⭐ 冷卻（15分鐘，僅在下咒後生效）
     rpg.hellDuelCd = rpg.hellDuelCd || {};
-    const _cdRem = Math.max(0, (rpg.hellDuelCd[targetId] || 0) + 30*60*1000 - Date.now());
-    if (_cdRem > 0) { showToast(`⏳ 冷卻中（剩 ${Math.ceil(_cdRem/60000)} 分鐘，上次下咒後 30 分鐘才能再挑戰）`); return; }
+    const _cdRem = Math.max(0, (rpg.hellDuelCd[targetId] || 0) + 15*60*1000 - Date.now());
+    if (_cdRem > 0) { showToast(`⏳ 冷卻中（剩 ${Math.ceil(_cdRem/60000)} 分鐘，上次下咒後 15 分鐘才能再挑戰）`); return; }
 
     // ⭐ 扣除體力
     rpg.stamina = Math.max(0, (rpg.stamina || 0) - _duelCost);
