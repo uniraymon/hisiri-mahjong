@@ -13924,7 +13924,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510124810';
+  const APP_VERSION = '20260510125037';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -23395,14 +23395,17 @@ ${b.text}
         if (mTxt) mTxt.textContent = `${Math.max(0,e.hp.monster)}/${dMaxHp}`;
       }
       const isSameRound = idx < logArr.length && logArr[idx]?.round === e.round;
-      _pvpAnimTimer = setTimeout(step, isSameRound ? 80 : 550);
+      _pvpAnimTimer = setTimeout(step, isSameRound ? 35 : 220);
     };
-    _pvpAnimTimer = setTimeout(step, 200);
+    _pvpAnimTimer = setTimeout(step, 100);
   }
   window.showHellPvpAnimatedModal = showHellPvpAnimatedModal;
 
   // ⭐ 選咒 modal（勝利後 4 選 1）
+  // replayEntry 存入全域避免 JSON 內嵌 onclick 屬性斷行 bug
+  window._hellCurseSelectionReplay = null;
   function showHellCurseSelectionModal(replayEntry, targetId) {
+    window._hellCurseSelectionReplay = replayEntry; // 🔒 避免 JSON 雙引號破壞 onclick 屬性
     const target = players.find(p => p && p.id === targetId);
     const tName = target?.name || '對方';
     const curses = [
@@ -23412,7 +23415,7 @@ ${b.text}
       { id: 'paralyze', icon: '⚡', name: '雞痳街之咒',  desc: '戰鬥開始時獲得 3 層麻痺，3 分鐘內持續生效' },
     ];
     const btnHtml = curses.map(c => `
-      <button onclick="applyHellPvpCurse('${targetId}','${c.id}',${JSON.stringify(replayEntry).replace(/'/g, "\\'")})"
+      <button onclick="applyHellPvpCurse('${targetId}','${c.id}')"
         style="width:100%;padding:10px 12px;border:none;border-radius:10px;cursor:pointer;
                background:linear-gradient(135deg,#3b0764,#7c3aed);color:#e9d5ff;
                font-size:12px;font-weight:700;text-align:left;margin-bottom:8px;line-height:1.5;">
@@ -23426,7 +23429,7 @@ ${b.text}
         <div style="font-size:11px;color:#9ca3af;margin-top:2px;">下咒後對此玩家冷卻 30 分鐘</div>
       </div>
       ${btnHtml}
-      <button onclick="applyHellPvpCurse('${targetId}','none',${JSON.stringify(replayEntry).replace(/'/g, "\\'")})"
+      <button onclick="applyHellPvpCurse('${targetId}','none')"
         style="width:100%;padding:8px;border:none;border-radius:8px;cursor:pointer;
                background:#374151;color:#9ca3af;font-size:12px;font-weight:700;">
         不施咒（直接看回放）
@@ -23436,7 +23439,8 @@ ${b.text}
   window.showHellCurseSelectionModal = showHellCurseSelectionModal;
 
   // ⭐ 施加詛咒並顯示回放
-  function applyHellPvpCurse(targetId, curseType, replayEntry) {
+  function applyHellPvpCurse(targetId, curseType) {
+    const replayEntry = window._hellCurseSelectionReplay; // 從全域取回放資料
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
     const target = players.find(p => p && p.id === targetId);
