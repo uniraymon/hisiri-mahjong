@@ -10093,25 +10093,26 @@
           if (_petItem?.petAbility) {
             const _pa = _petItem.petAbility;
             if (_petTurnCount % _pa.interval === 0) {
-              if (_pa.type === 'vulnerable') {
-                monster.statuses = monster.statuses || [];
-                monster.statuses.push({ type: 'vulnerable', amount: 0.50, hits: 1 });
-                log.push({ type: 'player', text: `回合 ${round}：${_petItem.icon} 【${_petItem.name}】「${_pa.label}」！${monster.name} 進入易傷狀態！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+              const _petTgt = mList.find(m => m.alive && m.hp > 0); // ⭐ fix: 多目標要找存活怪
+              if (_pa.type === 'vulnerable' && _petTgt) {
+                _petTgt.statuses = _petTgt.statuses || [];
+                _petTgt.statuses.push({ type: 'vulnerable', amount: 0.50, hits: 1 });
+                log.push({ type: 'player', text: `回合 ${round}：${_petItem.icon} 【${_petItem.name}】「${_pa.label}」！${_petTgt.name} 進入易傷狀態！`, hp: hpsSnapshot() });
               } else if (_pa.type === 'fullRestore') {
                 const _hpGain = Math.max(0, stats.maxHp - pHp);
                 const _mpGain = Math.max(0, stats.maxMp - pMp);
                 pHp = stats.maxHp;
                 pMp = stats.maxMp;
-                log.push({ type: 'player', text: `回合 ${round}：${_petItem.icon} 【${_petItem.name}】「${_pa.label}」！HP +${_hpGain}、MP +${_mpGain}（全回）！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
-              } else if (_pa.type === 'tripleAttack') {
-                log.push({ type: 'player', text: `回合 ${round}：${_petItem.icon} 【${_petItem.name}】「${_pa.label}」！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+                log.push({ type: 'player', text: `回合 ${round}：${_petItem.icon} 【${_petItem.name}】「${_pa.label}」！HP +${_hpGain}、MP +${_mpGain}（全回）！`, hp: hpsSnapshot() });
+              } else if (_pa.type === 'tripleAttack' && _petTgt) {
+                log.push({ type: 'player', text: `回合 ${round}：${_petItem.icon} 【${_petItem.name}】「${_pa.label}」！`, hp: hpsSnapshot() });
                 for (let _ph = 1; _ph <= 3; _ph++) {
                   const _petDmg = Math.round((stats.atk + (stats.mark || 0)) * (_pa.dmgMult || 20));
-                  mHp = Math.max(0, mHp - _petDmg);
-                  log.push({ type: 'player', text: `　　↳ 第 ${_ph} 擊 -${_petDmg} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
-                  if (mHp <= 0) break;
+                  _petTgt.hp = Math.max(0, _petTgt.hp - _petDmg);
+                  if (_petTgt.hp <= 0) _petTgt.alive = false;
+                  log.push({ type: 'player', text: `　　↳ 第 ${_ph} 擊 -${_petDmg} HP`, hp: hpsSnapshot() });
+                  if (!_petTgt.alive) break;
                 }
-                if (mHp <= 0) break;
               }
             }
           }
@@ -14069,7 +14070,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510194017';
+  const APP_VERSION = '20260510200035';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -14125,7 +14126,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260510_ultimates';
+  const NEWS_LATEST_ID = 'patch_20260510_petfix';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -14146,13 +14147,30 @@ ${b.text}
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
 
+        <div style="background:linear-gradient(135deg,#1a2a00,#2a3a00); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🐾 寵物能力 Bug 修正（試煉戰場）　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#bef264; margin:6px 0 4px;">🐾 寵物自動技能修正（試煉戰場 / 組隊戰）</div>
+        <div>・修正寵物裝備在<b>試煉戰場（多目標戰）</b>中技能無法發動的 Bug</div>
+        <div>・根本原因：程式碼錯誤讀取不存在的單體目標變數，導致觸發時直接崩潰或無效</div>
+        <div style="font-size:12px; padding-left:8px; margin:4px 0;">
+          <div>👁️ <b>靈魂凝視</b>（易傷）：現正確將易傷狀態施加到第一隻存活的怪</div>
+          <div>🌀 <b>腐蝕淨化</b>（全回HP/MP）：HP/MP 回復量現顯示正確數值</div>
+          <div>⚔️ <b>冥界三連擊</b>（三連傷害）：現正確打到目標並更新 HP 顯示</div>
+        </div>
+
+        <div style="background:#111a00; border-radius:8px; padding:8px 12px; margin:10px 0 16px; font-size:12px; color:#bef264;">
+          💡 試煉戰場（試煉之路 / 神殿）中配備寵物裝備，技能現在可以正常發動！
+        </div>
+
         <div style="background:linear-gradient(135deg,#0c1a3b,#1a0050); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">⚡ 大絕技能系統 ＋ 職業專屬強化　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
         </div>
 
         <div style="font-weight:700; color:#a5b4fc; margin:6px 0 4px;">🌑 弓手大絕：影分身（Lv 15，40 MP，每場限一次）</div>
         <div>・召喚分身！接下 <b>5 個自己回合</b>，所有行動連續發動兩次</div>
-        <div>・分身攻擊獨立計算爆頭／暴擊，爆頭計入永久累積</div>
+        <div>・分身攻擊獨立計算爆頭／暴擊，爆頭計入本場累積</div>
 
         <div style="font-weight:700; color:#fca5a5; margin:10px 0 4px;">🦊 戰士大絕：鵝暴化（Lv 15，免費，每場限一次）</div>
         <div>・持續 <b>15 個自己回合</b>：ATK/DEF +20%、血池收益×2</div>
@@ -14167,16 +14185,16 @@ ${b.text}
         </div>
 
         <div style="background:linear-gradient(135deg,#1a3a1a,#0a2a0a); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
-          <div style="font-size:15px; font-weight:800; color:#fff;">🎯 弓手永久爆頭累積　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
+          <div style="font-size:15px; font-weight:800; color:#fff;">🎯 弓手場內爆頭里程碑　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
         </div>
 
-        <div style="font-weight:700; color:#86efac; margin:6px 0 4px;">🎯🏆 每 50 爆頭 → 永久 +5% 爆頭率</div>
-        <div>・弓手每次戰鬥的爆頭次數會永久累積到帳號中</div>
-        <div>・每累積 <b>50 次爆頭</b>，永久爆頭率提升 +5%（無上限）</div>
-        <div>・影分身的分身爆頭同樣計入累積！</div>
+        <div style="font-weight:700; color:#86efac; margin:6px 0 4px;">🎯 每 50 爆頭 → <b>本場</b> +5% 爆頭率</div>
+        <div>・本場戰鬥中每累積 <b>50 次爆頭</b>，爆頭率提升 +5%（場內有效）</div>
+        <div>・影分身的分身爆頭同樣計入本場累積！</div>
+        <div>・戰鬥結束後重置，不永久存檔</div>
 
         <div style="background:#0a2a0a; border-radius:8px; padding:8px 12px; margin:10px 0 16px; font-size:12px; color:#86efac;">
-          💡 弓手玩得越久，爆頭率越高！刷副本累積爆頭，讓角色越來越強！
+          💡 場內爆頭連鎖效應！本場打越多爆頭，後續爆頭率越滾越高！
         </div>
 
         <div style="background:linear-gradient(135deg,#1e1b4b,#2d1a6b); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
