@@ -9115,16 +9115,24 @@
           const _chantMark = Math.round((stats.mark || 0) * (1 + (pBuff.atkPct || 0) + (pBuff.markPct || 0)) * 0.20);
           let _chantDmg = 0; let _chantExtra = '';
           if (_chantEl === 'ice') {
-            _chantDmg = Math.max(1, Math.round(_chantMark * 1.9 * (0.85 + Math.random() * 0.30)));
+            _chantDmg = Math.max(1, Math.round(_chantMark * 1.6 * (0.85 + Math.random() * 0.30)));
             if (Math.random() < 0.25 && !hasStatus(monster, 'paralyze')) { applyStatus(monster, { type: 'paralyze', charges: 1 }); _chantExtra = ' ⚡麻痺！'; }
           } else if (_chantEl === 'fire') {
-            _chantDmg = Math.max(1, Math.round(_chantMark * 2.3 * (0.85 + Math.random() * 0.30)));
+            _chantDmg = Math.max(1, Math.round(_chantMark * 2.0 * (0.85 + Math.random() * 0.30)));
           } else if (_chantEl === 'thunder') {
-            for (let _ci = 0; _ci < 3; _ci++) _chantDmg += Math.max(1, Math.round(_chantMark * 1.1 * (0.85 + Math.random() * 0.30)));
+            for (let _ci = 0; _ci < 3; _ci++) _chantDmg += Math.max(1, Math.round(_chantMark * 0.8 * (0.85 + Math.random() * 0.30)));
           } else { // blood
-            _chantDmg = Math.max(1, Math.round(_chantMark * 1.7 * (0.85 + Math.random() * 0.30)));
-            const _chantHeal = Math.round(_chantDmg * 0.10);
-            if (_chantHeal > 0) { pHp = Math.min(stats.maxHp, pHp + _chantHeal); _chantExtra = ` 🩸+${_chantHeal}HP`; }
+            _chantDmg = Math.max(1, Math.round(_chantMark * 1.4 * (0.85 + Math.random() * 0.30)));
+            // ⭐ 血系：吸血 + 固定回HP10% + 回MP10%；法書≥3屠時×3
+            const _bloodInBook = _spellBook.filter(e => e === 'blood').length + 1; // +1 含本次
+            const _bloodMult   = _bloodInBook >= 3 ? 3 : 1;
+            const _chantHealDmg = Math.round(_chantDmg * 0.10);
+            const _chantHealHp  = Math.round((stats.maxHp || 0) * 0.10 * _bloodMult);
+            const _chantHealMp  = Math.round((stats.maxMp || 0) * 0.10 * _bloodMult);
+            const _totalHpHeal  = _chantHealDmg + _chantHealHp;
+            if (_totalHpHeal > 0) pHp = Math.min(stats.maxHp, pHp + _totalHpHeal);
+            if (_chantHealMp  > 0) pMp = Math.min(stats.maxMp || 0, (pMp || 0) + _chantHealMp);
+            _chantExtra = ` 🩸+${_totalHpHeal}HP +${_chantHealMp}MP${_bloodMult > 1 ? '（3屠×3！）' : ''}`;
           }
           const _chantIcon = { ice: '❄️冰錐術', fire: '🔥火球術', thunder: '⚡連環閃電', blood: '🩸血吸術' }[_chantEl];
           mHp = Math.max(0, mHp - _chantDmg);
@@ -10707,16 +10715,24 @@
             const _chantMarkM = Math.round((stats.mark || 0) * (1 + (pBuff.atkPct || 0) + (pBuff.markPct || 0)) * 0.20);
             let _chantDmgM = 0; let _chantExtraM = '';
             if (_chantElM === 'ice') {
-              _chantDmgM = Math.max(1, Math.round(_chantMarkM * 1.9 * (0.85 + Math.random() * 0.30)));
+              _chantDmgM = Math.max(1, Math.round(_chantMarkM * 1.6 * (0.85 + Math.random() * 0.30)));
               if (Math.random() < 0.25 && !hasStatus(_chantTgt, 'paralyze')) { applyStatus(_chantTgt, { type: 'paralyze', charges: 1 }); _chantExtraM = ' ⚡麻痺！'; }
             } else if (_chantElM === 'fire') {
-              _chantDmgM = Math.max(1, Math.round(_chantMarkM * 2.3 * (0.85 + Math.random() * 0.30)));
+              _chantDmgM = Math.max(1, Math.round(_chantMarkM * 2.0 * (0.85 + Math.random() * 0.30)));
             } else if (_chantElM === 'thunder') {
-              for (let _ci = 0; _ci < 3; _ci++) _chantDmgM += Math.max(1, Math.round(_chantMarkM * 1.1 * (0.85 + Math.random() * 0.30)));
+              for (let _ci = 0; _ci < 3; _ci++) _chantDmgM += Math.max(1, Math.round(_chantMarkM * 0.8 * (0.85 + Math.random() * 0.30)));
             } else {
-              _chantDmgM = Math.max(1, Math.round(_chantMarkM * 1.7 * (0.85 + Math.random() * 0.30)));
-              const _chantHealM = Math.round(_chantDmgM * 0.10);
-              if (_chantHealM > 0) { pHp = Math.min(stats.maxHp, pHp + _chantHealM); _chantExtraM = ` 🩸+${_chantHealM}HP`; }
+              _chantDmgM = Math.max(1, Math.round(_chantMarkM * 1.4 * (0.85 + Math.random() * 0.30)));
+              // ⭐ 血系：吸血 + 固定回HP10% + 回MP10%；法書≥3屠時×3
+              const _bloodInBookM = _spellBookM.filter(e => e === 'blood').length + 1;
+              const _bloodMultM   = _bloodInBookM >= 3 ? 3 : 1;
+              const _chantHealDmgM = Math.round(_chantDmgM * 0.10);
+              const _chantHealHpM  = Math.round((stats.maxHp || 0) * 0.10 * _bloodMultM);
+              const _chantHealMpM  = Math.round((stats.maxMp || 0) * 0.10 * _bloodMultM);
+              const _totalHpHealM  = _chantHealDmgM + _chantHealHpM;
+              if (_totalHpHealM > 0) pHp = Math.min(stats.maxHp, pHp + _totalHpHealM);
+              if (_chantHealMpM  > 0) pMp = Math.min(stats.maxMp || 0, (pMp || 0) + _chantHealMpM);
+              _chantExtraM = ` 🩸+${_totalHpHealM}HP +${_chantHealMpM}MP${_bloodMultM > 1 ? '（3屠×3！）' : ''}`;
             }
             const _chantIconM = { ice: '❄️冰錐術', fire: '🔥火球術', thunder: '⚡連環閃電', blood: '🩸血吸術' }[_chantElM];
             _chantTgt.hp = Math.max(0, _chantTgt.hp - _chantDmgM);
@@ -13859,7 +13875,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510121421';
+  const APP_VERSION = '20260510122342';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13915,7 +13931,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260510_mage_spellbuff';
+  const NEWS_LATEST_ID = 'patch_20260510_chant_blood';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -13940,13 +13956,10 @@ ${b.text}
           <div style="font-size:15px; font-weight:800; color:#fff;">📖 法師魔法系統強化　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
         </div>
 
-        <div style="font-weight:700; color:#a5b4fc; margin:6px 0 4px;">📖 自動唸咒 — 升至固定5等，傷害翻倍</div>
-        <div>・傷害基底從 <b>MARK×10%</b> 提升至 <b>MARK×20%</b>（固定5等強度，不再是小咒）</div>
-        <div>・所有元素倍率 +0.3：</div>
-        <div style="font-size:11px; padding-left:8px;">
-          <div>🧊 冰：1.6 → <b>1.9</b>　｜　🔥 火：2.0 → <b>2.3</b></div>
-          <div>⚡ 雷：0.8×3 → <b>1.1×3</b>　｜　🩸 血：1.4 → <b>1.7</b></div>
-        </div>
+        <div style="font-weight:700; color:#a5b4fc; margin:6px 0 4px;">📖 自動唸咒 — 固定5等強度（傷害基底×2）</div>
+        <div>・傷害基底從 <b>MARK×10%</b> 提升至 <b>MARK×20%</b>，倍率不變（固定5等強度）</div>
+        <div>・🩸 <b>血系大幅強化</b>：每次觸發除吸血外，額外回復 HP+10%、MP+10%</div>
+        <div>・法書中有 ≥3 顆🩸血：<b>回HP/MP效果×3（30%）</b></div>
 
         <div style="font-weight:700; color:#a5b4fc; margin:10px 0 4px;">💥 元素爆發 — 全面強化</div>
         <div>・所有元素傷害倍率 +0.3：</div>
@@ -15505,10 +15518,11 @@ ${b.text}
       buffPairs.push('─────────────');
       buffPairs.push('📖 持續 6 回合（玩家行動計算）');
       buffPairs.push('🔄 每次角色行動回合（普攻或使用技能）自動施放一次隨機元素咒（固定5等，傷害約 MARK×20%）：');
-      buffPairs.push('　🧊 冰：MARK×1.9，25% 機率附加麻痺 1 回合');
-      buffPairs.push('　🔥 火：MARK×2.3');
-      buffPairs.push('　⚡ 雷：3 連打，每段 MARK×1.1');
-      buffPairs.push('　🩸 血：MARK×1.7，並吸血（傷害的 10%）');
+      buffPairs.push('　🧊 冰：MARK×1.6，25% 機率附加麻痺 1 回合');
+      buffPairs.push('　🔥 火：MARK×2.0');
+      buffPairs.push('　⚡ 雷：3 連打，每段 MARK×0.8');
+      buffPairs.push('　🩸 血：MARK×1.4，吸血10% + 回HP10% + 回MP10%');
+      buffPairs.push('　　　法書≥3屠：回HP/MP效果×3（最多各30%）');
       buffPairs.push('📚 唸咒的元素會同步記入魔法書');
       buffPairs.push('─────────────');
     }
