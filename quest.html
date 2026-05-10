@@ -3728,6 +3728,7 @@
           <div class="combatant-spd-text" id="mSpdText">⏱ 行動條 0%</div>
         </div>
       </div>
+      ${_spellBookPanelHtml(me && getRpg(me).class === 'mage')}
       <div class="battle-log" id="battleLog"></div>
     `;
     fr.innerHTML = arenaHtml;
@@ -3800,6 +3801,8 @@
           if (pMpBar) pMpBar.style.width = (entry.hp.mp / _maxMp * 100) + '%';
           if (pMpTx) pMpTx.textContent = `MP ${entry.hp.mp}/${_maxMp}`;
         }
+        // ⭐ 法書 UI 更新
+        if (entry.hp.spellBook !== undefined) updateSpellBookPanel(entry.hp.spellBook);
         // 浮動傷害 + 精靈動畫（舊版完整邏輯）
         const _mDmg = _wbPrevMHp - entry.hp.monster;
         const _pDmg = _wbPrevPHp - entry.hp.player;
@@ -4935,6 +4938,43 @@
     // 自身 HP（延伸）
     1150: { id: 1150, label: '自身 HP ≤ X%（次要條件）',  paramType: 'percent' },
   };
+
+  // ⭐ 法書 UI：在戰鬥動畫中更新魔法書面板（10 格元素槽）
+  function updateSpellBookPanel(book) {
+    const _sbIcon   = { fire:'🔥', ice:'❄️', thunder:'⚡', poison:'☠️', blood:'🩸' };
+    const _sbBg     = { fire:'#7f1d1d', ice:'#1e3a5f', thunder:'#3b2a00', poison:'#14532d', blood:'#450a0a' };
+    const _sbBorder = { fire:'#dc2626', ice:'#3b82f6', thunder:'#facc15', poison:'#22c55e', blood:'#b91c1c' };
+    for (let i = 0; i < 10; i++) {
+      const el = document.getElementById('sbSlot' + i);
+      if (!el) continue;
+      const elem = book[i];
+      if (elem) {
+        el.textContent = _sbIcon[elem] || '✨';
+        el.style.background   = _sbBg[elem]     || '#1e1b4b';
+        el.style.borderColor  = _sbBorder[elem]  || '#4c1d95';
+      } else {
+        el.textContent = '';
+        el.style.background  = '#0f0a2e';
+        el.style.borderColor = '#4c1d95';
+      }
+    }
+    const countEl = document.getElementById('sbCount');
+    if (countEl) countEl.textContent = `${book.length}/10`;
+  }
+  window.updateSpellBookPanel = updateSpellBookPanel;
+
+  // ⭐ 法書面板 HTML（嵌入各戰鬥 arena）
+  function _spellBookPanelHtml(isMage) {
+    if (!isMage) return '';
+    const slots = Array.from({length: 10}, (_, i) =>
+      `<div id="sbSlot${i}" style="width:22px;height:22px;border-radius:4px;background:#0f0a2e;border:1px solid #4c1d95;display:flex;align-items:center;justify-content:center;font-size:13px;transition:background 0.2s,border-color 0.2s;"></div>`
+    ).join('');
+    return `<div id="spellBookPanel" style="background:#1e1b4b;border-radius:8px;padding:5px 12px;margin:4px 0;font-size:11px;display:flex;align-items:center;gap:0;flex-wrap:wrap;border:1px solid #4c1d95;">
+      <span style="color:#a78bfa;font-weight:800;padding:2px 10px 2px 0;border-right:1px solid #4c1d95;margin-right:10px;white-space:nowrap;">📖 魔法書</span>
+      <div style="display:flex;gap:3px;align-items:center;flex-wrap:wrap;">${slots}</div>
+      <span id="sbCount" style="color:#6d28d9;font-size:10px;margin-left:8px;white-space:nowrap;">0/10</span>
+    </div>`;
+  }
 
   // 評估一條 judge 是否成立
   // ctx = { pHp, maxHp, pMp, maxMp, mHp, maxMHp, playerActions, behaviorCount, ruleUseCount, lastRuleFireAt }
@@ -8431,7 +8471,7 @@
             log.push({
               type: _burstIsCrit ? 'crit-player' : 'player',
               text: `回合 ${round}：💥 元素爆發（${_bcDesc || '法書空'}）${_burstIsCrit ? '【暴擊】' : ''} → ${monster.name} -${_burstDmg} HP${_burstFx.length ? '　' + _burstFx.join('、') : ''}（${costStr}）`,
-              hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp },
+              hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp, spellBook: [] },
             });
             // 清空法書
             _spellBook = [];
@@ -8674,6 +8714,8 @@
             if (player.rpg.class === 'mage' && skill.spellElement && totalDmg > 0) {
               _spellBook.push(skill.spellElement);
               if (_spellBook.length > 10) _spellBook.shift();
+              // ⭐ 法書 UI 標記：把最新法書狀態附到剛推入的 log 條目
+              if (log.length > 0 && log[log.length - 1].hp) log[log.length - 1].hp.spellBook = [..._spellBook];
             }
             // ⭐ 鵝鵝的刀盾：護盾衝鋒後追加免費普攻（正常傷害 + 當前HP×3 真傷）
             if (skill.id === 'p_shield_charge' && pBuff.swordShield > 0 && mHp > 0) {
@@ -8736,7 +8778,7 @@
             log.push({
               type: 'player',
               text: `回合 ${round}：🌀 元素吸收 → ${_abLog.length ? _abLog.join('　') : '法書空，無效果'}（${costStr}）`,
-              hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp },
+              hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp, spellBook: [] },
             });
             // 清空法書
             _spellBook = [];
@@ -9088,7 +9130,7 @@
           mHp = Math.max(0, mHp - _chantDmg);
           _spellBook.push(_chantEl);
           if (_spellBook.length > 10) _spellBook.shift();
-          log.push({ type: 'player', text: `回合 ${round}：📖 自動唸咒 ${_chantIcon} → ${monster.name} -${_chantDmg} HP${_chantExtra}　[法書${_spellBook.length}/10]`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+          log.push({ type: 'player', text: `回合 ${round}：📖 自動唸咒 ${_chantIcon} → ${monster.name} -${_chantDmg} HP${_chantExtra}　[法書${_spellBook.length}/10]`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp, spellBook: [..._spellBook] } });
           if (mHp <= 0) { pushDeathLine(); }
         }
         // ⭐ 完美節拍（晚餐鵝精魂刻印特殊）：追蹤連爆計數
@@ -13816,7 +13858,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510112639';
+  const APP_VERSION = '20260510113259';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -20987,6 +21029,7 @@ ${b.text}
             <span id="pbHmgStatus" style="color:#6b7280; border-left:1px solid #7e22ce; padding-left:10px; font-style:italic;">未召喚</span>
           </div>
         </div>` : ''}
+        ${_spellBookPanelHtml(rpg.class === 'mage')}
         <div class="battle-log" id="battleLog"></div>
       `;
       const resultHost = document.getElementById('personalBossResult');
@@ -21087,6 +21130,8 @@ ${b.text}
             if (bpBar) bpBar.style.width = Math.min(100, (entry.hp.bloodPool / Math.max(1, stats.maxHp)) * 100) + '%';
             if (bpText) bpText.textContent = `🩸 血池 ${entry.hp.bloodPool}`;
           }
+          // ⭐ 法書 UI 更新
+          if (entry.hp.spellBook !== undefined) updateSpellBookPanel(entry.hp.spellBook);
           // ⭐ 浮動傷害 + 攻擊者/受傷者動畫（舊版完整邏輯）
           const _dmgM = _dPrevMHp - entry.hp.monster;
           const _dmgP = _dPrevPHp - entry.hp.player;
@@ -23771,6 +23816,7 @@ ${b.text}
           <div class="combatant-spd-text" id="mSpdText">⏱ 行動條 0%</div>
         </div>
       </div>
+      ${_spellBookPanelHtml(rpg.class === 'mage')}
       <div class="battle-log" id="battleLog"></div>
     `;
     document.getElementById('fightResult').innerHTML = arenaHtml;
@@ -23864,6 +23910,8 @@ ${b.text}
           if (bpBar) bpBar.style.width = Math.min(100, (entry.hp.bloodPool / Math.max(1, stats.maxHp)) * 100) + '%';
           if (bpText) bpText.textContent = `🩸 血池 ${entry.hp.bloodPool}`;
         }
+        // ⭐ 法書 UI 更新
+        if (entry.hp.spellBook !== undefined) updateSpellBookPanel(entry.hp.spellBook);
         // 浮動傷害數字
         const _mDmg = _prevMHp - entry.hp.monster;
         const _pDmg = _prevPHp - entry.hp.player;
