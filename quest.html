@@ -2644,7 +2644,9 @@
         { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.25, turns: 3, key: 'p_blessing' }, buffMaxHpPct: 0.20 },
         // ⭐ 護盾衝鋒：6× DEF；攻擊完後 DEF +10%（持續 3 回合）硬值 40
         { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 45, type: 'damage', defMult: 5.1, postSelfBuff: { stat: 'defPct', amount: 0.10, turns: 3, key: 'p_shield_charge' }, cast: 35 },
-        { id: 'p_aegis',         name: '反傷護盾', icon: '🪞', unlockLv: 8,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'reflectPct', amount: 0.50, turns: 3 } },
+        { id: 'p_aegis',         name: '百倍返しだ', icon: '💢', unlockLv: 8,  cooldown: 0, mpCost: 30, type: 'buff', applyHundredfoldReflect: 1, maxLv: 1 },
+        // ⭐ 不滅聖盾：終極大技 — 20×DEF + 10%maxHp / 攻後 DEF+60%(5回) + 免疫2次
+        { id: 'p_immortal_shield', name: '不滅聖盾', icon: '🛡✨', unlockLv: 10, cooldown: 0, mpCost: 80, type: 'damage', defMult: 20, bonusMaxHpPct: 0.10, postSelfBuff: { stat: 'defPct', amount: 0.60, turns: 5, key: 'p_immortal_shield' }, applyShield: 2, cast: 50, maxLv: 1 },
         // ⭐ 新增：神聖奪魂 — 0.8× ATK 傷害 + 回 4 MP（聖騎回魔多一倍）
         { id: 'p_mana_drain',    name: '神聖奪魂', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 0.8, mpRestore: 4 },
         // ⭐ 鵝鵝的刀盾：buff 持續 10 次自身行動（playerTurnOnly）
@@ -2830,7 +2832,7 @@
     // 聖騎
     p_judgment:'holy',  p_holy_slash:'holy', p_holy_heal:'holy',  p_pray:'holy',
     p_holy_smite:'holy', p_godfist:'holy',   p_blessing:'holy',   p_aegis:'holy',
-    p_shield_charge:'holy', p_sword_shield:'holy',
+    p_shield_charge:'holy', p_sword_shield:'holy', p_immortal_shield:'holy',
   };
 
   // ⭐ 裝備外觀（帽子 / 衣服 / 武器圖層）
@@ -5351,8 +5353,9 @@
         ];
       case 'paladin':
         return [
+          { judgeId: 1920, param: 1,  skillId: 'p_immortal_shield' }, // 不滅聖盾：每場最多一次大招
           { judgeId: 1101, param: 60, skillId: 'p_holy_heal' },
-          { judgeId: 1910, param: 4,  skillId: 'p_aegis' },           // 每4回合用一次反傷護盾（含麻痺，優先於神聖祝福）
+          { judgeId: 1910, param: 4,  skillId: 'p_aegis' },           // 每4回合用一次百倍返しだ（含麻痺，優先於神聖祝福）
           { judgeId: 1000, param: 0,  skillId: 'p_sword_shield' },    // 鵝鵝的刀盾（普攻+HP×3真傷、盾衝補攻；10回buff）
           { judgeId: 1000, param: 0,  skillId: 'p_blessing' },        // 神聖祝福（DEF +40% + 最大HP +20% buff）
           { judgeId: 1201, param: 25, skillId: 'p_pray' },
@@ -8769,8 +8772,13 @@
             }
             // ⭐ postSelfBuff：傷害技攻擊完後額外給自己 buff（護盾衝鋒：DEF +10）
             if (skill.postSelfBuff) {
-              applyStatus(playerObj, { type: 'buff', stat: skill.postSelfBuff.stat, amount: skill.postSelfBuff.amount, turns: skill.postSelfBuff.turns });
+              applyStatus(playerObj, { type: 'buff', stat: skill.postSelfBuff.stat, amount: skill.postSelfBuff.amount, turns: skill.postSelfBuff.turns, key: skill.postSelfBuff.key });
               extra += ` ✨${describeBuff(skill.postSelfBuff)}`;
+            }
+            // ⭐ 傷害技 applyShield（不滅聖盾：攻擊完後給 N 次免疫）
+            if (skill.applyShield) {
+              applyStatus(playerObj, { type: 'shield', charges: skill.applyShield, turns: 99 });
+              extra += ` 🛡 免疫 ${skill.applyShield} 次傷害`;
             }
             // ⭐ bonusMaxHpPct 顯示：讓玩家看到「+X HP 傷害」明確來自最大血量
             if (skill.bonusMaxHpPct && __bonusMaxHpDmg > 0) {
@@ -8920,7 +8928,12 @@
             // ⭐ 隱身：另加 shield 狀態（吸收一次傷害）+ Lv 5 額外 +20% 爆傷 buff
             if (skill.applyShield) {
               applyStatus(playerObj, { type: 'shield', charges: skill.applyShield, turns: 99 });
-              extraNote.push('🛡 免疫一次傷害');
+              extraNote.push(`🛡 免疫 ${skill.applyShield} 次傷害`);
+            }
+            // ⭐ 百倍返しだ：下次受傷半減 + 反射 100× 真傷（charge-based）
+            if (skill.applyHundredfoldReflect) {
+              applyStatus(playerObj, { type: 'hundredfoldReflect', charges: 1, turns: 99 });
+              extraNote.push('💢 百倍返し（下次受傷半減＋反射100×真傷）');
             }
             if (skill.id === 'a_stealth' && (__skillLv || 0) >= 5) {
               applyStatus(playerObj, { type: 'buff', stat: 'critDmg', amount: 0.20, turns: skill.selfBuff.turns });
@@ -9624,6 +9637,17 @@
             dmg = Math.max(1, Math.round(dmg));
             dmg = consumeShield(dmg);
             dmg = consumePartialShield(dmg);
+            // ⭐ 百倍返しだ：受傷半減 + 反射 100× 真傷（charge-based）
+            let _hrOrigDmg = 0;
+            if (dmg > 0) {
+              const _hrSt = (playerObj.statuses || []).find(x => x.type === 'hundredfoldReflect' && (x.charges || 0) > 0);
+              if (_hrSt) {
+                _hrSt.charges -= 1;
+                if (_hrSt.charges <= 0) playerObj.statuses = playerObj.statuses.filter(x => x !== _hrSt);
+                _hrOrigDmg = dmg;
+                dmg = Math.round(dmg * 0.5);
+              }
+            }
             // ⭐ 風鵝護符：物理/魔法傷害減免（ignoreDef=魔法，其餘=物理）
             if (mSkill.ignoreDef && _fxMagShield > 0)   dmg = Math.max(1, Math.round(dmg * Math.max(0.40, 1 - _fxMagShield * 0.20)));
             if (!mSkill.ignoreDef && _fxPhysShield > 0) dmg = Math.max(1, Math.round(dmg * Math.max(0.40, 1 - _fxPhysShield * 0.20)));
@@ -9637,10 +9661,17 @@
               if (_isPaladin && !_hmgFrozen) _hmgTakenCount++;
               log.push({
                 type: 'monster',
-                text: `回合 ${round}：${monster.icon}${monster.name} ✨${mSkill.verb || '技能'} → ${player.name} -${dmg} HP`,
+                text: `回合 ${round}：${monster.icon}${monster.name} ✨${mSkill.verb || '技能'} → ${player.name} -${dmg} HP${_hrOrigDmg > 0 ? '（半減）' : ''}`,
                 hp: { player: pHp, monster: mHp, mp: pMp }
               });
               applyReflect(dmg);
+            }
+            // ⭐ 百倍返しだ：反射 100× 真傷給怪物
+            if (_hrOrigDmg > 0 && mHp > 0) {
+              const _hrDmg = _hrOrigDmg * 100;
+              mHp -= _hrDmg;
+              log.push({ type: 'crit-player', text: `回合 ${round}：💢【百倍返しだ！】→ ${monster.name} 真傷 -${_hrDmg.toLocaleString()} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+              if (mHp <= 0) { pushDeathLine(); break; }
             }
             // ⭐ 不屈（午餐鵝精魂刻印特殊）：首次致死改為以 1 HP 存活
             if (pHp <= 0 && _spiritSpecials.has('tenacious') && !_tenaciousUsed) {
@@ -9675,6 +9706,17 @@
             dmg = Math.max(1, Math.round(dmg));
             dmg = consumeShield(dmg);
             dmg = consumePartialShield(dmg);
+            // ⭐ 百倍返しだ：受傷半減 + 反射 100×（普攻/多段）
+            let _hrOrigDmg2 = 0;
+            if (dmg > 0) {
+              const _hrSt2 = (playerObj.statuses || []).find(x => x.type === 'hundredfoldReflect' && (x.charges || 0) > 0);
+              if (_hrSt2) {
+                _hrSt2.charges -= 1;
+                if (_hrSt2.charges <= 0) playerObj.statuses = playerObj.statuses.filter(x => x !== _hrSt2);
+                _hrOrigDmg2 = dmg;
+                dmg = Math.round(dmg * 0.5);
+              }
+            }
             // ⭐ 風鵝護符：普攻為物理傷害
             if (_fxPhysShield > 0) dmg = Math.max(1, Math.round(dmg * Math.max(0.40, 1 - _fxPhysShield * 0.20)));
             // ⭐ 鵝盾刀：普攻物理減傷
@@ -9686,10 +9728,17 @@
               if (_isPaladin && !_hmgFrozen) _hmgTakenCount++;
               log.push({
                 type: 'monster',
-                text: `回合 ${round}：${monster.name} ${monster.verb}${hits > 1 ? `（${h+1}/${hits}）` : ''} → ${player.name} -${dmg} HP`,
+                text: `回合 ${round}：${monster.name} ${monster.verb}${hits > 1 ? `（${h+1}/${hits}）` : ''} → ${player.name} -${dmg} HP${_hrOrigDmg2 > 0 ? '（半減）' : ''}`,
                 hp: { player: Math.max(0, pHp), monster: mHp, mp: pMp }
               });
               applyReflect(dmg);
+            }
+            // ⭐ 百倍返しだ：反射 100× 真傷
+            if (_hrOrigDmg2 > 0 && mHp > 0) {
+              const _hrDmg2 = _hrOrigDmg2 * 100;
+              mHp -= _hrDmg2;
+              log.push({ type: 'crit-player', text: `回合 ${round}：💢【百倍返しだ！】→ ${monster.name} 真傷 -${_hrDmg2.toLocaleString()} HP`, hp: { player: Math.max(0, pHp), monster: Math.max(0, mHp), mp: pMp } });
+              if (mHp <= 0) { pushDeathLine(); dead = true; break; }
             }
             if (mHp <= 0) { pushDeathLine(); dead = true; break; }
             // ⭐ 不屈：普攻多段致死防護
@@ -9780,7 +9829,8 @@
       /^回合 \d+：🪞 反傷/.test(txt) ||
       /：.*?元素吸收 →/.test(txt) ||
       /^　　↳/.test(txt) ||
-      /靈噬之印 → /.test(txt);
+      /靈噬之印 → /.test(txt) ||
+      /：💢【百倍返しだ/.test(txt);
 
     return {
       get pAct() { return pAct; },
@@ -9897,7 +9947,7 @@
         s.charges = (s.charges || 0) - 1;
       }
       // ⭐ 易傷/護盾/麻痺/中毒/流血/魔坑：全部 charge/hit-based，不計 turns
-      if (s.type !== 'vulnerable' && s.type !== 'shield' && s.type !== 'paralyze' && s.type !== 'poison' && s.type !== 'partialShield' && s.type !== 'bleed') {
+      if (s.type !== 'vulnerable' && s.type !== 'shield' && s.type !== 'hundredfoldReflect' && s.type !== 'paralyze' && s.type !== 'poison' && s.type !== 'partialShield' && s.type !== 'bleed') {
         // ⭐ playerTurnOnly buff（鷹眼/瘋鵝術）只在玩家回合倒數，怪物回合不消耗
         if (!s.playerTurnOnly || isPlayerTick) {
           s.turns = (s.turns || 0) - 1;
@@ -9906,8 +9956,9 @@
     }
     target.statuses = target.statuses.filter(s => {
       if (s.type === 'vulnerable')    return (s.hits     || 0) > 0;
-      if (s.type === 'shield')        return (s.charges  || 0) > 0;
-      if (s.type === 'paralyze')      return (s.charges  || 0) > 0; // ⭐ charge-based
+      if (s.type === 'shield')               return (s.charges || 0) > 0;
+      if (s.type === 'hundredfoldReflect')   return (s.charges || 0) > 0; // ⭐ charge-based 百倍返し
+      if (s.type === 'paralyze')             return (s.charges || 0) > 0; // ⭐ charge-based
       if (s.type === 'poison')        return (s.charges  || 0) > 0; // ⭐ charge-based
       if (s.type === 'bleed')         return (s.charges  || 0) > 0; // ⭐ charge-based
       if (s.type === 'scorch')        return (s.charges  || 0) > 0; // ⭐ charge-based 灼燒
@@ -9970,10 +10021,10 @@
     return `✨ ${buff.stat} ${buff.amount >= 0 ? '+' : ''}${buff.amount}`;
   }
   function statusEmoji(type) {
-    return type === 'poison' ? '☠️' : type === 'paralyze' ? '⚡' : type === 'vulnerable' ? '🎯' : type === 'bleed' ? '🩸' : type === 'scorch' ? '🔥' : type === 'buff' ? '✨' : '✨';
+    return type === 'poison' ? '☠️' : type === 'paralyze' ? '⚡' : type === 'vulnerable' ? '🎯' : type === 'bleed' ? '🩸' : type === 'scorch' ? '🔥' : type === 'hundredfoldReflect' ? '💢' : type === 'buff' ? '✨' : '✨';
   }
   function statusLabel(type) {
-    return type === 'poison' ? '中毒' : type === 'paralyze' ? '麻痺' : type === 'vulnerable' ? '易傷' : type === 'bleed' ? '流血' : type === 'scorch' ? '灼燒' : type === 'buff' ? '增益' : type;
+    return type === 'poison' ? '中毒' : type === 'paralyze' ? '麻痺' : type === 'vulnerable' ? '易傷' : type === 'bleed' ? '流血' : type === 'scorch' ? '灼燒' : type === 'hundredfoldReflect' ? '百倍返し' : type === 'buff' ? '增益' : type;
   }
 
   // 多目標戰鬥（最多 N 隻怪物 vs 玩家），用在「試煉戰場」
@@ -10653,8 +10704,13 @@
             }
             // ⭐ postSelfBuff：護盾衝鋒打完 +10 DEF buff
             if (skill.postSelfBuff) {
-              applyStatus(playerObj, { type: 'buff', stat: skill.postSelfBuff.stat, amount: skill.postSelfBuff.amount, turns: skill.postSelfBuff.turns });
+              applyStatus(playerObj, { type: 'buff', stat: skill.postSelfBuff.stat, amount: skill.postSelfBuff.amount, turns: skill.postSelfBuff.turns, key: skill.postSelfBuff.key });
               extra += ` ✨${describeBuff(skill.postSelfBuff)}`;
+            }
+            // ⭐ 傷害技 applyShield（不滅聖盾：攻擊完後給 N 次免疫）
+            if (skill.applyShield) {
+              applyStatus(playerObj, { type: 'shield', charges: skill.applyShield, turns: 99 });
+              extra += ` 🛡 免疫 ${skill.applyShield} 次傷害`;
             }
             // ⭐ 爆血：攻擊完畢後清空血池
             if (skill.usesBloodPool) bloodPool = 0;
@@ -10770,7 +10826,11 @@
             }
             if (skill.applyShield) {
               applyStatus(playerObj, { type: 'shield', charges: skill.applyShield, turns: 99 });
-              extraNote.push('🛡 免疫一次傷害');
+              extraNote.push(`🛡 免疫 ${skill.applyShield} 次傷害`);
+            }
+            if (skill.applyHundredfoldReflect) {
+              applyStatus(playerObj, { type: 'hundredfoldReflect', charges: 1, turns: 99 });
+              extraNote.push('💢 百倍返し（下次受傷半減＋反射100×真傷）');
             }
             if (skill.id === 'a_stealth' && (__skillLv || 0) >= 5) {
               applyStatus(playerObj, { type: 'buff', stat: 'critDmg', amount: 0.20, turns: skill.selfBuff.turns });
@@ -11355,6 +11415,17 @@
             dmg = Math.max(1, Math.round(dmg));
             dmg = consumeShield2(dmg);
             dmg = consumePartialShield2(dmg);
+            // ⭐ 百倍返しだ：受傷半減 + 反射 100× 真傷（試煉場）
+            let _hrOrigDmgM = 0;
+            if (dmg > 0) {
+              const _hrStM = (playerObj.statuses || []).find(x => x.type === 'hundredfoldReflect' && (x.charges || 0) > 0);
+              if (_hrStM) {
+                _hrStM.charges -= 1;
+                if (_hrStM.charges <= 0) playerObj.statuses = playerObj.statuses.filter(x => x !== _hrStM);
+                _hrOrigDmgM = dmg;
+                dmg = Math.round(dmg * 0.5);
+              }
+            }
             // ⭐ 風鵝護符：物理/魔法傷害減免（ignoreDef=魔法，其餘=物理）
             if (mSkill.ignoreDef && _fxMagShield > 0)   dmg = Math.max(1, Math.round(dmg * Math.max(0.40, 1 - _fxMagShield * 0.20)));
             if (!mSkill.ignoreDef && _fxPhysShield > 0) dmg = Math.max(1, Math.round(dmg * Math.max(0.40, 1 - _fxPhysShield * 0.20)));
@@ -11370,10 +11441,17 @@
               if (_isPaladinM && !_hmgFrozenM) _hmgTakenCountM++;
               log.push({
                 type: 'monster',
-                text: `回合 ${round}：${m.icon}${m.name} ✨${mSkill.verb || '技能'} → ${player.name} -${dmg} HP`,
+                text: `回合 ${round}：${m.icon}${m.name} ✨${mSkill.verb || '技能'} → ${player.name} -${dmg} HP${_hrOrigDmgM > 0 ? '（半減）' : ''}`,
                 hp: hpsSnapshot(),
               });
               applyReflect2(dmg);
+            }
+            // ⭐ 百倍返しだ：反射 100× 真傷給怪物
+            if (_hrOrigDmgM > 0 && m.alive && m.hp > 0) {
+              const _hrDmgM = _hrOrigDmgM * 100;
+              m.hp -= _hrDmgM;
+              if (m.hp <= 0) m.alive = false;
+              log.push({ type: 'crit-player', text: `回合 ${round}：💢【百倍返しだ！】→ ${m.icon}${m.name} 真傷 -${_hrDmgM.toLocaleString()} HP`, hp: hpsSnapshot() });
             }
             // ⭐ 風鵝護符：異常狀態抵抗 -25%；shield 擋下傷害時同時免疫附加狀態
             if (pHp > 0 && dmg > 0 && mSkill.applyStatus && Math.random() < (mSkill.applyStatus.chance || 1) * (1 - _statusResistM)) {
@@ -11401,6 +11479,17 @@
             dmg = Math.max(1, Math.round(dmg));
             dmg = consumeShield2(dmg);
             dmg = consumePartialShield2(dmg);
+            // ⭐ 百倍返しだ：受傷半減 + 反射 100×（試煉場普攻）
+            let _hrOrigDmgM2 = 0;
+            if (dmg > 0) {
+              const _hrStM2 = (playerObj.statuses || []).find(x => x.type === 'hundredfoldReflect' && (x.charges || 0) > 0);
+              if (_hrStM2) {
+                _hrStM2.charges -= 1;
+                if (_hrStM2.charges <= 0) playerObj.statuses = playerObj.statuses.filter(x => x !== _hrStM2);
+                _hrOrigDmgM2 = dmg;
+                dmg = Math.round(dmg * 0.5);
+              }
+            }
             // ⭐ 風鵝護符：普攻為物理傷害
             if (_fxPhysShield > 0) dmg = Math.max(1, Math.round(dmg * Math.max(0.40, 1 - _fxPhysShield * 0.20)));
             if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1) * (_weaponBpBoostMult || 1);
@@ -11415,10 +11504,17 @@
               if (_isPaladinM && !_hmgFrozenM) _hmgTakenCountM++;
               log.push({
                 type: 'monster',
-                text: `回合 ${round}：${m.icon}${m.name} ${m.verb || '攻擊'}${hits > 1 ? ` (${h+1}/${hits})` : ''} → ${player.name} -${dmg} HP`,
+                text: `回合 ${round}：${m.icon}${m.name} ${m.verb || '攻擊'}${hits > 1 ? ` (${h+1}/${hits})` : ''} → ${player.name} -${dmg} HP${_hrOrigDmgM2 > 0 ? '（半減）' : ''}`,
                 hp: hpsSnapshot(),
               });
               applyReflect2(dmg);
+            }
+            // ⭐ 百倍返しだ：反射 100× 真傷
+            if (_hrOrigDmgM2 > 0 && m.alive && m.hp > 0) {
+              const _hrDmgM2 = _hrOrigDmgM2 * 100;
+              m.hp -= _hrDmgM2;
+              if (m.hp <= 0) m.alive = false;
+              log.push({ type: 'crit-player', text: `回合 ${round}：💢【百倍返しだ！】→ ${m.icon}${m.name} 真傷 -${_hrDmgM2.toLocaleString()} HP`, hp: hpsSnapshot() });
             }
             if (!m.alive) break;
             if (pHp <= 0) break;
@@ -14276,7 +14372,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510232151';
+  const APP_VERSION = '20260511000429';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
