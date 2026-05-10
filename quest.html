@@ -4929,6 +4929,7 @@
     1901: { id: 1901, label: '我已行動 ≥ X 次',           paramType: 'count' },
     1910: { id: 1910, label: '每 X 次行動觸發一次',       paramType: 'count' },
     1912: { id: 1912, label: '每 X 次自己的行動（固定回數，吃掉跳過）', paramType: 'count' },
+    1913: { id: 1913, label: '擊出後隔 X 次自己行動再放（麻痺跳過）',  paramType: 'count' },
     1920: { id: 1920, label: '本場最多用 X 次',           paramType: 'count' },
     1940: { id: 1940, label: 'X% 機率',                  paramType: 'percent' },
     // 自身 HP（延伸）
@@ -4972,6 +4973,10 @@
       }
       case 1912: // ⭐ 每 X 次自己的行動（固定回數 modulo，吃掉跳過）：不含麻痺；不從上次觸發起算
         return v > 0 && ctx.behaviorCount > 0 && (ctx.behaviorCount % v === 0);
+      case 1913: { // ⭐ 擊出後隔 X 次自己行動再放（從上次觸發起算；behaviorCount 不含麻痺 → 麻痺跳過）
+        const last1913 = ctx.lastRuleFireAt[ruleIdx];
+        return last1913 === undefined || (v > 0 && (ctx.behaviorCount - last1913) >= v);
+      }
       case 1920: return (ctx.ruleUseCount[ruleIdx] || 0) < v;
       case 1940: return Math.random() < (v / 100);
       default:   return false;
@@ -8328,11 +8333,13 @@
           usedRuleIdx = r;
           break;
         }
-        // 累積規則使用次數（給 1920「最多 X 次」用）；記錄觸發時機（給 1911 用）
+        // 累積規則使用次數（給 1920「最多 X 次」用）；記錄觸發時機（給 1911 / 1913 用）
         if (usedRuleIdx >= 0) {
           ruleUseCount[usedRuleIdx] = (ruleUseCount[usedRuleIdx] || 0) + 1;
           if (actionPattern[usedRuleIdx]?.judgeId === 1911) {
-            lastRuleFireAt[usedRuleIdx] = playerActions;
+            lastRuleFireAt[usedRuleIdx] = playerActions;   // 1911：含麻痺的行動總數
+          } else if (actionPattern[usedRuleIdx]?.judgeId === 1913) {
+            lastRuleFireAt[usedRuleIdx] = behaviorCount;   // 1913：不含麻痺的行動數
           }
           // 1912 改為 modulo，不需要記錄上次觸發點
         }
@@ -9971,7 +9978,9 @@
         if (usedRuleIdx >= 0) {
           ruleUseCount[usedRuleIdx] = (ruleUseCount[usedRuleIdx] || 0) + 1;
           if (actionPattern[usedRuleIdx]?.judgeId === 1911) {
-            lastRuleFireAt[usedRuleIdx] = playerActions;
+            lastRuleFireAt[usedRuleIdx] = playerActions;   // 1911：含麻痺的行動總數
+          } else if (actionPattern[usedRuleIdx]?.judgeId === 1913) {
+            lastRuleFireAt[usedRuleIdx] = behaviorCount;   // 1913：不含麻痺的行動數
           }
           // 1912 改為 modulo，不需要記錄上次觸發點
         }
@@ -13807,7 +13816,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510111505';
+  const APP_VERSION = '20260510112500';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
