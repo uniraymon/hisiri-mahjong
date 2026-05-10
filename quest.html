@@ -13943,7 +13943,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510151423';
+  const APP_VERSION = '20260510151940';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -23328,7 +23328,7 @@ ${b.text}
       <h2 style="color:#c084fc; margin-bottom:10px;">
         <span>⚔️ 主動挑戰</span>
         <span style="font-size:11px;color:#818cf8;font-weight:500;margin-left:6px;">
-          （勝利 +30 EXP・落敗 +60 EXP・每次 20 體力・下咒後 30 分冷卻）
+          （勝利 +30 EXP・落敗 +60 EXP・每次 20 體力・下咒後 15 分冷卻）
         </span>
       </h2>
       <div style="font-size:11px;color:#818cf8;margin-bottom:10px;background:#0d0020;
@@ -23833,6 +23833,12 @@ ${b.text}
     if (!targetArena.registered) { showToast('對方未報名競技場！'); return; }
     if (targetId === me.id) { showToast('不能挑戰自己！'); return; }
 
+    // ⭐ 防護符檢查
+    if (targetRpg.hellProtect && Date.now() < targetRpg.hellProtect.endAt) {
+      showToast(`🛡️ ${escapeHtml(target.name)} 持有防護符，無法挑戰！`); return;
+    }
+    if (targetRpg.hellProtect) delete targetRpg.hellProtect; // 已過期則清除
+
     // 挑戰冷卻
     const lastTs  = arena.lastChallengeTs?.[targetId] || 0;
     const elapsed = Date.now() - lastTs;
@@ -23939,21 +23945,27 @@ ${b.text}
           const eloWin = computeEloChange(arena.rating, pRating, 1);
           const eloLoss = computeEloChange(arena.rating, pRating, 0);
           const pStats = computeStats(p);
+          const pProtect = pRpg?.hellProtect && Date.now() < (pRpg.hellProtect.endAt || 0); // ⭐ 防護符
+          const canChallenge = !onCd && !pProtect;
           return `
             <div style="display:flex; align-items:center; gap:8px; padding:10px; background:#1f2937; border-radius:10px; margin-bottom:6px;">
               <div style="font-size:22px; flex-shrink:0;">${pCls.icon || '👤'}</div>
               <div style="flex:1; min-width:0; overflow:hidden;">
                 <div style="font-size:13px; font-weight:700; color:#f3f4f6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(p.name || '???')}</div>
-                <div style="font-size:10px; color:#9ca3af;">Lv${pRpg?.level||1} ${pCls.name||'?'} ｜ 🏆 ${pArena.wins||0}勝 ${pArena.losses||0}敗</div>
+                <div style="font-size:10px; color:#9ca3af;">Lv${pRpg?.level||1} ${pCls.name||'?'} ｜ 🏆 ${pArena.wins||0}勝 ${pArena.losses||0}敗
+                  ${pProtect ? `<span style="color:#86efac; margin-left:4px;">🛡️防護符</span>` : ''}
+                </div>
                 <div style="font-size:10px; color:#6b7280;">HP ${Math.round(pStats.maxHp*PVP_HP_MULT)} / ATK ${Math.round(pStats.atk*PVP_ATK_MULT)} / DEF ${Math.round(pStats.def*PVP_DEF_BOOST)}</div>
               </div>
               <div style="flex-shrink:0;">
                 ${onCd
                   ? `<div style="font-size:10px; color:#6b7280; text-align:center;">⏳ ${cdMin}分後</div>`
-                  : `<button onclick="arenaChallenge('${escapeHtml(p.id)}')" style="
-                      padding:8px 12px; border:none; border-radius:8px; cursor:pointer;
-                      background:linear-gradient(135deg,#7c3aed,#4f46e5); color:#fff;
-                      font-size:12px; font-weight:700; white-space:nowrap;">⚔️ 挑戰</button>`}
+                  : pProtect
+                    ? `<button disabled style="padding:8px 12px; border:none; border-radius:8px; cursor:not-allowed; background:#374151; color:#6b7280; font-size:12px; font-weight:700; white-space:nowrap;">🛡️ 防護</button>`
+                    : `<button onclick="arenaChallenge('${escapeHtml(p.id)}')" style="
+                        padding:8px 12px; border:none; border-radius:8px; cursor:pointer;
+                        background:linear-gradient(135deg,#7c3aed,#4f46e5); color:#fff;
+                        font-size:12px; font-weight:700; white-space:nowrap;">⚔️ 挑戰</button>`}
               </div>
             </div>`;
         }).join('');
