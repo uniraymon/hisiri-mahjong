@@ -13807,7 +13807,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510110712';
+  const APP_VERSION = '20260510111505';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -24465,6 +24465,7 @@ ${b.text}
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:8px;">
         <button class="btn btn-secondary" onclick="adminFullHeal()">💚 滿血滿體力</button>
         <button class="btn btn-secondary" onclick="adminGiveLegendary()">🌟 神話全套</button>
+        <button class="btn btn-secondary" onclick="adminResetBossCooldowns()" style="grid-column:1/-1; background:linear-gradient(135deg,#fef9c3,#facc15); color:#78350f; font-weight:800;">⏩ 重置王冷卻（世界王 + 個人王 → 0 CD）</button>
         <button class="btn btn-secondary" onclick="adminPickSet()" style="grid-column:1/-1; background:linear-gradient(135deg,#fef3c7,#f59e0b); color:#7c2d12;">🛡 直接拿整套套裝（選一套）</button>
         <button class="btn btn-secondary" onclick="adminPickEquipment()" style="grid-column:1/-1; background:linear-gradient(135deg,#ddd6fe,#7c3aed); color:#fff;">🎯 自選裝備 + 詞條（Debug）</button>
         <button class="btn btn-secondary" onclick="adminPickSpirit()" style="grid-column:1/-1; background:linear-gradient(135deg,#fce7f3,#a21caf); color:#fff;">✨ 生成晶魂 + 加入袋中（Debug）</button>
@@ -24688,6 +24689,21 @@ ${b.text}
     showToast('💚 HP / MP / 體力 全滿');
   }
   window.adminFullHeal = adminFullHeal;
+
+  function adminResetBossCooldowns() {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    // 世界王冷卻（rpg 欄位 + localStorage 雙重清除）
+    r.lastBossAttackTime = 0;
+    try { localStorage.removeItem(WB9_CD_LS_PREFIX + me.id); } catch(e) {}
+    // 個人王共用冷卻
+    r.personalBossLastAt = 0;
+    saveData();
+    if (typeof renderPersonalBoss === 'function') renderPersonalBoss();
+    showDebugModal();
+    showToast('⏩ 世界王 + 個人王冷卻已重置！');
+  }
+  window.adminResetBossCooldowns = adminResetBossCooldowns;
 
   function adminGiveLegendary() {
     const me = getMe(); if (!me) return;
