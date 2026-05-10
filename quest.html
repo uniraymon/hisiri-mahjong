@@ -2693,9 +2693,9 @@
         // 靈魂撕裂：6.5× ATK，無視 DEF + 必定流血（unlockLv 15）
         { id: 'hm_soul_rend',    name: '靈魂撕裂', icon: '💔', unlockLv: 15, cooldown: 0, mpCost: 95, type: 'damage', mult: 6.5, ignoreDef: true, applyStatus: { type: 'poison', charges: 5, dmg: 150, chance: 1.00 },
           desc: '撕裂目標靈魂，無法防禦的巨大衝擊，必定施加持續流血（5 回合，每回 150 傷害）。(6.5× ATK，無視防禦)' },
-        // 魔神降臨：8.0× ATK，無視 DEF + 強麻痺（unlockLv 18）— 終極大招
-        { id: 'hm_demon_god',    name: '魔神降臨', icon: '👹', unlockLv: 18, cooldown: 0, mpCost: 120, type: 'damage', mult: 8.0, ignoreDef: true, applyStatus: { type: 'paralyze', charges: 3, chance: 0.90, skipChance: 1.0 },
-          desc: '魔神親臨降下終極制裁，90% 機率麻痺對手 3 回合（行動必定被取消）。(8.0× ATK，無視防禦) ─ 終極大招' },
+        // 魔神降臨：2.0× ATK，無視 DEF（unlockLv 18）— 終極大招
+        { id: 'hm_demon_god',    name: '魔神降臨', icon: '👹', unlockLv: 18, cooldown: 0, mpCost: 120, type: 'damage', mult: 2.0, ignoreDef: true,
+          desc: '魔神親臨降下終極制裁，貫穿防禦給予強力打擊。(2.0× ATK，無視防禦) ─ 終極大招' },
       ],
       skillTree: [
         { id: 'hm_dark_atk',   name: '黑暗強化', icon: '⚔️', desc: '+3% ATK',       maxLevel: 5, effect: 'atkPct',      per: 0.03 },
@@ -13943,7 +13943,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510145605';
+  const APP_VERSION = '20260510145644';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
