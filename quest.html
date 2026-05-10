@@ -7069,8 +7069,6 @@
     if (!Array.isArray(player.rpg.patternPageNames)) player.rpg.patternPageNames = ['頁 1', '頁 2', '頁 3', '頁 4'];
     if (!player.rpg.wbPatternPage || typeof player.rpg.wbPatternPage !== 'object') player.rpg.wbPatternPage = {};
     if (!player.rpg.wbEquipSet    || typeof player.rpg.wbEquipSet    !== 'object') player.rpg.wbEquipSet    = {};
-    if (typeof player.rpg.archerHsTotal !== 'number') player.rpg.archerHsTotal = 0;
-    if (typeof player.rpg.archerHsBonus !== 'number') player.rpg.archerHsBonus = 0;
     // ⭐ HP 平衡 v1 一次性遷移：套新詞綴 perLv / 稀有度 mult / 階層 mult；精魂 base HP × 0.7 + HP 詞綴 × 0.7
     if (!player.rpg._hpRebalV1 && typeof applyHpRebalanceToPlayer === 'function') {
       try {
@@ -9024,7 +9022,8 @@
             const _madFocus  = !_madSix && (pBuff.madGooseFocus  || 0) > 0;
             const _madStatus = (pBuff.madGooseStatus || 0) > 0;
             // ⭐ 弓手多連射：每發 0.30×ATK，獨立爆擊，爆頭率 5%+爆擊率×20%
-            const HEADSHOT_CHANCE = 0.05 + baseCrit2 * 0.2 + (pBuff.headshotChance || 0) + (player.rpg.archerHsBonus || 0);
+            // ⭐ 爆頭里程碑（場內）：每 50 爆頭 +5%（本場累積，不永久存檔）
+            const HEADSHOT_CHANCE = 0.05 + baseCrit2 * 0.2 + (pBuff.headshotChance || 0) + Math.floor(_aHs / 50) * 0.05;
             // 六連固定 6 段（不與其他段數疊加）；聚擊 1 段；其他正常
             const totalHits = _madSix ? 6 : _madFocus ? 1 : 3 + Math.round(pBuff.extraHits || 0);
             // 隱身爆頭保證：消耗後第一箭必中爆頭
@@ -9660,18 +9659,6 @@
         }
         if (pHp <= 0) break;
         } // end if (!_daMaSkipAtk)
-      }
-    }
-    // ⭐ 弓手永久爆頭里程碑：每 50 爆頭 +5% 爆頭率
-    if (player.rpg.class === 'archer' && _aHs > 0) {
-      const _prevHsTotal = player.rpg.archerHsTotal || 0;
-      const _newHsTotal  = _prevHsTotal + _aHs;
-      const _oldMs = Math.floor(_prevHsTotal / 50);
-      const _newMs = Math.floor(_newHsTotal  / 50);
-      player.rpg.archerHsTotal = _newHsTotal;
-      if (_newMs > _oldMs) {
-        player.rpg.archerHsBonus = Math.round(((player.rpg.archerHsBonus || 0) + 0.05 * (_newMs - _oldMs)) * 1000) / 1000;
-        log.push({ type: 'crit-player', text: `🎯🏆 爆頭里程碑！累積 ${_newHsTotal} 爆頭（每 50 次 +5%），永久爆頭率 +${Math.round(player.rpg.archerHsBonus * 100)}%！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
       }
     }
     const won = pHp > 0 && mHp <= 0;
@@ -10725,7 +10712,8 @@
             const _madFocusM  = !_madSixM && (pBuff.madGooseFocus  || 0) > 0;
             const _madStatusM = (pBuff.madGooseStatus || 0) > 0;
             // ⭐ 弓手多連射：每發 0.30×ATK，獨立爆擊，爆頭率 5%+爆擊率×20%
-            const HEADSHOT_CHANCE = 0.05 + baseCrit2 * 0.2 + (pBuff.headshotChance || 0) + (player.rpg.archerHsBonus || 0);
+            // ⭐ 爆頭里程碑（場內）：每 50 爆頭 +5%
+            const HEADSHOT_CHANCE = 0.05 + baseCrit2 * 0.2 + (pBuff.headshotChance || 0) + Math.floor(_aHs / 50) * 0.05;
             // 六連固定 6 段；聚擊 1 段；其他正常
             const totalHits = _madSixM ? 6 : _madFocusM ? 1 : 3 + Math.round(pBuff.extraHits || 0);
             const _stealthHsSt = (playerObj.statuses || []).find(s => s.type === 'stealthHeadshot');
@@ -11230,17 +11218,6 @@
           }
         }
         if (pHp <= 0) break;
-      }
-    }
-    // ⭐ 弓手永久爆頭里程碑：每 50 爆頭 +5% 爆頭率
-    if (player.rpg.class === 'archer' && _aHs > 0) {
-      const _prevHsTotal = player.rpg.archerHsTotal || 0;
-      const _newHsTotal  = _prevHsTotal + _aHs;
-      const _oldMs = Math.floor(_prevHsTotal / 50);
-      const _newMs = Math.floor(_newHsTotal  / 50);
-      player.rpg.archerHsTotal = _newHsTotal;
-      if (_newMs > _oldMs) {
-        player.rpg.archerHsBonus = Math.round(((player.rpg.archerHsBonus || 0) + 0.05 * (_newMs - _oldMs)) * 1000) / 1000;
       }
     }
     const won = pHp > 0 && mList.every(m => !m.alive);
@@ -14092,7 +14069,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510193644';
+  const APP_VERSION = '20260510194017';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
