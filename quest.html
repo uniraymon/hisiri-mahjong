@@ -8358,8 +8358,9 @@
         _petTurnCount++;
         {
           const _petItem = resolveItem(player.rpg?.equipment?.pet);
-          if (_petItem?.petAbility) {
-            const _pa = _petItem.petAbility;
+          // ⭐ drop instance 可能缺少 petAbility（只有基礎定義有）→ 從 findItem 補全
+          const _pa = _petItem?.petAbility ?? findItem(_petItem?.id)?.petAbility ?? null;
+          if (_pa && _petItem) {
             // ⭐ fix：第 1 次行動立即觸發，之後每 interval 次觸發（確保短戰鬥也能發動）
             if ((_petTurnCount - 1) % _pa.interval === 0) {
               if (_pa.type === 'vulnerable') {
@@ -8526,7 +8527,7 @@
             const _burstFx = [];
             if (_bc.fire >= 3) {
               // ⭐ 灼燒（新狀態）：mark×15 真傷×3 tick + 每 tick 蝕掉魔坑 -15%
-              applyStatus(monster, { type: 'scorch', charges: 3, markDmg: Math.round(stats.mark * 15) });
+              applyStatus(monster, { type: 'scorch', charges: 3, markDmg: Math.round(stats.mark * 40) });
               _burstFx.push('🔥灼燒3充（真傷）');
             }
             if (_bc.ice >= 3) {
@@ -9268,11 +9269,24 @@
             _chantExtra = ` 🩸+${_totalHpHeal}HP +${_chantHealMp}MP${_bloodMult > 1 ? '（3屠×3！）' : ''}`;
           }
           const _chantIcon = { ice: '❄️冰錐術', fire: '🔥火球術', thunder: '⚡連環閃電', blood: '🩸血吸術', storm: '🌩️怒雷風暴', destroy: '💀毀滅之怒', firestorm: '🌋火焰風暴' }[_chantEl];
+          // ⭐ 自動唸咒：套用魔法加成乘數
+          //   玩家端（受大咒書加成）：法師魔攻被動、技能傷害加成
+          //   怪物端（固定）：法術抗性（與玩家是否拿大咒書無關）
+          const _chantBonusPct = _grimoire ? 1.0 : 0.5;
+          _chantDmg *= (1 + (passive.flatPct || 0) * _chantBonusPct);    // 法師魔攻被動（玩家端）
+          _chantDmg *= (1 + (bonus.skillDmgPct || 0) * _chantBonusPct);  // 技能傷害加成（玩家端）
+          if (_monMagRes) _chantDmg *= (1 - _monMagRes);                  // 怪物法術抗性（固定，怪物端）
+          // ⭐ 暴擊判定（與施法相同機率）
+          const _chantCritChance = baseCritChance + (pBuff.critChance || 0);
+          const _chantCritMult   = critMult + (pBuff.critDmg || 0);
+          const _chantIsCrit = Math.random() < _chantCritChance;
+          if (_chantIsCrit) _chantDmg *= _chantCritMult;
+          _chantDmg = Math.max(1, Math.round(_chantDmg));
           mHp = Math.max(0, mHp - _chantDmg);
           const _cOvfl = _spellBook.length >= 10 ? _spellBook[0] : null;
           _spellBook.push(_chantBookEl);
           if (_spellBook.length > 10) _spellBook.shift();
-          log.push({ type: 'player', text: `回合 ${round}：📖 自動唸咒${_grimoire ? '【大咒書】' : ''} ${_chantIcon} → ${monster.name} -${_chantDmg} HP${_chantExtra}　[法書${_spellBook.length}/10]`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp, spellBook: [..._spellBook] } });
+          log.push({ type: _chantIsCrit ? 'crit-player' : 'player', text: `回合 ${round}：📖 自動唸咒${_grimoire ? '【大咒書】' : ''}${_chantIsCrit ? '【暴擊】' : ''} ${_chantIcon} → ${monster.name} -${_chantDmg} HP${_chantExtra}　[法書${_spellBook.length}/10]`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp, spellBook: [..._spellBook] } });
           if (_cOvfl) {
             const _ovMkC = (stats.mark||0)*(1+(pBuff.atkPct||0)+(pBuff.markPct||0));
             const _ovIcoC = {fire:'🔥',ice:'🧊',thunder:'⚡',poison:'☠️',blood:'🩸'}[_cOvfl]||'✨';
@@ -9697,11 +9711,41 @@
       maxMp: stats.maxMp,
       coinsStolen,
       critCount,
-      log,
+      log: compressLog(log), // ⭐ 壓縮：合併 HP回 + MP回 / 攻擊 + 吸血
       archerStats: player.rpg?.class === 'archer'
         ? { baseCrit: baseCritChance, critMult, finalHit: _aHit, finalCrit: _aCrit, finalHs: _aHs }
         : null,
     };
+  }
+
+  // ============================================================
+  // ⭐ 戰鬥日誌壓縮：合併相鄰同類條目，減少顯示行數
+  // Rule 1: 「💚 生命湧現 +N HP」緊跟「💙 自然回 +N MP」→ 同一行
+  // Rule 2: 攻擊行（含 →）緊跟「🩸 吸血 +N HP」→ 吸血追加到攻擊行尾
+  // ============================================================
+  function compressLog(entries) {
+    if (!entries || !entries.length) return entries;
+    const out = [];
+    for (let i = 0; i < entries.length; i++) {
+      const cur  = entries[i];
+      const prev = out.length ? out[out.length - 1] : null;
+      // Rule 1：回血 + 回MP 合一
+      if (prev && prev.type === 'player' && cur.type === 'player' &&
+          /💚 生命湧現 \+\d+/.test(prev.text) && /💙 自然回 \+\d+/.test(cur.text)) {
+        const mpPart = cur.text.replace(/^回合 \d+[\（(][^）)]*[）)]?：|^回合 \d+：/, '');
+        out[out.length - 1] = { ...prev, text: prev.text + ' ' + mpPart, hp: cur.hp || prev.hp };
+        continue;
+      }
+      // Rule 2：攻擊行 + 吸血行 合一
+      if (prev && prev.type === 'player' && cur.type === 'player' &&
+          prev.text.includes(' → ') && /🩸 吸血 \+\d+ HP/.test(cur.text)) {
+        const stealPart = cur.text.replace(/^回合 [^：]+：/, '');
+        out[out.length - 1] = { ...prev, text: prev.text + '：' + stealPart, hp: cur.hp || prev.hp };
+        continue;
+      }
+      out.push(cur);
+    }
+    return out;
   }
 
   // ============================================================
@@ -10122,8 +10166,9 @@
         _petTurnCount++;
         {
           const _petItem = resolveItem(player.rpg?.equipment?.pet);
-          if (_petItem?.petAbility) {
-            const _pa = _petItem.petAbility;
+          // ⭐ drop instance 可能缺少 petAbility（只有基礎定義有）→ 從 findItem 補全
+          const _pa = _petItem?.petAbility ?? findItem(_petItem?.id)?.petAbility ?? null;
+          if (_pa && _petItem) {
             // ⭐ fix：第 1 次行動立即觸發，之後每 interval 次觸發
             if ((_petTurnCount - 1) % _pa.interval === 0) {
               const _petTgt = mList.find(m => m.alive && m.hp > 0); // ⭐ fix: 多目標要找存活怪
@@ -10972,12 +11017,25 @@
               _chantExtraM = ` 🩸+${_totalHpHealM}HP +${_chantHealMpM}MP${_bloodMultM > 1 ? '（3屠×3！）' : ''}`;
             }
             const _chantIconM = { ice: '❄️冰錐術', fire: '🔥火球術', thunder: '⚡連環閃電', blood: '🩸血吸術', storm: '🌩️怒雷風暴', destroy: '💀毀滅之怒', firestorm: '🌋火焰風暴' }[_chantElM];
+            // ⭐ 自動唸咒：套用魔法加成乘數
+            //   玩家端（受大咒書影響）：法師魔攻被動、技能傷害加成
+            //   怪物端（固定）：法術抗性
+            const _chantBonusPctM = _grimoireM ? 1.0 : 0.5;
+            _chantDmgM *= (1 + (passive.flatPct || 0) * _chantBonusPctM);    // 法師魔攻被動（玩家端）
+            _chantDmgM *= (1 + (bonus.skillDmgPct || 0) * _chantBonusPctM);  // 技能傷害加成（玩家端）
+            if (_chantTgt.magRes) _chantDmgM *= (1 - _chantTgt.magRes);      // 怪物法術抗性（固定，怪物端）
+            // ⭐ 暴擊判定
+            const _chantCritChanceM = baseCritChance + (pBuff.critChance || 0);
+            const _chantCritMultM   = critMult + (pBuff.critDmg || 0);
+            const _chantIsCritM = Math.random() < _chantCritChanceM;
+            if (_chantIsCritM) _chantDmgM *= _chantCritMultM;
+            _chantDmgM = Math.max(1, Math.round(_chantDmgM));
             _chantTgt.hp = Math.max(0, _chantTgt.hp - _chantDmgM);
             if (_chantTgt.hp <= 0) _chantTgt.alive = false;
             const _cOvflM = _spellBookM.length >= 10 ? _spellBookM[0] : null;
             _spellBookM.push(_chantBookElM);
             if (_spellBookM.length > 10) _spellBookM.shift();
-            log.push({ type: 'player', text: `回合 ${round}：📖 自動唸咒${_grimoireM ? '【大咒書】' : ''} ${_chantIconM} → ${_chantTgt.icon}${_chantTgt.name} -${_chantDmgM} HP${_chantExtraM}　[法書${_spellBookM.length}/10]`, hp: hpsSnapshot() });
+            log.push({ type: _chantIsCritM ? 'crit-player' : 'player', text: `回合 ${round}：📖 自動唸咒${_grimoireM ? '【大咒書】' : ''}${_chantIsCritM ? '【暴擊】' : ''} ${_chantIconM} → ${_chantTgt.icon}${_chantTgt.name} -${_chantDmgM} HP${_chantExtraM}　[法書${_spellBookM.length}/10]`, hp: hpsSnapshot() });
             if (_cOvflM) {
               const _ovMkCM = (stats.mark||0)*(1+(pBuff.atkPct||0)+(pBuff.markPct||0));
               const _ovIcoCM = {fire:'🔥',ice:'🧊',thunder:'⚡',poison:'☠️',blood:'🩸'}[_cOvflM]||'✨';
@@ -11295,7 +11353,7 @@
       pMpFinal: pMp,
       monsters: mList.map(m => ({ id: m.id, name: m.name, icon: m.icon, hp: Math.max(0, m.hp), maxHp: m.maxHp, alive: m.alive, level: m.level, xpDrop: m.xpDrop, goldDrop: m.goldDrop })),
       maxHp: stats.maxHp, maxMp: stats.maxMp,
-      coinsStolen: 0, critCount, log,
+      coinsStolen: 0, critCount, log: compressLog(log), // ⭐ 壓縮：合併 HP回 + MP回 / 攻擊 + 吸血
       archerStats: player.rpg?.class === 'archer'
         ? { baseCrit: baseCritChance, critMult, finalHit: _aHit, finalCrit: _aCrit, finalHs: _aHs }
         : null,
@@ -14137,7 +14195,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510214750';
+  const APP_VERSION = '20260510222135';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
