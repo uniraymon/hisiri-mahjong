@@ -9649,8 +9649,8 @@
             }
             if (pHp <= 0) { dead = true; }
             if (mHp <= 0) { pushDeathLine(); break; }
-            // 對玩家上狀態（⭐ 風鵝護符：異常狀態抵抗 -25%）
-            if (!dead && mSkill.applyStatus && Math.random() < (mSkill.applyStatus.chance || 1) * (1 - _statusResist)) {
+            // 對玩家上狀態（⭐ 風鵝護符：異常狀態抵抗 -25%；shield 擋下傷害時同時免疫附加狀態）
+            if (!dead && dmg > 0 && mSkill.applyStatus && Math.random() < (mSkill.applyStatus.chance || 1) * (1 - _statusResist)) {
               applyStatus(playerObj, mSkill.applyStatus);
               log.push({ type: 'system', text: `回合 ${round}：${player.name} 進入 ${statusEmoji(mSkill.applyStatus.type)}${statusLabel(mSkill.applyStatus.type)} 狀態`, hp: { player: pHp, monster: mHp, mp: pMp } });
             }
@@ -11375,8 +11375,8 @@
               });
               applyReflect2(dmg);
             }
-            // ⭐ 風鵝護符：異常狀態抵抗 -25%
-            if (pHp > 0 && mSkill.applyStatus && Math.random() < (mSkill.applyStatus.chance || 1) * (1 - _statusResistM)) {
+            // ⭐ 風鵝護符：異常狀態抵抗 -25%；shield 擋下傷害時同時免疫附加狀態
+            if (pHp > 0 && dmg > 0 && mSkill.applyStatus && Math.random() < (mSkill.applyStatus.chance || 1) * (1 - _statusResistM)) {
               applyStatus(playerObj, mSkill.applyStatus);
               log.push({ type: 'system', text: `回合 ${round}：${player.name} 進入 ${statusEmoji(mSkill.applyStatus.type)}${statusLabel(mSkill.applyStatus.type)} 狀態`, hp: hpsSnapshot() });
             }
@@ -14276,7 +14276,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510231646';
+  const APP_VERSION = '20260510232151';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
