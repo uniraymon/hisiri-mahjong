@@ -9219,31 +9219,42 @@
           }
         }
         // ⭐ 自動唸咒（法書）：每玩家回合追加隨機施法
-        // ⭐ 最後的大咒書：施放完整版技能（固定10等），加入怒雷風暴與毀滅之怒
+        // ⭐ 最後的大咒書：火→火焰風暴 / 雷→怒雷風暴 / 血→毀滅之怒（固定10等，100% MARK）
         if (player.rpg.class === 'mage' && (pBuff.autoChant || 0) > 0 && mHp > 0) {
           const _grimoire = (pBuff.finalGrimoire || 0) > 0;
-          const _chantList = _grimoire ? ['ice', 'fire', 'thunder', 'blood', 'storm', 'destroy'] : ['ice', 'fire', 'thunder', 'blood'];
+          // ⭐ 大咒書：取代 fire→firestorm / thunder→storm / blood→destroy
+          const _chantList = _grimoire ? ['ice', 'firestorm', 'storm', 'destroy'] : ['ice', 'fire', 'thunder', 'blood'];
           const _chantEl = _chantList[Math.floor(Math.random() * _chantList.length)];
-          const _chantMark = Math.round((stats.mark || 0) * (1 + (pBuff.atkPct || 0) + (pBuff.markPct || 0)) * 0.20);
+          // ⭐ 大咒書：100% MARK；一般自動唸咒：20% MARK
+          const _chantMark = Math.round((stats.mark || 0) * (1 + (pBuff.atkPct || 0) + (pBuff.markPct || 0)) * (_grimoire ? 1.0 : 0.20));
           let _chantDmg = 0; let _chantExtra = '';
-          // 怒雷風暴 / 毀滅之怒 屬於法書 thunder / blood 元素
-          const _chantBookEl = _chantEl === 'storm' ? 'thunder' : _chantEl === 'destroy' ? 'blood' : _chantEl;
+          // 怒雷風暴→thunder / 毀滅之怒→blood / 火焰風暴→fire
+          const _chantBookEl = _chantEl === 'storm' ? 'thunder' : _chantEl === 'destroy' ? 'blood' : _chantEl === 'firestorm' ? 'fire' : _chantEl;
           if (_chantEl === 'ice') {
-            _chantDmg = Math.max(1, Math.round(_chantMark * 1.6 * (0.85 + Math.random() * 0.30)));
-            if (Math.random() < 0.25 && !hasStatus(monster, 'paralyze')) { applyStatus(monster, { type: 'paralyze', charges: 1 }); _chantExtra = ' ⚡麻痺！'; }
+            if (_grimoire) {
+              // 冰錐術 Lv10: mult 2.8 + markMult 2 = 4.8；麻痺機率 ~49%，2 層
+              _chantDmg = Math.max(1, Math.round(_chantMark * 4.8 * (0.85 + Math.random() * 0.30)));
+              if (Math.random() < 0.49 && !hasStatus(monster, 'paralyze')) { applyStatus(monster, { type: 'paralyze', charges: 2 }); _chantExtra = ' ⚡麻痺！'; }
+            } else {
+              _chantDmg = Math.max(1, Math.round(_chantMark * 1.6 * (0.85 + Math.random() * 0.30)));
+              if (Math.random() < 0.25 && !hasStatus(monster, 'paralyze')) { applyStatus(monster, { type: 'paralyze', charges: 1 }); _chantExtra = ' ⚡麻痺！'; }
+            }
           } else if (_chantEl === 'fire') {
             _chantDmg = Math.max(1, Math.round(_chantMark * 2.0 * (0.85 + Math.random() * 0.30)));
+          } else if (_chantEl === 'firestorm') {
+            // ⭐ 火焰風暴 Lv10: flat 262 + markMult 12.5 × MARK（取代 fire）
+            _chantDmg = Math.max(1, Math.round(262 + _chantMark * 12.5 * (0.85 + Math.random() * 0.30)));
           } else if (_chantEl === 'thunder') {
             for (let _ci = 0; _ci < 3; _ci++) _chantDmg += Math.max(1, Math.round(_chantMark * 0.8 * (0.85 + Math.random() * 0.30)));
           } else if (_chantEl === 'storm') {
-            // ⭐ 怒雷風暴：flat 360 + markMult 7
-            _chantDmg = Math.max(1, Math.round(_chantMark * 7.0 * (0.85 + Math.random() * 0.30)) + 360);
+            // ⭐ 怒雷風暴 Lv10: flat 630 + markMult 14.25 × MARK（取代 thunder）
+            _chantDmg = Math.max(1, Math.round(630 + _chantMark * 14.25 * (0.85 + Math.random() * 0.30)));
           } else if (_chantEl === 'destroy') {
-            // ⭐ 毀滅之怒：3×MARK魔法傷（固定10等）+ 易傷1層
-            _chantDmg = Math.max(1, Math.round(_chantMark * 3.0 * (0.85 + Math.random() * 0.30)));
-            applyStatus(monster, { type: 'vulnerable', amount: 0.5, hits: 1, chance: 1.0 });
-            _chantExtra = ' 👁️易傷！';
-          } else { // blood
+            // ⭐ 毀滅之怒 Lv10: 7.25 × MARK + 易傷×2（取代 blood，血屬性入法書）
+            _chantDmg = Math.max(1, Math.round(_chantMark * 7.25 * (0.85 + Math.random() * 0.30)));
+            applyStatus(monster, { type: 'vulnerable', amount: 0.5, hits: 2 });
+            _chantExtra = ' 👁️易傷×2！';
+          } else { // blood（一般唸咒）
             _chantDmg = Math.max(1, Math.round(_chantMark * 1.4 * (0.85 + Math.random() * 0.30)));
             // ⭐ 血系：吸血 + 固定回HP10% + 回MP10%；法書≥3屠時×3
             const _bloodInBook = _spellBook.filter(e => e === 'blood').length + 1; // +1 含本次
@@ -9256,12 +9267,12 @@
             if (_chantHealMp  > 0) pMp = Math.min(stats.maxMp || 0, (pMp || 0) + _chantHealMp);
             _chantExtra = ` 🩸+${_totalHpHeal}HP +${_chantHealMp}MP${_bloodMult > 1 ? '（3屠×3！）' : ''}`;
           }
-          const _chantIcon = { ice: '❄️冰錐術', fire: '🔥火球術', thunder: '⚡連環閃電', blood: '🩸血吸術', storm: '🌩️怒雷風暴', destroy: '💀毀滅之怒' }[_chantEl];
+          const _chantIcon = { ice: '❄️冰錐術', fire: '🔥火球術', thunder: '⚡連環閃電', blood: '🩸血吸術', storm: '🌩️怒雷風暴', destroy: '💀毀滅之怒', firestorm: '🌋火焰風暴' }[_chantEl];
           mHp = Math.max(0, mHp - _chantDmg);
           const _cOvfl = _spellBook.length >= 10 ? _spellBook[0] : null;
           _spellBook.push(_chantBookEl);
           if (_spellBook.length > 10) _spellBook.shift();
-          log.push({ type: 'player', text: `回合 ${round}：📖 自動唸咒 ${_chantIcon} → ${monster.name} -${_chantDmg} HP${_chantExtra}　[法書${_spellBook.length}/10]`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp, spellBook: [..._spellBook] } });
+          log.push({ type: 'player', text: `回合 ${round}：📖 自動唸咒${_grimoire ? '【大咒書】' : ''} ${_chantIcon} → ${monster.name} -${_chantDmg} HP${_chantExtra}　[法書${_spellBook.length}/10]`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp, spellBook: [..._spellBook] } });
           if (_cOvfl) {
             const _ovMkC = (stats.mark||0)*(1+(pBuff.atkPct||0)+(pBuff.markPct||0));
             const _ovIcoC = {fire:'🔥',ice:'🧊',thunder:'⚡',poison:'☠️',blood:'🩸'}[_cOvfl]||'✨';
@@ -10912,21 +10923,42 @@
           }
         }
         // ⭐ 自動唸咒（組隊）：每玩家回合追加隨機施法
+        // ⭐ 最後的大咒書：火→火焰風暴 / 雷→怒雷風暴 / 血→毀滅之怒（固定10等，100% MARK）
         if (player.rpg.class === 'mage' && (pBuff.autoChant || 0) > 0) {
           const _chantTgt = monsters.filter(m => m.alive && m.hp > 0)[0];
           if (_chantTgt) {
-            const _chantListM = ['ice', 'fire', 'thunder', 'blood'];
-            const _chantElM = _chantListM[Math.floor(Math.random() * 4)];
-            const _chantMarkM = Math.round((stats.mark || 0) * (1 + (pBuff.atkPct || 0) + (pBuff.markPct || 0)) * 0.20);
+            const _grimoireM = (pBuff.finalGrimoire || 0) > 0;
+            // ⭐ 大咒書：取代 fire→firestorm / thunder→storm / blood→destroy
+            const _chantListM = _grimoireM ? ['ice', 'firestorm', 'storm', 'destroy'] : ['ice', 'fire', 'thunder', 'blood'];
+            const _chantElM = _chantListM[Math.floor(Math.random() * _chantListM.length)];
+            // ⭐ 大咒書：100% MARK；一般自動唸咒：20% MARK
+            const _chantMarkM = Math.round((stats.mark || 0) * (1 + (pBuff.atkPct || 0) + (pBuff.markPct || 0)) * (_grimoireM ? 1.0 : 0.20));
             let _chantDmgM = 0; let _chantExtraM = '';
+            const _chantBookElM = _chantElM === 'storm' ? 'thunder' : _chantElM === 'destroy' ? 'blood' : _chantElM === 'firestorm' ? 'fire' : _chantElM;
             if (_chantElM === 'ice') {
-              _chantDmgM = Math.max(1, Math.round(_chantMarkM * 1.6 * (0.85 + Math.random() * 0.30)));
-              if (Math.random() < 0.25 && !hasStatus(_chantTgt, 'paralyze')) { applyStatus(_chantTgt, { type: 'paralyze', charges: 1 }); _chantExtraM = ' ⚡麻痺！'; }
+              if (_grimoireM) {
+                _chantDmgM = Math.max(1, Math.round(_chantMarkM * 4.8 * (0.85 + Math.random() * 0.30)));
+                if (Math.random() < 0.49 && !hasStatus(_chantTgt, 'paralyze')) { applyStatus(_chantTgt, { type: 'paralyze', charges: 2 }); _chantExtraM = ' ⚡麻痺！'; }
+              } else {
+                _chantDmgM = Math.max(1, Math.round(_chantMarkM * 1.6 * (0.85 + Math.random() * 0.30)));
+                if (Math.random() < 0.25 && !hasStatus(_chantTgt, 'paralyze')) { applyStatus(_chantTgt, { type: 'paralyze', charges: 1 }); _chantExtraM = ' ⚡麻痺！'; }
+              }
             } else if (_chantElM === 'fire') {
               _chantDmgM = Math.max(1, Math.round(_chantMarkM * 2.0 * (0.85 + Math.random() * 0.30)));
+            } else if (_chantElM === 'firestorm') {
+              // ⭐ 火焰風暴 Lv10: flat 262 + markMult 12.5 × MARK
+              _chantDmgM = Math.max(1, Math.round(262 + _chantMarkM * 12.5 * (0.85 + Math.random() * 0.30)));
             } else if (_chantElM === 'thunder') {
               for (let _ci = 0; _ci < 3; _ci++) _chantDmgM += Math.max(1, Math.round(_chantMarkM * 0.8 * (0.85 + Math.random() * 0.30)));
-            } else {
+            } else if (_chantElM === 'storm') {
+              // ⭐ 怒雷風暴 Lv10: flat 630 + markMult 14.25 × MARK
+              _chantDmgM = Math.max(1, Math.round(630 + _chantMarkM * 14.25 * (0.85 + Math.random() * 0.30)));
+            } else if (_chantElM === 'destroy') {
+              // ⭐ 毀滅之怒 Lv10: 7.25 × MARK + 易傷×2（血屬性入法書）
+              _chantDmgM = Math.max(1, Math.round(_chantMarkM * 7.25 * (0.85 + Math.random() * 0.30)));
+              applyStatus(_chantTgt, { type: 'vulnerable', amount: 0.5, hits: 2 });
+              _chantExtraM = ' 👁️易傷×2！';
+            } else { // blood（一般唸咒）
               _chantDmgM = Math.max(1, Math.round(_chantMarkM * 1.4 * (0.85 + Math.random() * 0.30)));
               // ⭐ 血系：吸血 + 固定回HP10% + 回MP10%；法書≥3屠時×3
               const _bloodInBookM = _spellBookM.filter(e => e === 'blood').length + 1;
@@ -10939,13 +10971,13 @@
               if (_chantHealMpM  > 0) pMp = Math.min(stats.maxMp || 0, (pMp || 0) + _chantHealMpM);
               _chantExtraM = ` 🩸+${_totalHpHealM}HP +${_chantHealMpM}MP${_bloodMultM > 1 ? '（3屠×3！）' : ''}`;
             }
-            const _chantIconM = { ice: '❄️冰錐術', fire: '🔥火球術', thunder: '⚡連環閃電', blood: '🩸血吸術' }[_chantElM];
+            const _chantIconM = { ice: '❄️冰錐術', fire: '🔥火球術', thunder: '⚡連環閃電', blood: '🩸血吸術', storm: '🌩️怒雷風暴', destroy: '💀毀滅之怒', firestorm: '🌋火焰風暴' }[_chantElM];
             _chantTgt.hp = Math.max(0, _chantTgt.hp - _chantDmgM);
             if (_chantTgt.hp <= 0) _chantTgt.alive = false;
             const _cOvflM = _spellBookM.length >= 10 ? _spellBookM[0] : null;
-            _spellBookM.push(_chantElM);
+            _spellBookM.push(_chantBookElM);
             if (_spellBookM.length > 10) _spellBookM.shift();
-            log.push({ type: 'player', text: `回合 ${round}：📖 自動唸咒 ${_chantIconM} → ${_chantTgt.icon}${_chantTgt.name} -${_chantDmgM} HP${_chantExtraM}　[法書${_spellBookM.length}/10]`, hp: hpsSnapshot() });
+            log.push({ type: 'player', text: `回合 ${round}：📖 自動唸咒${_grimoireM ? '【大咒書】' : ''} ${_chantIconM} → ${_chantTgt.icon}${_chantTgt.name} -${_chantDmgM} HP${_chantExtraM}　[法書${_spellBookM.length}/10]`, hp: hpsSnapshot() });
             if (_cOvflM) {
               const _ovMkCM = (stats.mark||0)*(1+(pBuff.atkPct||0)+(pBuff.markPct||0));
               const _ovIcoCM = {fire:'🔥',ice:'🧊',thunder:'⚡',poison:'☠️',blood:'🩸'}[_cOvflM]||'✨';
@@ -14105,7 +14137,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510205650';
+  const APP_VERSION = '20260510210648';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
