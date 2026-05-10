@@ -13806,7 +13806,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510105234';
+  const APP_VERSION = '20260510110227';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13862,7 +13862,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260510_hell_pvp2';
+  const NEWS_LATEST_ID = 'patch_20260510_affix_filter';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -13882,6 +13882,20 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#064e3b,#065f46); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🔍 背包詞條高級篩選　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#6ee7b7; margin:6px 0 4px;">🔍 詞條高級篩選</div>
+        <div>・背包 FILTER 下方新增「<b>詞條篩選</b>」列，可按詞條類型快速找裝備</div>
+        <div>・可選：⚔️ ATK ／ 🛡 DEF ／ 💨 SPD ／ ❤️ HP ／ ✨ MARK ／ 💚 回血/回合</div>
+        <div>・只針對 <b>詞條（affix）</b> 篩選，不影響裝備基礎屬性</div>
+        <div>・可與槽位篩選同時使用（例如：只看有 ATK 詞條的武器）</div>
+
+        <div style="background:#052e16; border-radius:8px; padding:8px 12px; margin:10px 0 16px; font-size:12px; color:#a7f3d0;">
+          💡 適合整理背包時快速找出特定強化方向的裝備！
+        </div>
 
         <div style="background:linear-gradient(135deg,#200030,#4c1d95); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">⚔️ 地獄使者 PvP 大升級　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
@@ -15677,6 +15691,7 @@ ${b.text}
   let __invBulkMode = false;
   let __invSelected = new Set();   // 內容是 inventory 的「全域 idx」
   let __invFilter = 'all';         // 背包分類篩選
+  let __invAffixFilter = null;     // 高級篩選：詞條類型（null=無 / 'atk'/'def'/...）
 
   // ── 精魂背包批量模式 ──
   let __spiritBulkMode = false;
@@ -15691,6 +15706,7 @@ ${b.text}
     __invSelected = new Set();
     __invBulkMode = false;
     __invFilter = 'all';
+    __invAffixFilter = null;
     const html = `
       <div>
         <div style="font-size:11px; color:#5b3d62; padding:6px 10px; background:#fef3c7; border-radius:8px; margin-bottom:8px; border:1px dashed #f59e0b;">
@@ -16787,20 +16803,49 @@ ${b.text}
     ];
     const filterBarEl = document.getElementById('invFilterBar');
     if (filterBarEl) {
+      const INV_AFFIX_FILTERS = [
+        { type: null,       label: '全部' },
+        { type: 'atk',     label: '⚔️ ATK' },
+        { type: 'def',     label: '🛡 DEF' },
+        { type: 'spd',     label: '💨 SPD' },
+        { type: 'hp',      label: '❤️ HP' },
+        { type: 'mark',    label: '✨ MARK' },
+        { type: 'hpRegen', label: '💚 回血/回合' },
+      ];
+      const affixRowHtml = `
+        <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; padding-top:5px; border-top:1px dashed #4b2563; align-items:center;">
+          <span style="font-size:10px; color:#c4b5fd; font-weight:700; white-space:nowrap; margin-right:2px;">🔍 詞條：</span>
+          ${INV_AFFIX_FILTERS.map(f =>
+            `<button class="inv-filter-btn ${__invAffixFilter === f.type ? 'active' : ''}" onclick="setInvAffixFilter(${f.type === null ? 'null' : `'${f.type}'`})">${f.label}</button>`
+          ).join('')}
+        </div>`;
       filterBarEl.innerHTML = INV_FILTERS.map(f =>
         `<button class="inv-filter-btn ${__invFilter === f.key ? 'active' : ''}" onclick="setInvFilter('${f.key}')">${f.label}</button>`
-      ).join('');
+      ).join('') + affixRowHtml;
     }
 
     // 篩選後的物品列表（保留 globalIdx 對應到原始 inventory）
     const displayItems = [];
     inv.forEach((entry, idx) => {
       const item = resolveItem(entry);
-      if (!item) { if (__invFilter === 'all') displayItems.push({ entry, globalIdx: idx, item: null }); return; }
-      if (__invFilter === 'all') { displayItems.push({ entry, globalIdx: idx, item }); return; }
-      if (__invFilter === 'coin' && item.isBossCoin) { displayItems.push({ entry, globalIdx: idx, item }); return; }
-      if (__invFilter === 'ring' && (item.slot === 'ring' || item.slot === 'ring1' || item.slot === 'ring2')) { displayItems.push({ entry, globalIdx: idx, item }); return; }
-      if (item.slot === __invFilter) displayItems.push({ entry, globalIdx: idx, item });
+      // ── 槽位篩選 ──
+      if (!item) {
+        // 未知物品：只在無任何篩選時顯示
+        if (__invFilter === 'all' && !__invAffixFilter) displayItems.push({ entry, globalIdx: idx, item: null });
+        return;
+      }
+      let passSlot = false;
+      if (__invFilter === 'all') passSlot = true;
+      else if (__invFilter === 'coin' && item.isBossCoin) passSlot = true;
+      else if (__invFilter === 'ring' && (item.slot === 'ring' || item.slot === 'ring1' || item.slot === 'ring2')) passSlot = true;
+      else passSlot = item.slot === __invFilter;
+      if (!passSlot) return;
+      // ── 詞條高級篩選 ──
+      if (__invAffixFilter) {
+        const hasAffix = Array.isArray(item.affixes) && item.affixes.some(a => a.type === __invAffixFilter);
+        if (!hasAffix) return;
+      }
+      displayItems.push({ entry, globalIdx: idx, item });
     });
 
     const pageCount = Math.max(1, Math.ceil(displayItems.length / INV_PAGE_SIZE));
@@ -16901,6 +16946,13 @@ ${b.text}
     renderEquipment();
   }
   window.setInvFilter = setInvFilter;
+
+  function setInvAffixFilter(type) {
+    __invAffixFilter = type || null;
+    __invPage = 0;
+    renderEquipment();
+  }
+  window.setInvAffixFilter = setInvAffixFilter;
 
   // ── 懸停預覽 ──
   function showInvPreview(globalIdx, evt) {
