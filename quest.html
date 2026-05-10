@@ -8357,24 +8357,34 @@
         // ⭐ 寵物觸發（每 N 次實際行動）
         _petTurnCount++;
         {
-          const _petItem = resolveItem(player.rpg?.equipment?.pet);
-          // ⭐ drop instance 可能缺少 petAbility（只有基礎定義有）→ 從 findItem 補全
-          const _pa = _petItem?.petAbility ?? findItem(_petItem?.id)?.petAbility ?? null;
-          if (_pa && _petItem) {
+          const _petRaw  = player.rpg?.equipment?.pet;
+          const _petItem = resolveItem(_petRaw);
+          // ⭐ 多路徑取 petAbility：drop instance 的 id = 'drop_xxx'（隨機），baseId 才是基礎 ID
+          //   路徑 1：drop instance.baseId（e.g. 'pet_soul_eye'）
+          //   路徑 2：_petItem.id（wrapper / base def 直接帶有正確 id）
+          //   路徑 3：raw entry 字串 ID 或 wrapper.id
+          const _petId   = _petItem?.baseId
+                        ?? _petItem?.id
+                        ?? (typeof _petRaw === 'string' ? _petRaw : _petRaw?.id)
+                        ?? null;
+          const _petDef  = _petId ? findItem(_petId) : null;
+          const _petDisp = _petItem ?? _petDef;   // 用於顯示 icon / name
+          const _pa      = _petItem?.petAbility ?? _petDef?.petAbility ?? null;
+          if (_pa && _petDisp) {
             // ⭐ fix：第 1 次行動立即觸發，之後每 interval 次觸發（確保短戰鬥也能發動）
             if ((_petTurnCount - 1) % _pa.interval === 0) {
               if (_pa.type === 'vulnerable') {
                 monster.statuses = monster.statuses || [];
                 monster.statuses.push({ type: 'vulnerable', amount: 0.50, hits: 1 });
-                log.push({ type: 'player', text: `回合 ${round}：${_petItem.icon} 【${_petItem.name}】「${_pa.label}」！${monster.name} 進入易傷狀態！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+                log.push({ type: 'player', text: `回合 ${round}：${_petDisp.icon} 【${_petDisp.name}】「${_pa.label}」！${monster.name} 進入易傷狀態！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
               } else if (_pa.type === 'fullRestore') {
                 const _hpGain = Math.max(0, stats.maxHp - pHp);
                 const _mpGain = Math.max(0, stats.maxMp - pMp);
                 pHp = stats.maxHp;
                 pMp = stats.maxMp;
-                log.push({ type: 'player', text: `回合 ${round}：${_petItem.icon} 【${_petItem.name}】「${_pa.label}」！HP +${_hpGain}、MP +${_mpGain}（全回）！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+                log.push({ type: 'player', text: `回合 ${round}：${_petDisp.icon} 【${_petDisp.name}】「${_pa.label}」！HP +${_hpGain}、MP +${_mpGain}（全回）！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
               } else if (_pa.type === 'tripleAttack') {
-                log.push({ type: 'player', text: `回合 ${round}：${_petItem.icon} 【${_petItem.name}】「${_pa.label}」！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+                log.push({ type: 'player', text: `回合 ${round}：${_petDisp.icon} 【${_petDisp.name}】「${_pa.label}」！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
                 for (let _ph = 1; _ph <= 3; _ph++) {
                   const _petDmg = Math.round((stats.atk + (stats.mark || 0)) * (_pa.dmgMult || 20));
                   mHp = Math.max(0, mHp - _petDmg);
@@ -10165,27 +10175,34 @@
         // ⭐ 寵物觸發（每 N 次實際行動）
         _petTurnCount++;
         {
-          const _petItem = resolveItem(player.rpg?.equipment?.pet);
-          // ⭐ drop instance 可能缺少 petAbility（只有基礎定義有）→ 從 findItem 補全
-          const _pa = _petItem?.petAbility ?? findItem(_petItem?.id)?.petAbility ?? null;
-          if (_pa && _petItem) {
+          const _petRawM  = player.rpg?.equipment?.pet;
+          const _petItemM = resolveItem(_petRawM);
+          // ⭐ 多路徑取 petAbility：drop instance 的 id = 'drop_xxx'（隨機），baseId 才是基礎 ID
+          const _petIdM   = _petItemM?.baseId
+                         ?? _petItemM?.id
+                         ?? (typeof _petRawM === 'string' ? _petRawM : _petRawM?.id)
+                         ?? null;
+          const _petDefM  = _petIdM ? findItem(_petIdM) : null;
+          const _petDispM = _petItemM ?? _petDefM;
+          const _paM      = _petItemM?.petAbility ?? _petDefM?.petAbility ?? null;
+          if (_paM && _petDispM) {
             // ⭐ fix：第 1 次行動立即觸發，之後每 interval 次觸發
-            if ((_petTurnCount - 1) % _pa.interval === 0) {
+            if ((_petTurnCount - 1) % _paM.interval === 0) {
               const _petTgt = mList.find(m => m.alive && m.hp > 0); // ⭐ fix: 多目標要找存活怪
-              if (_pa.type === 'vulnerable' && _petTgt) {
+              if (_paM.type === 'vulnerable' && _petTgt) {
                 _petTgt.statuses = _petTgt.statuses || [];
                 _petTgt.statuses.push({ type: 'vulnerable', amount: 0.50, hits: 1 });
-                log.push({ type: 'player', text: `回合 ${round}：${_petItem.icon} 【${_petItem.name}】「${_pa.label}」！${_petTgt.name} 進入易傷狀態！`, hp: hpsSnapshot() });
-              } else if (_pa.type === 'fullRestore') {
+                log.push({ type: 'player', text: `回合 ${round}：${_petDispM.icon} 【${_petDispM.name}】「${_paM.label}」！${_petTgt.name} 進入易傷狀態！`, hp: hpsSnapshot() });
+              } else if (_paM.type === 'fullRestore') {
                 const _hpGain = Math.max(0, stats.maxHp - pHp);
                 const _mpGain = Math.max(0, stats.maxMp - pMp);
                 pHp = stats.maxHp;
                 pMp = stats.maxMp;
-                log.push({ type: 'player', text: `回合 ${round}：${_petItem.icon} 【${_petItem.name}】「${_pa.label}」！HP +${_hpGain}、MP +${_mpGain}（全回）！`, hp: hpsSnapshot() });
-              } else if (_pa.type === 'tripleAttack' && _petTgt) {
-                log.push({ type: 'player', text: `回合 ${round}：${_petItem.icon} 【${_petItem.name}】「${_pa.label}」！`, hp: hpsSnapshot() });
+                log.push({ type: 'player', text: `回合 ${round}：${_petDispM.icon} 【${_petDispM.name}】「${_paM.label}」！HP +${_hpGain}、MP +${_mpGain}（全回）！`, hp: hpsSnapshot() });
+              } else if (_paM.type === 'tripleAttack' && _petTgt) {
+                log.push({ type: 'player', text: `回合 ${round}：${_petDispM.icon} 【${_petDispM.name}】「${_paM.label}」！`, hp: hpsSnapshot() });
                 for (let _ph = 1; _ph <= 3; _ph++) {
-                  const _petDmg = Math.round((stats.atk + (stats.mark || 0)) * (_pa.dmgMult || 20));
+                  const _petDmg = Math.round((stats.atk + (stats.mark || 0)) * (_paM.dmgMult || 20));
                   _petTgt.hp = Math.max(0, _petTgt.hp - _petDmg);
                   if (_petTgt.hp <= 0) _petTgt.alive = false;
                   log.push({ type: 'player', text: `　　↳ 第 ${_ph} 擊 -${_petDmg} HP`, hp: hpsSnapshot() });
@@ -14195,7 +14212,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510222135';
+  const APP_VERSION = '20260510223336';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
