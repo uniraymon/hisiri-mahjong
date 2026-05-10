@@ -13858,7 +13858,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510113259';
+  const APP_VERSION = '20260510113930';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13914,7 +13914,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260510_judge1913';
+  const NEWS_LATEST_ID = 'patch_20260510_debug_cd_fix';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -13934,6 +13934,20 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#134e4a,#065f46); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🔧 Debug 王冷卻重置修正　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#6ee7b7; margin:6px 0 4px;">⏩ 重置王冷卻（Debug）— 修正雲端冷卻未清除問題</div>
+        <div>・修正「⏩ 重置王冷卻」按下後 UI 顯示無冷卻，但實際攻擊仍被擋的問題</div>
+        <div>・根本原因：伺服器端 Firebase 的 <b>attackCooldowns</b> 記錄未一併清除</div>
+        <div>・修正後按下重置，同步清除所有王 doc 的 <b>attackCooldowns[你的 ID]</b>，重置立即生效</div>
+        <div>・同時加入本地時間戳更新，防止 Firebase onSnapshot 把舊冷卻同步回來</div>
+
+        <div style="background:#052e16; border-radius:8px; padding:8px 12px; margin:10px 0 16px; font-size:12px; color:#a7f3d0;">
+          💡 重置成功後 Toast 會顯示「含雲端」字樣，確認雲端清除完成！
+        </div>
 
         <div style="background:linear-gradient(135deg,#0f172a,#1e3a5f); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">📋 行動規則新增判斷條件　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
@@ -24774,10 +24788,20 @@ ${b.text}
     try { localStorage.removeItem(WB9_CD_LS_PREFIX + me.id); } catch(e) {}
     // 個人王共用冷卻
     r.personalBossLastAt = 0;
+    // 🔒 防止 Firebase onSnapshot 把舊 lastBossAttackTime 同步回來
+    me.lastTouchedAt = Date.now();
+    __persistLocalSnapshot();
     saveData();
+    // ⭐ 同步清除 Firebase boss doc 的 attackCooldowns（伺服器端冷卻）
+    if (window.__firebaseSync?.wb9ResetPlayerCooldowns) {
+      window.__firebaseSync.wb9ResetPlayerCooldowns(me.id)
+        .then(() => showToast('⏩ 世界王 + 個人王冷卻已重置（含雲端）！'))
+        .catch(e => { console.warn('wb9ResetPlayerCooldowns failed:', e); showToast('⏩ 本地冷卻已重置，雲端清除失敗'); });
+    } else {
+      showToast('⏩ 世界王 + 個人王冷卻已重置！');
+    }
     if (typeof renderPersonalBoss === 'function') renderPersonalBoss();
     showDebugModal();
-    showToast('⏩ 世界王 + 個人王冷卻已重置！');
   }
   window.adminResetBossCooldowns = adminResetBossCooldowns;
 
@@ -27129,6 +27153,15 @@ ${b.text}
           tx.set(bossRef, _prune(state));
           return { state, position: state.queue.length };
         });
+      },
+      // ⭐ Debug 用：清除所有王 doc 裡 attackCooldowns[pid]（讓伺服器端不再擋冷卻）
+      wb9ResetPlayerCooldowns: async (pid) => {
+        const allIds = window.__wb9BossIds || [];
+        const updates = allIds.map(bossId =>
+          updateDoc(doc(wb9Col, bossId), { [`attackCooldowns.${pid}`]: deleteField() })
+            .catch(() => {}) // 若 doc 不存在就忽略
+        );
+        await Promise.all(updates);
       },
       // 退出排隊：TX 讀取目標王 doc → 移除該玩家 → 寫回
       wb9LeaveQueue: async (bossId, attackerId) => {
