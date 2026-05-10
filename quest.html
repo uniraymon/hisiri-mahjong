@@ -9340,6 +9340,27 @@
               mLastSkillRound = round;
               mSkillNextIdx++;
             }
+          } else if (Array.isArray(monster.pvpDefRules) && monster.pvpDefRules.length) {
+            // ⭐ PvP 守方：依防守頁的 HOF 規則順序評估條件，選第一個成立且 CD 就緒的技能
+            for (const rule of monster.pvpDefRules) {
+              const { judgeId, param, monSkill: rs, skillIndex } = rule;
+              if (!rs) continue; // basic attack → 不用 mSkill，交給後面普攻
+              const last = mSkillLast[skillIndex] ?? -999;
+              if (round - last < (rs.cooldown || 3)) continue; // CD 未就緒
+              // 條件評估（只支援可在怪物視角評估的 judge）
+              let condMet;
+              if      (judgeId === 1000) condMet = true;                           // 必定
+              else if (judgeId === 1101 || judgeId === 1150)
+                condMet = (mHp / monster.maxHp * 100) <= param;                   // 自身 HP ≤ X%
+              else if (judgeId === 1201) condMet = false;                          // 自身 MP（守方無 MP 系統）
+              else    condMet = true;                                               // 其他條件：視為成立
+              if (condMet) {
+                mSkill = rs;
+                mSkillLast[skillIndex] = round;
+                mLastSkillRound = round;
+                break;
+              }
+            }
           } else if (Math.random() < 0.65) {
             // 一般怪物：65% 機率從冷卻就緒的技能中隨機挑一招
             const ready = [];
@@ -13945,7 +13966,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510152143';
+  const APP_VERSION = '20260510154138';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -23700,8 +23721,7 @@ ${b.text}
     const rpg  = defenderPlayer.rpg || {};
     const cls  = CLASSES[rpg.class];
 
-    // ── 從第一頁行動規則提取技能清單 ──
-    // ⭐ 防守頁（index 4）優先；若為空則 fallback 到第一頁
+    // ── 從防守頁（index 4）優先；若為空則 fallback 到第一頁 ──
     const _defPage = Array.isArray(rpg.actionPatterns) ? (rpg.actionPatterns[4] || []) : [];
     const page1 = _defPage.length > 0 ? _defPage : (Array.isArray(rpg.actionPatterns) ? (rpg.actionPatterns[0] || []) : []);
     const seen  = new Set();
@@ -23713,10 +23733,10 @@ ${b.text}
         skillIds.push(sid);
       }
     }
-    // 也把 basic 補在最後（至少有普攻）
     const hasBasic = page1.some(r => r?.skillId === 'basic');
 
-    // 若第一頁完全沒設定，改用職業預設規則
+    // 若防守頁完全沒設定，改用職業預設規則
+    const usingDefault = skillIds.length === 0;
     const effectiveIds = skillIds.length > 0 ? skillIds : (() => {
       const def = getDefaultActionPattern(rpg.class) || [];
       const ids = [];
@@ -23729,30 +23749,29 @@ ${b.text}
       return ids;
     })();
 
-    // ── 把技能 ID → 怪物技能格式 ──
+    // ── 把技能 ID → 怪物技能格式（同時保留 _skillId 供 HOF 條件對照）──
     const skillLevels = rpg.skillLevels || {};
     const monSkills   = [];
+    const skillIdToIdx = {}; // skillId → monSkills index
 
-    for (const id of effectiveIds.slice(0, 6)) {  // 最多取 6 個
+    for (const id of effectiveIds.slice(0, 8)) {  // 最多取 8 個
       const def = cls?.skills?.find(s => s.id === id);
       if (!def) continue;
       const lv   = Math.max(1, skillLevels[id] || 1);
       const mult = (def.mult || 1.0) + (def.multPerLv || 0) * (lv - 1);
       const label= `${def.icon || ''}${def.name}`;
+      let ms = null;
 
       if (def.type === 'damage') {
-        const ms = { verb: label, mult: Math.round(mult * 100) / 100 };
-        if (def.magic) ms.ignoreDef = true;
+        ms = { verb: label, mult: Math.round(mult * 100) / 100, _skillId: id };
+        if (def.ignoreDef || def.magic) ms.ignoreDef = true;
         if (def.applyStatus) ms.applyStatus = { ...def.applyStatus };
         if (def.hits && def.hits > 1) ms.hits = def.hits;
-        monSkills.push(ms);
 
       } else if (def.type === 'heal' || def.healPct) {
         // 治療 → 守方自身 DEF 暫時增強（模擬生存意志）
-        monSkills.push({
-          type: 'monsterSelfBuff', verb: label,
-          stat: 'def', amount: Math.round(dStats.def * 0.25), turns: 3,
-        });
+        ms = { type: 'monsterSelfBuff', verb: label, _skillId: id,
+               stat: 'def', amount: Math.round(dStats.def * 0.25), turns: 3 };
 
       } else if (def.type === 'buff') {
         // Buff 技能 → 依主要效果轉換
@@ -23760,16 +23779,17 @@ ${b.text}
         if (sb) {
           const isPct = sb.stat?.endsWith('Pct') || sb.stat === 'atkPct';
           const bStat = isPct ? (sb.stat === 'atkPct' ? 'atk' : 'def') : (sb.stat || 'atk');
-          const bAmt  = isPct
-            ? Math.round((dStats.atk || 0) * (sb.amount || 0))
-            : (sb.amount || 0);
+          const bAmt  = isPct ? Math.round((dStats.atk || 0) * (sb.amount || 0)) : (sb.amount || 0);
           if (bAmt > 0) {
-            monSkills.push({
-              type: 'monsterSelfBuff', verb: label,
-              stat: bStat, amount: bAmt, turns: sb.turns || 3,
-            });
+            ms = { type: 'monsterSelfBuff', verb: label, _skillId: id,
+                   stat: bStat, amount: bAmt, turns: sb.turns || 3 };
           }
         }
+      }
+
+      if (ms) {
+        skillIdToIdx[id] = monSkills.length;
+        monSkills.push(ms);
       }
     }
 
@@ -23779,24 +23799,44 @@ ${b.text}
       monSkills.push({ verb: '強力一擊', mult: 1.4 });
     }
 
-    // 若玩家第一頁有設定 basic，補一個普攻
+    // 若玩家有設定 basic，補一個普攻
     if (hasBasic || monSkills.length < 2) {
       monSkills.push({ verb: '普通攻擊', mult: 1.0 });
     }
 
-    return monSkills;
+    // ── 建立 HOF 防守規則列表（保留 judgeId 條件，供 autoFight 評估）──
+    // 只在非 fallback 情況下建立（fallback 時用隨機選技能即可）
+    let pvpDefRules = null;
+    if (!usingDefault && page1.length > 0) {
+      pvpDefRules = [];
+      for (const rule of page1) {
+        const sid = rule?.skillId;
+        if (!sid) continue;
+        const judgeId = rule.judgeId || 1000;
+        const param   = rule.param   || 0;
+        if (sid === 'basic') {
+          pvpDefRules.push({ judgeId, param, monSkill: null, skillIndex: -1 }); // basic attack
+        } else if (sid in skillIdToIdx) {
+          const si = skillIdToIdx[sid];
+          pvpDefRules.push({ judgeId, param, monSkill: monSkills[si], skillIndex: si });
+        }
+      }
+    }
+
+    return { skills: monSkills, pvpDefRules };
   }
 
   // ─── PvP 戰鬥核心 ────────────────────────────
   function autoFightPvP(attackerPlayer, defenderPlayer) {
     const dStats = computeStats(defenderPlayer);
     const dCls   = CLASSES[defenderPlayer.rpg?.class] || { icon: '👤', name: '冒險者' };
-    const defSkills = buildDefenderSkills(defenderPlayer, dStats);
+    const { skills: defSkills, pvpDefRules } = buildDefenderSkills(defenderPlayer, dStats);
 
     // 守方「怪物」：HP×2, ATK×0.55, DEF×1.8
     const defMonster = {
       name:      defenderPlayer.name || '競技場挑戰者',
       icon:      dCls.icon || '👤',
+      verb:      dCls.attackVerb || '攻擊',  // ⭐ 補上預設普攻動詞，避免 log 顯示 undefined
       hp:        Math.round(dStats.maxHp * PVP_HP_MULT),
       maxHp:     Math.round(dStats.maxHp * PVP_HP_MULT),
       atk:       Math.round(dStats.atk   * PVP_ATK_MULT),
@@ -23806,6 +23846,7 @@ ${b.text}
       exp: 0, gold: 0,
       maxRounds: 150,
       skills:    defSkills,
+      pvpDefRules,           // ⭐ HOF 條件規則（null = 用隨機選技能）
       ability:   null,
       statuses:  [],
     };
