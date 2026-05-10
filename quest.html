@@ -14070,7 +14070,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510200035';
+  const APP_VERSION = '20260510203906';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -25081,10 +25081,11 @@ ${b.text}
 
       <div class="shop-section-title">👑 王硬幣（快捷）</div>
       ${[
-        { id:'bc_goose_king',   icon:'👑', name:'鵝皇'   },
-        { id:'bc_dragon_goose', icon:'🐲', name:'古龍鵝' },
-        { id:'bc_pebble_goose', icon:'🪨', name:'鵝卵石' },
-        { id:'bc_storm_goose',  icon:'⚡', name:'風中殘鵝' },
+        { id:'bc_goose_king',    icon:'👑', name:'鵝皇'    },
+        { id:'bc_dragon_goose',  icon:'🐲', name:'古龍鵝'  },
+        { id:'bc_pebble_goose',  icon:'🪨', name:'鵝卵石'  },
+        { id:'bc_storm_goose',   icon:'⚡', name:'風中殘鵝' },
+        { id:'bc_soul_devourer', icon:'👁️', name:'靈噬魔皇' },
       ].map(c => {
         const have = (r.bossCoins || {})[c.id] || 0;
         return `<div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
