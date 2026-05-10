@@ -6924,7 +6924,11 @@
       spd:  base.spd  || 0,
       hp:   base.hp   || 0,
       mark: base.mark || 0,
+      mp:   base.mp   || 0,
       affixes: [],
+      // ⭐ 保留寵物 / 特殊物品的固定能力描述（用於 tooltip 顯示）
+      ...(base.affixDesc  ? { affixDesc:  base.affixDesc  } : {}),
+      ...(base.petAbility ? { petAbility: base.petAbility } : {}),
     };
     // ⭐ 詞條數依稀有度：白 0 / 綠 1 / 藍 2 / 紫 3（精英用 forceAffixes 蓋過）
     const affixCount = forceAffixes != null ? forceAffixes : def.affixes;
@@ -14212,7 +14216,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510223336';
+  const APP_VERSION = '20260510223832';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -16844,8 +16848,10 @@ ${b.text}
     if (item.affixes && item.affixes.length) {
       item.affixes.forEach(a => lines.push(`+${a.val} ${a.type.toUpperCase()}（${a.name}）`));
     }
-    // ⭐ 鵝王恩賜固定詞條
-    if (item.affixDesc) lines.push(`✦ ${item.affixDesc}`);
+    // ⭐ 固定詞條 / 寵物能力（drop instance 舊存檔可能無此欄，fallback 查基礎定義）
+    const _baseDef = item.baseId ? findItem(item.baseId) : null;
+    const _resolvedAffix = item.affixDesc || _baseDef?.affixDesc;
+    if (_resolvedAffix) lines.push(`✦ ${_resolvedAffix}`);
     if (item.setId && SETS[item.setId]) {
       const set = SETS[item.setId];
       lines.push('');
@@ -17741,16 +17747,18 @@ ${b.text}
       }
     }
 
-    // 寵物技能
+    // 寵物技能（drop instance 舊存檔無 petAbility，fallback 查基礎定義）
+    const _hpBaseDef = item.baseId ? findItem(item.baseId) : null;
+    const _hpPa      = item.petAbility || _hpBaseDef?.petAbility || null;
     let petHtml = '';
-    if (item.petAbility) {
-      const pa = item.petAbility;
-      petHtml = `<div class="hp-pet">🐾 每 ${pa.interval} 回合：${pa.label}</div>`;
+    if (_hpPa) {
+      petHtml = `<div class="hp-pet">🐾 每 ${_hpPa.interval} 回合：${_hpPa.label}</div>`;
     }
 
-    // affixDesc（印記特效等）
+    // affixDesc（印記特效等，drop instance 舊存檔同樣 fallback 查基礎定義）
+    const _hpAffix = item.affixDesc || _hpBaseDef?.affixDesc || null;
     let affixHtml = '';
-    if (item.affixDesc) affixHtml = `<div class="hp-affix">✦ ${escapeHtml(item.affixDesc)}</div>`;
+    if (_hpAffix) affixHtml = `<div class="hp-affix">✦ ${escapeHtml(_hpAffix)}</div>`;
 
     el.innerHTML = `
       <div class="hp-icon">${item.icon}</div>
@@ -18162,6 +18170,19 @@ ${b.text}
         `;
       }
     }
+    // ⭐ 寵物能力（drop instance 舊存檔無 petAbility，fallback 查基礎定義）
+    const _invBaseDef = item.baseId ? findItem(item.baseId) : null;
+    const _invAffix   = item.affixDesc || _invBaseDef?.affixDesc || null;
+    const _invPa      = item.petAbility || _invBaseDef?.petAbility || null;
+    let petAbilityInvHtml = '';
+    if (_invAffix && !item.isBossGift) {
+      const _invPaLabel = _invPa?.label ? `【${_invPa.label}】 ` : '';
+      petAbilityInvHtml = `<div style="margin-top:7px; padding:6px 10px; background:linear-gradient(135deg,#f0e6ff,#ede0ff); border:1.5px solid #a855f7; border-radius:9px; font-size:11px; color:#6b21a8; font-weight:700; text-align:left;">
+        <div style="font-size:10px; color:#7c3aed; font-weight:800; margin-bottom:3px;">🐾 寵物能力</div>
+        <div>${_invPaLabel}${escapeHtml(_invAffix)}</div>
+      </div>`;
+    }
+
     // 套裝資訊
     let setHtml = '';
     if (item.setId && SETS[item.setId]) {
@@ -18189,6 +18210,7 @@ ${b.text}
           ${item.lv ? `Lv ${item.lv}　·　` : ''}${formatItemStats(item)}
         </div>
         ${affixHtml}
+        ${petAbilityInvHtml}
         ${rerollHtml}
         ${compareHtml}
         ${setHtml}
@@ -18626,6 +18648,19 @@ ${b.text}
       ? `<div style="margin-top:6px; padding:5px 8px; background:${rarColor}20; border-radius:6px; font-size:11px;">${item.affixes.map(a => `<div style="color:${rarColor};">+${a.val} ${a.type.toUpperCase()}（${a.name}）</div>`).join('')}</div>`
       : '';
 
+    // ⭐ 寵物 / 固定能力描述（drop instance 舊存檔無 affixDesc，fallback 查基礎定義）
+    const _slotBaseDef = item.baseId ? findItem(item.baseId) : null;
+    const _slotAffix   = item.affixDesc || _slotBaseDef?.affixDesc || null;
+    const _slotPa      = item.petAbility || _slotBaseDef?.petAbility || null;
+    let petAbilityHtml = '';
+    if (_slotAffix && !item.isBossGift) {
+      const _paLabel = _slotPa?.label ? `【${_slotPa.label}】 ` : '';
+      petAbilityHtml = `<div style="margin-top:7px; padding:6px 10px; background:linear-gradient(135deg,#f0e6ff,#ede0ff); border:1.5px solid #a855f7; border-radius:9px; font-size:11px; color:#6b21a8; font-weight:700; text-align:left;">
+        <div style="font-size:10px; color:#7c3aed; font-weight:800; margin-bottom:3px;">🐾 寵物能力</div>
+        <div>${_paLabel}${escapeHtml(_slotAffix)}</div>
+      </div>`;
+    }
+
     // 套裝資訊
     let setHtml = '';
     if (item.setId && SETS[item.setId]) {
@@ -18707,6 +18742,7 @@ ${b.text}
         <div style="font-weight:700; font-size:16px; color:${rarColor};">${escapeHtml(item.name)}</div>
         <div style="font-size:12px; color:#8b6f9b; margin-top:4px;">${item.lv ? `Lv ${item.lv}　·　` : ''}${formatItemStats(item)}</div>
         ${affixHtml}
+        ${petAbilityHtml}
         ${fusionDetailHtml}
         ${setHtml}
         ${gemSlotsHtml}
