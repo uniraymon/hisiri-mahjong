@@ -9770,6 +9770,7 @@
   // monIcon/monName：單體戰鬥傳入；多目標傳入 null（自動從文字解析）
   function makeBattleLogFormatter(monIcon, monName) {
     let pAct = 0, mAct = 0;
+    let _lastPlayerRound = -1;  // 同一 round 內多個玩家動作共用同一 pAct 數字
     // 這些 player-type 條目是被動/附帶效果，不計入玩家行動數
     const _isPassive = (txt) =>
       /：💚 生命湧現/.test(txt) ||
@@ -9789,7 +9790,11 @@
         const tp  = entry.type;
         if (tp === 'player' || tp === 'crit-player') {
           if (!_isPassive(txt)) {
-            pAct++;
+            // 同一 round 的所有玩家動作共用同一計數（如寵物觸發 + 主動作同屬一個玩家回合）
+            if (entry.round !== _lastPlayerRound) {
+              pAct++;
+              _lastPlayerRound = entry.round;
+            }
             // "回合 N（X/Y）：..." 或 "回合 N：..." 都處理
             return txt.replace(/^回合 \d+[（(][^）)]*[）)]：|^回合 \d+：/, `玩家回合 ${pAct}：`);
           }
@@ -14271,7 +14276,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510230021';
+  const APP_VERSION = '20260510230959';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
