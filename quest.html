@@ -13786,7 +13786,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510053806';
+  const APP_VERSION = '20260510094314';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -22776,6 +22776,34 @@ ${b.text}
           </div>`;
         }).join('');
 
+    // ⭐ 最近戰鬥回放（最多 5 場）
+    const replays = rpg.hellPvpReplays || [];
+    const replayHtml = replays.length === 0
+      ? `<div style="font-size:11px;color:#6b7280;text-align:center;padding:8px 0;">尚無戰鬥記錄</div>`
+      : replays.map((r, i) => {
+          const ago = typeof formatRelativeTime === 'function' ? formatRelativeTime(r.ts) : '';
+          return `
+            <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;
+                        background:#0d0020;border-radius:8px;margin-bottom:5px;
+                        border-left:3px solid ${r.won?'#7c3aed':'#dc2626'};">
+              <div style="font-size:16px;flex-shrink:0;">${r.won?'⚔️':'💀'}</div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:12px;font-weight:700;color:${r.won?'#c4b5fd':'#f87171'};
+                            overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                  ${r.won?'勝':'敗'} vs ${escapeHtml(r.targetIcon)} ${escapeHtml(r.targetName)}
+                  <span style="font-size:10px;font-weight:400;color:#6b7280;">Lv${r.targetLevel}</span>
+                </div>
+                <div style="font-size:10px;color:#6b7280;">${r.rounds} 回合　+${r.xpGained} EXP　${ago}</div>
+              </div>
+              <button onclick="showHellPvpReplay(${i})"
+                style="padding:5px 10px;border:none;border-radius:6px;font-size:10px;font-weight:700;
+                       cursor:pointer;background:linear-gradient(135deg,#4c1d95,#7c3aed);color:#e9d5ff;
+                       flex-shrink:0;">
+                📋 回放
+              </button>
+            </div>`;
+        }).join('');
+
     card.innerHTML = `
       <h2 style="color:#c084fc; margin-bottom:10px;">
         <span>⚔️ 主動挑戰</span>
@@ -22794,6 +22822,10 @@ ${b.text}
         </span>
       </div>
       ${targetHtml}
+      <div style="margin-top:12px;border-top:1px solid #2d1b69;padding-top:10px;">
+        <div style="font-size:12px;font-weight:700;color:#a78bfa;margin-bottom:6px;">📋 最近戰鬥回放（最多 5 場）</div>
+        ${replayHtml}
+      </div>
     `;
   }
   window.renderHellPvpCard = renderHellPvpCard;
@@ -22804,10 +22836,7 @@ ${b.text}
     const rpg = getRpg(me);
     const target = players.find(p => p && p.id === targetId);
     if (!target) { showToast('找不到目標'); return; }
-    // CD 30 min（測試期間暫停冷卻）
     rpg.hellDuelCd = rpg.hellDuelCd || {};
-    // const cdRem = Math.max(0, (rpg.hellDuelCd[targetId] || 0) + 30*60*1000 - Date.now());
-    // if (cdRem > 0) { showToast(`⏳ 冷卻中（剩 ${Math.ceil(cdRem/60000)} min）`); return; }
 
     // ⭐ 直接用真實玩家物件出戰（共用標準系統）
     const meStats = computeStats(me);
@@ -22827,6 +22856,26 @@ ${b.text}
     rpg.hellStats = rpg.hellStats || {};
     rpg.hellStats.duelCount = (rpg.hellStats.duelCount || 0) + 1;
 
+    // ⭐ 儲存回放（最多 5 場，精簡 log 只存 type/text/round）
+    const compactLog = result.log.map(({ type, text, round }) => ({ type, text, round }));
+    const tRpg = getRpg(target);
+    const tCls = CLASSES[tRpg?.class] || { icon: '👤', name: '冒險者' };
+    const replayEntry = {
+      ts: Date.now(),
+      targetId: target.id,
+      targetName: target.name || '???',
+      targetIcon: tCls.icon || '👤',
+      targetClass: tCls.name || '冒險者',
+      targetLevel: tRpg?.level || 1,
+      won: result.won,
+      rounds: result.rounds || 0,
+      xpGained,
+      log: compactLog,
+    };
+    if (!rpg.hellPvpReplays) rpg.hellPvpReplays = [];
+    rpg.hellPvpReplays.unshift(replayEntry);
+    if (rpg.hellPvpReplays.length > 5) rpg.hellPvpReplays = rpg.hellPvpReplays.slice(0, 5);
+
     // 廣播
     if (result.won) {
       broadcastHellAction('⚔️', `地獄使者 【${escapeHtml(me.name||'???')}】 在正面決鬥中擊潰了 ${escapeHtml(target.name)}！（+${xpGained} EXP）`);
@@ -22835,19 +22884,55 @@ ${b.text}
     }
     saveData();
 
-    const logLines = result.log.slice(-15).map(e =>
-      `<div style="font-size:11px;color:${e.type==='player'?'#93c5fd':e.type==='monster'?'#fca5a5':'#9ca3af'};padding:1px 0;">${escapeHtml(e.text||'')}</div>`
-    ).join('');
-    showModal(result.won ? '⚔️ 決鬥勝利！' : '💀 決鬥落敗', `
-      <div style="background:#0d0000;border-radius:8px;padding:8px;margin-bottom:10px;max-height:200px;overflow-y:auto;">${logLines}</div>
-      <div style="text-align:center;font-size:14px;font-weight:800;color:${result.won?'#fde047':'#f87171'};">
-        ${result.won ? '⚔️ 地獄使者勝！' : '💀 地獄使者敗！'}
-      </div>
-      <div style="text-align:center;font-size:12px;color:#9ca3af;margin-top:4px;">獲得 <b style="color:#fbbf24;">${xpGained} 戰鬥 EXP</b>（${result.won?'勝利':'落敗 ×2'}）</div>
-      <button onclick="hideModal();render();" style="margin-top:12px;width:100%;padding:10px;border:none;border-radius:8px;background:#374151;color:#fff;cursor:pointer;font-size:13px;font-weight:700;">關閉</button>
-    `);
+    // ⭐ 顯示完整戰鬥記錄 modal
+    showHellPvpResultModal(replayEntry);
   }
   window.hellChallengePlayer = hellChallengePlayer;
+
+  // ⭐ 渲染 PvP 戰鬥 log HTML（共用：即時結果 & 回放）
+  function _renderPvpLogHtml(log) {
+    let lastRound = null;
+    return (log || []).map(e => {
+      let sep = '';
+      if (e.round !== undefined && e.round !== lastRound) {
+        lastRound = e.round;
+        sep = `<div style="text-align:center;color:#475569;font-size:10px;padding:2px 0;border-top:1px solid #1e293b;margin:2px 0;">── 回合 ${e.round} ──</div>`;
+      }
+      const col = e.type === 'crit-player' ? '#fde047'
+        : e.type === 'player'   ? '#93c5fd'
+        : e.type === 'monster'  ? '#fca5a5'
+        : '#c4b5fd';
+      return `${sep}<div style="font-size:11px;color:${col};padding:1px 0;">${escapeHtml(e.text || '')}</div>`;
+    }).join('');
+  }
+
+  // ⭐ 顯示決鬥結果 modal（含完整 log）
+  function showHellPvpResultModal(replay) {
+    const logHtml = _renderPvpLogHtml(replay.log);
+    showModal(replay.won ? '⚔️ 決鬥勝利！' : '💀 決鬥落敗', `
+      <div style="text-align:center;padding:6px 0 10px;">
+        <div style="font-size:28px;">${replay.won ? '⚔️' : '💀'}</div>
+        <div style="font-size:14px;font-weight:800;color:${replay.won?'#fde047':'#f87171'};margin-top:4px;">
+          vs ${escapeHtml(replay.targetIcon)} ${escapeHtml(replay.targetName)}
+          <span style="font-size:10px;font-weight:400;color:#9ca3af;">Lv${replay.targetLevel} ${escapeHtml(replay.targetClass)}</span>
+        </div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:2px;">${replay.won?'⚔️ 地獄使者勝！':'💀 地獄使者敗！'}　共 ${replay.rounds} 回合　+${replay.xpGained} EXP</div>
+      </div>
+      <div class="battle-log" style="max-height:340px;overflow-y:auto;padding:8px;border-radius:8px;">${logHtml}</div>
+      <button onclick="hideModal();renderHellPvpCard();" style="margin-top:12px;width:100%;padding:10px;border:none;border-radius:8px;background:#374151;color:#fff;cursor:pointer;font-size:13px;font-weight:700;">關閉</button>
+    `);
+  }
+  window.showHellPvpResultModal = showHellPvpResultModal;
+
+  // ⭐ 查看指定回放（索引 0 = 最新）
+  function showHellPvpReplay(idx) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const replay = (rpg.hellPvpReplays || [])[idx];
+    if (!replay) { showToast('找不到回放記錄'); return; }
+    showHellPvpResultModal(replay);
+  }
+  window.showHellPvpReplay = showHellPvpReplay;
 
   // ============================================================
   // ⭐⭐⭐  競技場系統（Arena / PvP）  ⭐⭐⭐
