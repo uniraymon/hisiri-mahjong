@@ -7014,11 +7014,13 @@
       const ap = player.rpg.actionPatterns;
       if (ap && typeof ap === 'object' && ('0' in ap || '1' in ap || '2' in ap || '3' in ap)) {
         // Firestore 把巢狀陣列轉成 object {"0":[],"1":[],...} → 還原回陣列
+        // ⭐ index 4 = 防守頁，必須一併還原，否則每次 Firebase sync 都會把防守頁清空
         player.rpg.actionPatterns = [
           Array.isArray(ap['0']) ? ap['0'] : [],
           Array.isArray(ap['1']) ? ap['1'] : [],
           Array.isArray(ap['2']) ? ap['2'] : [],
           Array.isArray(ap['3']) ? ap['3'] : [],
+          Array.isArray(ap['4']) ? ap['4'] : [],
         ];
       } else {
         player.rpg.actionPatterns = [
@@ -13943,7 +13945,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510151940';
+  const APP_VERSION = '20260510152143';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -16258,7 +16260,7 @@ ${b.text}
 
   // ── 輔助：取得當前編輯頁的 pattern 陣列（確保陣列存在）
   function _apCurrentPage(rpg) {
-    rpg.actionPatterns = rpg.actionPatterns || [[], [], [], []];
+    rpg.actionPatterns = rpg.actionPatterns || [[], [], [], [], []]; // index 4 = 防守頁
     if (!Array.isArray(rpg.actionPatterns[__apPage])) rpg.actionPatterns[__apPage] = [];
     return rpg.actionPatterns[__apPage];
   }
@@ -16348,7 +16350,7 @@ ${b.text}
     safeConfirm(`確定重置「${(getRpg(getMe()).patternPageNames||[])[__apPage]||'頁 '+(__apPage+1)}」為預設規則表？目前的設定會清掉。`, () => {
       const me = getMe(); if (!me) return;
       const rpg = getRpg(me);
-      rpg.actionPatterns = rpg.actionPatterns || [[], [], [], []];
+      rpg.actionPatterns = rpg.actionPatterns || [[], [], [], [], []]; // index 4 = 防守頁
       rpg.actionPatterns[__apPage] = getDefaultActionPattern(rpg.class);
       saveData();
       renderActionPattern();
@@ -16403,7 +16405,7 @@ ${b.text}
   function copyApPageFrom(fromIdx) {
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
-    rpg.actionPatterns = rpg.actionPatterns || [[], [], [], []];
+    rpg.actionPatterns = rpg.actionPatterns || [[], [], [], [], []]; // index 4 = 防守頁
     const src = rpg.actionPatterns[fromIdx];
     if (!Array.isArray(src) || src.length === 0) { showToast('來源頁沒有規則'); return; }
     const allNames = [...(rpg.patternPageNames || []), '🛡 防守頁'];
@@ -19469,7 +19471,7 @@ ${b.text}
     rpg.abilityPoints = 5;
     rpg.abilities = { str: 0, vit: 0, agi: 0, dex: 0, int: 0, luk: 0 };
     rpg.actionPattern = getDefaultActionPattern(classId);
-    rpg.actionPatterns = [getDefaultActionPattern(classId), [], [], []];
+    rpg.actionPatterns = [getDefaultActionPattern(classId), [], [], [], []]; // index 4 = 防守頁
     rpg.activePatternPage = 0;
     rpg.patternPageNames = ['頁 1', '頁 2', '頁 3', '頁 4'];
     const stats = computeStats(me);
