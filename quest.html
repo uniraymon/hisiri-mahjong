@@ -13924,7 +13924,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510131859';
+  const APP_VERSION = '20260510142503';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -16180,7 +16180,7 @@ ${b.text}
           <span class="ap-num">#${i + 1}</span>
           <select class="ap-judge" onchange="updateActionRule(${i}, 'judgeId', this.value)">${judgeOptions(rule.judgeId)}</select>
           ${showParam
-            ? `<input class="ap-param" type="number" value="${rule.param}" onchange="updateActionRule(${i}, 'param', this.value)">${paramSuffix ? `<span class="ap-suffix">${paramSuffix}</span>` : ''}`
+            ? `<input class="ap-param" type="number" value="${rule.param}" min="0" oninput="updateActionRuleParam(${i}, this.value)" onchange="updateActionRuleParam(${i}, this.value)">${paramSuffix ? `<span class="ap-suffix">${paramSuffix}</span>` : ''}`
             : `<span class="ap-param-na">—</span>`}
           <span class="ap-arrow">→</span>
           <select class="ap-skill" onchange="updateActionRule(${i}, 'skillId', this.value)">${skillOptions(rule.skillId)}</select>
@@ -16192,16 +16192,19 @@ ${b.text}
     }).join('');
 
     const isActivePage = __apPage === rpg.activePatternPage;
-    const pageName = escapeHtml(names[__apPage] || '頁 '+(__apPage+1));
+    const isDefPage = __apPage === 4;
+    const pageName = isDefPage ? '🛡 防守頁' : escapeHtml(names[__apPage] || '頁 '+(__apPage+1));
 
     host.innerHTML = `
       <div style="display:flex; gap:5px; margin-bottom:8px;">${tabsHtml}</div>
       <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px; flex-wrap:wrap;">
-        <span style="font-size:12px; font-weight:700; color:#5b21b6;">📋 ${pageName}</span>
-        <button onclick="renameApPage(${__apPage})" style="font-size:10px; padding:2px 7px; border:1px solid #d1d5db; border-radius:5px; background:#f9fafb; cursor:pointer;">✏️ 改名</button>
-        ${!isActivePage
-          ? `<button onclick="setActivePatternPage(${__apPage})" style="font-size:10px; padding:2px 7px; border:1px solid #16a34a; border-radius:5px; background:#f0fdf4; color:#15803d; cursor:pointer; font-weight:700;">✦ 設為打怪預設</button>`
-          : `<span style="font-size:10px; color:#16a34a; font-weight:700;">✦ 目前打怪使用中</span>`}
+        <span style="font-size:12px; font-weight:700; color:${isDefPage?'#b91c1c':'#5b21b6'};">📋 ${pageName}</span>
+        ${!isDefPage ? `<button onclick="renameApPage(${__apPage})" style="font-size:10px; padding:2px 7px; border:1px solid #d1d5db; border-radius:5px; background:#f9fafb; cursor:pointer;">✏️ 改名</button>` : ''}
+        ${!isDefPage
+          ? (!isActivePage
+            ? `<button onclick="setActivePatternPage(${__apPage})" style="font-size:10px; padding:2px 7px; border:1px solid #16a34a; border-radius:5px; background:#f0fdf4; color:#15803d; cursor:pointer; font-weight:700;">✦ 設為打怪預設</button>`
+            : `<span style="font-size:10px; color:#16a34a; font-weight:700;">✦ 目前打怪使用中</span>`)
+          : `<span style="font-size:10px; color:#9ca3af;">被地獄使者挑戰時自動套用此頁規則</span>`}
       </div>
       <div style="font-size:11px; color:#8b6f9b; padding:6px 10px; background:#fffaf0; border-radius:8px; margin-bottom:8px; border:1px dashed #fbbf24;">
         💡 從上到下檢查，第一條 <b>條件成立</b> 且 <b>技能可用</b>（MP/CD/等級）的就執行；都不成立會自動普攻。
@@ -16229,12 +16232,28 @@ ${b.text}
     if (!pat[idx]) return;
     const r = pat[idx];
     if (field === 'judgeId') r.judgeId = Number(value) || 1000;
-    else if (field === 'param') r.param = Math.max(0, Number(value) || 0);
     else if (field === 'skillId') r.skillId = String(value);
     saveData();
-    renderActionPattern();
+    renderActionPattern(); // 只有 judgeId/skillId 變動才需整體重繪
   }
   window.updateActionRule = updateActionRule;
+
+  // ⭐ 專用：更新 param（不重繪，避免輸入時失焦）
+  function updateActionRuleParam(idx, value) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const pat = _apCurrentPage(rpg);
+    if (!pat[idx]) {
+      // 防守頁資料被 Firebase 同步覆蓋後可能為空，嘗試從 DOM 還原規則
+      const judgeEls = document.querySelectorAll('.ap-judge');
+      const skillEls = document.querySelectorAll('.ap-skill');
+      if (!judgeEls[idx] || !skillEls[idx]) return;
+      pat[idx] = { judgeId: Number(judgeEls[idx].value) || 1000, param: 0, skillId: String(skillEls[idx].value) };
+    }
+    pat[idx].param = Math.max(0, Number(value) || 0);
+    saveData(); // 存檔但不重繪，輸入框保持焦點
+  }
+  window.updateActionRuleParam = updateActionRuleParam;
 
   function addActionRule() {
     const me = getMe(); if (!me) return;
