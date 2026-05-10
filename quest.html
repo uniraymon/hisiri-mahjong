@@ -2587,9 +2587,9 @@
         // ⭐ 血吸術：1.4 × MARK 魔法傷害 + 吸血 10%
         { id: 'm_blood_drain',    name: '血吸術',   icon: '🩸', unlockLv: 6,  cooldown: 0, mpCost: 28, type: 'damage', markMult: 1.4, magic: true, lifesteal: 0.10, spellElement: 'blood' },
         // ⭐ 魔法書系統三技能
-        // 自動唸咒：每玩家回合法書自動隨機施放4種法術之一（固定5等，20% MARK），持續6回合
+        // 自動唸咒：每玩家回合法書自動隨機施放4種法術之一（固定5等，20% MARK），持續20回合
         { id: 'm_auto_chant', name: '自動唸咒', icon: '📖', unlockLv: 5, cooldown: 0, mpCost: 20, type: 'buff',
-          selfBuff: { stat: 'autoChant', amount: 1, turns: 6, playerTurnOnly: true }, maxLv: 1 },
+          selfBuff: { stat: 'autoChant', amount: 1, turns: 20, playerTurnOnly: true }, maxLv: 1 },
         // 元素爆發：爆發法書所有屬性為魔法傷害（無視DEF，爆傷跟角色爆傷），清空法書
         { id: 'm_elem_burst', name: '元素爆發', icon: '💥', unlockLv: 7, cooldown: 0, mpCost: 35, type: 'damage',
           isSpellBurst: true, magic: true, ignoreDef: true, maxLv: 1 },
@@ -14137,7 +14137,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510210648';
+  const APP_VERSION = '20260510214750';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -14473,7 +14473,7 @@ ${b.text}
         <div>・5 種元素：🔥 火 / 🧊 冰 / ⚡ 雷 / ☠️ 毒 / 🩸 血，對應現有各技能</div>
 
         <div style="font-weight:700; color:#a5b4fc; margin:10px 0 4px;">📖 自動唸咒（Lv.5，20 MP）</div>
-        <div>・持續 <b>6 回合</b>，每次角色行動回合自動施放一次隨機元素咒（固定5等，傷害基底 = MARK×20%）</div>
+        <div>・持續 <b>20 回合</b>，每次角色行動回合自動施放一次隨機元素咒（固定5等，傷害基底 = MARK×20%）</div>
         <div style="font-size:11px; padding-left:8px;">
           <div>🧊 冰：×1.6　25% 附加麻痺 1 回合</div>
           <div>🔥 火：×2.0（無視防禦）</div>
