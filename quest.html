@@ -14372,7 +14372,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260511000429';
+  const APP_VERSION = '20260511000638';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -14428,7 +14428,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260510_pet_tooltip';
+  const NEWS_LATEST_ID = 'patch_20260511_paladin_rework';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -14448,6 +14448,35 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#002a1a,#005c38); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🦸 聖騎大改版 ＋ 戰鬥系統修正　<span style="font-size:11px; opacity:0.85;">2026-05-11</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#6ee7b7; margin:6px 0 4px;">💢 百倍返しだ（原「反傷護盾」全面重做）</div>
+        <div>・舊效果（反傷 50%、3 回合）已移除，改為全新機制</div>
+        <div>・施放後：<b>下一次受到的攻擊傷害減半</b>，同時對怪物反射 <b>原始傷害 × 100 真傷</b>（無上限、穿透一切防禦）</div>
+        <div>・一次性 charge（用完即消耗），技能不可升級</div>
+        <div>・例：怪物打來 300 傷害 → 你只受 150，怪物反吃 30,000 真傷</div>
+
+        <div style="font-weight:700; color:#6ee7b7; margin:10px 0 4px;">🛡✨ 不滅聖盾（聖騎全新大招）</div>
+        <div>・Lv 10 解鎖 / 80 MP / 每場限用 1 次</div>
+        <div>・傷害：<b>20× DEF + 10% maxHp</b>（公式同護盾衝鋒，攻擊力遠超）</div>
+        <div>・攻擊後：自身 <b>DEF +60%（5 回合）+ 免疫 2 次傷害</b></div>
+        <div>・高 DEF 聖騎一砲可輸出數萬傷害，打完還變不倒</div>
+
+        <div style="font-weight:700; color:#6ee7b7; margin:10px 0 4px;">🛡 護盾系列修正 — 格擋也免疫附加狀態</div>
+        <div>・修正 Bug：以往絕對防禦 / 隱身格擋攻擊時，傷害歸零但<b>麻痺等附加狀態仍可命中</b></div>
+        <div>・現在傷害為 0（完全格擋）時，麻痺 / 易傷等附加效果也一併免疫</div>
+
+        <div style="font-weight:700; color:#86efac; margin:10px 0 4px;">📋 戰鬥 LOG 格式升級</div>
+        <div>・行動計數格式改為「<b>玩家回合 X：</b>」、「<b>怪物名稱回合 X：</b>」，讓玩家清楚看到自己的行動輪次</div>
+        <div>・同一戰鬥回合內的多個玩家動作（如寵物觸發 + 主動技能）<b>共用同一回合計數</b>，不再誤算</div>
+        <div>・所有戰鬥類型（普通戰 / 世界王 / 個人王 / 黨戰 / 試煉）統一使用相同 LOG 格式</div>
+
+        <div style="background:#002a18; border-radius:8px; padding:8px 12px; margin:10px 0 16px; font-size:12px; color:#6ee7b7;">
+          💡 聖騎現在有了能一擊定乾坤的大招！百倍返しだ配合高防禦怪物，一個不小心就是天文數字！
+        </div>
 
         <div style="background:linear-gradient(135deg,#1a0050,#3b006b); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🐾 寵物強化 ＋ 自動唸咒升級　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
