@@ -2685,7 +2685,7 @@
         { id: 'hm_hellfire',     name: '地獄烈焰', icon: '🔥', unlockLv: 8,  cooldown: 0, mpCost: 50, type: 'damage', mult: 3.2, applyStatus: { type: 'poison', charges: 3, dmg: 90, chance: 0.90 },
           desc: '召喚地獄業火燃燒敵人，90% 機率施加灼燒（3 回合，每回 90 傷害）。(3.2× ATK)' },
         // 魔王怒吼：4.5× ATK + 麻痺（2 charges，70% 機率）— 大招
-        { id: 'hm_death_howl',   name: '魔王怒吼', icon: '💀', unlockLv: 10, cooldown: 0, mpCost: 65, type: 'damage', mult: 4.5, applyStatus: { type: 'paralyze', charges: 2, chance: 0.70 },
+        { id: 'hm_death_howl',   name: '魔王怒吼', icon: '💀', unlockLv: 10, cooldown: 0, mpCost: 65, type: 'damage', mult: 4.5, applyStatus: { type: 'paralyze', charges: 2, chance: 0.70, skipChance: 0.75 },
           desc: '爆發魔王之力以怒吼震懾敵人，70% 機率麻痺對手 2 回合。(4.5× ATK)' },
         // 冥界審判：5.5× ATK，無視 DEF + 強毒（unlockLv 12）
         { id: 'hm_abyss_judge',  name: '冥界審判', icon: '⚖️', unlockLv: 12, cooldown: 0, mpCost: 80, type: 'damage', mult: 5.5, ignoreDef: true, applyStatus: { type: 'poison', charges: 3, dmg: 120, chance: 0.85 },
@@ -2694,8 +2694,8 @@
         { id: 'hm_soul_rend',    name: '靈魂撕裂', icon: '💔', unlockLv: 15, cooldown: 0, mpCost: 95, type: 'damage', mult: 6.5, ignoreDef: true, applyStatus: { type: 'poison', charges: 5, dmg: 150, chance: 1.00 },
           desc: '撕裂目標靈魂，無法防禦的巨大衝擊，必定施加持續流血（5 回合，每回 150 傷害）。(6.5× ATK，無視防禦)' },
         // 魔神降臨：8.0× ATK，無視 DEF + 強麻痺（unlockLv 18）— 終極大招
-        { id: 'hm_demon_god',    name: '魔神降臨', icon: '👹', unlockLv: 18, cooldown: 0, mpCost: 120, type: 'damage', mult: 8.0, ignoreDef: true, applyStatus: { type: 'paralyze', charges: 3, chance: 0.90 },
-          desc: '魔神親臨降下終極制裁，90% 機率麻痺對手 3 回合。(8.0× ATK，無視防禦) ─ 終極大招' },
+        { id: 'hm_demon_god',    name: '魔神降臨', icon: '👹', unlockLv: 18, cooldown: 0, mpCost: 120, type: 'damage', mult: 8.0, ignoreDef: true, applyStatus: { type: 'paralyze', charges: 3, chance: 0.90, skipChance: 1.0 },
+          desc: '魔神親臨降下終極制裁，90% 機率麻痺對手 3 回合（行動必定被取消）。(8.0× ATK，無視防禦) ─ 終極大招' },
       ],
       skillTree: [
         { id: 'hm_dark_atk',   name: '黑暗強化', icon: '⚔️', desc: '+3% ATK',       maxLevel: 5, effect: 'atkPct',      per: 0.03 },
@@ -5326,6 +5326,20 @@
           { judgeId: 1000, param: 0,  skillId: 'p_godfist' },         // 神之拳（2 目標 + 麻痺）
           { judgeId: 1000, param: 0,  skillId: 'p_holy_smite' },      // 神聖懲戒（2.5× ATK + 10% maxHp + 易傷）
           { judgeId: 1000, param: 0,  skillId: 'p_holy_slash' },      // 聖光斬（1.2× ATK + 5% maxHp）
+          { judgeId: 1000, param: 0,  skillId: 'basic' },
+        ];
+      case 'hellmessenger':
+        return [
+          { judgeId: 1101, param: 35, skillId: 'hm_hell_drain' },    // 自身 HP ≤ 35% → 地獄汲取（回 12% HP + 回 MP）
+          { judgeId: 1101, param: 50, skillId: 'hm_karma_shield' },  // 自身 HP ≤ 50% → 業障護盾（DEF +50% buff 4 回）
+          { judgeId: 1201, param: 25, skillId: 'hm_mana_drain' },    // 自身 MP ≤ 25% → 冥力汲取（0 費，回 12% MP）
+          { judgeId: 1000, param: 0,  skillId: 'hm_demon_god' },     // 魔神降臨（終極：8.0×，必定麻痺 3 回）
+          { judgeId: 1000, param: 0,  skillId: 'hm_soul_rend' },     // 靈魂撕裂（6.5×，必定強毒 5 回）
+          { judgeId: 1000, param: 0,  skillId: 'hm_abyss_judge' },   // 冥界審判（5.5×，無視 DEF + 強毒）
+          { judgeId: 1000, param: 0,  skillId: 'hm_death_howl' },    // 魔王怒吼（4.5×，麻痺 2 回）
+          { judgeId: 1000, param: 0,  skillId: 'hm_hellfire' },      // 地獄烈焰（3.2×，強毒 3 回）
+          { judgeId: 1000, param: 0,  skillId: 'hm_curse_burst' },   // 詛咒爆發（2.0×，中毒 4 回）
+          { judgeId: 1000, param: 0,  skillId: 'hm_soul_slash' },    // 靈魂斬（1.8×，無視 DEF）
           { judgeId: 1000, param: 0,  skillId: 'basic' },
         ];
       default:
@@ -9579,6 +9593,9 @@
         // ⭐ charge-based：護盾/麻痺/中毒/流血均取較多層
         existing.charges = Math.max(existing.charges || 0, status.charges || 0);
         if (status.type === 'poison') existing.dmg = Math.max(existing.dmg || 0, status.dmg || 0);
+        // ⭐ 麻痺重疊時，skipChance 取較高值（確保終極技能的必定跳過效果不被覆蓋）
+        if (status.type === 'paralyze' && status.skipChance !== undefined)
+          existing.skipChance = Math.max(existing.skipChance || 0, status.skipChance);
       } else {
         existing.turns = Math.max(existing.turns, status.turns);
         if (isBuff) existing.amount = Math.max(existing.amount || 0, status.amount || 0);
@@ -9653,7 +9670,9 @@
     if (!p) return false;
     p.charges -= 1;
     if (p.charges <= 0) target.statuses = target.statuses.filter(s => s !== p);
-    return Math.random() < skipChance; // true = 跳過行動
+    // ⭐ 若技能有設定 skipChance（如魔神降臨 = 1.0 必跳過），優先採用；否則沿用傳入值
+    const sc = (p.skipChance !== undefined) ? p.skipChance : skipChance;
+    return Math.random() < sc; // true = 跳過行動
   }
   // 把目前生效的 buff 加總（atkPct/defPct/spd/critChance/critDmg/reflectPct/maxHpPct）
   function getBuffBonus(target) {
@@ -13924,7 +13943,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510143617';
+  const APP_VERSION = '20260510145605';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
