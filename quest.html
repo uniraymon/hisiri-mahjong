@@ -2466,6 +2466,13 @@
         { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 25, hpCost: 0.10, type: 'damage', mult: 4.5, cast: 50, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 1, chance: 1 }, customLv: true },
         // ⭐ 爆血：消耗血池（本場所有 HP 代價技能累積），以真傷形式打出（無視防禦與抗性）
         { id: 'w_blood_explode', name: '爆血',   icon: '🩸💥', unlockLv: 8, cooldown: 1, mpCost: 0, type: 'damage', usesBloodPool: true, cast: 5, maxLv: 1 },
+        // ⭐ 大絕：鵝暴化 — 15 個自己回合，ATK/DEF+20%、血池×2、每回合失血5%入血池
+        { id: 'w_goose_berserk', name: '鵝暴化', icon: '🦊', unlockLv: 15, cooldown: 99, mpCost: 0, type: 'buff',
+          selfBuff:  { stat: 'atkPct',  amount: 0.20, turns: 15, playerTurnOnly: true },
+          selfBuff2: { stat: 'defPct',  amount: 0.20, turns: 15, playerTurnOnly: true },
+          selfBuff3: { stat: 'berserk', amount: 1,    turns: 15, playerTurnOnly: true },
+          isUltimate: true, maxLv: 1,
+          desc: '【大絕】狂暴化！持續 15 個自己回合：ATK/DEF +20%、血池收益×2、每回合失血 5%（失血進血池）。每場限用一次。' },
         { id: 'w_war_cry',      name: '戰意呼喚', icon: '📢', unlockLv: 3,  cooldown: 0, mpCost: 0, type: 'heal', healPct: 0.15, isMpRegen: true },
         // ⭐ 改版：不耗 MP，改扣 20% 當前 HP；ATK +45% + 暴擊率 +20%；持續 5 回；cast 60；不可升級
         { id: 'w_bloodlust',    name: '嗜血怒嚎', icon: '🦁', unlockLv: 2,  cooldown: 0, mpCost: 0, hpCost: 0.20, type: 'buff', selfBuff: { stat: 'atkPct', amount: 0.45, turns: 5 }, selfBuff2: { stat: 'critChance', amount: 0.20, turns: 5 }, cast: 60, maxLv: 1 },
@@ -2524,6 +2531,11 @@
         { id: 'a_mad_goose_status', name: '瘋鵝術(異擊)', icon: '🪿', unlockLv: 6,  cooldown: 0, mpCost: 15, type: 'buff', selfBuff: { stat: 'madGooseStatus', amount: 1, turns: 3, playerTurnOnly: true }, maxLv: 1 },
         // ⭐ 瘋鵝術(六連)：5 回合，段數固定 6 連（不與其他段數疊加），爆頭率-5%，不累積疊層
         { id: 'a_mad_goose_six',   name: '瘋鵝術(六連)', icon: '🪿', unlockLv: 6,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'madGooseSix', amount: 1, turns: 5, playerTurnOnly: true }, selfBuff2: { stat: 'headshotChance', amount: -0.05, turns: 5, playerTurnOnly: true }, maxLv: 1 },
+        // ⭐ 大絕：影分身 — 接下 5 個自己回合，所有行動連續發動兩次
+        { id: 'a_shadow_clone', name: '影分身', icon: '🌑', unlockLv: 15, cooldown: 99, mpCost: 40, type: 'buff',
+          selfBuff: { stat: 'shadowClone', amount: 1, turns: 5, playerTurnOnly: true },
+          isUltimate: true, maxLv: 1,
+          desc: '【大絕】召喚分身！接下 5 個自己回合，所有行動連續發動兩次。每場限用一次。' },
         { id: 'a_wind_song',       name: '風之歌', icon: '🎵', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true },
         { id: 'a_arrow_storm',     name: '箭雨',   icon: '🌧', unlockLv: 6,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.5, targetCount: 'all' },
         // 奪魂箭：0.8× ATK 傷害 + 回 2 MP（免費，每次攻擊都能補魔）
@@ -2584,6 +2596,11 @@
         // 元素吸收：法書所有屬性轉換為增益（5玩家回合），清空法書
         { id: 'm_elem_absorb', name: '元素吸收', icon: '🌀', unlockLv: 7, cooldown: 0, mpCost: 20, type: 'buff',
           isSpellAbsorb: true, maxLv: 1 },
+        // ⭐ 大絕：最後的大咒書 — 15回合，自動唸咒施放實際技能(固定10等)，加入怒雷風暴與毀滅之怒
+        { id: 'm_final_grimoire', name: '最後的大咒書', icon: '📕', unlockLv: 15, cooldown: 99, mpCost: 50, type: 'buff',
+          selfBuff: { stat: 'finalGrimoire', amount: 1, turns: 15, playerTurnOnly: true },
+          isUltimate: true, maxLv: 1,
+          desc: '【大絕】開啟最終法典！持續 15 個自己回合，自動唸咒施放完整版技能（固定 10 等）並加入怒雷風暴與毀滅之怒。每場限用一次。' },
       ],
       skillTree: [
         { id: 'm_mp',    name: '法力深淵', icon: '💎', desc: '+5% 最大 MP',         maxLevel: 5, effect: 'mpPct',     per: 0.05 },
@@ -3512,8 +3529,12 @@
       art: boss.art || null,
     };
 
-    const _wbPage = r.wbPatternPage?.[bossId];
-    const result  = autoFight(me, monster, typeof _wbPage === 'number' ? { patternPage: _wbPage } : undefined);
+    const _wbPage   = r.wbPatternPage?.[bossId];
+    const _wbEqSet  = r.wbEquipSet?.[bossId];
+    const _wbOpts   = {};
+    if (typeof _wbPage  === 'number') _wbOpts.patternPage = _wbPage;
+    if (typeof _wbEqSet === 'number') _wbOpts.equipSet    = _wbEqSet;
+    const result  = autoFight(me, monster, Object.keys(_wbOpts).length ? _wbOpts : undefined);
     const dmgRaw  = Math.round(Math.max(0, state.hp - result.mHpFinal) * 1.3); // ⭐ 世界王傷害 × 1.3
 
     // 戰鬥快照（給 recentBattles）
@@ -4137,17 +4158,30 @@
       } else {
         actionHtml = `<button class="btn btn-primary" onclick="wb9JoinQueue('${boss.id}')" style="background:linear-gradient(135deg,#f59e0b,#dc2626); box-shadow:0 4px 0 #991b1b;">📋 加入排隊${queueCount > 0 ? `（前面 ${queueCount} 人）` : ''}</button>`;
       }
-      // 規則頁選擇器（世界王）
+      // 規則頁 + 裝備套裝選擇器（世界王）
       const _wbPageIdx = r.wbPatternPage?.[boss.id] ?? r.activePatternPage ?? 0;
       const _wpNames = r.patternPageNames || ['頁 1', '頁 2', '頁 3', '頁 4'];
+      const _wbEqSetIdx = r.wbEquipSet?.[boss.id];
+      const _wbLoadouts = r.equipLoadouts || [null, null, null];
       const wbPagePickerHtml = me ? `
-        <div style="display:flex; align-items:center; gap:6px; margin:8px 0 4px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:6px; margin:8px 0 0; flex-wrap:wrap;">
           <span style="font-size:10px; color:#c4b5fd;">📋 規則：</span>
           <select onchange="setWbPatternPage('${boss.id}', this.value)"
             style="font-size:11px; padding:2px 5px; border-radius:5px; background:#1e1b4b; color:#fff; border:1px solid #7c3aed; cursor:pointer;">
             ${[0,1,2,3].map(i => {
               const cnt = (r.actionPatterns?.[i]||[]).length;
               return `<option value="${i}" ${_wbPageIdx === i ? 'selected' : ''}>${escapeHtml(_wpNames[i]||'頁 '+(i+1))} (${cnt}條)</option>`;
+            }).join('')}
+          </select>
+          <span style="font-size:10px; color:#c4b5fd; margin-left:4px;">🎽 裝備：</span>
+          <select onchange="setWbEquipSet('${boss.id}', this.value)"
+            style="font-size:11px; padding:2px 5px; border-radius:5px; background:#1e1b4b; color:#fff; border:1px solid #7c3aed; cursor:pointer;">
+            <option value="-1" ${_wbEqSetIdx === undefined ? 'selected' : ''}>目前裝備</option>
+            ${[0,1,2].map(i => {
+              const l = _wbLoadouts[i];
+              const lName = l?.name || `套裝 ${i+1}`;
+              const hasItems = l && Object.values(l.equipment||{}).some(Boolean);
+              return `<option value="${i}" ${_wbEqSetIdx === i ? 'selected' : ''}>${escapeHtml(lName)}${!hasItems?' (空)':''}</option>`;
             }).join('')}
           </select>
         </div>` : '';
@@ -7034,6 +7068,9 @@
     if (typeof player.rpg.activePatternPage !== 'number') player.rpg.activePatternPage = 0;
     if (!Array.isArray(player.rpg.patternPageNames)) player.rpg.patternPageNames = ['頁 1', '頁 2', '頁 3', '頁 4'];
     if (!player.rpg.wbPatternPage || typeof player.rpg.wbPatternPage !== 'object') player.rpg.wbPatternPage = {};
+    if (!player.rpg.wbEquipSet    || typeof player.rpg.wbEquipSet    !== 'object') player.rpg.wbEquipSet    = {};
+    if (typeof player.rpg.archerHsTotal !== 'number') player.rpg.archerHsTotal = 0;
+    if (typeof player.rpg.archerHsBonus !== 'number') player.rpg.archerHsBonus = 0;
     // ⭐ HP 平衡 v1 一次性遷移：套新詞綴 perLv / 稀有度 mult / 階層 mult；精魂 base HP × 0.7 + HP 詞綴 × 0.7
     if (!player.rpg._hpRebalV1 && typeof applyHpRebalanceToPlayer === 'function') {
       try {
@@ -7966,7 +8003,15 @@
   function autoFight(player, monster, opts) {
     const log = [];
     const cls = CLASSES[player.rpg.class];
+    // ⭐ 裝備套裝覆蓋：用指定套裝替換 rpg.equipment 進行這場戰鬥的屬性計算
+    const _rpg = player.rpg;
+    const _origEquip = _rpg.equipment;
+    if (typeof opts?.equipSet === 'number') {
+      const _setEq = (_rpg.equipLoadouts || [])[opts.equipSet]?.equipment;
+      if (_setEq && typeof _setEq === 'object') _rpg.equipment = _setEq;
+    }
     const stats = computeStats(player);
+    _rpg.equipment = _origEquip; // ⭐ 屬性計算完成後立即還原，避免影響其他邏輯
 
     // ⭐ PvP 模式：攻方 ATK × PVP_ATK_MULT，HP × PVP_HP_MULT
     if (opts?.pvpMode) {
@@ -8097,6 +8142,7 @@
     let coinsStolen = 0;
     let critCount = 0;
     let bloodPool = 0; // ⭐ 血池：累積所有 HP 代價技能扣的血，供「爆血」技能使用
+    let _ultimateFired = false; // ⭐ 大絕：每場限用一次
     // ⭐ 聖母鵝（HMG）系統 — 聖騎專屬
     const _isPaladin = player.rpg.class === 'paladin';
     let _hmgActive = false;      // 是否已召喚
@@ -8295,6 +8341,13 @@
           pHp = stats.maxHp;
           log.push({ type: 'system', text: `回合 ${round}：💖 最大HP 加成結束，HP 恢復上限 ${stats.maxHp}`, hp: { player: pHp, monster: mHp, mp: pMp } });
         }
+        // ⭐ 鵝暴化：每玩家回合失血 5%（失血進血池）
+        if (player.rpg.class === 'warrior' && (pBuff.berserk || 0) > 0 && pHp > 0) {
+          const _bkDrain = Math.round(stats.maxHp * 0.05);
+          pHp = Math.max(1, pHp - _bkDrain);
+          bloodPool += _bkDrain * (1 + (_weaponBpBoostMult - 1));
+          log.push({ type: 'system', text: `回合 ${round}：🦊【鵝暴化】失血 -${_bkDrain} HP → 🩸血池+${_bkDrain}（當前血池：${Math.round(bloodPool)}）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+        }
         if (pHp <= 0) break;
         // ⭐ 麻痺（charge-based + 20% RNG）：玩家受麻痺發動率 20%（原 30%，玩家反映太高故調降）
         if (consumeParalyze(playerObj, 0.20)) {
@@ -8371,6 +8424,8 @@
           if (!sInfo) continue; // 規則指向不存在的技能（職業改了？）
           const s = sInfo.skill;
           if ((s.unlockLv || 1) > (player.rpg.level || 1)) continue;
+          // ⭐ 大絕：每場限用一次
+          if (s && s.isUltimate && _ultimateFired) continue;
           // ⭐ 玩家技能 CD 取消（用 MP 跟硬值控制節奏）
           // if (playerActions < (nextActionForSkill[s.id] || 0)) continue;
           const effMpCost = Math.round((s.mpCost || 0) * (1 - Math.min(0.80, (passive.mpDiscount || 0) + _fusionMpDiscount + (_weaponMpDiscount || 0))));
@@ -8420,10 +8475,12 @@
           nextActionForSkill[skill.id] = playerActions + skill.cooldown;
           // ⭐ 硬值：施放完 pGauge 額外扣 cast（重技能下次行動更慢）
           pGauge -= getEffectiveCast(skill);
+          // ⭐ 大絕：標記已使用
+          if (useSkill?.isUltimate) _ultimateFired = true;
           // 成本說明字串（多種代價可能組合：MP / HP）
           // ⭐ 血池累積：任何扣 HP 的技能（血祭斬 / 死戰之怒 / 嗜血怒嚎…）都加進血池
           // ⭐ 嗜血怒嚎 期間：血池增量×2
-          if (hpPaid > 0) bloodPool += hpPaid * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1) * (_weaponBpBoostMult || 1);
+          if (hpPaid > 0) bloodPool += hpPaid * ((hasStatus(playerObj, 'bloodlust_pool') || (pBuff.berserk || 0) > 0) ? 2 : 1) * (_weaponBpBoostMult || 1);
           const costParts = [];
           if (effMpCost > 0) costParts.push(`-${effMpCost} MP`);
           if (hpPaid > 0)    costParts.push(`-${hpPaid} HP`);
@@ -8441,6 +8498,8 @@
             _burstRaw += _bc.thunder * _bMark * 2.1;
             _burstRaw += _bc.poison  * _bMark * 1.6;
             _burstRaw += _bc.blood   * _bMark * 1.8;
+            // ⭐ 法書全滿（10顆）：技能傷害+30%
+            if (_spellBook.length >= 10) { _burstRaw *= 1.30; }
             // 法書為空 → 最低1傷
             _burstRaw = Math.max(1, _burstRaw);
             // 浮動 ±15%
@@ -8771,7 +8830,8 @@
             const _ab = { fire: 0, ice: 0, thunder: 0, poison: 0, blood: 0 };
             for (const _el of _spellBook) if (_ab[_el] !== undefined) _ab[_el]++;
             const _abMark = (stats.mark || 0) * (1 + (pBuff.atkPct || 0) + (pBuff.markPct || 0));
-            const _abTurns = 5;
+            // ⭐ 法書全滿（10顆）：持續回合+1
+            const _abTurns = _spellBook.length >= 10 ? 6 : 5;
             const _abLog = [];
             // 🔥 火：MARK +12%×N（上限60%）
             if (_ab.fire > 0) {
@@ -8964,7 +9024,7 @@
             const _madFocus  = !_madSix && (pBuff.madGooseFocus  || 0) > 0;
             const _madStatus = (pBuff.madGooseStatus || 0) > 0;
             // ⭐ 弓手多連射：每發 0.30×ATK，獨立爆擊，爆頭率 5%+爆擊率×20%
-            const HEADSHOT_CHANCE = 0.05 + baseCrit2 * 0.2 + (pBuff.headshotChance || 0);
+            const HEADSHOT_CHANCE = 0.05 + baseCrit2 * 0.2 + (pBuff.headshotChance || 0) + (player.rpg.archerHsBonus || 0);
             // 六連固定 6 段（不與其他段數疊加）；聚擊 1 段；其他正常
             const totalHits = _madSix ? 6 : _madFocus ? 1 : 3 + Math.round(pBuff.extraHits || 0);
             // 隱身爆頭保證：消耗後第一箭必中爆頭
@@ -9056,6 +9116,26 @@
               }
               if (mHp <= 0) { pushDeathLine(); break; }
             }
+            // ⭐ 影分身：分身重複攻擊一次（所有箭矢再打一輪）
+            if ((pBuff.shadowClone || 0) > 0 && mHp > 0) {
+              for (let _sh = 1; _sh <= totalHits; _sh++) {
+                let _sdmg = _madFocus ? effAtk * 2.5 : effAtk * 0.30;
+                _sdmg *= (0.85 + Math.random() * 0.3);
+                _sdmg *= (1 + _aHit * 0.01);
+                const _sisCrit = Math.random() < baseCrit2;
+                const _sisHs   = Math.random() < HEADSHOT_CHANCE;
+                if (!_sisHs) _sdmg *= DEF_PIERCE_K / (monDef0 + DEF_PIERCE_K);
+                if (_sisCrit) { _sdmg *= critMult2 + _aCritBonus; critCount++; }
+                if (_sisHs)   { _sdmg *= 3 + _aHsBonus; }
+                if (_monPhysRes) _sdmg *= (1 - _monPhysRes);
+                _sdmg = Math.max(1, Math.round(_sdmg));
+                _sdmg = monShield0(_sdmg);
+                mHp -= _sdmg;
+                if (!_madSix) { _aHit++; if (_sisCrit) { _aCrit++; _aCritBonus += 0.01+Math.random()*0.03; } if (_sisHs) { _aHs++; _aHsBonus += 0.05+Math.random()*0.08; } }
+                log.push({ type: (_sisCrit||_sisHs)?'crit-player':'player', text: `回合 ${round}（分身${_sh}/${totalHits}）：🌑【影分身】${_sisHs&&_sisCrit?'🎯【爆頭+暴擊】':_sisHs?'🎯【爆頭】':_sisCrit?'【暴擊】':''} → ${monster.name} -${_sdmg} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+                if (mHp <= 0) break;
+              }
+            }
             // ⭐ 聖母鵝計數：弓手普攻擊中（按箭數計段）
             if (_isPaladin && !_hmgFrozen) _hmgHitCount += totalHits;
           } else {
@@ -9137,12 +9217,16 @@
             }
           }
         }
-        // ⭐ 自動唸咒（法書）：每玩家回合追加隨機施法（冰/火/雷/血，固定5等，20% MARK）
+        // ⭐ 自動唸咒（法書）：每玩家回合追加隨機施法
+        // ⭐ 最後的大咒書：施放完整版技能（固定10等），加入怒雷風暴與毀滅之怒
         if (player.rpg.class === 'mage' && (pBuff.autoChant || 0) > 0 && mHp > 0) {
-          const _chantList = ['ice', 'fire', 'thunder', 'blood'];
-          const _chantEl = _chantList[Math.floor(Math.random() * 4)];
+          const _grimoire = (pBuff.finalGrimoire || 0) > 0;
+          const _chantList = _grimoire ? ['ice', 'fire', 'thunder', 'blood', 'storm', 'destroy'] : ['ice', 'fire', 'thunder', 'blood'];
+          const _chantEl = _chantList[Math.floor(Math.random() * _chantList.length)];
           const _chantMark = Math.round((stats.mark || 0) * (1 + (pBuff.atkPct || 0) + (pBuff.markPct || 0)) * 0.20);
           let _chantDmg = 0; let _chantExtra = '';
+          // 怒雷風暴 / 毀滅之怒 屬於法書 thunder / blood 元素
+          const _chantBookEl = _chantEl === 'storm' ? 'thunder' : _chantEl === 'destroy' ? 'blood' : _chantEl;
           if (_chantEl === 'ice') {
             _chantDmg = Math.max(1, Math.round(_chantMark * 1.6 * (0.85 + Math.random() * 0.30)));
             if (Math.random() < 0.25 && !hasStatus(monster, 'paralyze')) { applyStatus(monster, { type: 'paralyze', charges: 1 }); _chantExtra = ' ⚡麻痺！'; }
@@ -9150,6 +9234,14 @@
             _chantDmg = Math.max(1, Math.round(_chantMark * 2.0 * (0.85 + Math.random() * 0.30)));
           } else if (_chantEl === 'thunder') {
             for (let _ci = 0; _ci < 3; _ci++) _chantDmg += Math.max(1, Math.round(_chantMark * 0.8 * (0.85 + Math.random() * 0.30)));
+          } else if (_chantEl === 'storm') {
+            // ⭐ 怒雷風暴：flat 360 + markMult 7
+            _chantDmg = Math.max(1, Math.round(_chantMark * 7.0 * (0.85 + Math.random() * 0.30)) + 360);
+          } else if (_chantEl === 'destroy') {
+            // ⭐ 毀滅之怒：3×MARK魔法傷（固定10等）+ 易傷1層
+            _chantDmg = Math.max(1, Math.round(_chantMark * 3.0 * (0.85 + Math.random() * 0.30)));
+            applyStatus(monster, { type: 'vulnerable', amount: 0.5, hits: 1, chance: 1.0 });
+            _chantExtra = ' 👁️易傷！';
           } else { // blood
             _chantDmg = Math.max(1, Math.round(_chantMark * 1.4 * (0.85 + Math.random() * 0.30)));
             // ⭐ 血系：吸血 + 固定回HP10% + 回MP10%；法書≥3屠時×3
@@ -9163,10 +9255,10 @@
             if (_chantHealMp  > 0) pMp = Math.min(stats.maxMp || 0, (pMp || 0) + _chantHealMp);
             _chantExtra = ` 🩸+${_totalHpHeal}HP +${_chantHealMp}MP${_bloodMult > 1 ? '（3屠×3！）' : ''}`;
           }
-          const _chantIcon = { ice: '❄️冰錐術', fire: '🔥火球術', thunder: '⚡連環閃電', blood: '🩸血吸術' }[_chantEl];
+          const _chantIcon = { ice: '❄️冰錐術', fire: '🔥火球術', thunder: '⚡連環閃電', blood: '🩸血吸術', storm: '🌩️怒雷風暴', destroy: '💀毀滅之怒' }[_chantEl];
           mHp = Math.max(0, mHp - _chantDmg);
           const _cOvfl = _spellBook.length >= 10 ? _spellBook[0] : null;
-          _spellBook.push(_chantEl);
+          _spellBook.push(_chantBookEl);
           if (_spellBook.length > 10) _spellBook.shift();
           log.push({ type: 'player', text: `回合 ${round}：📖 自動唸咒 ${_chantIcon} → ${monster.name} -${_chantDmg} HP${_chantExtra}　[法書${_spellBook.length}/10]`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp, spellBook: [..._spellBook] } });
           if (_cOvfl) {
@@ -9570,6 +9662,18 @@
         } // end if (!_daMaSkipAtk)
       }
     }
+    // ⭐ 弓手永久爆頭里程碑：每 50 爆頭 +5% 爆頭率
+    if (player.rpg.class === 'archer' && _aHs > 0) {
+      const _prevHsTotal = player.rpg.archerHsTotal || 0;
+      const _newHsTotal  = _prevHsTotal + _aHs;
+      const _oldMs = Math.floor(_prevHsTotal / 50);
+      const _newMs = Math.floor(_newHsTotal  / 50);
+      player.rpg.archerHsTotal = _newHsTotal;
+      if (_newMs > _oldMs) {
+        player.rpg.archerHsBonus = Math.round(((player.rpg.archerHsBonus || 0) + 0.05 * (_newMs - _oldMs)) * 1000) / 1000;
+        log.push({ type: 'crit-player', text: `🎯🏆 爆頭里程碑！累積 ${_newHsTotal} 爆頭（每 50 次 +5%），永久爆頭率 +${Math.round(player.rpg.archerHsBonus * 100)}%！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+      }
+    }
     const won = pHp > 0 && mHp <= 0;
     log.push = __origLogPush; // ⭐ 還原 push，避免 closure 洩漏
     return {
@@ -9699,7 +9803,7 @@
   }
   // 把目前生效的 buff 加總（atkPct/defPct/spd/critChance/critDmg/reflectPct/maxHpPct）
   function getBuffBonus(target) {
-    const out = { atkPct: 0, defPct: 0, def: 0, spd: 0, critChance: 0, critDmg: 0, reflectPct: 0, maxHpPct: 0, markPct: 0, dmgReducePct: 0, spdPct: 0, extraHits: 0, headshotChance: 0, swordShield: 0 };
+    const out = { atkPct: 0, defPct: 0, def: 0, spd: 0, critChance: 0, critDmg: 0, reflectPct: 0, maxHpPct: 0, markPct: 0, dmgReducePct: 0, spdPct: 0, extraHits: 0, headshotChance: 0, swordShield: 0, berserk: 0, shadowClone: 0, finalGrimoire: 0 };
     if (!target || !target.statuses) return out;
     for (const s of target.statuses) {
       if (s.type !== 'buff' || !s.stat) continue;
@@ -9723,6 +9827,9 @@
     if (buff.stat === 'extraHits')       return `🪿 普攻段數 +${buff.amount}`;
     if (buff.stat === 'headshotChance')  return `🎯 爆頭率 +${Math.round(buff.amount * 100)}%`;
     if (buff.stat === 'swordShield')     return `⚔🛡 鵝鵝的刀盾（普攻+HP×3真傷、盾衝補攻，10回）`;
+    if (buff.stat === 'shadowClone')    return `🌑 影分身（行動×2，${buff.turns}回合）`;
+    if (buff.stat === 'berserk')        return `🦊 鵝暴化（ATK/DEF+20%、血池×2、失血入血池，${buff.turns}回合）`;
+    if (buff.stat === 'finalGrimoire')  return `📕 最後的大咒書（強化自動唸咒，${buff.turns}回合）`;
     return `✨ ${buff.stat} ${buff.amount >= 0 ? '+' : ''}${buff.amount}`;
   }
   function statusEmoji(type) {
@@ -9816,6 +9923,7 @@
       pHp = Math.max(1, Math.floor(pHp * 0.50));
     }
     let bloodPool = 0; // ⭐ 血池：累積所有 HP 代價技能扣的血，供「爆血」技能使用
+    let _ultimateFiredM = false; // ⭐ 大絕：每場限用一次
     const playerObj = { statuses: [] };
     // ⭐ 聖母鵝（HMG）系統 — 聖騎專屬
     const _isPaladinM = player.rpg.class === 'paladin';
@@ -10081,6 +10189,8 @@
           if (!sInfo) continue;
           const s = sInfo.skill;
           if ((s.unlockLv || 1) > (player.rpg.level || 1)) continue;
+          // ⭐ 大絕：每場限用一次
+          if (s && s.isUltimate && _ultimateFiredM) continue;
           // ⭐ 玩家技能 CD 取消（用 MP 跟硬值控制節奏）
           // if (playerActions < (nextActionForSkill[s.id] || 0)) continue;
           const effMpCost = Math.round((s.mpCost || 0) * (1 - Math.min(0.80, (passive.mpDiscount || 0) + _fusionMpDiscount + (_weaponMpDiscount || 0))));
@@ -10122,6 +10232,8 @@
           // ⭐ 血池累積：任何扣 HP 的技能都加進血池（嗜血怒嚎期間×2）
           if (hpPaid > 0) bloodPool += hpPaid * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1) * (_weaponBpBoostMult || 1);
           nextActionForSkill[skill.id] = playerActions + skill.cooldown;
+          // ⭐ 大絕：標記已使用
+          if (useSkill?.isUltimate) _ultimateFiredM = true;
           const costParts = [];
           if (effMpCost > 0) costParts.push(`-${effMpCost} MP`);
           if (hpPaid > 0)    costParts.push(`-${hpPaid} HP`);
@@ -10139,6 +10251,8 @@
             _burstRawM += _bcM.thunder * _bMarkM * 2.1;
             _burstRawM += _bcM.poison  * _bMarkM * 1.6;
             _burstRawM += _bcM.blood   * _bMarkM * 1.8;
+            // ⭐ 法書全滿（10顆）：技能傷害+30%
+            if (_spellBookM.length >= 10) { _burstRawM *= 1.30; }
             _burstRawM = Math.max(1, _burstRawM);
             _burstRawM *= (0.85 + Math.random() * 0.30);
             // 雷：爆擊率加成；≥4顆雷必爆；爆傷跟角色爆傷
@@ -10446,7 +10560,8 @@
             const _abM = { fire: 0, ice: 0, thunder: 0, poison: 0, blood: 0 };
             for (const _el of _spellBookM) if (_abM[_el] !== undefined) _abM[_el]++;
             const _abMarkM = (stats.mark || 0) * (1 + (pBuff.atkPct || 0) + (pBuff.markPct || 0));
-            const _abTurnsM = 5;
+            // ⭐ 法書全滿（10顆）：持續回合+1
+            const _abTurnsM = _spellBookM.length >= 10 ? 6 : 5;
             const _abLogM = [];
             if (_abM.fire > 0) {
               const _fAmtM = Math.min(0.60, _abM.fire * 0.12);
@@ -10610,7 +10725,7 @@
             const _madFocusM  = !_madSixM && (pBuff.madGooseFocus  || 0) > 0;
             const _madStatusM = (pBuff.madGooseStatus || 0) > 0;
             // ⭐ 弓手多連射：每發 0.30×ATK，獨立爆擊，爆頭率 5%+爆擊率×20%
-            const HEADSHOT_CHANCE = 0.05 + baseCrit2 * 0.2 + (pBuff.headshotChance || 0);
+            const HEADSHOT_CHANCE = 0.05 + baseCrit2 * 0.2 + (pBuff.headshotChance || 0) + (player.rpg.archerHsBonus || 0);
             // 六連固定 6 段；聚擊 1 段；其他正常
             const totalHits = _madSixM ? 6 : _madFocusM ? 1 : 3 + Math.round(pBuff.extraHits || 0);
             const _stealthHsSt = (playerObj.statuses || []).find(s => s.type === 'stealthHeadshot');
@@ -11115,6 +11230,17 @@
           }
         }
         if (pHp <= 0) break;
+      }
+    }
+    // ⭐ 弓手永久爆頭里程碑：每 50 爆頭 +5% 爆頭率
+    if (player.rpg.class === 'archer' && _aHs > 0) {
+      const _prevHsTotal = player.rpg.archerHsTotal || 0;
+      const _newHsTotal  = _prevHsTotal + _aHs;
+      const _oldMs = Math.floor(_prevHsTotal / 50);
+      const _newMs = Math.floor(_newHsTotal  / 50);
+      player.rpg.archerHsTotal = _newHsTotal;
+      if (_newMs > _oldMs) {
+        player.rpg.archerHsBonus = Math.round(((player.rpg.archerHsBonus || 0) + 0.05 * (_newMs - _oldMs)) * 1000) / 1000;
       }
     }
     const won = pHp > 0 && mList.every(m => !m.alive);
@@ -13966,7 +14092,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510154827';
+  const APP_VERSION = '20260510193644';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -14022,7 +14148,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260510_hell_duel_fix';
+  const NEWS_LATEST_ID = 'patch_20260510_ultimates';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -14042,6 +14168,53 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#0c1a3b,#1a0050); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">⚡ 大絕技能系統 ＋ 職業專屬強化　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#a5b4fc; margin:6px 0 4px;">🌑 弓手大絕：影分身（Lv 15，40 MP，每場限一次）</div>
+        <div>・召喚分身！接下 <b>5 個自己回合</b>，所有行動連續發動兩次</div>
+        <div>・分身攻擊獨立計算爆頭／暴擊，爆頭計入永久累積</div>
+
+        <div style="font-weight:700; color:#fca5a5; margin:10px 0 4px;">🦊 戰士大絕：鵝暴化（Lv 15，免費，每場限一次）</div>
+        <div>・持續 <b>15 個自己回合</b>：ATK/DEF +20%、血池收益×2</div>
+        <div>・每回合失血 <b>5% 最大HP</b>，失去的血全進血池！</div>
+
+        <div style="font-weight:700; color:#c4b5fd; margin:10px 0 4px;">📕 法師大絕：最後的大咒書（Lv 15，50 MP，每場限一次）</div>
+        <div>・持續 <b>15 個自己回合</b>，自動唸咒強化為固定 10 等強度</div>
+        <div>・新增兩種強力元素：<b>🌩️怒雷風暴</b>（超高爆發傷害）、<b>💀毀滅之怒</b>（強力傷害+易傷）</div>
+
+        <div style="background:#0c1a3b; border-radius:8px; padding:8px 12px; margin:10px 0 16px; font-size:12px; color:#a5b4fc;">
+          💡 大絕技能每場戰鬥限用一次，無法透過行動規則重覆觸發。需 Lv 15 才解鎖。
+        </div>
+
+        <div style="background:linear-gradient(135deg,#1a3a1a,#0a2a0a); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🎯 弓手永久爆頭累積　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#86efac; margin:6px 0 4px;">🎯🏆 每 50 爆頭 → 永久 +5% 爆頭率</div>
+        <div>・弓手每次戰鬥的爆頭次數會永久累積到帳號中</div>
+        <div>・每累積 <b>50 次爆頭</b>，永久爆頭率提升 +5%（無上限）</div>
+        <div>・影分身的分身爆頭同樣計入累積！</div>
+
+        <div style="background:#0a2a0a; border-radius:8px; padding:8px 12px; margin:10px 0 16px; font-size:12px; color:#86efac;">
+          💡 弓手玩得越久，爆頭率越高！刷副本累積爆頭，讓角色越來越強！
+        </div>
+
+        <div style="background:linear-gradient(135deg,#1e1b4b,#2d1a6b); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">📖 法師法書全滿（10顆）強化　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#c4b5fd; margin:6px 0 4px;">💥 元素爆發：法書全滿 → 技能傷害 +30%</div>
+        <div>・法書塞滿 10 顆元素時，元素爆發傷害額外 <b>×1.3</b></div>
+
+        <div style="font-weight:700; color:#c4b5fd; margin:10px 0 4px;">🌀 元素吸收：法書全滿 → 持續回合 +1（5→6回合）</div>
+        <div>・法書塞滿 10 顆元素時，元素吸收的所有 buff 持續 <b>6 次自身行動</b></div>
+
+        <div style="background:#1e1b4b; border-radius:8px; padding:8px 12px; margin:10px 0 16px; font-size:12px; color:#c4b5fd;">
+          💡 法書全滿 = 爆發更強 + 吸收更持久，法師爆發窗口大幅延長！
+        </div>
 
         <div style="background:linear-gradient(135deg,#1a0030,#3b0010); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🔧 地獄使者決鬥 — 修正＋加速　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
@@ -16473,6 +16646,31 @@ ${b.text}
     renderWorldBoss();
   }
   window.setWbPatternPage = setWbPatternPage;
+
+  // 設定世界王用哪個裝備套裝
+  function setWbEquipSet(bossId, setStr) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const set = parseInt(setStr);
+    rpg.wbEquipSet = rpg.wbEquipSet || {};
+    rpg.wbEquipSet[bossId] = (isNaN(set) || set < 0) ? undefined : set;
+    saveData();
+    renderWorldBoss();
+  }
+  window.setWbEquipSet = setWbEquipSet;
+
+  // 設定個人王用哪個裝備套裝
+  function setPersonalBossEquipSet(bossId, setStr) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const set = parseInt(setStr);
+    if (!rpg.personalBoss) rpg.personalBoss = {};
+    if (!rpg.personalBoss[bossId]) rpg.personalBoss[bossId] = { currentHp: 1, killCount: 0 };
+    rpg.personalBoss[bossId].equipSet = (isNaN(set) || set < 0) ? undefined : set;
+    saveData();
+    renderPersonalBoss();
+  }
+  window.setPersonalBossEquipSet = setPersonalBossEquipSet;
 
   // 技能樹現在只在 modal 裡渲染，舊頁面卡片已移除 → 這裡保留空殼以免有舊 call site
   function renderSkillTree() { /* moved to showSkillsModal */ }
@@ -21196,9 +21394,11 @@ ${b.text}
     const onCd = cdRemain > 0;
     const m = Math.floor(cdRemain / 60000);
     const s = Math.ceil((cdRemain % 60000) / 1000);
-    // 規則頁選擇器
-    const pbPatPage = st.patternPage ?? (rpg.activePatternPage ?? 0);
-    const pnames = rpg.patternPageNames || ['頁 1', '頁 2', '頁 3', '頁 4'];
+    // 規則頁 + 裝備套裝選擇器
+    const pbPatPage  = st.patternPage ?? (rpg.activePatternPage ?? 0);
+    const pbEqSetIdx = st.equipSet;
+    const pnames     = rpg.patternPageNames || ['頁 1', '頁 2', '頁 3', '頁 4'];
+    const _pbLoadouts = rpg.equipLoadouts || [null, null, null];
     const pagePickerHtml = `
       <div style="display:flex; align-items:center; gap:6px; margin-top:8px; flex-wrap:wrap;">
         <span style="font-size:10px; opacity:0.8;">📋 使用規則：</span>
@@ -21210,6 +21410,17 @@ ${b.text}
           }).join('')}
         </select>
         <button onclick="showActionPatternModal(${pbPatPage})" style="font-size:10px; padding:2px 7px; border:1px solid #7c3aed; border-radius:5px; background:#1e1b4b; color:#c4b5fd; cursor:pointer;">✏️ 編輯</button>
+        <span style="font-size:10px; opacity:0.8; margin-left:4px;">🎽 使用裝備：</span>
+        <select onchange="setPersonalBossEquipSet('${cur.id}', this.value)"
+          style="font-size:11px; padding:2px 5px; border-radius:5px; background:#1e1b4b; color:#fff; border:1px solid #7c3aed; cursor:pointer;">
+          <option value="-1" ${pbEqSetIdx === undefined ? 'selected' : ''}>目前裝備</option>
+          ${[0,1,2].map(i => {
+            const l = _pbLoadouts[i];
+            const lName = l?.name || `套裝 ${i+1}`;
+            const hasItems = l && Object.values(l.equipment||{}).some(Boolean);
+            return `<option value="${i}" ${pbEqSetIdx === i ? 'selected' : ''}>${escapeHtml(lName)}${!hasItems?' (空)':''}</option>`;
+          }).join('')}
+        </select>
       </div>`;
     host.innerHTML = `
       <div style="display:flex; gap:6px; margin-bottom:10px;">${tabsHtml}</div>
@@ -21298,8 +21509,12 @@ ${b.text}
       isElite: false, isPersonalBoss: true,
       maxRounds: def.maxRounds,
     };
-    const _pbPage = rpg.personalBoss?.[bossId]?.patternPage;
-    const result = autoFight(me, monster, typeof _pbPage === 'number' ? { patternPage: _pbPage } : undefined);
+    const _pbPage  = rpg.personalBoss?.[bossId]?.patternPage;
+    const _pbEqSet = rpg.personalBoss?.[bossId]?.equipSet;
+    const _pbOpts  = {};
+    if (typeof _pbPage  === 'number') _pbOpts.patternPage = _pbPage;
+    if (typeof _pbEqSet === 'number') _pbOpts.equipSet    = _pbEqSet;
+    const result = autoFight(me, monster, Object.keys(_pbOpts).length ? _pbOpts : undefined);
     const stats = computeStats(me);
 
     // ============================================================
