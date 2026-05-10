@@ -13924,7 +13924,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510125037';
+  const APP_VERSION = '20260510131859';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -13980,7 +13980,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260510_spellbook_overflow';
+  const NEWS_LATEST_ID = 'patch_20260510_hell_duel_fix';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -14000,6 +14000,26 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#1a0030,#3b0010); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🔧 地獄使者決鬥 — 修正＋加速　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#fca5a5; margin:6px 0 4px;">⚔️ 勝利後選咒 — 修正 SyntaxError（無法施咒 / 出現 ERROR）</div>
+        <div>・修正勝利後按下詛咒按鈕觸發「<b>Uncaught SyntaxError</b>」的問題</div>
+        <div>・根本原因：戰鬥 log 含特殊字元，內嵌 JSON 破壞 HTML 按鈕屬性</div>
+        <div>・修正後詛咒選擇頁面可正常使用，不再出現錯誤</div>
+
+        <div style="font-weight:700; color:#fca5a5; margin:10px 0 4px;">🎬 決鬥回放動畫 — 加速</div>
+        <div style="font-size:12px; padding-left:8px;">
+          <div>同回合行動間隔：80ms → <b>35ms</b></div>
+          <div>跨回合間隔：550ms → <b>220ms</b></div>
+          <div>初始啟動延遲：200ms → <b>100ms</b></div>
+        </div>
+
+        <div style="background:#1a0010; border-radius:8px; padding:8px 12px; margin:10px 0 16px; font-size:12px; color:#fca5a5;">
+          💡 決鬥回放現在流速更快，戰鬥過程更直觀清楚！
+        </div>
 
         <div style="background:linear-gradient(135deg,#3b1a6b,#1e1b4b); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">💫 法書溢出 — 自動觸發元素吸收　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
@@ -14147,7 +14167,7 @@ ${b.text}
         </div>
 
         <div style="background:linear-gradient(135deg,#1e1b4b,#312e81); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
-          <div style="font-size:15px; font-weight:800; color:#fff;">📖 法師魔法書系統　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
+          <div style="font-size:15px; font-weight:800; color:#fff;">📖 法師魔法書系統（最新）　<span style="font-size:11px; opacity:0.85;">2026-05-10</span></div>
         </div>
 
         <div style="font-weight:700; color:#a5b4fc; margin:6px 0 4px;">📖 魔法書（法師專屬）</div>
@@ -14155,39 +14175,42 @@ ${b.text}
         <div>・5 種元素：🔥 火 / 🧊 冰 / ⚡ 雷 / ☠️ 毒 / 🩸 血，對應現有各技能</div>
 
         <div style="font-weight:700; color:#a5b4fc; margin:10px 0 4px;">📖 自動唸咒（Lv.5，20 MP）</div>
-        <div>・持續 <b>6 回合</b>，每次角色行動回合（普攻 / 使用技能）自動施放一次隨機元素咒（固定5等，傷害約 MARK×20%）</div>
+        <div>・持續 <b>6 回合</b>，每次角色行動回合自動施放一次隨機元素咒（固定5等，傷害基底 = MARK×20%）</div>
         <div style="font-size:11px; padding-left:8px;">
-          <div>🧊 冰：×1.9　25% 附加麻痺 1 回合</div>
-          <div>🔥 火：×2.3</div>
-          <div>⚡ 雷：3 連打，每段 ×1.1</div>
-          <div>🩸 血：×1.7　並吸血（傷害 10%）</div>
+          <div>🧊 冰：×1.6　25% 附加麻痺 1 回合</div>
+          <div>🔥 火：×2.0（無視防禦）</div>
+          <div>⚡ 雷：3 連打，每段 ×0.8（無視防禦）</div>
+          <div>🩸 血：×1.4　吸血10% + 立即回HP10%maxHP + 回MP10%maxMP</div>
+          <div>　　　法書≥3顆血：回HP/MP效果各×3（最多各30%）</div>
         </div>
-        <div>・唸咒造成的傷害也會把元素記入魔法書</div>
+        <div>・唸咒的元素也會記入魔法書</div>
+        <div>・💫 法書已滿時唸咒，被擠出的最舊元素自動觸發對應吸收效果（1自身行動）</div>
 
         <div style="font-weight:700; color:#a5b4fc; margin:10px 0 4px;">💥 元素爆發（Lv.7，35 MP）</div>
         <div>・消耗魔法書中<b>所有元素</b>進行爆發，傷害無視防禦（MARK 為基底）</div>
         <div style="font-size:11px; padding-left:8px;">
-          <div>🔥 火 ×N：MARK × 2.0 × N　≥4顆附加燃燒（毒 ×3）</div>
-          <div>🧊 冰 ×N：MARK × 1.7 × N　≥3顆附加凍結（麻痺 ×1）</div>
-          <div>⚡ 雷 ×N：MARK × 1.8 × N　每顆爆擊率 +8%</div>
-          <div>☠️ 毒 ×N：MARK × 1.3 × N　附加中毒 N 層</div>
-          <div>🩸 血 ×N：MARK × 1.5 × N　附加易傷 N 層（爆傷跟角色爆傷）</div>
+          <div>🔥 火 ×N：MARK × <b>2.3</b> × N　≥4顆附加燃燒（中毒 ×3）</div>
+          <div>🧊 冰 ×N：MARK × <b>2.0</b> × N　≥3顆附加凍結（麻痺 ×1）</div>
+          <div>⚡ 雷 ×N：MARK × <b>2.1</b> × N　每顆爆擊率 +8%，<b>≥4顆必爆！</b></div>
+          <div>☠️ 毒 ×N：MARK × <b>1.6</b> × N　附加中毒 N 層</div>
+          <div>🩸 血 ×N：MARK × <b>1.8</b> × N　附加易傷 N 層（×1.5/層）</div>
         </div>
-        <div>・爆發後魔法書<b>清空</b></div>
+        <div>・爆發後魔法書<b>清空</b>；爆傷跟隨角色屬性</div>
 
         <div style="font-weight:700; color:#a5b4fc; margin:10px 0 4px;">🌀 元素吸收（Lv.7，20 MP）</div>
-        <div>・將魔法書中所有元素轉化為 5 回合持續 buff</div>
+        <div>・將魔法書中所有元素轉化為 <b>5 自身行動回合</b>持續 buff（怪物行動不消耗）</div>
         <div style="font-size:11px; padding-left:8px;">
-          <div>🔥 火 ×N：MARK + 12% × N（攻擊力提升）</div>
-          <div>🧊 冰 ×N：DEF + 20% × N（上限 +50%）</div>
-          <div>⚡ 雷 ×N：爆傷 + 10% × N</div>
+          <div>🔥 火 ×N：MARK +12% × N</div>
+          <div>🧊 冰 ×N：DEF +20% × N（<b>無上限</b>，10冰=+200%）</div>
+          <div>⚡ 雷 ×N：爆傷 +10% × N</div>
           <div>☠️ 毒 ×N：每玩家回合自動對敵施加 1 充能毒，持續 N 回合</div>
-          <div>🩸 血 ×N：立即回 HP = MARK × N × 2；MaxHP +4% × N；每回合回 MP +3×N（5回合）</div>
+          <div>🩸 血 ×N：立即回 HP = MARK×N×2；MaxHP +4%×N；每行動回 MP +3×N（5行動）</div>
         </div>
         <div>・吸收後魔法書<b>清空</b></div>
+        <div>・💫 <b>法書溢出</b>：法書滿10格時新元素加入，被擠出的元素自動觸發對應吸收效果（持續1自身行動）</div>
 
         <div style="background:#1e1b4b; border-radius:8px; padding:8px 12px; margin-top:10px; margin-bottom:16px; font-size:12px; color:#c7d2fe;">
-          💡 推薦流程：先用技能把書填滿 → 用「元素爆發」打出高傷，或用「元素吸收」換取持續強化！「自動唸咒」開啟後普攻也能積書，大幅提升節奏。
+          💡 推薦：技能填書 → 元素爆發高傷 / 元素吸收持續強化；自動唸咒開啟後普攻也能積書；法書循環不停時溢出效果持續提供增益！
         </div>
 
         <div style="background:linear-gradient(135deg,#14532d,#166534); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
