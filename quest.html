@@ -14276,7 +14276,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260510231325';
+  const APP_VERSION = '20260510231646';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -28161,6 +28161,18 @@ ${b.text}
                   const { log, ...rest } = h;
                   return rest;
                 });
+              }
+              // ⭐ partyHistory 每筆含完整 log（可達數百條），備份時去除
+              if (Array.isArray(r.partyHistory)) {
+                r.partyHistory = r.partyHistory.slice(0, 5).map(h => {
+                  if (!h) return h;
+                  const { log, ...rest } = h;
+                  return rest;
+                });
+              }
+              // ⭐ wbBattleHistory 備份時限 3 筆（快照本身偏大）
+              if (Array.isArray(r.wbBattleHistory)) {
+                r.wbBattleHistory = r.wbBattleHistory.slice(0, 3);
               }
               copy.rpg = r;
             }
