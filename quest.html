@@ -8994,6 +8994,13 @@
               const _mgClearStats = new Set(['extraHits', 'headshotChance', 'madGooseFocus', 'madGooseStatus', 'madGooseSix']);
               playerObj.statuses = (playerObj.statuses || []).filter(s => !(s.type === 'buff' && _mgClearStats.has(s.stat)));
             }
+            // ⭐ 自動唸咒互斥：隨機版 / 輪替版只能擇一，新的覆蓋舊的
+            if (skill.id === 'm_auto_chant') {
+              playerObj.statuses = (playerObj.statuses || []).filter(s => !(s.type === 'buff' && s.stat === 'autoChantCycle'));
+              _chantCycleIdx = 0; // 重置輪替計數器
+            } else if (skill.id === 'm_auto_chant_cycle') {
+              playerObj.statuses = (playerObj.statuses || []).filter(s => !(s.type === 'buff' && s.stat === 'autoChant'));
+            }
             if (skill.selfBuff) {
               applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff.stat, amount: skill.selfBuff.amount, turns: skill.selfBuff.turns, playerTurnOnly: !!skill.selfBuff.playerTurnOnly });
             }
@@ -11048,6 +11055,13 @@
             if (skill.id && skill.id.startsWith('a_mad_goose')) {
               const _mgClearStats = new Set(['extraHits', 'headshotChance', 'madGooseFocus', 'madGooseStatus', 'madGooseSix']);
               playerObj.statuses = (playerObj.statuses || []).filter(s => !(s.type === 'buff' && _mgClearStats.has(s.stat)));
+            }
+            // ⭐ 自動唸咒互斥（組隊）：隨機版 / 輪替版只能擇一，新的覆蓋舊的
+            if (skill.id === 'm_auto_chant') {
+              playerObj.statuses = (playerObj.statuses || []).filter(s => !(s.type === 'buff' && s.stat === 'autoChantCycle'));
+              _chantCycleIdxM = 0; // 重置輪替計數器
+            } else if (skill.id === 'm_auto_chant_cycle') {
+              playerObj.statuses = (playerObj.statuses || []).filter(s => !(s.type === 'buff' && s.stat === 'autoChant'));
             }
             if (skill.selfBuff) {
               applyStatus(playerObj, { type: 'buff', stat: skill.selfBuff.stat, amount: skill.selfBuff.amount, turns: skill.selfBuff.turns, playerTurnOnly: !!skill.selfBuff.playerTurnOnly });
@@ -14771,7 +14785,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260511144426';
+  const APP_VERSION = '20260511145256';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -16748,6 +16762,7 @@ ${b.text}
       buffPairs.push('　　　法書≥3屠：回HP/MP效果×3（最多各30%）');
       buffPairs.push('📚 唸咒的元素會同步記入魔法書');
       buffPairs.push('👁️ 易傷狀態：法書唸咒傷害吃到易傷加成，但不消耗易傷層數');
+      buffPairs.push('⚠️ 與「自動唸咒-輪」互斥：施放此技能會取消「自動唸咒-輪」效果（反之亦然）');
       buffPairs.push('─────────────');
     }
     // ⭐ 自動唸咒-輪
@@ -16761,7 +16776,7 @@ ${b.text}
       buffPairs.push('　🩸 血：MARK×1.4，吸血10% + 回HP10% + 回MP10%');
       buffPairs.push('　　　法書≥3屠：回HP/MP效果×3（最多各30%）');
       buffPairs.push('─────────────');
-      buffPairs.push('💡 與「自動唸咒」可同時使用（各自獨立施放，一回合最多 2 次唸咒）');
+      buffPairs.push('⚠️ 與「自動唸咒」互斥：施放此技能會取消「自動唸咒」效果（反之亦然）');
       buffPairs.push('📚 唸咒的元素會同步記入魔法書');
       buffPairs.push('👁️ 易傷狀態：法書唸咒傷害吃到易傷加成，但不消耗易傷層數');
       buffPairs.push('─────────────');
