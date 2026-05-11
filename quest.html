@@ -14572,7 +14572,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260511121837';
+  const APP_VERSION = '20260511125043';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -14628,7 +14628,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260511_chaos_goose';
+  const NEWS_LATEST_ID = 'patch_20260511_boss_art_and_chant';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -14648,6 +14648,28 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#1a1a00,#3a3a00); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🎨 Boss 立繪上線 ＋ 法師系統修正　<span style="font-size:11px; opacity:0.85;">2026-05-11</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#fde68a; margin:6px 0 4px;">🎨 全 Boss 立繪補齊（9 隻）</div>
+        <div>・世界王：🪨 鵝卵石 / ⚡ 風中殘鵝 / 👁️ 靈噬魔皇 / 🌑 混沌鵝尊</div>
+        <div>・黨戰 Boss：🌋 煉獄鵝皇 / 🗡️ 雙影刺客（含暗影甲 + 幻影乙）/ ⚱️ 遠古鵝神</div>
+        <div>・戰鬥結算畫面與 Boss 介紹頁現在都能看到對應立繪！</div>
+
+        <div style="font-weight:700; color:#fde68a; margin:10px 0 4px;">📖 法書自動唸咒 × 易傷 機制修正</div>
+        <div>・修正 Bug：<b>法書唸咒的傷害現在正確吃到易傷加成</b>（×1.5）</div>
+        <div>・同時修正：唸咒傷害<b>不會消耗易傷層數</b>，易傷留給主動攻擊完整使用</div>
+        <div>・適用於自動唸咒與最後的大咒書，普通戰 / 世界王 / 試煉全生效</div>
+
+        <div style="font-weight:700; color:#fde68a; margin:10px 0 4px;">📕 最後的大咒書 — 技能說明補完</div>
+        <div>・技能頁點開後，現在有完整的效果說明：4 種強化元素、傷害公式、MARK 倍率、法書連動等</div>
+        <div>・自動唸咒說明也一併更新（持續回合數修正為 20 回合）</div>
+
+        <div style="background:#2a2500; border-radius:8px; padding:8px 12px; margin:10px 0 16px; font-size:12px; color:#fde68a;">
+          💡 打易傷技後接大咒書連打，傷害全程吃到易傷加成又不浪費次數，法師爆發力大幅提升！
+        </div>
 
         <div style="background:linear-gradient(135deg,#1a001a,#3d005c); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🌑 混沌鵝尊降臨 ＋ 多項系統更新　<span style="font-size:11px; opacity:0.85;">2026-05-11</span></div>
