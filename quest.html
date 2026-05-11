@@ -9406,6 +9406,8 @@
           const _chantCritMult   = critMult + (pBuff.critDmg || 0);
           const _chantIsCrit = Math.random() < _chantCritChance;
           if (_chantIsCrit) _chantDmg *= _chantCritMult;
+          // ⭐ 易傷加成（peek：吃到倍率但不消耗層數）
+          _chantDmg *= peekVulnerable(monster);
           _chantDmg = Math.max(1, Math.round(_chantDmg));
           mHp = Math.max(0, mHp - _chantDmg);
           const _cOvfl = _spellBook.length >= 10 ? _spellBook[0] : null;
@@ -10089,6 +10091,11 @@
     v.hits -= 1;
     if (v.hits <= 0) target.statuses = target.statuses.filter(s => s !== v);
     return 1 + (v.amount || 0.5);
+  }
+  // ⭐ 易傷（peek）：回傳傷害倍率但不消耗層數（自動唸咒用 — 吃到易傷加成但不減少次數）
+  function peekVulnerable(target) {
+    const v = (target.statuses || []).find(s => s.type === 'vulnerable' && (s.hits || 0) > 0);
+    return v ? 1 + (v.amount || 0.5) : 1.0;
   }
   // ⭐ 麻痺（charge-based + RNG）：每次行動消耗 1 層，依 skipChance 決定是否真的跳過
   //   玩家受麻痺：skipChance = 0.20（20%）；怪物受麻痺：skipChance = 0.50（50%）
@@ -11317,6 +11324,8 @@
             const _chantCritMultM   = critMult + (pBuff.critDmg || 0);
             const _chantIsCritM = Math.random() < _chantCritChanceM;
             if (_chantIsCritM) _chantDmgM *= _chantCritMultM;
+            // ⭐ 易傷加成（peek：吃到倍率但不消耗層數）
+            _chantDmgM *= peekVulnerable(_chantTgt);
             _chantDmgM = Math.max(1, Math.round(_chantDmgM));
             _chantTgt.hp = Math.max(0, _chantTgt.hp - _chantDmgM);
             if (_chantTgt.hp <= 0) _chantTgt.alive = false;
@@ -14563,7 +14572,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260511121106';
+  const APP_VERSION = '20260511121837';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -16444,7 +16453,7 @@ ${b.text}
     // ⭐ 自動唸咒
     if (skill.id === 'm_auto_chant') {
       buffPairs.push('─────────────');
-      buffPairs.push('📖 持續 6 回合（玩家行動計算）');
+      buffPairs.push('📖 持續 20 回合（玩家行動計算）');
       buffPairs.push('🔄 每次角色行動回合（普攻或使用技能）自動施放一次隨機元素咒（固定5等，傷害約 MARK×20%）：');
       buffPairs.push('　🧊 冰：MARK×1.6，25% 機率附加麻痺 1 回合');
       buffPairs.push('　🔥 火：MARK×2.0');
@@ -16452,6 +16461,27 @@ ${b.text}
       buffPairs.push('　🩸 血：MARK×1.4，吸血10% + 回HP10% + 回MP10%');
       buffPairs.push('　　　法書≥3屠：回HP/MP效果×3（最多各30%）');
       buffPairs.push('📚 唸咒的元素會同步記入魔法書');
+      buffPairs.push('👁️ 易傷狀態：法書唸咒傷害吃到易傷加成，但不消耗易傷層數');
+      buffPairs.push('─────────────');
+    }
+    // ⭐ 最後的大咒書
+    if (skill.id === 'm_final_grimoire') {
+      buffPairs.push('─────────────');
+      buffPairs.push('【大絕・每場限用一次】需先施放「自動唸咒」才能生效');
+      buffPairs.push('📕 持續 15 個自己回合，大幅強化自動唸咒效果：');
+      buffPairs.push('　・MARK 倍率：20% → 100%（傷害 5 倍提升）');
+      buffPairs.push('　・魔攻被動 / 技能傷害加成完整計入（一般自動唸咒只有 50%）');
+      buffPairs.push('　・技能庫升級為以下 4 種強化元素（各 25% 機率）：');
+      buffPairs.push('─────────────');
+      buffPairs.push('🧊 冰 — MARK×4.8，49% 機率附加⚡麻痺 2 層');
+      buffPairs.push('🌋 火焰風暴 — 固定傷害 262 + MARK×12.5');
+      buffPairs.push('🌩️ 怒雷風暴 — 固定傷害 630 + MARK×14.25');
+      buffPairs.push('💀 毀滅之怒 — MARK×7.25 + 👁️易傷 ×2 次（🩸血屬性記入法書）');
+      buffPairs.push('─────────────');
+      buffPairs.push('💥 所有唸咒可暴擊，暴擊率 / 爆傷與角色屬性相同');
+      buffPairs.push('👁️ 易傷狀態：法書唸咒傷害吃到易傷加成，但不消耗易傷層數');
+      buffPairs.push('📚 唸咒元素同步記入魔法書，可與元素爆發 / 元素吸收連動');
+      buffPairs.push('💫 法書溢出：法書滿 10 格時最舊元素被擠出，自動觸發 1 回合對應增益');
       buffPairs.push('─────────────');
     }
     // ⭐ 元素爆發
