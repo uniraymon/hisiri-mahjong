@@ -9632,11 +9632,6 @@
         }
       } else {
         mGauge -= ATB_THRESHOLD;
-        // ⭐ castPenalty：技能使用後額外扣減 ATB（混沌終鳴硬直 -150）
-        if (mSkill?.castPenalty) {
-          mGauge -= mSkill.castPenalty;
-          log.push({ type: 'system', text: `回合 ${round}：⏳ ${monster.name} 硬直！ATB -${mSkill.castPenalty}`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
-        }
         // 怪物身上狀態 tick（中毒、流血、麻痺）
         monster._curHp = mHp; // ⭐ 流血傷害需要當前 HP
         const mevs = tickStatuses(monster, monster.maxHp, false); // 怪物回合
@@ -9976,6 +9971,11 @@
             }
             if (pHp <= 0) { dead = true; break; }
           }
+        }
+        // ⭐ castPenalty：技能使用後額外扣減 ATB（混沌終鳴硬直 -150）
+        if (mSkill?.castPenalty) {
+          mGauge -= mSkill.castPenalty;
+          log.push({ type: 'system', text: `回合 ${round}：⏳ ${monster.name} 硬直！ATB -${mSkill.castPenalty}`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
         }
         // 偷錢：60% 機率得手 — ⭐ 偷錢量降低 50%（綠茶不算 cameo 走另一條 path）
         if (!dead && mAbility?.type === 'steal' && Math.random() < 0.6) {
@@ -11667,11 +11667,6 @@
         // 怪物的回合
         const m = actor;
         m.gauge -= ATB_THRESHOLD;
-        // ⭐ castPenalty：技能使用後額外扣減 ATB（混沌終鳴硬直 -150）
-        if (mSkill?.castPenalty) {
-          m.gauge -= mSkill.castPenalty;
-          log.push({ type: 'system', text: `回合 ${round}：⏳ ${m.icon}${m.name} 硬直！ATB -${mSkill.castPenalty}`, hp: hpsSnapshot() });
-        }
         // 怪物中毒等狀態 tick
         const evs = tickStatuses(m, m.maxHp, false); // 怪物回合
         for (const ev of evs) {
@@ -11928,6 +11923,11 @@
             if (!m.alive) break;
             if (pHp <= 0) break;
           }
+        }
+        // ⭐ castPenalty：技能使用後額外扣減 ATB（混沌終鳴硬直 -150）
+        if (mSkill?.castPenalty) {
+          m.gauge -= mSkill.castPenalty;
+          log.push({ type: 'system', text: `回合 ${round}：⏳ ${m.icon}${m.name} 硬直！ATB -${mSkill.castPenalty}`, hp: hpsSnapshot() });
         }
         if (pHp <= 0) break;
       }
@@ -14803,7 +14803,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260511170257';
+  const APP_VERSION = '20260511192109';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
