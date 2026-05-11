@@ -2466,6 +2466,8 @@
         { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 25, hpCost: 0.10, type: 'damage', mult: 4.5, cast: 50, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 1, chance: 1 }, customLv: true },
         // ⭐ 爆血：消耗血池（本場所有 HP 代價技能累積），以真傷形式打出（無視防禦與抗性）
         { id: 'w_blood_explode', name: '爆血',   icon: '🩸💥', unlockLv: 8, cooldown: 1, mpCost: 0, type: 'damage', usesBloodPool: true, cast: 5, maxLv: 1 },
+        // ⭐ 諸血高：消耗 50% 血池，獲得消耗量 80% 的 HP（可突破最大 HP 上限）
+        { id: 'w_blood_high', name: '諸血高', icon: '🩸❤️‍🔥', unlockLv: 5, cooldown: 0, mpCost: 0, type: 'heal', isBloodHeal: true, cast: 20, maxLv: 1 },
         // ⭐ 大絕：鵝暴化 — 15 個自己回合，ATK/DEF+20%、血池×2、每回合失血5%入血池
         { id: 'w_goose_berserk', name: '鵝暴化', icon: '🦊', unlockLv: 15, cooldown: 99, mpCost: 0, type: 'buff',
           selfBuff:  { stat: 'atkPct',  amount: 0.20, turns: 15, playerTurnOnly: true },
@@ -2578,6 +2580,9 @@
         // ⭐ 絕對防禦：回血 50% + 抵擋下一次傷害（不能升級）
         { id: 'm_absolute_defense', name: '絕對防禦', icon: '🔰', unlockLv: 8,  cooldown: 0, mpCost: 55, type: 'heal', healPct: 0.5, applyShield: 1, maxLv: 1 },
         { id: 'm_destruction',    name: '毀滅之怒',   icon: '💀', unlockLv: 12, cooldown: 0, mpCost: 65, type: 'damage', mult: 3, magic: true, useMark: true, ignoreDef: true, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 1, chance: 1 }, cast: 37, customLv: true, spellElement: 'blood' },
+        // ⭐ 冰霜風暴：固定傷害 120 + MARK×5.5，無視 DEF，50% 機率霜凍（SPD-30%，3行動回合，noStack）
+        { id: 'm_ice_storm',      name: '冰霜風暴',   icon: '🌨️', unlockLv: 10, cooldown: 0, mpCost: 45, type: 'damage', flat: 120, markMult: 5.5, ignoreDef: true, cast: 45, spellElement: 'ice', maxLv: 1,
+          applyStatus: { type: 'buff', stat: 'spdPct', amount: -0.30, turns: 3, key: 'frost', noStack: true, monsterTurnOnly: true, chance: 0.50 } },
         { id: 'm_firestorm',      name: '火焰風暴',   icon: '🌋', unlockLv: 7,  cooldown: 0, mpCost: 55, type: 'damage', flat: 150, markMult: 6, ignoreDef: true, targetCount: 'all', cast: 50, spellElement: 'fire' },
         { id: 'm_thunder_storm',  name: '怒雷風暴',   icon: '⚡', unlockLv: 9,  cooldown: 0, mpCost: 45, type: 'damage', flat: 360, markMult: 7, magic: true, ignoreDef: true, cast: 25, spellElement: 'thunder' },
         { id: 'm_poison_cloud',   name: '毒霧',       icon: '☠️', unlockLv: 3,  cooldown: 0, mpCost: 30, type: 'damage', flat: 50, perLv: 3, ignoreDef: true, targetCount: 'all', maxLv: 5, applyStatus: { type: 'poison', charges: 4, chance: 0.85 }, spellElement: 'poison' },
@@ -2590,6 +2595,9 @@
         // 自動唸咒：每玩家回合法書自動隨機施放4種法術之一（固定5等，20% MARK），持續20回合
         { id: 'm_auto_chant', name: '自動唸咒', icon: '📖', unlockLv: 5, cooldown: 0, mpCost: 20, type: 'buff',
           selfBuff: { stat: 'autoChant', amount: 1, turns: 20, playerTurnOnly: true }, maxLv: 1 },
+        // ⭐ 自動唸咒-輪：固定冰→火→雷→血順序施法，持續20回合
+        { id: 'm_auto_chant_cycle', name: '自動唸咒-輪', icon: '🔄📖', unlockLv: 6, cooldown: 0, mpCost: 20, type: 'buff',
+          selfBuff: { stat: 'autoChantCycle', amount: 1, turns: 20, playerTurnOnly: true }, maxLv: 1 },
         // 元素爆發：爆發法書所有屬性為魔法傷害（無視DEF，爆傷跟角色爆傷），清空法書
         { id: 'm_elem_burst', name: '元素爆發', icon: '💥', unlockLv: 7, cooldown: 0, mpCost: 35, type: 'damage',
           isSpellBurst: true, magic: true, ignoreDef: true, maxLv: 1 },
@@ -8206,6 +8214,7 @@
     let _sdVoidBuff = false;              // 冥魂之印：下次技能 +20% 旗標
     let _petTurnCount = 0;               // 寵物觸發計數（實際行動次數）
     let _spellBook = [];                 // ⭐ 法書：記錄法師施放的元素（最多10格）
+    let _chantCycleIdx = 0;              // ⭐ 自動唸咒-輪：當前週期位置（0冰/1火/2雷/3血，循環）
     let pHp = stats.maxHp; // ⭐ 每場戰鬥 HP 自動回滿（HP 變成屬性，不是耗材）
     let pMp = stats.maxMp; // ⭐ 每場戰鬥 MP 自動回滿
     // ⭐ 噬命之印（fx_sd_life）：ATK/DEF +20%、最大HP -50%
@@ -8341,6 +8350,8 @@
       // 重算 pSpd（含 buff / spdPct debuff）
       const pBuff = getBuffBonus(playerObj);
       pSpd = Math.max(1, (SPD_BASE + effectiveSpd + (pBuff.spd || 0)) * (1 + (pBuff.spdPct || 0)));
+      // ⭐ 霜凍：每回合重算怪物速度（霜凍 = spdPct debuff，turns 只在怪物行動回合倒數）
+      mSpd = Math.max(1, (SPD_BASE + monster.spd) * (1 + (getBuffBonus(monster).spdPct || 0)));
       effPSpd = _capSpd(pSpd, mSpd); // ⭐ 套用 SPD 軟上限
       // 推進時間：跳到下一個「條滿」的瞬間
       const pNeed = Math.max(0, ATB_THRESHOLD - pGauge);
@@ -8874,8 +8885,13 @@
             }
             // 對怪物上狀態（毒箭、冰錐術…）
             if (skill.applyStatus && Math.random() < (skill.applyStatus.chance || 1)) {
-              applyStatus(monster, skill.applyStatus);
-              log.push({ type: 'system', text: `回合 ${round}：${monster.name} 進入 ${statusEmoji(skill.applyStatus.type)}${statusLabel(skill.applyStatus.type)} 狀態`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+              // ⭐ noStack：若已有相同效果（如霜凍），跳過不應用也不記錄
+              const _stNoStack = skill.applyStatus.noStack && (monster.statuses || []).some(s => s.type === skill.applyStatus.type && s.stat === skill.applyStatus.stat && s.key === skill.applyStatus.key);
+              if (!_stNoStack) {
+                applyStatus(monster, skill.applyStatus);
+                const _stLabel = skill.applyStatus.key === 'frost' ? '🌨️霜凍（SPD-30%，3行動回合）' : `${statusEmoji(skill.applyStatus.type)}${statusLabel(skill.applyStatus.type)}`;
+                log.push({ type: 'system', text: `回合 ${round}：${monster.name} 進入 ${_stLabel} 狀態`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+              }
             }
             // ⭐ 靈噬之印（fx_sd_drain）：技能攻擊後 10%/層 機率使敵人麻痺
             if (_fxSdDrain > 0 && mHp > 0 && Math.random() < Math.min(1, _fxSdDrain * 0.10)) {
@@ -9044,6 +9060,17 @@
             });
             // ⭐ 聖母鵝計數：神聖祝福也算補血
             if (_isPaladin && !_hmgFrozen && skill.id === 'p_blessing') _hmgHealCount++;
+          } else if (skill.type === 'heal' && skill.isBloodHeal) {
+            // ⭐ 諸血高：消耗 50% 血池，獲得消耗量 80% 的 HP（可突破最大 HP 上限）
+            if (bloodPool <= 0) {
+              log.push({ type: 'system', text: `回合 ${round}：${skill.icon} ${skill.name} → 血池為空，無效！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp, bloodPool } });
+            } else {
+              const _bhConsumed = Math.floor(bloodPool * 0.50);
+              bloodPool -= _bhConsumed;
+              const _bhHeal = Math.round(_bhConsumed * 0.80);
+              pHp += _bhHeal; // ⭐ 可突破最大 HP 上限（不 clamp）
+              log.push({ type: 'crit-player', text: `回合 ${round}：${skill.icon} ${skill.name} → 🩸血池 -${_bhConsumed}（剩 ${bloodPool}）→ ❤️‍🔥+${_bhHeal} HP（${pHp} / ${stats.maxHp}）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp, bloodPool } });
+            }
           } else if (skill.type === 'heal') {
             // 'heal' 類型：可同時帶 healPct（HP 補）+ mpFlat 或 mpPct（MP 補）
             const gainedParts = [];
@@ -9358,9 +9385,10 @@
           const _chantBookEl = _chantEl === 'storm' ? 'thunder' : _chantEl === 'destroy' ? 'blood' : _chantEl === 'firestorm' ? 'fire' : _chantEl;
           if (_chantEl === 'ice') {
             if (_grimoire) {
-              // 冰錐術 Lv10: mult 2.8 + markMult 2 = 4.8；麻痺機率 ~49%，2 層
-              _chantDmg = Math.max(1, Math.round(_chantMark * 4.8 * (0.85 + Math.random() * 0.30)));
-              if (Math.random() < 0.49 && !hasStatus(monster, 'paralyze')) { applyStatus(monster, { type: 'paralyze', charges: 2 }); _chantExtra = ' ⚡麻痺！'; }
+              // ⭐ 冰霜風暴 Lv10: flat 120 + MARK×5.5；50% 機率霜凍（SPD-30%，3行動回合，noStack）
+              _chantDmg = Math.max(1, Math.round((120 + _chantMark * 5.5) * (0.85 + Math.random() * 0.30)));
+              const _frostExist = (monster.statuses || []).some(s => s.type === 'buff' && s.stat === 'spdPct' && s.key === 'frost');
+              if (Math.random() < 0.50 && !_frostExist) { applyStatus(monster, { type: 'buff', stat: 'spdPct', amount: -0.30, turns: 3, key: 'frost', monsterTurnOnly: true }); _chantExtra = ' 🌨️霜凍！SPD-30%（3行動回合）'; }
             } else {
               _chantDmg = Math.max(1, Math.round(_chantMark * 1.6 * (0.85 + Math.random() * 0.30)));
               if (Math.random() < 0.25 && !hasStatus(monster, 'paralyze')) { applyStatus(monster, { type: 'paralyze', charges: 1 }); _chantExtra = ' ⚡麻痺！'; }
@@ -9424,6 +9452,77 @@
             else if (_cOvfl==='poison')  { applyStatus(playerObj,{type:'buff',stat:'spellPoison',amount:1,turns:1,playerTurnOnly:true,key:'absorb_poison'}); _ovNoteC='☠️毒吐息1行動'; }
             else if (_cOvfl==='blood')   { const _ovHC=Math.round(_ovMkC*2); pHp=Math.min(stats.maxHp,pHp+_ovHC); applyStatus(playerObj,{type:'buff',stat:'maxHpPct',amount:0.04,turns:1,playerTurnOnly:true,key:'absorb_blood_hp'}); applyStatus(playerObj,{type:'buff',stat:'mpRegen',amount:3,turns:1,playerTurnOnly:true,key:'absorb_blood_mp'}); _ovNoteC=`🩸回HP+${_ovHC}、MaxHP+4%、MP+3`; }
             if (_ovNoteC) log.push({type:'system',text:`💫 法書溢出（${_ovIcoC}）→ ${_ovNoteC}（1自身行動）`,hp:{player:pHp,monster:Math.max(0,mHp),mp:pMp,spellBook:[..._spellBook]}});
+          }
+          if (mHp <= 0) { pushDeathLine(); }
+        }
+        // ⭐ 自動唸咒-輪：固定冰→火→雷→血循環施法
+        if (player.rpg.class === 'mage' && (pBuff.autoChantCycle || 0) > 0 && mHp > 0) {
+          const _cycGrimoire = (pBuff.finalGrimoire || 0) > 0;
+          const _cycleEls = _cycGrimoire ? ['ice', 'firestorm', 'storm', 'destroy'] : ['ice', 'fire', 'thunder', 'blood'];
+          const _cycEl = _cycleEls[_chantCycleIdx % 4];
+          _chantCycleIdx++;
+          const _cycMark = Math.round((stats.mark || 0) * (1 + (pBuff.atkPct || 0) + (pBuff.markPct || 0)) * (_cycGrimoire ? 1.0 : 0.20));
+          let _cycDmg = 0; let _cycExtra = '';
+          const _cycBookEl = _cycEl === 'storm' ? 'thunder' : _cycEl === 'destroy' ? 'blood' : _cycEl === 'firestorm' ? 'fire' : _cycEl;
+          if (_cycEl === 'ice') {
+            if (_cycGrimoire) {
+              _cycDmg = Math.max(1, Math.round((120 + _cycMark * 5.5) * (0.85 + Math.random() * 0.30)));
+              const _cycFrost = (monster.statuses || []).some(s => s.type === 'buff' && s.stat === 'spdPct' && s.key === 'frost');
+              if (Math.random() < 0.50 && !_cycFrost) { applyStatus(monster, { type: 'buff', stat: 'spdPct', amount: -0.30, turns: 3, key: 'frost', monsterTurnOnly: true }); _cycExtra = ' 🌨️霜凍！SPD-30%（3行動回合）'; }
+            } else {
+              _cycDmg = Math.max(1, Math.round(_cycMark * 1.6 * (0.85 + Math.random() * 0.30)));
+              if (Math.random() < 0.25 && !hasStatus(monster, 'paralyze')) { applyStatus(monster, { type: 'paralyze', charges: 1 }); _cycExtra = ' ⚡麻痺！'; }
+            }
+          } else if (_cycEl === 'fire') {
+            _cycDmg = Math.max(1, Math.round(_cycMark * 2.0 * (0.85 + Math.random() * 0.30)));
+          } else if (_cycEl === 'firestorm') {
+            _cycDmg = Math.max(1, Math.round(262 + _cycMark * 12.5 * (0.85 + Math.random() * 0.30)));
+          } else if (_cycEl === 'thunder') {
+            for (let _ci = 0; _ci < 3; _ci++) _cycDmg += Math.max(1, Math.round(_cycMark * 0.8 * (0.85 + Math.random() * 0.30)));
+          } else if (_cycEl === 'storm') {
+            _cycDmg = Math.max(1, Math.round(630 + _cycMark * 14.25 * (0.85 + Math.random() * 0.30)));
+          } else if (_cycEl === 'destroy') {
+            _cycDmg = Math.max(1, Math.round(_cycMark * 7.25 * (0.85 + Math.random() * 0.30)));
+            applyStatus(monster, { type: 'vulnerable', amount: 0.5, hits: 2 });
+            _cycExtra = ' 👁️易傷×2！';
+          } else { // blood
+            _cycDmg = Math.max(1, Math.round(_cycMark * 1.4 * (0.85 + Math.random() * 0.30)));
+            const _bloodInBookC = _spellBook.filter(e => e === 'blood').length + 1;
+            const _bloodMultC = _bloodInBookC >= 3 ? 3 : 1;
+            const _cycHealDmg = Math.round(_cycDmg * 0.10);
+            const _cycHealHp  = Math.round((stats.maxHp || 0) * 0.10 * _bloodMultC);
+            const _cycHealMp  = Math.round((stats.maxMp || 0) * 0.10 * _bloodMultC);
+            const _totalHpHealC = _cycHealDmg + _cycHealHp;
+            if (_totalHpHealC > 0) pHp = Math.min(stats.maxHp, pHp + _totalHpHealC);
+            if (_cycHealMp > 0) pMp = Math.min(stats.maxMp || 0, (pMp || 0) + _cycHealMp);
+            _cycExtra = ` 🩸+${_totalHpHealC}HP +${_cycHealMp}MP${_bloodMultC > 1 ? '（3屠×3！）' : ''}`;
+          }
+          const _cycIcon = { ice: '❄️冰錐術', fire: '🔥火球術', thunder: '⚡連環閃電', blood: '🩸血吸術', storm: '🌩️怒雷風暴', destroy: '💀毀滅之怒', firestorm: '🌋火焰風暴' }[_cycEl];
+          const _cycBonusPct = _cycGrimoire ? 1.0 : 0.5;
+          _cycDmg *= (1 + (passive.flatPct || 0) * _cycBonusPct);
+          _cycDmg *= (1 + (bonus.skillDmgPct || 0) * _cycBonusPct);
+          if (_monMagRes) _cycDmg *= (1 - _monMagRes);
+          const _cycCritChance = baseCritChance + (pBuff.critChance || 0);
+          const _cycCritMult   = critMult + (pBuff.critDmg || 0);
+          const _cycIsCrit = Math.random() < _cycCritChance;
+          if (_cycIsCrit) _cycDmg *= _cycCritMult;
+          _cycDmg *= peekVulnerable(monster);
+          _cycDmg = Math.max(1, Math.round(_cycDmg));
+          mHp = Math.max(0, mHp - _cycDmg);
+          const _cOvflCyc = _spellBook.length >= 10 ? _spellBook[0] : null;
+          _spellBook.push(_cycBookEl);
+          if (_spellBook.length > 10) _spellBook.shift();
+          log.push({ type: _cycIsCrit ? 'crit-player' : 'player', text: `回合 ${round}：🔄📖 自動唸咒-輪${_cycGrimoire ? '【大咒書】' : ''}${_cycIsCrit ? '【暴擊】' : ''} ${_cycIcon} → ${monster.name} -${_cycDmg} HP${_cycExtra}　[法書${_spellBook.length}/10]`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp, spellBook: [..._spellBook] } });
+          if (_cOvflCyc) {
+            const _ovMkCyc = (stats.mark||0)*(1+(pBuff.atkPct||0)+(pBuff.markPct||0));
+            const _ovIcoCyc = {fire:'🔥',ice:'🧊',thunder:'⚡',poison:'☠️',blood:'🩸'}[_cOvflCyc]||'✨';
+            let _ovNoteCyc = '';
+            if (_cOvflCyc==='fire')         { applyStatus(playerObj,{type:'buff',stat:'markPct',amount:0.12,turns:1,playerTurnOnly:true,key:'absorb_fire'}); _ovNoteCyc='🔥MARK+12%'; }
+            else if (_cOvflCyc==='ice')     { applyStatus(playerObj,{type:'buff',stat:'defPct', amount:0.20,turns:1,playerTurnOnly:true,key:'absorb_ice'}); _ovNoteCyc='🧊DEF+20%'; }
+            else if (_cOvflCyc==='thunder') { applyStatus(playerObj,{type:'buff',stat:'critDmg',amount:0.10,turns:1,playerTurnOnly:true,key:'absorb_thunder'}); _ovNoteCyc='⚡爆傷+10%'; }
+            else if (_cOvflCyc==='poison')  { applyStatus(playerObj,{type:'buff',stat:'spellPoison',amount:1,turns:1,playerTurnOnly:true,key:'absorb_poison'}); _ovNoteCyc='☠️毒吐息1行動'; }
+            else if (_cOvflCyc==='blood')   { const _ovHCyc=Math.round(_ovMkCyc*2); pHp=Math.min(stats.maxHp,pHp+_ovHCyc); applyStatus(playerObj,{type:'buff',stat:'maxHpPct',amount:0.04,turns:1,playerTurnOnly:true,key:'absorb_blood_hp'}); applyStatus(playerObj,{type:'buff',stat:'mpRegen',amount:3,turns:1,playerTurnOnly:true,key:'absorb_blood_mp'}); _ovNoteCyc=`🩸回HP+${_ovHCyc}、MaxHP+4%、MP+3`; }
+            if (_ovNoteCyc) log.push({type:'system',text:`💫 法書溢出（${_ovIcoCyc}）→ ${_ovNoteCyc}（1自身行動）`,hp:{player:pHp,monster:Math.max(0,mHp),mp:pMp,spellBook:[..._spellBook]}});
           }
           if (mHp <= 0) { pushDeathLine(); }
         }
@@ -10001,6 +10100,8 @@
       ? target.statuses.find(s => s.type === 'buff' && s.stat === status.stat && s.key === status.key)
       : target.statuses.find(s => s.type === status.type);
     if (existing) {
+      // ⭐ noStack：若已有相同效果，跳過（不刷新、不疊加）— 用於霜凍等不可重複施加的狀態
+      if (status.noStack) return;
       if (status.type === 'vulnerable') {
         // ⭐ hit-based：取較多次數，疊加量取最大
         existing.hits   = Math.max(existing.hits   || 0, status.hits   || 0);
@@ -10063,7 +10164,8 @@
       // ⭐ 易傷/護盾/麻痺/中毒/流血/魔坑：全部 charge/hit-based，不計 turns
       if (s.type !== 'vulnerable' && s.type !== 'shield' && s.type !== 'hundredfoldReflect' && s.type !== 'paralyze' && s.type !== 'poison' && s.type !== 'partialShield' && s.type !== 'bleed') {
         // ⭐ playerTurnOnly buff（鷹眼/瘋鵝術）只在玩家回合倒數，怪物回合不消耗
-        if (!s.playerTurnOnly || isPlayerTick) {
+        // ⭐ monsterTurnOnly buff（霜凍）只在怪物回合倒數，玩家回合不消耗
+        if ((!s.playerTurnOnly || isPlayerTick) && (!s.monsterTurnOnly || !isPlayerTick)) {
           s.turns = (s.turns || 0) - 1;
         }
       }
@@ -10110,7 +10212,7 @@
   }
   // 把目前生效的 buff 加總（atkPct/defPct/spd/critChance/critDmg/reflectPct/maxHpPct）
   function getBuffBonus(target) {
-    const out = { atkPct: 0, defPct: 0, def: 0, spd: 0, critChance: 0, critDmg: 0, reflectPct: 0, maxHpPct: 0, markPct: 0, dmgReducePct: 0, spdPct: 0, extraHits: 0, headshotChance: 0, swordShield: 0, berserk: 0, shadowClone: 0, finalGrimoire: 0 };
+    const out = { atkPct: 0, defPct: 0, def: 0, spd: 0, critChance: 0, critDmg: 0, reflectPct: 0, maxHpPct: 0, markPct: 0, dmgReducePct: 0, spdPct: 0, extraHits: 0, headshotChance: 0, swordShield: 0, berserk: 0, shadowClone: 0, finalGrimoire: 0, autoChant: 0, autoChantCycle: 0 };
     if (!target || !target.statuses) return out;
     for (const s of target.statuses) {
       if (s.type !== 'buff' || !s.stat) continue;
@@ -10130,6 +10232,7 @@
     if (buff.stat === 'maxHpPct')     return `💖 最大HP +${Math.round(buff.amount * 100)}%（戰鬥中有效）`;
     if (buff.stat === 'markPct')      return `🌀 MARK +${Math.round(buff.amount * 100)}%`;
     if (buff.stat === 'dmgReducePct')    return `🛡 受傷 -${Math.round(buff.amount * 100)}%（物理 + 魔法）`;
+    if (buff.key === 'frost')             return `🌨️ 霜凍（SPD ${Math.round(buff.amount * 100)}%，${buff.turns}行動回合）`;
     if (buff.stat === 'spdPct')          return buff.amount < 0 ? `💨 SPD ${Math.round(buff.amount * 100)}%` : `💨 SPD +${Math.round(buff.amount * 100)}%`;
     if (buff.stat === 'extraHits')       return `🪿 普攻段數 +${buff.amount}`;
     if (buff.stat === 'headshotChance')  return `🎯 爆頭率 +${Math.round(buff.amount * 100)}%`;
@@ -10208,6 +10311,7 @@
     // ⭐ 風鵝護符 + 異蝕之印：玩家異常狀態抗性（上限 95%）
     const _statusResistM   = Math.min(_fxStatusRes * 0.25 + _fxSdCorrode * 0.25, 0.95);
     let _spellBookM = [];                // ⭐ 法書：記錄法師施放的元素（最多10格）
+    let _chantCycleIdxM = 0;            // ⭐ 自動唸咒-輪（組隊）：當前週期位置
     // 弓手普攻流疊加（本場累積）
     let _aHit = 0;
     let _aCrit = 0;      // 暴擊計數（UI 顯示）
@@ -10345,6 +10449,8 @@
       // 重算 pSpd（含 buff / spdPct debuff）
       const pBuff = getBuffBonus(playerObj);
       pSpd = Math.max(1, (SPD_BASE + effectiveSpd + (pBuff.spd || 0)) * (1 + (pBuff.spdPct || 0)));
+      // ⭐ 霜凍：每回合重算存活怪物速度（霜凍 = spdPct debuff，turns 只在怪物行動回合倒數）
+      mList.forEach(m => { if (m.alive) m._effSpd = Math.max(1, (SPD_BASE + (m.spd||0)) * (1 + (getBuffBonus(m).spdPct||0))); });
       effPSpd = _capSpdM(pSpd); // ⭐ 套用 SPD 軟上限（對存活怪物平均速度）
       // ATB 推進（用 _effSpd 已加 SPD_BASE）
       const aliveM = mList.filter(m => m.alive);
@@ -10720,7 +10826,13 @@
               }
               // 套用狀態
               if (skill.applyStatus && Math.random() < (skill.applyStatus.chance || 1)) {
-                applyStatus(tgt, skill.applyStatus);
+                // ⭐ noStack：若已有相同效果（如霜凍），跳過
+                const _stNoStackM = skill.applyStatus.noStack && (tgt.statuses || []).some(s => s.type === skill.applyStatus.type && s.stat === skill.applyStatus.stat && s.key === skill.applyStatus.key);
+                if (!_stNoStackM) {
+                  applyStatus(tgt, skill.applyStatus);
+                  const _stLabelM = skill.applyStatus.key === 'frost' ? '🌨️霜凍（SPD-30%，3行動回合）' : `${statusEmoji(skill.applyStatus.type)}${statusLabel(skill.applyStatus.type)}`;
+                  log.push({ type: 'system', text: `回合 ${round}：${tgt.icon}${tgt.name} 進入 ${_stLabelM} 狀態`, hp: hpsSnapshot() });
+                }
               }
               // ⭐ 靈噬之印（fx_sd_drain）：技能攻擊後 10%/層 機率使敵人麻痺
               if (_fxSdDrain > 0 && tgt.hp > 0 && Math.random() < Math.min(1, _fxSdDrain * 0.10)) {
@@ -11001,6 +11113,17 @@
             });
             // ⭐ 聖母鵝計數：神聖祝福也算補血
             if (_isPaladinM && !_hmgFrozenM && skill.id === 'p_blessing') _hmgHealCountM++;
+          } else if (skill.type === 'heal' && skill.isBloodHeal) {
+            // ⭐ 諸血高（組隊）：消耗 50% 血池，獲得消耗量 80% 的 HP（可突破最大 HP 上限）
+            if (bloodPool <= 0) {
+              log.push({ type: 'system', text: `回合 ${round}：${skill.icon} ${skill.name} → 血池為空，無效！`, hp: hpsSnapshot() });
+            } else {
+              const _bhConsumedM = Math.floor(bloodPool * 0.50);
+              bloodPool -= _bhConsumedM;
+              const _bhHealM = Math.round(_bhConsumedM * 0.80);
+              pHp += _bhHealM; // ⭐ 可突破最大 HP 上限（不 clamp）
+              log.push({ type: 'crit-player', text: `回合 ${round}：${skill.icon} ${skill.name} → 🩸血池 -${_bhConsumedM}（剩 ${bloodPool}）→ ❤️‍🔥+${_bhHealM} HP（${pHp} / ${stats.maxHp}）`, hp: hpsSnapshot() });
+            }
           } else if (skill.type === 'heal') {
             const gainedParts = [];
             if (skill.healPct) {
@@ -11277,8 +11400,10 @@
             const _chantBookElM = _chantElM === 'storm' ? 'thunder' : _chantElM === 'destroy' ? 'blood' : _chantElM === 'firestorm' ? 'fire' : _chantElM;
             if (_chantElM === 'ice') {
               if (_grimoireM) {
-                _chantDmgM = Math.max(1, Math.round(_chantMarkM * 4.8 * (0.85 + Math.random() * 0.30)));
-                if (Math.random() < 0.49 && !hasStatus(_chantTgt, 'paralyze')) { applyStatus(_chantTgt, { type: 'paralyze', charges: 2 }); _chantExtraM = ' ⚡麻痺！'; }
+                // ⭐ 冰霜風暴 Lv10: flat 120 + MARK×5.5；50% 機率霜凍（SPD-30%，3行動回合，noStack）
+                _chantDmgM = Math.max(1, Math.round((120 + _chantMarkM * 5.5) * (0.85 + Math.random() * 0.30)));
+                const _frostExistM = (_chantTgt.statuses || []).some(s => s.type === 'buff' && s.stat === 'spdPct' && s.key === 'frost');
+                if (Math.random() < 0.50 && !_frostExistM) { applyStatus(_chantTgt, { type: 'buff', stat: 'spdPct', amount: -0.30, turns: 3, key: 'frost', monsterTurnOnly: true }); _chantExtraM = ' 🌨️霜凍！SPD-30%（3行動回合）'; }
               } else {
                 _chantDmgM = Math.max(1, Math.round(_chantMarkM * 1.6 * (0.85 + Math.random() * 0.30)));
                 if (Math.random() < 0.25 && !hasStatus(_chantTgt, 'paralyze')) { applyStatus(_chantTgt, { type: 'paralyze', charges: 1 }); _chantExtraM = ' ⚡麻痺！'; }
@@ -11343,6 +11468,80 @@
               else if (_cOvflM==='poison')  { applyStatus(playerObj,{type:'buff',stat:'spellPoison',amount:1,turns:1,playerTurnOnly:true,key:'absorb_poison'}); _ovNoteCM='☠️毒吐息1行動'; }
               else if (_cOvflM==='blood')   { const _ovHCM=Math.round(_ovMkCM*2); pHp=Math.min(stats.maxHp,pHp+_ovHCM); applyStatus(playerObj,{type:'buff',stat:'maxHpPct',amount:0.04,turns:1,playerTurnOnly:true,key:'absorb_blood_hp'}); applyStatus(playerObj,{type:'buff',stat:'mpRegen',amount:3,turns:1,playerTurnOnly:true,key:'absorb_blood_mp'}); _ovNoteCM=`🩸回HP+${_ovHCM}、MaxHP+4%、MP+3`; }
               if (_ovNoteCM) log.push({type:'system',text:`💫 法書溢出（${_ovIcoCM}）→ ${_ovNoteCM}（1自身行動）`,hp:hpsSnapshot()});
+            }
+          }
+        }
+        // ⭐ 自動唸咒-輪（組隊）：固定冰→火→雷→血循環施法
+        if (player.rpg.class === 'mage' && (pBuff.autoChantCycle || 0) > 0) {
+          const _cycTgt = monsters.filter(m => m.alive && m.hp > 0)[0];
+          if (_cycTgt) {
+            const _cycGrimoireM = (pBuff.finalGrimoire || 0) > 0;
+            const _cycleElsM = _cycGrimoireM ? ['ice', 'firestorm', 'storm', 'destroy'] : ['ice', 'fire', 'thunder', 'blood'];
+            const _cycElM = _cycleElsM[_chantCycleIdxM % 4];
+            _chantCycleIdxM++;
+            const _cycMarkM = Math.round((stats.mark || 0) * (1 + (pBuff.atkPct || 0) + (pBuff.markPct || 0)) * (_cycGrimoireM ? 1.0 : 0.20));
+            let _cycDmgM = 0; let _cycExtraM = '';
+            const _cycBookElM = _cycElM === 'storm' ? 'thunder' : _cycElM === 'destroy' ? 'blood' : _cycElM === 'firestorm' ? 'fire' : _cycElM;
+            if (_cycElM === 'ice') {
+              if (_cycGrimoireM) {
+                _cycDmgM = Math.max(1, Math.round((120 + _cycMarkM * 5.5) * (0.85 + Math.random() * 0.30)));
+                const _cycFrostM = (_cycTgt.statuses || []).some(s => s.type === 'buff' && s.stat === 'spdPct' && s.key === 'frost');
+                if (Math.random() < 0.50 && !_cycFrostM) { applyStatus(_cycTgt, { type: 'buff', stat: 'spdPct', amount: -0.30, turns: 3, key: 'frost', monsterTurnOnly: true }); _cycExtraM = ' 🌨️霜凍！SPD-30%（3行動回合）'; }
+              } else {
+                _cycDmgM = Math.max(1, Math.round(_cycMarkM * 1.6 * (0.85 + Math.random() * 0.30)));
+                if (Math.random() < 0.25 && !hasStatus(_cycTgt, 'paralyze')) { applyStatus(_cycTgt, { type: 'paralyze', charges: 1 }); _cycExtraM = ' ⚡麻痺！'; }
+              }
+            } else if (_cycElM === 'fire') {
+              _cycDmgM = Math.max(1, Math.round(_cycMarkM * 2.0 * (0.85 + Math.random() * 0.30)));
+            } else if (_cycElM === 'firestorm') {
+              _cycDmgM = Math.max(1, Math.round(262 + _cycMarkM * 12.5 * (0.85 + Math.random() * 0.30)));
+            } else if (_cycElM === 'thunder') {
+              for (let _ci = 0; _ci < 3; _ci++) _cycDmgM += Math.max(1, Math.round(_cycMarkM * 0.8 * (0.85 + Math.random() * 0.30)));
+            } else if (_cycElM === 'storm') {
+              _cycDmgM = Math.max(1, Math.round(630 + _cycMarkM * 14.25 * (0.85 + Math.random() * 0.30)));
+            } else if (_cycElM === 'destroy') {
+              _cycDmgM = Math.max(1, Math.round(_cycMarkM * 7.25 * (0.85 + Math.random() * 0.30)));
+              applyStatus(_cycTgt, { type: 'vulnerable', amount: 0.5, hits: 2 });
+              _cycExtraM = ' 👁️易傷×2！';
+            } else { // blood
+              _cycDmgM = Math.max(1, Math.round(_cycMarkM * 1.4 * (0.85 + Math.random() * 0.30)));
+              const _bloodInBookCM = _spellBookM.filter(e => e === 'blood').length + 1;
+              const _bloodMultCM = _bloodInBookCM >= 3 ? 3 : 1;
+              const _cycHealDmgM = Math.round(_cycDmgM * 0.10);
+              const _cycHealHpM  = Math.round((stats.maxHp || 0) * 0.10 * _bloodMultCM);
+              const _cycHealMpM  = Math.round((stats.maxMp || 0) * 0.10 * _bloodMultCM);
+              const _totalHpHealCM = _cycHealDmgM + _cycHealHpM;
+              if (_totalHpHealCM > 0) pHp = Math.min(stats.maxHp, pHp + _totalHpHealCM);
+              if (_cycHealMpM > 0) pMp = Math.min(stats.maxMp || 0, (pMp || 0) + _cycHealMpM);
+              _cycExtraM = ` 🩸+${_totalHpHealCM}HP +${_cycHealMpM}MP${_bloodMultCM > 1 ? '（3屠×3！）' : ''}`;
+            }
+            const _cycIconM = { ice: '❄️冰錐術', fire: '🔥火球術', thunder: '⚡連環閃電', blood: '🩸血吸術', storm: '🌩️怒雷風暴', destroy: '💀毀滅之怒', firestorm: '🌋火焰風暴' }[_cycElM];
+            const _cycBonusPctM = _cycGrimoireM ? 1.0 : 0.5;
+            _cycDmgM *= (1 + (passive.flatPct || 0) * _cycBonusPctM);
+            _cycDmgM *= (1 + (bonus.skillDmgPct || 0) * _cycBonusPctM);
+            if (_cycTgt.magRes) _cycDmgM *= (1 - _cycTgt.magRes);
+            const _cycCritChanceM = baseCritChance + (pBuff.critChance || 0);
+            const _cycCritMultM   = critMult + (pBuff.critDmg || 0);
+            const _cycIsCritM = Math.random() < _cycCritChanceM;
+            if (_cycIsCritM) _cycDmgM *= _cycCritMultM;
+            _cycDmgM *= peekVulnerable(_cycTgt);
+            _cycDmgM = Math.max(1, Math.round(_cycDmgM));
+            _cycTgt.hp = Math.max(0, _cycTgt.hp - _cycDmgM);
+            if (_cycTgt.hp <= 0) _cycTgt.alive = false;
+            const _cOvflCycM = _spellBookM.length >= 10 ? _spellBookM[0] : null;
+            _spellBookM.push(_cycBookElM);
+            if (_spellBookM.length > 10) _spellBookM.shift();
+            log.push({ type: _cycIsCritM ? 'crit-player' : 'player', text: `回合 ${round}：🔄📖 自動唸咒-輪${_cycGrimoireM ? '【大咒書】' : ''}${_cycIsCritM ? '【暴擊】' : ''} ${_cycIconM} → ${_cycTgt.icon}${_cycTgt.name} -${_cycDmgM} HP${_cycExtraM}　[法書${_spellBookM.length}/10]`, hp: hpsSnapshot() });
+            if (_cOvflCycM) {
+              const _ovMkCycM = (stats.mark||0)*(1+(pBuff.atkPct||0)+(pBuff.markPct||0));
+              const _ovIcoCycM = {fire:'🔥',ice:'🧊',thunder:'⚡',poison:'☠️',blood:'🩸'}[_cOvflCycM]||'✨';
+              let _ovNoteCycM = '';
+              if (_cOvflCycM==='fire')         { applyStatus(playerObj,{type:'buff',stat:'markPct',amount:0.12,turns:1,playerTurnOnly:true,key:'absorb_fire'}); _ovNoteCycM='🔥MARK+12%'; }
+              else if (_cOvflCycM==='ice')     { applyStatus(playerObj,{type:'buff',stat:'defPct', amount:0.20,turns:1,playerTurnOnly:true,key:'absorb_ice'}); _ovNoteCycM='🧊DEF+20%'; }
+              else if (_cOvflCycM==='thunder') { applyStatus(playerObj,{type:'buff',stat:'critDmg',amount:0.10,turns:1,playerTurnOnly:true,key:'absorb_thunder'}); _ovNoteCycM='⚡爆傷+10%'; }
+              else if (_cOvflCycM==='poison')  { applyStatus(playerObj,{type:'buff',stat:'spellPoison',amount:1,turns:1,playerTurnOnly:true,key:'absorb_poison'}); _ovNoteCycM='☠️毒吐息1行動'; }
+              else if (_cOvflCycM==='blood')   { const _ovHCycM=Math.round(_ovMkCycM*2); pHp=Math.min(stats.maxHp,pHp+_ovHCycM); applyStatus(playerObj,{type:'buff',stat:'maxHpPct',amount:0.04,turns:1,playerTurnOnly:true,key:'absorb_blood_hp'}); applyStatus(playerObj,{type:'buff',stat:'mpRegen',amount:3,turns:1,playerTurnOnly:true,key:'absorb_blood_mp'}); _ovNoteCycM=`🩸回HP+${_ovHCycM}、MaxHP+4%、MP+3`; }
+              if (_ovNoteCycM) log.push({type:'system',text:`💫 法書溢出（${_ovIcoCycM}）→ ${_ovNoteCycM}（1自身行動）`,hp:hpsSnapshot()});
             }
           }
         }
@@ -14572,7 +14771,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260511125043';
+  const APP_VERSION = '20260511144426';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -14628,7 +14827,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260511_boss_art_and_chant';
+  const NEWS_LATEST_ID = 'patch_20260511_blood_high';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -14648,6 +14847,47 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#3a0000,#7c0000); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🩸 戰士新技能：諸血高　<span style="font-size:11px; opacity:0.85;">2026-05-11</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#fca5a5; margin:6px 0 4px;">🩸❤️‍🔥 新技能：諸血高（戰士 Lv 5 解鎖）</div>
+        <div>・消耗 <b>50% 血池</b>，獲得消耗量 <b>80%</b> 的 HP（不可升級）</div>
+        <div>・回血<b>可突破最大 HP 上限</b>（超血量狀態）</div>
+        <div>・血池為空時施放無效</div>
+        <div style="background:#300a00; border-radius:6px; padding:6px 10px; margin:4px 0; font-size:12px;">
+          📌 例：血池 10000 / HP 2500/3000<br>
+          → 消耗 5000 血池 → 回血 4000 HP → HP 6500/3000，血池剩 5000
+        </div>
+        <div>・搭配鵝暴化 / 血祭斬等高血池技能，可做出超越上限的巨量回血！</div>
+
+        <div style="background:#2a0000; border-radius:8px; padding:8px 12px; margin:10px 0 16px; font-size:12px; color:#fca5a5;">
+          💡 戰士換血打法：先用血祭斬 / 嗜血怒嚎累積血池，再一發諸血高把 HP 頂到滿血甚至超出！高血池配上爆血大招，輸出與生存全面兼顧！
+        </div>
+
+        <div style="background:linear-gradient(135deg,#00183a,#003a7c); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🌨️ 法師新技能 ＋ 自動唸咒-輪　<span style="font-size:11px; opacity:0.85;">2026-05-11</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#93c5fd; margin:6px 0 4px;">🌨️ 新技能：冰霜風暴（法師 Lv 10 解鎖）</div>
+        <div>・傷害：固定傷害 <b>120 + MARK×5.5</b>（無視 DEF，魔攻屬性）</div>
+        <div>・<b>50% 機率</b>附加【霜凍】：目標 <b>SPD -30%</b>，持續 <b>3 個目標行動回合</b></div>
+        <div>・霜凍<b>不可疊加</b>：目標已有霜凍時此次不再觸發</div>
+        <div>・冰屬性元素記入魔法書，可觸發法書溢出增益</div>
+
+        <div style="font-weight:700; color:#93c5fd; margin:10px 0 4px;">📕 最後的大咒書 — 冰系升級</div>
+        <div>・大咒書啟動後，自動唸咒冰系由「冰錐術 MARK×4.8 + 麻痺」<b>升級為冰霜風暴</b></div>
+        <div>・固定傷害 120 + MARK×5.5，50% 霜凍（SPD-30%，3行動回合），已有霜凍時不重複觸發</div>
+
+        <div style="font-weight:700; color:#6ee7b7; margin:10px 0 4px;">🔄📖 新技能：自動唸咒-輪（法師 Lv 6 解鎖）</div>
+        <div>・效果同「自動唸咒」，但<b>按固定順序</b>輪替施放：冰 → 火 → 雷 → 血 → 冰…</div>
+        <div>・與「自動唸咒」可<b>同時使用</b>，兩技能各自獨立施放，一回合最多觸發 2 次唸咒</div>
+        <div>・開啟大咒書後，輪替技能庫同樣升級為：冰霜風暴 → 火焰風暴 → 怒雷風暴 → 毀滅之怒</div>
+
+        <div style="background:#001a30; border-radius:8px; padding:8px 12px; margin:10px 0 16px; font-size:12px; color:#93c5fd;">
+          💡 自動唸咒（隨機）+ 自動唸咒-輪（固定）同時生效，大咒書加持後每回合可噴 2 發高傷害咒語！霜凍讓怪物行動變慢，配合易傷效果，法師爆發力全面提升！
+        </div>
 
         <div style="background:linear-gradient(135deg,#1a1a00,#3a3a00); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🎨 Boss 立繪上線 ＋ 法師系統修正　<span style="font-size:11px; opacity:0.85;">2026-05-11</span></div>
@@ -16472,11 +16712,35 @@ ${b.text}
       buffPairs.push('🩸 血池來源：血祭斬 / 死戰之怒（扣10% maxHP）/ 嗜血怒嚎（扣20% 當前HP）');
       buffPairs.push('💀 施放後血池歸零，冷卻 1 回合');
     }
+    // ⭐ 諸血高
+    if (skill.isBloodHeal) {
+      buffPairs.push('─────────────');
+      buffPairs.push('🩸 消耗當前 50% 血池，獲得消耗量 80% 的 HP');
+      buffPairs.push('❤️‍🔥 回血可突破最大 HP 上限（超血量狀態）');
+      buffPairs.push('─────────────');
+      buffPairs.push('📌 範例：血池 10000 / HP 2500/3000');
+      buffPairs.push('　→ 消耗 5000 血池 → 回血 4000 HP → HP 6500/3000');
+      buffPairs.push('　→ 血池剩 5000');
+      buffPairs.push('─────────────');
+      buffPairs.push('⚠️ 血池為空時施放無效');
+      buffPairs.push('🩸 血池來源：血祭斬 / 死戰之怒 / 嗜血怒嚎 / 鵝暴化');
+      buffPairs.push('─────────────');
+    }
+    // ⭐ 冰霜風暴
+    if (skill.id === 'm_ice_storm') {
+      buffPairs.push('─────────────');
+      buffPairs.push('🌨️ 固定傷害 120 + MARK×5.5，無視防禦（魔攻屬性）');
+      buffPairs.push('❄️ 50% 機率對目標施加【霜凍】：SPD -30%，持續 3 個目標行動回合');
+      buffPairs.push('　・霜凍不可疊加 — 目標已有霜凍時，此次不再施加');
+      buffPairs.push('　・目標每行動一次，霜凍倒數一格（共 3 次行動後自動解除）');
+      buffPairs.push('🧊 冰屬性元素記入魔法書（可觸發溢出增益）');
+      buffPairs.push('─────────────');
+    }
     // ⭐ 自動唸咒
     if (skill.id === 'm_auto_chant') {
       buffPairs.push('─────────────');
       buffPairs.push('📖 持續 20 回合（玩家行動計算）');
-      buffPairs.push('🔄 每次角色行動回合（普攻或使用技能）自動施放一次隨機元素咒（固定5等，傷害約 MARK×20%）：');
+      buffPairs.push('🔀 每次角色行動回合自動施放一次【隨機】元素咒（固定5等，傷害約 MARK×20%）：');
       buffPairs.push('　🧊 冰：MARK×1.6，25% 機率附加麻痺 1 回合');
       buffPairs.push('　🔥 火：MARK×2.0');
       buffPairs.push('　⚡ 雷：3 連打，每段 MARK×0.8');
@@ -16486,16 +16750,32 @@ ${b.text}
       buffPairs.push('👁️ 易傷狀態：法書唸咒傷害吃到易傷加成，但不消耗易傷層數');
       buffPairs.push('─────────────');
     }
+    // ⭐ 自動唸咒-輪
+    if (skill.id === 'm_auto_chant_cycle') {
+      buffPairs.push('─────────────');
+      buffPairs.push('🔄📖 持續 20 回合（玩家行動計算）');
+      buffPairs.push('🔁 每次角色行動回合自動施放一次【固定順序】元素咒（冰→火→雷→血 循環，MARK×20%）：');
+      buffPairs.push('　🧊 冰：MARK×1.6，25% 機率附加麻痺 1 回合');
+      buffPairs.push('　🔥 火：MARK×2.0');
+      buffPairs.push('　⚡ 雷：3 連打，每段 MARK×0.8');
+      buffPairs.push('　🩸 血：MARK×1.4，吸血10% + 回HP10% + 回MP10%');
+      buffPairs.push('　　　法書≥3屠：回HP/MP效果×3（最多各30%）');
+      buffPairs.push('─────────────');
+      buffPairs.push('💡 與「自動唸咒」可同時使用（各自獨立施放，一回合最多 2 次唸咒）');
+      buffPairs.push('📚 唸咒的元素會同步記入魔法書');
+      buffPairs.push('👁️ 易傷狀態：法書唸咒傷害吃到易傷加成，但不消耗易傷層數');
+      buffPairs.push('─────────────');
+    }
     // ⭐ 最後的大咒書
     if (skill.id === 'm_final_grimoire') {
       buffPairs.push('─────────────');
-      buffPairs.push('【大絕・每場限用一次】需先施放「自動唸咒」才能生效');
+      buffPairs.push('【大絕・每場限用一次】需先施放「自動唸咒」或「自動唸咒-輪」才能生效');
       buffPairs.push('📕 持續 15 個自己回合，大幅強化自動唸咒效果：');
       buffPairs.push('　・MARK 倍率：20% → 100%（傷害 5 倍提升）');
       buffPairs.push('　・魔攻被動 / 技能傷害加成完整計入（一般自動唸咒只有 50%）');
-      buffPairs.push('　・技能庫升級為以下 4 種強化元素（各 25% 機率）：');
+      buffPairs.push('　・技能庫升級為以下 4 種強化元素（各 25% 機率 / 固定輪替）：');
       buffPairs.push('─────────────');
-      buffPairs.push('🧊 冰 — MARK×4.8，49% 機率附加⚡麻痺 2 層');
+      buffPairs.push('🌨️ 冰霜風暴 — 固定傷害 120 + MARK×5.5，50% 機率霜凍（SPD-30%，3行動回合）');
       buffPairs.push('🌋 火焰風暴 — 固定傷害 262 + MARK×12.5');
       buffPairs.push('🌩️ 怒雷風暴 — 固定傷害 630 + MARK×14.25');
       buffPairs.push('💀 毀滅之怒 — MARK×7.25 + 👁️易傷 ×2 次（🩸血屬性記入法書）');
