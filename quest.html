@@ -2577,7 +2577,7 @@
         { id: 'm_arcane_shield',  name: '魔力護盾',   icon: '🛡️', unlockLv: 5,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'dmgReducePct', amount: 0.50, turns: 4 }, cast: 10, maxLv: 1 },
         // ⭐ 絕對防禦：回血 50% + 抵擋下一次傷害（不能升級）
         { id: 'm_absolute_defense', name: '絕對防禦', icon: '🔰', unlockLv: 8,  cooldown: 0, mpCost: 55, type: 'heal', healPct: 0.5, applyShield: 1, maxLv: 1 },
-        { id: 'm_destruction',    name: '毀滅之怒',   icon: '💀', unlockLv: 12, cooldown: 0, mpCost: 65, type: 'damage', mult: 3, magic: true, useMark: true, ignoreDef: true, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 1, chance: 1 }, cast: 37, customLv: true },
+        { id: 'm_destruction',    name: '毀滅之怒',   icon: '💀', unlockLv: 12, cooldown: 0, mpCost: 65, type: 'damage', mult: 3, magic: true, useMark: true, ignoreDef: true, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 1, chance: 1 }, cast: 37, customLv: true, spellElement: 'blood' },
         { id: 'm_firestorm',      name: '火焰風暴',   icon: '🌋', unlockLv: 7,  cooldown: 0, mpCost: 55, type: 'damage', flat: 150, markMult: 6, ignoreDef: true, targetCount: 'all', cast: 50, spellElement: 'fire' },
         { id: 'm_thunder_storm',  name: '怒雷風暴',   icon: '⚡', unlockLv: 9,  cooldown: 0, mpCost: 45, type: 'damage', flat: 360, markMult: 7, magic: true, ignoreDef: true, cast: 25, spellElement: 'thunder' },
         { id: 'm_poison_cloud',   name: '毒霧',       icon: '☠️', unlockLv: 3,  cooldown: 0, mpCost: 30, type: 'damage', flat: 50, perLv: 3, ignoreDef: true, targetCount: 'all', maxLv: 5, applyStatus: { type: 'poison', charges: 4, chance: 0.85 }, spellElement: 'poison' },
@@ -3410,6 +3410,41 @@
         fourth:      { bossCoinQty: 12 },
         participant: { bossCoinQty: 10 },
         killer:      { bossCoinQty: 10 },
+      },
+    },
+    // ⭐ 混沌鵝尊
+    {
+      id: 'chaos_goose',
+      name: '🌑 混沌鵝尊', icon: '🌑', art: 'art/png/modern_v3/bosses/boss_chaos.png',
+      maxHp: 100000000,
+      atk: 1200, def: 700, spd: 150,
+      physRes: 0.20, magRes: 0.20,
+      defPen: 0,
+      tier: 99,
+      level: 99,
+      verb: '混沌啄擊',
+      skills: [
+        // ① 鵝翼湮滅：ATK×2.0 無視防禦
+        { verb: '鵝翼湮滅', mult: 2.0, ignoreDef: true, cooldown: 4 },
+        // ② 鵝息腐蝕：ATK×1.2 + 100% 中毒（3層）
+        { verb: '鵝息腐蝕', mult: 1.2, applyStatus: { type: 'poison', charges: 3, chance: 1.0 }, cooldown: 3 },
+        // ③ 冥羽護甲：ATK×0.8 無視防禦 + 自身 DEF+350（10回）
+        { verb: '冥羽護甲', mult: 0.8, ignoreDef: true, applyStatus: { type: 'buff', stat: 'def', amount: 350, turns: 10, chance: 1.0 }, cooldown: 6 },
+        // ④ 裂空鵝爪：ATK×1.6 + 100% 流血（3層）
+        { verb: '裂空鵝爪', mult: 1.6, applyStatus: { type: 'bleed', charges: 3, chance: 1.0 }, cooldown: 5 },
+        // ⑤ 鵝神覺醒：自身 ATK+400（8回）
+        { verb: '鵝神覺醒', type: 'monsterSelfBuff', stat: 'atk', amount: 400, turns: 8, cooldown: 8 },
+        // ☄ 混沌終鳴：ATK×18 單段無視防禦，回合≥50 後每10回合優先觸發
+        { verb: '混沌終鳴', mult: 18.0, ignoreDef: true, minRound: 50, everyRounds: 10, cooldown: 1 },
+      ],
+      bossCoin: { id: 'bc_chaos_goose', name: '混沌鵝羽', icon: '🌑' },
+      killRewards: {
+        top:         { bossCoinQty: 30 },
+        second:      { bossCoinQty: 24 },
+        third:       { bossCoinQty: 18 },
+        fourth:      { bossCoinQty: 18 },
+        participant: { bossCoinQty: 12 },
+        killer:      { bossCoinQty: 15 },
       },
     },
   ];
@@ -4880,6 +4915,34 @@
     { id: 'bg_sd_life',    name: '噬命之印', icon: '💀', slot: 'accessory', lv: 1,
       isBossGift: true, sourceBossId: 'soul_devourer', rarity: 'gold', fusionEffect: 'fx_sd_life',
       affixDesc: 'ATK +20%、DEF +20%、最大 HP -50%（噬命之印）' },
+
+    // ── 混沌鵝尊印記（混沌扭蛋獎勵，合成用）─────────────────────────
+    { id: 'bg_cg_chaos',   name: '混沌之印', icon: '🌀', slot: 'accessory', lv: 1, atk: 12, mark: 8,  mp: 12, mpRegen: 1,
+      isBossGift: true, sourceBossId: 'chaos_goose', rarity: 'gold', fusionEffect: 'fx_cg_chaos',
+      affixDesc: '每次攻擊 15% 機率使敵方 ATK↓20%（3回；混沌之印）' },
+    { id: 'bg_cg_void',    name: '虛空之印', icon: '🕳️', slot: 'accessory', lv: 1, atk: 8,  mark: 12, mp: 12, mpRegen: 1,
+      isBossGift: true, sourceBossId: 'chaos_goose', rarity: 'gold', fusionEffect: 'fx_cg_void',
+      affixDesc: '攻擊無視 DEF 20%；敵方有強化狀態時傷害再+20%（虛空之印）' },
+    { id: 'bg_cg_ruin',    name: '滅世之印', icon: '💥', slot: 'accessory', lv: 1, atk: 10, mark: 10, hp: 60, mp: 10, mpRegen: 1,
+      isBossGift: true, sourceBossId: 'chaos_goose', rarity: 'gold', fusionEffect: 'fx_cg_ruin',
+      affixDesc: '敵方 HP<20% 時所有傷害+20%（WB以本生最大HP計算；滅世之印）' },
+    { id: 'bg_cg_decree',  name: '鵝尊之令', icon: '👑', slot: 'accessory', lv: 1, atk: 8,  mark: 12, mp: 15, mpRegen: 1,
+      isBossGift: true, sourceBossId: 'chaos_goose', rarity: 'gold', fusionEffect: 'fx_cg_decree',
+      affixDesc: '敵方 HP≥70% 時所有傷害+15%（WB以本生最大HP計算；鵝尊之令）' },
+
+    // ── 混沌鵝尊翅膀（混沌扭蛋獎勵，wings 格，不可融合）─────────────
+    { id: 'bg_cg_wing_chaos', name: '混沌鵝翼', icon: '🪶',   slot: 'wings', lv: 1, atk: 10, mark: 8,  spd: 8, mp: 10, mpRegen: 1,
+      isBossGift: true, sourceBossId: 'chaos_goose', rarity: 'gold',
+      wingSkillDmgPct: 0.05,
+      affixDesc: '技能傷害 +5%（混沌鵝翼）' },
+    { id: 'bg_cg_wing_void',  name: '虛空鵝翼', icon: '🌑🪶', slot: 'wings', lv: 1, atk: 8,  mark: 10, def: 10, hp: 50, mp: 10, mpRegen: 1,
+      isBossGift: true, sourceBossId: 'chaos_goose', rarity: 'gold',
+      wingDmgReduct: 0.15,
+      affixDesc: '受到傷害 -15%（虛空鵝翼）' },
+    { id: 'bg_cg_wing_doom',  name: '末世之翼', icon: '⚫🪶', slot: 'wings', lv: 1, atk: 12, mark: 10, hp: 60, mp: 10, mpRegen: 1,
+      isBossGift: true, sourceBossId: 'chaos_goose', rarity: 'gold',
+      wingBasicAtkPct: 0.10,
+      affixDesc: '普攻傷害 +10%（末世之翼）' },
   ];
 
   // ============================================================
@@ -8102,6 +8165,16 @@
     const _fxSdCorrode = getFusionEffectCount(player, 'fx_sd_corrode'); // 異蝕之印：玩家異常狀態抗性 +25%/層
     const _fxSdVoid    = getFusionEffectCount(player, 'fx_sd_void');    // 冥魂之印：技能後下次 +20%
     const _fxSdLife    = getFusionEffectCount(player, 'fx_sd_life');    // 噬命之印：ATK/DEF +20%，HP -50%
+    // ⭐ 混沌鵝尊印記效果
+    const _fxCgChaos   = getFusionEffectCount(player, 'fx_cg_chaos');   // 混沌之印：攻擊 15% 機率 ATK↓20%（3回）
+    const _fxCgVoid    = getFusionEffectCount(player, 'fx_cg_void');    // 虛空之印：無視 DEF 20%；敵有 buff 再+20%
+    const _fxCgRuin    = getFusionEffectCount(player, 'fx_cg_ruin');    // 滅世之印：敵 HP<20% 時+20%
+    const _fxCgDecree  = getFusionEffectCount(player, 'fx_cg_decree');  // 鵝尊之令：敵 HP≥70% 時+15%
+    // ⭐ 翅膀被動（wings 格裝備）
+    const _wingsItem        = resolveItem(player.rpg?.equipment?.wings);
+    const _wingsSkillDmgPct = _wingsItem?.wingSkillDmgPct  || 0; // 混沌鵝翼：技能傷害 +5%
+    const _wingsDmgReduct   = _wingsItem?.wingDmgReduct    || 0; // 虛空鵝翼：受到傷害 -15%
+    const _wingsBasicAtkPct = _wingsItem?.wingBasicAtkPct  || 0; // 末世之翼：普攻傷害 +10%
     // 派生值
     const regenPer = (cls.regenPer || 0) + (bonus.regen || 0) + _fxGuardian * 0.03;
     const _fusionMpDiscount = Math.min(_fxMage * 0.20, 0.80);
@@ -8328,16 +8401,7 @@
         const _hadMaxHpPct = (playerObj.statuses || []).some(s => s.type === 'buff' && s.stat === 'maxHpPct');
         const pevs = tickStatuses(playerObj, stats.maxHp, true); // 玩家回合
         for (const ev of pevs) {
-          let _tickDmg = ev.dmg;
-          // ⭐ 毒傷扣除魔坑（partialShield）
-          if (ev.type === 'poison') {
-            const _ps = (playerObj.statuses || []).find(x => x.type === 'partialShield' && (x.hitsLeft || 0) > 0);
-            if (_ps) {
-              _tickDmg = Math.max(1, Math.round(_tickDmg * (1 - (_ps.reducePct || 0))));
-              _ps.hitsLeft -= 1;
-              if (_ps.hitsLeft <= 0) playerObj.statuses = playerObj.statuses.filter(x => x !== _ps);
-            }
-          }
+          const _tickDmg = ev.dmg;
           pHp = Math.max(0, pHp - _tickDmg);
           log.push({ type: 'monster', text: `回合 ${round}：${player.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${_tickDmg} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
         }
@@ -8642,6 +8706,18 @@
                 _sdVoidBuff = true;
               }
             }
+            // ⭐ 混沌鵝翼（wingSkillDmgPct）：技能傷害 +5%
+            if (_wingsSkillDmgPct > 0) dmg *= (1 + _wingsSkillDmgPct);
+            // ⭐ 虛空之印（fx_cg_void）：無視 DEF 20%；敵有 buff 時再+20%/層
+            if (_fxCgVoid > 0) {
+              // 無視 DEF 效果已在 effDef 計算中無法回退，改在傷害上補乘（近似：+20% 等效）
+              dmg *= (1 + 0.20 * _fxCgVoid);
+              if ((monster.statuses || []).some(s => s.type === 'buff')) dmg *= (1 + 0.20 * _fxCgVoid);
+            }
+            // ⭐ 滅世之印（fx_cg_ruin）：敵 HP<20% 時+20%/層（WB用本生最大HP）
+            if (_fxCgRuin > 0 && mHp < monster.maxHp * 0.20) dmg *= (1 + 0.20 * _fxCgRuin);
+            // ⭐ 鵝尊之令（fx_cg_decree）：敵 HP≥70% 時+15%/層（WB用本生最大HP）
+            if (_fxCgDecree > 0 && mHp >= monster.maxHp * 0.70) dmg *= (1 + 0.15 * _fxCgDecree);
             // ⭐ 聖騎 bonusMaxHpPct：純加值（maxHp × X），不吃怪 DEF
             //    例：聖光斬 1.2× ATK + 5% maxHp → 200 maxHp 玩家額外 +10 傷害
             //    ATK 部分被高 DEF 壓到負值時，先 clamp 0 再加 maxHp，避免被 Math.max(1) 蓋掉
@@ -9089,6 +9165,11 @@
               if (_fxConquer > 0) dmg *= (1 + _fxConquer * 0.50);
               // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%/層）
               if (_fxPgHp > 0 && pHp < stats.maxHp * 0.3) dmg *= (1 + _fxPgHp * 0.50);
+              // ⭐ 末世之翼（wingBasicAtkPct）：普攻傷害 +10%
+              if (_wingsBasicAtkPct > 0) dmg *= (1 + _wingsBasicAtkPct);
+              // ⭐ 滅世之印（fx_cg_ruin）+ 鵝尊之令（fx_cg_decree）：普攻也適用
+              if (_fxCgRuin > 0 && mHp < monster.maxHp * 0.20) dmg *= (1 + 0.20 * _fxCgRuin);
+              if (_fxCgDecree > 0 && mHp >= monster.maxHp * 0.70) dmg *= (1 + 0.15 * _fxCgDecree);
               if (_monPhysRes) dmg *= (1 - _monPhysRes);
               dmg *= consumeVulnerable(monster);
               dmg = Math.max(1, Math.round(dmg));
@@ -9096,6 +9177,11 @@
               dmg = monShield0(dmg);
               mHp -= dmg;
               lastDmg = dmg;
+              // ⭐ 混沌之印（fx_cg_chaos）：命中後 15% 機率使敵 ATK↓20%（3回）
+              if (_fxCgChaos > 0 && mHp > 0 && Math.random() < Math.min(1, _fxCgChaos * 0.15)) {
+                applyStatus(monster, { type: 'buff', stat: 'atkPct', amount: -0.20, turns: 3 });
+                log.push({ type: 'player', text: `回合 ${round}（${hit}/${totalHits}）：🌀 混沌之印 → ${monster.name} ATK↓20%（3回）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+              }
               // ⭐ 弓手普攻流：本箭命中後疊層（六連模式下不累積）
               if (!_madSix) {
                 _aHit++;
@@ -9193,6 +9279,11 @@
             if (_fxConquer > 0) dmg *= (1 + _fxConquer * 0.50);
             // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%/層）
             if (_fxPgHp > 0 && pHp < stats.maxHp * 0.3) dmg *= (1 + _fxPgHp * 0.50);
+            // ⭐ 末世之翼（wingBasicAtkPct）：普攻傷害 +10%
+            if (_wingsBasicAtkPct > 0) dmg *= (1 + _wingsBasicAtkPct);
+            // ⭐ 滅世之印（fx_cg_ruin）+ 鵝尊之令（fx_cg_decree）：普攻也適用
+            if (_fxCgRuin > 0 && mHp < monster.maxHp * 0.20) dmg *= (1 + 0.20 * _fxCgRuin);
+            if (_fxCgDecree > 0 && mHp >= monster.maxHp * 0.70) dmg *= (1 + 0.15 * _fxCgDecree);
             if (!_nonArcHs && _monPhysRes) dmg *= (1 - _monPhysRes); // 爆頭無視抗性
             dmg *= consumeVulnerable(monster);
             dmg = Math.max(1, Math.round(dmg));
@@ -9217,6 +9308,12 @@
               pHp = Math.min(stats.maxHp, pHp + vampHeal);
               if (pHp - _vbefore > 0) log.push({ type: 'player', text: `回合 ${round}：🩸 吸血 +${pHp - _vbefore} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
             }
+            // ⭐ 混沌之印（fx_cg_chaos）：命中後 15% 機率使敵 ATK↓20%（3回）
+            if (_fxCgChaos > 0 && mHp > 0 && Math.random() < Math.min(1, _fxCgChaos * 0.15)) {
+              applyStatus(monster, { type: 'buff', stat: 'atkPct', amount: -0.20, turns: 3 });
+              log.push({ type: 'player', text: `回合 ${round}：🌀 混沌之印 → ${monster.name} ATK↓20%（3回）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+            }
+            // ⭐ 靈噬之印（fx_sd_drain）：普攻後 10%/層 機率使敵人麻痺
             // ⭐ 聖母鵝計數：普攻擊中
             if (_isPaladin && !_hmgFrozen) _hmgHitCount++;
             const _hsLabel = _nonArcHs ? '🎯【爆頭】' : '';
@@ -9438,15 +9535,6 @@
             mHp = Math.max(0, mHp - _mTickDmg);
             log.push({ type: 'player', text: `回合 ${round}：${monster.name} 🔥灼燒 真傷 -${_mTickDmg} HP${_scorchNote}`, hp: { player: pHp, monster: mHp, mp: pMp } });
           } else {
-            // ⭐ 王中毒傷害扣除魔坑（partialShield）
-            if (ev.type === 'poison') {
-              const _mPs = (monster.statuses || []).find(x => x.type === 'partialShield' && (x.hitsLeft || 0) > 0);
-              if (_mPs) {
-                _mTickDmg = Math.max(1, Math.round(_mTickDmg * (1 - (_mPs.reducePct || 0))));
-                _mPs.hitsLeft -= 1;
-                if (_mPs.hitsLeft <= 0) monster.statuses = monster.statuses.filter(x => x !== _mPs);
-              }
-            }
             mHp = Math.max(0, mHp - _mTickDmg);
             log.push({ type: 'player', text: `回合 ${round}：${monster.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${_mTickDmg} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
           }
@@ -9519,20 +9607,38 @@
                 break;
               }
             }
-          } else if (Math.random() < 0.65) {
-            // 一般怪物：65% 機率從冷卻就緒的技能中隨機挑一招
-            const ready = [];
+          } else {
+            // ⭐ 優先檢查 minRound + everyRounds 定時大招（不消耗 65% 隨機機會）
+            let _nukeSkill = null;
             for (let si = 0; si < monster.skills.length; si++) {
               const s = monster.skills[si];
-              if (s.type === 'poisonCounter') continue; // 吸大麻不參與隨機挑選
+              if (s.minRound == null || s.everyRounds == null) continue;
+              if (round < s.minRound) continue;
+              if ((round - s.minRound) % s.everyRounds !== 0) continue;
               const last = mSkillLast[si] ?? -999;
-              if (round - last >= (s.cooldown || 3)) ready.push({ s, si });
+              if (round - last < (s.cooldown || 1)) continue;
+              _nukeSkill = { s, si }; break;
             }
-            if (ready.length) {
-              const pick = ready[Math.floor(Math.random() * ready.length)];
-              mSkill = pick.s;
-              mSkillLast[pick.si] = round;
+            if (_nukeSkill) {
+              mSkill = _nukeSkill.s;
+              mSkillLast[_nukeSkill.si] = round;
               mLastSkillRound = round;
+            } else if (Math.random() < 0.65) {
+              // 一般怪物：65% 機率從冷卻就緒的技能中隨機挑一招
+              const ready = [];
+              for (let si = 0; si < monster.skills.length; si++) {
+                const s = monster.skills[si];
+                if (s.type === 'poisonCounter') continue; // 吸大麻不參與隨機挑選
+                if (s.minRound != null) continue; // 定時技能不參與隨機
+                const last = mSkillLast[si] ?? -999;
+                if (round - last >= (s.cooldown || 3)) ready.push({ s, si });
+              }
+              if (ready.length) {
+                const pick = ready[Math.floor(Math.random() * ready.length)];
+                mSkill = pick.s;
+                mSkillLast[pick.si] = round;
+                mLastSkillRound = round;
+              }
             }
           }
         }
@@ -9654,6 +9760,8 @@
             // ⭐ 鵝盾刀：物理/魔法各減傷 physShieldPct/magShieldPct
             if (mSkill.magic && _weaponMagShield > 0)   dmg = Math.max(1, Math.round(dmg * (1 - Math.min(0.5, _weaponMagShield))));
             if (!mSkill.magic && _weaponPhysShield > 0) dmg = Math.max(1, Math.round(dmg * (1 - Math.min(0.5, _weaponPhysShield))));
+            // ⭐ 虛空鵝翼（wingDmgReduct）：受到傷害 -15%
+            if (_wingsDmgReduct > 0) dmg = Math.max(1, Math.round(dmg * (1 - _wingsDmgReduct)));
             if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1) * (_weaponBpBoostMult || 1);
             pHp = Math.max(0, pHp - dmg);
             if (dmg > 0) {
@@ -9721,6 +9829,8 @@
             if (_fxPhysShield > 0) dmg = Math.max(1, Math.round(dmg * Math.max(0.40, 1 - _fxPhysShield * 0.20)));
             // ⭐ 鵝盾刀：普攻物理減傷
             if (_weaponPhysShield > 0) dmg = Math.max(1, Math.round(dmg * (1 - Math.min(0.5, _weaponPhysShield))));
+            // ⭐ 虛空鵝翼（wingDmgReduct）：受到傷害 -15%
+            if (_wingsDmgReduct > 0) dmg = Math.max(1, Math.round(dmg * (1 - _wingsDmgReduct)));
             if (player.rpg.class === 'warrior') bloodPool += Math.min(Math.max(0, pHp), dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1) * (_weaponBpBoostMult || 1);
             pHp -= dmg;
             if (dmg > 0) {
@@ -9927,12 +10037,13 @@
     const safeMax = Math.max(1, maxHp || target.maxHp || 0);
     for (const s of target.statuses) {
       if (s.type === 'poison') {
-        // ⭐ 中毒傷害：世界王（tier 99）0.05% maxHp；一般怪 3% maxHp
-        // ※ 不用 defPen 判斷（soul_devourer defPen:0 是 falsy 會誤判）
-        const _isWb9 = target.tier === 99 || (target.defPen > 0);
-        const _poisonPct = _isWb9 ? 0.0005 : 0.03;
-        const dmg = Math.max(1, Math.round(safeMax * _poisonPct));
+        // ⭐ 中毒遞減傷害：首次 0.5% maxHp，每次觸發 ×0.8 遞減
+        // _poisonTickCount 掛在 target 上，記錄本場已觸發次數（0-based）
+        const _ptc = target._poisonTickCount || 0;
+        const _poisonBasePct = 0.005 * Math.pow(0.8, _ptc);
+        const dmg = Math.max(1, Math.round(safeMax * _poisonBasePct));
         events.push({ type: 'poison', dmg });
+        target._poisonTickCount = _ptc + 1;
         s.charges = (s.charges || 0) - 1; // ⭐ charge-based：每次觸發消耗 1 層
       }
       // ⭐ 流血：每次觸發扣目標當前 HP 的 0.05%，消耗 1 層
@@ -10066,6 +10177,16 @@
     const _fxSdCorrode = getFusionEffectCount(player, 'fx_sd_corrode');
     const _fxSdVoid    = getFusionEffectCount(player, 'fx_sd_void');
     const _fxSdLife    = getFusionEffectCount(player, 'fx_sd_life');
+    // ⭐ 混沌鵝尊印記效果
+    const _fxCgChaos   = getFusionEffectCount(player, 'fx_cg_chaos');
+    const _fxCgVoid    = getFusionEffectCount(player, 'fx_cg_void');
+    const _fxCgRuin    = getFusionEffectCount(player, 'fx_cg_ruin');
+    const _fxCgDecree  = getFusionEffectCount(player, 'fx_cg_decree');
+    // ⭐ 翅膀被動（wings 格裝備）
+    const _wingsItemM        = resolveItem(player.rpg?.equipment?.wings);
+    const _wingsSkillDmgPct  = _wingsItemM?.wingSkillDmgPct  || 0;
+    const _wingsDmgReduct    = _wingsItemM?.wingDmgReduct    || 0;
+    const _wingsBasicAtkPct  = _wingsItemM?.wingBasicAtkPct  || 0;
     const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0) + (setB.critChance || 0);
     let critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
     // fx_guardian: 每回合 HP 回復最大值 3%/層
@@ -10260,16 +10381,7 @@
         const _hadMaxHpPct2 = (playerObj.statuses || []).some(s => s.type === 'buff' && s.stat === 'maxHpPct');
         const evs = tickStatuses(playerObj, stats.maxHp, true); // 玩家回合
         for (const ev of evs) {
-          let _tickDmg2 = ev.dmg;
-          // ⭐ 毒傷扣除魔坑（partialShield）
-          if (ev.type === 'poison') {
-            const _ps2 = (playerObj.statuses || []).find(x => x.type === 'partialShield' && (x.hitsLeft || 0) > 0);
-            if (_ps2) {
-              _tickDmg2 = Math.max(1, Math.round(_tickDmg2 * (1 - (_ps2.reducePct || 0))));
-              _ps2.hitsLeft -= 1;
-              if (_ps2.hitsLeft <= 0) playerObj.statuses = playerObj.statuses.filter(x => x !== _ps2);
-            }
-          }
+          const _tickDmg2 = ev.dmg;
           pHp = Math.max(0, pHp - _tickDmg2);
           log.push({ type: 'monster', text: `回合 ${round}：${player.name} ${statusEmoji(ev.type)}${statusLabel(ev.type)} 觸發 -${_tickDmg2} HP`, hp: hpsSnapshot() });
         }
@@ -10562,6 +10674,17 @@
               if (_fxDgMp > 0 && pMp >= stats.maxMp * 0.9) dmg *= (1 + _fxDgMp * 0.25);
               // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%/層）
               if (_fxPgHp > 0 && pHp < stats.maxHp * 0.3) dmg *= (1 + _fxPgHp * 0.50);
+              // ⭐ 混沌鵝翼（wingSkillDmgPct）：技能傷害 +5%
+              if (_wingsSkillDmgPct > 0) dmg *= (1 + _wingsSkillDmgPct);
+              // ⭐ 虛空之印（fx_cg_void）：無視 DEF 20% + 敵有 buff 再+20%/層
+              if (_fxCgVoid > 0) {
+                dmg *= (1 + 0.20 * _fxCgVoid);
+                if ((tgt.statuses || []).some(s => s.type === 'buff')) dmg *= (1 + 0.20 * _fxCgVoid);
+              }
+              // ⭐ 滅世之印（fx_cg_ruin）：敵 HP<20% 時+20%/層
+              if (_fxCgRuin > 0 && tgt.hp < tgt.maxHp * 0.20) dmg *= (1 + 0.20 * _fxCgRuin);
+              // ⭐ 鵝尊之令（fx_cg_decree）：敵 HP≥70% 時+15%/層
+              if (_fxCgDecree > 0 && tgt.hp >= tgt.maxHp * 0.70) dmg *= (1 + 0.15 * _fxCgDecree);
               const skillCrit = baseCritChance + (skill.extraCritChance || 0) + (pBuff.critChance || 0);
               // ⭐ 合成效果：fx_pg_critdmg（目標 HP<25% 時爆傷+30%/層）
               const _pgCritBonusM = (_fxPgCrit > 0 && tgt.hp <= tgt.maxHp * 0.25) ? _fxPgCrit * 0.30 : 0;
@@ -10598,6 +10721,11 @@
                 if (!hasStatus(tgt, 'paralyze')) {
                   applyStatus(tgt, { type: 'paralyze', charges: 2 });
                 }
+              }
+              // ⭐ 混沌之印（fx_cg_chaos）：技能命中後 15% 機率使敵 ATK↓20%（3回）
+              if (_fxCgChaos > 0 && tgt.hp > 0 && Math.random() < Math.min(1, _fxCgChaos * 0.15)) {
+                applyStatus(tgt, { type: 'buff', stat: 'atkPct', amount: -0.20, turns: 3 });
+                log.push({ type: 'player', text: `回合 ${round}：🌀 混沌之印 → ${tgt.icon||''}${tgt.name} ATK↓20%（3回）`, hp: hpsSnapshot() });
               }
               // ⭐ 法書記錄（組隊）
               if (player.rpg.class === 'mage' && skill.spellElement) {
@@ -10970,6 +11098,10 @@
               if (_fxConquer > 0) dmg *= (1 + _fxConquer * 0.50);
               // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%/層）
               if (_fxPgHp > 0 && pHp < stats.maxHp * 0.3) dmg *= (1 + _fxPgHp * 0.50);
+              // ⭐ 末世之翼、滅世之印、鵝尊之令：普攻加成
+              if (_wingsBasicAtkPct > 0) dmg *= (1 + _wingsBasicAtkPct);
+              if (_fxCgRuin > 0 && tgt.hp < tgt.maxHp * 0.20) dmg *= (1 + 0.20 * _fxCgRuin);
+              if (_fxCgDecree > 0 && tgt.hp >= tgt.maxHp * 0.70) dmg *= (1 + 0.15 * _fxCgDecree);
               if (tgt.physRes) dmg *= (1 - tgt.physRes);
               dmg *= consumeVulnerable(tgt);
               dmg = Math.max(1, Math.round(dmg));
@@ -11025,6 +11157,11 @@
                 }
                 // 55%：無異常
               }
+              // ⭐ 混沌之印 on-hit（弓手普攻每箭）
+              if (_fxCgChaos > 0 && tgt.hp > 0 && Math.random() < Math.min(1, _fxCgChaos * 0.15)) {
+                applyStatus(tgt, { type: 'buff', stat: 'atkPct', amount: -0.20, turns: 3 });
+                log.push({ type: 'player', text: `回合 ${round}（${hit}/${totalHits}）：🌀 混沌之印 → ${tgt.icon}${tgt.name} ATK↓20%（3回）`, hp: hpsSnapshot() });
+              }
               if (tgt.hp <= 0) break;
             }
             // ⭐ 聖母鵝計數：弓手普攻擊中（按箭數計段）
@@ -11055,6 +11192,10 @@
             if (_fxConquer > 0) dmg *= (1 + _fxConquer * 0.50);
             // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%/層）
             if (_fxPgHp > 0 && pHp < stats.maxHp * 0.3) dmg *= (1 + _fxPgHp * 0.50);
+            // ⭐ 末世之翼、滅世之印、鵝尊之令：普攻加成
+            if (_wingsBasicAtkPct > 0) dmg *= (1 + _wingsBasicAtkPct);
+            if (_fxCgRuin > 0 && tgt.hp < tgt.maxHp * 0.20) dmg *= (1 + 0.20 * _fxCgRuin);
+            if (_fxCgDecree > 0 && tgt.hp >= tgt.maxHp * 0.70) dmg *= (1 + 0.15 * _fxCgDecree);
             if (!_nonArcHsM && tgt.physRes) dmg *= (1 - tgt.physRes);
             dmg *= consumeVulnerable(tgt); // ⭐ 易傷（hit-based）
             dmg = Math.max(1, Math.round(dmg));
@@ -11071,6 +11212,11 @@
             }
             tgt.hp = Math.max(0, tgt.hp - dmg - _ssBonusTrueDmgM);
             if (tgt.hp <= 0) tgt.alive = false;
+            // ⭐ 混沌之印 on-hit（非弓手普攻）
+            if (_fxCgChaos > 0 && tgt.hp > 0 && Math.random() < Math.min(1, _fxCgChaos * 0.15)) {
+              applyStatus(tgt, { type: 'buff', stat: 'atkPct', amount: -0.20, turns: 3 });
+              log.push({ type: 'player', text: `回合 ${round}：🌀 混沌之印 → ${tgt.icon}${tgt.name} ATK↓20%（3回）`, hp: hpsSnapshot() });
+            }
             // ⭐ 合成效果：fx_vamp（普攻吸血：傷害×3%/層）
             if (_fxVamp > 0 && dmg > 0) {
               const vampHeal = Math.max(1, Math.round(dmg * _fxVamp * 0.03));
@@ -11334,18 +11480,36 @@
               cdMap.__lastSkillR = round;
               cdMap.__nextIdx++;
             }
-          } else if (Math.random() < 0.65) {
-            const ready = [];
+          } else {
+            // ⭐ 優先檢查 minRound + everyRounds 定時大招
+            let _nukeSkill2 = null;
             for (let si = 0; si < m.skills.length; si++) {
               const s = m.skills[si];
+              if (s.minRound == null || s.everyRounds == null) continue;
+              if (round < s.minRound) continue;
+              if ((round - s.minRound) % s.everyRounds !== 0) continue;
               const last = cdMap[si] ?? -999;
-              if (round - last >= (s.cooldown || 3)) ready.push({ s, si });
+              if (round - last < (s.cooldown || 1)) continue;
+              _nukeSkill2 = { s, si }; break;
             }
-            if (ready.length) {
-              const pick = ready[Math.floor(Math.random() * ready.length)];
-              mSkill = pick.s;
-              cdMap[pick.si] = round;
+            if (_nukeSkill2) {
+              mSkill = _nukeSkill2.s;
+              cdMap[_nukeSkill2.si] = round;
               cdMap.__lastSkillR = round;
+            } else if (Math.random() < 0.65) {
+              const ready = [];
+              for (let si = 0; si < m.skills.length; si++) {
+                const s = m.skills[si];
+                if (s.minRound != null) continue; // 定時技能不參與隨機
+                const last = cdMap[si] ?? -999;
+                if (round - last >= (s.cooldown || 3)) ready.push({ s, si });
+              }
+              if (ready.length) {
+                const pick = ready[Math.floor(Math.random() * ready.length)];
+                mSkill = pick.s;
+                cdMap[pick.si] = round;
+                cdMap.__lastSkillR = round;
+              }
             }
           }
         }
@@ -11430,6 +11594,8 @@
             // ⭐ 風鵝護符：物理/魔法傷害減免（ignoreDef=魔法，其餘=物理）
             if (mSkill.ignoreDef && _fxMagShield > 0)   dmg = Math.max(1, Math.round(dmg * Math.max(0.40, 1 - _fxMagShield * 0.20)));
             if (!mSkill.ignoreDef && _fxPhysShield > 0) dmg = Math.max(1, Math.round(dmg * Math.max(0.40, 1 - _fxPhysShield * 0.20)));
+            // ⭐ 虛空鵝翼（wingDmgReduct）：受到傷害 -15%
+            if (_wingsDmgReduct > 0) dmg = Math.max(1, Math.round(dmg * (1 - _wingsDmgReduct)));
             if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1) * (_weaponBpBoostMult || 1);
             pHp = Math.max(0, pHp - dmg);
             // ⭐ 不屈：首次致死改為 1 HP 存活
@@ -11493,6 +11659,8 @@
             }
             // ⭐ 風鵝護符：普攻為物理傷害
             if (_fxPhysShield > 0) dmg = Math.max(1, Math.round(dmg * Math.max(0.40, 1 - _fxPhysShield * 0.20)));
+            // ⭐ 虛空鵝翼（wingDmgReduct）：受到傷害 -15%
+            if (_wingsDmgReduct > 0) dmg = Math.max(1, Math.round(dmg * (1 - _wingsDmgReduct)));
             if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1) * (_weaponBpBoostMult || 1);
             pHp = Math.max(0, pHp - dmg);
             // ⭐ 不屈：首次致死改為 1 HP 存活
@@ -13219,6 +13387,28 @@
       ],
     },
     {
+      id: 'boss_chaos', icon: '🌑', name: '混沌扭蛋',
+      desc: '消耗 3 顆混沌鵝羽抽混沌印記（效果型金飾品）/ 混沌翅膀 / 體力 / EXP',
+      cost: 3,
+      isBossCoin: true,
+      coinFilter: 'bc_chaos_goose',
+      currencyIcon: '🌑',
+      currencyName: '混沌鵝羽',
+      status: 'open',
+      pool: [
+        { type: 'item', id: 'bg_cg_chaos',     weight: 10 },
+        { type: 'item', id: 'bg_cg_void',       weight: 10 },
+        { type: 'item', id: 'bg_cg_ruin',       weight: 10 },
+        { type: 'item', id: 'bg_cg_decree',     weight: 8  },
+        { type: 'item', id: 'bg_cg_wing_chaos', weight: 7  },
+        { type: 'item', id: 'bg_cg_wing_void',  weight: 7  },
+        { type: 'item', id: 'bg_cg_wing_doom',  weight: 7  },
+        { type: 'stamina', amount: 80,  weight: 20, label: '體力 +80',   icon: '⚡' },
+        { type: 'stamina', amount: 150, weight: 10, label: '體力 +150',  icon: '⚡' },
+        { type: 'xp',      amount: 1000,weight: 11, label: 'EXP +1000',  icon: '✨' },
+      ],
+    },
+    {
       id: 'egg', icon: '🥚', name: '鵝蛋扭蛋', desc: '用鵝蛋幣抽頭像 / 稱號 / 翅膀寵物',
       status: 'locked', // 之後做（目前在 index.html）
     },
@@ -14373,7 +14563,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260511000753';
+  const APP_VERSION = '20260511121106';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -14429,7 +14619,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260511_paladin_rework';
+  const NEWS_LATEST_ID = 'patch_20260511_chaos_goose';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -14449,6 +14639,45 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#1a001a,#3d005c); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🌑 混沌鵝尊降臨 ＋ 多項系統更新　<span style="font-size:11px; opacity:0.85;">2026-05-11</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#c084fc; margin:6px 0 4px;">🌑 新世界王：混沌鵝尊（Tier 99 / Lv 99）</div>
+        <div>・HP 1億 / ATK 1200 / DEF 700 / SPD 150，物理 / 魔法抗性各 20%</div>
+        <div>・六種技能：鵝翼湮滅（×2.0 無視防禦）、鵝息腐蝕（×1.2 + 毒3層）、冥羽護甲（自增 DEF+350）、裂空鵝爪（×1.6 + 流血）、鵝神覺醒（ATK+400 8回合）</div>
+        <div>・<b>⚠️ 混沌終鳴</b>：第 50 回合起、每 10 回合觸發一次，×18.0 無視防禦大招，立刻閃！</div>
+
+        <div style="font-weight:700; color:#c084fc; margin:10px 0 4px;">🌑 混沌扭蛋（3 混沌鵝羽 / 抽）</div>
+        <div>・4 種印記（金飾品，可融合）：混沌之印 / 虛空之印 / 滅世之印 / 鵝尊之令</div>
+        <div>・3 種翅膀（翅膀槽，<b>不可融合</b>）：混沌鵝翼 / 虛空鵝翼 / 末世之翼</div>
+
+        <div style="font-weight:700; color:#a78bfa; margin:10px 0 4px;">🪶 翅膀裝備效果（裝在翅膀槽，被動生效）</div>
+        <div>・<b>混沌鵝翼</b>：技能傷害 +5%</div>
+        <div>・<b>虛空鵝翼</b>：受到傷害 -15%</div>
+        <div>・<b>末世之翼</b>：普攻傷害 +10%</div>
+
+        <div style="font-weight:700; color:#a78bfa; margin:10px 0 4px;">💎 印記融合效果</div>
+        <div>・<b>混沌之印</b>：攻擊 15%/層 機率使敵方 ATK↓20%（3回）</div>
+        <div>・<b>虛空之印</b>：攻擊無視 DEF 20%；敵有強化時傷害再+20%</div>
+        <div>・<b>滅世之印</b>：敵 HP＜20% 時所有傷害 +20%（WB 以本生最大 HP 計算）</div>
+        <div>・<b>鵝尊之令</b>：敵 HP≥70% 時所有傷害 +15%（WB 以本生最大 HP 計算）</div>
+
+        <div style="font-weight:700; color:#f9a8d4; margin:10px 0 4px;">☠️ 中毒機制重設計（遞減傷害）</div>
+        <div>・舊：每 tick 固定傷害；新：首次 <b>0.5% maxHp</b>，每次觸發 × 0.8 遞減</div>
+        <div>・適用於玩家與怪物；中毒不再與魔坑互動（魔坑只攔截技能傷害）</div>
+
+        <div style="font-weight:700; color:#86efac; margin:10px 0 4px;">💀 法師毀滅之怒修正</div>
+        <div>・修正 Bug：手動施放「毀滅之怒」後，<b>血屬性未記入法書</b></div>
+        <div>・現在施放後會將【🩸血】元素存入法書，可觸發溢出效果</div>
+
+        <div style="font-weight:700; color:#fbbf24; margin:10px 0 4px;">👹 地獄使者詛咒等級上限 20 → <b>50</b></div>
+        <div>・地獄等級上限提升至 Lv 50，繼續累積 EXP 解鎖更強詛咒力！</div>
+
+        <div style="background:#1a0030; border-radius:8px; padding:8px 12px; margin:10px 0 16px; font-size:12px; color:#c084fc;">
+          💡 混沌鵝尊是目前最強的世界王，第 50 回合必定釋放×18 大招，記得在那之前擊殺牠！
+        </div>
 
         <div style="background:linear-gradient(135deg,#002a1a,#005c38); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🦸 聖騎大改版 ＋ 戰鬥系統修正　<span style="font-size:11px; opacity:0.85;">2026-05-11</span></div>
@@ -22901,7 +23130,7 @@ ${b.text}
     rpg.hellXp = (rpg.hellXp || 0) + amount;
     rpg.hellLv = rpg.hellLv || 1;
     let hellLeveled = false;
-    while (rpg.hellLv < 20) {
+    while (rpg.hellLv < 50) {
       const needed = hellExpToNextLv(rpg.hellLv);
       if (rpg.hellXp >= needed) { rpg.hellXp -= needed; rpg.hellLv++; hellLeveled = true; }
       else break;
@@ -23614,7 +23843,7 @@ ${b.text}
     const hellLv    = rpg.hellLv || 1;
     const hellXp    = rpg.hellXp || 0;
     const xpNeeded  = hellExpToNextLv(hellLv);
-    const xpPct     = hellLv >= 20 ? 100 : Math.min(100, Math.round(hellXp / xpNeeded * 100));
+    const xpPct     = hellLv >= 50 ? 100 : Math.min(100, Math.round(hellXp / xpNeeded * 100));
     const hStats    = computeHellStats(rpg);
     const staminaMax = getHellStaminaMax(rpg);
     const staminaPct = Math.min(100, Math.round(stamina / staminaMax * 100));
@@ -23851,7 +24080,7 @@ ${b.text}
             </div>
             <div style="text-align:right;">
               <div style="font-size:16px;font-weight:900;color:#fbbf24;">地獄 Lv ${hellLv}</div>
-              <div style="font-size:10px;color:#9ca3af;">${hellLv>=20?'✨ MAX':hellXp+' / '+xpNeeded+' EXP'}</div>
+              <div style="font-size:10px;color:#9ca3af;">${hellLv>=50?'✨ MAX':hellXp+' / '+xpNeeded+' EXP'}</div>
             </div>
           </div>
           <!-- EXP bar -->
@@ -25512,6 +25741,7 @@ ${b.text}
         { id:'bc_pebble_goose',  icon:'🪨', name:'鵝卵石'  },
         { id:'bc_storm_goose',   icon:'⚡', name:'風中殘鵝' },
         { id:'bc_soul_devourer', icon:'👁️', name:'靈噬魔皇' },
+        { id:'bc_chaos_goose',   icon:'🌑', name:'混沌鵝尊' },
       ].map(c => {
         const have = (r.bossCoins || {})[c.id] || 0;
         return `<div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
@@ -26861,6 +27091,7 @@ ${b.text}
     { id: 'bc_pebble_goose',  label: '🪨 鵝卵石硬幣',    icon: '🪨' },
     { id: 'bc_storm_goose',   label: '⚡ 風中殘鵝硬幣',  icon: '⚡' },
     { id: 'bc_soul_devourer', label: '👁️ 靈噬魔皇硬幣', icon: '👁️' },
+    { id: 'bc_chaos_goose',   label: '🌑 混沌鵝尊硬幣', icon: '🌑' },
   ];
 
   function adminShowGrantCoinsModal() {
