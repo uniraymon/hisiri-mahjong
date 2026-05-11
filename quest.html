@@ -3442,8 +3442,8 @@
         { verb: '裂空鵝爪', mult: 1.6, applyStatus: { type: 'bleed', charges: 3, chance: 1.0 }, cooldown: 5 },
         // ⑤ 鵝神覺醒：自身 ATK+400（8回）
         { verb: '鵝神覺醒', type: 'monsterSelfBuff', stat: 'atk', amount: 400, turns: 8, cooldown: 8 },
-        // ☄ 混沌終鳴：ATK×18 計入防禦，回合≥50 後每10回合優先觸發
-        { verb: '混沌終鳴', mult: 18.0, minRound: 50, everyRounds: 10, cooldown: 1 },
+        // ☄ 混沌終鳴：ATK×18 計入防禦，回合≥50 後每20回合優先觸發
+        { verb: '混沌終鳴', mult: 18.0, minRound: 50, everyRounds: 20, cooldown: 1 },
       ],
       bossCoin: { id: 'bc_chaos_goose', name: '混沌鵝羽', icon: '🌑' },
       killRewards: {
@@ -14793,7 +14793,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260511154845';
+  const APP_VERSION = '20260511160906';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -14849,7 +14849,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260511_blood_explode';
+  const NEWS_LATEST_ID = 'patch_20260511_chaos_cd';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -14869,6 +14869,19 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#1a001a,#3d005c); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🌑 混沌終鳴調整　<span style="font-size:11px; opacity:0.85;">2026-05-11</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#c084fc; margin:6px 0 4px;">☄️ 混沌終鳴 觸發頻率調整</div>
+        <div>・觸發條件不變：第 <b>50 回合</b>起開始觸發</div>
+        <div>・舊頻率：每 <b>10 回合</b>一次 → 新頻率：每 <b>20 回合</b>一次</div>
+        <div>・觸發時序：第 50、70、90、110… 回合</div>
+
+        <div style="background:#1a0030; border-radius:8px; padding:8px 12px; margin:10px 0 16px; font-size:12px; color:#c084fc;">
+          💡 大招間距拉長，給玩家更多緩衝時間！高回合戰鬥依然要留意倒數！
+        </div>
 
         <div style="background:linear-gradient(135deg,#3a0000,#7c0000); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🩸💥 爆血強化　<span style="font-size:11px; opacity:0.85;">2026-05-11</span></div>
@@ -14959,7 +14972,7 @@ ${b.text}
         <div style="font-weight:700; color:#c084fc; margin:6px 0 4px;">🌑 新世界王：混沌鵝尊（Tier 99 / Lv 99）</div>
         <div>・HP 1億 / ATK 1200 / DEF 700 / SPD 150，物理 / 魔法抗性各 20%</div>
         <div>・六種技能：鵝翼湮滅（×2.0 無視防禦）、鵝息腐蝕（×1.2 + 毒3層）、冥羽護甲（自增 DEF+350）、裂空鵝爪（×1.6 + 流血）、鵝神覺醒（ATK+400 8回合）</div>
-        <div>・<b>⚠️ 混沌終鳴</b>：第 50 回合起、每 10 回合觸發一次，×18.0 無視防禦大招，立刻閃！</div>
+        <div>・<b>⚠️ 混沌終鳴</b>：第 50 回合起、每 <b>20</b> 回合觸發一次，×18.0 大招，計入 DEF，立刻閃！</div>
 
         <div style="font-weight:700; color:#c084fc; margin:10px 0 4px;">🌑 混沌扭蛋（3 混沌鵝羽 / 抽）</div>
         <div>・4 種印記（金飾品，可融合）：混沌之印 / 虛空之印 / 滅世之印 / 鵝尊之令</div>
