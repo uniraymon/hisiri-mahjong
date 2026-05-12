@@ -144,10 +144,11 @@
     opacity: 0.7;
     animation: sparkleFloat 2.5s ease-in-out infinite;
     z-index: 6;
+    will-change: transform, opacity;
   }
   @keyframes sparkleFloat {
-    0%, 100% { opacity: 0.3; transform: rotate(0) scale(1); }
-    50%      { opacity: 1;   transform: rotate(25deg) scale(1.2); }
+    0%, 100% { opacity: 0.3; transform: translateX(-50%) rotate(0) scale(1); }
+    50%      { opacity: 1;   transform: translateX(-50%) rotate(25deg) scale(1.2); }
   }
 
   /* 卡片角徽章 */
@@ -316,8 +317,9 @@
   .eng-slot.eng-slot-success { background: linear-gradient(135deg, #d1fae5, #6ee7b7); border-color: #10b981; color: #065f46; box-shadow: 0 2px 0 #059669; }
   .eng-slot.eng-slot-fail    { background: linear-gradient(135deg, #fee2e2, #fca5a5); border-color: #ef4444; color: #991b1b; box-shadow: 0 2px 0 #dc2626; }
   .eng-slot.eng-slot-filled  { cursor: default; }
-  .eng-slot.eng-slot-next    { border-color: #a78bfa; background: #ede9fe; animation: eng-pulse 1s infinite alternate; }
-  @keyframes eng-pulse { from { box-shadow: 0 0 0 0 #a78bfa44; } to { box-shadow: 0 0 0 5px #a78bfa00; } }
+  /* ⚡ Perf: opacity-only pulse (was box-shadow keyframes) */
+  .eng-slot.eng-slot-next    { border-color: #a78bfa; background: #ede9fe; animation: eng-pulse 1s ease-in-out infinite alternate; will-change: opacity; }
+  @keyframes eng-pulse { from { opacity: 0.6; } to { opacity: 1; } }
   .eng-rate { font-size: 10px; color: #6d28d9; font-weight: 600; background: #ede9fe; border-radius: 99px; padding: 2px 7px; }
   .eng-special-box { background: linear-gradient(135deg, #fef9c3, #fde68a); border: 1.5px solid #f59e0b; border-radius: 10px; padding: 8px 10px; margin-top: 8px; }
   .eng-special-box.unlocked { background: linear-gradient(135deg, #d1fae5, #a7f3d0); border-color: #10b981; }
@@ -354,11 +356,11 @@
     pointer-events: none;
     user-select: none;
   }
-  .pd-armor  { z-index: 1; animation: pdPulse 3s ease-in-out infinite; filter: drop-shadow(0 0 6px rgba(125,211,252,0.5)); }
+  .pd-armor  { z-index: 1; animation: pdPulse 3s ease-in-out infinite; filter: drop-shadow(0 0 6px rgba(125,211,252,0.5)); will-change: transform; }
   .pd-base   { z-index: 2; filter: drop-shadow(0 4px 8px rgba(124,58,237,0.25)); }
   .pd-shield { z-index: 3; }
-  .pd-weapon { z-index: 4; animation: pdSwayWeapon 2.6s ease-in-out infinite; transform-origin: center; }
-  .pd-acc    { z-index: 5; animation: pdFloatAcc 2.4s ease-in-out infinite; }
+  .pd-weapon { z-index: 4; animation: pdSwayWeapon 2.6s ease-in-out infinite; transform-origin: center; will-change: transform; }
+  .pd-acc    { z-index: 5; animation: pdFloatAcc 2.4s ease-in-out infinite; will-change: transform; }
 
   /* === 裝備分階自動上色（用 CSS filter 覆蓋 SVG 模板） === */
   /* 武器：10 階色調（木 → 鐵 → 鋼 → 銀 → 魔 → 聖 → 邪 → 雷 → 龍 → 神話） */
@@ -371,12 +373,8 @@
   .pd-weapon[data-tier="7"]  { filter: hue-rotate(-30deg) saturate(2.2) brightness(0.7) drop-shadow(0 0 6px rgba(220,38,38,0.7)); }
   .pd-weapon[data-tier="8"]  { filter: hue-rotate(-80deg) saturate(3) brightness(1.2) drop-shadow(0 0 7px rgba(250,204,21,0.95)); }
   .pd-weapon[data-tier="9"]  { filter: hue-rotate(110deg) saturate(2.2) brightness(1.05) drop-shadow(0 0 7px rgba(34,197,94,0.85)); }
-  .pd-weapon[data-tier="10"] { filter: saturate(2.5) brightness(1.2) drop-shadow(0 0 4px #ff7eb9) drop-shadow(0 0 8px #7afcff) drop-shadow(0 0 14px rgba(255,255,255,0.6)); animation: pdSwayWeapon 2.6s ease-in-out infinite, pdRainbow 4s linear infinite; }
-  @keyframes pdRainbow {
-    0%   { filter: hue-rotate(0deg)   saturate(2.5) brightness(1.2) drop-shadow(0 0 6px #ff7eb9); }
-    50%  { filter: hue-rotate(180deg) saturate(2.5) brightness(1.2) drop-shadow(0 0 6px #7afcff); }
-    100% { filter: hue-rotate(360deg) saturate(2.5) brightness(1.2) drop-shadow(0 0 6px #ff7eb9); }
-  }
+  /* ⚡ Perf: hue-rotate animation removed (GPU filter recalc per frame). Use opacity-based glow instead. */
+  .pd-weapon[data-tier="10"] { filter: saturate(2.2) brightness(1.15) drop-shadow(0 0 8px #ff7eb9); animation: pdSwayWeapon 2.6s ease-in-out infinite, pdGlow 3s ease-in-out infinite; will-change: transform, opacity; }
 
   /* 防具：10 階盔甲光暈色 */
   .pd-armor[data-tier="1"]  { filter: hue-rotate(20deg) saturate(0.5) brightness(0.85); }
@@ -388,7 +386,7 @@
   .pd-armor[data-tier="7"]  { filter: hue-rotate(140deg) saturate(2) brightness(0.6) drop-shadow(0 0 8px rgba(220,38,38,0.6)); }
   .pd-armor[data-tier="8"]  { filter: hue-rotate(-110deg) saturate(2.5) brightness(1.15) drop-shadow(0 0 10px rgba(250,204,21,0.85)); }
   .pd-armor[data-tier="9"]  { filter: hue-rotate(80deg) saturate(2.2) brightness(1.05) drop-shadow(0 0 10px rgba(34,197,94,0.8)); }
-  .pd-armor[data-tier="10"] { filter: saturate(3) brightness(1.2) drop-shadow(0 0 12px rgba(255,255,255,0.8)); animation: pdPulse 3s ease-in-out infinite, pdRainbow 4s linear infinite; }
+  .pd-armor[data-tier="10"] { filter: saturate(2.2) brightness(1.15) drop-shadow(0 0 10px rgba(180,180,255,0.8)); animation: pdPulse 3s ease-in-out infinite, pdGlow 3s ease-in-out infinite; will-change: transform, opacity; }
 
   /* 飾品：10 階色 */
   .pd-acc[data-tier="1"]  { filter: sepia(0.7) saturate(0.7) brightness(0.9); }
@@ -400,7 +398,7 @@
   .pd-acc[data-tier="7"]  { filter: hue-rotate(-30deg) saturate(2.2) brightness(0.75) drop-shadow(0 0 5px rgba(220,38,38,0.7)); }
   .pd-acc[data-tier="8"]  { filter: hue-rotate(-80deg) saturate(3) brightness(1.15) drop-shadow(0 0 6px rgba(250,204,21,0.95)); }
   .pd-acc[data-tier="9"]  { filter: hue-rotate(110deg) saturate(2.2) brightness(1.05) drop-shadow(0 0 6px rgba(34,197,94,0.85)); }
-  .pd-acc[data-tier="10"] { animation: pdFloatAcc 2.4s ease-in-out infinite, pdRainbow 4s linear infinite; filter: saturate(2.5) brightness(1.2) drop-shadow(0 0 6px rgba(255,255,255,0.9)); }
+  .pd-acc[data-tier="10"] { animation: pdFloatAcc 2.4s ease-in-out infinite, pdGlow 3s ease-in-out infinite; filter: saturate(2.2) brightness(1.15) drop-shadow(0 0 6px rgba(180,180,255,0.9)); will-change: transform, opacity; }
   /* emoji fallback：當 SVG 載不到時用 emoji 撐住中央位置 */
   .pd-base-emoji {
     position: absolute;
@@ -423,6 +421,11 @@
   @keyframes pdFloatAcc {
     0%, 100% { transform: translateY(0); }
     50%      { transform: translateY(-2px); }
+  }
+  /* ⚡ Perf: opacity-only glow for tier-10 items — no filter recalc per frame */
+  @keyframes pdGlow {
+    0%, 100% { opacity: 0.82; }
+    50%      { opacity: 1; }
   }
 
   /* 角色資訊（卡片下方） */
@@ -705,10 +708,12 @@
   .combatant-spd-fill.full {
     background: linear-gradient(90deg, #fff, #fde047);
     animation: spdPulse 0.5s ease-in-out infinite alternate;
+    will-change: opacity;
   }
+  /* ⚡ Perf: opacity-only — no repaint (was box-shadow keyframes) */
   @keyframes spdPulse {
-    from { box-shadow: 0 0 4px rgba(245, 158, 11, 0.5) inset; }
-    to   { box-shadow: 0 0 10px rgba(245, 158, 11, 1) inset; }
+    from { opacity: 0.65; }
+    to   { opacity: 1; }
   }
   .combatant-spd-text {
     font-size: 8px;
@@ -1297,11 +1302,12 @@
     50%  { transform: scale(1.01); box-shadow: 0 0 0 6px #fde68a; }
     100% { transform: scale(1);    box-shadow: none; }
   }
+  /* ⚡ Perf: transform-only, no box-shadow in keyframes */
   @keyframes wb9AttackPulse {
-    0%,100% { transform: scale(1);    box-shadow: 0 4px 0 #7c3aed; }
-    50%     { transform: scale(1.04); box-shadow: 0 6px 18px rgba(220,38,38,0.7); }
+    0%,100% { transform: scale(1); }
+    50%     { transform: scale(1.04); }
   }
-  .wb9-attack-btn { animation: wb9AttackPulse 1.2s ease-in-out infinite; }
+  .wb9-attack-btn { animation: wb9AttackPulse 1.2s ease-in-out infinite; will-change: transform; }
 
   /* 行動規則編輯器 */
   .ap-list {
@@ -15049,7 +15055,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260512231735';
+  const APP_VERSION = '20260513000411';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -21124,18 +21130,29 @@ ${b.text}
     }
     info.textContent = parts.join(' · ');
   }
+  // ⚡ Perf: 1s tick — wb9Render has internal hash guard (cheap if no change)
+  //   renderPersonalBoss() 只在 CD 狀態切換 or 每 3 秒才重建 HTML
+  let __pbCdWasActive = false;
+  let __pbLastTick3   = -1;
   setInterval(() => {
     const stage = document.getElementById('stageGame');
-    if (stage && !stage.classList.contains('hidden')) {
-      updateStaminaUI();
-      // ⭐ v9：每秒呼叫 wb9Render（內部 hash 比對；沒變化只 patch 倒數文字，不重畫）
-      if (typeof wb9Render === 'function') wb9Render();
-      // 個人 BOSS 共用冷卻倒數
-      const me2 = getMe();
-      const myRpg2 = me2 ? getRpg(me2) : null;
-      if (myRpg2 && getPersonalBossCdRemain(myRpg2) > 0 && !__personalBossInProgress) renderPersonalBoss();
-      if (Math.floor(Date.now() / 1000) % 30 === 0) renderCharCard();
+    if (!stage || stage.classList.contains('hidden')) return;
+    updateStaminaUI();
+    // 世界王：hash 比對，沒有變化只更新計時文字
+    if (typeof wb9Render === 'function') wb9Render();
+    // 個人 BOSS 冷卻倒數：CD 狀態切換 or 每 3 秒重建一次（不用每秒）
+    const me2 = getMe();
+    const myRpg2 = me2 ? getRpg(me2) : null;
+    if (myRpg2 && !__personalBossInProgress) {
+      const cdNow   = getPersonalBossCdRemain(myRpg2) > 0;
+      const tick3s  = Math.floor(Date.now() / 3000);
+      if (cdNow !== __pbCdWasActive || (cdNow && tick3s !== __pbLastTick3)) {
+        __pbCdWasActive = cdNow;
+        __pbLastTick3   = tick3s;
+        renderPersonalBoss();
+      }
     }
+    if (Math.floor(Date.now() / 1000) % 30 === 0) renderCharCard();
   }, 1000);
 
   // ============================================================
