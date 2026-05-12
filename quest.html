@@ -3750,6 +3750,9 @@
     wb9[bossId] = newState;
     // 尾刀者立即領取擊殺獎勵
     if (killed) wb9ClaimKillReward(bossId);
+    // ⭐ 成就追蹤：世界王參戰 / 擊殺次數
+    r.worldBossParticipations = (r.worldBossParticipations || 0) + 1;
+    if (killed) r.worldBossKills = (r.worldBossKills || 0) + 1;
 
     // 每場戰鬥 XP / 鵝鵝幣
     let xpGain = 0, coinGain = 0;
@@ -14797,6 +14800,7 @@
     const cDone = !sp.engraving.trackC || (sp.engraving.trackC.slots.length >= 7);
     if (aDone && bDone && cDone) {
       sp.engraving.done = true;
+      rpg.spiritEngraveDone = (rpg.spiritEngraveDone || 0) + 1; // ⭐ 成就追蹤
       const aS = sp.engraving.trackA.slots.filter(Boolean).length;
       const bS = sp.engraving.trackB.slots.filter(Boolean).length;
       const cS = sp.engraving.trackC?.slots?.filter(Boolean).length || 0;
@@ -15045,7 +15049,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260512224756';
+  const APP_VERSION = '20260512231735';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -19541,6 +19545,7 @@ ${b.text}
     target.affixes = newAffixes;
     target.rarity = 'legendary'; // 繼承後確保傳說品質（有詞條）
     target.inherited = true;     // 標記已繼承，不可再繼承
+    r.inheritCount = (r.inheritCount || 0) + 1; // ⭐ 成就追蹤
 
     spendCoins(me.id, INHERIT_COST);
     saveData();
@@ -19864,6 +19869,7 @@ ${b.text}
     // Safe removal: use the original indices
     const removeIdx = matInvIdx > baseInvIdx ? matInvIdx : matInvIdx;
     r.inventory.splice(removeIdx, 1);
+    r.fusionCount = (r.fusionCount || 0) + 1; // ⭐ 成就追蹤
 
     saveData();
     if (typeof renderCharCard === 'function') renderCharCard();
@@ -26155,6 +26161,7 @@ ${b.text}
         }
         rpg.kills = rpg.kills || {};
         rpg.kills[m.id] = (rpg.kills[m.id] || 0) + 1;
+        if (m._awakened) rpg.awakenKills = (rpg.awakenKills || 0) + 1; // ⭐ 成就追蹤：覺醒擊殺
       });
     }
     console.log(`[XP-DBG] finalizeFightMulti — pid=${player.id} xpBefore=${rpg.xp} +${totalXp} deadCount=${deadCount}/${monsters.length}`);
@@ -26251,6 +26258,7 @@ ${b.text}
     if (result.won) {
       if (!rpg.kills) rpg.kills = {};
       rpg.kills[monster.id] = (rpg.kills[monster.id] || 0) + 1;
+      if (monster._awakened) rpg.awakenKills = (rpg.awakenKills || 0) + 1; // ⭐ 成就追蹤：覺醒擊殺
     }
     const logEl = document.getElementById('battleLog');
     let rewardHtml = '';

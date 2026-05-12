@@ -2494,6 +2494,51 @@
     { id: 'quest_kill_merch',  cat: '冒險島', icon: '💸', name: '商人剋星',       title: '商人剋星',       desc: '擊倒商人鵝 3 次',   check: s => (s.rpgKills?.merch  || 0) >= 3 },
     { id: 'quest_crit_100',    cat: '冒險島', icon: '💥', name: '暴擊狂',         title: '暴擊狂',         desc: '冒險中累計暴擊 100 次',  check: s => (s.rpgCrits || 0) >= 100 },
     { id: 'quest_crit_500',    cat: '冒險島', icon: '⚡', name: '暴擊大師',       title: '暴擊大師',       desc: '冒險中累計暴擊 500 次',  check: s => (s.rpgCrits || 0) >= 500 },
+    { id: 'quest_lv35',        cat: '冒險島', icon: '🌌', name: '深淵究極者',     title: '深淵究極者',     desc: '冒險島達到 Lv 35',          check: s => s.rpgLevel >= 35 },
+    { id: 'quest_win200',      cat: '冒險島', icon: '⚔️', name: '不敗戰神',       title: '不敗戰神',       desc: '冒險島累計勝 200 場',        check: s => s.rpgWins >= 200 },
+    { id: 'quest_win500',      cat: '冒險島', icon: '🔱', name: '戰神降臨',       title: '戰神降臨',       desc: '冒險島累計勝 500 場',        check: s => s.rpgWins >= 500 },
+    { id: 'quest_crit_1000',   cat: '冒險島', icon: '💢', name: '暴擊之神',       title: '暴擊之神',       desc: '冒險中累計暴擊 1000 次', check: s => (s.rpgCrits || 0) >= 1000 },
+    { id: 'quest_crit_2000',   cat: '冒險島', icon: '🌩️', name: '暴擊傳說',       title: '暴擊傳說',       desc: '冒險中累計暴擊 2000 次', check: s => (s.rpgCrits || 0) >= 2000 },
+    { id: 'quest_legendary_n2',cat: '冒險島', icon: '🌑', name: '深奈戰士',       title: '深奈戰士',       desc: '裝備深奈 Lv31+ 傳說裝備',    check: s => !!s.rpgHasLegendaryN2 },
+    { id: 'quest_set_item',    cat: '冒險島', icon: '🔮', name: '套裝收藏家',     title: '套裝收藏家',     desc: '裝備任意套裝裝備',            check: s => !!s.rpgHasSetItem },
+    // 深奈落
+    { id: 'kill_nabyss_elite',   cat: '深奈落', icon: '👹', name: '奈落征服者',   title: '奈落征服者',   desc: '擊倒奈落支配者 1 次',  check: s => (s.rpgKills?.elite_nabyss || 0) >= 1 },
+    { id: 'kill_nabyss_elite_5', cat: '深奈落', icon: '🗡️', name: '奈落屠獵者',   title: '奈落屠獵者',   desc: '擊倒奈落支配者 5 次',  check: s => (s.rpgKills?.elite_nabyss || 0) >= 5 },
+    { id: 'kill_nabyss2_elite',  cat: '深奈落', icon: '☠️', name: '深奈探索者',   title: '深奈探索者',   desc: '擊倒奈落之主 1 次',    check: s => (s.rpgKills?.elite_nabyss2 || 0) >= 1 },
+    { id: 'kill_nabyss2_elite_5',cat: '深奈落', icon: '🌀', name: '深奈支配者',   title: '深奈支配者',   desc: '擊倒奈落之主 5 次',    check: s => (s.rpgKills?.elite_nabyss2 || 0) >= 5 },
+    { id: 'kill_void_dragon',    cat: '深奈落', icon: '🐲', name: '虛空屠龍者',   title: '虛空屠龍者',   desc: '擊倒虛空龍 1 次',      check: s => (s.rpgKills?.void_dragon || 0) >= 1 },
+    { id: 'kill_void_dragon_5',  cat: '深奈落', icon: '🔥', name: '龍族剋星',     title: '龍族剋星',     desc: '擊倒虛空龍 5 次',      check: s => (s.rpgKills?.void_dragon || 0) >= 5 },
+    { id: 'kill_chaos_avatar',   cat: '深奈落', icon: '💜', name: '混沌終結者',   title: '混沌終結者',   desc: '擊倒混沌化身 1 次',    check: s => (s.rpgKills?.chaos_avatar || 0) >= 1 },
+    { id: 'kill_chaos_avatar_5', cat: '深奈落', icon: '🌪️', name: '混沌粉碎者',   title: '混沌粉碎者',   desc: '擊倒混沌化身 5 次',    check: s => (s.rpgKills?.chaos_avatar || 0) >= 5 },
+    { id: 'kill_nabyss_destroy', cat: '深奈落', icon: '💣', name: '奈落破壞者',   title: '奈落破壞者',   desc: '擊倒奈落破壞神 1 次',  check: s => (s.rpgKills?.nabyss_destroyer || 0) >= 1 },
+    { id: 'kill_nabyss_destroy_5',cat: '深奈落', icon: '⚡', name: '末日裁決者',  title: '末日裁決者',   desc: '擊倒奈落破壞神 5 次',  check: s => (s.rpgKills?.nabyss_destroyer || 0) >= 5 },
+    { id: 'awaken_kill_1',  cat: '深奈落', icon: '🌩️', name: '覺醒終結者',       title: '覺醒終結者',   desc: '擊殺已覺醒的怪物 1 次',  check: s => (s.rpgAwakenKills || 0) >= 1 },
+    { id: 'awaken_kill_10', cat: '深奈落', icon: '⚡', name: '覺醒剋星',          title: '覺醒剋星',     desc: '擊殺已覺醒的怪物 10 次', check: s => (s.rpgAwakenKills || 0) >= 10 },
+    // 世界王
+    { id: 'wb_participate_1',  cat: '世界王', icon: '⚔️', name: '世界王挑戰者', title: '世界王挑戰者', desc: '攻擊世界王 1 次',    check: s => (s.rpgWorldBossParticipations || 0) >= 1 },
+    { id: 'wb_participate_10', cat: '世界王', icon: '🏹', name: '世界王老兵',   title: '世界王老兵',   desc: '攻擊世界王 10 次',   check: s => (s.rpgWorldBossParticipations || 0) >= 10 },
+    { id: 'wb_participate_30', cat: '世界王', icon: '🛡',  name: '世界王守護者', title: '世界王守護者', desc: '攻擊世界王 30 次',   check: s => (s.rpgWorldBossParticipations || 0) >= 30 },
+    { id: 'wb_kill_1',  cat: '世界王', icon: '💥', name: '世界王終結者', title: '世界王終結者', desc: '給世界王致命一擊 1 次',  check: s => (s.rpgWorldBossKills || 0) >= 1 },
+    { id: 'wb_kill_5',  cat: '世界王', icon: '🏆', name: '世界王剋星',   title: '世界王剋星',   desc: '給世界王致命一擊 5 次',  check: s => (s.rpgWorldBossKills || 0) >= 5 },
+    // 個人王
+    { id: 'pboss_kill_1',  cat: '個人王', icon: '🥊', name: '個人王挑戰者', title: '個人王挑戰者', desc: '擊殺個人王 1 次',   check: s => (s.rpgPBossKills || 0) >= 1 },
+    { id: 'pboss_kill_5',  cat: '個人王', icon: '🥋', name: '個人王剋星',   title: '個人王剋星',   desc: '擊殺個人王 5 次',   check: s => (s.rpgPBossKills || 0) >= 5 },
+    { id: 'pboss_kill_20', cat: '個人王', icon: '🎖️', name: '個人王征服者', title: '個人王征服者', desc: '擊殺個人王 20 次',  check: s => (s.rpgPBossKills || 0) >= 20 },
+    { id: 'pboss_kill_50', cat: '個人王', icon: '👑', name: '個人王之王',   title: '個人王之王',   desc: '擊殺個人王 50 次',  check: s => (s.rpgPBossKills || 0) >= 50 },
+    // 競技場
+    { id: 'arena_first',   cat: '競技場', icon: '⚔️', name: '競技場新鮮人', title: '競技場新鮮人', desc: '參加競技場 1 場',    check: s => (s.rpgArenaFights || 0) >= 1 },
+    { id: 'arena_win_1',   cat: '競技場', icon: '🏆', name: '競技場首勝',   title: '競技場首勝',   desc: '競技場勝利 1 場',   check: s => (s.rpgArenaWins || 0) >= 1 },
+    { id: 'arena_win_10',  cat: '競技場', icon: '🎯', name: '競技達人',     title: '競技達人',     desc: '競技場勝利 10 場',  check: s => (s.rpgArenaWins || 0) >= 10 },
+    { id: 'arena_win_30',  cat: '競技場', icon: '🌟', name: '競技精英',     title: '競技精英',     desc: '競技場勝利 30 場',  check: s => (s.rpgArenaWins || 0) >= 30 },
+    { id: 'arena_win_50',  cat: '競技場', icon: '🔱', name: '競技場霸主',   title: '競技場霸主',   desc: '競技場勝利 50 場',  check: s => (s.rpgArenaWins || 0) >= 50 },
+    // 強化系統（合成 / 精魂刻印 / 繼承）
+    { id: 'fusion_1',    cat: '強化', icon: '⚗️', name: '見習煉金師', title: '見習煉金師', desc: '完成印記合成 1 次',    check: s => (s.rpgFusionCount || 0) >= 1 },
+    { id: 'fusion_5',    cat: '強化', icon: '🧪', name: '熟練煉金師', title: '熟練煉金師', desc: '完成印記合成 5 次',    check: s => (s.rpgFusionCount || 0) >= 5 },
+    { id: 'fusion_10',   cat: '強化', icon: '💫', name: '印記大師',   title: '印記大師',   desc: '完成印記合成 10 次',   check: s => (s.rpgFusionCount || 0) >= 10 },
+    { id: 'engrave_1',   cat: '強化', icon: '✨', name: '刻印學徒',   title: '刻印學徒',   desc: '完成精魂刻印 1 次',    check: s => (s.rpgSpiritEngraveDone || 0) >= 1 },
+    { id: 'engrave_3',   cat: '強化', icon: '🌟', name: '刻印師',     title: '刻印師',     desc: '完成精魂刻印 3 次',    check: s => (s.rpgSpiritEngraveDone || 0) >= 3 },
+    { id: 'inherit_1',   cat: '強化', icon: '🔗', name: '傳承者',     title: '傳承者',     desc: '完成深奈裝備繼承 1 次', check: s => (s.rpgInheritCount || 0) >= 1 },
+    { id: 'inherit_3',   cat: '強化', icon: '💎', name: '深奈鑄造師', title: '深奈鑄造師', desc: '完成深奈裝備繼承 3 次', check: s => (s.rpgInheritCount || 0) >= 3 },
     // 日常活動
     { id: 'work_1',    cat: '日常', icon: '💼', name: '鵝鵝兼職',     title: '鵝鵝兼職',   desc: '打工 1 次',       check: s => (s.rpgWorkCount || 0) >= 1 },
     { id: 'work_10',   cat: '日常', icon: '🍜', name: '兼職達人',     title: '兼職達人',   desc: '打工 10 次',      check: s => (s.rpgWorkCount || 0) >= 10 },
@@ -2563,6 +2608,33 @@
     const rpgWorkCount   = rpg.workCount || 0;
     const rpgForageCount = rpg.forageCount || 0;
     const rpgForageBattles = rpg.forageBattles || 0;
+    // ⭐ 新：深奈落傳說裝備（Lv31+）
+    const rpgHasLegendaryN2 = ALL_EQ_SLOTS.some(s => {
+      const v = eq[s]; if (!v) return false;
+      if (typeof v === 'object') return v.rarity === 'legendary' && (v.lv || 0) >= 31;
+      return /_(3[1-9]|[4-9]\d)$/.test(String(v));
+    });
+    // ⭐ 新：套裝裝備
+    const rpgHasSetItem = ALL_EQ_SLOTS.some(s => {
+      const v = eq[s]; if (!v) return false;
+      if (typeof v === 'object') return !!v.setId;
+      return String(v).startsWith('set_');
+    });
+    // ⭐ 新：個人王擊殺數（所有王合計）
+    const _pbossData = rpg.personalBoss || {};
+    const rpgPBossKills = Object.values(_pbossData).reduce((sum, b) =>
+      sum + (typeof b === 'object' ? (b.killCount || 0) : 0), 0);
+    // ⭐ 新：世界王
+    const rpgWorldBossParticipations = rpg.worldBossParticipations || 0;
+    const rpgWorldBossKills = rpg.worldBossKills || 0;
+    // ⭐ 新：競技場
+    const rpgArenaWins   = rpg.arena?.wins   || 0;
+    const rpgArenaFights = (rpg.arena?.wins || 0) + (rpg.arena?.losses || 0);
+    // ⭐ 新：強化系統
+    const rpgFusionCount      = rpg.fusionCount      || 0;
+    const rpgSpiritEngraveDone = rpg.spiritEngraveDone || 0;
+    const rpgInheritCount     = rpg.inheritCount      || 0;
+    const rpgAwakenKills      = rpg.awakenKills       || 0;
     const coinsEarned = calcCoinsEarned(records);
     const coinsSpent  = player ? (player.coinsSpent || 0) : 0;
     const coinsBalance = coinsEarned - coinsSpent;
@@ -2573,6 +2645,11 @@
       metGreenTea, rpgKills, rpgCrits,
       rpgWorkCount, rpgForageCount, rpgForageBattles,
       gachaEquipCount,
+      rpgHasLegendaryN2, rpgHasSetItem,
+      rpgPBossKills,
+      rpgWorldBossParticipations, rpgWorldBossKills,
+      rpgArenaWins, rpgArenaFights,
+      rpgFusionCount, rpgSpiritEngraveDone, rpgInheritCount, rpgAwakenKills,
       coinsEarned, coinsSpent, coinsBalance
     };
   }
