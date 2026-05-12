@@ -3155,6 +3155,81 @@
       ],
       dialogue: ['現實...只是幻象...', '支配...你的意識！', '幻影...才是真實！'],
       deathLine: ['幻象...破碎...', '支配...終結...', '現實...消融...'] },
+
+    // ===== 深奈 專屬怪物（Tier 7，Lv 31-35）=====
+    // ⭐ 使用 skills（非 verbs）直接接入戰鬥引擎；附 awakenSkill（HP≤40% 覺醒時加入技能池）
+    { id: 'void_core', name: '虛無之核', icon: '⚫', tier: 7,
+      hpBase: 4200, atkBase: 145, defBase: 580, spdBase: 70,
+      magRes: 0, physRes: 0.2,
+      verb: '核心脈衝',
+      skills: [
+        { verb: '虛無放射', mult: 1.8, magic: true, ignoreDef: true, cooldown: 5 },
+        { verb: '核裂震盪', mult: 1.3, magic: true, applyStatus: { type: 'vulnerable', hits: 2, amount: 0.25, chance: 0.60 }, cooldown: 4 },
+      ],
+      awakenSkill: { verb: '⚡核心爆發', mult: 2.5, magic: true, ignoreDef: true, applyStatus: { type: 'vulnerable', hits: 3, amount: 0.30, chance: 0.75 }, cooldown: 8 },
+      dialogue: ['虛無是一切的起點...', '你的存在...只是雜訊...', '核心...永不熄滅！'],
+      deathLine: ['核心...崩解...', '虛無...召回我...', '雜訊...終止...'] },
+
+    { id: 'nabyss_summoner', name: '奈落召喚師', icon: '🔯', tier: 7,
+      hpBase: 3000, atkBase: 160, defBase: 420, spdBase: 100,
+      magRes: 0.3, physRes: 0,
+      verb: '深淵低語',
+      skills: [
+        { verb: '深淵低語', mult: 1.5, magic: true, cooldown: 4 },
+        { verb: '奈落詛咒', mult: 1.2, magic: true, applyStatus: { type: 'paralyze', charges: 2, chance: 0.50 }, cooldown: 5 },
+      ],
+      awakenSkill: { verb: '⚡深淵加護', mult: 1.0, type: 'monsterSelfBuff', stat: 'atkPct', amount: 0.40, turns: 4, cooldown: 10 },
+      dialogue: ['召喚...聽從我的呼喚！', '奈落的力量借我一用...', '深淵之門...開啟！'],
+      deathLine: ['召喚...中斷...', '連結...斷開...', '奈落...拒絕了我...'] },
+
+    { id: 'deep_assassin', name: '深淵刺客', icon: '🗡️', tier: 7,
+      hpBase: 3500, atkBase: 220, defBase: 350, spdBase: 190,
+      magRes: 0, physRes: 0,
+      verb: '影步突刺',
+      ability: { type: 'multiHit', hits: 2 },
+      skills: [
+        { verb: '致命刺殺', mult: 2.5, alwaysCrit: true, cooldown: 6 },
+        { verb: '影步突刺', mult: 1.5, applyStatus: { type: 'bleed', charges: 3, chance: 0.65 }, cooldown: 4 },
+      ],
+      awakenSkill: { verb: '⚡虛影連刺', mult: 1.2, hits: 3, applyStatus: { type: 'bleed', charges: 2, chance: 0.70 }, cooldown: 7 },
+      dialogue: ['影子不留痕跡...', '你連我的影子都抓不到！', '刺殺...是一門藝術...'],
+      deathLine: ['...影子...消散...', '沒想到...真的被抓到了...', '這一刺...不夠深...'] },
+
+    { id: 'chaos_avatar', name: '混沌化身', icon: '🌪️', tier: 7,
+      hpBase: 4800, atkBase: 180, defBase: 450, spdBase: 120,
+      magRes: 0.2, physRes: 0.2,
+      verb: '混沌衝擊',
+      skills: [
+        { verb: '混沌衝擊', mult: 2.0, cooldown: 5 },
+        { verb: '混沌鏡像', mult: 0, type: 'monsterSelfBuff', stat: 'defPct', amount: 0.30, turns: 3, cooldown: 6 },
+      ],
+      awakenSkill: { verb: '⚡混沌滅絕', mult: 2.2, applyStatus: { type: 'vulnerable', hits: 2, amount: 0.35, chance: 0.80 }, cooldown: 9 },
+      dialogue: ['混沌是終極的答案！', '形態...只是幻覺！', '一切都在變化...包括你的命運！'],
+      deathLine: ['混沌...歸於寂靜...', '終究...有了形態...', '變化...停止...'] },
+
+    { id: 'void_dragon', name: '虛空龍', icon: '🐲', tier: 7,
+      hpBase: 5500, atkBase: 195, defBase: 500, spdBase: 90,
+      magRes: 0.3, physRes: 0.2,
+      verb: '奈落龍爪',
+      skills: [
+        { verb: '龍息虛無', mult: 2.8, magic: true, ignoreDef: true, cooldown: 7 },
+        { verb: '奈落龍爪', mult: 1.8, applyStatus: { type: 'bleed', charges: 3, chance: 0.60 }, cooldown: 4 },
+      ],
+      awakenSkill: { verb: '⚡虛空咆哮', mult: 3.5, magic: true, ignoreDef: true, applyStatus: { type: 'paralyze', charges: 1, chance: 1.0 }, cooldown: 10 },
+      dialogue: ['虛空是我的領域...', '龍之威嚴...感受吧！', '奈落深處...才是我真正的家！'],
+      deathLine: ['龍...也有盡頭...', '虛空...接納我回去...', '威嚴...未曾消逝...'] },
+
+    { id: 'nabyss_destroyer', name: '奈落破壞神', icon: '💣', tier: 7,
+      hpBase: 3200, atkBase: 250, defBase: 280, spdBase: 140,
+      magRes: 0, physRes: 0,
+      verb: '破壞之拳',
+      skills: [
+        { verb: '破壞宣言', mult: 2.8, cooldown: 5 },
+        { verb: '奈落轟擊', mult: 1.5, hits: 3, cooldown: 6 },
+      ],
+      awakenSkill: { verb: '⚡終焉之擊', mult: 5.0, alwaysCrit: true, cooldown: 10 },
+      dialogue: ['破壞...是進化！', '讓一切都歸於虛無！', '毀滅...美麗嗎？'],
+      deathLine: ['破壞...也有終點...', '...這份力量...傳給你...', '終焉...原來這麼美...'] },
   ];
 
   // === 打怪地區 ===
@@ -3172,8 +3247,10 @@
     { id: 'deep',  name: '深層', icon: '🌑', minLv: 16, maxLv: 20, unlockLv: 15 },
     { id: 'abyss',  name: '深淵',    icon: '☠️', minLv: 21, maxLv: 25, unlockLv: 20 },
     { id: 'abyss2', name: '深淵 II', icon: '⚔️', minLv: 21, maxLv: 25, unlockLv: 20 },
-    // ⭐ 奈落：超越深淵的混沌虛空（第一層，未來可擴增）
+    // ⭐ 奈落：超越深淵的混沌虛空（第一層）
     { id: 'nabyss', name: '奈落', icon: '🕳️', minLv: 26, maxLv: 30, unlockLv: 25 },
+    // ⭐ 深奈：奈落底層，已超越黑暗的虛無境界（第二層）
+    { id: 'nabyss2', name: '深奈', icon: '🌀', minLv: 31, maxLv: 35, unlockLv: 30 },
   ];
   const ZONES = [
     { id: 'forest',  name: '鵝森林',   icon: '🌳', desc: '弱小怪物與惡作劇鵝鵝',
@@ -3207,6 +3284,17 @@
       monsters: ['void_wraith', 'abyss_knight', 'shadow_golem', 'null_mage', 'chaos_beast', 'phantom_ruler'],
       dropBias: ['weapon', 'armor', 'gloves', 'boots', 'helmet', 'cape'],
       color: '#6d28d9' },
+    // ⭐ 深奈（Lv 31-35）分為兩個子區：單挑（含精英14%）/ 群戰（2-3 隻）
+    { id: 'nabyss2_solo', name: '深奈・單挑', icon: '🌀', desc: '奈落底層，與覺醒強敵一對一決戰',
+      minLv: 30,
+      monsters: ['void_core', 'nabyss_summoner', 'deep_assassin', 'chaos_avatar', 'void_dragon', 'nabyss_destroyer'],
+      dropBias: ['weapon', 'armor', 'gloves', 'boots', 'helmet', 'cape'],
+      color: '#0f172a' },
+    { id: 'nabyss2_multi', name: '深奈・群戰', icon: '💫', desc: '深奈底層深處，2～3 隻覺醒怪同時出現',
+      minLv: 30,
+      monsters: ['void_core', 'nabyss_summoner', 'deep_assassin', 'chaos_avatar', 'void_dragon', 'nabyss_destroyer'],
+      dropBias: ['weapon', 'armor', 'gloves', 'boots', 'helmet', 'cape'],
+      color: '#1e1b4b' },
   ];
   // ⭐ 怪物能力 → 等級的縮放係數（HOF 風格層級制）
   // ATK/SPD 用基本曲線：每進一層 ×1.30，每等 +2.5%
@@ -3255,8 +3343,8 @@
   // 鵝鵝幣掉落：依層級（不再看怪物 goldBase）
   // 上層 ~30 / 中層 ~60 / 下層 ~90 / 深層 ~130，± 約 15% 浮動
   function coinDropByLevel(lv) {
-    const layer = Math.min(5, Math.floor((Math.max(1, lv) - 1) / 5));
-    const base = [30, 60, 90, 130, 250, 400][layer];  // Lv 26-30 奈落層 400 鵝鵝幣
+    const layer = Math.min(6, Math.floor((Math.max(1, lv) - 1) / 5));
+    const base = [30, 60, 90, 130, 250, 400, 600][layer];  // Lv 26-30 奈落 400、Lv 31+ 深奈 600
     return Math.round(base * (0.9 + Math.random() * 0.2));
   }
   // 在某層內隨機抽一個怪物等級
@@ -4444,9 +4532,9 @@
       affixes: [],
     };
     // 滾 2 條隨機詞條（以王等級當「lv」算強度，這裡固定 30）
-    // ⭐ 精魂不出奈落專用詞條（nabyssOnly）
+    // ⭐ 精魂不出奈落/深奈專用詞條
     const refLv = 30;
-    const _spiritAffixPool = AFFIXES.filter(a => !a.nabyssOnly);
+    const _spiritAffixPool = AFFIXES.filter(a => !a.nabyssOnly && !a.nabyss2Only);
     for (let i = 0; i < SPIRIT_AFFIX_COUNT; i++) {
       const a = _spiritAffixPool[Math.floor(Math.random() * _spiritAffixPool.length)];
       let val = Math.max(1, Math.round((1 + refLv * a.perLv) * 1.0));
@@ -5531,6 +5619,24 @@
       dialogue: ['此域一切，皆由我支配！', '奈落的力量，凡人無法承受！', '踏入奈落者，命運已定！'],
       deathLine: ['支配...終結...了...', '奈落...會有新的...主宰...', '你...比我預想的...強...'],
     },
+    // ⭐ 深奈精英：奈落之主（Lv 35 頂階，tier 7，使用 skills + 覺醒機制）
+    {
+      id: 'elite_nabyss2', zone: 'nabyss2', name: '★ 奈落之主', icon: '🌀',
+      fixedHp: 1500000, hpBase: 5800, atkBase: 210, defBase: 600, spdBase: 110,
+      goldBase: 1000, xpBase: 2500,
+      verb: '奈落宣判',
+      tier: 7,
+      physRes: 0.3, magRes: 0.3,
+      skills: [
+        { verb: '奈落宣判',   mult: 3.0, applyStatus: { type: 'vulnerable', hits: 3, amount: 0.35, chance: 0.70 }, cooldown: 5 },
+        { verb: '虛無消滅',   mult: 4.0, magic: true, ignoreDef: true, cooldown: 7 },
+        { verb: '深奈壓制',   mult: 1.8, applyStatus: { type: 'paralyze', charges: 3, chance: 0.55 }, cooldown: 4 },
+        { verb: '奈落終結',   mult: 5.5, alwaysCrit: true, cooldown: 10 },
+      ],
+      awakenSkill: { verb: '⚡深奈覺醒・奈落終結', mult: 5.5, alwaysCrit: true, cooldown: 10 },
+      dialogue: ['此域之主...不是你！', '深奈的力量，你無法想象！', '踏入底層者...留下來吧！'],
+      deathLine: ['主宰...終結...', '深奈...會有新的靈魂...', '你的力量...已超越底層...'],
+    },
   ];
 
   // === 打工 ===
@@ -6057,6 +6163,28 @@
     { id: 'b_nabyss',  name: '奈落靴',   icon: '🌑', slot: 'boots',   spd: 22, hp: 100,           lv: 28 },
     { id: 'p_nabyss',  name: '奈落披',   icon: '🌑', slot: 'cape',    hp: 200, def: 22,            lv: 28 },
     { id: 'a_nabyss2', name: '奈落鎧',   icon: '⚫', slot: 'armor',   def: 35, hp: 80,             lv: 28 },
+    // ⭐ 深奈裝備（Lv 33，只在深奈層掉落）
+    // 4 把特殊武器（rareWeapon: true → 掉落率減半）
+    { id: 'w_void_cannon',   name: '虛空炮',   icon: '🏹', slot: 'weapon', atk: 60, lv: 33, rareWeapon: true,
+      nabyssHs: 0.07,   // ⭐ 所有職業普攻可爆頭 +7%（比虛空長弓的 +5% 更強）
+      desc: '深奈虛無弦線，穿透一切形體的靈魂爆頭能力，覺醒強敵也難逃一擊' },
+    { id: 'w_nabyss2_blade', name: '奈落裂刃', icon: '🌀', slot: 'weapon', atk: 72, lv: 33, rareWeapon: true,
+      bloodPoolBoost: 0.30, // ⭐ 劍士血池累積量 +30%
+      desc: '深奈裂縫所鑄之刃，大幅強化血池的汲取效率' },
+    { id: 'w_deep_tome',     name: '深奈法典', icon: '📖', slot: 'weapon', mark: 70, lv: 33, rareWeapon: true,
+      mpDiscount: 0.30, // ⭐ 技能 MP 消耗 -30%
+      desc: '深奈底層魔力循環，最大程度降低術式能量損耗' },
+    { id: 'w_chaos_defender', name: '混沌裂盾', icon: '🛡', slot: 'weapon', atk: 80, mark: 45, def: 75, lv: 33, rareWeapon: true,
+      physShieldPct: 0.12, magShieldPct: 0.12, // ⭐ 被攻擊時物理/魔法各減傷 12%
+      hmgDmgBoost: 0.20,                        // ⭐ 聖母鵝傷害 +20%（激動亂舞 + 獻身）
+      desc: '混沌深淵鍛造的攻守合一神器，聖母鵝的守護力量也隨之強化' },
+    // 6 件一般深奈裝備
+    { id: 'a_deep_nabyss',  name: '深奈鎧',   icon: '🌀', slot: 'armor',   def: 55,                    lv: 33 },
+    { id: 'h_deep_nabyss',  name: '深奈冠',   icon: '🔮', slot: 'helmet',  def: 38, atk: 14, mark: 11, lv: 33 },
+    { id: 'g_deep_nabyss',  name: '深奈腕',   icon: '💫', slot: 'gloves',  atk: 38, mark: 28, spd: 14, lv: 33 },
+    { id: 'b_deep_nabyss',  name: '深奈靴',   icon: '🌀', slot: 'boots',   spd: 30, hp: 150,            lv: 33 },
+    { id: 'p_deep_nabyss',  name: '深奈披',   icon: '🌀', slot: 'cape',    hp: 280, def: 30,             lv: 33 },
+    { id: 'a_deep_nabyss2', name: '深奈護甲', icon: '⚫', slot: 'armor',   def: 50, hp: 100,             lv: 33 },
     // 綠茶指南書（slot: guide）— 不掉落、不販售，遇綠茶鵝達到次數時自動發放
     { id: 'gt_10',  name: '綠茶見習指南',   icon: '💚', slot: 'guide', atk: 3,  spd: 2,                   lv: 1, gtReq: 10  },
     { id: 'gt_20',  name: '綠茶實戰手冊',   icon: '📗', slot: 'guide', atk: 6,  spd: 4,  hp: 15,          lv: 1, gtReq: 20  },
@@ -6903,6 +7031,12 @@
     { type: 'def',     name: '深淵護盾', perLv: 0.45, nabyssOnly: true },
     { type: 'spd',     name: '混沌疾影', perLv: 0.35, nabyssOnly: true },
     { type: 'hp',      name: '奈落根基', perLv: 3.5,  nabyssOnly: true },
+    // ⭐ 深奈專用詞條池（lv 33 裝備才會出，nabyss2Only: true）
+    { type: 'atk',     name: '奈落烙印', perLv: 0.60, nabyss2Only: true },
+    { type: 'mark',    name: '深奈術印', perLv: 0.60, nabyss2Only: true },
+    { type: 'def',     name: '虛無守護', perLv: 0.55, nabyss2Only: true },
+    { type: 'hp',      name: '深奈根基', perLv: 4.0,  nabyss2Only: true },
+    { type: 'atk',     name: '覺醒破甲', perLv: 0,    nabyss2Only: true, awakenDmgBonus: 0.12 }, // ⭐ 對覺醒中怪物 +12% 傷害（特殊詞條）
   ];
   // ⭐ 稀有度：詞條數綁定顏色
   //   白 (common)    0 詞條
@@ -7013,7 +7147,8 @@
     //   Lv 11-15（下層）×1.20
     //   Lv 16-20（深層）×1.35
     //   Lv 21-25（深淵）×1.50
-    //   Lv 26+（奈落）  ×1.80
+    //   Lv 26-30（奈落）×1.80
+    //   Lv 31+（深奈）  ×2.20
     const layerAffixMult = (() => {
       const lv = drop.lv || 1;
       if (lv <= 5)  return 1.00;
@@ -7021,21 +7156,23 @@
       if (lv <= 15) return 1.20;
       if (lv <= 20) return 1.35;
       if (lv <= 25) return 1.50;
-      return 1.80; // 奈落
+      if (lv <= 30) return 1.80; // 奈落
+      return 2.20; // 深奈（Lv 31+）
     })();
-    // ⭐ 奈落詞條規則：
+    // ⭐ 詞條規則：
     //   - 掉落時最多 3 條（白0/綠1/藍2/紫3），第 4 條只能靠奈落鍛造打出
-    //   - 奈落裝（lv26+）前 3 條：普通詞條 + 生命湧現，
-    //     禁止出現 虛空之力/深淵護盾/混沌疾影/奈落根基（這 4 條只能在第 4 條）
-    //   - 非奈落裝：普通詞條池，完全不出 nabyssOnly
-    const isNabyssItem = (drop.lv || 1) >= 26;
-    // 奈落裝前 3 條：普通池 + 生命湧現（hpRegen），排除其他 nabyssOnly
-    const poolNormal = AFFIXES.filter(a => !a.nabyssOnly || a.type === 'hpRegen');
-    // 非奈落裝：完全禁用 nabyssOnly
-    const poolBase   = AFFIXES.filter(a => !a.nabyssOnly);
+    //   - 奈落裝（lv 26-30）前 3 條：普通詞條 + 生命湧現，禁止出現其他 nabyssOnly
+    //   - 深奈裝（lv 31+）前 3 條：普通詞條 + 生命湧現，禁止出現 nabyssOnly/nabyss2Only
+    //   - 非奈落裝：普通詞條池，完全不出 nabyssOnly / nabyss2Only
+    const isNabyssItem  = (drop.lv || 1) >= 26 && (drop.lv || 1) <= 30;
+    const isNabyss2Item = (drop.lv || 1) >= 31;
+    // 深奈裝前 3 條：普通池 + 生命湧現，排除其他專用詞條
+    const poolNormal = AFFIXES.filter(a => !a.nabyssOnly && !a.nabyss2Only || a.type === 'hpRegen');
+    // 非奈落裝：完全禁用 nabyssOnly / nabyss2Only
+    const poolBase   = AFFIXES.filter(a => !a.nabyssOnly && !a.nabyss2Only);
 
     for (let i = 0; i < affixCount; i++) {
-      const pool = isNabyssItem ? poolNormal : poolBase;
+      const pool = (isNabyssItem || isNabyss2Item) ? poolNormal : poolBase;
       const a = pool[Math.floor(Math.random() * pool.length)];
       // ⭐ hpRegen 詞條：固定 2%（存整數 2，代表 2%；戰鬥引擎讀出後除以 100），上限 10%
       const val = a.fixedPct != null
@@ -7396,6 +7533,14 @@
       if (typeof window !== 'undefined') {
         window.__pendingUpdateV19 = window.__pendingUpdateV19 || new Set();
         window.__pendingUpdateV19.add(player.id);
+      }
+    }
+    // ⭐ v20：深奈（奈落2層）上線
+    if (!player.rpg.updateV20 && typeof getMeId === 'function' && player.id === getMeId()) {
+      player.rpg.updateV20 = true;
+      if (typeof window !== 'undefined') {
+        window.__pendingUpdateV20 = window.__pendingUpdateV20 || new Set();
+        window.__pendingUpdateV20.add(player.id);
       }
     }
     // ⭐ v16 migration：修正聖騎 p_aegis 在行動規則表中永遠被 p_blessing 搶先的問題
@@ -7934,9 +8079,9 @@
       // 落入下面的 forage elite 分支
     } else if (noSpecial) {
       // 多怪同戰時的「補位怪」：跳過綠茶 / 寶箱 / 精英 roll，直接到普通怪邏輯
-    } else if (opts?.zoneId !== 'nabyss_multi') {
+    } else if (opts?.zoneId !== 'nabyss_multi' && opts?.zoneId !== 'nabyss2_multi') {
       // 綠茶事件：頭 5 場固定 5%，第 6 場起每場 +2% 慢慢加，第 30 場保底必出
-      // ⭐ nabyss_multi（群戰區）排除綠茶鵝，不適合在多怪戰場出現
+      // ⭐ nabyss_multi / nabyss2_multi（群戰區）排除綠茶鵝，不適合在多怪戰場出現
       if (rpg) {
         rpg.greenTeaPity = (rpg.greenTeaPity || 0) + 1;
         const baseRate = 0.05;
@@ -8007,10 +8152,12 @@
         };
       }
     }
-    // 精英怪：在指定地區內 14% 機率出現；noSpecial 跳過；nabyss_multi 不出精英（群戰區）
-    if (!noSpecial && opts && opts.zoneId && opts.zoneId !== 'nabyss_multi' && Math.random() < 0.14) {
-      // ⭐ 奈落兩子區均對應 elite_nabyss（zone: 'nabyss'）；精英只出現在 nabyss_solo
-      const _eliteZoneId = opts.zoneId?.startsWith('nabyss') ? 'nabyss' : opts.zoneId;
+    // 精英怪：在指定地區內 14% 機率出現；noSpecial 跳過；nabyss_multi / nabyss2_multi 不出精英（群戰區）
+    if (!noSpecial && opts && opts.zoneId && opts.zoneId !== 'nabyss_multi' && opts.zoneId !== 'nabyss2_multi' && Math.random() < 0.14) {
+      // ⭐ 奈落子區：nabyss_solo → elite_nabyss（zone:'nabyss'）；nabyss2_solo → elite_nabyss2（zone:'nabyss2'）
+      const _isN2zone = opts.zoneId?.startsWith('nabyss2');
+      const _isN1zone = opts.zoneId?.startsWith('nabyss') && !_isN2zone;
+      const _eliteZoneId = _isN2zone ? 'nabyss2' : _isN1zone ? 'nabyss' : opts.zoneId;
       const elite = ELITES.find(e => e.zone === _eliteZoneId);
       const zone = ZONES.find(z => z.id === opts.zoneId) || ZONES.find(z => z.id === _eliteZoneId);
       if (elite && zone) {
@@ -8206,6 +8353,18 @@
     const _weaponMpDiscount   = _weaponItem?.mpDiscount   || 0;   // 深淵法杖：MP 消耗 -25%
     const _weaponPhysShield   = _weaponItem?.physShieldPct || 0;  // 鵝盾刀：物理減傷
     const _weaponMagShield    = _weaponItem?.magShieldPct  || 0;  // 鵝盾刀：魔法減傷
+    const _weaponHmgBoost     = 1 + (_weaponItem?.hmgDmgBoost || 0); // 混沌裂盾：聖母鵝傷害 +20%
+    // ⭐ 覺醒破甲：掃描所有裝備的詞條，累計對「已覺醒」怪物的傷害加成
+    let _awakenDmgBonus = 0;
+    for (const _chkSlot of ['weapon', 'armor', 'helmet', 'gloves', 'boots', 'cape', 'ring1', 'ring2', 'accessory', 'wings']) {
+      const _chkItem = resolveItem(player.rpg?.equipment?.[_chkSlot]);
+      if (_chkItem && Array.isArray(_chkItem.affixes)) {
+        for (const _ca of _chkItem.affixes) {
+          const _caDef = AFFIXES.find(x => x.name === _ca.name);
+          if (_caDef?.awakenDmgBonus) _awakenDmgBonus += _caDef.awakenDmgBonus;
+        }
+      }
+    }
     // ⭐ 精魂刻印特殊效果
     const _spiritSpecials = getSpiritSpecials(player);
     let _tenaciousUsed = false;           // 不屈：每場限一次
@@ -8781,6 +8940,8 @@
               }
               // ⭐ 易傷（hit-based）：每段各消耗 1 層
               hitDmg *= consumeVulnerable(monster);
+              // ⭐ 覺醒破甲詞條：對已覺醒怪物傷害加成
+              if (_awakenDmgBonus > 0 && monster._awakened) hitDmg *= (1 + _awakenDmgBonus);
               hitDmg = Math.max(1, Math.round(hitDmg));
               if (mAbility?.type === 'flatCapDmg') hitDmg = Math.min(hitDmg, mAbility.cap || 1);
               hitDmg = consumeMonsterShield(hitDmg);
@@ -9211,6 +9372,8 @@
               if (_fxCgDecree > 0 && mHp >= monster.maxHp * 0.70) dmg *= (1 + 0.15 * _fxCgDecree);
               if (_monPhysRes) dmg *= (1 - _monPhysRes);
               dmg *= consumeVulnerable(monster);
+              // ⭐ 覺醒破甲詞條：對已覺醒怪物傷害加成
+              if (_awakenDmgBonus > 0 && monster._awakened) dmg *= (1 + _awakenDmgBonus);
               dmg = Math.max(1, Math.round(dmg));
               if (mAbility?.type === 'flatCapDmg') dmg = Math.min(dmg, mAbility.cap || 1);
               dmg = monShield0(dmg);
@@ -9325,6 +9488,8 @@
             if (_fxCgDecree > 0 && mHp >= monster.maxHp * 0.70) dmg *= (1 + 0.15 * _fxCgDecree);
             if (!_nonArcHs && _monPhysRes) dmg *= (1 - _monPhysRes); // 爆頭無視抗性
             dmg *= consumeVulnerable(monster);
+            // ⭐ 覺醒破甲詞條：對已覺醒怪物傷害加成
+            if (_awakenDmgBonus > 0 && monster._awakened) dmg *= (1 + _awakenDmgBonus);
             dmg = Math.max(1, Math.round(dmg));
             if (mAbility?.type === 'flatCapDmg') dmg = Math.min(dmg, mAbility.cap || 1);
             dmg = monShield0(dmg);
@@ -9607,20 +9772,20 @@
             const _mCrit = Math.random() < _critChance;
             const physFinal = Math.round(physDmg * (_pCrit ? critMult : 1));
             const magFinal  = Math.round(magDmg  * (_mCrit ? critMult : 1));
-            let _hmgDmg = Math.max(1, physFinal + magFinal);
+            let _hmgDmg = Math.max(1, Math.round((physFinal + magFinal) * _weaponHmgBoost));
             const _anyCrit = _pCrit || _mCrit;
             if (_anyCrit) { _hmgIsCrit = true; critCount++; }
             mHp -= _hmgDmg;
             const _critStr = _pCrit && _mCrit ? '【雙暴擊】' : _pCrit ? '【物理暴擊】' : _mCrit ? '【魔法暴擊】' : '';
-            _hmgLogText = `${monster.name} -${_hmgDmg} HP${_critStr}（物理 ${physFinal} + 魔法 ${magFinal}）`;
+            _hmgLogText = `${monster.name} -${_hmgDmg} HP${_critStr}（物理 ${physFinal} + 魔法 ${magFinal}${_weaponHmgBoost > 1 ? ' ×' + _weaponHmgBoost.toFixed(2) : ''}）`;
           } else { // 獻身
             const _turnsUsed = _hmgActionsLeft + 1; // 含本次（已 -- 過）
             const _devBase = (_hmgAtk + _hmgMark + _hmgDef) * (1 + _hmgHitCount / 10 + _hmgTakenCount / 10) * _turnsUsed;
-            const _devDmg  = Math.max(1, Math.round(_devBase * critMult));
+            const _devDmg  = Math.max(1, Math.round(_devBase * critMult * _weaponHmgBoost));
             _hmgIsCrit = true; critCount++;
             mHp -= _devDmg;
             _hmgActive = false; _hmgActionsLeft = 0;
-            _hmgLogText = `${monster.name} -${_devDmg} HP【必殺暴擊】✨ 聖母鵝消失`;
+            _hmgLogText = `${monster.name} -${_devDmg} HP【必殺暴擊】✨ 聖母鵝消失${_weaponHmgBoost > 1 ? ` ×${_weaponHmgBoost.toFixed(2)}` : ''}`;
           }
           log.push({
             type: _hmgIsCrit ? 'crit-player' : 'player',
@@ -9629,6 +9794,16 @@
             hmgCounters: { hit: _hmgHitCount, taken: _hmgTakenCount, heal: _hmgHealCount, active: _hmgActive, actionsLeft: _hmgActionsLeft },
           });
           if (mHp <= 0) { pushDeathLine(); break; }
+        }
+        // ⭐ 覺醒機制（Tier 7 / 精英奈落）：HP≤40% 首次觸發，ATK+40% / SPD+25%，解鎖覺醒技能
+        if (monster.awakenSkill && !monster._awakened && mHp > 0 && mHp <= monster.maxHp * 0.40) {
+          monster._awakened = true;
+          monster.atk = Math.round(monster.atk * 1.4);
+          monster.spd = Math.round(monster.spd * 1.25);
+          mSpd = Math.max(1, SPD_BASE + monster.spd); // ⭐ 同步更新 ATB 速度
+          if (!Array.isArray(monster.skills)) monster.skills = [];
+          monster.skills.push(monster.awakenSkill);
+          log.push({ type: 'monster', text: `⚡ 【覺醒！】${monster.name} HP 跌破 40%！ATK +40% / SPD +25%！覺醒技能已解鎖！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
         }
       } else {
         mGauge -= ATB_THRESHOLD;
@@ -10343,6 +10518,18 @@
     const _weaponMpDiscount   = _weaponItemM?.mpDiscount   || 0;
     const _weaponPhysShield   = _weaponItemM?.physShieldPct || 0;
     const _weaponMagShield    = _weaponItemM?.magShieldPct  || 0;
+    const _weaponHmgBoost     = 1 + (_weaponItemM?.hmgDmgBoost || 0); // 混沌裂盾：聖母鵝傷害 +20%
+    // ⭐ 覺醒破甲：掃描所有裝備的詞條，累計對「已覺醒」怪物的傷害加成
+    let _awakenDmgBonus = 0;
+    for (const _chkSlotM of ['weapon', 'armor', 'helmet', 'gloves', 'boots', 'cape', 'ring1', 'ring2', 'accessory', 'wings']) {
+      const _chkItemM = resolveItem(player.rpg?.equipment?.[_chkSlotM]);
+      if (_chkItemM && Array.isArray(_chkItemM.affixes)) {
+        for (const _caM of _chkItemM.affixes) {
+          const _caDefM = AFFIXES.find(x => x.name === _caM.name);
+          if (_caDefM?.awakenDmgBonus) _awakenDmgBonus += _caDefM.awakenDmgBonus;
+        }
+      }
+    }
     // ⭐ 精魂刻印特殊效果
     const _spiritSpecials = getSpiritSpecials(player);
     let _tenaciousUsed = false;
@@ -10834,6 +11021,8 @@
                 const _effSkillCritMultM = (skill.alwaysCrit || _fcSM || !tgt.critDmgReduct) ? skillCritMult : 1.0 + (skillCritMult - 1.0) * (1 - tgt.critDmgReduct);
                 dmg *= _effSkillCritMultM; if (_fcSM && _dgCritCount > 0) dmg *= 1.30; critCount++; if (_dgCritCount > 0 && !_fcSM) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount);
               }
+              // ⭐ 覺醒破甲詞條：對已覺醒怪物傷害加成
+              if (_awakenDmgBonus > 0 && tgt._awakened) dmg *= (1 + _awakenDmgBonus);
               dmg = Math.max(1, Math.round(dmg));
               if (tgt.ability?.type === 'flatCapDmg') dmg = Math.min(dmg, tgt.ability.cap || 1);
               dmg = consumeMonsterShield2(tgt, dmg);
@@ -11261,6 +11450,8 @@
               if (_fxCgDecree > 0 && tgt.hp >= tgt.maxHp * 0.70) dmg *= (1 + 0.15 * _fxCgDecree);
               if (tgt.physRes) dmg *= (1 - tgt.physRes);
               dmg *= consumeVulnerable(tgt);
+              // ⭐ 覺醒破甲詞條：對已覺醒怪物傷害加成
+              if (_awakenDmgBonus > 0 && tgt._awakened) dmg *= (1 + _awakenDmgBonus);
               dmg = Math.max(1, Math.round(dmg));
               if (tgt.ability?.type === 'flatCapDmg') dmg = Math.min(dmg, tgt.ability.cap || 1);
               tgt.hp = Math.max(0, tgt.hp - dmg);
@@ -11355,6 +11546,8 @@
             if (_fxCgDecree > 0 && tgt.hp >= tgt.maxHp * 0.70) dmg *= (1 + 0.15 * _fxCgDecree);
             if (!_nonArcHsM && tgt.physRes) dmg *= (1 - tgt.physRes);
             dmg *= consumeVulnerable(tgt); // ⭐ 易傷（hit-based）
+            // ⭐ 覺醒破甲詞條：對已覺醒怪物傷害加成
+            if (_awakenDmgBonus > 0 && tgt._awakened) dmg *= (1 + _awakenDmgBonus);
             dmg = Math.max(1, Math.round(dmg));
             if (tgt.ability?.type === 'flatCapDmg') dmg = Math.min(dmg, tgt.ability.cap || 1);
             // ⭐ 鵝鵝的刀盾：普攻追加 HP×3 真傷（不過盾，吃爆擊/爆頭）
@@ -11620,23 +11813,23 @@
               const _mCritM = Math.random() < _critChanceM;
               const physFinalM = Math.round(physDmgM * (_pCritM ? critMult : 1));
               const magFinalM  = Math.round(magDmgM  * (_mCritM ? critMult : 1));
-              let _hmgDmgM = Math.max(1, physFinalM + magFinalM);
+              let _hmgDmgM = Math.max(1, Math.round((physFinalM + magFinalM) * _weaponHmgBoost));
               const _anyCritM = _pCritM || _mCritM;
               if (_anyCritM) { _hmgIsCritM = true; critCount++; }
               _hmgTgt.hp = Math.max(0, _hmgTgt.hp - _hmgDmgM);
               if (_hmgTgt.hp <= 0) _hmgTgt.alive = false;
               const _critStrM = _pCritM && _mCritM ? '【雙暴擊】' : _pCritM ? '【物理暴擊】' : _mCritM ? '【魔法暴擊】' : '';
-              _hmgLogTextM = `${_hmgTgt.icon}${_hmgTgt.name} -${_hmgDmgM} HP${_critStrM}（物理 ${physFinalM} + 魔法 ${magFinalM}）`;
+              _hmgLogTextM = `${_hmgTgt.icon}${_hmgTgt.name} -${_hmgDmgM} HP${_critStrM}（物理 ${physFinalM} + 魔法 ${magFinalM}${_weaponHmgBoost > 1 ? ' ×' + _weaponHmgBoost.toFixed(2) : ''}）`;
             }
           } else { // 獻身
             if (_hmgTgt) {
               const _turnsUsedM = _hmgActionsLeftM + 1;
               const _devBaseM = (_hmgAtkM + _hmgMarkM + _hmgDefM) * (1 + _hmgHitCountM / 10 + _hmgTakenCountM / 10) * _turnsUsedM;
-              const _devDmgM  = Math.max(1, Math.round(_devBaseM * critMult));
+              const _devDmgM  = Math.max(1, Math.round(_devBaseM * critMult * _weaponHmgBoost));
               _hmgIsCritM = true; critCount++;
               _hmgTgt.hp = Math.max(0, _hmgTgt.hp - _devDmgM);
               if (_hmgTgt.hp <= 0) _hmgTgt.alive = false;
-              _hmgLogTextM = `${_hmgTgt.icon}${_hmgTgt.name} -${_devDmgM} HP【必殺暴擊】✨`;
+              _hmgLogTextM = `${_hmgTgt.icon}${_hmgTgt.name} -${_devDmgM} HP【必殺暴擊】✨${_weaponHmgBoost > 1 ? ` ×${_weaponHmgBoost.toFixed(2)}` : ''}`;
             }
             _hmgActiveM = false; _hmgActionsLeftM = 0;
             _hmgLogTextM += ' 聖母鵝消失';
@@ -11646,6 +11839,18 @@
             text: `回合 ${round}（🕊️ 聖母鵝之${_hmgChosenM}）：${_hmgLogTextM}　「${_dlgM}」`,
             hp: hpsSnapshot(),
           });
+        }
+        // ⭐ 覺醒機制（Tier 7 / 精英奈落）：HP≤40% 首次觸發，ATK+40% / SPD+25%，解鎖覺醒技能
+        for (const _mL of mList) {
+          if (_mL.alive && _mL.awakenSkill && !_mL._awakened && _mL.hp > 0 && _mL.hp <= _mL.maxHp * 0.40) {
+            _mL._awakened = true;
+            _mL.atk = Math.round(_mL.atk * 1.4);
+            _mL.spd = Math.round(_mL.spd * 1.25);
+            _mL._effSpd = Math.max(1, SPD_BASE + _mL.spd); // ⭐ 同步更新 ATB 速度
+            if (!Array.isArray(_mL.skills)) _mL.skills = [];
+            _mL.skills.push(_mL.awakenSkill);
+            log.push({ type: 'monster', text: `⚡ 【覺醒！】${_mL.name} HP 跌破 40%！ATK +40% / SPD +25%！覺醒技能已解鎖！`, hp: hpsSnapshot() });
+          }
         }
         // ⭐ 完美節拍（晚餐鵝精魂刻印特殊）：追蹤連爆計數
         if (_spiritSpecials.has('perfect_tempo') && mList.some(m => m.alive)) {
@@ -12373,6 +12578,43 @@
     if (window.__pendingUpdateV19 && window.__pendingUpdateV19.has(me.id)) {
       window.__pendingUpdateV19.delete(me.id);
       saveData(); // 靜默存檔即可，無需彈窗
+    }
+    // ⭐ v20 優先（最新）：深奈（奈落2層）上線
+    if (window.__pendingUpdateV20 && window.__pendingUpdateV20.has(me.id)) {
+      window.__pendingUpdateV20.delete(me.id);
+      const html = `
+        <div style="text-align:left; padding:6px 0;">
+          <div style="text-align:center; font-size:48px; margin-bottom:6px;">🌀⚡🔗⚒️</div>
+          <div style="text-align:center; font-weight:800; font-size:17px; color:#1e293b; margin-bottom:8px;">v20 深奈（奈落2層）上線！</div>
+          <div style="font-size:12px; color:#1e293b; line-height:1.9; padding:10px 14px; background:#f1f5f9; border-radius:10px; border:2px dashed #334155;">
+
+            <div style="font-weight:800; color:#1e293b; margin-bottom:4px;">🌀 新區域：深奈（Lv 31–35）</div>
+            • 需達 <b>Lv 30</b> 解鎖，分為「深奈・單挑」與「深奈・群戰（2–3 隻）」<br>
+            • 6 隻全新 <b>Tier 7 怪物</b>：虛無之核・奈落召喚師・深淵刺客・混沌化身・虛空龍・奈落破壞神<br>
+            • 精英王 ⭐ <b>奈落之主</b>（固定 150 萬 HP！）<br>
+
+            <div style="font-weight:800; color:#dc2626; margin:10px 0 4px;">⚡ 覺醒機制</div>
+            • 所有深奈怪物 <b>HP ≤ 40%</b> 時首次覺醒：ATK +40%・SPD +25%<br>
+            • 覺醒後解鎖獨有覺醒技能，戰鬥瞬間升溫！<br>
+
+            <div style="font-weight:800; color:#0369a1; margin:10px 0 4px;">🗡️ 新裝備（Lv 33）</div>
+            • <b>奈落裂刃</b>：ATK+72・🩸血池+30%<br>
+            • <b>深奈法典</b>：MARK+70・💧MP-30%<br>
+            • <b>虛空炮</b>：ATK+60・🎯爆頭+7%<br>
+            • <b>混沌裂盾</b>：ATK+80 MARK+45 DEF+75・物/魔-12%・🕊️聖母鵝傷害+20%<br>
+            • 深奈鎧 / 冠 / 腕 / 靴 / 披 / 護甲 × 6 件<br>
+
+            <div style="font-weight:800; color:#7c3aed; margin:10px 0 4px;">⚒️ 深奈鍛造 &amp; 🔗 裝備繼承</div>
+            • Lv 31+ 傳說裝可解鎖 <b>深奈特殊詞條</b>（含「覺醒破甲」——對覺醒怪傷害+12%！）<br>
+            • 深奈武器/防具可 <b>🔗 繼承</b>奈落裝的詞條種類，按深奈階數重算數值，只需 500 🪙<br>
+
+          </div>
+          <button class="btn btn-primary" onclick="hideModal()" style="margin-top:14px; width:100%; background:linear-gradient(135deg,#1e293b,#334155);">🌀 前往深奈！</button>
+        </div>
+      `;
+      showModal('🌀 v20 深奈上線', html);
+      saveData();
+      return;
     }
     // ⭐ v18 優先（最新）：競技場 / 嗜血爆裂修正 / 宵夜鵝 / 精魂最後的宵夜
     if (window.__pendingUpdateV18 && window.__pendingUpdateV18.has(me.id)) {
@@ -14803,7 +15045,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260511192109';
+  const APP_VERSION = '20260512223501';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -14859,7 +15101,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260511_chaos_atb';
+  const NEWS_LATEST_ID = 'patch_20260512_nabyss2';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -14879,6 +15121,30 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#0f172a,#1e3a5f); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🌀 v20 深奈（奈落2層）上線！　<span style="font-size:11px; opacity:0.85;">2026-05-12</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#38bdf8; margin:6px 0 4px;">🌀 新區域：深奈（Lv 31–35）</div>
+        <div>・需達 <b>Lv 30</b> 解鎖，分「深奈・單挑」與「深奈・群戰（2–3 隻）」</div>
+        <div>・6 隻 Tier 7 新怪：虛無之核・奈落召喚師・深淵刺客・混沌化身・虛空龍・奈落破壞神</div>
+        <div>・精英王 ⭐ <b>奈落之主</b> —— 固定 <b>150萬 HP</b>！</div>
+
+        <div style="font-weight:700; color:#f87171; margin:10px 0 4px;">⚡ 覺醒機制</div>
+        <div>・深奈所有怪物 HP ≤ 40% 時首次覺醒：<b>ATK +40%・SPD +25%</b>，解鎖覺醒技能</div>
+
+        <div style="font-weight:700; color:#a78bfa; margin:10px 0 4px;">🗡️ 新裝備 Lv 33（4武器 + 6防具）</div>
+        <div>・奈落裂刃（ATK+72・血池+30%）・深奈法典（MARK+70・MP-30%）</div>
+        <div>・虛空炮（ATK+60・爆頭+7%）・混沌裂盾（ATK+80 MARK+45・聖母鵝傷害+20%）</div>
+
+        <div style="font-weight:700; color:#34d399; margin:10px 0 4px;">⚒️ 深奈鍛造 &amp; 🔗 裝備繼承</div>
+        <div>・Lv 31+ 傳說裝可鍛造「深奈特殊詞條」（含覺醒破甲——覺醒怪傷害+12%）</div>
+        <div>・深奈武器/防具可 <b>🔗 繼承</b> 奈落裝的詞條種類，只需 <b>500 🪙</b></div>
+
+        <div style="background:#0c1a2e; border-radius:8px; padding:8px 12px; margin:10px 0 16px; font-size:12px; color:#7dd3fc;">
+          💡 深奈的怪很硬，建議先備好奈落裝備或繼承升級再挑戰！覺醒後威力翻倍要小心！
+        </div>
 
         <div style="background:linear-gradient(135deg,#1a001a,#3d005c); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🌑 混沌終鳴調整　<span style="font-size:11px; opacity:0.85;">2026-05-11</span></div>
@@ -18960,17 +19226,31 @@ ${b.text}
           : `<div style="color:#a78bfa; border-top:1px dashed #7c3aed40; margin-top:4px; padding-top:4px;">⚒️ +${a.val} ${a.type.toUpperCase()}（${a.name}）</div>`
         ).join('')}</div>`
       : '';
-    // ⭐ 奈落鍛造：lv 26+ 掉落物可花費鵝鵝幣敲第 4 條詞條
+    // ⭐ 裝備繼承系統：Lv 33 武器/防具可從 Lv 28 奈落同槽位裝備繼承詞條
+    const _isInheritTarget = (item.lv || 0) >= 31 && (item.slot === 'weapon' || item.slot === 'armor') && !item.inherited;
+    const inheritHtml = _isInheritTarget ? `
+      <div style="margin-top:8px; padding:8px 10px; background:#0f172a20; border:1.5px dashed #334155; border-radius:10px; text-align:center;">
+        <div style="font-size:11px; color:#64748b; margin-bottom:5px; font-weight:700;">🔗 裝備繼承</div>
+        <div style="font-size:10px; color:#475569; margin-bottom:6px; line-height:1.5;">
+          從同槽位奈落裝備（Lv 26-30）繼承詞條種類，按深奈階數重算數值　花費 <b style="color:#fbbf24;">500 🪙</b>
+        </div>
+        <button class="btn btn-primary" onclick="showInheritModal(${idx})" style="width:100%; background:linear-gradient(135deg,#1e293b,#0f172a); box-shadow:0 3px 0 #020617; font-size:12px;">🔗 選擇繼承來源</button>
+      </div>
+    ` : (item.inherited ? `<div style="margin-top:8px; padding:5px 8px; background:#e0f2fe; border:1px solid #0ea5e9; border-radius:8px; font-size:10px; color:#0369a1; text-align:center;">🔗 已繼承詞條</div>` : '');
+    // ⭐ 奈落/深奈鍛造：lv 26+ 掉落物可花費鵝鵝幣敲第 4 條詞條
     const _REROLL_COSTS = [150000, 300000, 600000, 1200000, 2400000, 3000000];
     const _isNabyssLoot = (item.lv || 1) >= 26 && Array.isArray(item.affixes) && item.rarity === 'legendary';
+    const _isDeepNabyssLoot = (item.lv || 1) >= 31;
     const _rerollCount = item.rerollCount || 0;
     const _nextRerollCost = _REROLL_COSTS[Math.min(_rerollCount, _REROLL_COSTS.length - 1)];
     const _hasFourthAffix = (item.affixes || []).length >= 4;
+    const _forgeLabel = _isDeepNabyssLoot ? '深奈鍛造' : '奈落鍛造';
+    const _forgeAffixLabel = _isDeepNabyssLoot ? '深奈特殊詞條' : '奈落特殊詞條';
     const rerollHtml = _isNabyssLoot ? `
       <div style="margin-top:8px; padding:8px 10px; background:#4c1d9520; border:1.5px dashed #7c3aed; border-radius:10px; text-align:center;">
-        <div style="font-size:11px; color:#a78bfa; margin-bottom:5px; font-weight:700;">⚒️ 奈落鍛造</div>
+        <div style="font-size:11px; color:#a78bfa; margin-bottom:5px; font-weight:700;">⚒️ ${_forgeLabel}</div>
         <div style="font-size:10px; color:#8b5cf6; margin-bottom:6px; line-height:1.5;">
-          ${_hasFourthAffix ? '重新敲第 4 條詞條' : '敲出第 4 條詞條'}（奈落特殊詞條）　花費 <b style="color:#fbbf24;">${_nextRerollCost.toLocaleString()} 🪙</b>
+          ${_hasFourthAffix ? '重新敲第 4 條詞條' : '敲出第 4 條詞條'}（${_forgeAffixLabel}）　花費 <b style="color:#fbbf24;">${_nextRerollCost.toLocaleString()} 🪙</b>
           ${_rerollCount > 0 ? `<br><span style="color:#9ca3af;">（已敲 ${_rerollCount} 次，下次 ${(_REROLL_COSTS[Math.min(_rerollCount+1, _REROLL_COSTS.length-1)]).toLocaleString()} 🪙）</span>` : ''}
         </div>
         <button class="btn btn-primary" onclick="doAffixReroll(${idx})" style="width:100%; background:linear-gradient(135deg,#7c3aed,#4c1d95); box-shadow:0 3px 0 #3b0764; font-size:12px;">⚒️ ${_hasFourthAffix ? '重敲詞條' : '敲一條詞條'}</button>
@@ -19055,6 +19335,7 @@ ${b.text}
         </div>
         ${affixHtml}
         ${petAbilityInvHtml}
+        ${inheritHtml}
         ${rerollHtml}
         ${compareHtml}
         ${setHtml}
@@ -19126,10 +19407,11 @@ ${b.text}
       item.affixes.splice(3, 1);
     }
 
-    // 從奈落特殊詞條池（nabyssOnly）隨機一條（第 4 條專屬）
-    const layerAffixMult = 1.80;
+    // 從奈落特殊詞條池（nabyssOnly / nabyss2Only）隨機一條（第 4 條專屬）
+    const isN2 = (item.lv || 0) >= 31;
+    const layerAffixMult = isN2 ? 2.20 : 1.80;
     const def = RARITY[item.rarity] || RARITY['legendary'];
-    const poolNabyss = AFFIXES.filter(a => a.nabyssOnly);
+    const poolNabyss = isN2 ? AFFIXES.filter(a => a.nabyss2Only) : AFFIXES.filter(a => a.nabyssOnly);
     const a = poolNabyss[Math.floor(Math.random() * poolNabyss.length)];
     const val = a.fixedPct != null
       ? a.fixedPct
@@ -19150,6 +19432,123 @@ ${b.text}
     const typeLabel = a.type === 'hpRegen' ? '生命回復' : a.type.toUpperCase();
     showToast(`⚒️ 敲出【${a.name}】！+${val} ${typeLabel}（花費 ${cost.toLocaleString()} 🪙）`);
     openInvItemActions(idx);
+  };
+
+  // ============================================================
+  // 🔗 裝備繼承系統（深奈 Lv31+ 武器/防具 ← 奈落 Lv26-30 同槽位裝備）
+  // ============================================================
+  window.showInheritModal = function showInheritModal(targetIdx) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const target = r.inventory[targetIdx];
+    if (!target || (target.lv || 0) < 31 || !['weapon', 'armor'].includes(target.slot) || target.inherited) {
+      showToast('🔗 此物品不符合繼承條件');
+      return;
+    }
+    // 找符合條件的來源：同槽位、奈落 Lv26-30、有詞條
+    const sources = (r.inventory || [])
+      .map((entry, i) => ({ item: resolveItem(entry), rawEntry: entry, idx: i }))
+      .filter(({ item, idx }) =>
+        item && idx !== targetIdx &&
+        item.slot === target.slot &&
+        (item.lv || 0) >= 26 && (item.lv || 0) <= 30 &&
+        Array.isArray(item.affixes) && item.affixes.length > 0
+      );
+    if (sources.length === 0) {
+      showToast('🔗 背包中沒有符合的奈落裝備（同槽位，Lv 26-30，有詞條）');
+      return;
+    }
+    const INHERIT_COST = 500;
+    const coins = getCoins(me.id);
+    const sourceListHtml = sources.map(({ item: src, idx: si }) => {
+      const affixPreview = (src.affixes || []).map(a => `<span style="color:#7c3aed;font-size:10px;">✦${a.name}</span>`).join(' ');
+      const rarColor = src.rarity ? RARITY[src.rarity]?.color : '#9ca3af';
+      const rarLabel = src.rarity ? RARITY[src.rarity]?.label : '';
+      return `
+        <div style="padding:8px 10px; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:8px; margin-bottom:6px; cursor:pointer;" onclick="confirmInherit(${targetIdx}, ${si})">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:22px;">${src.icon}</span>
+            <div style="flex:1;">
+              <div style="font-size:12px; font-weight:700; color:${rarColor};">${rarLabel ? `[${rarLabel}] ` : ''}${escapeHtml(src.name)} <span style="color:#64748b;">Lv ${src.lv || '?'}</span></div>
+              <div style="font-size:10px; color:#7c3aed; margin-top:2px;">${affixPreview}</div>
+            </div>
+            <button class="btn btn-primary" style="font-size:11px; padding:4px 8px;" onclick="event.stopPropagation(); confirmInherit(${targetIdx}, ${si})">繼承</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+    const html = `
+      <div style="padding:4px 0;">
+        <div style="font-size:12px; color:#1e293b; margin-bottom:10px; line-height:1.6;">
+          🔗 選擇要繼承的奈落裝備。<br>
+          繼承後，來源裝備的 <b>詞條種類</b> 將移植到 <b>${escapeHtml(target.name)}</b>，數值按 Lv33 深奈階數（×2.20）重算。<br>
+          花費：<b style="color:#fbbf24;">${INHERIT_COST.toLocaleString()} 🪙</b>　|　目前：<b style="color:${coins >= INHERIT_COST ? '#16a34a' : '#dc2626'};">${coins.toLocaleString()} 🪙</b>
+        </div>
+        ${coins < INHERIT_COST ? '<div style="padding:8px; background:#fef2f2; border:1px solid #fca5a5; border-radius:6px; font-size:11px; color:#dc2626; margin-bottom:8px;">⚠️ 鵝鵝幣不足 500</div>' : ''}
+        <div style="max-height:280px; overflow-y:auto;">${sourceListHtml}</div>
+        <button class="btn btn-secondary" onclick="hideModal(); openInvItemActions(${targetIdx});" style="margin-top:8px; width:100%;">← 取消</button>
+      </div>
+    `;
+    showModal(`🔗 選擇繼承來源（${escapeHtml(target.name)}）`, html);
+  };
+
+  window.confirmInherit = function confirmInherit(targetIdx, sourceIdx) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const target = r.inventory[targetIdx];
+    const sourceEntry = r.inventory[sourceIdx];
+    const source = resolveItem(sourceEntry);
+    if (!target || !source) return;
+    if (target.inherited) { showToast('🔗 此裝備已繼承過，不可再次繼承'); return; }
+    const INHERIT_COST = 500;
+    if (getCoins(me.id) < INHERIT_COST) { showToast(`🔗 鵝鵝幣不足！需要 ${INHERIT_COST} 枚`); return; }
+
+    // 移除舊詞條對屬性的貢獻
+    const oldAffixes = target.affixes || [];
+    for (const a of oldAffixes) {
+      if (a.type === 'hpRegen') target.hpRegen = Math.max(0, (target.hpRegen || 0) - a.val);
+      else target[a.type] = Math.max(0, (target[a.type] || 0) - a.val);
+    }
+    target.affixes = [];
+
+    // 繼承來源詞條（種類），按 Lv33 深奈階數重算數值
+    const targetLv = target.lv || 33;
+    const def = RARITY['legendary'];                // 詞條計算使用傳說級別倍率
+    const layerMult = 2.20;                          // 深奈階數倍率
+    const newAffixes = [];
+    for (const srcAffix of (source.affixes || [])) {
+      const affixDef = AFFIXES.find(a => a.name === srcAffix.name);
+      if (!affixDef) {
+        // 找不到定義：用原始類型按新 lv 比例推算
+        const oldVal = srcAffix.val;
+        const ratio = targetLv / (source.lv || 28);
+        const newVal = Math.max(1, Math.round(oldVal * ratio * (layerMult / 1.80)));
+        newAffixes.push({ type: srcAffix.type, name: srcAffix.name, val: newVal });
+        if (srcAffix.type === 'hpRegen') target.hpRegen = (target.hpRegen || 0) + newVal;
+        else target[srcAffix.type] = (target[srcAffix.type] || 0) + newVal;
+      } else if (affixDef.fixedPct != null) {
+        const newVal = affixDef.fixedPct;
+        newAffixes.push({ type: affixDef.type, name: affixDef.name, val: newVal });
+        if (affixDef.type === 'hpRegen') target.hpRegen = (target.hpRegen || 0) + newVal;
+        else target[affixDef.type] = (target[affixDef.type] || 0) + newVal;
+      } else {
+        const newVal = Math.max(1, Math.round((1 + targetLv * (affixDef.perLv || 0)) * def.mult * layerMult));
+        newAffixes.push({ type: affixDef.type, name: affixDef.name, val: newVal });
+        if (affixDef.type === 'hpRegen') target.hpRegen = (target.hpRegen || 0) + newVal;
+        else target[affixDef.type] = (target[affixDef.type] || 0) + newVal;
+      }
+    }
+    target.affixes = newAffixes;
+    target.rarity = 'legendary'; // 繼承後確保傳說品質（有詞條）
+    target.inherited = true;     // 標記已繼承，不可再繼承
+
+    spendCoins(me.id, INHERIT_COST);
+    saveData();
+    if (typeof renderCharCard === 'function') renderCharCard();
+
+    const affixNames = newAffixes.map(a => `【${a.name} +${a.val}】`).join(' ');
+    showToast(`🔗 繼承完成！${escapeHtml(target.name)} 獲得詞條：${affixNames}（花費 ${INHERIT_COST} 🪙）`);
+    openInvItemActions(targetIdx);
   };
 
   // ============================================================
@@ -20574,12 +20973,21 @@ ${b.text}
     if (!host) return;
     if (!rpg.currentZone) rpg.currentZone = 'forest';
     if (!rpg.currentLayer) rpg.currentLayer = 'upper';
-    // ⭐ 奈落層與其他層互斥：奈落層只顯示兩個奈落子區；一般層不顯示奈落子區
-    const _isNabyssLayer = rpg.currentLayer === 'nabyss';
-    const _isNabyssZone = rpg.currentZone?.startsWith('nabyss');
-    if (_isNabyssLayer && !_isNabyssZone) rpg.currentZone = 'nabyss_solo';
-    if (!_isNabyssLayer && _isNabyssZone) rpg.currentZone = 'forest';
-    const _visibleZones = ZONES.filter(z => _isNabyssLayer ? z.id.startsWith('nabyss') : !z.id.startsWith('nabyss'));
+    // ⭐ 奈落/深奈層與其他層互斥：各奈落層只顯示對應子區；一般層不顯示奈落子區
+    const _isNabyssLayer  = rpg.currentLayer === 'nabyss';
+    const _isNabyss2Layer = rpg.currentLayer === 'nabyss2';
+    const _isAnyNabyssLayer = _isNabyssLayer || _isNabyss2Layer;
+    const _isNabyss2Zone = rpg.currentZone?.startsWith('nabyss2');
+    const _isNabyss1Zone = rpg.currentZone?.startsWith('nabyss') && !_isNabyss2Zone;
+    const _isNabyssZone  = _isNabyss1Zone || _isNabyss2Zone;
+    if (_isNabyssLayer  && !_isNabyss1Zone)       rpg.currentZone = 'nabyss_solo';
+    if (_isNabyss2Layer && !_isNabyss2Zone)        rpg.currentZone = 'nabyss2_solo';
+    if (!_isAnyNabyssLayer && _isNabyssZone)       rpg.currentZone = 'forest';
+    const _visibleZones = ZONES.filter(z => {
+      if (_isNabyssLayer)  return z.id.startsWith('nabyss') && !z.id.startsWith('nabyss2');
+      if (_isNabyss2Layer) return z.id.startsWith('nabyss2');
+      return !z.id.startsWith('nabyss');
+    });
     const tabsHtml = _visibleZones.map(z => {
       const locked = rpg.level < z.minLv;
       const active = rpg.currentZone === z.id;
@@ -20648,9 +21056,13 @@ ${b.text}
       return;
     }
     rpg.currentLayer = layerId;
-    // ⭐ 奈落層互斥：進入奈落自動切到奈落單挑；離開奈落自動切回一般區
+    // ⭐ 奈落/深奈層互斥：進入對應奈落層自動切到該層單挑區；離開則切回一般區
     if (layerId === 'nabyss') {
-      if (!rpg.currentZone?.startsWith('nabyss')) rpg.currentZone = 'nabyss_solo';
+      const _inN2 = rpg.currentZone?.startsWith('nabyss2');
+      const _inN1 = rpg.currentZone?.startsWith('nabyss') && !_inN2;
+      if (!_inN1) rpg.currentZone = 'nabyss_solo';
+    } else if (layerId === 'nabyss2') {
+      if (!rpg.currentZone?.startsWith('nabyss2')) rpg.currentZone = 'nabyss2_solo';
     } else if (rpg.currentZone?.startsWith('nabyss')) {
       rpg.currentZone = 'forest';
     }
@@ -25379,12 +25791,14 @@ ${b.text}
         return runMultiMonsterFight(me, monsters, { zoneId, layerId, opts });
       }
     }
-    // ⭐ 奈落群戰區（nabyss_multi）：2-4 隻怪同時出現；精英照常單打
-    if (zoneId === 'nabyss_multi') {
+    // ⭐ 奈落/深奈群戰區（nabyss_multi / nabyss2_multi）：多怪同時出現；精英照常單打
+    if (zoneId === 'nabyss_multi' || zoneId === 'nabyss2_multi') {
       if (monster.isElite) {
         // 精英單打：直接跑 autoFight（後面邏輯處理）
       } else {
-        const count = 2 + Math.floor(Math.random() * 3); // 隨機 2-4 隻
+        const count = zoneId === 'nabyss2_multi'
+          ? 2 + Math.floor(Math.random() * 2)   // 深奈群戰：隨機 2-3 隻（覺醒怪更強）
+          : 2 + Math.floor(Math.random() * 3);  // 奈落群戰：隨機 2-4 隻
         const monsters = [monster];
         for (let i = 1; i < count; i++) {
           const m = generateMonster(rpg.level, { zoneId, layerId, targetLv, noSpecial: true });
