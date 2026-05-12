@@ -15045,7 +15045,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260512223501';
+  const APP_VERSION = '20260512224756';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -21078,9 +21078,12 @@ ${b.text}
     const z = ZONES.find(zz => zz.id === zoneId);
     if (!z) return;
     if (rpg.level < z.minLv) { showToast(`需 Lv${z.minLv} 才能進入${z.name}`); return; }
-    // ⭐ 奈落區只能在奈落層選；一般區不能在奈落層選
-    if (zoneId.startsWith('nabyss') && rpg.currentLayer !== 'nabyss') return;
-    if (!zoneId.startsWith('nabyss') && rpg.currentLayer === 'nabyss') return;
+    // ⭐ 奈落/深奈區只能在對應層選；一般區不能在奈落層選
+    const _isN2zone = zoneId.startsWith('nabyss2');
+    const _isN1zone = zoneId.startsWith('nabyss') && !_isN2zone;
+    if (_isN2zone && rpg.currentLayer !== 'nabyss2') return;
+    if (_isN1zone && rpg.currentLayer !== 'nabyss')  return;
+    if (!zoneId.startsWith('nabyss') && (rpg.currentLayer === 'nabyss' || rpg.currentLayer === 'nabyss2')) return;
     rpg.currentZone = zoneId;
     if (!rpg.currentLayer) rpg.currentLayer = 'upper';
     saveData();
