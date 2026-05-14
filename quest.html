@@ -356,7 +356,7 @@
     pointer-events: none;
     user-select: none;
   }
-  .pd-armor  { z-index: 1; animation: pdPulse 3s ease-in-out infinite; filter: drop-shadow(0 0 6px rgba(125,211,252,0.5)); will-change: transform; }
+  .pd-armor  { z-index: 1; animation: pdPulse 3s ease-in-out infinite; will-change: transform; }
   .pd-base   { z-index: 2; filter: drop-shadow(0 4px 8px rgba(124,58,237,0.25)); }
   .pd-shield { z-index: 3; }
   .pd-weapon { z-index: 4; animation: pdSwayWeapon 2.6s ease-in-out infinite; transform-origin: center; will-change: transform; }
@@ -669,7 +669,7 @@
     75% { transform: translateX(6px); }
   }
   /* 外觀外框包覆層（frame + orbit 不跟著角色動畫移動） */
-  .cosm-wrap { position: relative; display: inline-block; }
+  .cosm-wrap { position: relative; display: inline-block; contain: layout style; }
   @keyframes cosmOrbit {
     from { transform: translate(-50%,-50%) rotate(0deg)   translateX(var(--cosm-r,38px)) rotate(0deg); }
     to   { transform: translate(-50%,-50%) rotate(360deg) translateX(var(--cosm-r,38px)) rotate(-360deg); }
@@ -8213,10 +8213,31 @@
     return { counts, bonuses };
   }
 
+  // ⚡ Perf: computeStats 結果快取（key = 所有影響屬性的欄位）
+  //   裝備/技能/能力/寶石/精魂/地城寶物未變動時直接回傳快取，避免每秒重算
+  const _statsCache = new Map();
+  function _statsKey(rpg) {
+    return [
+      rpg.class, rpg.level,
+      rpg.equipment      ? JSON.stringify(rpg.equipment)       : '',
+      rpg.skills         ? JSON.stringify(rpg.skills)          : '',
+      rpg.abilities      ? JSON.stringify(rpg.abilities)       : '',
+      rpg.equippedGems   ? JSON.stringify(rpg.equippedGems)    : '',
+      rpg.spiritSlots    ? JSON.stringify(rpg.spiritSlots)     : '',
+      rpg.spiritEngraving? JSON.stringify(rpg.spiritEngraving) : '',
+      Array.isArray(rpg.dungeonTreasures) ? rpg.dungeonTreasures.join(',') : '',
+    ].join('|');
+  }
+
   function computeStats(player) {
     const rpg = getRpg(player);
     const cls = CLASSES[rpg.class];
     if (!cls) return null;
+
+    const _ck = _statsKey(rpg);
+    const _cached = _statsCache.get(player.id);
+    if (_cached && _cached.k === _ck) return _cached.v;
+
     const lv = rpg.level || 1;
     const b = computeSkillBonuses(player);
     const ab = computeAbilityBonuses(player);
@@ -8232,20 +8253,22 @@
     let itemCritChance = 0;
     let itemCritDmg = 0;
     let itemMpRegen = 0;
+    let totalHpRegen = 0;
     for (const slot of ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape', 'wings', 'pet', 'guide', 'ring1', 'ring2']) {
       const itemId = rpg.equipment?.[slot];
       if (itemId) {
         const item = resolveItem(itemId);
         if (item) {
-          if (item.atk)  stats.atk  += item.atk;
-          if (item.def)  stats.def  += item.def;
-          if (item.spd)  stats.spd  += item.spd;
-          if (item.hp)   stats.maxHp += item.hp;
-          if (item.mp)   stats.maxMp += item.mp;
-          if (item.mark) stats.mark += item.mark;
+          if (item.atk)    stats.atk    += item.atk;
+          if (item.def)    stats.def    += item.def;
+          if (item.spd)    stats.spd    += item.spd;
+          if (item.hp)     stats.maxHp  += item.hp;
+          if (item.mp)     stats.maxMp  += item.mp;
+          if (item.mark)   stats.mark   += item.mark;
           if (item.critChance) itemCritChance += item.critChance;
           if (item.critDmg)    itemCritDmg    += item.critDmg;
           if (item.mpRegen)    itemMpRegen    += item.mpRegen;
+          if (item.hpRegen)    totalHpRegen   += item.hpRegen;
           // ⭐ 合成組件加成：fusedComponents 的屬性疊加（各 slot 最多 1 個）
           if (item.isBossGift && Array.isArray(item.fusedComponents)) {
             for (const fc of item.fusedComponents) {
@@ -8261,15 +8284,6 @@
             }
           }
         }
-      }
-    }
-    // ⭐ 裝備 hpRegen 累積（奈落裝備「生命湧現」詞條）
-    let totalHpRegen = 0;
-    for (const slot of ['weapon', 'armor', 'accessory', 'helmet', 'gloves', 'boots', 'cape', 'wings', 'pet', 'guide', 'ring1', 'ring2']) {
-      const itemId = rpg.equipment?.[slot];
-      if (itemId) {
-        const item = resolveItem(itemId);
-        if (item?.hpRegen) totalHpRegen += item.hpRegen;
       }
     }
     stats.hpRegenPct = Math.min(10, totalHpRegen); // 存為百分比整數（2 = 2%），上限 10%
@@ -8355,8 +8369,8 @@
     stats.setBonuses = mergedBonuses;
     stats.setCounts = setInfo.counts;
     // 給 UI 顯示用：總暴擊率 / 總爆傷倍率（包含職業底、技能、能力、被動、裝備、套裝）
-    const cBonus = computeSkillBonuses(player);
-    const cAbil  = computeAbilityBonuses(player);
+    const cBonus = b;
+    const cAbil  = ab;
     const cPass  = (typeof computePassiveBonuses === 'function') ? computePassiveBonuses(player) : {};
     stats.totalCritChance = 0.08
       + (cls.critBonus || 0)
@@ -8374,6 +8388,7 @@
     if (_dtb?.hpRegenPct) {
       stats.hpRegenPct = Math.min(10, (stats.hpRegenPct || 0) + Math.round(_dtb.hpRegenPct * 100));
     }
+    _statsCache.set(player.id, { k: _ck, v: stats });
     return stats;
   }
 
@@ -15574,7 +15589,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260514154354';
+  const APP_VERSION = '20260514160758';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
