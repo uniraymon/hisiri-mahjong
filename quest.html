@@ -15569,7 +15569,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260514132849';
+  const APP_VERSION = '20260514133342';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -23303,7 +23303,7 @@ ${b.text}
           🎁 可開 <span style="color:${rColor};font-size:20px;font-weight:900;">${boxes}</span> / 8 個寶箱
         </div>
         <div id="dungeonBoxArea">
-          ${_dungeonBoxesHtml(boxes)}
+          ${_dungeonBoxesHtml(boxes, _dungeonGenerateBoxes())}
         </div>
       </div>`;
   }
@@ -23395,28 +23395,55 @@ ${b.text}
   }
   window.dungeonPickBuff = dungeonPickBuff;
 
-  // HTML：8 個寶箱格，allowedCount = 可開數量
-  function _dungeonBoxesHtml(allowedCount) {
+  // 地城寶箱稀有度顏色/名稱
+  const _DT_RARITY_COLOR = { goose:'#fde047', legend:'#c084fc', flash:'#67e8f9', normal:'#86efac', trash:'#9ca3af' };
+  const _DT_RARITY_NAME  = { goose:'🦢鵝王', legend:'🌟傳說', flash:'⚡閃光', normal:'🟢普通', trash:'⬜普通' };
+
+  // 預先生成 8 個寶箱內容並洗牌
+  // 固定組成：1 高級（30%鵝王/70%傳說）、2 普通、3 渣鵝、2 鵝蛋幣
+  function _dungeonGenerateBoxes() {
+    const configs = [
+      { type: 'high' },
+      { type: 'normal' },
+      { type: 'normal' },
+      { type: 'trash' },
+      { type: 'trash' },
+      { type: 'trash' },
+      { type: 'coin', amount: Math.floor(Math.random()*5)+1 },
+      { type: 'coin', amount: Math.floor(Math.random()*5)+1 },
+    ];
+    // Fisher-Yates 洗牌
+    for (let i = configs.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [configs[i], configs[j]] = [configs[j], configs[i]];
+    }
+    return configs;
+  }
+
+  // HTML：8 個寶箱格，boxConfigs = 預先生成的內容陣列（JSON 編碼存在容器上）
+  function _dungeonBoxesHtml(allowedCount, boxConfigs) {
+    const cfgEncoded = encodeURIComponent(JSON.stringify(boxConfigs));
     const boxes = Array.from({ length: 8 }, (_, i) => `
       <div class="dungeon-box" id="dbox_${i}" onclick="dungeonOpenBox(${i},${allowedCount})">
         <div style="font-size:24px;">🎁</div>
         <div style="font-size:9px;color:#a78bfa;margin-top:3px;">#${i+1}</div>
       </div>`).join('');
     return `
-      <div style="font-size:11px;color:#9ca3af;text-align:center;margin-bottom:8px;" id="dboxStatusLine">
-        點選寶箱開啟（剩餘 <span id="dboxRemain" style="color:#c4b5fd;font-weight:700;">${allowedCount}</span> 次）
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
-        ${boxes}
-      </div>
-      <div id="dungeonBoxRewards" style="margin-top:10px;"></div>`;
+      <div data-boxcfg="${cfgEncoded}">
+        <div style="font-size:11px;color:#9ca3af;text-align:center;margin-bottom:6px;" id="dboxStatusLine">
+          點選寶箱開啟（剩餘 <span id="dboxRemain" style="color:#c4b5fd;font-weight:700;">${allowedCount}</span> 次）
+        </div>
+        <div style="font-size:10px;color:#6b7280;text-align:center;margin-bottom:8px;">
+          🦢高級×1　🟢普通×2　⬜渣鵝×3　🥚幣×2　（洗牌後隱藏）
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
+          ${boxes}
+        </div>
+        <div id="dungeonBoxRewards" style="margin-top:10px;"></div>
+      </div>`;
   }
 
-  // 地城寶箱稀有度顏色/名稱
-  const _DT_RARITY_COLOR = { goose:'#fde047', legend:'#c084fc', flash:'#67e8f9', normal:'#86efac', trash:'#9ca3af' };
-  const _DT_RARITY_NAME  = { goose:'🦢鵝王', legend:'🌟傳說', flash:'⚡閃光', normal:'🟢普通', trash:'⬜普通' };
-
-  // 開單個寶箱（v2：地城寶物 + 地城鵝蛋幣）
+  // 開單個寶箱（v3：固定組成，開前不知哪個是哪個）
   function dungeonOpenBox(idx, limit) {
     const el = document.getElementById('dbox_' + idx);
     if (!el || el.dataset.opened) return;
@@ -23429,24 +23456,49 @@ ${b.text}
     if (!rpg.dungeonTreasures) rpg.dungeonTreasures = [];
     if (rpg.dungeonEggCoins == null) rpg.dungeonEggCoins = 0;
 
-    // 稀有度抽籤：鵝王 1%、傳說 4%、普通 35%、垃圾 60%（閃光不從箱子出）
-    const roll = Math.random() * 100;
-    const targetRarity = roll < 1 ? 'goose' : roll < 5 ? 'legend' : roll < 40 ? 'normal' : 'trash';
-    const pool = DUNGEON_TREASURES.filter(t => t.rarity === targetRarity);
+    // 讀取預先生成的寶箱設定
+    const container = el.closest('[data-boxcfg]');
+    const configs = container ? JSON.parse(decodeURIComponent(container.dataset.boxcfg)) : [];
+    const cfg = configs[idx] || { type: 'trash' };
 
     let treasure = null;
-    if (pool.length > 0) treasure = pool[Math.floor(Math.random() * pool.length)];
-    if (treasure) rpg.dungeonTreasures.push(treasure.id);  // 允許重複持有
+    let coins = 0;
+    let displayEmoji = '📦';
+    let rewardHtml = '';
 
-    // 地城鵝蛋幣：1~5 枚
-    const coins = Math.floor(Math.random() * 5) + 1;
-    rpg.dungeonEggCoins += coins;
+    if (cfg.type === 'coin') {
+      // 純鵝蛋幣
+      coins = cfg.amount || 1;
+      rpg.dungeonEggCoins += coins;
+      displayEmoji = '🥚';
+      rewardHtml = `<span style="color:#fbbf24;">地城鵝蛋幣 ×${coins}</span>`;
+    } else {
+      // 依箱型決定稀有度池
+      let targetRarity;
+      if (cfg.type === 'high') {
+        targetRarity = Math.random() < 0.30 ? 'goose' : 'legend';
+      } else if (cfg.type === 'normal') {
+        targetRarity = 'normal';
+      } else {
+        targetRarity = 'trash';
+      }
+      const pool = DUNGEON_TREASURES.filter(t => t.rarity === targetRarity);
+      if (pool.length > 0) treasure = pool[Math.floor(Math.random() * pool.length)];
+      if (treasure) rpg.dungeonTreasures.push(treasure.id);
+      const rc = _DT_RARITY_COLOR[treasure?.rarity] || '#9ca3af';
+      displayEmoji = cfg.type === 'high' ? '✨' : '📦';
+      rewardHtml = treasure
+        ? `<span style="color:${rc};">${_DT_RARITY_NAME[treasure.rarity]||''} ${treasure.name}</span>`
+        : '<span style="color:#6b7280;">（空箱）</span>';
+    }
 
-    // 標記已開
+    // 標記已開、更新格子外觀
     el.dataset.opened = '1';
-    const rc = treasure ? (_DT_RARITY_COLOR[treasure.rarity] || '#86efac') : '#9ca3af';
-    el.innerHTML = `<div style="font-size:18px;">${treasure ? '✨' : '📦'}</div>
-      <div style="font-size:8px;color:${rc};margin-top:2px;text-align:center;line-height:1.3;word-break:break-all;">${treasure ? treasure.name : '?'}</div>`;
+    const rc2 = treasure ? (_DT_RARITY_COLOR[treasure.rarity] || '#9ca3af') : (cfg.type === 'coin' ? '#fbbf24' : '#6b7280');
+    el.innerHTML = `<div style="font-size:20px;">${displayEmoji}</div>
+      <div style="font-size:8px;color:${rc2};margin-top:2px;text-align:center;line-height:1.3;word-break:break-all;">
+        ${treasure ? treasure.name : (cfg.type === 'coin' ? `幣×${coins}` : '空')}
+      </div>`;
 
     const remain = limit - (alreadyOpened + 1);
     const remainEl = document.getElementById('dboxRemain');
@@ -23457,10 +23509,7 @@ ${b.text}
     if (listEl) {
       const d = document.createElement('div');
       d.style.cssText = 'font-size:12px;padding:5px 10px;background:rgba(0,0,0,0.3);border-radius:6px;margin-bottom:4px;line-height:1.6;';
-      const tLabel = treasure
-        ? `<span style="color:${rc};">${_DT_RARITY_NAME[treasure.rarity]||''} ${treasure.name}</span>`
-        : '<span style="color:#6b7280;">無寶物</span>';
-      d.innerHTML = `📦 #${idx+1} → ${tLabel} <span style="color:#fbbf24;font-size:10px;">＋地城鵝蛋幣×${coins}</span>`;
+      d.innerHTML = `📦 #${idx+1} → ${rewardHtml}`;
       listEl.appendChild(d);
     }
 
