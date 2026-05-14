@@ -2259,6 +2259,46 @@
   }
   /* ⭐ 防 iOS Safari 自動放大：所有 input/select 字體不得小於 16px */
   input, select, textarea { font-size: max(16px, 1em) !important; }
+
+  /* ⚔️ 副本系統 */
+  .dungeon-box {
+    cursor: pointer;
+    background: linear-gradient(135deg, #1e1b4b, #312e81);
+    border: 2px solid #4338ca;
+    border-radius: 10px;
+    padding: 10px 4px;
+    text-align: center;
+    transition: all 0.2s;
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .dungeon-box:hover:not([data-opened]) {
+    border-color: #818cf8;
+    background: linear-gradient(135deg, #312e81, #4338ca);
+    transform: scale(1.05);
+  }
+  .dungeon-box[data-opened] {
+    cursor: default;
+    background: linear-gradient(135deg, #064e3b, #065f46);
+    border-color: #10b981;
+  }
+  .dungeon-floor-badge {
+    flex: 1;
+    text-align: center;
+    padding: 5px 2px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  @keyframes dungeonPop {
+    0%   { transform: scale(0.8); opacity: 0; }
+    60%  { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); }
+  }
+  .dungeon-rank-pop { animation: dungeonPop 0.4s ease-out; }
 </style>
 </head>
 <body>
@@ -2362,6 +2402,18 @@
       <h2 style="color:#c7d2fe;"><span>⚔️ 組隊挑戰</span> <span style="font-size:11px; color:#818cf8; font-weight:500;">（2-3 人排隊、挑戰固定 BOSS）</span></h2>
       <div id="partyBody"></div>
       <div id="partyHistoryArea"></div>
+    </div>
+
+    <div class="card" style="background:linear-gradient(135deg,#0a0514,#1a0a2e); border:1px solid #6d28d9;">
+      <h2 style="color:#e9d5ff;"><span>🏰 副本探險</span> <span style="font-size:11px; color:#a78bfa; font-weight:500;">（5層挑戰・次數評分・Roguelike BUFF）</span></h2>
+      <div id="dungeonBody"></div>
+      <div id="dungeonFightResult"></div>
+    </div>
+
+    <div class="card" style="background:linear-gradient(135deg,#0a0514,#120a1e); border:1px solid #4c1d95;">
+      <h2 style="color:#e9d5ff;"><span>🏺 地城寶物</span> <span style="font-size:11px; color:#a78bfa; font-weight:500;">（收集・交易・強化效果）</span></h2>
+      <div id="dungeonTreasureBody"></div>
+      <div id="dungeonTradePanel"></div>
     </div>
 
     <div class="card">
@@ -5615,7 +5667,7 @@
     // ⭐ 奈落精英：奈落支配者（Lv 30 頂階，hpBase 直接設高層值，不用 deepBase）
     {
       id: 'elite_nabyss', zone: 'nabyss', name: '★ 奈落支配者', icon: '👁️',
-      fixedHp: 800000, hpBase: 3600, atkBase: 155, defBase: 480, spdBase: 95,
+      fixedHp: 800000, hpBase: 3600, atkBase: 93, defBase: 480, spdBase: 95,
       goldBase: 600, xpBase: 1400,
       verb: '奈落審判',
       ability: { type: 'multiHit', hits: 2 },
@@ -5631,7 +5683,7 @@
     // ⭐ 深奈精英：奈落之主（Lv 35 頂階，tier 7，使用 skills + 覺醒機制）
     {
       id: 'elite_nabyss2', zone: 'nabyss2', name: '★ 奈落之主', icon: '🌀',
-      fixedHp: 1500000, hpBase: 5800, atkBase: 210, defBase: 600, spdBase: 110,
+      fixedHp: 1500000, hpBase: 5800, atkBase: 126, defBase: 600, spdBase: 110,
       goldBase: 1000, xpBase: 2500,
       verb: '奈落宣判',
       tier: 7,
@@ -6225,6 +6277,319 @@
 
   const STAMINA_MAX = 200;
   const STAMINA_PER_FIGHT = 10;
+
+  // ⚔️ 副本系統常數（可隨時調整）
+  // HP：5千萬起，每層 +2千萬
+  const DUNGEON_FLOOR_HPS = [50000000, 70000000, 90000000, 110000000, 130000000];
+  const DUNGEON_HP_RECOVER_MULT = 1.10;                  // 下一層守護者 HP × 1.10（10% 回復懲罰）
+  const DUNGEON_STAMINA_PER_FLOOR = 10;                  // 每層消耗體力
+  // v2：純挑戰次數評分（次數越少越好）
+  const DUNGEON_ATTEMPTS_S = 20;   // 全通且 ≤20 次 → S RANK
+  const DUNGEON_ATTEMPTS_A = 35;   // 全通且 ≤35 次 → RANK 2（>35 → RANK 3）
+  // Roguelike BUFF 池（6 選 3 抽，每清一層選 1）
+  const DUNGEON_BUFF_POOL = [
+    { id:'atk30', label:'⚔️ 鵝王之怒',  desc:'ATK & MARK +30%',          emoji:'🔴' },
+    { id:'def30', label:'🛡 鵝甲強化',  desc:'DEF +30（固定加值）',        emoji:'🔵' },
+    { id:'imm5',  label:'🌟 鵝皇護體',  desc:'首 5 回合免疫所有傷害',      emoji:'🟡' },
+    { id:'hp50',  label:'💚 鵝鵝生命',  desc:'HP 上限 +50%',               emoji:'🟢' },
+    { id:'spd30', label:'💨 鵝式疾走',  desc:'SPD +30%',                   emoji:'⚪' },
+    { id:'pen10', label:'💥 鵝蛋穿透',  desc:'守護者物理抗性 -10%',        emoji:'🟠' },
+  ];
+  const DUNGEON_BOSS_DEF = {
+    id:   'dungeon_boss',
+    name: '⚔️ 副本守護者',
+    icon: '⚔️',
+    verb: '守護者斬擊',
+    skills: [
+      { verb: '守護者怒擊', mult: 2.2, cooldown: 3 },
+      { verb: '防壁粉碎',   mult: 1.6, applyStatus: { type: 'paralyze', charges: 2, chance: 0.50 }, cooldown: 4 },
+      { verb: '絕望一擊',   mult: 1.8, ignoreDef: true, cooldown: 5 },
+    ],
+    maxRounds: 200,   // 血量大，多給回合
+    defPen: 0.30,
+    // 每層獨立屬性（index 0 = Floor 1）
+    floorStats: [
+      { level: 40, atk:  600, def:  600, physRes: 0.10, magRes: 0.10, spd:  80 },
+      { level: 44, atk:  825, def:  950, physRes: 0.13, magRes: 0.13, spd: 115 },
+      { level: 48, atk: 1050, def: 1300, physRes: 0.15, magRes: 0.15, spd: 150 },
+      { level: 52, atk: 1275, def: 1650, physRes: 0.18, magRes: 0.18, spd: 175 },
+      { level: 56, atk: 1500, def: 2000, physRes: 0.20, magRes: 0.20, spd: 200 },
+    ],
+  };
+
+  // ⚔️ 地下城寶物（200 樣）
+  const DUNGEON_TREASURES = [
+    // ─── 🌟 鵝鵝級 (16) ───
+    {id:'dt_g01',name:'鵝王之魂',  rarity:'goose', bonuses:{allPct:0.05,critChance:0.10}},
+    {id:'dt_g02',name:'不死鵝蛋',  rarity:'goose', special:'imm1_death'},
+    {id:'dt_g03',name:'超限神諭',  rarity:'goose', special:'overcrit_convert'},
+    {id:'dt_g04',name:'傳說鵝印',  rarity:'goose', bonuses:{hpRegenPct:0.02}},
+    {id:'dt_g05',name:'終極鵝力',  rarity:'goose', bonuses:{critDmg:0.50}},
+    {id:'dt_g06',name:'鵝皇護盾',  rarity:'goose', special:'full_block_5pct'},
+    {id:'dt_g07',name:'吸血鵝牙',  rarity:'goose', bonuses:{physVampPct:0.03}},
+    {id:'dt_g08',name:'拚命鵝魂',  rarity:'goose', special:'hp_loss_dmg_boost'},
+    {id:'dt_g09',name:'鵝鵝連擊',  rarity:'goose', bonuses:{comboBonus:0.15}},
+    {id:'dt_g10',name:'鵝式節能',  rarity:'goose', bonuses:{mpDiscountPct:0.15}},
+    {id:'dt_g11',name:'鵝皇全能',  rarity:'goose', bonuses:{allPct:0.04}},
+    {id:'dt_g12',name:'超速鵝神',  rarity:'goose', bonuses:{spd:50,mpRegen:3}},
+    {id:'dt_g13',name:'鵝界霸主',  rarity:'goose', bonuses:{atk:50,critChance:0.15}},
+    {id:'dt_g14',name:'最強鵝盾',  rarity:'goose', bonuses:{def:80,dmgReduction:0.10}},
+    {id:'dt_g15',name:'鵝鵝覺醒',  rarity:'goose', bonuses:{maxHp:500,hpRegenPct:0.01}},
+    {id:'dt_g16',name:'神鵝祝福',  rarity:'goose', bonuses:{skillDmgPct:0.20}},
+    // ─── 💎 傳說級 (21) ───
+    {id:'dt_l01',name:'全能傳說石', rarity:'legend',bonuses:{allPct:0.02}},
+    {id:'dt_l02',name:'開場爆發符', rarity:'legend',special:'early_atk15pct'},
+    {id:'dt_l03',name:'絕境鵝魂',  rarity:'legend',special:'low_hp30_atk20pct'},
+    {id:'dt_l04',name:'精準傳說石', rarity:'legend',bonuses:{critDmg:0.10}},
+    {id:'dt_l05',name:'危機應戰',  rarity:'legend',special:'low_hp50_atk8pct'},
+    {id:'dt_l06',name:'傳說節能石', rarity:'legend',bonuses:{mpDiscountPct:0.05}},
+    {id:'dt_l07',name:'鵝甲修復',  rarity:'legend',bonuses:{dmgReduction:0.02,hpRegenPct:0.01}},
+    {id:'dt_l08',name:'傳說暴擊石', rarity:'legend',bonuses:{critChance:0.08,critDmg:0.20}},
+    {id:'dt_l09',name:'傳說破甲符', rarity:'legend',bonuses:{defIgnorePct:0.10}},
+    {id:'dt_l10',name:'傳說疾風符', rarity:'legend',bonuses:{spd:50}},
+    {id:'dt_l11',name:'傳說烈焰石', rarity:'legend',bonuses:{magDmgPct:0.15}},
+    {id:'dt_l12',name:'傳說護甲',  rarity:'legend',bonuses:{def:50,hpFlatRegen:5}},
+    {id:'dt_l13',name:'傳說戰鬥靈', rarity:'legend',special:'growing_atk5'},
+    {id:'dt_l14',name:'傳說連擊符', rarity:'legend',bonuses:{comboBonus:0.10}},
+    {id:'dt_l15',name:'傳說吸血石', rarity:'legend',bonuses:{magVampPct:0.02}},
+    {id:'dt_l16',name:'傳說封印石', rarity:'legend',bonuses:{dmgReduction:0.03}},
+    {id:'dt_l17',name:'傳說鷹眼',  rarity:'legend',bonuses:{critDmg:0.30}},
+    {id:'dt_l18',name:'傳說攻速石', rarity:'legend',bonuses:{atk:25,spd:30}},
+    {id:'dt_l19',name:'傳說魔力石', rarity:'legend',bonuses:{maxMp:50,mpRegen:3}},
+    {id:'dt_l20',name:'傳說生命石', rarity:'legend',bonuses:{maxHp:300,hpFlatRegen:5}},
+    {id:'dt_l21',name:'傳說克星符', rarity:'legend',bonuses:{bossExtraDmg:0.08}},
+    // ─── ✨ 閃鵝級 (30) 暫不開放 ───
+    {id:'dt_f01',name:'閃鵝破甲',  rarity:'flash', bonuses:{defIgnorePct:0.05}},
+    {id:'dt_f02',name:'閃鵝疾速',  rarity:'flash', bonuses:{spd:30}},
+    {id:'dt_f03',name:'閃鵝狂攻',  rarity:'flash', bonuses:{atk:20}},
+    {id:'dt_f04',name:'閃鵝魔力',  rarity:'flash', bonuses:{mpDiscountPct:0.08}},
+    {id:'dt_f05',name:'閃鵝生命',  rarity:'flash', bonuses:{maxHp:200}},
+    {id:'dt_f06',name:'閃鵝暴擊',  rarity:'flash', bonuses:{critChance:0.05}},
+    {id:'dt_f07',name:'閃鵝護甲',  rarity:'flash', bonuses:{def:30}},
+    {id:'dt_f08',name:'閃鵝魔攻',  rarity:'flash', bonuses:{mark:15}},
+    {id:'dt_f09',name:'閃鵝堅壁',  rarity:'flash', bonuses:{def:15}},
+    {id:'dt_f10',name:'閃鵝連斬',  rarity:'flash', bonuses:{comboBonus:0.08}},
+    {id:'dt_f11',name:'閃鵝吸血',  rarity:'flash', bonuses:{physVampPct:0.01}},
+    {id:'dt_f12',name:'閃鵝快攻',  rarity:'flash', bonuses:{critChance:0.03}},
+    {id:'dt_f13',name:'閃鵝魔盾',  rarity:'flash', bonuses:{dmgReduction:0.08}},
+    {id:'dt_f14',name:'閃鵝暴眼',  rarity:'flash', bonuses:{critChance:0.05}},
+    {id:'dt_f15',name:'閃鵝回復',  rarity:'flash', bonuses:{hpFlatRegen:3}},
+    {id:'dt_f16',name:'閃鵝魔回',  rarity:'flash', bonuses:{mpRegen:2}},
+    {id:'dt_f17',name:'閃鵝雙刃',  rarity:'flash', bonuses:{atk:15,spd:15}},
+    {id:'dt_f18',name:'閃鵝堅甲',  rarity:'flash', bonuses:{def:20,maxHp:100}},
+    {id:'dt_f19',name:'閃鵝魔印',  rarity:'flash', bonuses:{mark:10,mpDiscountPct:0.03}},
+    {id:'dt_f20',name:'閃鵝衝刺',  rarity:'flash', bonuses:{spd:20,critChance:0.02}},
+    {id:'dt_f21',name:'閃鵝連擊',  rarity:'flash', bonuses:{comboBonus:0.05}},
+    {id:'dt_f22',name:'閃鵝穿透',  rarity:'flash', bonuses:{physDmgPct:0.08}},
+    {id:'dt_f23',name:'閃鵝魔法',  rarity:'flash', bonuses:{magDmgPct:0.08}},
+    {id:'dt_f24',name:'閃鵝強心',  rarity:'flash', bonuses:{def:15,maxHp:50}},
+    {id:'dt_f25',name:'閃鵝蓄力',  rarity:'flash', bonuses:{critDmg:0.08}},
+    {id:'dt_f26',name:'閃鵝守護',  rarity:'flash', bonuses:{dmgReduction:0.05}},
+    {id:'dt_f27',name:'閃鵝靈魂',  rarity:'flash', bonuses:{critDmg:0.15}},
+    {id:'dt_f28',name:'閃鵝封印',  rarity:'flash', bonuses:{skillDmgPct:0.05}},
+    {id:'dt_f29',name:'閃鵝光環',  rarity:'flash', bonuses:{dmgReduction:0.04}},
+    {id:'dt_f30',name:'閃鵝全能',  rarity:'flash', bonuses:{atk:12,def:12,spd:12}},
+    // ─── 🥚 普通級 (63) ───
+    {id:'dt_n01',name:'力量護符 I',   rarity:'normal',bonuses:{atk:4}},
+    {id:'dt_n02',name:'力量護符 II',  rarity:'normal',bonuses:{atk:6}},
+    {id:'dt_n03',name:'力量護符 III', rarity:'normal',bonuses:{atk:8}},
+    {id:'dt_n04',name:'力量護符 IV',  rarity:'normal',bonuses:{atk:10}},
+    {id:'dt_n05',name:'力量護符 V',   rarity:'normal',bonuses:{atk:12}},
+    {id:'dt_n06',name:'戰士石 I',    rarity:'normal',bonuses:{atk:5,def:3}},
+    {id:'dt_n07',name:'戰士石 II',   rarity:'normal',bonuses:{atk:7,def:5}},
+    {id:'dt_n08',name:'攻擊寶珠',    rarity:'normal',bonuses:{atk:6,maxHp:40}},
+    {id:'dt_n09',name:'鬥氣石',      rarity:'normal',bonuses:{atk:5,critChance:0.01}},
+    {id:'dt_n10',name:'破甲石',      rarity:'normal',bonuses:{atk:6,defIgnorePct:0.02}},
+    {id:'dt_n11',name:'戰鬥玉',      rarity:'normal',bonuses:{atk:8,spd:5}},
+    {id:'dt_n12',name:'力量精華',    rarity:'normal',bonuses:{atk:4,mark:3}},
+    {id:'dt_n13',name:'戰鬥晶石',    rarity:'normal',bonuses:{atk:7}},
+    {id:'dt_n14',name:'猛攻石',      rarity:'normal',bonuses:{atk:10,critChance:0.01}},
+    {id:'dt_n15',name:'鐵拳護符',    rarity:'normal',bonuses:{atk:9,critChance:0.02}},
+    {id:'dt_n16',name:'生命石 I',    rarity:'normal',bonuses:{maxHp:60}},
+    {id:'dt_n17',name:'生命石 II',   rarity:'normal',bonuses:{maxHp:80}},
+    {id:'dt_n18',name:'生命石 III',  rarity:'normal',bonuses:{maxHp:100}},
+    {id:'dt_n19',name:'生命石 IV',   rarity:'normal',bonuses:{maxHp:120}},
+    {id:'dt_n20',name:'生命石 V',    rarity:'normal',bonuses:{maxHp:150}},
+    {id:'dt_n21',name:'護盾石 I',    rarity:'normal',bonuses:{maxHp:70,def:3}},
+    {id:'dt_n22',name:'護盾石 II',   rarity:'normal',bonuses:{maxHp:90,def:5}},
+    {id:'dt_n23',name:'生命精華',    rarity:'normal',bonuses:{maxHp:80,hpFlatRegen:1}},
+    {id:'dt_n24',name:'鐵壁石',      rarity:'normal',bonuses:{maxHp:100,dmgReduction:0.02}},
+    {id:'dt_n25',name:'強體石',      rarity:'normal',bonuses:{maxHp:120,atk:3}},
+    {id:'dt_n26',name:'疾速石 I',    rarity:'normal',bonuses:{spd:8}},
+    {id:'dt_n27',name:'疾速石 II',   rarity:'normal',bonuses:{spd:12}},
+    {id:'dt_n28',name:'疾速石 III',  rarity:'normal',bonuses:{spd:15}},
+    {id:'dt_n29',name:'疾速精華',    rarity:'normal',bonuses:{spd:10,atk:4}},
+    {id:'dt_n30',name:'風行石',      rarity:'normal',bonuses:{spd:12,def:4}},
+    {id:'dt_n31',name:'輕盈石',      rarity:'normal',bonuses:{spd:15,maxHp:50}},
+    {id:'dt_n32',name:'魔力石 I',    rarity:'normal',bonuses:{mark:5}},
+    {id:'dt_n33',name:'魔力石 II',   rarity:'normal',bonuses:{mark:8}},
+    {id:'dt_n34',name:'魔力石 III',  rarity:'normal',bonuses:{mark:10}},
+    {id:'dt_n35',name:'魔攻精華',    rarity:'normal',bonuses:{mark:7,mpDiscountPct:0.02}},
+    {id:'dt_n36',name:'魔法晶石',    rarity:'normal',bonuses:{mark:8,spd:5}},
+    {id:'dt_n37',name:'魔印石',      rarity:'normal',bonuses:{mark:10,maxHp:40}},
+    {id:'dt_n38',name:'防禦石 I',    rarity:'normal',bonuses:{def:8}},
+    {id:'dt_n39',name:'防禦石 II',   rarity:'normal',bonuses:{def:12}},
+    {id:'dt_n40',name:'防禦石 III',  rarity:'normal',bonuses:{def:16}},
+    {id:'dt_n41',name:'防禦石 IV',   rarity:'normal',bonuses:{def:20}},
+    {id:'dt_n42',name:'護甲石',      rarity:'normal',bonuses:{def:12,maxHp:60}},
+    {id:'dt_n43',name:'堅甲石',      rarity:'normal',bonuses:{def:18}},
+    {id:'dt_n44',name:'鐵壁晶石',    rarity:'normal',bonuses:{def:14,atk:3}},
+    {id:'dt_n45',name:'防禦精華',    rarity:'normal',bonuses:{def:16,critChance:0.01}},
+    {id:'dt_n46',name:'魔力容器 I',  rarity:'normal',bonuses:{maxMp:20}},
+    {id:'dt_n47',name:'魔力容器 II', rarity:'normal',bonuses:{maxMp:30}},
+    {id:'dt_n48',name:'魔力容器 III',rarity:'normal',bonuses:{maxMp:40}},
+    {id:'dt_n49',name:'魔力回復石 I',rarity:'normal',bonuses:{mpRegen:1}},
+    {id:'dt_n50',name:'魔力回復石 II',rarity:'normal',bonuses:{mpRegen:2}},
+    {id:'dt_n51',name:'節能石 I',    rarity:'normal',bonuses:{mpDiscountPct:0.02}},
+    {id:'dt_n52',name:'節能石 II',   rarity:'normal',bonuses:{mpDiscountPct:0.03}},
+    {id:'dt_n53',name:'魔力精華',    rarity:'normal',bonuses:{maxMp:25,mpRegen:1}},
+    {id:'dt_n54',name:'暴擊石 I',    rarity:'normal',bonuses:{critChance:0.02}},
+    {id:'dt_n55',name:'暴擊石 II',   rarity:'normal',bonuses:{critChance:0.03}},
+    {id:'dt_n56',name:'暴擊石 III',  rarity:'normal',bonuses:{critChance:0.04}},
+    {id:'dt_n57',name:'暴擊傷害石 I',rarity:'normal',bonuses:{critDmg:0.08}},
+    {id:'dt_n58',name:'暴擊傷害石 II',rarity:'normal',bonuses:{critDmg:0.12}},
+    {id:'dt_n59',name:'鷹眼石 I',    rarity:'normal',bonuses:{critChance:0.02,critDmg:0.05}},
+    {id:'dt_n60',name:'鷹眼石 II',   rarity:'normal',bonuses:{critChance:0.03,critDmg:0.08}},
+    {id:'dt_n61',name:'守護石 I',    rarity:'normal',bonuses:{def:5,dmgReduction:0.01}},
+    {id:'dt_n62',name:'守護石 II',   rarity:'normal',bonuses:{def:8,dmgReduction:0.02}},
+    {id:'dt_n63',name:'精準石',      rarity:'normal',bonuses:{critChance:0.03,critDmg:0.05}},
+    // ─── 🪨 渣鵝級 (70) ───
+    {id:'dt_t01',name:'破舊攻擊符',  rarity:'trash', bonuses:{atk:2}},
+    {id:'dt_t02',name:'生鏽劍刃',   rarity:'trash', bonuses:{atk:3}},
+    {id:'dt_t03',name:'碎片力量石',  rarity:'trash', bonuses:{atk:2,maxHp:20}},
+    {id:'dt_t04',name:'舊戰士符',   rarity:'trash', bonuses:{atk:3,def:1}},
+    {id:'dt_t05',name:'磨損利刃',   rarity:'trash', bonuses:{atk:2,critChance:0.005}},
+    {id:'dt_t06',name:'廢鐵武器',   rarity:'trash', bonuses:{atk:4}},
+    {id:'dt_t07',name:'舊鬥氣石',   rarity:'trash', bonuses:{atk:2,spd:2}},
+    {id:'dt_t08',name:'碎裂攻擊玉',  rarity:'trash', bonuses:{atk:3}},
+    {id:'dt_t09',name:'訓練劍符',   rarity:'trash', bonuses:{atk:2,mark:1}},
+    {id:'dt_t10',name:'舊力量護符',  rarity:'trash', bonuses:{atk:3,def:2}},
+    {id:'dt_t11',name:'鈍器碎片',   rarity:'trash', bonuses:{atk:4,maxHp:15}},
+    {id:'dt_t12',name:'戰鬥廢料',   rarity:'trash', bonuses:{atk:2}},
+    {id:'dt_t13',name:'古舊武器符',  rarity:'trash', bonuses:{atk:3,spd:2}},
+    {id:'dt_t14',name:'磨損劍石',   rarity:'trash', bonuses:{atk:2,def:1}},
+    {id:'dt_t15',name:'淘汰攻擊石',  rarity:'trash', bonuses:{atk:3,maxHp:10}},
+    {id:'dt_t16',name:'殘舊生命石',  rarity:'trash', bonuses:{maxHp:20}},
+    {id:'dt_t17',name:'破損護盾',   rarity:'trash', bonuses:{maxHp:25}},
+    {id:'dt_t18',name:'舊生命符',   rarity:'trash', bonuses:{maxHp:30}},
+    {id:'dt_t19',name:'碎裂盾片',   rarity:'trash', bonuses:{maxHp:20,def:1}},
+    {id:'dt_t20',name:'廢舊鐵甲',   rarity:'trash', bonuses:{maxHp:25,atk:1}},
+    {id:'dt_t21',name:'舊生命玉',   rarity:'trash', bonuses:{maxHp:30,spd:2}},
+    {id:'dt_t22',name:'訓練用護甲',  rarity:'trash', bonuses:{maxHp:20}},
+    {id:'dt_t23',name:'舊護盾符',   rarity:'trash', bonuses:{maxHp:28}},
+    {id:'dt_t24',name:'生命碎片',   rarity:'trash', bonuses:{maxHp:20,def:1}},
+    {id:'dt_t25',name:'訓練護體符',  rarity:'trash', bonuses:{maxHp:22}},
+    {id:'dt_t26',name:'廢舊生命石',  rarity:'trash', bonuses:{maxHp:18}},
+    {id:'dt_t27',name:'古老生命符',  rarity:'trash', bonuses:{maxHp:24,atk:1}},
+    {id:'dt_t28',name:'破舊疾速石',  rarity:'trash', bonuses:{spd:3}},
+    {id:'dt_t29',name:'磨損速度符',  rarity:'trash', bonuses:{spd:4}},
+    {id:'dt_t30',name:'舊風行符',   rarity:'trash', bonuses:{spd:3,atk:1}},
+    {id:'dt_t31',name:'碎裂疾速玉',  rarity:'trash', bonuses:{spd:4,maxHp:10}},
+    {id:'dt_t32',name:'廢舊速度石',  rarity:'trash', bonuses:{spd:3}},
+    {id:'dt_t33',name:'舊輕盈符',   rarity:'trash', bonuses:{spd:5}},
+    {id:'dt_t34',name:'訓練速度石',  rarity:'trash', bonuses:{spd:3,maxHp:10}},
+    {id:'dt_t35',name:'古老速度符',  rarity:'trash', bonuses:{spd:4,def:1}},
+    {id:'dt_t36',name:'破舊防禦石',  rarity:'trash', bonuses:{def:3}},
+    {id:'dt_t37',name:'磨損護甲',   rarity:'trash', bonuses:{def:4}},
+    {id:'dt_t38',name:'舊防禦符',   rarity:'trash', bonuses:{def:3,maxHp:15}},
+    {id:'dt_t39',name:'碎裂鐵甲',   rarity:'trash', bonuses:{def:4,atk:1}},
+    {id:'dt_t40',name:'廢舊防盾',   rarity:'trash', bonuses:{def:5}},
+    {id:'dt_t41',name:'訓練防禦石',  rarity:'trash', bonuses:{def:3}},
+    {id:'dt_t42',name:'碎片護甲',   rarity:'trash', bonuses:{def:4,spd:1}},
+    {id:'dt_t43',name:'舊堅甲石',   rarity:'trash', bonuses:{def:5,maxHp:12}},
+    {id:'dt_t44',name:'古老防禦符',  rarity:'trash', bonuses:{def:3,critChance:0.005}},
+    {id:'dt_t45',name:'廢舊鐵甲片',  rarity:'trash', bonuses:{def:4}},
+    {id:'dt_t46',name:'破舊魔力石',  rarity:'trash', bonuses:{mark:2}},
+    {id:'dt_t47',name:'舊魔法符',   rarity:'trash', bonuses:{mark:3}},
+    {id:'dt_t48',name:'碎裂魔力玉',  rarity:'trash', bonuses:{mark:2,maxHp:15}},
+    {id:'dt_t49',name:'廢舊魔印石',  rarity:'trash', bonuses:{mark:3,atk:1}},
+    {id:'dt_t50',name:'古老魔力符',  rarity:'trash', bonuses:{mark:2,spd:2}},
+    {id:'dt_t51',name:'舊魔力容器',  rarity:'trash', bonuses:{maxMp:8}},
+    {id:'dt_t52',name:'廢舊節能石',  rarity:'trash', bonuses:{mpDiscountPct:0.01}},
+    {id:'dt_t53',name:'舊魔力符',   rarity:'trash', bonuses:{maxMp:10}},
+    {id:'dt_t54',name:'碎裂魔力符',  rarity:'trash', bonuses:{maxMp:12,atk:1}},
+    {id:'dt_t55',name:'古老魔力石',  rarity:'trash', bonuses:{mpDiscountPct:0.01,maxHp:15}},
+    {id:'dt_t56',name:'破舊暴擊石',  rarity:'trash', bonuses:{critChance:0.005}},
+    {id:'dt_t57',name:'舊暴擊符',   rarity:'trash', bonuses:{critChance:0.01}},
+    {id:'dt_t58',name:'磨損暴擊玉',  rarity:'trash', bonuses:{critChance:0.01}},
+    {id:'dt_t59',name:'舊防護石',   rarity:'trash', bonuses:{def:2,maxHp:5}},
+    {id:'dt_t60',name:'碎裂暴擊符',  rarity:'trash', bonuses:{critChance:0.01,critDmg:0.02}},
+    {id:'dt_t61',name:'廢舊暴擊石',  rarity:'trash', bonuses:{critChance:0.01,atk:1}},
+    {id:'dt_t62',name:'舊精準符',   rarity:'trash', bonuses:{def:2,critChance:0.005}},
+    {id:'dt_t63',name:'訓練暴擊石',  rarity:'trash', bonuses:{critChance:0.005,maxHp:10}},
+    {id:'dt_t64',name:'古老爆傷符',  rarity:'trash', bonuses:{critDmg:0.02,def:1}},
+    {id:'dt_t65',name:'廢舊閃避石',  rarity:'trash', bonuses:{def:2,spd:2}},
+    {id:'dt_t66',name:'舊戰鬥日誌',  rarity:'trash', bonuses:{hpFlatRegen:1}},
+    {id:'dt_t67',name:'破舊技能石',  rarity:'trash', bonuses:{skillDmgPct:0.01}},
+    {id:'dt_t68',name:'舊魔法回復',  rarity:'trash', bonuses:{mpRegen:1}},
+    {id:'dt_t69',name:'廢舊連擊石',  rarity:'trash', bonuses:{comboBonus:0.02}},
+    {id:'dt_t70',name:'古老戰鬥符',  rarity:'trash', bonuses:{atk:2,def:2,spd:2}},
+  ]; // total = 16+21+30+63+70 = 200
+
+  // 計算玩家持有地下城寶物的戰鬥加成
+  function computeDungeonTreasureBonus(player) {
+    const owned = player?.rpg?.dungeonTreasures || [];
+    // 同一件道具不疊加：先去重，保留每個 id 只算一次
+    const uniqueOwned = [...new Set(owned)];
+    const r = {
+      atk:0,def:0,spd:0,mark:0,maxHp:0,maxMp:0,
+      critChance:0,critDmg:0,mpRegen:0,hpRegenPct:0,hpFlatRegen:0,
+      dmgReduction:0,defIgnorePct:0,physVampPct:0,magVampPct:0,
+      mpDiscountPct:0,physDmgPct:0,magDmgPct:0,skillDmgPct:0,
+      comboBonus:0,bossExtraDmg:0,allPct:0,
+      specials: new Set(),
+    };
+    for (const id of uniqueOwned) {
+      const item = DUNGEON_TREASURES.find(t => t.id === id);
+      if (!item) continue;
+      const b = item.bonuses || {};
+      for (const k of Object.keys(r)) {
+        if (k === 'specials') continue;
+        if (b[k] != null) r[k] += b[k];
+      }
+      if (item.special) r.specials.add(item.special);
+    }
+    return r;
+  }
+
+  // 寶物效果描述
+  function dungeonTreasureDesc(item) {
+    if (!item) return '';
+    const b = item.bonuses || {};
+    const parts = [];
+    if (b.atk)          parts.push(`ATK+${b.atk}`);
+    if (b.def)          parts.push(`DEF+${b.def}`);
+    if (b.spd)          parts.push(`SPD+${b.spd}`);
+    if (b.mark)         parts.push(`MARK+${b.mark}`);
+    if (b.maxHp)        parts.push(`HP+${b.maxHp}`);
+    if (b.maxMp)        parts.push(`MP+${b.maxMp}`);
+    if (b.critChance)   parts.push(`暴擊率+${Math.round(b.critChance*100)}%`);
+    if (b.critDmg)      parts.push(`暴擊傷害+${Math.round(b.critDmg*100)}%`);
+    if (b.mpRegen)      parts.push(`MP回+${b.mpRegen}/回`);
+    if (b.hpFlatRegen)  parts.push(`HP回+${b.hpFlatRegen}/回`);
+    if (b.hpRegenPct)   parts.push(`HP回+${Math.round(b.hpRegenPct*100)}%/回`);
+    if (b.dmgReduction) parts.push(`受傷-${Math.round(b.dmgReduction*100)}%`);
+    if (b.defIgnorePct) parts.push(`無視防禦+${Math.round(b.defIgnorePct*100)}%`);
+    if (b.physVampPct)  parts.push(`物理吸血+${Math.round(b.physVampPct*100)}%`);
+    if (b.magVampPct)   parts.push(`魔法吸血+${Math.round(b.magVampPct*100)}%`);
+    if (b.mpDiscountPct)parts.push(`MP消耗-${Math.round(b.mpDiscountPct*100)}%`);
+    if (b.physDmgPct)   parts.push(`物理傷害+${Math.round(b.physDmgPct*100)}%`);
+    if (b.magDmgPct)    parts.push(`魔法傷害+${Math.round(b.magDmgPct*100)}%`);
+    if (b.skillDmgPct)  parts.push(`技能傷害+${Math.round(b.skillDmgPct*100)}%`);
+    if (b.comboBonus)   parts.push(`連擊傷害+${Math.round(b.comboBonus*100)}%`);
+    if (b.bossExtraDmg) parts.push(`對BOSS傷害+${Math.round(b.bossExtraDmg*100)}%`);
+    if (b.allPct)       parts.push(`全屬性+${Math.round(b.allPct*100)}%`);
+    const sp = item.special;
+    if (sp === 'imm1_death')         parts.push('HP歸零一次無效（免死）');
+    if (sp === 'overcrit_convert')   parts.push('暴擊率>100%時每多5%→爆傷+1%');
+    if (sp === 'full_block_5pct')    parts.push('5%機率完全格擋受到傷害');
+    if (sp === 'hp_loss_dmg_boost')  parts.push('每損5%血量→傷害+1.5%（上限+30%）');
+    if (sp === 'early_atk15pct')     parts.push('開場ATK & MARK +15%');
+    if (sp === 'low_hp30_atk20pct')  parts.push('HP<30%時ATK+20%（觸發一次）');
+    if (sp === 'low_hp50_atk8pct')   parts.push('HP<50%時ATK+8%（觸發一次）');
+    if (sp === 'growing_atk5')       parts.push('每回合ATK+5（上限+50）');
+    return parts.join('・') || '（收藏品）';
+  }
 
   // ⭐ DEF 百分比公式常數：減傷% = DEF/(DEF+K)，K 越小 DEF 越有效（隨時可調）
   const DEF_PIERCE_K = 500;
@@ -7878,6 +8243,24 @@
     stats.def   += treasure.def  || 0;
     stats.spd   += treasure.spd  || 0;
     stats.mark  += treasure.mark || 0;
+    // ⭐ 地下城寶物加成
+    const _dtb = (typeof computeDungeonTreasureBonus === 'function') ? computeDungeonTreasureBonus(player) : null;
+    if (_dtb) {
+      if (_dtb.allPct > 0) {
+        stats.atk   = Math.round(stats.atk   * (1 + _dtb.allPct));
+        stats.def   = Math.round(stats.def   * (1 + _dtb.allPct));
+        stats.spd   = Math.round(stats.spd   * (1 + _dtb.allPct));
+        stats.mark  = Math.round((stats.mark||0) * (1 + _dtb.allPct));
+        stats.maxHp = Math.round(stats.maxHp * (1 + _dtb.allPct));
+      }
+      stats.atk   += _dtb.atk;
+      stats.def   += _dtb.def;
+      stats.spd   += _dtb.spd;
+      stats.mark  += _dtb.mark;
+      stats.maxHp += _dtb.maxHp;
+      stats.maxMp += _dtb.maxMp;
+      stats.hpFlatRegen = (_dtb.hpFlatRegen || 0);
+    }
     // ⭐ 精魂加成（裝在 5 個槽中的）
     let spiritCritChance = 0;
     let spiritCritDmg = 0;
@@ -7921,8 +8304,8 @@
     }
     // critChance / critDmg：把裝備 + 寶物 + 精魂 + 寶石加成併到 setBonuses，autoFight 直接讀
     const mergedBonuses = { ...setInfo.bonuses };
-    mergedBonuses.critChance = (mergedBonuses.critChance || 0) + itemCritChance + (treasure.critChance || 0) + spiritCritChance + gemCritChance;
-    mergedBonuses.critDmg    = (mergedBonuses.critDmg    || 0) + itemCritDmg    + (treasure.critDmg || 0)    + spiritCritDmg;
+    mergedBonuses.critChance = (mergedBonuses.critChance || 0) + itemCritChance + (treasure.critChance || 0) + spiritCritChance + gemCritChance + (_dtb?.critChance || 0);
+    mergedBonuses.critDmg    = (mergedBonuses.critDmg    || 0) + itemCritDmg    + (treasure.critDmg    || 0) + spiritCritDmg                                                + (_dtb?.critDmg    || 0);
     stats.setBonuses = mergedBonuses;
     stats.setCounts = setInfo.counts;
     // 給 UI 顯示用：總暴擊率 / 總爆傷倍率（包含職業底、技能、能力、被動、裝備、套裝）
@@ -7939,8 +8322,12 @@
       + (cAbil.critDmgBonus || 0)
       + (cPass.critDmg || 0)
       + (mergedBonuses.critDmg || 0);
-    // ⭐ 每回合 MP 自動恢復（鵝王恩賜首飾 + 寶物 mpRegen、之後其他來源都加在這裡）
-    stats.mpRegen = itemMpRegen + (treasure.mpRegen || 0);
+    // ⭐ 每回合 MP 自動恢復（鵝王恩賜首飾 + 寶物 mpRegen + 地城寶物）
+    stats.mpRegen = itemMpRegen + (treasure.mpRegen || 0) + (_dtb?.mpRegen || 0);
+    // ⭐ 每回合 HP 自然回復（地城寶物 hpRegenPct 加成到現有 hpRegenPct，上限 10%）
+    if (_dtb?.hpRegenPct) {
+      stats.hpRegenPct = Math.min(10, (stats.hpRegenPct || 0) + Math.round(_dtb.hpRegenPct * 100));
+    }
     return stats;
   }
 
@@ -8252,6 +8639,28 @@
       stats.maxHp = Math.round(stats.maxHp * PVP_HP_MULT);
     }
 
+    // ⭐ 副本 Roguelike BUFF & 地城寶物特殊效果旗標
+    const _dungeonBuffs     = opts?.dungeonBuffs || [];
+    const _dungeonImm5      = _dungeonBuffs.includes('imm5');
+    const _dtBonus          = opts?.dungeonTreasureBonus || {};
+    const _dtSpecials       = new Set(opts?.dungeonTreasureSpecials || []);
+    const _dtFullBlock      = _dtSpecials.has('full_block_5pct')    ? 0.05 : 0;
+    const _dtGrowingAtkStep = _dtSpecials.has('growing_atk5')       ? 5    : 0;
+    const _dtLowHp30Atk     = _dtSpecials.has('low_hp30_atk20pct')  ? 0.20 : 0;
+    const _dtLowHp50Atk     = _dtSpecials.has('low_hp50_atk8pct')   ? 0.08 : 0;
+    let   _dtGrowingAtkAcc  = 0;   // 累積已加的 ATK（上限 50）
+    let   _dtLowHp30Done    = false;
+    let   _dtLowHp50Done    = false;
+    let   _dtImm1DeathUsed  = false;
+    // 副本 BUFF 屬性加成（套在 stats 上，後續計算直接生效）
+    if (_dungeonBuffs.includes('atk30')) {
+      stats.atk  = Math.round(stats.atk  * 1.30);
+      stats.mark = Math.round((stats.mark||0) * 1.30);
+    }
+    if (_dungeonBuffs.includes('def30'))  stats.def   = (stats.def||0) + 30;
+    if (_dungeonBuffs.includes('hp50'))   stats.maxHp = Math.round(stats.maxHp * 1.50);
+    if (_dungeonBuffs.includes('spd30'))  stats.spd   = Math.round(stats.spd  * 1.30);
+
     // 綠茶事件：腳本式遭遇，跳過正常戰鬥
     if (monster.ability?.type === 'cameo') {
       const startHp = Math.min(player.rpg.hp ?? stats.maxHp, stats.maxHp);
@@ -8348,6 +8757,7 @@
     const _earlyDefStacks = getFusionEffectCount(player, 'fx_sg_earlydef');
     const _statusResist   = Math.min(_fxStatusRes * 0.25 + _fxSdCorrode * 0.25, 0.95);
     let _nextForceCrit = 0; // 剩餘必爆次數
+    if (_dtSpecials.has('force_crit_r1')) _nextForceCrit = Math.max(_nextForceCrit, 1); // 🥚 鵝鵝神諭：開場首回必定暴擊
     // 弓手普攻流疊加（本場累積，回合間持續）
     let _aHit = 0;       // 命中數 → 普攻傷害 +1%/層
     let _aCrit = 0;      // 暴擊計數（用於 UI 顯示）
@@ -8500,6 +8910,13 @@
       }
     };
 
+    // ⭐ 地城寶物：開場爆發符（ATK/MARK +15%，整場生效）
+    if (_dtSpecials.has('early_atk15pct')) {
+      stats.atk  = Math.round(stats.atk  * 1.15);
+      stats.mark = Math.round((stats.mark||0) * 1.15);
+      log.push({ type:'system', text:'✨ [地城寶物] 開場爆發符！ATK & MARK +15%' });
+    }
+
     // ⭐ 先機（早餐鵝精魂刻印特殊）：戰鬥開場先手一擊
     if (_spiritSpecials.has('vanguard') && mHp > 0) {
       const _vAtk = stats.atk;
@@ -8546,6 +8963,10 @@
         const _regenHeal = Math.max(1, Math.round(stats.maxHp * (stats.hpRegenPct / 100)));
         pHp = Math.min(stats.maxHp, pHp + _regenHeal);
         log.push({ type: 'player', text: `回合 ${round}：💚 生命湧現 +${_regenHeal} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
+      }
+      // ⭐ 地城寶物：平實 HP 回復（hpFlatRegen/回）
+      if (pTurn && (stats.hpFlatRegen || 0) > 0 && pHp < stats.maxHp && pHp > 0) {
+        pHp = Math.min(stats.maxHp, pHp + stats.hpFlatRegen);
       }
       // ⭐ 每回合自動回 MP（法系 4 / 其他 2）+ 鵝王恩賜飾品 mpRegen + 血吸收 buff mpRegen
       if (pTurn && pMp < stats.maxMp) {
@@ -8605,6 +9026,25 @@
         }
         // ⭐ 實際行動計數（judge 1912 用）：麻痺後 continue，此行不執行，故不含被吃掉回合
         behaviorCount++;
+        // ⭐ 地城寶物：傳說戰鬥靈（每次實際行動 ATK+5，上限+50）
+        if (_dtGrowingAtkStep > 0) {
+          const _gAdd = Math.min(_dtGrowingAtkStep, 50 - _dtGrowingAtkAcc);
+          if (_gAdd > 0) { stats.atk += _gAdd; _dtGrowingAtkAcc += _gAdd; }
+        }
+        // ⭐ 地城寶物：絕境覺醒（HP<30%）
+        if (_dtLowHp30Atk > 0 && !_dtLowHp30Done && pHp < stats.maxHp * 0.30) {
+          _dtLowHp30Done = true;
+          stats.atk  = Math.round(stats.atk  * (1 + _dtLowHp30Atk));
+          stats.mark = Math.round((stats.mark||0) * (1 + _dtLowHp30Atk));
+          log.push({ type:'system', text:`🔥 [地城寶物] 絕境鵝魂！ATK +${Math.round(_dtLowHp30Atk*100)}%`, hp:{player:pHp,monster:mHp,mp:pMp} });
+        }
+        // ⭐ 地城寶物：危機應戰（HP<50%）
+        if (_dtLowHp50Atk > 0 && !_dtLowHp50Done && pHp < stats.maxHp * 0.50) {
+          _dtLowHp50Done = true;
+          stats.atk  = Math.round(stats.atk  * (1 + _dtLowHp50Atk));
+          stats.mark = Math.round((stats.mark||0) * (1 + _dtLowHp50Atk));
+          log.push({ type:'system', text:`⚡ [地城寶物] 危機應戰！ATK +${Math.round(_dtLowHp50Atk*100)}%`, hp:{player:pHp,monster:mHp,mp:pMp} });
+        }
         // ⭐ 寵物觸發（每 N 次實際行動）
         _petTurnCount++;
         {
@@ -8689,7 +9129,7 @@
           if (s && s.isUltimate && _ultimateFired) continue;
           // ⭐ 玩家技能 CD 取消（用 MP 跟硬值控制節奏）
           // if (playerActions < (nextActionForSkill[s.id] || 0)) continue;
-          const effMpCost = Math.round((s.mpCost || 0) * (1 - Math.min(0.80, (passive.mpDiscount || 0) + _fusionMpDiscount + (_weaponMpDiscount || 0))));
+          const effMpCost = Math.round((s.mpCost || 0) * (1 - Math.min(0.90, (passive.mpDiscount || 0) + _fusionMpDiscount + (_weaponMpDiscount || 0) + (_dtBonus.mpDiscountPct || 0))));
           if (pMp < effMpCost) continue;
           // HP 代價技能：必須有「比成本多」的 HP（防自爆）
           if (s.hpCost) {
@@ -8721,7 +9161,7 @@
           const __skillLv = (player.rpg.skillLevels && player.rpg.skillLevels[useSkill.id]) || 0;
           const skill = getSkillEffectiveStats(useSkill, __skillLv);
           // Lv 5 治療系：mpCostMult 進一步打折
-          const effMpCost = Math.round((skill.mpCost || 0) * (skill.mpCostMult || 1) * (1 - Math.min(0.80, (passive.mpDiscount || 0) + _fusionMpDiscount + (_weaponMpDiscount || 0))));
+          const effMpCost = Math.round((skill.mpCost || 0) * (skill.mpCostMult || 1) * (1 - Math.min(0.90, (passive.mpDiscount || 0) + _fusionMpDiscount + (_weaponMpDiscount || 0) + (_dtBonus.mpDiscountPct || 0))));
           pMp -= effMpCost;
           // ⭐ HP 代價（戰士血祭系列）：施法時扣自身 HP（最少留 1）
           let hpPaid = 0;
@@ -8922,6 +9362,8 @@
             if (_fxDgMp > 0 && pMp >= stats.maxMp * 0.9) dmg *= (1 + _fxDgMp * 0.25);
             // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%/層）
             if (_fxPgHp > 0 && pHp < stats.maxHp * 0.3) dmg *= (1 + _fxPgHp * 0.50);
+            // ⭐ 地城寶物：拚命鵝魂（每損失5% HP +1.5%傷害，上限+30%）
+            if (_dtSpecials.has('hp_loss_dmg_boost')) { const _dtHlb = Math.min(0.30, Math.floor(Math.max(0, 1 - pHp/stats.maxHp) / 0.05) * 0.015); if (_dtHlb > 0) dmg *= (1 + _dtHlb); }
             // ⭐ 合成效果：fx_dg_def（攻擊無視 DEF 15%，修正 DEF 折算）— 已在 dmg 計算中套用
             const skillCrit = baseCritChance + (skill.extraCritChance || 0) + (pBuff.critChance || 0);
             // ⭐ 合成效果：fx_pg_critdmg（目標 HP<25% 時爆傷+30%/層）
@@ -8944,7 +9386,10 @@
               if (_fcS) _nextForceCrit--;
               if (hitCrit) {
                 // ⭐ 最擊坑性：只對普通暴擊有效，alwaysCrit/forceCrit 不受限
-                const _effSkillCritMult = (skill.alwaysCrit || _fcS || !monster.critDmgReduct) ? skillCritMult : 1.0 + (skillCritMult - 1.0) * (1 - monster.critDmgReduct);
+                // ⭐ 地城寶物：超限神諭（暴擊率>100%時，每多5%→爆傷+1%）
+                const _ocBonusS = (_dtSpecials.has('overcrit_convert') && skillCrit > 1.0) ? Math.floor((skillCrit - 1.0) / 0.05) * 0.01 : 0;
+                const _skillCritMult = skillCritMult + _ocBonusS;
+                const _effSkillCritMult = (skill.alwaysCrit || _fcS || !monster.critDmgReduct) ? _skillCritMult : 1.0 + (_skillCritMult - 1.0) * (1 - monster.critDmgReduct);
                 hitDmg *= _effSkillCritMult; if (_fcS && _dgCritCount > 0) hitDmg *= 1.30; critCount++; lastIsCrit = true; if (_dgCritCount > 0 && !_fcS) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount);
               }
               // ⭐ 易傷（hit-based）：每段各消耗 1 層
@@ -9364,7 +9809,10 @@
               const _hitCritMult = critMult2 + _aCritBonus;
               if (isCrit) {
                 // ⭐ 最擊坑性：forceCrit 或爆頭時不受限
-                const _effHitCritMult = (_fcA || isHs || !monster.critDmgReduct) ? _hitCritMult : 1.0 + (_hitCritMult - 1.0) * (1 - monster.critDmgReduct);
+                // ⭐ 地城寶物：超限神諭（暴擊率>100%時，每多5%→爆傷+1%）
+                const _ocBonusA = (_dtSpecials.has('overcrit_convert') && baseCrit2 > 1.0) ? Math.floor((baseCrit2 - 1.0) / 0.05) * 0.01 : 0;
+                const _hitCritMult2 = _hitCritMult + _ocBonusA;
+                const _effHitCritMult = (_fcA || isHs || !monster.critDmgReduct) ? _hitCritMult2 : 1.0 + (_hitCritMult2 - 1.0) * (1 - monster.critDmgReduct);
                 dmg *= _effHitCritMult; critCount++; if (_dgCritCount > 0 && !_fcA) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount);
               }
               // ⭐ 弓手普攻流疊加：爆頭傷害（隨機 +5~13%/層，累積）
@@ -9374,6 +9822,8 @@
               if (_fxConquer > 0) dmg *= (1 + _fxConquer * 0.50);
               // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%/層）
               if (_fxPgHp > 0 && pHp < stats.maxHp * 0.3) dmg *= (1 + _fxPgHp * 0.50);
+              // ⭐ 地城寶物：拚命鵝魂（每損失5% HP +1.5%傷害，上限+30%）
+              if (_dtSpecials.has('hp_loss_dmg_boost')) { const _dtHlb = Math.min(0.30, Math.floor(Math.max(0, 1 - pHp/stats.maxHp) / 0.05) * 0.015); if (_dtHlb > 0) dmg *= (1 + _dtHlb); }
               // ⭐ 末世之翼（wingBasicAtkPct）：普攻傷害 +10%
               if (_wingsBasicAtkPct > 0) dmg *= (1 + _wingsBasicAtkPct);
               // ⭐ 滅世之印（fx_cg_ruin）+ 鵝尊之令（fx_cg_decree）：普攻也適用
@@ -9409,12 +9859,12 @@
                 stacks: { hit: _aHit, crit: _aCrit, hs: _aHs, critBonus: _aCritBonus, hsBonus: _aHsBonus },
               });
               // ⭐ 合成效果：fx_vamp（普攻吸血：傷害×3%/層，每箭各自吸）
-              if (_fxVamp > 0 && dmg > 0) {
-                const vampHeal = Math.max(1, Math.round(dmg * _fxVamp * 0.03));
+              { const _tv = _fxVamp * 0.03 + (_dtBonus.physVampPct||0); if (_tv > 0 && dmg > 0) {
+                const vampHeal = Math.max(1, Math.round(dmg * _tv));
                 const _vbefore = pHp;
                 pHp = Math.min(stats.maxHp, pHp + vampHeal);
                 if (pHp - _vbefore > 0) log.push({ type: 'player', text: `回合 ${round}（${hit}/${totalHits}）：🩸 吸血 +${pHp - _vbefore} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
-              }
+              } }
               if (mAbility?.type === 'reflect' && mAbility.resist) {
                 const r = Math.min(mAbility.cap || 300, Math.max(1, Math.round(dmg * mAbility.resist)));
                 pHp = Math.max(0, pHp - r);
@@ -9483,13 +9933,18 @@
             }
             if (isCrit2) {
               // ⭐ 最擊坑性：forceCrit 不受限
-              const _effCritMult2B = (_fcB || !monster.critDmgReduct) ? critMult2 : 1.0 + (critMult2 - 1.0) * (1 - monster.critDmgReduct);
+              // ⭐ 地城寶物：超限神諭（暴擊率>100%時，每多5%→爆傷+1%）
+              const _ocBonusB = (_dtSpecials.has('overcrit_convert') && baseCrit2 > 1.0) ? Math.floor((baseCrit2 - 1.0) / 0.05) * 0.01 : 0;
+              const _critMult2B = critMult2 + _ocBonusB;
+              const _effCritMult2B = (_fcB || !monster.critDmgReduct) ? _critMult2B : 1.0 + (_critMult2B - 1.0) * (1 - monster.critDmgReduct);
               dmg *= _effCritMult2B; if (_fcB && _dgCritCount > 0) dmg *= 1.30; critCount++; if (_dgCritCount > 0 && !_fcB) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount);
             }
             // ⭐ 合成效果：fx_conquer（普攻傷害+50%/層）
             if (_fxConquer > 0) dmg *= (1 + _fxConquer * 0.50);
             // ⭐ 合成效果：fx_pg_hp（背水：HP<30%時所有傷害+50%/層）
             if (_fxPgHp > 0 && pHp < stats.maxHp * 0.3) dmg *= (1 + _fxPgHp * 0.50);
+            // ⭐ 地城寶物：拚命鵝魂（每損失5% HP +1.5%傷害，上限+30%）
+            if (_dtSpecials.has('hp_loss_dmg_boost')) { const _dtHlb = Math.min(0.30, Math.floor(Math.max(0, 1 - pHp/stats.maxHp) / 0.05) * 0.015); if (_dtHlb > 0) dmg *= (1 + _dtHlb); }
             // ⭐ 末世之翼（wingBasicAtkPct）：普攻傷害 +10%
             if (_wingsBasicAtkPct > 0) dmg *= (1 + _wingsBasicAtkPct);
             // ⭐ 滅世之印（fx_cg_ruin）+ 鵝尊之令（fx_cg_decree）：普攻也適用
@@ -9514,13 +9969,13 @@
             }
             mHp -= dmg;
             if (_ssBonusTrueDmg > 0) mHp = Math.max(0, mHp - _ssBonusTrueDmg);
-            // ⭐ 合成效果：fx_vamp（普攻吸血：傷害×3%/層）
-            if (_fxVamp > 0 && dmg > 0) {
-              const vampHeal = Math.max(1, Math.round(dmg * _fxVamp * 0.03));
+            // ⭐ 合成效果：fx_vamp（普攻吸血：傷害×3%/層）+ 地城寶物 physVampPct
+            { const _tv = _fxVamp * 0.03 + (_dtBonus.physVampPct||0); if (_tv > 0 && dmg > 0) {
+              const vampHeal = Math.max(1, Math.round(dmg * _tv));
               const _vbefore = pHp;
               pHp = Math.min(stats.maxHp, pHp + vampHeal);
               if (pHp - _vbefore > 0) log.push({ type: 'player', text: `回合 ${round}：🩸 吸血 +${pHp - _vbefore} HP`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
-            }
+            } }
             // ⭐ 混沌之印（fx_cg_chaos）：命中後 15% 機率使敵 ATK↓20%（3回）
             if (_fxCgChaos > 0 && mHp > 0 && Math.random() < Math.min(1, _fxCgChaos * 0.15)) {
               applyStatus(monster, { type: 'buff', stat: 'atkPct', amount: -0.20, turns: 3 });
@@ -10037,7 +10492,14 @@
             dmg *= (0.85 + Math.random() * 0.3);
             dmg *= (1 - (passive.dmgReduction || 0));
             dmg *= (1 - (pBuff.dmgReducePct || 0));
+            dmg *= (1 - (_dtBonus.dmgReduction || 0));
             dmg = Math.max(1, Math.round(dmg));
+            // ⭐ 副本免疫 / 完全格擋
+            if (_dungeonImm5 && round <= 5) { dmg = 0; }
+            else if (_dtFullBlock > 0 && Math.random() < _dtFullBlock) {
+              log.push({ type:'system', text:`🛡 [鵝皇護盾] 完全格擋！`, hp:{player:pHp,monster:mHp,mp:pMp} });
+              dmg = 0;
+            }
             dmg = consumeShield(dmg);
             dmg = consumePartialShield(dmg);
             // ⭐ 百倍返しだ：受傷半減 + 反射 100× 真傷（charge-based）
@@ -10083,6 +10545,10 @@
               _tenaciousUsed = true; pHp = 1;
               log.push({ type: 'system', text: `🛡 不屈發動！${player.name} 以 1 HP 撐過致命一擊！`, hp: { player: pHp, monster: mHp, mp: pMp } });
             }
+            if (pHp <= 0 && !_dtImm1DeathUsed && _dtSpecials.has('imm1_death')) {
+              _dtImm1DeathUsed = true; pHp = 1;
+              log.push({ type: 'system', text: `🥚 不死鵝蛋發動！${player.name} 以 1 HP 神奇存活！`, hp: { player: pHp, monster: mHp, mp: pMp } });
+            }
             if (pHp <= 0) { dead = true; }
             if (mHp <= 0) { pushDeathLine(); break; }
             // 對玩家上狀態（⭐ 風鵝護符：異常狀態抵抗 -25%；shield 擋下傷害時同時免疫附加狀態）
@@ -10108,7 +10574,11 @@
             dmg *= perHitMult;
             dmg *= (1 - (passive.dmgReduction || 0));
             dmg *= (1 - (pBuff.dmgReducePct || 0));
+            dmg *= (1 - (_dtBonus.dmgReduction || 0));
             dmg = Math.max(1, Math.round(dmg));
+            // ⭐ 副本免疫 / 完全格擋（多段）
+            if (_dungeonImm5 && round <= 5) { dmg = 0; }
+            else if (_dtFullBlock > 0 && h === 0 && Math.random() < _dtFullBlock) { dmg = 0; }
             dmg = consumeShield(dmg);
             dmg = consumePartialShield(dmg);
             // ⭐ 百倍返しだ：受傷半減 + 反射 100×（普攻/多段）
@@ -10830,7 +11300,7 @@
           if (s && s.isUltimate && _ultimateFiredM) continue;
           // ⭐ 玩家技能 CD 取消（用 MP 跟硬值控制節奏）
           // if (playerActions < (nextActionForSkill[s.id] || 0)) continue;
-          const effMpCost = Math.round((s.mpCost || 0) * (1 - Math.min(0.80, (passive.mpDiscount || 0) + _fusionMpDiscount + (_weaponMpDiscount || 0))));
+          const effMpCost = Math.round((s.mpCost || 0) * (1 - Math.min(0.90, (passive.mpDiscount || 0) + _fusionMpDiscount + (_weaponMpDiscount || 0) + (_dtBonus.mpDiscountPct || 0))));
           if (pMp < effMpCost) continue;
           if (s.hpCost) {
             const need = Math.max(1, Math.round(stats.maxHp * s.hpCost));
@@ -10844,7 +11314,7 @@
           if (actionPattern[usedRuleIdx]?.judgeId === 1911) {
             lastRuleFireAt[usedRuleIdx] = playerActions;   // 1911：含麻痺的行動總數
           } else if (actionPattern[usedRuleIdx]?.judgeId === 1913) {
-            lastRuleFireAt[usedRuleIdx] = behaviorCount;   // 1913：不含麻痺的行動數
+            lastRuleFireAt[usedRuleIdx] = behaviorCountM;   // 1913：不含麻痺的行動數
           }
           // 1912 改為 modulo，不需要記錄上次觸發點
         }
@@ -10858,7 +11328,7 @@
           const __skillLv = (player.rpg.skillLevels && player.rpg.skillLevels[useSkill.id]) || 0;
           const skill = getSkillEffectiveStats(useSkill, __skillLv);
           // Lv 5 治療系：mpCostMult 進一步打折
-          const effMpCost = Math.round((skill.mpCost || 0) * (skill.mpCostMult || 1) * (1 - Math.min(0.80, (passive.mpDiscount || 0) + _fusionMpDiscount + (_weaponMpDiscount || 0))));
+          const effMpCost = Math.round((skill.mpCost || 0) * (skill.mpCostMult || 1) * (1 - Math.min(0.90, (passive.mpDiscount || 0) + _fusionMpDiscount + (_weaponMpDiscount || 0) + (_dtBonus.mpDiscountPct || 0))));
           pMp -= effMpCost;
           let hpPaid = 0;
           if (skill.hpCost) {
@@ -11482,12 +11952,12 @@
                 stacks: { hit: _aHit, crit: _aCrit, hs: _aHs, critBonus: _aCritBonus, hsBonus: _aHsBonus },
               });
               // ⭐ 合成效果：fx_vamp（普攻吸血：傷害×3%/層，每箭各自吸）
-              if (_fxVamp > 0 && dmg > 0) {
-                const vampHeal = Math.max(1, Math.round(dmg * _fxVamp * 0.03));
+              { const _tv = _fxVamp * 0.03 + (_dtBonus.physVampPct||0); if (_tv > 0 && dmg > 0) {
+                const vampHeal = Math.max(1, Math.round(dmg * _tv));
                 const _vbefore = pHp;
                 pHp = Math.min(stats.maxHp, pHp + vampHeal);
                 if (pHp - _vbefore > 0) log.push({ type: 'player', text: `回合 ${round}（${hit}/${totalHits}）：🩸 吸血 +${pHp - _vbefore} HP`, hp: hpsSnapshot() });
-              }
+              } }
               if (tgt.ability?.type === 'reflect' && tgt.ability.resist) {
                 const r = Math.min(tgt.ability.cap || 300, Math.max(1, Math.round(dmg * tgt.ability.resist)));
                 pHp = Math.max(0, pHp - r);
@@ -11577,12 +12047,12 @@
               log.push({ type: 'player', text: `回合 ${round}：🌀 混沌之印 → ${tgt.icon}${tgt.name} ATK↓20%（3回）`, hp: hpsSnapshot() });
             }
             // ⭐ 合成效果：fx_vamp（普攻吸血：傷害×3%/層）
-            if (_fxVamp > 0 && dmg > 0) {
-              const vampHeal = Math.max(1, Math.round(dmg * _fxVamp * 0.03));
+            { const _tv = _fxVamp * 0.03 + (_dtBonus.physVampPct||0); if (_tv > 0 && dmg > 0) {
+              const vampHeal = Math.max(1, Math.round(dmg * _tv));
               const _vbefore = pHp;
               pHp = Math.min(stats.maxHp, pHp + vampHeal);
               if (pHp - _vbefore > 0) log.push({ type: 'player', text: `回合 ${round}：🩸 吸血 +${pHp - _vbefore} HP`, hp: hpsSnapshot() });
-            }
+            } }
             let _normReflect = 0;
             if (tgt.ability?.type === 'reflect' && tgt.ability.resist) {
               // 反傷：受到傷害的 N%，上限由 cap 設定（預設 300）
@@ -11856,8 +12326,8 @@
             _mL.atk = Math.round(_mL.atk * 1.4);
             _mL.spd = Math.round(_mL.spd * 1.25);
             _mL._effSpd = Math.max(1, SPD_BASE + _mL.spd); // ⭐ 同步更新 ATB 速度
-            if (!Array.isArray(_mL.skills)) _mL.skills = [];
-            _mL.skills.push(_mL.awakenSkill);
+            // ⭐ 新建陣列避免污染 MONSTERS 定義的共用 skills 參考
+            _mL.skills = Array.isArray(_mL.skills) ? [..._mL.skills, _mL.awakenSkill] : [_mL.awakenSkill];
             log.push({ type: 'monster', text: `⚡ 【覺醒！】${_mL.name} HP 跌破 40%！ATK +40% / SPD +25%！覺醒技能已解鎖！`, hp: hpsSnapshot() });
           }
         }
@@ -12568,6 +13038,8 @@
     renderCharQuickMenu();
     renderPartyTab();
     renderPartyHistory();
+    renderDungeon();
+    renderDungeonTreasures();
     renderForageHistory(); // ⭐ 自己最近 5 場打怪戰報
     renderPersonalBossHistory(); // ⭐ 個人王最近 5 場戰報
     renderWbHistory(); // ⭐ 世界王最近 5 場戰報
@@ -15055,7 +15527,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260513000411';
+  const APP_VERSION = '20260514132600';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -19236,8 +19708,9 @@ ${b.text}
           : `<div style="color:#a78bfa; border-top:1px dashed #7c3aed40; margin-top:4px; padding-top:4px;">⚒️ +${a.val} ${a.type.toUpperCase()}（${a.name}）</div>`
         ).join('')}</div>`
       : '';
-    // ⭐ 裝備繼承系統：Lv 33 武器/防具可從 Lv 28 奈落同槽位裝備繼承詞條
-    const _isInheritTarget = (item.lv || 0) >= 31 && (item.slot === 'weapon' || item.slot === 'armor') && !item.inherited;
+    // ⭐ 裝備繼承系統：Lv 31+ 武器/防具/頭/手套/鞋/披風可從奈落同槽位裝備繼承詞條
+    const _INHERIT_SLOTS = ['weapon', 'armor', 'helmet', 'gloves', 'boots', 'cape'];
+    const _isInheritTarget = (item.lv || 0) >= 31 && _INHERIT_SLOTS.includes(item.slot) && !item.inherited;
     const inheritHtml = _isInheritTarget ? `
       <div style="margin-top:8px; padding:8px 10px; background:#0f172a20; border:1.5px dashed #334155; border-radius:10px; text-align:center;">
         <div style="font-size:11px; color:#64748b; margin-bottom:5px; font-weight:700;">🔗 裝備繼承</div>
@@ -19445,13 +19918,14 @@ ${b.text}
   };
 
   // ============================================================
-  // 🔗 裝備繼承系統（深奈 Lv31+ 武器/防具 ← 奈落 Lv26-30 同槽位裝備）
+  // 🔗 裝備繼承系統（深奈 Lv31+ 武器/防具/頭/手套/鞋/披風 ← 奈落 Lv26-30 同槽位裝備）
   // ============================================================
+  const INHERIT_ELIGIBLE_SLOTS = ['weapon', 'armor', 'helmet', 'gloves', 'boots', 'cape'];
   window.showInheritModal = function showInheritModal(targetIdx) {
     const me = getMe(); if (!me) return;
     const r = getRpg(me);
     const target = r.inventory[targetIdx];
-    if (!target || (target.lv || 0) < 31 || !['weapon', 'armor'].includes(target.slot) || target.inherited) {
+    if (!target || (target.lv || 0) < 31 || !INHERIT_ELIGIBLE_SLOTS.includes(target.slot) || target.inherited) {
       showToast('🔗 此物品不符合繼承條件');
       return;
     }
@@ -22306,6 +22780,893 @@ ${b.text}
     renderPartyTab();
   }
   window.partyPatternRemove = partyPatternRemove;
+
+  // ==============================================================
+  // ⚔️ 副本系統 v2（Dungeon System）
+  // ==============================================================
+
+  function dungeonGetRun(rpg) {
+    return (rpg.dungeonRun && rpg.dungeonRun.active) ? rpg.dungeonRun : null;
+  }
+
+  function dungeonGetHistory(rpg) {
+    if (!Array.isArray(rpg.dungeonHistory)) rpg.dungeonHistory = [];
+    return rpg.dungeonHistory;
+  }
+
+  // 從 autoFight log 抽取最大單次傷害（玩家對怪）
+  function dungeonExtractMaxHit(log, monStartHp) {
+    let maxHit = 0;
+    let prevMHp = monStartHp;
+    for (const entry of (log || [])) {
+      if (entry.hp && entry.hp.monster != null) {
+        const dmg = Math.max(0, prevMHp - entry.hp.monster);
+        if (dmg > maxHit) maxHit = dmg;
+        prevMHp = entry.hp.monster;
+      }
+    }
+    return maxHit;
+  }
+
+  // 從 autoFight log 抽取總回合數
+  function dungeonExtractRounds(log) {
+    let maxRound = 0;
+    for (const entry of (log || [])) {
+      if (entry.round != null && entry.round > maxRound) maxRound = entry.round;
+    }
+    return maxRound;
+  }
+
+  // v2 評分：純看總挑戰次數（越少越好）
+  function calcDungeonScore(run) {
+    return run.totalAttempts || 0; // 低分 = 好成績
+  }
+
+  // v2 排名：必須 5 層全通才有評分；次數越少越好
+  function dungeonGetRankInfo(floorsCleared, score) {
+    if (floorsCleared < 5) return null; // 未全通 → 無評分
+    // score = totalAttempts（低分=好）
+    if (score <= DUNGEON_ATTEMPTS_S) return { rank:'S', label:'S RANK', boxes:5, color:'#fde047', bg:'linear-gradient(135deg,#ca8a04,#fde047)' };
+    if (score <= DUNGEON_ATTEMPTS_A) return { rank:'A', label:'RANK 2', boxes:4, color:'#c084fc', bg:'linear-gradient(135deg,#7c3aed,#a78bfa)' };
+    return { rank:'B', label:'RANK 3', boxes:3, color:'#6ee7b7', bg:'linear-gradient(135deg,#059669,#6ee7b7)' };
+  }
+
+  // 渲染副本歷史紀錄
+  function renderDungeonHistory(rpg) {
+    const history = dungeonGetHistory(rpg);
+    if (!history.length) return '';
+    const rows = history.slice().reverse().slice(0, 5).map(h => {
+      const ri   = dungeonGetRankInfo(h.floorsCleared, h.score);
+      const dt   = new Date(h.ts);
+      const time = `${dt.getMonth()+1}/${dt.getDate()} ${dt.getHours()}:${String(dt.getMinutes()).padStart(2,'0')}`;
+      const attemptsText = (h.totalAttempts != null) ? `${h.totalAttempts} 次` : `評 ${(h.score||0).toLocaleString()}`;
+      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid #1e1b4b;font-size:11px;">
+        <span style="font-weight:800;color:${ri?ri.color:'#6b7280'};min-width:52px;">${ri?ri.label:'未評'}</span>
+        <span style="color:#9ca3af;">${h.floorsCleared}/5層</span>
+        <span style="color:#a78bfa;">${attemptsText}</span>
+        <span style="color:#6b7280;margin-left:auto;font-size:10px;">${time}</span>
+      </div>`;
+    }).join('');
+    return `
+      <div style="background:rgba(0,0,0,0.3);border:1px solid #2d1b69;border-radius:10px;overflow:hidden;margin-top:8px;">
+        <div style="padding:6px 10px;background:rgba(109,40,217,0.25);font-size:11px;font-weight:700;color:#a78bfa;">📜 最近紀錄（最多 5 筆）</div>
+        ${rows}
+      </div>`;
+  }
+
+  // 產生 3 個不重複的 Buff 選項（從 DUNGEON_BUFF_POOL 隨機選）
+  function _dungeonGenBuffOptions() {
+    const pool = DUNGEON_BUFF_POOL.slice();
+    const opts = [];
+    while (opts.length < 3 && pool.length > 0) {
+      const i = Math.floor(Math.random() * pool.length);
+      opts.push(pool.splice(i, 1)[0].id);
+    }
+    return opts;
+  }
+
+  // 主渲染：副本 UI
+  function renderDungeon() {
+    const body = document.getElementById('dungeonBody');
+    if (!body) return;
+    const me = getMe();
+    if (!me) { body.innerHTML = '<div style="color:#a78bfa;padding:8px;font-size:12px;">請先登入</div>'; return; }
+    const rpg = getRpg(me);
+    if (!rpg.class) { body.innerHTML = '<div style="color:#a78bfa;padding:8px;font-size:12px;text-align:center;">先選職業 ♡</div>'; return; }
+
+    const run     = dungeonGetRun(rpg);
+    const stamina = rpg.stamina || 0;
+
+    if (!run) {
+      // ── 無進行中副本：顯示說明 + 開始按鈕 + 歷史 ──
+      const history  = dungeonGetHistory(rpg);
+      const bestRun  = history.length ? history.reduce((b,h) => {
+        if (!b) return h;
+        if (h.floorsCleared < 5) return b.floorsCleared === 5 ? b : (h.floorsCleared > b.floorsCleared ? h : b);
+        if (b.floorsCleared < 5) return h;
+        return (h.score < b.score) ? h : b;
+      }, null) : null;
+      const bestRI   = bestRun ? dungeonGetRankInfo(bestRun.floorsCleared, bestRun.score) : null;
+      const canStart = stamina >= DUNGEON_STAMINA_PER_FLOOR;
+
+      body.innerHTML = `
+        <div style="font-size:11px;color:#a78bfa;padding:4px 0 10px;line-height:1.8;">
+          💡 連續挑戰 5 層副本<br>
+          🔄 每次挑戰（勝/敗）計 1 次，失敗則守護者 HP +10%<br>
+          🍀 每清一層可選 1 個 Roguelike BUFF（共 4 次）<br>
+          🎖 全通！≤${DUNGEON_ATTEMPTS_S}次→<b style="color:#fde047;">S RANK</b>　≤${DUNGEON_ATTEMPTS_A}次→<b style="color:#c084fc;">RANK 2</b>　其他→<b style="color:#6ee7b7;">RANK 3</b><br>
+          📦 S RANK→5箱　RANK 2→4箱　RANK 3→3箱（從 8 箱中選）
+        </div>
+        ${bestRI ? `
+          <div style="background:rgba(0,0,0,0.35);border:1px solid #4c1d95;border-radius:10px;padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px;font-size:11px;">
+            <span style="color:#a78bfa;font-weight:700;">🏅 最佳</span>
+            <span style="font-weight:800;color:${bestRI.color};">${bestRI.label}</span>
+            <span style="color:#9ca3af;">${bestRun.floorsCleared}/5層</span>
+            <span style="color:#a78bfa;">${bestRun.totalAttempts != null ? bestRun.totalAttempts+'次' : '評 '+(bestRun.score||0).toLocaleString()}</span>
+          </div>` : ''}
+        <div style="background:rgba(0,0,0,0.2);border:1px solid #3b0764;border-radius:12px;padding:12px;margin-bottom:10px;">
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:12px;">
+            ${DUNGEON_FLOOR_HPS.map((hp,i) => {
+              const fs = DUNGEON_BOSS_DEF.floorStats[i];
+              const hpLabel = hp >= 100000000 ? (hp/100000000).toFixed(1)+'億' : (hp/10000).toLocaleString()+'萬';
+              return `<div style="text-align:center;background:rgba(109,40,217,0.15);border:1px solid #4c1d95;border-radius:8px;padding:6px 2px;">
+                <div style="font-size:10px;color:#a78bfa;font-weight:700;">F${i+1}</div>
+                <div style="font-size:9px;color:#e9d5ff;font-weight:600;">${hpLabel}</div>
+                <div style="font-size:8px;color:#6b7280;">Lv${fs.level}</div>
+              </div>`;
+            }).join('')}
+          </div>
+          <button onclick="dungeonStartRun()" ${canStart?'':'disabled'}
+            style="display:block;width:100%;background:${canStart?'linear-gradient(135deg,#7c3aed,#4c1d95)':'#374151'};color:${canStart?'#fff':'#6b7280'};border:none;padding:13px;border-radius:12px;font-size:14px;font-weight:800;cursor:${canStart?'pointer':'not-allowed'};font-family:inherit;${canStart?'box-shadow:0 4px 0 #2e1065;':''}letter-spacing:1px;">
+            🏰 進入副本　<span style="font-size:11px;font-weight:500;">(每層 ${DUNGEON_STAMINA_PER_FLOOR}⚡，共需 ${DUNGEON_STAMINA_PER_FLOOR * 5}⚡)</span>
+          </button>
+          ${!canStart ? `<div style="text-align:center;font-size:11px;color:#ef4444;margin-top:6px;">⚡ 體力不足（目前 ${stamina}/${DUNGEON_STAMINA_PER_FLOOR} 點）</div>` : ''}
+        </div>
+        ${renderDungeonHistory(rpg)}
+      `;
+    } else {
+      // ── 副本進行中 ──
+      const floorIdx      = run.floor - 1;
+      const curHp         = run.floorCurrentHp;
+      const floorBaseHp   = DUNGEON_FLOOR_HPS[floorIdx];
+      const hpPct         = Math.max(0, Math.min(100, (curHp / floorBaseHp) * 100));
+      const canFight      = stamina >= DUNGEON_STAMINA_PER_FLOOR;
+      const totalAttempts = run.totalAttempts || 0;
+      const floorAttempt  = (run.floorAttempts || [])[floorIdx] || 0;
+
+      const floorBadges = [1,2,3,4,5].map(i => {
+        const done = i < run.floor;
+        const cur  = i === run.floor;
+        return `<div class="dungeon-floor-badge"
+          style="background:${done?'#166534':cur?'linear-gradient(135deg,#7c3aed,#4c1d95)':'rgba(0,0,0,0.2)'};
+                 color:${done?'#4ade80':cur?'#e9d5ff':'#4b5563'};
+                 border:1px solid ${done?'#16a34a':cur?'#7c3aed':'#374151'};">
+          ${done?'✓':i}
+        </div>`;
+      }).join('');
+
+      const buffBadges = (run.dungeonBuffs || []).map(bid => {
+        const b = DUNGEON_BUFF_POOL.find(x => x.id === bid);
+        return b ? `<span style="font-size:10px;background:rgba(109,40,217,0.3);border:1px solid #7c3aed;border-radius:6px;padding:2px 6px;color:#c4b5fd;">${b.emoji} ${b.label}</span>` : '';
+      }).join('');
+
+      // 若等待選 BUFF → 顯示選 BUFF 畫面
+      if (run.pendingBuffChoice && (run.pendingBuffOptions || []).length) {
+        body.innerHTML = `
+          <div style="display:flex;gap:4px;margin-bottom:8px;">${floorBadges}</div>
+          ${_dungeonBuffChoiceHtml(run)}
+          <div style="text-align:center;margin-top:8px;">
+            <button onclick="dungeonAbandon()"
+              style="background:transparent;color:#6b7280;border:1px solid #374151;padding:6px 20px;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit;">
+              放棄副本
+            </button>
+          </div>
+        `;
+      } else {
+        body.innerHTML = `
+          <div style="display:flex;gap:4px;margin-bottom:8px;">${floorBadges}</div>
+
+          <div style="background:rgba(0,0,0,0.35);border:1px solid #4c1d95;border-radius:10px;padding:10px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <span style="font-size:13px;font-weight:800;color:#e9d5ff;">${DUNGEON_BOSS_DEF.icon} Floor ${run.floor} 守護者 Lv ${DUNGEON_BOSS_DEF.floorStats[floorIdx].level}</span>
+              <span style="font-size:10px;color:#a78bfa;">${curHp.toLocaleString()} HP</span>
+            </div>
+            <div style="background:#1a0a2e;border-radius:6px;height:10px;overflow:hidden;">
+              <div style="height:100%;width:${hpPct.toFixed(1)}%;background:linear-gradient(90deg,#dc2626,#ef4444);border-radius:6px;transition:width 0.5s;"></div>
+            </div>
+            <div style="font-size:9px;color:#6b7280;margin-top:3px;text-align:right;">${curHp.toLocaleString()} HP（基準 ${floorBaseHp.toLocaleString()}，失敗每次+10%）</div>
+          </div>
+
+          <div style="display:flex;gap:6px;font-size:11px;color:#9ca3af;margin-bottom:8px;padding:8px 10px;background:rgba(0,0,0,0.2);border-radius:8px;flex-wrap:wrap;">
+            <span>⚔️ 已清 ${run.floorsCleared} 層</span>
+            <span>🔄 總挑戰 ${totalAttempts} 次</span>
+            <span>🎯 本層已試 ${floorAttempt} 次</span>
+          </div>
+
+          ${buffBadges ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;padding:0 2px;">${buffBadges}</div>` : ''}
+
+          <button onclick="dungeonFight()" id="dungeonFightBtn" ${canFight?'':'disabled'}
+            style="display:block;width:100%;background:${canFight?'linear-gradient(135deg,#dc2626,#991b1b)':'#374151'};color:${canFight?'#fff':'#6b7280'};border:none;padding:13px;border-radius:12px;font-size:14px;font-weight:800;cursor:${canFight?'pointer':'not-allowed'};font-family:inherit;${canFight?'box-shadow:0 4px 0 #7f1d1d;':''}margin-bottom:8px;">
+            ${canFight?`⚔️ 攻打 Floor ${run.floor}　（${DUNGEON_STAMINA_PER_FLOOR}⚡）`:`⚡ 體力不足（需 ${DUNGEON_STAMINA_PER_FLOOR} 點）`}
+          </button>
+          <div style="text-align:center;">
+            <button onclick="dungeonAbandon()"
+              style="background:transparent;color:#6b7280;border:1px solid #374151;padding:6px 20px;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit;">
+              放棄副本
+            </button>
+          </div>
+        `;
+      }
+    }
+  }
+  window.renderDungeon = renderDungeon;
+
+  // 開始新一次副本
+  function dungeonStartRun() {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (!rpg.class)              { showToast('先選職業'); return; }
+    if (rpg.hp <= 0)             { showToast('💀 HP 太低，先回滿再來'); return; }
+    if ((rpg.stamina||0) < DUNGEON_STAMINA_PER_FLOOR) { showToast(`⚡ 體力不足（需 ${DUNGEON_STAMINA_PER_FLOOR} 點）`); return; }
+    if (dungeonGetRun(rpg))      { showToast('⚔️ 已有進行中的副本'); return; }
+
+    rpg.dungeonRun = {
+      active:           true,
+      startedAt:        Date.now(),
+      floor:            1,
+      floorCurrentHp:   DUNGEON_FLOOR_HPS[0],
+      floorsCleared:    0,
+      totalDamage:      0,
+      totalRounds:      0,
+      maxHit:           0,
+      // v2 新增
+      totalAttempts:    0,
+      floorAttempts:    [0, 0, 0, 0, 0],
+      dungeonBuffs:     [],
+      pendingBuffChoice: false,
+      pendingBuffOptions: [],
+    };
+    saveData();
+    // 清掉上次的戰報
+    const fr = document.getElementById('dungeonFightResult');
+    if (fr) fr.innerHTML = '';
+    renderDungeon();
+    document.getElementById('dungeonBody')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  window.dungeonStartRun = dungeonStartRun;
+
+  // 存副本歷史並清除進行中的副本
+  function _dungeonSaveResult(rpg, run, score, rankInfo) {
+    const history = dungeonGetHistory(rpg);
+    history.push({
+      ts:            Date.now(),
+      floorsCleared: run.floorsCleared,
+      totalDamage:   run.totalDamage,
+      totalRounds:   run.totalRounds,
+      maxHit:        run.maxHit || 0,
+      score,
+      totalAttempts: run.totalAttempts || 0,
+      rank:          rankInfo ? rankInfo.rank : null,
+    });
+    if (history.length > 20) history.splice(0, history.length - 20);
+    rpg.dungeonRun = null;
+  }
+
+  // 執行當前層戰鬥 (v2)
+  function dungeonFight() {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const run = dungeonGetRun(rpg);
+    if (!run) { showToast('先進入副本'); return; }
+    if (run.pendingBuffChoice) { showToast('🍀 請先選擇 BUFF！'); return; }
+    if ((rpg.stamina||0) < DUNGEON_STAMINA_PER_FLOOR) { showToast('⚡ 體力不足'); return; }
+
+    // 鎖按鈕防多點
+    const fightBtn = document.getElementById('dungeonFightBtn');
+    if (fightBtn) fightBtn.disabled = true;
+
+    const floorIdx   = run.floor - 1;
+    const bossHp     = run.floorCurrentHp;
+
+    // 建立怪物物件（每層使用獨立屬性）
+    const _fs = DUNGEON_BOSS_DEF.floorStats[floorIdx];
+    let physRes = _fs.physRes;
+    // pen10 BUFF：守護者物理抗性 -10%
+    if ((run.dungeonBuffs || []).includes('pen10')) physRes = Math.max(0, physRes - 0.10);
+
+    const monster = {
+      id:        DUNGEON_BOSS_DEF.id,
+      name:      DUNGEON_BOSS_DEF.name,
+      icon:      DUNGEON_BOSS_DEF.icon,
+      level:     _fs.level,
+      hp:        bossHp,
+      maxHp:     bossHp,
+      atk:       _fs.atk,
+      def:       _fs.def,
+      spd:       _fs.spd,
+      defPen:    DUNGEON_BOSS_DEF.defPen,
+      physRes,
+      magRes:    _fs.magRes,
+      verb:      DUNGEON_BOSS_DEF.verb,
+      skills:    DUNGEON_BOSS_DEF.skills,
+      maxRounds: DUNGEON_BOSS_DEF.maxRounds,
+      goldDrop:  0, xpDrop: 0,
+    };
+
+    // 計算地城寶物加成
+    const _dtb = (typeof computeDungeonTreasureBonus === 'function') ? computeDungeonTreasureBonus(rpg) : {};
+    const _dtSpecials = _dtb.specials ? [..._dtb.specials] : [];
+
+    // 扣除體力
+    rpg.stamina = Math.max(0, (rpg.stamina||0) - DUNGEON_STAMINA_PER_FLOOR);
+
+    // 計次（無論勝敗）
+    run.totalAttempts = (run.totalAttempts || 0) + 1;
+    if (!run.floorAttempts) run.floorAttempts = [0,0,0,0,0];
+    run.floorAttempts[floorIdx] = (run.floorAttempts[floorIdx] || 0) + 1;
+
+    // 執行戰鬥
+    let result;
+    try {
+      result = autoFight(me, monster, {
+        skipStamina:           true,
+        dungeonBuffs:          run.dungeonBuffs || [],
+        dungeonTreasureBonus:  _dtb,
+        dungeonTreasureSpecials: _dtSpecials,
+      });
+    } catch (e) {
+      console.error('[dungeonFight] autoFight 崩潰', e);
+      rpg.stamina = Math.min(STAMINA_MAX, (rpg.stamina||0) + DUNGEON_STAMINA_PER_FLOOR); // 退費
+      run.totalAttempts = Math.max(0, run.totalAttempts - 1);
+      run.floorAttempts[floorIdx] = Math.max(0, run.floorAttempts[floorIdx] - 1);
+      saveData();
+      if (fightBtn) fightBtn.disabled = false;
+      showToast(`⚠️ 戰鬥引擎出錯（${e?.message||e}）`);
+      return;
+    }
+
+    // 統計本層數據
+    const dmgDealt    = Math.max(0, bossHp - result.mHpFinal);
+    const rounds      = dungeonExtractRounds(result.log);
+    const maxHitFloor = dungeonExtractMaxHit(result.log, bossHp);
+
+    run.totalDamage += dmgDealt;
+    run.totalRounds += rounds;
+    run.maxHit       = Math.max(run.maxHit || 0, maxHitFloor);
+
+    const resultEl = document.getElementById('dungeonFightResult');
+
+    if (result.won) {
+      run.floorsCleared++;
+
+      // ⭐ 20% 機率掉落閃光級寶物（每擊倒一層守護者）
+      let _flashDropName = null;
+      if (Math.random() < 0.20) {
+        const _flashPool = DUNGEON_TREASURES.filter(t => t.rarity === 'flash');
+        if (_flashPool.length > 0) {
+          const _dropped = _flashPool[Math.floor(Math.random() * _flashPool.length)];
+          if (!rpg.dungeonTreasures) rpg.dungeonTreasures = [];
+          rpg.dungeonTreasures.push(_dropped.id);
+          _flashDropName = _dropped.name;
+        }
+      }
+      if (_flashDropName) showToast(`⚡ 守護者掉落：閃光 ${_flashDropName}！`);
+
+      if (run.floor < 5) {
+        // 通過此層 → 進入下一層，重置為基礎 HP
+        run.floor++;
+        run.floorCurrentHp = DUNGEON_FLOOR_HPS[run.floor - 1];
+        // 產生 Buff 選項，等待玩家選擇
+        run.pendingBuffChoice  = true;
+        run.pendingBuffOptions = _dungeonGenBuffOptions();
+        saveData();
+
+        if (resultEl) {
+          resultEl.innerHTML = _dungeonFloorClearHtml(run, floorIdx + 1, dmgDealt, rounds, maxHitFloor);
+          resultEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        renderDungeon();
+      } else {
+        // 全 5 層通關！
+        const score    = calcDungeonScore(run);
+        const rankInfo = dungeonGetRankInfo(run.floorsCleared, score);
+        _dungeonSaveResult(rpg, run, score, rankInfo);
+        saveData();
+
+        if (resultEl) {
+          resultEl.innerHTML = _dungeonCompleteHtml(run, score, rankInfo, floorIdx + 1, dmgDealt, rounds);
+          resultEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        renderDungeon();
+      }
+    } else {
+      // 本層失敗：守護者 HP +10% 基礎值，副本繼續
+      const baseHp = DUNGEON_FLOOR_HPS[floorIdx];
+      run.floorCurrentHp = Math.round(run.floorCurrentHp + baseHp * 0.10);
+      saveData();
+
+      if (resultEl) {
+        resultEl.innerHTML = _dungeonRetryHtml(run, floorIdx + 1, dmgDealt, rounds, bossHp);
+        resultEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      renderDungeon();
+    }
+
+    if (typeof updateStaminaUI === 'function') updateStaminaUI();
+  }
+  window.dungeonFight = dungeonFight;
+
+  // HTML：某層通關（v2：顯示提示先選 Buff）
+  function _dungeonFloorClearHtml(run, clearedFloor, dmgDealt, rounds, maxHit) {
+    const nextFloor = run.floor;
+    const nextHp    = run.floorCurrentHp;
+    return `
+      <div style="background:linear-gradient(135deg,#052e16,#14532d);border:1px solid #16a34a;border-radius:12px;padding:14px;margin-top:10px;" class="dungeon-rank-pop">
+        <div style="text-align:center;margin-bottom:10px;">
+          <div style="font-size:30px;">✨⚔️✨</div>
+          <div style="font-size:16px;font-weight:800;color:#4ade80;">Floor ${clearedFloor} 通關！</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px;margin-bottom:10px;">
+          <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:8px;text-align:center;">
+            <div style="color:#9ca3af;">本層傷害</div>
+            <div style="color:#4ade80;font-weight:700;font-size:13px;">${(dmgDealt/1000000).toFixed(1)}百萬</div>
+          </div>
+          <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:8px;text-align:center;">
+            <div style="color:#9ca3af;">本層回合</div>
+            <div style="color:#4ade80;font-weight:700;font-size:13px;">${rounds}</div>
+          </div>
+          <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:8px;text-align:center;">
+            <div style="color:#9ca3af;">最大單擊</div>
+            <div style="color:#4ade80;font-weight:700;font-size:13px;">${(maxHit/1000000).toFixed(1)}百萬</div>
+          </div>
+        </div>
+        <div style="font-size:12px;color:#fbbf24;text-align:center;padding:10px;background:rgba(0,0,0,0.25);border-radius:8px;font-weight:700;">
+          🍀 請至上方選擇 Roguelike BUFF，再挑戰 Floor ${nextFloor}！<br>
+          <span style="font-size:10px;color:#86efac;font-weight:400;">下層守護者 HP：${nextHp.toLocaleString()}</span>
+        </div>
+      </div>`;
+  }
+
+  // HTML：全通！(v2)
+  function _dungeonCompleteHtml(run, score, rankInfo, lastFloor, lastDmg, lastRounds) {
+    const rLabel = rankInfo ? rankInfo.label : 'RANK 3';
+    const rColor = rankInfo ? rankInfo.color : '#6ee7b7';
+    const rBg    = rankInfo ? rankInfo.bg    : 'linear-gradient(135deg,#059669,#6ee7b7)';
+    const boxes  = rankInfo ? rankInfo.boxes : 3;
+    const attempts = run.totalAttempts || score;
+    return `
+      <div style="background:linear-gradient(135deg,#1a0a2e,#2e1065);border:2px solid #7c3aed;border-radius:14px;padding:16px;margin-top:10px;" class="dungeon-rank-pop">
+        <div style="text-align:center;margin-bottom:12px;">
+          <div style="font-size:40px;margin-bottom:4px;">🏆</div>
+          <div style="font-size:18px;font-weight:900;color:#e9d5ff;margin-bottom:6px;">副本全通！</div>
+          <div style="display:inline-block;background:${rBg};color:#fff;font-size:15px;font-weight:800;padding:5px 24px;border-radius:20px;letter-spacing:2px;">${rLabel}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;font-size:11px;">
+          <div style="background:rgba(0,0,0,0.4);border-radius:8px;padding:8px;text-align:center;">
+            <div style="color:#9ca3af;">總挑戰次數</div>
+            <div style="color:${rColor};font-weight:900;font-size:18px;">${attempts}</div>
+          </div>
+          <div style="background:rgba(0,0,0,0.4);border-radius:8px;padding:8px;text-align:center;">
+            <div style="color:#9ca3af;">總傷害</div>
+            <div style="color:#c4b5fd;font-weight:800;font-size:14px;">${(run.totalDamage/100000000).toFixed(2)}億</div>
+          </div>
+          <div style="background:rgba(0,0,0,0.4);border-radius:8px;padding:8px;text-align:center;">
+            <div style="color:#9ca3af;">最大單擊</div>
+            <div style="color:#c4b5fd;font-weight:800;font-size:14px;">${((run.maxHit||0)/1000000).toFixed(1)}百萬</div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:13px;color:#e9d5ff;font-weight:700;margin-bottom:12px;">
+          🎁 可開 <span style="color:${rColor};font-size:20px;font-weight:900;">${boxes}</span> / 8 個寶箱
+        </div>
+        <div id="dungeonBoxArea">
+          ${_dungeonBoxesHtml(boxes)}
+        </div>
+      </div>`;
+  }
+
+  // HTML：本層失敗（v2：不結束副本，守護者 HP +10%，可繼續重試）
+  function _dungeonRetryHtml(run, failFloor, dmgDealt, rounds, prevBossHp) {
+    const newHp      = run.floorCurrentHp;
+    const attempts   = run.totalAttempts || 0;
+    const floorTries = (run.floorAttempts || [])[failFloor - 1] || 0;
+    return `
+      <div style="background:linear-gradient(135deg,#1a0505,#450a0a);border:1px solid #991b1b;border-radius:12px;padding:14px;margin-top:10px;" class="dungeon-rank-pop">
+        <div style="text-align:center;margin-bottom:10px;">
+          <div style="font-size:30px;">💀</div>
+          <div style="font-size:15px;font-weight:800;color:#fca5a5;">Floor ${failFloor} 失敗</div>
+          <div style="font-size:11px;color:#9ca3af;margin-top:4px;">副本仍在進行中！已試 ${floorTries} 次／累計 ${attempts} 次</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:11px;margin-bottom:10px;">
+          <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:7px;text-align:center;">
+            <div style="color:#9ca3af;">本次傷害</div>
+            <div style="color:#fca5a5;font-weight:700;">${(dmgDealt/1000000).toFixed(1)}百萬</div>
+          </div>
+          <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:7px;text-align:center;">
+            <div style="color:#9ca3af;">本次回合</div>
+            <div style="color:#fca5a5;font-weight:700;">${rounds}</div>
+          </div>
+          <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:7px;text-align:center;">
+            <div style="color:#9ca3af;">守護者新HP</div>
+            <div style="color:#f97316;font-weight:700;">${newHp.toLocaleString()}</div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:#fbbf24;text-align:center;padding:8px;background:rgba(0,0,0,0.2);border-radius:8px;margin-bottom:10px;">
+          ⚠️ 守護者 HP 已增加 10%（${prevBossHp.toLocaleString()} → ${newHp.toLocaleString()}）<br>
+          <span style="color:#9ca3af;font-size:10px;">可繼續重試，次數越多評分越低</span>
+        </div>
+        <button onclick="document.getElementById('dungeonFightResult').innerHTML=''"
+          style="display:block;width:100%;background:linear-gradient(135deg,#dc2626,#991b1b);color:#fff;border:none;padding:11px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+          🔄 再次挑戰 Floor ${failFloor}
+        </button>
+      </div>`;
+  }
+
+  // HTML：Roguelike BUFF 選擇面板
+  function _dungeonBuffChoiceHtml(run) {
+    const opts = (run.pendingBuffOptions || []).map(bid => {
+      const b = DUNGEON_BUFF_POOL.find(x => x.id === bid);
+      if (!b) return '';
+      return `
+        <button onclick="dungeonPickBuff('${b.id}')"
+          style="display:block;width:100%;background:linear-gradient(135deg,#312e81,#1e1b4b);border:2px solid #7c3aed;color:#e9d5ff;padding:12px 10px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;text-align:left;">
+          <span style="font-size:18px;margin-right:8px;">${b.emoji}</span>
+          <span style="color:#c4b5fd;font-weight:900;">${b.label}</span>
+          <span style="color:#9ca3af;font-size:11px;margin-left:8px;">${b.desc}</span>
+        </button>`;
+    }).join('');
+    const cleared = run.floorsCleared || 0;
+    return `
+      <div style="background:linear-gradient(135deg,#1a0a2e,#2e1065);border:2px solid #fbbf24;border-radius:14px;padding:14px;margin-top:4px;">
+        <div style="text-align:center;margin-bottom:12px;">
+          <div style="font-size:26px;margin-bottom:4px;">🍀</div>
+          <div style="font-size:14px;font-weight:800;color:#fde047;">Floor ${cleared} 通關！選擇 Roguelike BUFF</div>
+          <div style="font-size:10px;color:#9ca3af;margin-top:3px;">選 1 個永久生效，帶入後續所有樓層</div>
+        </div>
+        ${opts}
+      </div>`;
+  }
+
+  // 玩家選擇 Roguelike BUFF
+  function dungeonPickBuff(buffId) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const run = dungeonGetRun(rpg);
+    if (!run || !run.pendingBuffChoice) { showToast('❌ 目前無法選擇 BUFF'); return; }
+
+    const buff = DUNGEON_BUFF_POOL.find(b => b.id === buffId);
+    if (!buff) { showToast('❌ 無效的 BUFF'); return; }
+
+    if (!run.dungeonBuffs) run.dungeonBuffs = [];
+    run.dungeonBuffs.push(buffId);
+    run.pendingBuffChoice  = false;
+    run.pendingBuffOptions = [];
+    saveData();
+
+    showToast(`🍀 獲得 BUFF：${buff.emoji} ${buff.label}`);
+
+    // 清掉通關戰報提示
+    const fr = document.getElementById('dungeonFightResult');
+    if (fr) fr.innerHTML = '';
+    renderDungeon();
+  }
+  window.dungeonPickBuff = dungeonPickBuff;
+
+  // HTML：8 個寶箱格，allowedCount = 可開數量
+  function _dungeonBoxesHtml(allowedCount) {
+    const boxes = Array.from({ length: 8 }, (_, i) => `
+      <div class="dungeon-box" id="dbox_${i}" onclick="dungeonOpenBox(${i},${allowedCount})">
+        <div style="font-size:24px;">🎁</div>
+        <div style="font-size:9px;color:#a78bfa;margin-top:3px;">#${i+1}</div>
+      </div>`).join('');
+    return `
+      <div style="font-size:11px;color:#9ca3af;text-align:center;margin-bottom:8px;" id="dboxStatusLine">
+        點選寶箱開啟（剩餘 <span id="dboxRemain" style="color:#c4b5fd;font-weight:700;">${allowedCount}</span> 次）
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
+        ${boxes}
+      </div>
+      <div id="dungeonBoxRewards" style="margin-top:10px;"></div>`;
+  }
+
+  // 地城寶箱稀有度顏色/名稱
+  const _DT_RARITY_COLOR = { goose:'#fde047', legend:'#c084fc', flash:'#67e8f9', normal:'#86efac', trash:'#9ca3af' };
+  const _DT_RARITY_NAME  = { goose:'🦢鵝王', legend:'🌟傳說', flash:'⚡閃光', normal:'🟢普通', trash:'⬜普通' };
+
+  // 開單個寶箱（v2：地城寶物 + 地城鵝蛋幣）
+  function dungeonOpenBox(idx, limit) {
+    const el = document.getElementById('dbox_' + idx);
+    if (!el || el.dataset.opened) return;
+
+    const alreadyOpened = document.querySelectorAll('[id^="dbox_"][data-opened]').length;
+    if (alreadyOpened >= limit) { showToast('📦 已達本次可開上限'); return; }
+
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (!rpg.dungeonTreasures) rpg.dungeonTreasures = [];
+    if (rpg.dungeonEggCoins == null) rpg.dungeonEggCoins = 0;
+
+    // 稀有度抽籤：鵝王 1%、傳說 4%、普通 35%、垃圾 60%（閃光不從箱子出）
+    const roll = Math.random() * 100;
+    const targetRarity = roll < 1 ? 'goose' : roll < 5 ? 'legend' : roll < 40 ? 'normal' : 'trash';
+    const pool = DUNGEON_TREASURES.filter(t => t.rarity === targetRarity);
+
+    let treasure = null;
+    if (pool.length > 0) treasure = pool[Math.floor(Math.random() * pool.length)];
+    if (treasure) rpg.dungeonTreasures.push(treasure.id);  // 允許重複持有
+
+    // 地城鵝蛋幣：1~5 枚
+    const coins = Math.floor(Math.random() * 5) + 1;
+    rpg.dungeonEggCoins += coins;
+
+    // 標記已開
+    el.dataset.opened = '1';
+    const rc = treasure ? (_DT_RARITY_COLOR[treasure.rarity] || '#86efac') : '#9ca3af';
+    el.innerHTML = `<div style="font-size:18px;">${treasure ? '✨' : '📦'}</div>
+      <div style="font-size:8px;color:${rc};margin-top:2px;text-align:center;line-height:1.3;word-break:break-all;">${treasure ? treasure.name : '?'}</div>`;
+
+    const remain = limit - (alreadyOpened + 1);
+    const remainEl = document.getElementById('dboxRemain');
+    if (remainEl) remainEl.textContent = remain;
+
+    // 追加到獎品列表
+    const listEl = document.getElementById('dungeonBoxRewards');
+    if (listEl) {
+      const d = document.createElement('div');
+      d.style.cssText = 'font-size:12px;padding:5px 10px;background:rgba(0,0,0,0.3);border-radius:6px;margin-bottom:4px;line-height:1.6;';
+      const tLabel = treasure
+        ? `<span style="color:${rc};">${_DT_RARITY_NAME[treasure.rarity]||''} ${treasure.name}</span>`
+        : '<span style="color:#6b7280;">無寶物</span>';
+      d.innerHTML = `📦 #${idx+1} → ${tLabel} <span style="color:#fbbf24;font-size:10px;">＋地城鵝蛋幣×${coins}</span>`;
+      listEl.appendChild(d);
+    }
+
+    if (remain <= 0) {
+      const statusEl = document.getElementById('dboxStatusLine');
+      if (statusEl) statusEl.innerHTML = '<span style="color:#4ade80;font-weight:700;">✅ 全部開啟完畢！</span>';
+    }
+
+    saveData();
+    if (typeof updateStaminaUI === 'function') updateStaminaUI();
+    if (typeof renderDungeonTreasures === 'function') renderDungeonTreasures();
+  }
+  window.dungeonOpenBox = dungeonOpenBox;
+
+  // 放棄副本（中途離開）
+  function dungeonAbandon() {
+    const me = getMe(); if (!me) return;
+    if (!confirm('確定放棄副本？本次進度不計分，已消耗體力不退還。')) return;
+    const rpg = getRpg(me);
+    rpg.dungeonRun = null;
+    saveData();
+    const fr = document.getElementById('dungeonFightResult');
+    if (fr) fr.innerHTML = '';
+    renderDungeon();
+  }
+  window.dungeonAbandon = dungeonAbandon;
+
+  // ══════════════════════════════════════════════════════
+  // ⭐ 地城寶物交易系統
+  // ══════════════════════════════════════════════════════
+
+  // 渲染地城寶物＋交易面板（掛在 dungeonBody 之外的獨立容器）
+  function renderDungeonTreasures() {
+    const body = document.getElementById('dungeonTreasureBody');
+    if (!body) return;
+    const me = getMe();
+    if (!me) { body.innerHTML = '<div style="color:#a78bfa;padding:8px;font-size:12px;">請先登入</div>'; return; }
+    const rpg = getRpg(me);
+    const owned = rpg.dungeonTreasures || [];
+    const coins = rpg.dungeonEggCoins || 0;
+
+    // 我的寶物（去重顯示，但顯示持有數量）
+    const countMap = {};
+    for (const id of owned) countMap[id] = (countMap[id]||0) + 1;
+    const uniqueIds = Object.keys(countMap);
+
+    const myTreasureHtml = uniqueIds.length === 0
+      ? '<div style="color:#6b7280;font-size:11px;text-align:center;padding:12px;">尚未持有任何地城寶物</div>'
+      : uniqueIds.map(id => {
+          const item = DUNGEON_TREASURES.find(t => t.id === id);
+          if (!item) return '';
+          const rc = _DT_RARITY_COLOR[item.rarity] || '#9ca3af';
+          const rn = _DT_RARITY_NAME[item.rarity]  || '';
+          const cnt = countMap[id];
+          const desc = (typeof dungeonTreasureDesc === 'function') ? dungeonTreasureDesc(item) : '';
+          return `<div style="background:rgba(0,0,0,0.25);border:1px solid #2d1b69;border-radius:8px;padding:7px 10px;margin-bottom:5px;display:flex;align-items:center;gap:8px;">
+            <div style="min-width:50px;font-size:10px;color:${rc};font-weight:700;">${rn}</div>
+            <div style="flex:1;">
+              <div style="font-size:12px;font-weight:700;color:#e9d5ff;">${item.name}${cnt > 1 ? ` <span style="color:#fbbf24;font-size:10px;">×${cnt}</span>` : ''}</div>
+              ${desc ? `<div style="font-size:10px;color:#9ca3af;margin-top:2px;">${desc}</div>` : ''}
+            </div>
+            <button onclick="dungeonTradeSelectMyItem('${id}')"
+              style="background:rgba(109,40,217,0.3);border:1px solid #7c3aed;color:#c4b5fd;padding:4px 8px;border-radius:6px;font-size:10px;cursor:pointer;font-family:inherit;white-space:nowrap;">
+              提出交易
+            </button>
+          </div>`;
+        }).join('');
+
+    // 待處理交易請求
+    const pending = rpg.pendingDungeonTrades || [];
+    const pendingHtml = pending.length === 0 ? '' : `
+      <div style="margin-top:12px;">
+        <div style="font-size:11px;font-weight:700;color:#fbbf24;margin-bottom:6px;">📬 待處理交易請求（${pending.length}）</div>
+        ${pending.map(tr => {
+          const fromPlayer = players.find(p => p.id === tr.fromId);
+          const fromName = fromPlayer ? (fromPlayer.name || tr.fromId) : tr.fromId;
+          const myItem  = DUNGEON_TREASURES.find(t => t.id === tr.wantItemId);
+          const theirItem = DUNGEON_TREASURES.find(t => t.id === tr.fromItemId);
+          const myRc    = myItem   ? (_DT_RARITY_COLOR[myItem.rarity]   || '#9ca3af') : '#9ca3af';
+          const theirRc = theirItem ? (_DT_RARITY_COLOR[theirItem.rarity] || '#9ca3af') : '#9ca3af';
+          const dt = new Date(tr.ts);
+          const timeStr = `${dt.getMonth()+1}/${dt.getDate()} ${dt.getHours()}:${String(dt.getMinutes()).padStart(2,'0')}`;
+          return `<div style="background:rgba(0,0,0,0.3);border:1px solid #92400e;border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:11px;">
+            <div style="color:#fcd34d;margin-bottom:4px;">🔔 <b>${escapeHtml(fromName)}</b> 想用
+              <span style="color:${theirRc};">${theirItem ? theirItem.name : '???'}</span>
+              換你的 <span style="color:${myRc};">${myItem ? myItem.name : '???'}</span>
+              <span style="color:#6b7280;font-size:9px;margin-left:4px;">${timeStr}</span>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button onclick="dungeonAcceptTrade('${tr.id}')"
+                style="flex:1;background:linear-gradient(135deg,#166534,#16a34a);color:#fff;border:none;padding:6px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">
+                ✅ 接受
+              </button>
+              <button onclick="dungeonDeclineTrade('${tr.id}')"
+                style="flex:1;background:rgba(0,0,0,0.3);color:#9ca3af;border:1px solid #374151;padding:6px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;">
+                ❌ 拒絕
+              </button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+
+    body.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="font-size:12px;font-weight:700;color:#c4b5fd;">🏺 我的地城寶物（${uniqueIds.length} 種 / 共 ${owned.length} 件）</div>
+        <div style="font-size:11px;color:#fbbf24;">🥚 地城幣 ${coins}</div>
+      </div>
+      ${myTreasureHtml}
+      ${pendingHtml}
+    `;
+  }
+  window.renderDungeonTreasures = renderDungeonTreasures;
+
+  // 選擇要拿去交易的自己的道具 → 彈出選對象面板
+  function dungeonTradeSelectMyItem(myItemId) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (!(rpg.dungeonTreasures || []).includes(myItemId)) { showToast('你沒有這件寶物'); return; }
+
+    // 列出有地城寶物的其他玩家
+    const otherPlayers = players.filter(p => p && p.id !== me.id && getRpg(p).dungeonTreasures?.length > 0);
+    if (!otherPlayers.length) { showToast('目前沒有其他玩家持有地城寶物'); return; }
+
+    const myItem = DUNGEON_TREASURES.find(t => t.id === myItemId);
+    const myRc = _DT_RARITY_COLOR[myItem?.rarity] || '#9ca3af';
+
+    // 建立選人面板
+    const panel = document.getElementById('dungeonTradePanel');
+    if (!panel) { showToast('找不到交易面板容器'); return; }
+
+    const playerOpts = otherPlayers.map(p => {
+      const pRpg = getRpg(p);
+      const theirOwned = pRpg.dungeonTreasures || [];
+      const countMap2 = {};
+      for (const id of theirOwned) countMap2[id] = (countMap2[id]||0)+1;
+      const items = Object.keys(countMap2).map(id2 => {
+        const ti = DUNGEON_TREASURES.find(t => t.id === id2);
+        if (!ti) return '';
+        const tRc = _DT_RARITY_COLOR[ti.rarity] || '#9ca3af';
+        const cnt2 = countMap2[id2];
+        return `<button onclick="dungeonSendTradeRequest('${me.id}','${p.id}','${myItemId}','${id2}')"
+          style="display:block;width:100%;background:rgba(0,0,0,0.2);border:1px solid #374151;color:#e9d5ff;padding:5px 8px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;text-align:left;margin-bottom:3px;">
+          <span style="color:${tRc};">${ti.name}</span>${cnt2>1?` ×${cnt2}`:''}
+        </button>`;
+      }).join('');
+      return `<div style="margin-bottom:10px;">
+        <div style="font-size:11px;color:#a78bfa;font-weight:700;margin-bottom:4px;">👤 ${escapeHtml(p.name||p.id)}</div>
+        ${items || '<div style="font-size:10px;color:#6b7280;">無寶物</div>'}
+      </div>`;
+    }).join('');
+
+    panel.innerHTML = `
+      <div style="background:linear-gradient(135deg,#1a0a2e,#2e1065);border:2px solid #7c3aed;border-radius:14px;padding:14px;margin-top:10px;">
+        <div style="font-size:13px;font-weight:800;color:#e9d5ff;margin-bottom:10px;">
+          🔄 用 <span style="color:${myRc};">${myItem?.name||myItemId}</span> 換取...
+          <button onclick="document.getElementById('dungeonTradePanel').innerHTML=''"
+            style="float:right;background:transparent;border:1px solid #374151;color:#6b7280;padding:2px 8px;border-radius:6px;font-size:10px;cursor:pointer;font-family:inherit;">✕</button>
+        </div>
+        <div style="max-height:300px;overflow-y:auto;">${playerOpts}</div>
+      </div>`;
+    panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+  window.dungeonTradeSelectMyItem = dungeonTradeSelectMyItem;
+
+  // 發送交易請求到對方
+  function dungeonSendTradeRequest(fromId, toId, fromItemId, wantItemId) {
+    const me = getMe(); if (!me || me.id !== fromId) return;
+    const target = players.find(p => p.id === toId);
+    if (!target) { showToast('找不到目標玩家'); return; }
+    const targetRpg = getRpg(target);
+
+    // 確認自己仍持有
+    const myRpg = getRpg(me);
+    if (!(myRpg.dungeonTreasures || []).includes(fromItemId)) { showToast('你已不持有該寶物'); return; }
+    // 確認對方仍持有
+    if (!(targetRpg.dungeonTreasures || []).includes(wantItemId)) { showToast('對方已不持有該寶物'); return; }
+
+    const tradeId = `tr_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+    if (!targetRpg.pendingDungeonTrades) targetRpg.pendingDungeonTrades = [];
+    // 上限 10 筆待處理，避免洗版
+    if (targetRpg.pendingDungeonTrades.length >= 10) { showToast('對方待處理交易已滿（最多 10 筆）'); return; }
+    targetRpg.pendingDungeonTrades.push({
+      id: tradeId, fromId, fromName: me.name||fromId, fromItemId, wantItemId, ts: Date.now(),
+    });
+    targetRpg.saveVersion = (targetRpg.saveVersion || 0) + 1;
+    target.lastTouchedAt = Date.now() - 1;
+
+    // 強制寫入對方資料
+    window.__firebaseSync?.forceWriteAllPlayers?.([target]).catch(() => {});
+    saveData();
+
+    const myItem  = DUNGEON_TREASURES.find(t => t.id === fromItemId);
+    const theirItem = DUNGEON_TREASURES.find(t => t.id === wantItemId);
+    showToast(`✅ 已向 ${target.name||toId} 提出交易：${myItem?.name||fromItemId} ↔ ${theirItem?.name||wantItemId}`);
+
+    const panel = document.getElementById('dungeonTradePanel');
+    if (panel) panel.innerHTML = '';
+    renderDungeonTreasures();
+  }
+  window.dungeonSendTradeRequest = dungeonSendTradeRequest;
+
+  // 接受交易請求
+  function dungeonAcceptTrade(tradeId) {
+    const me = getMe(); if (!me) return;
+    const myRpg = getRpg(me);
+    const trade = (myRpg.pendingDungeonTrades || []).find(t => t.id === tradeId);
+    if (!trade) { showToast('找不到此交易請求'); return; }
+
+    const fromPlayer = players.find(p => p.id === trade.fromId);
+    if (!fromPlayer) { showToast('提出方玩家不在線'); renderDungeonTreasures(); return; }
+    const fromRpg = getRpg(fromPlayer);
+
+    // 雙方確認仍持有
+    const myIdx   = (myRpg.dungeonTreasures || []).indexOf(trade.wantItemId);
+    const fromIdx = (fromRpg.dungeonTreasures || []).indexOf(trade.fromItemId);
+    if (myIdx === -1)   { showToast('你已不持有該寶物，交易取消'); myRpg.pendingDungeonTrades = myRpg.pendingDungeonTrades.filter(t => t.id !== tradeId); saveData(); renderDungeonTreasures(); return; }
+    if (fromIdx === -1) { showToast('對方已不持有該寶物，交易取消'); myRpg.pendingDungeonTrades = myRpg.pendingDungeonTrades.filter(t => t.id !== tradeId); saveData(); renderDungeonTreasures(); return; }
+
+    // 執行交換
+    myRpg.dungeonTreasures.splice(myIdx, 1);
+    myRpg.dungeonTreasures.push(trade.fromItemId);
+    fromRpg.dungeonTreasures.splice(fromIdx, 1);
+    fromRpg.dungeonTreasures.push(trade.wantItemId);
+
+    // 清除所有涉及這兩件道具的待處理交易（避免殘留）
+    myRpg.pendingDungeonTrades = (myRpg.pendingDungeonTrades || []).filter(t => t.id !== tradeId);
+
+    const myItem  = DUNGEON_TREASURES.find(t => t.id === trade.fromItemId);
+    const theirItem = DUNGEON_TREASURES.find(t => t.id === trade.wantItemId);
+    showToast(`🎉 交易成功！獲得：${myItem?.name||trade.fromItemId}`);
+
+    // 同步雙方
+    fromRpg.saveVersion = (fromRpg.saveVersion || 0) + 1;
+    fromPlayer.lastTouchedAt = Date.now() - 1;
+    window.__firebaseSync?.forceWriteAllPlayers?.([fromPlayer]).catch(() => {});
+    saveData();
+    renderDungeonTreasures();
+  }
+  window.dungeonAcceptTrade = dungeonAcceptTrade;
+
+  // 拒絕交易請求
+  function dungeonDeclineTrade(tradeId) {
+    const me = getMe(); if (!me) return;
+    const myRpg = getRpg(me);
+    myRpg.pendingDungeonTrades = (myRpg.pendingDungeonTrades || []).filter(t => t.id !== tradeId);
+    saveData();
+    renderDungeonTreasures();
+    showToast('已拒絕該交易請求');
+  }
+  window.dungeonDeclineTrade = dungeonDeclineTrade;
 
   // ⭐ 通用：更新單一 ATB 行動條（width = gauge%、滿條時加閃爍 .full）
   // 偵測「條突然下降」→ 那一方剛出手 → 快閃 100% 再掉到新值
@@ -26023,7 +27384,19 @@ ${b.text}
   function runMultiMonsterFight(me, monsters, ctx) {
     const rpg = getRpg(me);
     const stats = computeStats(me);
-    const result = autoFightMulti(me, monsters);
+    let result;
+    try {
+      result = autoFightMulti(me, monsters);
+    } catch (e) {
+      console.error('[runMultiMonsterFight] autoFightMulti 崩潰！', e);
+      __fightInProgress = false;
+      const fightEl = document.getElementById('fightResult');
+      if (fightEl) fightEl.innerHTML = `<div style="color:#dc2626;padding:12px;background:#fef2f2;border-radius:8px;margin-top:8px;">⚠️ 戰鬥引擎出錯（${escapeHtml(String(e?.message||e))}）<br>請重新嘗試或回報 Bug。</div>`;
+      const btn = document.getElementById('fightBtn');
+      if (btn) btn.disabled = false;
+      if (typeof updateStaminaUI === 'function') updateStaminaUI();
+      return;
+    }
     // 試煉場樣式 arena，但放 fightResult 區
     const arenaHtml = `
       <div class="multi-arena" id="battleArena">
@@ -26167,8 +27540,8 @@ ${b.text}
         totalXp += m.xpDrop || 0;
         totalGold += m.goldDrop || 0;
         const dropLv = Math.max(m.level || rpg.level, _layerDropFloor);
-        // ⭐ 奈落掉落：強制只掉 lv 28 裝備
-        const _isNabyssZone = _layerId === 'nabyss';
+        // ⭐ 奈落/深奈掉落：強制只掉高層裝備
+        const _isNabyssZone = _layerId === 'nabyss' || _layerId === 'nabyss2';
         const drop = rollItemDrop(dropLv, { slotBias: _zone ? _zone.dropBias : null, nabyssZone: _isNabyssZone });
         if (drop) {
           // ⭐ Phase A：走 atomic tx，避免並發 race 把剛拿的裝備吃掉
@@ -26321,7 +27694,8 @@ ${b.text}
       const _zone = ZONES.find(z => z.id === (rpg.currentZone || 'forest'));
       const _curLayer = ZONE_LAYERS.find(l => l.id === (rpg.currentLayer || 'upper'));
       const _isElite = !!(monster.isElite && !monster.isForageElite);
-      const _isNabyssZoneSingle = (rpg.currentLayer || 'upper') === 'nabyss';
+      const _curRawLayer = rpg.currentLayer || 'upper';
+      const _isNabyssZoneSingle = _curRawLayer === 'nabyss' || _curRawLayer === 'nabyss2';
       const dropLv = _isElite
         ? (_curLayer ? _curLayer.maxLv : (monster.level || rpg.level))
         : Math.max(monster.level || rpg.level, _curLayer ? _curLayer.maxLv - 2 : 0);
