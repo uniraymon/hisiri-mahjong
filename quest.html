@@ -3702,6 +3702,7 @@
         queue: [],
         damageLog: {},
         killCount: 0,
+        challengeCount: 0,
         recentBattles: [],
         lastKill: null,
       };
@@ -3792,7 +3793,7 @@
     // ⭐ 老天鵝：依 killCount%4 選形態，填入技能
     let _skFormName = '', _skFormArt = null, _skFormDebuff = {};
     if (boss.isSupremeKing && Array.isArray(boss.forms)) {
-      const _formIdx = (state.killCount || 0) % boss.forms.length;
+      const _formIdx = (state.challengeCount || 0) % boss.forms.length;
       const _form = boss.forms[_formIdx];
       boss.verb    = _form.verb;
       boss.ability = _form.ability || null;
@@ -4505,7 +4506,7 @@
     if (_skBoss) {
       const _skState   = wb9GetState(_skBoss.id);
       const _skHpPct   = Math.max(0, Math.min(100, (_skState.hp / _skBoss.maxHp) * 100));
-      const _skFormIdx = (_skState.killCount || 0) % (_skBoss.forms?.length || 4);
+      const _skFormIdx = (_skState.challengeCount || 0) % (_skBoss.forms?.length || 4);
       const _skForm    = _skBoss.forms?.[_skFormIdx];
       const _skFName   = _skForm?.formName || '???';
       const _skFArt    = _skForm?.art || null;
@@ -4620,7 +4621,7 @@
         actionHtml = `<button class="btn btn-primary" disabled style="background:#4b5563;">已排隊在 ${otherBoss?.name || ''}</button>`;
       } else if (boss.isSupremeKing) {
         const _eggCoins = r.dungeonEggCoins || 0;
-        const _skFormIdx  = (state.killCount || 0) % (boss.forms?.length || 4);
+        const _skFormIdx  = (state.challengeCount || 0) % (boss.forms?.length || 4);
         const _skFormName = boss.forms?.[_skFormIdx]?.formName || '???';
         const _gooseCoins2 = me ? getCoins(me.id) : 0;
         const _canEnter   = _gooseCoins2 >= 1000000;
@@ -16273,7 +16274,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260515024806';
+  const APP_VERSION = '20260515025003';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -32127,6 +32128,7 @@ ${b.text}
           state.damageLog[attackerId] = (state.damageLog[attackerId] || 0) + actualDmg;
           // 移出隊頭
           state.queue = state.queue.slice(1);
+          state.challengeCount = (state.challengeCount || 0) + 1; // ⭐ 每場挑戰後形態前進
           state.lastHitAt = Date.now();
           // ⭐ 記錄攻擊時間戳（伺服器端冷卻用），清除 30 分前過期紀錄防 doc 膨脹
           state.attackCooldowns = { ..._atCds, [attackerId]: Date.now() };
