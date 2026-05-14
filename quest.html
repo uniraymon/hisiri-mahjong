@@ -2524,13 +2524,13 @@
       attackVerb: '揮砍',
       skills: [
         // ⭐ 解鎖 -4，cooldown 全 0；保留高階大招的 cast / hpCost 控制節奏
-        { id: 'w_rage_flame',   name: '怒之炎',   icon: '☄️', unlockLv: 8,  cooldown: 0, mpCost: 50, type: 'damage', mult: 3.5, magic: true },
-        { id: 'w_heavy_strike', name: '重擊',     icon: '⚡', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'damage', mult: 1.3, alwaysCrit: true },
-        { id: 'w_rage_slash',   name: '狂怒斬',   icon: '🔥', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'damage', mult: 1.8, hits: 2, cast: 32 },
-        { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 1,  cooldown: 0, mpCost: 0, hpCost: 0.15, type: 'damage', mult: 2.0, cast: 5, bleedBonus: 1.0 },
-        { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 6,  cooldown: 0, mpCost: 15, type: 'damage', mult: 1.0, lifesteal: 0.20, customLv: true, bleedLifestealBonus: 0.10 },
+        { id: 'w_rage_flame',   name: '怒之炎',   icon: '☄️', unlockLv: 8,  cooldown: 0, mpCost: 50, type: 'damage', mult: 4.2, magic: true },
+        { id: 'w_heavy_strike', name: '重擊',     icon: '⚡', unlockLv: 1,  cooldown: 0, mpCost: 18, type: 'damage', mult: 1.6, alwaysCrit: true },
+        { id: 'w_rage_slash',   name: '狂怒斬',   icon: '🔥', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'damage', mult: 2.2, hits: 2, cast: 32 },
+        { id: 'w_blood_slash',  name: '血祭斬',   icon: '🩸', unlockLv: 1,  cooldown: 0, mpCost: 0, hpCost: 0.15, type: 'damage', mult: 2.4, cast: 5, bleedBonus: 1.0 },
+        { id: 'w_blood_burst',  name: '嗜血爆裂', icon: '💥', unlockLv: 6,  cooldown: 0, mpCost: 15, type: 'damage', mult: 1.2, lifesteal: 0.20, customLv: true, bleedLifestealBonus: 0.10 },
         // ⭐ 死戰之怒：施放後施加易傷 1 層；Lv10 +1 層（共 2 層）
-        { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 25, hpCost: 0.10, type: 'damage', mult: 4.5, cast: 50, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 1, chance: 1 }, customLv: true },
+        { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 25, hpCost: 0.10, type: 'damage', mult: 5.4, cast: 50, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 1, chance: 1 }, customLv: true },
         // ⭐ 爆血：消耗血池（本場所有 HP 代價技能累積），以真傷形式打出（無視防禦與抗性）
         { id: 'w_blood_explode', name: '爆血',   icon: '🩸💥', unlockLv: 8, cooldown: 1, mpCost: 0, type: 'damage', usesBloodPool: true, cast: 5, maxLv: 1 },
         // ⭐ 諸血高：消耗 50% 血池，獲得消耗量 80% 的 HP（可突破最大 HP 上限）
@@ -2546,11 +2546,11 @@
         // ⭐ 改版：不耗 MP，改扣 20% 當前 HP；ATK +45% + 暴擊率 +20%；持續 5 回；cast 60；不可升級
         { id: 'w_bloodlust',    name: '嗜血怒嚎', icon: '🦁', unlockLv: 2,  cooldown: 0, mpCost: 0, hpCost: 0.20, type: 'buff', selfBuff: { stat: 'atkPct', amount: 0.45, turns: 5 }, selfBuff2: { stat: 'critChance', amount: 0.20, turns: 5 }, cast: 60, maxLv: 1 },
         // ⭐ 新增：魔吸斬 — 0.8× ATK 傷害 + 回 2 MP（戰術用，低 MP 時穩定恢復）
-        { id: 'w_mana_strike',  name: '魔吸斬',   icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0, type: 'damage', mult: 0.8, mpRestore: 2 },
+        { id: 'w_mana_strike',  name: '魔吸斬',   icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0, type: 'damage', mult: 1.0, mpRestore: 2 },
         // ⭐ 新增：底氣 — 回血 70% + DEF +30（1 回合）；硬值 150；不可升級
         { id: 'w_guts',         name: '底氣',     icon: '💪', unlockLv: 4,  cooldown: 0, mpCost: 15, type: 'buff', applyPartialShield: { reducePct: 0.20, hits: 3 }, bonusHealPct: 0.50, cast: 75, maxLv: 1 },
         // ⭐ 新增：血鵝刀法 — 傷害 + 讓敵人流血 3 次（每次 0.5% 當前 HP）
-        { id: 'w_bleed_sword',  name: '血鵝刀法', icon: '🗡', unlockLv: 3,  cooldown: 0, mpCost: 18, type: 'damage', mult: 1.0, applyStatus: { type: 'bleed', charges: 3, chance: 1.0 } },
+        { id: 'w_bleed_sword',  name: '血鵝刀法', icon: '🗡', unlockLv: 3,  cooldown: 0, mpCost: 18, type: 'damage', mult: 1.2, applyStatus: { type: 'bleed', charges: 3, chance: 1.0 } },
       ],
       skillTree: [
         { id: 'w_hp',   name: '鋼鐵之軀', icon: '🛡',  desc: '+5% 最大 HP',         maxLevel: 5, effect: 'hpPct',     per: 0.05 },
@@ -2638,26 +2638,26 @@
       critBonus: 0.18,
       skills: [
         // ⭐ 法師技能組（v2 平衡調整）
-        { id: 'm_ice_lance',      name: '冰錐術',     icon: '❄️', unlockLv: 1,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.6, magic: true, useMark: true, applyStatus: { type: 'paralyze', charges: 2, chance: 0.25 }, spellElement: 'ice' },
-        { id: 'm_fireball',       name: '火球術',     icon: '🔥', unlockLv: 1,  cooldown: 0, mpCost: 25, type: 'damage', mult: 2, magic: true, useMark: true, ignoreDef: true, cast: 15, spellElement: 'fire' },
+        { id: 'm_ice_lance',      name: '冰錐術',     icon: '❄️', unlockLv: 1,  cooldown: 0, mpCost: 20, type: 'damage', mult: 1.9, magic: true, useMark: true, applyStatus: { type: 'paralyze', charges: 2, chance: 0.25 }, spellElement: 'ice' },
+        { id: 'm_fireball',       name: '火球術',     icon: '🔥', unlockLv: 1,  cooldown: 0, mpCost: 25, type: 'damage', mult: 2.4, magic: true, useMark: true, ignoreDef: true, cast: 15, spellElement: 'fire' },
         { id: 'm_mana_spring',    name: '法力湧泉',   icon: '💧', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', isMpRegen: true, isMpRegenStrong: true },
         // 連環閃電：3 段 MARK 傷害
-        { id: 'm_chain_lightning',name: '連環閃電',   icon: '⚡', unlockLv: 4,  cooldown: 0, mpCost: 35, type: 'damage', mult: 0.8, magic: true, useMark: true, ignoreDef: true, hits: 3, fixedHitMult: true, cast: 25, spellElement: 'thunder' },
+        { id: 'm_chain_lightning',name: '連環閃電',   icon: '⚡', unlockLv: 4,  cooldown: 0, mpCost: 35, type: 'damage', mult: 1.0, magic: true, useMark: true, ignoreDef: true, hits: 3, fixedHitMult: true, cast: 25, spellElement: 'thunder' },
         { id: 'm_arcane_shield',  name: '魔力護盾',   icon: '🛡️', unlockLv: 5,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'dmgReducePct', amount: 0.50, turns: 4 }, cast: 10, maxLv: 1 },
         // ⭐ 絕對防禦：回血 50% + 抵擋下一次傷害（不能升級）
         { id: 'm_absolute_defense', name: '絕對防禦', icon: '🔰', unlockLv: 8,  cooldown: 0, mpCost: 55, type: 'heal', healPct: 0.5, applyShield: 1, maxLv: 1 },
-        { id: 'm_destruction',    name: '毀滅之怒',   icon: '💀', unlockLv: 12, cooldown: 0, mpCost: 65, type: 'damage', mult: 3, magic: true, useMark: true, ignoreDef: true, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 1, chance: 1 }, cast: 37, customLv: true, spellElement: 'blood' },
-        // ⭐ 冰霜風暴：固定傷害 120 + MARK×5.5，無視 DEF，50% 機率霜凍（SPD-30%，3行動回合，noStack）
-        { id: 'm_ice_storm',      name: '冰霜風暴',   icon: '🌨️', unlockLv: 10, cooldown: 0, mpCost: 45, type: 'damage', flat: 120, markMult: 5.5, ignoreDef: true, cast: 45, spellElement: 'ice', maxLv: 1,
+        { id: 'm_destruction',    name: '毀滅之怒',   icon: '💀', unlockLv: 12, cooldown: 0, mpCost: 65, type: 'damage', mult: 3.6, magic: true, useMark: true, ignoreDef: true, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 1, chance: 1 }, cast: 37, customLv: true, spellElement: 'blood' },
+        // ⭐ 冰霜風暴：固定傷害 144 + MARK×6.6，無視 DEF，50% 機率霜凍（SPD-30%，3行動回合，noStack）
+        { id: 'm_ice_storm',      name: '冰霜風暴',   icon: '🌨️', unlockLv: 10, cooldown: 0, mpCost: 45, type: 'damage', flat: 144, markMult: 6.6, ignoreDef: true, cast: 45, spellElement: 'ice', maxLv: 1,
           applyStatus: { type: 'buff', stat: 'spdPct', amount: -0.30, turns: 3, key: 'frost', noStack: true, monsterTurnOnly: true, chance: 0.50 } },
-        { id: 'm_firestorm',      name: '火焰風暴',   icon: '🌋', unlockLv: 7,  cooldown: 0, mpCost: 55, type: 'damage', flat: 150, markMult: 6, ignoreDef: true, targetCount: 'all', cast: 50, spellElement: 'fire' },
-        { id: 'm_thunder_storm',  name: '怒雷風暴',   icon: '⚡', unlockLv: 9,  cooldown: 0, mpCost: 45, type: 'damage', flat: 360, markMult: 7, magic: true, ignoreDef: true, cast: 25, spellElement: 'thunder' },
-        { id: 'm_poison_cloud',   name: '毒霧',       icon: '☠️', unlockLv: 3,  cooldown: 0, mpCost: 30, type: 'damage', flat: 50, perLv: 3, ignoreDef: true, targetCount: 'all', maxLv: 5, applyStatus: { type: 'poison', charges: 4, chance: 0.85 }, spellElement: 'poison' },
+        { id: 'm_firestorm',      name: '火焰風暴',   icon: '🌋', unlockLv: 7,  cooldown: 0, mpCost: 55, type: 'damage', flat: 180, markMult: 7.2, ignoreDef: true, targetCount: 'all', cast: 50, spellElement: 'fire' },
+        { id: 'm_thunder_storm',  name: '怒雷風暴',   icon: '⚡', unlockLv: 9,  cooldown: 0, mpCost: 45, type: 'damage', flat: 432, markMult: 8.4, magic: true, ignoreDef: true, cast: 25, spellElement: 'thunder' },
+        { id: 'm_poison_cloud',   name: '毒霧',       icon: '☠️', unlockLv: 3,  cooldown: 0, mpCost: 30, type: 'damage', flat: 60, perLv: 4, ignoreDef: true, targetCount: 'all', maxLv: 5, applyStatus: { type: 'poison', charges: 4, chance: 0.85 }, spellElement: 'poison' },
         { id: 'm_arcane_focus',   name: '元素灌注',   icon: '🌀', unlockLv: 2,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'markPct', amount: 0.30, turns: 4 } },
         // ⭐ 魔力虹吸：物理傷（MARK 計算）+ 回 10% maxMP
-        { id: 'm_arcane_drain',   name: '魔力虹吸', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 0.8, useMark: true, mpRestorePct: 0.10 },
+        { id: 'm_arcane_drain',   name: '魔力虹吸', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 1.0, useMark: true, mpRestorePct: 0.10 },
         // ⭐ 血吸術：1.4 × MARK 魔法傷害 + 吸血 10%
-        { id: 'm_blood_drain',    name: '血吸術',   icon: '🩸', unlockLv: 6,  cooldown: 0, mpCost: 28, type: 'damage', markMult: 1.4, magic: true, lifesteal: 0.10, spellElement: 'blood' },
+        { id: 'm_blood_drain',    name: '血吸術',   icon: '🩸', unlockLv: 6,  cooldown: 0, mpCost: 28, type: 'damage', markMult: 1.7, magic: true, lifesteal: 0.10, spellElement: 'blood' },
         // ⭐ 魔法書系統三技能
         // 自動唸咒：每玩家回合法書自動隨機施放4種法術之一（固定5等，20% MARK），持續20回合
         { id: 'm_auto_chant', name: '自動唸咒', icon: '📖', unlockLv: 5, cooldown: 0, mpCost: 20, type: 'buff',
@@ -2707,23 +2707,23 @@
       skills: [
         // ⭐ 解鎖 -4，cooldown 全 0；alwaysCrit 只保留神之裁決（最高階收頭技）
         // ⭐ 審判：法術 2× ATK，打全體
-        { id: 'p_judgment',  name: '審判',     icon: '⚖️', unlockLv: 8,  cooldown: 0, mpCost: 38, type: 'damage', mult: 2.0, magic: true, targetCount: 'all' },
+        { id: 'p_judgment',  name: '審判',     icon: '⚖️', unlockLv: 8,  cooldown: 0, mpCost: 38, type: 'damage', mult: 2.4, magic: true, targetCount: 'all' },
         // ⭐ 聖光斬：1.2 ATK + 5% maxHp（不回血）；Lv 5 / Lv 10 各 +10% 暴擊率
-        { id: 'p_holy_slash',name: '聖光斬',   icon: '✝️', unlockLv: 1,  cooldown: 0, mpCost: 5,  type: 'damage', mult: 1.2, bonusMaxHpPct: 0.05, customLv: true },
+        { id: 'p_holy_slash',name: '聖光斬',   icon: '✝️', unlockLv: 1,  cooldown: 0, mpCost: 5,  type: 'damage', mult: 1.4, bonusMaxHpPct: 0.05, customLv: true },
         { id: 'p_holy_heal', name: '神聖治癒', icon: '✨', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'heal', healPct: 0.3, customLv: true },
         { id: 'p_pray',      name: '祈禱',     icon: '🙏', unlockLv: 1,  cooldown: 0, mpCost: 0,  type: 'heal', healPct: 0.05, isMpRegen: true, isMpRegenStrong: true },
         // ⭐ 神聖懲戒：2.5× ATK + 10% maxHp；Lv 5 +5% maxHp / Lv 10 易傷 +1 次
-        { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 6,  cooldown: 0, mpCost: 35, type: 'damage', mult: 2.5, bonusMaxHpPct: 0.10, cast: 30, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 2, chance: 1 }, customLv: true },
-        { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 7,  cooldown: 0, mpCost: 35, type: 'damage', mult: 1.7, targetCount: 2, applyStatus: { type: 'paralyze', charges: 2, chance: 1.0 }, cast: 15 },
+        { id: 'p_holy_smite',name: '神聖懲戒', icon: '🌟', unlockLv: 6,  cooldown: 0, mpCost: 35, type: 'damage', mult: 3.0, bonusMaxHpPct: 0.10, cast: 30, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 2, chance: 1 }, customLv: true },
+        { id: 'p_godfist',   name: '神之拳',   icon: '🤜', unlockLv: 7,  cooldown: 0, mpCost: 35, type: 'damage', mult: 2.0, targetCount: 2, applyStatus: { type: 'paralyze', charges: 2, chance: 1.0 }, cast: 15 },
         // ⭐ 神聖祝福：DEF +40%（3 回合）+ 臨時最大HP +20%（僅戰鬥中有效）
         { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.25, turns: 3, key: 'p_blessing' }, buffMaxHpPct: 0.20 },
         // ⭐ 護盾衝鋒：6× DEF；攻擊完後 DEF +10%（持續 3 回合）硬值 40
-        { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 45, type: 'damage', defMult: 5.1, postSelfBuff: { stat: 'defPct', amount: 0.10, turns: 3, key: 'p_shield_charge' }, cast: 35 },
+        { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 45, type: 'damage', defMult: 6.1, postSelfBuff: { stat: 'defPct', amount: 0.10, turns: 3, key: 'p_shield_charge' }, cast: 35 },
         { id: 'p_aegis',         name: '百倍返しだ', icon: '💢', unlockLv: 8,  cooldown: 0, mpCost: 30, type: 'buff', applyHundredfoldReflect: 1, maxLv: 1 },
         // ⭐ 不滅聖盾：終極大技 — 20×DEF + 10%maxHp / 攻後 DEF+60%(5回) + 免疫2次
-        { id: 'p_immortal_shield', name: '不滅聖盾', icon: '🛡✨', unlockLv: 10, cooldown: 0, mpCost: 80, type: 'damage', defMult: 20, bonusMaxHpPct: 0.10, postSelfBuff: { stat: 'defPct', amount: 0.60, turns: 5, key: 'p_immortal_shield' }, applyShield: 2, cast: 50, maxLv: 1 },
+        { id: 'p_immortal_shield', name: '不滅聖盾', icon: '🛡✨', unlockLv: 10, cooldown: 0, mpCost: 80, type: 'damage', defMult: 24, bonusMaxHpPct: 0.10, postSelfBuff: { stat: 'defPct', amount: 0.60, turns: 5, key: 'p_immortal_shield' }, applyShield: 2, cast: 50, maxLv: 1 },
         // ⭐ 新增：神聖奪魂 — 0.8× ATK 傷害 + 回 4 MP（聖騎回魔多一倍）
-        { id: 'p_mana_drain',    name: '神聖奪魂', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 0.8, mpRestore: 4 },
+        { id: 'p_mana_drain',    name: '神聖奪魂', icon: '🔵', unlockLv: 2,  cooldown: 0, mpCost: 0,  type: 'damage', mult: 1.0, mpRestore: 4 },
         // ⭐ 鵝鵝的刀盾：buff 持續 10 次自身行動（playerTurnOnly）
         //    啟動後：① 普攻追加 當前HP×3 真傷  ② 每次護盾衝鋒後自動補一次免費普攻
         { id: 'p_sword_shield',  name: '鵝鵝的刀盾', icon: '⚔🛡', unlockLv: 5, cooldown: 0, mpCost: 55, type: 'buff',
@@ -15631,7 +15631,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260514185232';
+  const APP_VERSION = '20260514190537';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
