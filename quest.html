@@ -3612,6 +3612,57 @@
         killer:      { bossCoinQty: 15 },
       },
     },
+    // ⭐ 老天鵝（隱藏 Boss）
+    {
+      id: 'supreme_king',
+      name: '⚜️ 老天鵝', icon: '⚜️', art: 'art/png/modern_v3/bosses/boss_supreme.png',
+      maxHp: 10000000000,
+      atk: 2500, def: 2500, spd: 500,
+      physRes: 0.30, magRes: 0.30,
+      defPen: 0,
+      tier: 100,
+      level: 100,
+      verb: '至尊天擊',
+      isSupremeKing: true,
+      // 4 個隨機形態（依 killCount % 4 決定，所有玩家看到相同形態）
+      forms: [
+        // Form 0：霸天型 — 多段猛攻
+        { formName: '霸天型', verb: '天道怒拳', ability: { type: 'multiHit', hits: 3 }, skills: [
+          { verb: '天崩地裂', mult: 3.2, cooldown: 3 },
+          { verb: '霸王連擊', mult: 1.8, applyStatus: { type: 'bleed', charges: 4, chance: 1.0 }, cooldown: 4 },
+          { verb: '天命終焉', mult: 10.0, ignoreDef: true, minRound: 30, everyRounds: 30, cooldown: 1 },
+        ]},
+        // Form 1：神聖型 — 削弱玩家攻擊力
+        { formName: '神聖型', verb: '審判天光', ability: null, skills: [
+          { verb: '神聖裁決', mult: 2.8, applyStatus: { type: 'buff', stat: 'atkPct', amount: -0.35, turns: 6, chance: 1.0 }, cooldown: 3 },
+          { verb: '天界護壁', type: 'monsterSelfBuff', stat: 'def', amount: 1000, turns: 8, cooldown: 6 },
+          { verb: '滅世聖光', mult: 9.0, ignoreDef: true, minRound: 30, everyRounds: 30, cooldown: 1 },
+        ]},
+        // Form 2：魔導型 — 吸MP + 毒
+        { formName: '魔導型', verb: '冥術汲取', ability: { type: 'physResist', resist: 0.40 }, skills: [
+          { verb: '冥力汲取', mult: 2.2, ignoreDef: true, mpDrainAll: true, lifestealMult: 8, cooldown: 3 },
+          { verb: '魂魄腐蝕', mult: 1.6, applyStatus: { type: 'poison', charges: 5, chance: 1.0 }, cooldown: 4 },
+          { verb: '老天大法', mult: 9.5, ignoreDef: true, minRound: 30, everyRounds: 30, cooldown: 1 },
+        ]},
+        // Form 3：速影型 — 極高頻率攻擊
+        { formName: '速影型', verb: '幽影疾斬', ability: { type: 'multiHit', hits: 4 }, skills: [
+          { verb: '殘影連刺', mult: 1.2, applyStatus: { type: 'paralyze', charges: 2, chance: 0.70 }, cooldown: 2 },
+          { verb: '幽冥毒霧', mult: 1.4, applyStatus: { type: 'poison', charges: 5, chance: 1.0 }, cooldown: 3 },
+          { verb: '速影滅世', mult: 11.0, ignoreDef: true, minRound: 30, everyRounds: 30, cooldown: 1 },
+        ]},
+      ],
+      skills: [], // 動態從 forms[killCount%4] 填入，見 wb9Attack
+      entryCoins: { type: 'dungeonEggCoins', base: 5, buff1Cost: 5, buff2Cost: 15 },
+      bossCoin: { id: 'bc_supreme_king', name: '至尊鵝羽', icon: '⚜️' },
+      killRewards: {
+        top:         { bossCoinQty: 50, supremeJadeQty: 5, skWeapon: true },
+        second:      { bossCoinQty: 40, supremeJadeQty: 4, skWeapon: true },
+        third:       { bossCoinQty: 30, supremeJadeQty: 3, skWeapon: true },
+        fourth:      { bossCoinQty: 25, supremeJadeQty: 2, skWeapon: true },
+        participant: { bossCoinQty: 20, supremeJadeQty: 1, skWeapon: true },
+        killer:      { bossCoinQty: 20, supremeJadeQty: 2 },
+      },
+    },
   ];
 
   // ⭐ Phase B：雲端 state 改用 rooms/{ROOM_ID}/wb9/{bossId}（每王一份獨立 doc）
@@ -3716,9 +3767,21 @@
     // 建立怪物物件給 autoFight 用
     const cls   = CLASSES[r.class];
     const stats = computeStats(me);
+
+    // ⭐ 老天鵝：依 killCount%4 選形態，填入技能
+    let _skFormName = '';
+    if (boss.isSupremeKing && Array.isArray(boss.forms)) {
+      const _formIdx = (state.killCount || 0) % boss.forms.length;
+      const _form = boss.forms[_formIdx];
+      boss.verb    = _form.verb;
+      boss.ability = _form.ability || null;
+      boss.skills  = _form.skills  || [];
+      _skFormName  = _form.formName || '';
+    }
+
     const monster = {
       id: boss.id, tier: 99,
-      name: boss.name, icon: boss.icon, level: boss.level,
+      name: boss.name + (_skFormName ? `【${_skFormName}】` : ''), icon: boss.icon, level: boss.level,
       hp: state.hp, maxHp: boss.maxHp,
       atk: boss.atk, def: boss.def, spd: boss.spd,
       physRes: boss.physRes || 0, magRes: boss.magRes || 0,
@@ -3736,7 +3799,12 @@
     const _wbOpts   = {};
     if (typeof _wbPage  === 'number') _wbOpts.patternPage = _wbPage;
     if (typeof _wbEqSet === 'number') _wbOpts.equipSet    = _wbEqSet;
+    // ⭐ 老天鵝入場 BUFF
+    const _skWbBuff = Array.isArray(r.skWbBuff) ? [...r.skWbBuff] : [];
+    if (_skWbBuff.length) _wbOpts.skBuffs = _skWbBuff;
     const result  = autoFight(me, monster, Object.keys(_wbOpts).length ? _wbOpts : undefined);
+    // 戰鬥後清除入場 buff
+    if (_skWbBuff.length) { r.skWbBuff = []; saveData(); }
     const dmgRaw  = Math.round(Math.max(0, state.hp - result.mHpFinal) * 1.3); // ⭐ 世界王傷害 × 1.3
 
     // 戰鬥快照（給 recentBattles）
@@ -3903,6 +3971,19 @@
     if (myEntry.bossCoinQty > 0 && myEntry.bossCoinId) {
       addBossCoin(me.id, myEntry.bossCoinId, myEntry.bossCoinQty);
     }
+    // ⭐ 老天鵝：至尊寶玉
+    if (myEntry.supremeJadeQty > 0) {
+      r.supremeJade = (r.supremeJade || 0) + myEntry.supremeJadeQty;
+    }
+    // ⭐ 老天鵝：隨機神裝武器
+    if (myEntry.skWeapon) {
+      const _skWeapons = ITEMS.filter(it => it.sourceBossId === 'supreme_king' && it.slot === 'weapon');
+      if (_skWeapons.length) {
+        const _w = _skWeapons[Math.floor(Math.random() * _skWeapons.length)];
+        r.inventory = Array.isArray(r.inventory) ? r.inventory : [];
+        r.inventory.push({ id: _w.id, qty: 1 });
+      }
+    }
     // 標記已領
     if (!r.claimedKills) r.claimedKills = {};
     r.claimedKills[bossId] = [...claimedArr, ts].slice(-30);
@@ -3919,11 +4000,84 @@
     if (myEntry.gemRaw    > 0) parts.push(`🪨原石×${myEntry.gemRaw}`);
     if (myEntry.gem3Qty   > 0) parts.push(`💎3等寶石×${myEntry.gem3Qty}`);
     if (myEntry.gem2Qty   > 0) parts.push(`💠2等寶石×${myEntry.gem2Qty}`);
-    if (myEntry.bossCoinQty > 0) parts.push(`${coinIcon}${coinName}×${myEntry.bossCoinQty}`);
-    if (myEntry.gooseCoins  > 0) parts.push(`🪙鵝鵝幣 ${(myEntry.gooseCoins/10000).toFixed(0)}萬`);
+    if (myEntry.bossCoinQty    > 0) parts.push(`${coinIcon}${coinName}×${myEntry.bossCoinQty}`);
+    if (myEntry.gooseCoins     > 0) parts.push(`🪙鵝鵝幣 ${(myEntry.gooseCoins/10000).toFixed(0)}萬`);
+    if (myEntry.supremeJadeQty > 0) parts.push(`⚜️至尊寶玉×${myEntry.supremeJadeQty}`);
+    if (myEntry.skWeapon)            parts.push(`🗡️神裝武器×1`);
     showToast(`🏆 ${bossName} 擊殺獎勵（${killerLabel}${rankLabel}）：${parts.join('、')}`);
   }
   window.wb9ClaimKillReward = wb9ClaimKillReward;
+
+  // ⭐ 老天鵝：入場 BUFF 選擇 Modal
+  const SK_BUFFS = [
+    { id: 'atk_mark_50',    label: 'ATK & MARK +50%',    icon: '⚔️' },
+    { id: 'spd_250',        label: 'SPD +250',            icon: '💨' },
+    { id: 'death_prevent',  label: '死亡防護一次（剩1血）', icon: '🛡️' },
+    { id: 'hp_50',          label: 'HP +50%',             icon: '❤️' },
+    { id: 'mp_50',          label: 'MP +50%',             icon: '💧' },
+    { id: 'def_50',         label: 'DEF +50%',            icon: '🛡' },
+    { id: 'crit_rate_20',   label: '爆擊率 +20%',         icon: '💥' },
+    { id: 'status_resist_50', label: '異常狀態防禦 +50%', icon: '✨' },
+    { id: 'crit_rate_100',  label: '爆擊率 +100%',        icon: '💥💥' },
+    { id: 'crit_dmg_200',   label: '爆擊傷害 +200%',      icon: '🔥' },
+    { id: 'no_buff',        label: '謝謝惠顧（無加持）',   icon: '😅' },
+  ];
+  function skRollBuff() {
+    return SK_BUFFS[Math.floor(Math.random() * SK_BUFFS.length)];
+  }
+  window.openSkBuffModal = function(bossId) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const coins = r.dungeonEggCoins || 0;
+    if (coins < 5) { showToast('🥚 地城鵝蛋幣不足（需 5 枚）'); return; }
+    const html = `
+      <div id="skBuffModal" style="position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:16px;">
+        <div style="background:linear-gradient(160deg,#1a0030,#3b0060);border:2px solid #9d174d;border-radius:16px;padding:20px;max-width:340px;width:100%;">
+          <div style="font-size:20px;font-weight:900;color:#f9a8d4;margin-bottom:4px;">⚜️ 挑戰老天鵝</div>
+          <div style="font-size:11px;color:#fbbf24;margin-bottom:14px;">🥚 地城鵝蛋幣：<b>${coins}</b></div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <button onclick="skConfirmEntry('${bossId}',0)" style="padding:12px;border-radius:10px;border:none;cursor:pointer;background:linear-gradient(135deg,#374151,#1f2937);color:#e5e7eb;font-size:13px;font-weight:700;text-align:left;">
+              🗡️ 基礎挑戰<br><span style="font-size:11px;color:#9ca3af;">消耗 5 枚地城鵝蛋幣，無加持</span>
+            </button>
+            <button onclick="skConfirmEntry('${bossId}',1)" style="padding:12px;border-radius:10px;border:none;cursor:pointer;background:linear-gradient(135deg,#1e3a5f,#1d4ed8);color:#bfdbfe;font-size:13px;font-weight:700;text-align:left;${coins<10?'opacity:.4;cursor:not-allowed;':''}">
+              ✨ 強化挑戰<br><span style="font-size:11px;color:#93c5fd;">消耗 10 枚（+5 幣）→ 隨機抽 1 個加持</span>
+            </button>
+            <button onclick="skConfirmEntry('${bossId}',2)" style="padding:12px;border-radius:10px;border:none;cursor:pointer;background:linear-gradient(135deg,#4c1d95,#7c3aed);color:#e9d5ff;font-size:13px;font-weight:700;text-align:left;${coins<20?'opacity:.4;cursor:not-allowed;':''}">
+              🔥 極限挑戰<br><span style="font-size:11px;color:#c4b5fd;">消耗 20 枚（+15 幣）→ 隨機抽 2 個加持</span>
+            </button>
+          </div>
+          <button onclick="document.getElementById('skBuffModal')?.remove()" style="margin-top:12px;width:100%;padding:8px;border-radius:8px;border:1px solid #6b7280;background:transparent;color:#9ca3af;cursor:pointer;font-size:12px;">取消</button>
+        </div>
+      </div>`;
+    document.body.insertAdjacentHTML('beforeend', html);
+  };
+  window.skConfirmEntry = function(bossId, tier) {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me);
+    const coins = r.dungeonEggCoins || 0;
+    const cost = tier === 0 ? 5 : tier === 1 ? 10 : 20;
+    if (coins < cost) { showToast('🥚 地城鵝蛋幣不足'); return; }
+    r.dungeonEggCoins = coins - cost;
+    const buffs = [];
+    if (tier >= 1) {
+      const b1 = skRollBuff();
+      buffs.push(b1.id);
+      if (tier >= 2) {
+        let b2 = skRollBuff();
+        let tries = 0;
+        while (b2.id === b1.id && b2.id !== 'no_buff' && tries++ < 10) b2 = skRollBuff();
+        buffs.push(b2.id);
+      }
+    }
+    r.skWbBuff = buffs;
+    saveData();
+    document.getElementById('skBuffModal')?.remove();
+    if (buffs.length) {
+      const buffNames = buffs.map(id => SK_BUFFS.find(b=>b.id===id)?.label || id).join('、');
+      showToast(`✨ 加持確認：${buffNames}`);
+    }
+    wb9JoinQueue(bossId);
+  };
 
   // 本場戰鬥結果（顯示在 #fightResult）
   function wb9ShowFightResult({ boss, dmgDealt, killed, xpGain, coinGain, won, log, snapId, me, stats, monster }) {
@@ -4361,6 +4515,21 @@
       } else if (queuedElsewhere) {
         const otherBoss = WB9_BOSSES.find(b => b.id === myQueuedBossId);
         actionHtml = `<button class="btn btn-primary" disabled style="background:#4b5563;">已排隊在 ${otherBoss?.name || ''}</button>`;
+      } else if (boss.isSupremeKing) {
+        const _eggCoins = r.dungeonEggCoins || 0;
+        const _skFormIdx  = (state.killCount || 0) % (boss.forms?.length || 4);
+        const _skFormName = boss.forms?.[_skFormIdx]?.formName || '???';
+        const _canEnter   = _eggCoins >= 5;
+        actionHtml = `
+          <div style="background:rgba(120,0,60,.25);border:1px solid #9d174d;border-radius:10px;padding:10px;margin-bottom:8px;">
+            <div style="font-size:11px;color:#f9a8d4;font-weight:700;margin-bottom:4px;">⚜️ 老天鵝入場</div>
+            <div style="font-size:11px;color:#fbbf24;">目前形態：<b>${_skFormName}</b>　🥚地城鵝蛋幣：<b>${_eggCoins}</b></div>
+            <div style="font-size:10px;color:#d1d5db;margin-top:3px;">基礎挑戰 5幣 ／ +5幣抽1加持 ／ +15幣抽2加持</div>
+          </div>
+          <button class="btn btn-primary" onclick="openSkBuffModal('${boss.id}')"
+            style="background:linear-gradient(135deg,#7c0060,#b91c1c);box-shadow:0 4px 0 #7f1d1d;${_canEnter?'':'opacity:.5;cursor:not-allowed;'}">
+            ${_canEnter ? '⚜️ 挑戰老天鵝！' : '🥚 地城鵝蛋幣不足（需 5 枚）'}
+          </button>`;
       } else {
         actionHtml = `<button class="btn btn-primary" onclick="wb9JoinQueue('${boss.id}')" style="background:linear-gradient(135deg,#f59e0b,#dc2626); box-shadow:0 4px 0 #991b1b;">📋 加入排隊${queueCount > 0 ? `（前面 ${queueCount} 人）` : ''}</button>`;
       }
@@ -5111,6 +5280,32 @@
       isBossGift: true, sourceBossId: 'chaos_goose', rarity: 'gold',
       wingBasicAtkPct: 0.10,
       affixDesc: '普攻傷害 +10%（末世之翼）' },
+
+    // ── 老天鵝神裝武器（8 把，每人隨機抽一把）─────────────────────────────
+    { id: 'sk_w_judgment',  name: '天道神劍',     icon: '⚜️', slot: 'weapon', lv: 1, atk: 90, critChance: 0.12, critDmg: 0.40,
+      isBossGift: true, sourceBossId: 'supreme_king', rarity: 'divine',
+      affixDesc: '暴擊率 +12%、暴擊傷害 +40%（天道神劍）' },
+    { id: 'sk_w_arcane',    name: '老天鵝法杖',   icon: '🌟', slot: 'weapon', lv: 1, mark: 100, mp: 40, mpRegen: 4,
+      isBossGift: true, sourceBossId: 'supreme_king', rarity: 'divine',
+      affixDesc: 'MP 上限 +40、MP 回復 +4/回（老天鵝法杖）' },
+    { id: 'sk_w_reaper',    name: '永恆鐮刀',     icon: '⚔️', slot: 'weapon', lv: 1, atk: 65, mark: 65, hp: 80,
+      isBossGift: true, sourceBossId: 'supreme_king', rarity: 'divine',
+      affixDesc: 'ATK & MARK 均衡，HP +80（永恆鐮刀）' },
+    { id: 'sk_w_shadow',    name: '速影雙刃',     icon: '💨', slot: 'weapon', lv: 1, atk: 60, spd: 35, critChance: 0.08,
+      isBossGift: true, sourceBossId: 'supreme_king', rarity: 'divine',
+      affixDesc: 'SPD +35、暴擊率 +8%（速影雙刃）' },
+    { id: 'sk_w_titan',     name: '霸天巨劍',     icon: '🗡️', slot: 'weapon', lv: 1, atk: 110, def: 25,
+      isBossGift: true, sourceBossId: 'supreme_king', rarity: 'divine',
+      affixDesc: '純粹高攻、DEF +25（霸天巨劍）' },
+    { id: 'sk_w_verdict',   name: '審判聖錘',     icon: '🔨', slot: 'weapon', lv: 1, atk: 75, mark: 35, critDmg: 0.50,
+      isBossGift: true, sourceBossId: 'supreme_king', rarity: 'divine',
+      affixDesc: '暴擊傷害 +50%（審判聖錘）' },
+    { id: 'sk_w_souldrain', name: '冥界噬魂刃',   icon: '💀', slot: 'weapon', lv: 1, atk: 70, mark: 50, mp: 20, mpRegen: 2,
+      isBossGift: true, sourceBossId: 'supreme_king', rarity: 'divine',
+      affixDesc: 'ATK+MARK 兼備、MPRegen +2（冥界噬魂刃）' },
+    { id: 'sk_w_bow',       name: '至尊神弓',     icon: '🏹', slot: 'weapon', lv: 1, atk: 80, spd: 20, mark: 30, critChance: 0.10,
+      isBossGift: true, sourceBossId: 'supreme_king', rarity: 'divine',
+      affixDesc: '暴擊率 +10%、SPD +20（至尊神弓）' },
   ];
 
   // ============================================================
@@ -8766,6 +8961,19 @@
     if (_dungeonBuffs.includes('hp50'))   stats.maxHp = Math.round(stats.maxHp * 1.50);
     if (_dungeonBuffs.includes('spd30'))  stats.spd   = Math.round(stats.spd  * 1.30);
 
+    // ⭐ 老天鵝挑戰 BUFF（入場加持）
+    const _skBuffs = new Set(opts?.skBuffs || []);
+    if (_skBuffs.has('atk_mark_50')) { stats.atk = Math.round(stats.atk * 1.50); stats.mark = Math.round((stats.mark||0) * 1.50); }
+    if (_skBuffs.has('spd_250'))     stats.spd   = (stats.spd||0) + 250;
+    if (_skBuffs.has('hp_50'))       stats.maxHp = Math.round(stats.maxHp * 1.50);
+    if (_skBuffs.has('mp_50'))       stats.maxMp = Math.round(stats.maxMp * 1.50);
+    if (_skBuffs.has('def_50'))      stats.def   = Math.round((stats.def||0) * 1.50);
+    let _skDeathPrevented = false;
+    const _skDeathPrevent  = _skBuffs.has('death_prevent');
+    const _skCritRateBonus = (_skBuffs.has('crit_rate_100') ? 1.00 : 0) + (_skBuffs.has('crit_rate_20') ? 0.20 : 0);
+    const _skCritDmgBonus  = _skBuffs.has('crit_dmg_200') ? 2.00 : 0;
+    const _skStatusResBonus = _skBuffs.has('status_resist_50') ? 0.50 : 0;
+
     // 綠茶事件：腳本式遭遇，跳過正常戰鬥
     if (monster.ability?.type === 'cameo') {
       const startHp = Math.min(player.rpg.hp ?? stats.maxHp, stats.maxHp);
@@ -8823,8 +9031,8 @@
     const setB = stats.setBonuses || {};
     // ⭐ 合成效果
     const _fx = getFusionEffects(player);
-    const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0) + (setB.critChance || 0);
-    let critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
+    const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0) + (setB.critChance || 0) + _skCritRateBonus;
+    let critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0) + _skCritDmgBonus;
     // ⭐ 合成效果疊加層數（getFusionEffectCount = 裝幾層算幾層）
     const _fxGuardian   = getFusionEffectCount(player, 'fx_guardian');
     const _fxMage       = getFusionEffectCount(player, 'fx_mage');
@@ -8860,7 +9068,7 @@
     const _dgCritCount = getFusionEffectCount(player, 'fx_dg_crit');
     // ⭐ 風鵝護符 + 異蝕之印：玩家異常狀態抗性（上限 95%）
     const _earlyDefStacks = getFusionEffectCount(player, 'fx_sg_earlydef');
-    const _statusResist   = Math.min(_fxStatusRes * 0.25 + _fxSdCorrode * 0.25, 0.95);
+    const _statusResist   = Math.min(_fxStatusRes * 0.25 + _fxSdCorrode * 0.25 + _skStatusResBonus, 0.95);
     let _nextForceCrit = 0; // 剩餘必爆次數
     if (_dtSpecials.has('force_crit_r1')) _nextForceCrit = Math.max(_nextForceCrit, 1); // 🥚 鵝鵝神諭：開場首回必定暴擊
     // 弓手普攻流疊加（本場累積，回合間持續）
@@ -10714,6 +10922,10 @@
               _dtImm1DeathUsed = true; pHp = 1;
               log.push({ type: 'system', text: `🥚 不死鵝蛋發動！${player.name} 以 1 HP 神奇存活！`, hp: { player: pHp, monster: mHp, mp: pMp } });
             }
+            if (pHp <= 0 && _skDeathPrevent && !_skDeathPrevented) {
+              _skDeathPrevented = true; pHp = 1;
+              log.push({ type: 'system', text: `⚜️ 老天鵝加持發動！${player.name} 以 1 HP 奇蹟存活！`, hp: { player: pHp, monster: mHp, mp: pMp } });
+            }
             if (pHp <= 0) { dead = true; }
             if (mHp <= 0) { pushDeathLine(); break; }
             // 對玩家上狀態（⭐ 風鵝護符：異常狀態抵抗 -25%；shield 擋下傷害時同時免疫附加狀態）
@@ -11133,8 +11345,8 @@
     const _wingsSkillDmgPct  = _wingsItemM?.wingSkillDmgPct  || 0;
     const _wingsDmgReduct    = _wingsItemM?.wingDmgReduct    || 0;
     const _wingsBasicAtkPct  = _wingsItemM?.wingBasicAtkPct  || 0;
-    const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0) + (setB.critChance || 0);
-    let critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0);
+    const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0) + (setB.critChance || 0) + _skCritRateBonus;
+    let critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0) + _skCritDmgBonus;
     // fx_guardian: 每回合 HP 回復最大值 3%/層
     const regenPer = (cls.regenPer || 0) + (bonus.regen || 0) + _fxGuardian * 0.03;
     // fx_mage: 技能 MP 消耗 -20%/層
@@ -11145,7 +11357,7 @@
     // ⭐ 風鵝護符效果
     const _earlyDefStacksM = getFusionEffectCount(player, 'fx_sg_earlydef');
     // ⭐ 風鵝護符 + 異蝕之印：玩家異常狀態抗性（上限 95%）
-    const _statusResistM   = Math.min(_fxStatusRes * 0.25 + _fxSdCorrode * 0.25, 0.95);
+    const _statusResistM   = Math.min(_fxStatusRes * 0.25 + _fxSdCorrode * 0.25 + _skStatusResBonus, 0.95);
     let _spellBookM = [];                // ⭐ 法書：記錄法師施放的元素（最多10格）
     let _chantCycleIdxM = 0;            // ⭐ 自動唸咒-輪（組隊）：當前週期位置
     // 弓手普攻流疊加（本場累積）
@@ -12811,6 +13023,10 @@
             if (pHp <= 0 && _spiritSpecials.has('tenacious') && !_tenaciousUsed) {
               _tenaciousUsed = true; pHp = 1;
               log.push({ type: 'system', text: `🛡 不屈發動！${player.name} 以 1 HP 存活！`, hp: hpsSnapshot() });
+            }
+            if (pHp <= 0 && _skDeathPrevent && !_skDeathPrevented) {
+              _skDeathPrevented = true; pHp = 1;
+              log.push({ type: 'system', text: `⚜️ 老天鵝加持發動！${player.name} 以 1 HP 奇蹟存活！`, hp: hpsSnapshot() });
             }
             if (dmg > 0) {
               // ⭐ 聖母鵝計數：被怪物普攻擊中
@@ -15753,7 +15969,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260514234112';
+  const APP_VERSION = '20260515011222';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
