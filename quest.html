@@ -15571,7 +15571,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260514151901';
+  const APP_VERSION = '20260514151926';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -15649,20 +15649,26 @@ ${b.text}
       <div style="line-height:1.7; font-size:13px; color:#374151;">
 
         <div style="background:linear-gradient(135deg,#0a0514,#1a0a2e); border-radius:10px; padding:10px 14px; margin-bottom:14px; border:1px solid #4c1d95;">
-          <div style="font-size:15px; font-weight:800; color:#e9d5ff;">🛠️ v21.1 地下城 UI 修補　<span style="font-size:11px; opacity:0.85;">2026-05-14</span></div>
+          <div style="font-size:15px; font-weight:800; color:#e9d5ff;">🛠️ v21.2 地城系統大升級　<span style="font-size:11px; opacity:0.85;">2026-05-14</span></div>
         </div>
 
-        <div style="font-weight:700; color:#c4b5fd; margin:6px 0 4px;">🏺 地城寶物頁改版</div>
-        <div>・寶物清單改為 <b>5 列格子選單</b>，每格顯示稀有度圖示 + 道具名 + 數量 badge</div>
-        <div>・點格子直接發起交易，介面更直觀</div>
+        <div style="font-weight:700; color:#fde047; margin:6px 0 4px;">📦 開箱大改版</div>
+        <div>・箱子數量改為 <b>20 個</b>（5欄×4排）：🦢鵝王×1　🌟傳說×2　⚡閃光×3　🟢普通×4　⬜渣鵝×7　🥚幣×3</div>
+        <div>・評分開箱數：<b style="color:#fde047;">S RANK → 10個</b>　<b style="color:#c084fc;">RANK A → 8個</b>　<b style="color:#6ee7b7;">RANK C → 6個</b></div>
+        <div>・開箱後格子顯示<b>稀有度色彩 + 寶物名 + 效果</b>，一目了然</div>
+        <div>・Toast 通知 + 獎勵列表均顯示完整效果說明</div>
 
-        <div style="font-weight:700; color:#4ade80; margin:10px 0 4px;">🐛 修復</div>
-        <div>・<b>交易按鈕按下會 ERROR</b> 的問題已修復（可正常向玩家提出交易）</div>
-        <div>・地下城對戰結果改為 <b>即時戰鬥回放</b>（逐步播放攻擊日誌，不再只顯示結果卡片）</div>
-        <div>・地城寶物資料型別異常防護（Firebase 同步後不再因格式問題報錯）</div>
+        <div style="font-weight:700; color:#67e8f9; margin:10px 0 4px;">🏺 地城寶物庫改版</div>
+        <div>・入口移至<b>角色快捷列</b>（探險寶物旁 🏺 地城寶）</div>
+        <div>・寶物庫 modal 顯示全部寶物（5分頁：鵝王/傳說/閃光/普通/極鵝）</div>
+        <div>・未收集的寶物灰色鎖定顯示，可預覽效果</div>
+
+        <div style="font-weight:700; color:#4ade80; margin:10px 0 4px;">🤝 交易流程改版</div>
+        <div>・新流程：點持有寶物 → <b>先選交易對象</b> → 再看對方寶物 → 確認發送</div>
+        <div>・每步均可返回上一頁，流程更清晰</div>
 
         <div style="background:rgba(0,0,0,0.3); border-radius:8px; padding:8px 12px; margin:8px 0 14px; font-size:12px; color:#a78bfa; border:1px solid #4c1d95;">
-          💡 地城寶物交易功能現在可以正常使用了！點格子→選對象→等對方接受即可！
+          💡 地城寶物庫從角色欄位的 🏺 圖示進入，交易新流程：寶物→對象→對方物品→送出！
         </div>
 
         <div style="background:linear-gradient(135deg,#0a0514,#2e1065); border-radius:10px; padding:10px 14px; margin-bottom:14px; border:1px solid #7c3aed;">
