@@ -16487,7 +16487,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260515034744';
+  const APP_VERSION = '20260515034937';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -16563,6 +16563,27 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#065f46,#047857); border-radius:10px; padding:10px 14px; margin-bottom:14px; border:2px solid #34d399; box-shadow:0 0 12px rgba(52,211,153,.3);">
+          <div style="font-size:15px; font-weight:800; color:#fff;">💎 v24 寶石系統更新 + 老天鵝調整　<span style="font-size:11px; opacity:0.85;">2026-05-15</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#34d399; margin:6px 0 4px;">💎 寶石掉落機率調整</div>
+        <div>・轉蛋機率全面更新：1階 <b>50%</b>・2階 <b>30%</b>・3階 <b>15%</b>・4階 <b>5%</b></div>
+        <div>・新增 <b>5階天石</b>（3個4階合成）及 <b>6階神話石</b>（3個5階合成）</div>
+        <div>・神話石屬性範例：ATK/MARK +130・DEF +105・HP +1,300・暴擊率 +40%</div>
+
+        <div style="font-weight:700; color:#fbbf24; margin:10px 0 4px;">⚜️ 老天鵝調整（v24）</div>
+        <div>・<b>傳說王（老天鵝）冷卻</b>：<b>30 秒</b>，與世界王完全獨立不共享</div>
+        <div>・<b>魔導型</b>：新技能「冥力汲取」── ATK×1.5 + 吸 20% MP + SPD -20%（3回合）</div>
+        <div>・<b>速影型</b>：幽冥毒霧改為毒×5 + 流血×3 + <b>霜凍（SPD -30%，3回，不可疊加）</b></div>
+
+        <div style="font-weight:700; color:#38bdf8; margin:10px 0 4px;">🗺️ 深奈裝備修正</div>
+        <div>・深奈（奈落2層）掉落裝備全面修正為 <b>Lv 33 專屬裝</b>（含奈落裂刃等）</div>
+
+        <div style="background:rgba(52,211,153,0.1); border-radius:8px; padding:8px 12px; margin:8px 0 16px; font-size:12px; color:#6ee7b7; border:1px solid #065f46;">
+          💡 一鍵合成已支援4→5→6階，寶石背包顯示天石（青）及神話石（粉）專屬顏色
+        </div>
 
         <div style="background:linear-gradient(135deg,#1a0020,#2d0030); border-radius:10px; padding:10px 14px; margin-bottom:14px; border:2px solid #9d174d; box-shadow:0 0 12px rgba(157,23,77,.35);">
           <div style="font-size:15px; font-weight:800; color:#fde68a;">⚜️ v21.3 老天鵝・限時傳說討伐 <span style="font-size:11px; opacity:0.85; color:#f9a8d4;">2026-05-15</span></div>
