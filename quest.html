@@ -2386,6 +2386,9 @@
     </div>
 
     <div class="card" style="background:linear-gradient(135deg,#0a0514,#1a0a2e); border:1px solid #6d28d9;">
+      <img src="assets/dungeon/dungeon-banner.png" alt=""
+        style="width:100%;border-radius:8px;margin-bottom:8px;display:block;image-rendering:pixelated;"
+        onerror="this.style.display='none'">
       <h2 style="color:#e9d5ff;"><span>🏰 副本探險</span> <span style="font-size:11px; color:#a78bfa; font-weight:500;">（5層挑戰・次數評分・Roguelike BUFF）</span></h2>
       <div id="dungeonBody"></div>
       <div id="dungeonFightResult"></div>
@@ -15571,7 +15574,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260514152845';
+  const APP_VERSION = '20260514154354';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -17499,7 +17502,11 @@ ${b.text}
         <span class="cqm-badge">${tCount}/${tMax}</span>
       </button>
       <button class="cqm-btn" onclick="showDungeonTreasureVault('goose')" title="地城寶物庫">
-        <span class="cqm-icon">🏺</span>
+        <span class="cqm-icon">
+          <img src="assets/dungeon/treasure-vault.png" alt="🏺"
+            style="width:28px;height:28px;image-rendering:pixelated;vertical-align:middle;"
+            onerror="this.outerHTML='🏺'">
+        </span>
         <span class="cqm-label">地城寶</span>
         <span class="cqm-badge">${dtCount}</span>
       </button>
@@ -23073,7 +23080,9 @@ ${b.text}
       body.innerHTML = `
         <div style="background:linear-gradient(135deg,#1a0a2e,#2e1065);border:2px solid #7c3aed;border-radius:14px;padding:16px;">
           <div style="text-align:center;margin-bottom:12px;">
-            <div style="font-size:36px;margin-bottom:4px;">🏆</div>
+            <img src="assets/dungeon/open-box.png" alt=""
+              style="width:100%;border-radius:8px;margin-bottom:8px;display:block;image-rendering:pixelated;"
+              onerror="this.style.display='none'">
             <div style="font-size:16px;font-weight:900;color:#e9d5ff;margin-bottom:6px;">副本完成！選擇寶箱</div>
             <div style="display:inline-block;background:${rBg};color:#fff;font-size:14px;font-weight:800;padding:4px 20px;border-radius:20px;letter-spacing:2px;">${rLabel}</div>
           </div>
@@ -24093,6 +24102,11 @@ ${b.text}
     window._dtVaultRarity = activeRarity || 'goose';
     const active = window._dtVaultRarity;
 
+    // 稀有度說明圖
+    const rarityBannerHtml = `<img src="assets/dungeon/rarity-cards.png" alt=""
+      style="width:100%;border-radius:8px;margin-bottom:8px;display:block;image-rendering:pixelated;"
+      onerror="this.style.display='none'">`;
+
     // 分頁列
     const tabHtml = _DTV_TABS.map(t => {
       const ownedCnt = DUNGEON_TREASURES.filter(it => it.rarity === t.key && countMap[it.id]).length;
@@ -24142,6 +24156,7 @@ ${b.text}
 
     const html = `
       <div style="background:linear-gradient(135deg,#0a0514,#1a0a2e);padding:4px;color:#e9d5ff;">
+        ${rarityBannerHtml}
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;">${tabHtml}</div>
         <div style="font-size:11px;color:#a78bfa;margin-bottom:8px;">
           已收集 <b style="color:#e9d5ff;">${ownedInTab} / ${items.length}</b>
@@ -24179,9 +24194,14 @@ ${b.text}
       </div>
     </div>`;
 
+    const tradeBanner = `<img src="assets/dungeon/trade-scene.png" alt=""
+      style="width:100%;border-radius:8px;margin-bottom:10px;display:block;image-rendering:pixelated;"
+      onerror="this.style.display='none'">`;
+
     if (!otherPlayers.length) {
       showModal('🔄 提出交易', `
         <div style="background:linear-gradient(135deg,#0a0514,#1a0a2e);padding:8px;color:#e9d5ff;">
+          ${tradeBanner}
           <div style="font-size:11px;color:#a78bfa;margin-bottom:6px;">準備提出：</div>
           ${myOfferBadge}
           <div style="color:#6b7280;font-size:12px;padding:12px;text-align:center;">目前沒有其他玩家持有地城寶物</div>
@@ -24208,6 +24228,7 @@ ${b.text}
 
     showModal('🔄 選擇交易對象', `
       <div style="background:linear-gradient(135deg,#0a0514,#1a0a2e);padding:4px;color:#e9d5ff;">
+        ${tradeBanner}
         <div style="font-size:11px;color:#a78bfa;margin-bottom:6px;">你準備提出：</div>
         ${myOfferBadge}
         <div style="font-size:11px;color:#a78bfa;margin-bottom:8px;">選擇要交易的對象：</div>
