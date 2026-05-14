@@ -4548,6 +4548,32 @@
           ${_canEnter ? '⚜️ 挑戰老天鵝！' : '🪙 鵝鵝幣不足（需 100 萬）'}
         </button>`;
       }
+      const _skPageIdx   = r ? (r.wbPatternPage?.[_skBoss.id] ?? r.activePatternPage ?? 0) : 0;
+      const _skWpNames   = r ? (r.patternPageNames || ['頁 1','頁 2','頁 3','頁 4']) : ['頁 1','頁 2','頁 3','頁 4'];
+      const _skEqSetIdx  = r ? r.wbEquipSet?.[_skBoss.id] : undefined;
+      const _skLoadouts  = r ? (r.equipLoadouts || [null,null,null]) : [null,null,null];
+      const _skPagePickerHtml = me ? `
+        <div style="display:flex;align-items:center;gap:6px;margin:8px 0 0;flex-wrap:wrap;">
+          <span style="font-size:10px;color:#f9a8d4;">📋 規則：</span>
+          <select onchange="setWbPatternPage('${_skBoss.id}', this.value)"
+            style="font-size:11px;padding:2px 5px;border-radius:5px;background:#3b0060;color:#f9a8d4;border:1px solid #9d174d;cursor:pointer;">
+            ${[0,1,2,3].map(i => {
+              const cnt = (r.actionPatterns?.[i]||[]).length;
+              return `<option value="${i}" ${_skPageIdx === i ? "selected" : ""}>${escapeHtml(_skWpNames[i]||"頁 "+(i+1))} (${cnt}條)</option>`;
+            }).join('')}
+          </select>
+          <span style="font-size:10px;color:#f9a8d4;margin-left:4px;">🎽 裝備：</span>
+          <select onchange="setWbEquipSet('${_skBoss.id}', this.value)"
+            style="font-size:11px;padding:2px 5px;border-radius:5px;background:#3b0060;color:#f9a8d4;border:1px solid #9d174d;cursor:pointer;">
+            <option value="-1" ${_skEqSetIdx === undefined ? "selected" : ""}>目前裝備</option>
+            ${[0,1,2].map(i => {
+              const l = _skLoadouts[i];
+              const lName = l?.name || `套裝 ${i+1}`;
+              const hasItems = l && Object.values(l.equipment||{}).some(Boolean);
+              return `<option value="${i}" ${_skEqSetIdx === i ? "selected" : ""}>${escapeHtml(lName)}${!hasItems?" (空)":""}</option>`;
+            }).join('')}
+          </select>
+        </div>` : '';
       const _skKillBanner = wb9KillBannerHtml(_skState);
       legendaryHtml = `
         <div style="background:linear-gradient(135deg,#1a0020,#2d0030,#1a0010);border:2px solid #9d174d;border-radius:14px;padding:12px 14px;margin-bottom:14px;box-shadow:0 0 24px rgba(157,23,77,.4),0 4px 12px rgba(0,0,0,.5);">
@@ -4570,6 +4596,7 @@
             <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7);">${_skState.hp.toLocaleString()} / ${_skBoss.maxHp.toLocaleString()}　(${_skHpPct.toFixed(1)}%)</div>
           </div>
           ${wb9DamageLeaderboardHtml(_skState)}
+          ${_skPagePickerHtml}
           ${_skActionHtml}
           ${wb9RecentBattlesHtml(_skState, _skBoss)}
         </div>`;
@@ -16304,7 +16331,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260515025704';
+  const APP_VERSION = '20260515025854';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
