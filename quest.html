@@ -1,3 +1,11 @@
+    // ⭐ v23：神聖型回血 50000、戰鬥 150 回
+    if (!player.rpg.updateV23 && typeof getMeId === 'function' && player.id === getMeId()) {
+      player.rpg.updateV23 = true;
+      if (typeof window !== 'undefined') {
+        window.__pendingUpdateV23 = window.__pendingUpdateV23 || new Set();
+        window.__pendingUpdateV23.add(player.id);
+      }
+    }
         <button class="btn btn-secondary" onclick="adminCompSkBossParticipants()" style="background:linear-gradient(135deg,#fdf4ff,#9d174d);color:#fff;font-weight:800;">🪺 老天鵝補償（+80蛋幣）＋重置排名</button>
 <!DOCTYPE html>
 <html lang="zh-Hant">
@@ -3623,6 +3631,7 @@
       defPen: 0,
       tier: 100,
       level: 100,
+      maxRounds: 130,
       verb: '至尊天擊',
       isSupremeKing: true,
       // 4 個隨機形態（依 killCount % 4 決定，所有玩家看到相同形態）
@@ -3641,7 +3650,7 @@
         { formName: '神聖型', formIdx: 1,
           art: 'assets/dungeon/boss-elder-swan-form1.png',
           verb: '審判天光', ability: null,
-          formDebuff: { critPenalty: 1.0, headshotPenalty: 0.30, bossHpRegen: 100000 },
+          formDebuff: { critPenalty: 1.0, headshotPenalty: 0.30, bossHpRegen: 50000 },
           skills: [
             { verb: '神聖裁決', mult: 2.8, applyStatus: { type: 'buff', stat: 'atkPct', amount: -0.35, turns: 6, chance: 1.0 }, cooldown: 3 },
             { verb: '天界護壁', type: 'monsterSelfBuff', stat: 'def', amount: 1000, turns: 8, cooldown: 6 },
@@ -8368,6 +8377,14 @@
       if (typeof window !== 'undefined') {
         window.__pendingUpdateV22 = window.__pendingUpdateV22 || new Set();
         window.__pendingUpdateV22.add(player.id);
+      }
+    }
+    // ⭐ v23：神聖型回血 50000、戰鬥 150 回
+    if (!player.rpg.updateV23 && typeof getMeId === 'function' && player.id === getMeId()) {
+      player.rpg.updateV23 = true;
+      if (typeof window !== 'undefined') {
+        window.__pendingUpdateV23 = window.__pendingUpdateV23 || new Set();
+        window.__pendingUpdateV23.add(player.id);
       }
     }
     // ⭐ v16 migration：修正聖騎 p_aegis 在行動規則表中永遠被 p_blessing 搶先的問題
@@ -13809,6 +13826,29 @@
     // ⭐ v20 優先（最新）：深奈（奈落2層）上線
     // ⭐ v21：老天鵝限時傳說討伐上線
     // ⭐ v22：老天鵝 DoT 上限調整
+    // ⭐ v23：老天鵝調整
+    if (window.__pendingUpdateV23 && window.__pendingUpdateV23.has(me.id)) {
+      window.__pendingUpdateV23.delete(me.id);
+      const html = `
+        <div style="text-align:left; padding:6px 0;">
+          <div style="text-align:center; font-size:48px; margin-bottom:6px;">⚔️🦢⚖️</div>
+          <div style="text-align:center; font-weight:800; font-size:17px; color:#9d174d; margin-bottom:8px;">v23 老天鵝平衡調整</div>
+          <div style="font-size:12px; color:#2d1b4e; line-height:1.9; padding:10px 14px; background:linear-gradient(135deg,#fdf2f8,#fdf4ff); border-radius:10px; border:2px dashed #f9a8d4;">
+
+            <div style="font-weight:800; color:#7c3aed; margin-bottom:4px;">⏱️ 戰鬥回合上限</div>
+            • 每場戰鬥由 <b>120 回 → 150 回</b>，給予玩家更多出手機會<br>
+
+            <div style="font-weight:800; color:#9d174d; margin:10px 0 4px;">✝️ 神聖型回血調整</div>
+            • 每回合回血：<b>10 萬 → 5 萬 HP</b>（降低神聖型的持久力）<br>
+
+          </div>
+          <button class="btn btn-primary" onclick="hideModal()" style="margin-top:14px; width:100%; background:linear-gradient(135deg,#7c0060,#b91c1c);">⚔️ 了解！</button>
+        </div>
+      `;
+      showModal('⚔️ v23 老天鵝調整', html);
+      saveData();
+      return;
+    }
     if (window.__pendingUpdateV22 && window.__pendingUpdateV22.has(me.id)) {
       window.__pendingUpdateV22.delete(me.id);
       const html = `
@@ -16331,7 +16371,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260515025854';
+  const APP_VERSION = '20260515030323';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
