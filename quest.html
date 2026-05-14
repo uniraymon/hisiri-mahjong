@@ -15571,7 +15571,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260514140456';
+  const APP_VERSION = '20260514143359';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -23330,11 +23330,14 @@ ${b.text}
     run.totalRounds += rounds;
     run.maxHit       = Math.max(run.maxHit || 0, maxHitFloor);
 
+    // 戰鬥前玩家 stats（用於 inline 戰報 HP 條）
+    const _dFightStats = (typeof computeStats === 'function') ? computeStats(me) : {};
+
     // ⭐ 儲存戰鬥回放快照
     try {
       const _dfId = 'df_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
       const _dfCls = CLASSES[rpg.class] || {};
-      const _dfStats = (typeof computeStats === 'function') ? computeStats(me) : {};
+      const _dfStats = _dFightStats;
       const _dfSnap = {
         id:          _dfId,
         ts:          Date.now(),
@@ -23377,6 +23380,12 @@ ${b.text}
 
     const resultEl = document.getElementById('dungeonFightResult');
 
+    // ── 計算結果 HTML（log 播完後才掛上去）──
+    let _doneHtml = '';
+    let _doneRenderDungeon = false; // 是否在 log 播完後才 renderDungeon
+    let _doneScrollBox   = false;
+    let _doneAutoHide    = false;
+
     if (result.won) {
       run.floorsCleared++;
 
@@ -23394,39 +23403,23 @@ ${b.text}
       if (_flashDropName) showToast(`⚡ 守護者掉落：閃光 ${_flashDropName}！`);
 
       if (run.floor < 5) {
-        // 通過此層 → 進入下一層，重置為基礎 HP
         run.floor++;
         run.floorCurrentHp = DUNGEON_FLOOR_HPS[run.floor - 1];
-        // 產生 Buff 選項，等待玩家選擇
         run.pendingBuffChoice  = true;
         run.pendingBuffOptions = _dungeonGenBuffOptions();
         saveData();
-
-        if (resultEl) {
-          resultEl.innerHTML = _dungeonFloorClearHtml(run, floorIdx + 1, dmgDealt, rounds, maxHitFloor);
-          resultEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-        renderDungeon();
+        renderDungeon(); // 立即顯示 Buff 選擇（dungeonBody 區）
+        _doneHtml = _dungeonFloorClearHtml(run, floorIdx + 1, dmgDealt, rounds, maxHitFloor);
       } else {
         // 全 5 層通關！
         const score    = calcDungeonScore(run);
         const rankInfo = dungeonGetRankInfo(run.floorsCleared, score);
         _dungeonSaveResult(rpg, run, score, rankInfo);
         saveData();
-
-        // 先顯示完成總結
-        if (resultEl) {
-          resultEl.innerHTML = _dungeonCompleteHtml(run, score, rankInfo, floorIdx + 1, dmgDealt, rounds);
-        }
-        // dungeonBody 渲染寶箱選擇畫面，並自動滾動至此
-        renderDungeon();
-        const db = document.getElementById('dungeonBody');
-        if (db) db.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        // 3 秒後自動清掉結果區（保持畫面整潔）
-        setTimeout(() => {
-          const re = document.getElementById('dungeonFightResult');
-          if (re) re.innerHTML = '';
-        }, 3000);
+        _doneHtml             = _dungeonCompleteHtml(run, score, rankInfo, floorIdx + 1, dmgDealt, rounds);
+        _doneRenderDungeon    = true; // 播完後 renderDungeon 顯示寶箱
+        _doneScrollBox        = true;
+        _doneAutoHide         = true;
       }
     } else {
       // 本層失敗：保留實際剩餘 HP，再追加 5% 基礎 HP 作懲罰
@@ -23434,18 +23427,208 @@ ${b.text}
       const remainHp = Math.max(1, result.mHpFinal || 1);
       run.floorCurrentHp = Math.round(remainHp + baseHp * 0.05);
       saveData();
-
-      if (resultEl) {
-        resultEl.innerHTML = _dungeonRetryHtml(run, floorIdx + 1, dmgDealt, rounds, bossHp);
-        resultEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      renderDungeon();
+      renderDungeon(); // 立即恢復挑戰按鈕
+      _doneHtml = _dungeonRetryHtml(run, floorIdx + 1, dmgDealt, rounds, bossHp);
     }
 
     if (typeof updateStaminaUI === 'function') updateStaminaUI();
     if (typeof renderDungeonBattleHistory === 'function') renderDungeonBattleHistory();
+
+    // ── 播放 inline 戰鬥記錄 ──
+    if (resultEl) {
+      if (result.log && result.log.length > 0) {
+        _dungeonPlayBattleLog(resultEl, result, _dFightStats, monster, rpg, {
+          doneHtml:           _doneHtml,
+          renderDungeonAfter: _doneRenderDungeon,
+          scrollToBox:        _doneScrollBox,
+          autoHideMs:         _doneAutoHide ? 3000 : 0,
+        });
+      } else {
+        // 沒有 log（不應發生）→ 直接顯示結果卡
+        resultEl.innerHTML = _doneHtml;
+        resultEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (_doneRenderDungeon) {
+          renderDungeon();
+          const db = document.getElementById('dungeonBody');
+          if (db) db.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        if (_doneAutoHide) setTimeout(() => { const re = document.getElementById('dungeonFightResult'); if (re) re.innerHTML = ''; }, 3000);
+      }
+    }
   }
   window.dungeonFight = dungeonFight;
+
+  // ⭐ inline 戰鬥記錄播放（地城專用，ID 前綴 df-，避免與其他戰鬥 ID 衝突）
+  function _dungeonPlayBattleLog(container, result, fightStats, monster, rpg, opts) {
+    const { doneHtml = '', renderDungeonAfter = false, scrollToBox = false, autoHideMs = 0 } = opts || {};
+    const maxHp    = fightStats.maxHp || 1;
+    const maxMp    = fightStats.maxMp || 1;
+    const monMaxHp = monster.maxHp || 1;
+    const log      = result.log || [];
+    const _hasBloodPool = log.some(e => e.hp && e.hp.bloodPool > 0);
+    const _isMage       = rpg.class === 'mage';
+    const _isArcher     = rpg.class === 'archer';
+    const _isPaladin    = rpg.class === 'paladin';
+
+    // Spell book 槽（法師用）
+    const _sbHtml = _isMage ? (() => {
+      const slots = Array.from({length:10},(_,i)=>`<div id="dfSbSlot${i}" style="width:20px;height:20px;border-radius:4px;background:#0f0a2e;border:1px solid #4c1d95;display:flex;align-items:center;justify-content:center;font-size:12px;transition:background 0.2s;"></div>`).join('');
+      return `<div style="background:#1e1b4b;border-radius:8px;padding:4px 10px;margin:4px 0;font-size:11px;display:flex;align-items:center;gap:0;flex-wrap:wrap;border:1px solid #4c1d95;">
+        <span style="color:#a78bfa;font-weight:800;padding:2px 8px 2px 0;border-right:1px solid #4c1d95;margin-right:8px;white-space:nowrap;">📖 魔法書</span>
+        <div style="display:flex;gap:2px;flex-wrap:wrap;">${slots}</div>
+        <span id="dfSbCount" style="color:#6d28d9;font-size:10px;margin-left:6px;white-space:nowrap;">0/10</span>
+      </div>`;
+    })() : '';
+
+    const arenaHtml = `
+      <div style="margin-top:8px;">
+        <div class="battle-arena" id="dfArena">
+          <div class="combatant" id="dfPlayer">
+            ${_playerCombatIconHTML(rpg, 'combatant-icon')}
+            <div class="combatant-name">${escapeHtml(rpg.name || '我')} Lv${rpg.level||1}</div>
+            <div class="combatant-hp-track"><div class="combatant-hp-fill" id="dfPHpBar" style="width:100%"></div></div>
+            <div class="combatant-hp-text" id="dfPHpText">${maxHp}/${maxHp}</div>
+            <div class="combatant-hp-track" style="margin-top:2px;"><div class="combatant-hp-fill" id="dfPMpBar" style="width:100%;background:linear-gradient(90deg,#93c5fd,#3b82f6);"></div></div>
+            <div class="combatant-hp-text" id="dfPMpText" style="color:#1e40af;">MP ${maxMp}/${maxMp}</div>
+            ${_hasBloodPool ? `<div class="combatant-hp-track" style="margin-top:2px;background:#3f0000;"><div class="combatant-hp-fill" id="dfPBloodBar" style="width:0%;background:linear-gradient(90deg,#ef4444,#991b1b);"></div></div><div class="combatant-hp-text" id="dfPBloodText" style="color:#ef4444;">🩸 血池 0</div>` : ''}
+            <div class="combatant-spd-track"><div class="combatant-spd-fill" id="dfPSpdBar" style="width:0%"></div></div>
+            <div class="combatant-spd-text" id="dfPSpdText">⏱ 行動條 0%</div>
+          </div>
+          <div class="vs-icon">⚔️</div>
+          <div class="combatant" id="dfMonster">
+            <div class="combatant-icon">${monster.icon || '👹'}</div>
+            <div class="combatant-name">${escapeHtml(monster.name||'?')} Lv${monster.level||1}</div>
+            <div class="combatant-hp-track"><div class="combatant-hp-fill" id="dfMHpBar" style="width:100%"></div></div>
+            <div class="combatant-hp-text" id="dfMHpText">${monMaxHp.toLocaleString()}/${monMaxHp.toLocaleString()}</div>
+            <div class="combatant-spd-track" style="margin-top:14px;"><div class="combatant-spd-fill" id="dfMSpdBar" style="width:0%"></div></div>
+            <div class="combatant-spd-text" id="dfMSpdText">⏱ 行動條 0%</div>
+          </div>
+        </div>
+        ${_sbHtml}
+        <div style="display:flex;gap:6px;align-items:center;margin:6px 0;font-size:11px;color:#a78bfa;">
+          <button id="dfSpeedBtn" onclick="_dfCycleSpeed()" style="background:rgba(109,40,217,0.25);border:1px solid #7c3aed;color:#c4b5fd;padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;">⚡ 速度 1×</button>
+          <span id="dfProgress" style="margin-left:auto;font-weight:600;color:#6b7280;">0 / ${log.length}</span>
+        </div>
+        <div class="battle-log" id="dfBattleLog" style="max-height:200px;background:#0f0a1e;border:1px solid #2d1b69;border-radius:8px;"></div>
+        <div id="dfResultCard"></div>
+      </div>`;
+
+    container.innerHTML = arenaHtml;
+    container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    const logEl  = document.getElementById('dfBattleLog');
+    const _fmt   = (typeof makeBattleLogFormatter === 'function') ? makeBattleLogFormatter(monster.icon||'', monster.name||'') : null;
+    const _rsbIcon   = { fire:'🔥', ice:'❄️', thunder:'⚡', poison:'☠️', blood:'🩸' };
+    const _rsbBg     = { fire:'#7f1d1d', ice:'#1e3a5f', thunder:'#3b2a00', poison:'#14532d', blood:'#450a0a' };
+    const _rsbBorder = { fire:'#dc2626', ice:'#3b82f6', thunder:'#facc15', poison:'#22c55e', blood:'#b91c1c' };
+
+    let i = 0, _lastRound, _prevPHp = maxHp, _prevMHp = monMaxHp;
+    window._dfReplaySpeed = 1;
+
+    const playStep = () => {
+      if (!document.getElementById('dfBattleLog')) return; // 元素已消失，停止
+      if (i >= log.length) {
+        // 播放完畢 → 掛上結果卡
+        const card = document.getElementById('dfResultCard');
+        if (card) { card.innerHTML = doneHtml; card.scrollIntoView({ behavior:'smooth', block:'nearest' }); }
+        if (renderDungeonAfter) {
+          renderDungeon();
+          if (scrollToBox) { const db = document.getElementById('dungeonBody'); if (db) db.scrollIntoView({ behavior:'smooth', block:'start' }); }
+        }
+        if (autoHideMs > 0) setTimeout(() => { const re = document.getElementById('dungeonFightResult'); if (re) re.innerHTML = ''; }, autoHideMs);
+        if (typeof renderDungeonBattleHistory === 'function') renderDungeonBattleHistory();
+        const prog = document.getElementById('dfProgress');
+        if (prog) prog.textContent = `${log.length} / ${log.length}（完）`;
+        return;
+      }
+
+      const entry = log[i++];
+      // 回合分隔線
+      if (entry.round !== undefined && entry.round !== _lastRound) {
+        _lastRound = entry.round;
+        const sep = document.createElement('div');
+        sep.style.cssText = 'text-align:center;color:#4c3082;font-size:10px;padding:3px 0;border-top:1px solid #2d1b69;margin:3px 0;';
+        sep.textContent = `── 回合 ${entry.round} ──`;
+        logEl.appendChild(sep);
+      }
+      const cls = entry.type === 'crit-player' ? 'log-crit' : entry.type === 'player' ? 'log-player' : entry.type === 'monster' ? 'log-monster' : 'log-system';
+      const div = document.createElement('div');
+      div.className = `log-line ${cls}`;
+      div.textContent = _fmt ? _fmt.fmtEntry(entry) : (entry.text || '');
+      logEl.appendChild(div);
+      logEl.scrollTop = logEl.scrollHeight;
+
+      if (entry.hp) {
+        const pHpBar  = document.getElementById('dfPHpBar');
+        const pHpText = document.getElementById('dfPHpText');
+        const mHpBar  = document.getElementById('dfMHpBar');
+        const mHpText = document.getElementById('dfMHpText');
+        if (pHpBar)  pHpBar.style.width  = (entry.hp.player / maxHp * 100) + '%';
+        if (pHpText) pHpText.textContent = `${entry.hp.player}/${maxHp}`;
+        if (mHpBar)  mHpBar.style.width  = (entry.hp.monster / monMaxHp * 100) + '%';
+        if (mHpText) mHpText.textContent = `${entry.hp.monster.toLocaleString()}/${monMaxHp.toLocaleString()}`;
+        if (entry.hp.mp != null) {
+          const pMpBar = document.getElementById('dfPMpBar'); const pMpText = document.getElementById('dfPMpText');
+          if (pMpBar) pMpBar.style.width = (entry.hp.mp / maxMp * 100) + '%';
+          if (pMpText) pMpText.textContent = `MP ${entry.hp.mp}/${maxMp}`;
+        }
+        if (_hasBloodPool && entry.hp.bloodPool != null) {
+          const bpBar = document.getElementById('dfPBloodBar'); const bpText = document.getElementById('dfPBloodText');
+          if (bpBar) bpBar.style.width = Math.min(100,(entry.hp.bloodPool/Math.max(1,maxHp))*100)+'%';
+          if (bpText) bpText.textContent = `🩸 血池 ${entry.hp.bloodPool}`;
+        }
+        if (_isMage && entry.hp.spellBook !== undefined) {
+          const book = entry.hp.spellBook;
+          for (let si = 0; si < 10; si++) {
+            const sl = document.getElementById('dfSbSlot' + si); if (!sl) continue;
+            const el = book[si];
+            if (el) { sl.textContent = _rsbIcon[el]||'✨'; sl.style.background = _rsbBg[el]||'#1e1b4b'; sl.style.borderColor = _rsbBorder[el]||'#4c1d95'; }
+            else    { sl.textContent = ''; sl.style.background = '#0f0a2e'; sl.style.borderColor = '#4c1d95'; }
+          }
+          const sc = document.getElementById('dfSbCount'); if (sc) sc.textContent = `${book.length}/10`;
+        }
+        // 傷害浮字 + 動畫
+        const mDmg = _prevMHp - entry.hp.monster;
+        const pDmg = _prevPHp - entry.hp.player;
+        if (mDmg > 0) { const el = document.getElementById('dfMonster'); if (el) showDamage(el, mDmg, entry.type==='crit-player'?'crit':'normal'); }
+        if (pDmg > 0) { const el = document.getElementById('dfPlayer');  if (el) showDamage(el, pDmg, 'normal'); }
+        if (entry.hp.player > _prevPHp) { const el = document.getElementById('dfPlayer'); if (el) showDamage(el, entry.hp.player-_prevPHp, 'heal'); }
+        _prevPHp = entry.hp.player; _prevMHp = entry.hp.monster;
+        if (entry.type==='player'||entry.type==='crit-player') {
+          const mEl=document.getElementById('dfMonster'); const pEl=document.getElementById('dfPlayer');
+          if (mEl) { mEl.classList.remove('hurt'); void mEl.offsetWidth; mEl.classList.add('hurt'); }
+          if (pEl) { pEl.classList.remove('attacking'); void pEl.offsetWidth; pEl.classList.add('attacking'); setTimeout(()=>pEl.classList.remove('attacking'),500); }
+        } else if (entry.type==='monster') {
+          const pEl=document.getElementById('dfPlayer'); const mEl=document.getElementById('dfMonster');
+          if (pEl) { pEl.classList.remove('hurt'); void pEl.offsetWidth; pEl.classList.add('hurt'); }
+          if (mEl) { mEl.classList.remove('attacking'); void mEl.offsetWidth; mEl.classList.add('attacking'); setTimeout(()=>mEl.classList.remove('attacking'),500); }
+        }
+      }
+      if (entry.gauge && typeof updateSpdBar==='function') {
+        updateSpdBar('dfPSpdBar','dfPSpdText',entry.gauge.p,'我的行動條');
+        updateSpdBar('dfMSpdBar','dfMSpdText',entry.gauge.m,'怪行動條');
+      }
+      const prog = document.getElementById('dfProgress');
+      if (prog) prog.textContent = `${i} / ${log.length}`;
+      const nx = log[i];
+      const sameRound = nx && entry.round !== undefined && entry.round === nx.round;
+      const delay = Math.max(30, (sameRound ? 50 : 180) / (window._dfReplaySpeed || 1));
+      setTimeout(playStep, delay);
+    };
+    playStep();
+  }
+  window._dungeonPlayBattleLog = _dungeonPlayBattleLog;
+
+  // 切換地城戰報播放速度
+  function _dfCycleSpeed() {
+    const speeds = [1, 2, 4, 8];
+    const cur = window._dfReplaySpeed || 1;
+    const next = speeds[(speeds.indexOf(cur) + 1) % speeds.length];
+    window._dfReplaySpeed = next;
+    const btn = document.getElementById('dfSpeedBtn');
+    if (btn) btn.textContent = `⚡ 速度 ${next}×`;
+  }
+  window._dfCycleSpeed = _dfCycleSpeed;
 
   // HTML：某層通關（v2：顯示提示先選 Buff）
   function _dungeonFloorClearHtml(run, clearedFloor, dmgDealt, rounds, maxHit) {
@@ -23797,7 +23980,7 @@ ${b.text}
     const me = getMe();
     if (!me) { body.innerHTML = '<div style="color:#a78bfa;padding:8px;font-size:12px;">請先登入</div>'; return; }
     const rpg = getRpg(me);
-    const owned = rpg.dungeonTreasures || [];
+    const owned = Array.isArray(rpg.dungeonTreasures) ? rpg.dungeonTreasures : [];
     const coins = rpg.dungeonEggCoins || 0;
 
     // 我的寶物（去重顯示，但顯示持有數量）
@@ -23805,27 +23988,26 @@ ${b.text}
     for (const id of owned) countMap[id] = (countMap[id]||0) + 1;
     const uniqueIds = Object.keys(countMap);
 
+    const _DT_RARITY_EMOJI = { goose:'🦢', legend:'🌟', flash:'⚡', normal:'🟢', trash:'⬜' };
+
     const myTreasureHtml = uniqueIds.length === 0
       ? '<div style="color:#6b7280;font-size:11px;text-align:center;padding:12px;">尚未持有任何地城寶物</div>'
-      : uniqueIds.map(id => {
-          const item = DUNGEON_TREASURES.find(t => t.id === id);
-          if (!item) return '';
-          const rc = _DT_RARITY_COLOR[item.rarity] || '#9ca3af';
-          const rn = _DT_RARITY_NAME[item.rarity]  || '';
-          const cnt = countMap[id];
-          const desc = (typeof dungeonTreasureDesc === 'function') ? dungeonTreasureDesc(item) : '';
-          return `<div style="background:rgba(0,0,0,0.25);border:1px solid #2d1b69;border-radius:8px;padding:7px 10px;margin-bottom:5px;display:flex;align-items:center;gap:8px;">
-            <div style="min-width:50px;font-size:10px;color:${rc};font-weight:700;">${rn}</div>
-            <div style="flex:1;">
-              <div style="font-size:12px;font-weight:700;color:#e9d5ff;">${item.name}${cnt > 1 ? ` <span style="color:#fbbf24;font-size:10px;">×${cnt}</span>` : ''}</div>
-              ${desc ? `<div style="font-size:10px;color:#9ca3af;margin-top:2px;">${desc}</div>` : ''}
-            </div>
-            <button onclick="dungeonTradeSelectMyItem('${id}')"
-              style="background:rgba(109,40,217,0.3);border:1px solid #7c3aed;color:#c4b5fd;padding:4px 8px;border-radius:6px;font-size:10px;cursor:pointer;font-family:inherit;white-space:nowrap;">
-              提出交易
-            </button>
-          </div>`;
-        }).join('');
+      : `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;">${
+          uniqueIds.map(id => {
+            const item = DUNGEON_TREASURES.find(t => t.id === id);
+            if (!item) return '';
+            const rc  = _DT_RARITY_COLOR[item.rarity] || '#9ca3af';
+            const emo = _DT_RARITY_EMOJI[item.rarity] || '📦';
+            const cnt = countMap[id];
+            return `<div onclick="dungeonTradeSelectMyItem('${id}')"
+              style="position:relative;background:rgba(0,0,0,0.35);border:2px solid ${rc};border-radius:8px;padding:6px 4px 5px;cursor:pointer;text-align:center;transition:background 0.15s;"
+              onmouseenter="this.style.background='rgba(109,40,217,0.25)'" onmouseleave="this.style.background='rgba(0,0,0,0.35)'">
+              ${cnt > 1 ? `<div style="position:absolute;top:2px;right:3px;font-size:8px;background:#7c3aed;color:#fff;border-radius:4px;padding:1px 3px;line-height:1.3;">×${cnt}</div>` : ''}
+              <div style="font-size:18px;line-height:1.3;">${emo}</div>
+              <div style="font-size:9px;color:#e9d5ff;line-height:1.25;margin-top:2px;word-break:break-all;">${item.name}</div>
+            </div>`;
+          }).join('')
+        }</div>`;
 
     // 待處理交易請求
     const pending = rpg.pendingDungeonTrades || [];
@@ -23876,7 +24058,8 @@ ${b.text}
   function dungeonTradeSelectMyItem(myItemId) {
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
-    if (!(rpg.dungeonTreasures || []).includes(myItemId)) { showToast('你沒有這件寶物'); return; }
+    if (!Array.isArray(rpg.dungeonTreasures)) rpg.dungeonTreasures = [];
+    if (!rpg.dungeonTreasures.includes(myItemId)) { showToast('你沒有這件寶物'); return; }
 
     // 列出有地城寶物的其他玩家
     const otherPlayers = players.filter(p => p && p.id !== me.id && getRpg(p).dungeonTreasures?.length > 0);
@@ -23932,9 +24115,11 @@ ${b.text}
 
     // 確認自己仍持有
     const myRpg = getRpg(me);
-    if (!(myRpg.dungeonTreasures || []).includes(fromItemId)) { showToast('你已不持有該寶物'); return; }
+    if (!Array.isArray(myRpg.dungeonTreasures)) myRpg.dungeonTreasures = [];
+    if (!Array.isArray(targetRpg.dungeonTreasures)) targetRpg.dungeonTreasures = [];
+    if (!myRpg.dungeonTreasures.includes(fromItemId)) { showToast('你已不持有該寶物'); return; }
     // 確認對方仍持有
-    if (!(targetRpg.dungeonTreasures || []).includes(wantItemId)) { showToast('對方已不持有該寶物'); return; }
+    if (!targetRpg.dungeonTreasures.includes(wantItemId)) { showToast('對方已不持有該寶物'); return; }
 
     const tradeId = `tr_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
     if (!targetRpg.pendingDungeonTrades) targetRpg.pendingDungeonTrades = [];
@@ -23947,7 +24132,7 @@ ${b.text}
     target.lastTouchedAt = Date.now() - 1;
 
     // 強制寫入對方資料
-    window.__firebaseSync?.forceWriteAllPlayers?.([target]).catch(() => {});
+    window.__firebaseSync?.forceWriteAllPlayers?.([target])?.catch(() => {});
     saveData();
 
     const myItem  = DUNGEON_TREASURES.find(t => t.id === fromItemId);
@@ -23993,7 +24178,7 @@ ${b.text}
     // 同步雙方
     fromRpg.saveVersion = (fromRpg.saveVersion || 0) + 1;
     fromPlayer.lastTouchedAt = Date.now() - 1;
-    window.__firebaseSync?.forceWriteAllPlayers?.([fromPlayer]).catch(() => {});
+    window.__firebaseSync?.forceWriteAllPlayers?.([fromPlayer])?.catch(() => {});
     saveData();
     renderDungeonTreasures();
   }
