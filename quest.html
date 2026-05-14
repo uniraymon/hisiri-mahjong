@@ -3644,6 +3644,7 @@
           skills: [
             { verb: '神聖裁決', mult: 2.8, applyStatus: { type: 'buff', stat: 'atkPct', amount: -0.35, turns: 6, chance: 1.0 }, cooldown: 3 },
             { verb: '天界護壁', type: 'monsterSelfBuff', stat: 'def', amount: 1000, turns: 8, cooldown: 6 },
+            { verb: '聖光虹吸', type: 'holyDrain', drainPct: 0.50, healMult: 1000, cooldown: 6 },
             { verb: '滅世聖光', mult: 9.0, ignoreDef: true, minRound: 50, everyRounds: 50, cooldown: 1 },
           ]},
         // Form 2：魔導型 — 物抗40%，玩家SPD-50%
@@ -3815,6 +3816,7 @@
       maxRounds: (boss.maxRounds || 100) + 20, // ⭐ 世界王每場多 20 回合
       goldDrop: 0, xpDrop: 0,
       art: _skFormArt || boss.art || null,
+      isSupremeKing: boss.isSupremeKing || false,
     };
 
     const _wbPage   = r.wbPatternPage?.[bossId];
@@ -10816,6 +10818,7 @@
         const mevs = tickStatuses(monster, monster.maxHp, false); // 怪物回合
         for (const ev of mevs) {
           let _mTickDmg = ev.dmg;
+          if (monster.isSupremeKing && (ev.type === 'bleed' || ev.type === 'poison')) _mTickDmg = Math.min(_mTickDmg, 10000);
           if (ev.type === 'scorch') {
             // ⭐ 灼燒：固定真傷（不受魔坑減傷）+ 每 tick 蝕掉魔坑 reducePct -15%
             const _mScPs = (monster.statuses || []).find(x => x.type === 'partialShield' && (x.hitsLeft || 0) > 0 && (x.reducePct || 0) > 0);
@@ -10994,6 +10997,18 @@
             const _dLabel = { atkPct: 'ATK', defPct: 'DEF', spdPct: 'SPD' }[mSkill.stat] || mSkill.stat;
             const _dPct = Math.round(Math.abs(mSkill.amount || 0) * 100);
             log.push({ type: 'monster', text: `回合 ${round}：${monster.icon}${monster.name} 💀 ${mSkill.verb} → ${debuffHit ? `${player.name} ${_dLabel} -${_dPct}%（${mSkill.turns || 3} 回合）` : '抵抗！'}`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+          } else if (mSkill.type === 'holyDrain') {
+            // ⭐ 聖光虹吸：吸取玩家 50% HP（含血池），每吸 1 回血 1000
+            const _hdDrainPct = mSkill.drainPct || 0.50;
+            const _hdHpDrain = Math.floor(pHp * _hdDrainPct);
+            const _hdBpDrain = (player.rpg.class === 'warrior') ? Math.floor(bloodPool * _hdDrainPct) : 0;
+            const _hdTotal = _hdHpDrain + _hdBpDrain;
+            pHp = Math.max(0, pHp - _hdHpDrain);
+            if (_hdBpDrain > 0) bloodPool = Math.max(0, bloodPool - _hdBpDrain);
+            const _hdHeal = Math.min(monster.maxHp - mHp, _hdTotal * (mSkill.healMult || 1000));
+            if (_hdHeal > 0) mHp = Math.min(monster.maxHp, mHp + _hdHeal);
+            log.push({ type: 'monster', text: `回合 ${round}：${monster.icon}${monster.name} ✨${mSkill.verb} → 吸取 ${player.name} ${_hdHpDrain.toLocaleString()} HP${_hdBpDrain > 0 ? `（+血池 ${_hdBpDrain.toLocaleString()}）` : ``}；老天鵝回血 +${_hdHeal.toLocaleString()}！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+            if (pHp <= 0) dead = true;
           } else if (mSkill.mpDrainAll) {
             // ⭐ 靈魂汲取：魔法傷害 + 吸光玩家 MP + 吸血回血
             const _monAtkBuff_drain = 1 + (getBuffBonus(monster).atkPct || 0);
@@ -13013,6 +13028,7 @@
         // 怪物中毒等狀態 tick
         const evs = tickStatuses(m, m.maxHp, false); // 怪物回合
         for (const ev of evs) {
+          if (m.isSupremeKing && (ev.type === 'bleed' || ev.type === 'poison')) ev.dmg = Math.min(ev.dmg, 10000);
           if (ev.type === 'scorch') {
             // ⭐ 灼燒：固定真傷 + 蝕掉魔坑 -15%
             const _mScPs = (m.statuses || []).find(x => x.type === 'partialShield' && (x.hitsLeft || 0) > 0 && (x.reducePct || 0) > 0);
@@ -13146,6 +13162,17 @@
             const _dLabel = { atkPct: 'ATK', defPct: 'DEF', spdPct: 'SPD' }[mSkill.stat] || mSkill.stat;
             const _dPct = Math.round(Math.abs(mSkill.amount || 0) * 100);
             log.push({ type: 'monster', text: `回合 ${round}：${m.icon}${m.name} 💀 ${mSkill.verb} → ${debuffHit ? `${player.name} ${_dLabel} -${_dPct}%（${mSkill.turns || 3} 回合）` : '抵抗！'}`, hp: hpsSnapshot() });
+          } else if (mSkill.type === 'holyDrain') {
+            const _hdDrainPct2 = mSkill.drainPct || 0.50;
+            const _hdHpDrain2 = Math.floor(pHp * _hdDrainPct2);
+            const _hdBpDrain2 = (player.rpg.class === 'warrior') ? Math.floor(bloodPool * _hdDrainPct2) : 0;
+            const _hdTotal2 = _hdHpDrain2 + _hdBpDrain2;
+            pHp = Math.max(0, pHp - _hdHpDrain2);
+            if (_hdBpDrain2 > 0) bloodPool = Math.max(0, bloodPool - _hdBpDrain2);
+            const _hdHeal2 = Math.min(m.maxHp - m.hp, _hdTotal2 * (mSkill.healMult || 1000));
+            if (_hdHeal2 > 0) m.hp = Math.min(m.maxHp, m.hp + _hdHeal2);
+            log.push({ type: 'monster', text: `回合 ${round}：${m.icon}${m.name} ✨${mSkill.verb} → 吸取 ${player.name} ${_hdHpDrain2.toLocaleString()} HP${_hdBpDrain2 > 0 ? `（+血池 ${_hdBpDrain2.toLocaleString()}）` : ``}；老天鵝回血 +${_hdHeal2.toLocaleString()}！`, hp: hpsSnapshot() });
+            if (pHp <= 0) { playerObj.alive = false; }
           } else {
             // ⭐ 30% DEF 穿透（試煉場）
             const _mPen3 = m.defPen || 0;
@@ -16201,7 +16228,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260515024100';
+  const APP_VERSION = '20260515024544';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
