@@ -594,7 +594,12 @@ body { font-family: 'Microsoft JhengHei', '微軟正黑體', sans-serif; backgro
 <script src="/socket.io/socket.io.js"></script>
 <script>
 // ===== STATE =====
-const socket = io();
+const socket = io({
+  transports: ['websocket', 'polling'],
+  upgrade: true,
+  reconnectionAttempts: 5,
+  timeout: 20000,
+});
 let myId = null;
 let boardData = null;
 let gameState = null;
