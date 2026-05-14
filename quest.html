@@ -16487,7 +16487,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260515033929';
+  const APP_VERSION = '20260515034744';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -17977,17 +17977,18 @@ ${b.text}
         <div>・<b>武器</b>：3 個孔；<b>衣服/鞋/頭盔/披風/手套</b>：各 1 個孔；其餘裝備無孔</div>
 
         <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">🎰 寶石轉蛋</div>
-        <div>・每次 <b>5,000 鵝鵝幣</b>，98% 機率獲得隨機一階晶石，2% 機率獲得<b>原石🪨</b></div>
+        <div>・每次 <b>5,000 鵝鵝幣</b>，掉落機率：1階 <b>50%</b>・2階 <b>30%</b>・3階 <b>15%</b>・4階 <b>5%</b></div>
 
         <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">⚗️ 合成進階</div>
-        <div>・<b>4 個一階 → 1 個二階</b>（同種）；<b>3 個二階 → 1 個三階</b>（同種）</div>
+        <div>・<b>4 個一階 → 1 個二階</b>；<b>3 個二階 → 1 個三階</b>；<b>3 個三階 → 1 個四階</b>（同種）</div>
+        <div>・<b>3 個四階 → 1 個五階天石</b>；<b>3 個五階 → 1 個六階神話石</b>（同種）</div>
         <div>・<b>3 個一階 + 1 個原石 → 1 個二階</b>（靈活配方）</div>
 
-        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">📊 一階→二階→三階屬性</div>
-        <div>・攻擊 / 法術：ATK/MARK +5 → +14 → +28</div>
-        <div>・防禦：DEF +4 → +11 → +22　·　速度：SPD +3 → +8 → +16</div>
-        <div>・生命：HP +50 → +130 → +260　·　魔力：MP +15 → +40 → +80</div>
-        <div>・暴擊：暴擊率 +2% → +5% → +10%</div>
+        <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">📊 各階屬性（ATK/MARK 示例）</div>
+        <div>・1階 +5　2階 +14　3階 +28　4階 +50　5階 +85　6階 +130</div>
+        <div>・防禦：+4／+11／+22／+40／+68／+105</div>
+        <div>・速度：+3／+8／+16／+28／+48／+72　·　生命：+50／+130／+260／+480／+820／+1300</div>
+        <div>・魔力：+8／+15／+35／+65／+100／+138　·　暴擊率：+2%／+5%／+10%／+18%／+28%／+40%</div>
 
         <div style="font-weight:700; color:#7c3aed; margin:10px 0 4px;">🎒 操作方式</div>
         <div>・點角色欄「💎 寶石」按鈕 → 開寶石系統（轉蛋 / 背包 / 合成）</div>
@@ -22055,7 +22056,7 @@ ${b.text}
     const gachaHtml = `
       <div style="background:linear-gradient(135deg,#7c3aed,#c026d3); border-radius:12px; padding:10px 14px; margin-bottom:8px; text-align:center;">
         <div style="font-weight:800; font-size:14px; color:#fff; margin-bottom:2px;">🎰 鵝鵝幣轉蛋</div>
-        <div style="font-size:11px; color:#e9d5ff; margin-bottom:4px;">5,000 鵝鵝幣 / 次 · 98% 一階晶石 · 2% 原石</div>
+        <div style="font-size:11px; color:#e9d5ff; margin-bottom:4px;">5,000 鵝鵝幣 / 次 &nbsp;｜&nbsp; 1階🔴 <b style="color:#fff">50%</b> · 2階🔵 <b style="color:#fff">30%</b> · 3階🟣 <b style="color:#fbbf24">15%</b> · 4階⭐ <b style="color:#fbbf24">5%</b></div>
         <div style="font-size:11px; color:#d8b4fe; margin-bottom:6px;">持有：<b style="color:#fff;">${coins.toLocaleString()}</b> 🪙</div>
         <div style="display:flex; gap:5px; justify-content:center; flex-wrap:wrap;">
           <button onclick="doGemGacha(1)" style="padding:6px 10px; background:${can1 ? '#fff' : '#6b7280'}; color:${can1 ? '#7c3aed' : '#d1d5db'}; font-weight:800; font-size:11px; border:none; border-radius:20px; cursor:${can1 ? 'pointer' : 'not-allowed'};">×1（5k）</button>
@@ -22097,9 +22098,9 @@ ${b.text}
             <div style="display:flex; flex-wrap:wrap; gap:4px;">`;
           for (const gem of gems.sort((a,b) => a.grade - b.grade)) {
             const cnt = inv[gem.id] || 0;
-            const gc = ['', '#9ca3af', '#3b82f6', '#a855f7', '#f59e0b'][gem.grade] || '#9ca3af';
-            const gradeName = ['', '一階', '二階', '三階', '四階'][gem.grade] || '';
-            const bg4 = gem.grade === 4 ? 'linear-gradient(135deg,#fffbeb,#fef3c7)' : 'linear-gradient(135deg,#fafafa,#f3e8ff)';
+            const gc = ['', '#9ca3af', '#3b82f6', '#a855f7', '#f59e0b', '#06b6d4', '#ec4899'][gem.grade] || '#9ca3af';
+            const gradeName = ['', '一階', '二階', '三階', '四階', '五階', '六階'][gem.grade] || '';
+            const bg4 = gem.grade === 6 ? 'linear-gradient(135deg,#fdf2f8,#fce7f3)' : gem.grade === 5 ? 'linear-gradient(135deg,#ecfeff,#cffafe)' : gem.grade === 4 ? 'linear-gradient(135deg,#fffbeb,#fef3c7)' : 'linear-gradient(135deg,#fafafa,#f3e8ff)';
             bodyHtml += `<div style="display:inline-flex; flex-direction:column; align-items:center; padding:6px 7px; background:${bg4}; border:1.5px solid ${gc}; border-radius:8px; min-width:54px;" title="${escapeHtml(gem.desc)}">
               <span style="font-size:20px;">${gem.icon}</span>
               <span style="font-size:9px; font-weight:700; color:${gc};">${escapeHtml(gem.name)}</span>
@@ -22343,7 +22344,7 @@ ${b.text}
 
     if (count === 1) {
       const r = results[0];
-      showToast(r.type === 'raw' ? `✨ 稀有！${r.icon} ${r.name}（2%）` : `${r.icon} ${r.name}！`);
+      showToast(`${r.icon} ${r.name}！`);
       renderGemModal();
     } else {
       _showGachaResults(results, '🎰', '💎');
@@ -22371,7 +22372,7 @@ ${b.text}
     renderCharCard();
     if (count === 1) {
       const r = results[0];
-      showToast(r.type === 'raw' ? `✨ 稀有！${r.icon} ${r.name}（2%）` : `${r.icon} ${r.name}！`);
+      showToast(`${r.icon} ${r.name}！`);
       renderGemModal();
     } else {
       _showGachaResults(results, '🎟', '🎟');
