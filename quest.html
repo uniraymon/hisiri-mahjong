@@ -1,3 +1,4 @@
+        <button class="btn btn-secondary" onclick="adminCompSkBossParticipants()" style="background:linear-gradient(135deg,#fdf4ff,#9d174d);color:#fff;font-weight:800;">🪺 老天鵝補償（+80蛋幣）＋重置排名</button>
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -16274,7 +16275,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260515025003';
+  const APP_VERSION = '20260515025330';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -29400,6 +29401,7 @@ ${b.text}
       <div class="shop-section-title">🏺 地城寶物</div>
       <div style="font-size:11px; color:#6b7280; margin-bottom:6px;">一鍵取得全部地城寶物各 ×1（不重複計算已有的）</div>
       <button class="btn btn-secondary" onclick="adminGrantAllDungeonTreasures()" style="width:100%;">🏺 一鍵全拿地城寶物 ×1</button>
+      <button class="btn btn-secondary" onclick="adminCompSkBossParticipants()" style="width:100%;background:linear-gradient(135deg,#7c0060,#9d174d);color:#fff;font-weight:800;">🪺 老天鵝補發 80 蛋幣 ＋ 重置 HP / 排名</button>
       <div class="shop-section-title">👑 王硬幣（快捷）</div>
       ${[
         { id:'bc_goose_king',    icon:'👑', name:'鵝皇'    },
@@ -29536,6 +29538,56 @@ ${b.text}
     showToast(`🏺 已新增 ${added} 件地城寶物（各×1）`);
   }
   window.adminGrantAllDungeonTreasures = adminGrantAllDungeonTreasures;
+
+  // ⭐ 老天鵝補發補償：補 dungeonEggCoins 給所有參戰玩家，並重置王血量與傷害排名
+  async function adminCompSkBossParticipants() {
+    const skBoss = WB9_BOSSES.find(b => b.isSupremeKing);
+    if (!skBoss) { showToast('找不到老天鵝定義'); return; }
+    const state = wb9GetState(skBoss.id);
+    if (!state) { showToast('找不到老天鵝狀態'); return; }
+    // 收集所有參戰玩家 ID（當前 damageLog + 上次擊殺 damageLog + recentBattles）
+    const participantSet = new Set();
+    for (const pid of Object.keys(state.damageLog || {})) participantSet.add(pid);
+    for (const pid of Object.keys(state.lastKill?.damageLog || {})) participantSet.add(pid);
+    for (const b of (state.recentBattles || [])) { if (b.attackerId) participantSet.add(b.attackerId); }
+    const participantIds = [...participantSet];
+    if (participantIds.length === 0) { showToast('沒有找到參戰玩家記錄'); return; }
+    const sure = confirm(`找到 ${participantIds.length} 位參戰玩家：\n${participantIds.map(pid => { const p = getPlayer(pid); return p ? p.name : pid; }).join('、')}\n\n補發 80 🪺 地城鵝蛋幣，並重置老天鵝 HP 與傷害排名？`);
+    if (!sure) return;
+    // 補發蛋幣
+    let compensated = 0;
+    for (const pid of participantIds) {
+      const p = getPlayer(pid); if (!p) continue;
+      const r = getRpg(p); if (!r) continue;
+      r.dungeonEggCoins = (r.dungeonEggCoins || 0) + 80;
+      compensated++;
+    }
+    saveData();
+    // 重置老天鵝 HP 與傷害排名
+    if (!window.__firebaseSync?.wb9SaveBoss) { showToast(`✅ 補發 ${compensated} 人 × 80 🪺（但雲端未連線，王狀態未重置）`); return; }
+    const newState = {
+      hp: skBoss.maxHp,
+      maxHp: skBoss.maxHp,
+      queue: [],
+      attackCooldowns: {},
+      damageLog: {},
+      killCount: state.killCount || 0,
+      challengeCount: state.challengeCount || 0,
+      recentBattles: state.recentBattles || [],
+      lastKill: state.lastKill || null,
+      lastHitAt: state.lastHitAt || null,
+    };
+    try {
+      await window.__firebaseSync.wb9SaveBoss(skBoss.id, newState);
+      wb9[skBoss.id] = newState;
+      wb9Render({ force: true });
+      showToast(`✅ 已補發 ${compensated} 位玩家 × 80 🪺，老天鵝 HP 與排名已重置！`);
+      showDebugModal();
+    } catch(e) {
+      showToast('❌ 雲端重置失敗：' + (e?.message || e));
+    }
+  }
+  window.adminCompSkBossParticipants = adminCompSkBossParticipants;
 
   async function adminAddBossCoins(coinId, amount) {
     const me = getMe(); if (!me) return;
