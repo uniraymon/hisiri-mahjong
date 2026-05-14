@@ -16494,7 +16494,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260515040802';
+  const APP_VERSION = '20260515041308';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -20168,7 +20168,7 @@ ${b.text}
           <div class="stat-cell"><div class="sc-label">爆傷</div><div class="sc-value">${Math.round((stats.totalCritDmg || 1.7) * 100)}%</div></div>
           <div class="stat-cell"><div class="sc-label" style="color:#10b981;">生命回復</div><div class="sc-value" style="color:#10b981;">${(stats.hpRegenPct || 0) > 0 ? (stats.hpRegenPct) + '%/回' : '-'}</div></div>
           <div class="stat-cell"><div class="sc-label" style="color:#60a5fa;">MP回復</div><div class="sc-value" style="color:#60a5fa;">${(stats.mpRegen || 0) > 0 ? '+' + (stats.mpRegen) + '/回' : '-'}</div></div>
-          <div class="stat-cell"><div class="sc-label" style="color:#f59e0b;">爆頭率</div><div class="sc-value" style="color:#f59e0b;">${rpg.class === 'archer' ? Math.round((0.05 + (stats.totalCritChance || 0) * 0.20) * 100) + '%' : '-'}</div></div>
+          <div class="stat-cell"><div class="sc-label" style="color:#f59e0b;">爆頭率</div><div class="sc-value" style="color:#f59e0b;">${(() => { const _c = stats.totalCritChance || 0; const _wpn = rpg.equipment?.weapon ? (ITEMS[rpg.equipment.weapon.baseId || rpg.equipment.weapon.id] || {}) : {}; const _nhs = _wpn.nabyssHs || 0; const _hs = Math.floor(Math.max(0, _c - 1.0) / 0.05) * 0.01 + _nhs; return _hs > 0 ? Math.round(_hs * 100) + '%' : (_c >= 1.0 ? '0%' : '需爆擊>100%'); })()}</div></div>
         </div>
         ${(() => {
           const setIds = Object.keys(stats.setCounts || {});
