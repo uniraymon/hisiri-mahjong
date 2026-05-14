@@ -3456,8 +3456,9 @@
     killer:      { gemRaw: 1, bossCoinQty: 3 },   // 尾刀額外獎勵
   };
   const WB9_QUEUE_STALE_MS     = 60 * 1000;
-  const WB9_COOLDOWN_MS        = 2.5 * 60 * 1000; // 2.5 分鐘冷卻（原 5 分鐘，減半）
-  const WB9_CD_LS_PREFIX       = '__wb9cd_';    // localStorage key 前綴（不依賴 Firebase 同步）
+  const WB9_COOLDOWN_MS        = 2.5 * 60 * 1000; // 世界王冷卻 2.5 分鐘
+  const WB9_CD_LS_PREFIX       = '__wb9cd_';       // 世界王 localStorage key 前綴
+  const WB9_SK_CD_LS_PREFIX    = '__wb9skcd_';     // 傳說王獨立冷卻 localStorage key 前綴
 
   const WB9_BOSSES = [
     {
@@ -3623,6 +3624,7 @@
       tier: 100,
       level: 100,
       maxRounds: 130,
+      cooldownMs: 30 * 1000,
       verb: '至尊天擊',
       isSupremeKing: true,
       // 4 個隨機形態（依 killCount % 4 決定，所有玩家看到相同形態）
@@ -3645,7 +3647,6 @@
           skills: [
             { verb: '神聖裁決', mult: 2.8, applyStatus: { type: 'buff', stat: 'atkPct', amount: -0.35, turns: 6, chance: 1.0 }, cooldown: 3 },
             { verb: '天界護壁', type: 'monsterSelfBuff', stat: 'def', amount: 1000, turns: 8, cooldown: 6 },
-            { verb: '聖光虹吸', type: 'holyDrain', drainPct: 0.50, healMult: 1000, cooldown: 6 },
             { verb: '滅世聖光', mult: 9.0, ignoreDef: true, minRound: 50, everyRounds: 50, cooldown: 1 },
           ]},
         // Form 2：魔導型 — 物抗40%，玩家SPD-50%
@@ -3654,7 +3655,7 @@
           verb: '冥術汲取', ability: { type: 'physResist', resist: 0.40 },
           formDebuff: { spdHalf: true },
           skills: [
-            { verb: '冥力汲取', mult: 2.2, ignoreDef: true, mpDrainAll: true, lifestealMult: 8, cooldown: 3 },
+            { verb: '冥力汲取', type: 'mpDrainSpd', mult: 1.5, mpDrainPct: 0.20, spdDebuffAmt: -0.20, spdDebuffTurns: 3, cooldown: 3 },
             { verb: '魂魄腐蝕', mult: 1.6, applyStatus: { type: 'poison', charges: 5, chance: 1.0 }, cooldown: 4 },
             { verb: '老天大法', mult: 9.5, ignoreDef: true, minRound: 50, everyRounds: 50, cooldown: 1 },
           ]},
@@ -3668,7 +3669,7 @@
             { verb: '幽冥毒霧', mult: 1.4,
               applyStatus:  { type: 'poison', charges: 5, chance: 1.0 },
               applyStatus2: { type: 'bleed',  charges: 3, chance: 1.0 },
-              applyStatus3: { type: 'scorch', charges: 3, markDmg: 5000, chance: 1.0 },
+              applyStatus3: { type: 'buff', stat: 'spdPct', amount: -0.30, turns: 3, key: 'frost', noStack: true, chance: 1.0 },
               cooldown: 3 },
             { verb: '速影滅世', mult: 11.0, ignoreDef: true, minRound: 50, everyRounds: 50, cooldown: 1 },
           ]},
@@ -3718,19 +3719,22 @@
     const boss = WB9_BOSSES.find(b => b.id === bossId);
     if (!boss) return;
     if (r.hp <= 0) { showToast('💀 HP 太低，先回滿再來'); return; }
-    // 全域 5 分冷卻
-    const cdRemain = wb9GetLastAttack(me) + WB9_COOLDOWN_MS - Date.now();
+    const _joinCdMs = boss.cooldownMs || WB9_COOLDOWN_MS;
+    const cdRemain = wb9GetLastAttack(me, bossId) + _joinCdMs - Date.now();
     if (cdRemain > 0) {
       const m = Math.floor(cdRemain / 60000);
       const s = Math.ceil((cdRemain % 60000) / 1000);
-      showToast(`⏳ 冷卻中，${m}:${String(s).padStart(2,'0')} 後可加入`);
+      showToast(`⏳ 冷卻中，${m > 0 ? m + ':' + String(s).padStart(2,'0') : s + 's'} 後可加入`);
       return;
     }
     if (!window.__firebaseSync || !window.__firebaseSync.wb9JoinQueue) {
       showToast('☁️ 雲端尚未連線，稍後再試'); return;
     }
     try {
-      const out = await window.__firebaseSync.wb9JoinQueue(bossId, me.id, boss);
+      const _cdBossIds = boss.isSupremeKing
+        ? ['supreme_king']
+        : WB9_BOSSES.filter(b => !b.isSupremeKing).map(b => b.id);
+      const out = await window.__firebaseSync.wb9JoinQueue(bossId, me.id, { ...boss, cdBossIds: _cdBossIds });
       // 更新本地 wb9 並重畫
       wb9[bossId] = out.state;
       forageTrace?.('wb9 join', { bossId, position: out.position });
@@ -3883,7 +3887,7 @@
     try {
       txOut = await window.__firebaseSync.wb9AttackTx(
         bossId, me.id, dmgRaw,
-        { maxHp: boss.maxHp, staleMs: WB9_QUEUE_STALE_MS, bossCoinId: boss.bossCoin?.id, killRewards: boss.killRewards || null },
+        { maxHp: boss.maxHp, staleMs: WB9_QUEUE_STALE_MS, bossCoinId: boss.bossCoin?.id, killRewards: boss.killRewards || null, cooldownMs: boss.cooldownMs || WB9_COOLDOWN_MS },
         snap_
       );
     } catch (e) {
@@ -3905,10 +3909,15 @@
     }
 
     const { actualDmg, killed, newState } = txOut;
-    // 全域 5 分冷卻（同時存 rpg 物件 + localStorage，防 Firebase 同步覆蓋）
+    // 冷卻記錄：傳說王與世界王分開存（rpg 欄位 + localStorage 雙軌防 Firebase 同步覆蓋）
     const _cdNow = Date.now();
-    r.lastBossAttackTime = _cdNow;
-    try { localStorage.setItem(WB9_CD_LS_PREFIX + me.id, String(_cdNow)); } catch(e) {}
+    if (bossId === 'supreme_king') {
+      r.lastSkAttackTime = _cdNow;
+      try { localStorage.setItem(WB9_SK_CD_LS_PREFIX + me.id, String(_cdNow)); } catch(e) {}
+    } else {
+      r.lastBossAttackTime = _cdNow;
+      try { localStorage.setItem(WB9_CD_LS_PREFIX + me.id, String(_cdNow)); } catch(e) {}
+    }
     me.lastTouchedAt = _cdNow; // 確保 applyRemotePlayers 時 local 版本勝出
     __persistLocalSnapshot();
     // 同步本地 wb9
@@ -4296,8 +4305,11 @@
   function __wb9Hash() {
     const me = getMe();
     const r = me ? getRpg(me) : null;
-    const onCd = me ? ((Date.now() - wb9GetLastAttack(me)) < WB9_COOLDOWN_MS) : false;
-    const parts = [`me:${me?.id || ''}`, `cd:${onCd ? '1' : '0'}`];
+    const _now = Date.now();
+    const _skBossH = WB9_BOSSES.find(b => b.isSupremeKing);
+    const wbOnCd = me ? (_now - wb9GetLastAttack(me, 'goose_king')) < WB9_COOLDOWN_MS : false;
+    const skOnCd = me && _skBossH ? (_now - wb9GetLastAttack(me, 'supreme_king')) < (_skBossH.cooldownMs || 30000) : false;
+    const parts = [`me:${me?.id || ''}`, `wbcd:${wbOnCd ? '1' : '0'}`, `skcd:${skOnCd ? '1' : '0'}`];
     for (const boss of WB9_BOSSES) {
       const s = wb9 && wb9[boss.id];
       const head = s && s.queue && s.queue[0];
@@ -4319,13 +4331,20 @@
   function __wb9UpdateLiveTimers() {
     const now = Date.now();
     const me = getMe();
-    const r = me ? getRpg(me) : null;
-    const cdRemain = me ? Math.max(0, wb9GetLastAttack(me) + WB9_COOLDOWN_MS - now) : 0;
+    const _skBossT = WB9_BOSSES.find(b => b.isSupremeKing);
+    const wbCdRemain = me ? Math.max(0, wb9GetLastAttack(me, 'goose_king') + WB9_COOLDOWN_MS - now) : 0;
+    const skCdRemain = me && _skBossT ? Math.max(0, wb9GetLastAttack(me, 'supreme_king') + (_skBossT.cooldownMs || 30000) - now) : 0;
     document.querySelectorAll('[data-wb9-cd-text]').forEach(el => {
-      if (cdRemain > 0) {
-        const m = Math.floor(cdRemain / 60000);
-        const s = Math.ceil((cdRemain % 60000) / 1000);
+      if (wbCdRemain > 0) {
+        const m = Math.floor(wbCdRemain / 60000);
+        const s = Math.ceil((wbCdRemain % 60000) / 1000);
         el.textContent = `⏳ 冷卻 ${m}:${String(s).padStart(2,'0')}`;
+      }
+    });
+    document.querySelectorAll('[data-wb9-sk-cd-text]').forEach(el => {
+      if (skCdRemain > 0) {
+        const s = Math.ceil(skCdRemain / 1000);
+        el.textContent = `⏳ 冷卻 ${s}s`;
       }
     });
     // 排隊頭過期顯示
@@ -4348,8 +4367,12 @@
     __wb9LastHash = hash;
     const me = getMe();
     const r = me ? getRpg(me) : null;
-    const cdRemain = me ? Math.max(0, wb9GetLastAttack(me) + WB9_COOLDOWN_MS - Date.now()) : 0;
-    const onCd = cdRemain > 0;
+    const _now = Date.now();
+    const _skBossR = WB9_BOSSES.find(b => b.isSupremeKing);
+    const wbCdRemain = me ? Math.max(0, wb9GetLastAttack(me, 'goose_king') + WB9_COOLDOWN_MS - _now) : 0;
+    const wbOnCd = wbCdRemain > 0;
+    const skCdRemain = me && _skBossR ? Math.max(0, wb9GetLastAttack(me, 'supreme_king') + (_skBossR.cooldownMs || 30000) - _now) : 0;
+    const skOnCd = skCdRemain > 0;
     // 我目前在哪個王排隊
     let myQueuedBossId = null;
     if (me) {
@@ -4358,7 +4381,7 @@
         if (q.find(x => x && x.pid === me.id)) { myQueuedBossId = boss.id; break; }
       }
     }
-    return wb9RenderImpl(me, r, cdRemain, onCd, myQueuedBossId);
+    return wb9RenderImpl(me, r, wbCdRemain, wbOnCd, myQueuedBossId, skCdRemain, skOnCd);
   }
 
   // 把 render 主體切出來（force 時用）
@@ -4396,8 +4419,14 @@
 
   // ⭐ commit 4：尾刀橫幅（王被殺時顯示 10 秒）
   // 冷卻時間：取 rpg 物件 與 localStorage 兩者最大值，避免 Firebase 同步或 Tab Leader 問題
-  function wb9GetLastAttack(me) {
+  function wb9GetLastAttack(me, bossId) {
     const r = me ? getRpg(me) : null;
+    if (bossId === 'supreme_king') {
+      const rpgTs = r ? (r.lastSkAttackTime || 0) : 0;
+      let lsTs = 0;
+      try { lsTs = parseInt(localStorage.getItem(WB9_SK_CD_LS_PREFIX + (me && me.id)) || '0') || 0; } catch(e) {}
+      return Math.max(rpgTs, lsTs);
+    }
     const rpgTs = r ? (r.lastBossAttackTime || 0) : 0;
     let lsTs = 0;
     try { lsTs = parseInt(localStorage.getItem(WB9_CD_LS_PREFIX + (me && me.id)) || '0') || 0; } catch(e) {}
@@ -4463,7 +4492,8 @@
       </div>`;
   }
 
-  function wb9RenderImpl(me, r, cdRemain, onCd, myQueuedBossId) {
+  function wb9RenderImpl(me, r, wbCdRemain, wbOnCd, myQueuedBossId, skCdRemain, skOnCd) {
+    const cdRemain = wbCdRemain; const onCd = wbOnCd;
     const el = document.getElementById('worldBossBody');
     if (!el) return;
     // 🔧 維護模式
@@ -4531,8 +4561,9 @@
         const _cdM = Math.floor((_skCdRemain % 3600000) / 60000);
         const _cdS = Math.ceil((_skCdRemain % 60000) / 1000);
         _skActionHtml = `<button class="btn btn-primary" disabled style="background:#4b5563;width:100%;margin-top:8px;">⏳ 老天鵝休眠中 ${_cdH}h ${_cdM}m ${String(_cdS).padStart(2,'0')}s</button>`;
-      } else if (onCd) {
-        _skActionHtml = `<button class="btn btn-primary" disabled style="background:#4b5563;width:100%;margin-top:8px;">⏳ 攻擊冷卻中</button>`;
+      } else if (skOnCd) {
+        const _skCdS = Math.ceil(skCdRemain / 1000);
+        _skActionHtml = `<button class="btn btn-primary" disabled style="background:#4b5563;width:100%;margin-top:8px;"><span data-wb9-sk-cd-text>⏳ 冷卻 ${_skCdS}s</span></button>`;
       } else if (_skIsMyTurn) {
         _skActionHtml = `
           <button class="btn btn-primary wb9-attack-btn" onclick="wb9Attack('${_skBoss.id}')" style="background:linear-gradient(135deg,#7c0060,#b91c1c);box-shadow:0 4px 0 #7f1d1d;width:100%;margin-top:8px;font-size:15px;">⚜️ 挑戰老天鵝！</button>
@@ -5505,6 +5536,22 @@
     gem_spd_4:  { id:'gem_spd_4',  name:'速度神石', icon:'🟡', grade:4, type:'spd',  spd:30,           desc:'神聖速度能量的終極凝聚' },
     gem_hp_4:   { id:'gem_hp_4',   name:'生命神石', icon:'❤️', grade:4, type:'hp',   hp:500,           desc:'神聖生命力量的終極凝聚' },
     gem_mp_4:   { id:'gem_mp_4',   name:'魔力神石', icon:'🔹', grade:4, type:'mp',   mp:55,            desc:'神聖魔力能量的終極凝聚' },
+    // ── 五階天石 ── 三個四階 → 一個五階
+    gem_atk_5:  { id:'gem_atk_5',  name:'攻擊天石', icon:'🔴', grade:5, type:'atk',  atk:85,           desc:'天界攻擊力量的超越凝聚' },
+    gem_mark_5: { id:'gem_mark_5', name:'法術天石', icon:'🟣', grade:5, type:'mark', mark:85,          desc:'天界法術能量的超越凝聚' },
+    gem_def_5:  { id:'gem_def_5',  name:'防禦天石', icon:'🔵', grade:5, type:'def',  def:68,           desc:'天界防禦力量的超越凝聚' },
+    gem_spd_5:  { id:'gem_spd_5',  name:'速度天石', icon:'🟡', grade:5, type:'spd',  spd:50,           desc:'天界速度能量的超越凝聚' },
+    gem_hp_5:   { id:'gem_hp_5',   name:'生命天石', icon:'❤️', grade:5, type:'hp',   hp:850,           desc:'天界生命力量的超越凝聚' },
+    gem_mp_5:   { id:'gem_mp_5',   name:'魔力天石', icon:'🔹', grade:5, type:'mp',   mp:90,            desc:'天界魔力能量的超越凝聚' },
+    gem_crit_5: { id:'gem_crit_5', name:'暴擊天石', icon:'⭐', grade:5, type:'crit', critChance:0.28,  desc:'天界暴擊能量的超越凝聚' },
+    // ── 六階神話石 ── 三個五階 → 一個六階
+    gem_atk_6:  { id:'gem_atk_6',  name:'攻擊神話石', icon:'🔴', grade:6, type:'atk',  atk:130,         desc:'神話級攻擊力量，超越神明的紅晶' },
+    gem_mark_6: { id:'gem_mark_6', name:'法術神話石', icon:'🟣', grade:6, type:'mark', mark:130,        desc:'神話級法術能量，超越神明的紫晶' },
+    gem_def_6:  { id:'gem_def_6',  name:'防禦神話石', icon:'🔵', grade:6, type:'def',  def:105,         desc:'神話級防禦力量，超越神明的藍晶' },
+    gem_spd_6:  { id:'gem_spd_6',  name:'速度神話石', icon:'🟡', grade:6, type:'spd',  spd:78,          desc:'神話級速度能量，超越神明的黃晶' },
+    gem_hp_6:   { id:'gem_hp_6',   name:'生命神話石', icon:'❤️', grade:6, type:'hp',   hp:1300,         desc:'神話級生命力量，超越神明的赤晶' },
+    gem_mp_6:   { id:'gem_mp_6',   name:'魔力神話石', icon:'🔹', grade:6, type:'mp',   mp:138,          desc:'神話級魔力能量，超越神明的水晶' },
+    gem_crit_6: { id:'gem_crit_6', name:'暴擊神話石', icon:'⭐', grade:6, type:'crit', critChance:0.40, desc:'神話級暴擊能量，超越神明的星晶' },
     // ── 原石（合成材料）── 轉蛋 2% 出貨
     gem_raw:    { id:'gem_raw',    name:'原石',     icon:'🪨', grade:0, type:'raw',                    desc:'未加工的魔力石英，合成時可代替任意一階晶石' },
   };
@@ -8378,6 +8425,14 @@
         window.__pendingUpdateV23.add(player.id);
       }
     }
+    // ⭐ v24：老天鵝全面更新公告（CD分開、速影型霜凍、寶石新階層 + 機率調整）
+    if (!player.rpg.updateV24 && typeof getMeId === 'function' && player.id === getMeId()) {
+      player.rpg.updateV24 = true;
+      if (typeof window !== 'undefined') {
+        window.__pendingUpdateV24 = window.__pendingUpdateV24 || new Set();
+        window.__pendingUpdateV24.add(player.id);
+      }
+    }
     // ⭐ v16 migration：修正聖騎 p_aegis 在行動規則表中永遠被 p_blessing 搶先的問題
     //   舊規則表：p_blessing（judge 1000）在前，p_aegis（judge 1000）在後 → p_aegis 永不觸發
     //   新規則表：p_aegis 改用 judge 1910（每4回合，含麻痺），移到 p_blessing 之前
@@ -11050,17 +11105,30 @@
             const _dLabel = { atkPct: 'ATK', defPct: 'DEF', spdPct: 'SPD' }[mSkill.stat] || mSkill.stat;
             const _dPct = Math.round(Math.abs(mSkill.amount || 0) * 100);
             log.push({ type: 'monster', text: `回合 ${round}：${monster.icon}${monster.name} 💀 ${mSkill.verb} → ${debuffHit ? `${player.name} ${_dLabel} -${_dPct}%（${mSkill.turns || 3} 回合）` : '抵抗！'}`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
-          } else if (mSkill.type === 'holyDrain') {
-            // ⭐ 聖光虹吸：吸取玩家 50% HP（含血池），每吸 1 回血 1000
-            const _hdDrainPct = mSkill.drainPct || 0.50;
-            const _hdHpDrain = Math.floor(pHp * _hdDrainPct);
-            const _hdBpDrain = (player.rpg.class === 'warrior') ? Math.floor(bloodPool * _hdDrainPct) : 0;
-            const _hdTotal = _hdHpDrain + _hdBpDrain;
-            pHp = Math.max(0, pHp - _hdHpDrain);
-            if (_hdBpDrain > 0) bloodPool = Math.max(0, bloodPool - _hdBpDrain);
-            const _hdHeal = Math.min(monster.maxHp - mHp, _hdTotal * (mSkill.healMult || 1000));
-            if (_hdHeal > 0) mHp = Math.min(monster.maxHp, mHp + _hdHeal);
-            log.push({ type: 'monster', text: `回合 ${round}：${monster.icon}${monster.name} ✨${mSkill.verb} → 吸取 ${player.name} ${_hdHpDrain.toLocaleString()} HP${_hdBpDrain > 0 ? `（+血池 ${_hdBpDrain.toLocaleString()}）` : ``}；老天鵝回血 +${_hdHeal.toLocaleString()}！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+          } else if (mSkill.type === 'mpDrainSpd') {
+            // 冥力汲取：ATK×1.5 傷害 + 吸20%MP + SPD-20% 3回合
+            const _monAtkBuff_mds = 1 + (getBuffBonus(monster).atkPct || 0);
+            let _mdsDmg = Math.max(1, monster.atk * _monAtkBuff_mds * (mSkill.mult || 1.5) - Math.floor(effDef / 2));
+            _mdsDmg *= (0.85 + Math.random() * 0.3);
+            _mdsDmg *= (1 - (passive.dmgReduction || 0));
+            _mdsDmg *= (1 - (pBuff.dmgReducePct || 0));
+            _mdsDmg = Math.max(1, Math.round(_mdsDmg));
+            _mdsDmg = consumeShield(_mdsDmg);
+            _mdsDmg = consumePartialShield(_mdsDmg);
+            if (_fxPhysShield > 0) _mdsDmg = Math.max(1, Math.round(_mdsDmg * Math.max(0.40, 1 - _fxPhysShield * 0.20)));
+            if (_weaponMagShield > 0) _mdsDmg = Math.max(1, Math.round(_mdsDmg * (1 - Math.min(0.5, _weaponMagShield))));
+            const _mdsDrained = Math.floor(pMp * (mSkill.mpDrainPct || 0.20));
+            pMp = Math.max(0, pMp - _mdsDrained);
+            applyStatus(playerObj, { type: 'buff', stat: 'spdPct', amount: mSkill.spdDebuffAmt || -0.20, turns: mSkill.spdDebuffTurns || 3 });
+            if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, _mdsDmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1) * (_weaponBpBoostMult || 1);
+            pHp = Math.max(0, pHp - _mdsDmg);
+            if (_isPaladin && !_hmgFrozen) _hmgTakenCount++;
+            log.push({ type: 'monster', text: `回合 ${round}：${monster.icon}${monster.name} 💜 ${mSkill.verb} → ${player.name} -${_mdsDmg.toLocaleString()} HP、MP -${_mdsDrained}（-20%）、SPD -20%（3回合）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+            applyReflect(_mdsDmg);
+            if (pHp <= 0 && _spiritSpecials.has('tenacious') && !_tenaciousUsed) {
+              _tenaciousUsed = true; pHp = 1;
+              log.push({ type: 'system', text: `🛡 不屈發動！${player.name} 以 1 HP 撐過！`, hp: { player: pHp, monster: mHp, mp: pMp } });
+            }
             if (pHp <= 0) dead = true;
           } else if (mSkill.mpDrainAll) {
             // ⭐ 靈魂汲取：魔法傷害 + 吸光玩家 MP + 吸血回血
@@ -13215,17 +13283,28 @@
             const _dLabel = { atkPct: 'ATK', defPct: 'DEF', spdPct: 'SPD' }[mSkill.stat] || mSkill.stat;
             const _dPct = Math.round(Math.abs(mSkill.amount || 0) * 100);
             log.push({ type: 'monster', text: `回合 ${round}：${m.icon}${m.name} 💀 ${mSkill.verb} → ${debuffHit ? `${player.name} ${_dLabel} -${_dPct}%（${mSkill.turns || 3} 回合）` : '抵抗！'}`, hp: hpsSnapshot() });
-          } else if (mSkill.type === 'holyDrain') {
-            const _hdDrainPct2 = mSkill.drainPct || 0.50;
-            const _hdHpDrain2 = Math.floor(pHp * _hdDrainPct2);
-            const _hdBpDrain2 = (player.rpg.class === 'warrior') ? Math.floor(bloodPool * _hdDrainPct2) : 0;
-            const _hdTotal2 = _hdHpDrain2 + _hdBpDrain2;
-            pHp = Math.max(0, pHp - _hdHpDrain2);
-            if (_hdBpDrain2 > 0) bloodPool = Math.max(0, bloodPool - _hdBpDrain2);
-            const _hdHeal2 = Math.min(m.maxHp - m.hp, _hdTotal2 * (mSkill.healMult || 1000));
-            if (_hdHeal2 > 0) m.hp = Math.min(m.maxHp, m.hp + _hdHeal2);
-            log.push({ type: 'monster', text: `回合 ${round}：${m.icon}${m.name} ✨${mSkill.verb} → 吸取 ${player.name} ${_hdHpDrain2.toLocaleString()} HP${_hdBpDrain2 > 0 ? `（+血池 ${_hdBpDrain2.toLocaleString()}）` : ``}；老天鵝回血 +${_hdHeal2.toLocaleString()}！`, hp: hpsSnapshot() });
+          } else if (mSkill.type === 'mpDrainSpd') {
+            // 冥力汲取：ATK×1.5 傷害 + 吸20%MP + SPD-20% 3回合
+            const _monAtkBuff_mds2 = 1 + (getBuffBonus(m).atkPct || 0);
+            let _mdsDmg2 = Math.max(1, m.atk * _monAtkBuff_mds2 * (mSkill.mult || 1.5) - Math.floor(effDef / 2));
+            _mdsDmg2 *= (0.85 + Math.random() * 0.3);
+            _mdsDmg2 *= (1 - (passive.dmgReduction || 0));
+            _mdsDmg2 *= (1 - (pBuff.dmgReducePct || 0));
+            _mdsDmg2 = Math.max(1, Math.round(_mdsDmg2));
+            _mdsDmg2 = consumeShield2(_mdsDmg2);
+            _mdsDmg2 = consumePartialShield2(_mdsDmg2);
+            if (_fxPhysShield > 0) _mdsDmg2 = Math.max(1, Math.round(_mdsDmg2 * Math.max(0.40, 1 - _fxPhysShield * 0.20)));
+            if (_wingsDmgReduct > 0) _mdsDmg2 = Math.max(1, Math.round(_mdsDmg2 * (1 - _wingsDmgReduct)));
+            const _mdsDrained2 = Math.floor(pMp * (mSkill.mpDrainPct || 0.20));
+            pMp = Math.max(0, pMp - _mdsDrained2);
+            applyStatus(playerObj, { type: 'buff', stat: 'spdPct', amount: mSkill.spdDebuffAmt || -0.20, turns: mSkill.spdDebuffTurns || 3 });
+            if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, _mdsDmg2) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1) * (_weaponBpBoostMult || 1);
+            pHp = Math.max(0, pHp - _mdsDmg2);
+            if (pHp <= 0 && _spiritSpecials.has('tenacious') && !_tenaciousUsed) {
+              _tenaciousUsed = true; pHp = 1;
+            }
             if (pHp <= 0) { playerObj.alive = false; }
+            log.push({ type: 'monster', text: `回合 ${round}：${m.icon}${m.name} 💜 ${mSkill.verb} → ${player.name} -${_mdsDmg2.toLocaleString()} HP、MP -${_mdsDrained2}（-20%）、SPD -20%（3回合）`, hp: hpsSnapshot() });
           } else {
             // ⭐ 30% DEF 穿透（試煉場）
             const _mPen3 = m.defPen || 0;
@@ -13818,6 +13897,52 @@
     // ⭐ v21：老天鵝限時傳說討伐上線
     // ⭐ v22：老天鵝 DoT 上限調整
     // ⭐ v23：老天鵝調整
+    // ⭐ v24：老天鵝完整設定總覽 + 速影型霜凍 + CD分開 + 寶石新階層
+    if (window.__pendingUpdateV24 && window.__pendingUpdateV24.has(me.id)) {
+      window.__pendingUpdateV24.delete(me.id);
+      const html = `
+        <div style="text-align:left; padding:6px 0;">
+          <div style="text-align:center; font-size:48px; margin-bottom:6px;">⚜️🦢📜</div>
+          <div style="text-align:center; font-weight:800; font-size:17px; color:#9d174d; margin-bottom:8px;">v24 老天鵝完整設定總覽</div>
+          <div style="font-size:12px; color:#2d1b4e; line-height:2.0; padding:10px 14px; background:linear-gradient(135deg,#fdf2f8,#fdf4ff); border-radius:10px; border:2px dashed #f9a8d4;">
+
+            <div style="font-weight:800; color:#9d174d; margin-bottom:4px;">📊 老天鵝基本數值</div>
+            • HP <b>100億</b>　ATK <b>2,200</b>　DEF <b>2,500</b>　SPD <b>500</b><br>
+            • 物抗 / 魔抗 各 <b>30%</b>　最大回合 <b>150 回</b><br>
+            • 流血 / 中毒 DoT 每次觸發上限 <b>50,000 HP</b><br>
+
+            <div style="font-weight:800; color:#b45309; margin:10px 0 4px;">🪙 入場費用</div>
+            • 基礎挑戰：<b>100 萬</b> 🪙鵝鵝幣<br>
+            • +1 加持：額外 <b>5</b> 🪺 地城鵝蛋幣<br>
+            • +2 加持：額外 <b>10</b> 🪺 地城鵝蛋幣<br>
+
+            <div style="font-weight:800; color:#7c3aed; margin:10px 0 4px;">🔄 形態輪替規則</div>
+            • 每完成一場挑戰後，形態自動推進（不論勝負）<br>
+            • 四大形態循環：霸天型 → 神聖型 → 魔導型 → 速影型<br>
+
+            <div style="font-weight:800; color:#7c3aed; margin:10px 0 4px;">🦢 四大形態詳細</div>
+            • <b>霸天型</b>：3段攻擊・玩家 ATK/MARK 減半<br>
+            • <b>神聖型</b>：每回合回血 <b>5 萬</b>・暴擊 -100%・爆頭 -30%<br>
+            • <b>魔導型</b>：物抗 40%・玩家 SPD 減半・「冥力汲取」ATK×1.5＋吸 20% MP＋SPD -20%（3回）<br>
+            • <b>速影型</b>：4段攻擊・SPD +300・玩家狀態抗性 -50%<br>
+            &nbsp;&nbsp;└ 幽冥毒霧：毒×5 ＋ 流血×3 ＋ <b>霜凍 SPD-30%（3回，不可疊加）</b><br>
+
+            <div style="font-weight:800; color:#0369a1; margin:10px 0 4px;">⏱️ 冷卻時間</div>
+            • 傳說王（老天鵝）：<b>30 秒</b>冷卻，與世界王完全獨立<br>
+            • 世界王（鵝皇等）：<b>2.5 分鐘</b>冷卻，互不干擾<br>
+
+            <div style="font-weight:800; color:#065f46; margin:10px 0 4px;">💎 寶石系統更新</div>
+            • 掉落機率：1級 <b>50%</b>・2級 <b>30%</b>・3級 <b>15%</b>・4級 <b>5%</b><br>
+            • 新增 <b>5階天石</b>（3個4階合成）與 <b>6階神話石</b>（3個5階合成）<br>
+
+          </div>
+          <button class="btn btn-primary" onclick="hideModal()" style="margin-top:14px; width:100%; background:linear-gradient(135deg,#7c0060,#b91c1c);">⚜️ 了解！前往挑戰！</button>
+        </div>
+      `;
+      showModal('⚜️ v24 老天鵝完整設定', html);
+      saveData();
+      return;
+    }
     if (window.__pendingUpdateV23 && window.__pendingUpdateV23.has(me.id)) {
       window.__pendingUpdateV23.delete(me.id);
       const html = `
@@ -13880,7 +14005,7 @@
             • 地城鵝蛋幣可透過地城副本探索獲得！<br>
 
             <div style="font-weight:800; color:#7c3aed; margin:10px 0 4px;">🦢 老天鵝四大形態</div>
-            • <b>神聖型</b>：每回合回血 10 萬・暴擊率 -100%・新技能「<b>聖光虹吸</b>」（吸取玩家 50% HP，回血 ×1000 倍）<br>
+            • <b>神聖型</b>：每回合回血 5 萬・暴擊率 -100%・爆頭率 -30%<br>
             • <b>魔導型</b>：物理抗性 40%・玩家 SPD 減半・吸魔攻擊<br>
             • <b>速影型</b>：4段攻擊・SPD +300・全狀態抗性降低<br>
             • <b>原始型</b>（Form 0）：無特殊限制，適合熱身<br>
@@ -16362,7 +16487,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260515030631';
+  const APP_VERSION = '20260515033153';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -22089,8 +22214,22 @@ ${b.text}
         inv[`gem_${type}_4`] = (inv[`gem_${type}_4`] || 0) + 1;
         totalMerges++;
       }
+      // 四階 → 五階（3 個一次）
+      while ((inv[`gem_${type}_4`] || 0) >= 3 && GEMS[`gem_${type}_5`]) {
+        inv[`gem_${type}_4`] -= 3;
+        if ((inv[`gem_${type}_4`] || 0) <= 0) delete inv[`gem_${type}_4`];
+        inv[`gem_${type}_5`] = (inv[`gem_${type}_5`] || 0) + 1;
+        totalMerges++;
+      }
+      // 五階 → 六階（3 個一次）
+      while ((inv[`gem_${type}_5`] || 0) >= 3 && GEMS[`gem_${type}_6`]) {
+        inv[`gem_${type}_5`] -= 3;
+        if ((inv[`gem_${type}_5`] || 0) <= 0) delete inv[`gem_${type}_5`];
+        inv[`gem_${type}_6`] = (inv[`gem_${type}_6`] || 0) + 1;
+        totalMerges++;
+      }
     }
-    if (totalMerges === 0) { showToast('沒有可合成的材料（一階需 ≥4，二/三階需 ≥3）'); return; }
+    if (totalMerges === 0) { showToast('沒有可合成的材料（一階需 ≥4，二至五階需 ≥3）'); return; }
     saveData();
     showToast(`⚗️ 一鍵合成完成！共合成 ${totalMerges} 次`);
     renderGemModal();
@@ -22125,9 +22264,14 @@ ${b.text}
   window.doCombineGem = doCombineGem;
 
   function rollOneGem() {
-    if (Math.random() < 0.02) return GEMS['gem_raw'];
     const type = GEM_TYPES_LIST[Math.floor(Math.random() * GEM_TYPES_LIST.length)];
-    return GEMS[`gem_${type}_1`];
+    const r = Math.random();
+    let grade;
+    if (r < 0.50)      grade = 1;
+    else if (r < 0.80) grade = 2;
+    else if (r < 0.95) grade = 3;
+    else               grade = 4;
+    return GEMS[`gem_${type}_${grade}`] || GEMS[`gem_${type}_1`];
   }
 
   // ⭐ 多次轉蛋結果顯示（共用）
@@ -29832,6 +29976,9 @@ ${b.text}
     // 世界王冷卻（rpg 欄位 + localStorage 雙重清除）
     r.lastBossAttackTime = 0;
     try { localStorage.removeItem(WB9_CD_LS_PREFIX + me.id); } catch(e) {}
+    // 傳說王冷卻
+    r.lastSkAttackTime = 0;
+    try { localStorage.removeItem(WB9_SK_CD_LS_PREFIX + me.id); } catch(e) {}
     // 個人王共用冷卻
     r.personalBossLastAt = 0;
     // 🔒 防止 Firebase onSnapshot 把舊 lastBossAttackTime 同步回來
@@ -32172,17 +32319,21 @@ ${b.text}
           const refs  = allIds.map(id => doc(wb9Col, id));
           const snaps = await Promise.all(refs.map(r => tx.get(r)));
           let _lastAttackTs = 0;
-          for (const s of snaps) {
+          const _cdBossIds = bossDef?.cdBossIds || null;
+          for (let _si = 0; _si < snaps.length; _si++) {
+            const s = snaps[_si];
             if (!s.exists()) continue;
             const q = (s.data().queue) || [];
             if (q.find(x => x && x.pid === attackerId)) {
               throw new Error('already-queued:' + s.id);
             }
-            // ⭐ 伺服器端冷卻驗證：從每個王 doc 的 attackCooldowns 取最新時間戳
-            const cds = s.data().attackCooldowns || {};
-            _lastAttackTs = Math.max(_lastAttackTs, cds[attackerId] || 0);
+            // ⭐ 伺服器端冷卻驗證：只查同群組 boss 的 CD（傳說王與世界王分開）
+            if (!_cdBossIds || _cdBossIds.includes(allIds[_si])) {
+              const cds = s.data().attackCooldowns || {};
+              _lastAttackTs = Math.max(_lastAttackTs, cds[attackerId] || 0);
+            }
           }
-          if (Date.now() - _lastAttackTs < 2.5 * 60 * 1000) throw new Error('cooldown');
+          if (Date.now() - _lastAttackTs < (bossDef?.cooldownMs || 30 * 1000)) throw new Error('cooldown');
           // 取得 / 初始化目標王 state
           const bossRef = doc(wb9Col, bossId);
           const bossSnap = snaps[allIds.indexOf(bossId)];
@@ -32255,7 +32406,7 @@ ${b.text}
           }
           // ⭐ 伺服器端冷卻驗證（防止多視窗/多裝置繞過）
           const _atCds = state.attackCooldowns || {};
-          if (Date.now() - (_atCds[attackerId] || 0) < 2.5 * 60 * 1000) {
+          if (Date.now() - (_atCds[attackerId] || 0) < (bossDef?.cooldownMs || 30 * 1000)) {
             throw new Error('cooldown');
           }
           // 套用傷害（上限為當前 HP）
