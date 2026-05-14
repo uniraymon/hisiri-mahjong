@@ -2385,6 +2385,19 @@
       <div id="forageHistoryArea"></div>
     </div>
 
+    <div class="card" style="background:linear-gradient(135deg,#0a0514,#1a0a2e); border:1px solid #6d28d9;">
+      <h2 style="color:#e9d5ff;"><span>🏰 副本探險</span> <span style="font-size:11px; color:#a78bfa; font-weight:500;">（5層挑戰・次數評分・Roguelike BUFF）</span></h2>
+      <div id="dungeonBody"></div>
+      <div id="dungeonFightResult"></div>
+      <div id="dungeonBattleHistoryArea"></div>
+    </div>
+
+    <div class="card" style="background:linear-gradient(135deg,#0a0514,#120a1e); border:1px solid #4c1d95;">
+      <h2 style="color:#e9d5ff;"><span>🏺 地城寶物</span> <span style="font-size:11px; color:#a78bfa; font-weight:500;">（收集・交易・強化效果）</span></h2>
+      <div id="dungeonTreasureBody"></div>
+      <div id="dungeonTradePanel"></div>
+    </div>
+
     <div class="card">
       <h2><span>🌍 世界王挑戰</span> <span style="font-size:11px; color:#8b6f9b; font-weight:500;">（共享 BOSS、所有人合力擊殺）</span></h2>
       <div id="worldBossBody"></div>
@@ -2402,19 +2415,6 @@
       <h2 style="color:#c7d2fe;"><span>⚔️ 組隊挑戰</span> <span style="font-size:11px; color:#818cf8; font-weight:500;">（2-3 人排隊、挑戰固定 BOSS）</span></h2>
       <div id="partyBody"></div>
       <div id="partyHistoryArea"></div>
-    </div>
-
-    <div class="card" style="background:linear-gradient(135deg,#0a0514,#1a0a2e); border:1px solid #6d28d9;">
-      <h2 style="color:#e9d5ff;"><span>🏰 副本探險</span> <span style="font-size:11px; color:#a78bfa; font-weight:500;">（5層挑戰・次數評分・Roguelike BUFF）</span></h2>
-      <div id="dungeonBody"></div>
-      <div id="dungeonFightResult"></div>
-      <div id="dungeonBattleHistoryArea"></div>
-    </div>
-
-    <div class="card" style="background:linear-gradient(135deg,#0a0514,#120a1e); border:1px solid #4c1d95;">
-      <h2 style="color:#e9d5ff;"><span>🏺 地城寶物</span> <span style="font-size:11px; color:#a78bfa; font-weight:500;">（收集・交易・強化效果）</span></h2>
-      <div id="dungeonTreasureBody"></div>
-      <div id="dungeonTradePanel"></div>
     </div>
 
     <div class="card">
@@ -15571,7 +15571,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260514143952';
+  const APP_VERSION = '20260514145206';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -24006,22 +24006,34 @@ ${b.text}
     const uniqueIds = Object.keys(countMap);
 
     const _DT_RARITY_EMOJI = { goose:'🦢', legend:'🌟', flash:'⚡', normal:'🟢', trash:'⬜' };
+    const _DT_RARITY_BG = {
+      goose:  'linear-gradient(135deg,#78350f,#b45309)',
+      legend: 'linear-gradient(135deg,#3b0764,#6d28d9)',
+      flash:  'linear-gradient(135deg,#164e63,#0891b2)',
+      normal: 'linear-gradient(135deg,#052e16,#166534)',
+      trash:  'linear-gradient(135deg,#1f2937,#374151)',
+    };
+    const _DT_RARITY_SHADOW = { goose:'#451a03', legend:'#1e0a3c', flash:'#082f49', normal:'#021407', trash:'#111827' };
+    const _DT_RARITY_TEXT   = { goose:'#fef3c7', legend:'#f3e8ff', flash:'#ecfeff', normal:'#dcfce7', trash:'#e5e7eb' };
 
     const myTreasureHtml = uniqueIds.length === 0
       ? '<div style="color:#6b7280;font-size:11px;text-align:center;padding:12px;">尚未持有任何地城寶物</div>'
-      : `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;">${
+      : `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">${
           uniqueIds.map(id => {
             const item = DUNGEON_TREASURES.find(t => t.id === id);
             if (!item) return '';
-            const rc  = _DT_RARITY_COLOR[item.rarity] || '#9ca3af';
-            const emo = _DT_RARITY_EMOJI[item.rarity] || '📦';
-            const cnt = countMap[id];
+            const rc     = _DT_RARITY_COLOR[item.rarity]  || '#9ca3af';
+            const emo    = _DT_RARITY_EMOJI[item.rarity]  || '📦';
+            const bg     = _DT_RARITY_BG[item.rarity]     || 'linear-gradient(135deg,#1f2937,#374151)';
+            const shadow = _DT_RARITY_SHADOW[item.rarity] || '#111827';
+            const tc     = _DT_RARITY_TEXT[item.rarity]   || '#e5e7eb';
+            const cnt    = countMap[id];
             return `<div onclick="dungeonTradeSelectMyItem('${id}')"
-              style="position:relative;background:rgba(0,0,0,0.35);border:2px solid ${rc};border-radius:8px;padding:6px 4px 5px;cursor:pointer;text-align:center;transition:background 0.15s;"
-              onmouseenter="this.style.background='rgba(109,40,217,0.25)'" onmouseleave="this.style.background='rgba(0,0,0,0.35)'">
-              ${cnt > 1 ? `<div style="position:absolute;top:2px;right:3px;font-size:8px;background:#7c3aed;color:#fff;border-radius:4px;padding:1px 3px;line-height:1.3;">×${cnt}</div>` : ''}
-              <div style="font-size:18px;line-height:1.3;">${emo}</div>
-              <div style="font-size:9px;color:#e9d5ff;line-height:1.25;margin-top:2px;word-break:break-all;">${item.name}</div>
+              style="background:${bg};border:2px solid ${rc};box-shadow:0 3px 0 ${shadow};border-radius:10px;padding:8px 3px 6px;cursor:pointer;text-align:center;transition:filter 0.15s;position:relative;"
+              onmouseenter="this.style.filter='brightness(1.2)'" onmouseleave="this.style.filter=''">
+              <div style="font-size:22px;line-height:1.2;">${emo}</div>
+              <div style="font-size:9px;font-weight:700;color:${tc};line-height:1.3;margin-top:3px;word-break:keep-all;">${item.name}</div>
+              <div style="font-size:9px;color:${tc};opacity:0.8;margin-top:1px;">${cnt > 1 ? `×${cnt}` : '　'}</div>
             </div>`;
           }).join('')
         }</div>`;
@@ -24078,8 +24090,11 @@ ${b.text}
     if (!Array.isArray(rpg.dungeonTreasures)) rpg.dungeonTreasures = [];
     if (!rpg.dungeonTreasures.includes(myItemId)) { showToast('你沒有這件寶物'); return; }
 
-    // 列出有地城寶物的其他玩家
-    const otherPlayers = players.filter(p => p && p.id !== me.id && getRpg(p).dungeonTreasures?.length > 0);
+    // 列出有地城寶物的其他玩家（getRpg 可能因資料不完整 throw，用 try-catch 保護）
+    const otherPlayers = players.filter(p => {
+      if (!p || p.id === me.id) return false;
+      try { return (getRpg(p).dungeonTreasures?.length || 0) > 0; } catch(e) { return false; }
+    });
     if (!otherPlayers.length) { showToast('目前沒有其他玩家持有地城寶物'); return; }
 
     const myItem = DUNGEON_TREASURES.find(t => t.id === myItemId);
@@ -24090,7 +24105,9 @@ ${b.text}
     if (!panel) { showToast('找不到交易面板容器'); return; }
 
     const playerOpts = otherPlayers.map(p => {
-      const pRpg = getRpg(p);
+      let pRpg;
+      try { pRpg = getRpg(p); } catch(e) { return ''; }
+      if (!pRpg) return '';
       const theirOwned = pRpg.dungeonTreasures || [];
       const countMap2 = {};
       for (const id of theirOwned) countMap2[id] = (countMap2[id]||0)+1;
