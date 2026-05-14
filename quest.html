@@ -9985,6 +9985,7 @@
             const hitLogs = [];
             let monsterDied = false;
             let totalReflect = 0; // ⭐ 反彈傷害累計（用於 log 顯示）
+            let _anyHsHit = false; // 任意段爆頭旗標（供單段技能 log 顯示用）
             for (let h = 0; h < skillHits && !monsterDied; h++) {
               let hitDmg = skill.usesBloodPool ? baseDmg : baseDmg * (0.9 + Math.random() * 0.2);
               // ⭐ 合成效果：fx_dg_crit（必爆+30%傷害；合入×2則下兩次必爆）
@@ -10001,7 +10002,7 @@
               }
               // ⭐ 技能爆頭（全職業）：×3 傷害（血池技能除外）
               const _isHsSkill = !skill.usesBloodPool && Math.random() < _skillHsChance;
-              if (_isHsSkill) { hitDmg *= 3; _aHs++; _aHsBonus += 0.05 + Math.random() * 0.08; }
+              if (_isHsSkill) { hitDmg *= 3; _aHs++; _aHsBonus += 0.05 + Math.random() * 0.08; _anyHsHit = true; }
               // ⭐ 易傷（hit-based）：每段各消耗 1 層
               hitDmg *= consumeVulnerable(monster);
               // ⭐ 覺醒破甲詞條：對已覺醒怪物傷害加成
@@ -10129,7 +10130,7 @@
             }
             log.push({
               type: 'crit-player',
-              text: `回合 ${round}：${skill.icon} ${skill.name}${lastIsCrit ? '【暴擊】' : ''}${isMagic ? '【魔攻】' : ''}${skillHits > 1 ? `×${skillHits}` : ''} → ${monster.name} ${skillHits > 1 ? '共 ' + totalDmg + ' HP ' + dmgStr : dmgStr}${extra}${costStr}`,
+              text: `回合 ${round}：${skill.icon} ${skill.name}${lastIsCrit ? '【暴擊】' : ''}${_anyHsHit && skillHits === 1 ? '🎯【爆頭】' : ''}${isMagic ? '【魔攻】' : ''}${skillHits > 1 ? `×${skillHits}` : ''} → ${monster.name} ${skillHits > 1 ? '共 ' + totalDmg + ' HP ' + dmgStr : dmgStr}${extra}${costStr}`,
               hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp, bloodPool },
               hmgCounters: _isPaladin ? { hit: _hmgHitCount + (_hmgFrozen ? 0 : 1), taken: _hmgTakenCount, heal: _hmgHealCount, active: _hmgActive, actionsLeft: _hmgActionsLeft } : undefined,
             });
@@ -12147,6 +12148,7 @@
             };
             let _bpHpContribM = 0; // ⭐ 爆血 HP 貢獻記錄（供 log 顯示）
             const hits = [];
+            let _anyHsHitM = false; // 任意段爆頭旗標（供單目標技能 log 顯示用）
             for (const tgt of targets) {
               const tgtMonDef = tgt.def + (getBuffBonus(tgt).def || 0);
               let dmg;
@@ -12249,7 +12251,7 @@
               }
               // ⭐ 技能爆頭（全職業）：×3 傷害（血池技能除外）
               const _isHsSkillM = !skill.usesBloodPool && Math.random() < _skillHsChanceM;
-              if (_isHsSkillM) { dmg *= 3; _aHs++; _aHsBonus += 0.05 + Math.random() * 0.08; }
+              if (_isHsSkillM) { dmg *= 3; _aHs++; _aHsBonus += 0.05 + Math.random() * 0.08; _anyHsHitM = true; }
               // ⭐ 覺醒破甲詞條：對已覺醒怪物傷害加成
               if (_awakenDmgBonus > 0 && tgt._awakened) dmg *= (1 + _awakenDmgBonus);
               dmg = Math.max(1, Math.round(dmg));
@@ -16513,7 +16515,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260515041732';
+  const APP_VERSION = '20260515042853';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
