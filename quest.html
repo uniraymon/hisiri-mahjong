@@ -4148,6 +4148,7 @@
           <div class="combatant-spd-text" id="mSpdText">⏱ 行動條 0%</div>
         </div>
       </div>
+      ${_battleStatsStripHtml(_wbStats, me ? getRpg(me) : null)}
       ${_spellBookPanelHtml(me && getRpg(me).class === 'mage')}
       <div class="battle-log" id="battleLog"></div>
     `;
@@ -5625,6 +5626,24 @@
     if (countEl) countEl.textContent = `${book.length}/10`;
   }
   window.updateSpellBookPanel = updateSpellBookPanel;
+
+  // ⭐ 戰鬥屬性條 HTML（嵌入各戰鬥 arena，顯示 ATK/MARK/DEF/爆擊/爆傷/爆頭）
+  function _battleStatsStripHtml(stats, rpg) {
+    const _crit = stats.totalCritChance || 0;
+    const _critDmg = stats.totalCritDmg || 1.7;
+    const _wpn = rpg?.equipment?.weapon ? (ITEMS[rpg.equipment.weapon.baseId || rpg.equipment.weapon.id] || {}) : {};
+    const _nhs = _wpn.nabyssHs || 0;
+    const _hs = Math.floor(Math.max(0, _crit - 1.0) / 0.05) * 0.01 + _nhs;
+    const _hsText = _hs > 0 ? Math.round(_hs * 100) + '%' : (_crit >= 1.0 ? '0%' : '-');
+    return `<div style="display:flex;flex-wrap:wrap;gap:3px 12px;padding:4px 10px;margin:4px 0;background:rgba(0,0,0,0.30);border-radius:7px;border:1px solid rgba(124,58,237,0.20);font-size:11px;">
+      <span style="color:#f87171;">⚔️ ATK <b>${stats.atk || 0}</b></span>
+      <span style="color:#818cf8;">✨ MARK <b>${stats.mark || 0}</b></span>
+      <span style="color:#34d399;">🛡 DEF <b>${stats.def || 0}</b></span>
+      <span style="color:#fbbf24;">💥 爆擊 <b>${Math.round(_crit * 100)}%</b></span>
+      <span style="color:#fb923c;">⚡ 爆傷 <b>${Math.round(_critDmg * 100)}%</b></span>
+      <span style="color:#f59e0b;">🎯 爆頭 <b>${_hsText}</b></span>
+    </div>`;
+  }
 
   // ⭐ 法書面板 HTML（嵌入各戰鬥 arena）
   function _spellBookPanelHtml(isMage) {
@@ -16494,7 +16513,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260515041308';
+  const APP_VERSION = '20260515041732';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -24586,6 +24605,7 @@ ${b.text}
           </div>
         </div>
         ${_sbHtml}
+        ${_battleStatsStripHtml(fightStats, rpg)}
         <div style="display:flex;gap:6px;align-items:center;margin:6px 0;font-size:11px;color:#a78bfa;">
           <button id="dfSpeedBtn" onclick="_dfCycleSpeed()" style="background:rgba(109,40,217,0.25);border:1px solid #7c3aed;color:#c4b5fd;padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;">⚡ 速度 1×</button>
           <span id="dfProgress" style="margin-left:auto;font-weight:600;color:#6b7280;">0 / ${log.length}</span>
@@ -26125,6 +26145,7 @@ ${b.text}
             <div class="combatant-spd-text" id="mSpdText">⏱ 行動條 0%</div>
           </div>
         </div>
+        ${_battleStatsStripHtml(stats, rpg)}
         ${rpg.class === 'archer' ? `
         <div id="pbArcherPanel" style="background:#0f172a; border-radius:8px; padding:6px 12px; margin:4px 0; font-size:11px; font-family:monospace; display:flex; gap:0; flex-wrap:wrap; align-items:stretch; border:1px solid #1e3a5f;">
           <div style="color:#7dd3fc; font-weight:800; padding:2px 10px 2px 0; border-right:1px solid #1e3a5f; margin-right:10px; display:flex; align-items:center;">🏹 弓手疊層</div>
@@ -28977,6 +28998,7 @@ ${b.text}
           <div class="combatant-spd-text" id="mSpdText">⏱ 行動條 0%</div>
         </div>
       </div>
+      ${_battleStatsStripHtml(stats, rpg)}
       ${_spellBookPanelHtml(rpg.class === 'mage')}
       <div class="battle-log" id="battleLog"></div>
     `;
