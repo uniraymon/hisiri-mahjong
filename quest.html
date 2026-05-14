@@ -16487,7 +16487,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260515033550';
+  const APP_VERSION = '20260515033929';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -22136,6 +22136,8 @@ ${b.text}
       if ((inv[`gem_${type}_1`]||0) >= 4) { canAutoMerge = true; break; }
       if ((inv[`gem_${type}_2`]||0) >= 3) { canAutoMerge = true; break; }
       if ((inv[`gem_${type}_3`]||0) >= 3) { canAutoMerge = true; break; }
+      if ((inv[`gem_${type}_4`]||0) >= 3) { canAutoMerge = true; break; }
+      if ((inv[`gem_${type}_5`]||0) >= 3) { canAutoMerge = true; break; }
     }
     let html = `
     <button onclick="doAutoMergeAll()" ${canAutoMerge ? '' : 'disabled'} style="width:100%; padding:9px; margin-bottom:10px; border-radius:10px; font-size:13px; font-weight:800; cursor:${canAutoMerge ? 'pointer' : 'not-allowed'}; border:none; ${canAutoMerge ? 'background:linear-gradient(135deg,#7c3aed,#c026d3); color:#fff; box-shadow:0 3px 0 #6b21a8;' : 'background:#f3f4f6; color:#9ca3af;'}">
@@ -22143,6 +22145,7 @@ ${b.text}
     </button>
     <div style="font-size:11px; color:#5b3d62; padding:6px 10px; background:#fef3c7; border-radius:8px; margin-bottom:10px; border:1px dashed #f59e0b;">
       ⚗️ <b>4×一階→1×二階</b>　·　<b>3×二階→1×三階</b>　·　<b>3×三階→1×四階</b><br>
+      ⚗️ <b>3×四階→1×五階</b>　·　<b>3×五階→1×六階</b><br>
       🪨 <b>3×一階 + 1×原石 → 1×二階</b>（同種）${rawCount > 0 ? `　<span style="color:#a855f7; font-weight:700;">原石 ×${rawCount}</span>` : ''}
     </div>`;
 
@@ -22151,16 +22154,25 @@ ${b.text}
       const g2 = GEMS[`gem_${type}_2`];
       const g3 = GEMS[`gem_${type}_3`];
       const g4 = GEMS[`gem_${type}_4`];
+      const g5 = GEMS[`gem_${type}_5`];
+      const g6 = GEMS[`gem_${type}_6`];
       const cnt1 = inv[g1.id] || 0;
       const cnt2 = inv[g2.id] || 0;
       const cnt3 = inv[g3.id] || 0;
       const cnt4 = g4 ? (inv[g4.id] || 0) : 0;
+      const cnt5 = g5 ? (inv[g5.id] || 0) : 0;
+      const cnt6 = g6 ? (inv[g6.id] || 0) : 0;
       const can4to1  = cnt1 >= 4;
       const can3raw  = cnt1 >= 3 && rawCount >= 1;
       const can3to2  = cnt2 >= 3;
       const can3to3  = g4 && cnt3 >= 3;
+      const can3to4  = g5 && cnt4 >= 3;
+      const can3to5  = g6 && cnt5 >= 3;
       const tc = { atk:'#ef4444', mark:'#a855f7', def:'#3b82f6', spd:'#ca8a04', hp:'#f43f5e', mp:'#0ea5e9', crit:'#f97316' }[type] || '#7c3aed';
-      const cntText = g4 ? `一×${cnt1} · 二×${cnt2} · 三×${cnt3} · <span style="color:#f59e0b; font-weight:700;">四×${cnt4}</span>` : `一×${cnt1} · 二×${cnt2} · 三×${cnt3}`;
+      let cntText = `一×${cnt1} · 二×${cnt2} · 三×${cnt3}`;
+      if (g4) cntText += ` · <span style="color:#f59e0b; font-weight:700;">四×${cnt4}</span>`;
+      if (g5) cntText += ` · <span style="color:#06b6d4; font-weight:700;">五×${cnt5}</span>`;
+      if (g6) cntText += ` · <span style="color:#a855f7; font-weight:800;">六×${cnt6}</span>`;
       html += `<div style="border:1.5px solid ${tc}30; border-radius:10px; padding:8px 10px; margin-bottom:8px; background:${tc}08;">
         <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
           <span style="font-size:16px;">${g1.icon}</span>
@@ -22179,6 +22191,12 @@ ${b.text}
           </button>
           ${g4 ? `<button onclick="doCombineGem('${type}',3,'normal')" ${can3to3 ? '' : 'disabled'} style="flex:1; min-width:80px; padding:6px 4px; font-size:10px; border-radius:7px; ${can3to3 ? `background:linear-gradient(135deg,${tc},#f59e0b); color:#fff; cursor:pointer; border:none; font-weight:700;` : 'background:#f3f4f6; color:#9ca3af; border:1px solid #e5e7eb;'}">
             ${g3.icon}×3→<span style="color:#fbbf24;">✨</span>${g4.icon}
+          </button>` : ''}
+          ${g5 ? `<button onclick="doCombineGem('${type}',4,'normal')" ${can3to4 ? '' : 'disabled'} style="flex:1; min-width:80px; padding:6px 4px; font-size:10px; border-radius:7px; ${can3to4 ? `background:linear-gradient(135deg,#0891b2,#7c3aed); color:#fff; cursor:pointer; border:none; font-weight:700;` : 'background:#f3f4f6; color:#9ca3af; border:1px solid #e5e7eb;'}">
+            ${g4.icon}×3→<span style="color:#67e8f9;">⭐</span>${g5.icon}
+          </button>` : ''}
+          ${g6 ? `<button onclick="doCombineGem('${type}',5,'normal')" ${can3to5 ? '' : 'disabled'} style="flex:1; min-width:80px; padding:6px 4px; font-size:10px; border-radius:7px; ${can3to5 ? `background:linear-gradient(135deg,#7c3aed,#ec4899); color:#fff; cursor:pointer; border:none; font-weight:700;` : 'background:#f3f4f6; color:#9ca3af; border:1px solid #e5e7eb;'}">
+            ${g5.icon}×3→<span style="color:#f9a8d4;">🌟</span>${g6.icon}
           </button>` : ''}
         </div>
       </div>`;
