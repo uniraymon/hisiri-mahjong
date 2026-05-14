@@ -6572,6 +6572,43 @@
     {id:'dt_t70',name:'古老戰鬥符',  rarity:'trash', bonuses:{atk:2,def:2,spd:2}},
   ]; // total = 16+21+30+63+70 = 200
 
+  // 由 bonuses/special 自動推導每件地城寶物的 emoji（不需手動在 200 件上加欄位）
+  function getDtEmoji(item) {
+    if (!item) return '📦';
+    const b = item.bonuses || {};
+    const s = item.special || '';
+    if (s === 'imm1_death')              return '🥚';
+    if (s === 'overcrit_convert')        return '🔮';
+    if (s === 'full_block_5pct')         return '🛡️';
+    if (s === 'hp_loss_dmg_boost')       return '❤️‍🔥';
+    if (s === 'early_atk15pct')          return '⚡';
+    if (s.startsWith('low_hp'))          return '🔥';
+    if (s === 'growing_atk5')            return '📈';
+    if (b.bossExtraDmg)                  return '👊';
+    if (b.physVampPct || b.magVampPct)   return '🩸';
+    if (b.allPct)                        return '👑';
+    if (b.skillDmgPct)                   return '✨';
+    if (b.comboBonus)                    return '🌀';
+    if (b.critChance && b.critDmg)       return '🎯';
+    if (b.critDmg)                       return '💥';
+    if (b.critChance)                    return '🎯';
+    if (b.defIgnorePct || b.physDmgPct)  return '🗡️';
+    if (b.magDmgPct)                     return '🔥';
+    if (b.dmgReduction)                  return '🔰';
+    if (b.mark)                          return '🔮';
+    if (b.mpRegen || b.mpDiscountPct)    return '💧';
+    if (b.maxMp)                         return '🔵';
+    if (b.hpRegenPct || b.hpFlatRegen)   return '💚';
+    if (b.spd && !b.atk && !b.def)      return '💨';
+    if (b.atk && !b.def)                return '⚔️';
+    if (b.def && !b.atk)                return '🛡️';
+    if (b.maxHp)                        return '💚';
+    if (b.atk)                          return '⚔️';
+    if (b.def)                          return '🛡️';
+    return '📦';
+  }
+  window.getDtEmoji = getDtEmoji;
+
   // 計算玩家持有地下城寶物的戰鬥加成
   function computeDungeonTreasureBonus(player) {
     const owned = player?.rpg?.dungeonTreasures || [];
@@ -15589,7 +15626,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260514160758';
+  const APP_VERSION = '20260514161817';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -23052,7 +23089,7 @@ ${b.text}
             borderColor = _DT_RARITY_COLOR[r] || '#9ca3af';
             boxBg = _BOX_BG[r] || _BOX_BG.trash;
             tc = _BOX_TC[r] || _BOX_TC.trash;
-            const tEmo = _BOX_EMO[r] || '📦';
+            const tEmo = getDtEmoji(t);
             const desc = t ? dungeonTreasureDesc(t).split('・')[0] : '';
             innerHtml = `<div style="font-size:16px;">${tEmo}</div>
               <div style="font-size:7px;font-weight:700;color:${tc};margin-top:1px;line-height:1.2;">${t ? t.name : oi.treasure_id}</div>
@@ -23080,7 +23117,7 @@ ${b.text}
           const t = DUNGEON_TREASURES.find(x => x.id === oi.treasure_id);
           const rc = t ? (_DT_RARITY_COLOR[t.rarity]||'#9ca3af') : '#9ca3af';
           const rn = t ? (_DT_RARITY_NAME[t.rarity]||'') : '';
-          const emo = t ? ({ goose:'🦢',legend:'🌟',flash:'⚡',normal:'🟢',trash:'⬜' }[t.rarity]||'📦') : '📦';
+          const emo = getDtEmoji(t);
           rHtml = t ? `<span style="color:${rc};font-weight:700;">${emo} ${rn} ${t.name}</span>` : `<span style="color:#6b7280;">${oi.treasure_id}</span>`;
           if (t) descHtml = `<div style="font-size:10px;color:#9ca3af;margin-top:2px;padding-left:4px;">${dungeonTreasureDesc(t)}</div>`;
         } else {
@@ -23929,7 +23966,7 @@ ${b.text}
         rpg.dungeonTreasures.push(treasure.id);
         openRecord.treasure_id = treasure.id;
       }
-      displayEmoji = { goose:'🦢', legend:'🌟', flash:'⚡', normal:'🟢', trash:'⬜' }[targetRarity] || '📦';
+      displayEmoji = getDtEmoji(treasure);
       const rc = _DT_RARITY_COLOR[treasure?.rarity] || '#9ca3af';
       rewardHtml = treasure
         ? `<span style="color:${rc};">${_DT_RARITY_NAME[treasure.rarity]||''} ${treasure.name}</span>`
@@ -24154,7 +24191,7 @@ ${b.text}
                  cursor:pointer;text-align:center;transition:filter 0.15s;"
           onmouseenter="this.style.filter='brightness(1.2)'" onmouseleave="this.style.filter=''">
           ${cnt > 1 ? `<div style="position:absolute;top:2px;right:3px;font-size:8px;background:${tabInfo.color};color:#1a0a2e;border-radius:4px;padding:1px 3px;font-weight:800;line-height:1.4;">×${cnt}</div>` : ''}
-          <div style="font-size:20px;line-height:1.2;">${_DTV_EMO[active]||'📦'}</div>
+          <div style="font-size:20px;line-height:1.2;">${getDtEmoji(item)}</div>
           <div style="font-size:9px;font-weight:700;color:${tabInfo.tc};line-height:1.3;margin-top:2px;">${item.name}</div>
           <div style="font-size:8px;color:${tabInfo.tc};opacity:0.7;margin-top:1px;line-height:1.2;">${shortDesc}</div>
         </div>`;
@@ -24202,7 +24239,7 @@ ${b.text}
     });
 
     const myOfferBadge = `<div style="display:inline-flex;align-items:center;gap:6px;background:${myInfo.bg};border:2px solid ${myInfo.color};border-radius:8px;padding:5px 10px;margin-bottom:12px;">
-      <span style="font-size:16px;">${_DTV_EMO[myItem?.rarity]||'📦'}</span>
+      <span style="font-size:16px;">${getDtEmoji(myItem)}</span>
       <div>
         <div style="font-size:11px;font-weight:700;color:${myInfo.tc};">${myItem?.name||myItemId}</div>
         <div style="font-size:9px;color:${myInfo.tc};opacity:0.75;">${dungeonTreasureDesc(myItem).split('・')[0]}</div>
@@ -24270,7 +24307,7 @@ ${b.text}
     for (const id of theirOwned) cm[id] = (cm[id]||0)+1;
 
     const myOfferBadge = `<div style="display:inline-flex;align-items:center;gap:6px;background:${myInfo.bg};border:2px solid ${myInfo.color};border-radius:8px;padding:4px 8px;margin-bottom:10px;">
-      <span style="font-size:14px;">${_DTV_EMO[myItem?.rarity]||'📦'}</span>
+      <span style="font-size:14px;">${getDtEmoji(myItem)}</span>
       <div><div style="font-size:10px;font-weight:700;color:${myInfo.tc};">${myItem?.name||myItemId}</div></div>
     </div>`;
 
@@ -24282,7 +24319,7 @@ ${b.text}
         style="display:flex;align-items:center;gap:8px;width:100%;background:${tInfo.bg};border:2px solid ${tInfo.color};
                color:${tInfo.tc};padding:7px 10px;border-radius:10px;font-size:11px;cursor:pointer;
                font-family:inherit;text-align:left;margin-bottom:5px;">
-        <span style="font-size:18px;">${_DTV_EMO[ti.rarity]||'📦'}</span>
+        <span style="font-size:18px;">${getDtEmoji(ti)}</span>
         <div style="flex:1;">
           <div style="font-weight:700;">${ti.name}${cm[id2]>1?` <span style="opacity:0.7;">×${cm[id2]}</span>`:''}</div>
           <div style="font-size:9px;opacity:0.7;margin-top:1px;">${dungeonTreasureDesc(ti)}</div>
