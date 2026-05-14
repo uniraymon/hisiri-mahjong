@@ -2532,7 +2532,8 @@
         // ⭐ 死戰之怒：施放後施加易傷 1 層；Lv10 +1 層（共 2 層）
         { id: 'w_death_rage',   name: '死戰之怒', icon: '☠️', unlockLv: 11, cooldown: 0, mpCost: 25, hpCost: 0.10, type: 'damage', mult: 5.4, cast: 50, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 1, chance: 1 }, customLv: true },
         // ⭐ 爆血：消耗血池（本場所有 HP 代價技能累積），以真傷形式打出（無視防禦與抗性）
-        { id: 'w_blood_explode', name: '爆血',   icon: '🩸💥', unlockLv: 8, cooldown: 1, mpCost: 0, type: 'damage', usesBloodPool: true, cast: 5, maxLv: 1 },
+        { id: 'w_blood_explode', name: '爆血',   icon: '🩸💥', unlockLv: 8, cooldown: 1, mpCost: 0, type: 'damage', usesBloodPool: true, cast: 5, maxLv: 1,
+          desc: '將全部血池以 ×3 真傷爆發（無視防禦與抗性），不消耗自身 HP。爆發後回復血池量 50% 的血量（可超過最大 HP），血池清空。' },
         // ⭐ 諸血高：消耗 50% 血池，獲得消耗量 80% 的 HP（可突破最大 HP 上限）
         { id: 'w_blood_high', name: '諸血高', icon: '🩸❤️‍🔥', unlockLv: 5, cooldown: 0, mpCost: 0, type: 'heal', isBloodHeal: true, cast: 20, maxLv: 1 },
         // ⭐ 大絕：鵝暴化 — 15 個自己回合，ATK/DEF+20%、血池×2、每回合失血5%入血池
@@ -2555,7 +2556,7 @@
         { id: 'w_blood_awakening', name: '血之覺醒', icon: '🩸⚡', unlockLv: 15, cooldown: 99, mpCost: 0, type: 'buff',
           isBloodAwakening: true, applyShield: 2,
           isUltimate: true, maxLv: 1,
-          desc: '【大絕】將 90% 血量化為血池！HP 剩 10%，接下來 2 次受傷無敵，下一個技能增傷 20%。每場限用一次。' },
+          desc: '【大絕】將目前 90% HP 轉化為血池（HP 降至最大值的 10%）。接下來 2 次受傷完全免疫，下一個技能傷害 +20%。搭配「爆血」可立即爆發超高真傷並回血血池量的 50%。每場限用一次。' },
       ],
       skillTree: [
         { id: 'w_hp',   name: '鋼鐵之軀', icon: '🛡',  desc: '+5% 最大 HP',         maxLevel: 5, effect: 'hpPct',     per: 0.05 },
@@ -9864,10 +9865,9 @@
             } else if (isFlat) {
               dmg = (skill.flat + (bonus.skillFlat || 0) + (abil.skillFlat || 0)) + (skill.perLv || 0) * (player.rpg.level || 1);
             } else if (skill.usesBloodPool) {
-              // ⭐ 爆血：（血池 + 當前HP×25%）× 3，無視 DEF / 抗性，易傷 / 暴擊正常計算，無隨機變異
-              _bpHpContrib = Math.floor(pHp * 0.25);
-              pHp = Math.max(1, pHp - _bpHpContrib); // 消耗 25% 當前HP（最少留1）
-              dmg = (bloodPool + _bpHpContrib) * 3;
+              // ⭐ 爆血：血池 × 3，無視 DEF / 抗性，易傷 / 暴擊正常計算，無隨機變異，不消耗 HP
+              _bpHpContrib = bloodPool; // 保存血池值供回血計算
+              dmg = bloodPool * 3;
               bloodPool = 0;
             } else {
               // ⭐ useMark:true 的技能使用 MARK 而非 ATK（法師魔攻技）
@@ -10013,12 +10013,10 @@
             }
             // 吸血 / 自癒：用總傷害計
             let extra = '';
-            // ⭐ 爆血：顯示 HP 貢獻（_bpHpContrib 在 damage 計算區塊已設定）
-            if (skill.usesBloodPool && _bpHpContrib > 0) extra += ` 🩸HP×25% -${_bpHpContrib}`;
-            // ⭐ 爆血：消耗HP的10%直接回復（可超過最大值）
+            // ⭐ 爆血：爆發後回血 血池×50%（可超過最大HP）
             if (skill.usesBloodPool && _bpHpContrib > 0) {
-              const _bbRestore = Math.floor(_bpHpContrib * 0.10);
-              if (_bbRestore > 0) { pHp += _bbRestore; extra += ` ❤️+${_bbRestore} HP（爆血回饋）`; }
+              const _bbRestore = Math.round(_bpHpContrib * 0.50);
+              if (_bbRestore > 0) { pHp += _bbRestore; extra += ` ❤️+${_bbRestore} HP（爆血回血）`; }
             }
             // ⭐ 血祭斬 真傷補正顯示（放在 extra 最前面）
             if (skill.id === 'w_blood_slash' && bloodPool > 0) {
@@ -12140,10 +12138,9 @@
               } else if (isFlat) {
                 dmg = (skill.flat + (bonus.skillFlat || 0) + (abil.skillFlat || 0)) + (skill.perLv || 0) * (player.rpg.level || 1);
               } else if (skill.usesBloodPool) {
-                // ⭐ 爆血：（血池 + 當前HP×25%）× 3，無視 DEF / 抗性
-                _bpHpContribM = Math.floor(pHp * 0.25);
-                pHp = Math.max(1, pHp - _bpHpContribM); // 消耗 25% 當前HP（最少留1）
-                dmg = (bloodPool + _bpHpContribM) * 3;
+                // ⭐ 爆血：血池 × 3，無視 DEF / 抗性，不消耗 HP
+                _bpHpContribM = bloodPool; // 保存血池值供回血計算
+                dmg = bloodPool * 3;
               } else {
                 const dmgStat = skill.useMark ? effMark : effAtk;
                 dmg = dmgStat * (skill.mult || 1);
@@ -12413,11 +12410,9 @@
               applyStatus(playerObj, { type: 'shield', charges: skill.applyShield, turns: 99 });
               extra += ` 🛡 免疫 ${skill.applyShield} 次傷害`;
             }
-            // ⭐ 爆血：攻擊完畢後清空血池
+            // ⭐ 爆血：爆發後回血 血池×50%（可超過最大HP），清空血池
             if (skill.usesBloodPool) {
-              if (_bpHpContribM > 0) extra += ` 🩸HP×25% -${_bpHpContribM}`;
-              // ⭐ 爆血：消耗HP的10%直接回復（可超過最大值）
-              if (_bpHpContribM > 0) { const _bbR = Math.floor(_bpHpContribM * 0.10); if (_bbR > 0) { pHp += _bbR; extra += ` ❤️+${_bbR} HP（爆血回饋）`; } }
+              if (_bpHpContribM > 0) { const _bbR = Math.round(_bpHpContribM * 0.50); if (_bbR > 0) { pHp += _bbR; extra += ` ❤️+${_bbR} HP（爆血回血）`; } }
               bloodPool = 0;
             }
             const targetSummary = hits.map(h => `${h.tgt.icon}${h.tgt.name} -${h.dmg}${h.isCrit ? '【爆】' : ''}${h.isHs ? '🎯' : ''}`).join(' / ');
@@ -16499,7 +16494,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260515035848';
+  const APP_VERSION = '20260515040802';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
