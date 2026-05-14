@@ -7933,12 +7933,12 @@
     // 排除綠茶指南書（slot: guide）— 那是綠茶遭遇次數的里程碑獎勵，不能掉落
     // 排除飾品（accessory 不在 6 槽掉落清單中，從商店買）
     const _baseFilter = i => i.slot !== 'guide' && i.slot !== 'accessory' && i.slot !== 'ring';
-    // ⭐ 奈落專屬掉落：只掉 lv 28 裝備（nabyssZone flag）
+    // ⭐ 奈落專屬掉落：nabyssZone 傳數字（28 或 33），只掉對應 lv 裝備
     const forceNabyss = opts && opts.nabyssZone;
     let eligible;
     if (forceNabyss) {
-      // ⭐ 奈落掉落：只取 lv 28 裝備
-      eligible = ITEMS.filter(i => _baseFilter(i) && (i.lv || 1) === 28);
+      const _nabyssTargetLv = typeof forceNabyss === 'number' ? forceNabyss : 28;
+      eligible = ITEMS.filter(i => _baseFilter(i) && (i.lv || 1) === _nabyssTargetLv);
       if (eligible.length === 0) eligible = ITEMS.filter(i => _baseFilter(i));
     } else if (layerRange) {
       // ⭐ 精英掉落：在層的 [min, max] 範圍找等級最高的裝備
@@ -16487,7 +16487,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260515033153';
+  const APP_VERSION = '20260515033550';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -29367,7 +29367,7 @@ ${b.text}
       const _curLayer = ZONE_LAYERS.find(l => l.id === (rpg.currentLayer || 'upper'));
       const _isElite = !!(monster.isElite && !monster.isForageElite);
       const _curRawLayer = rpg.currentLayer || 'upper';
-      const _isNabyssZoneSingle = _curRawLayer === 'nabyss' || _curRawLayer === 'nabyss2';
+      const _isNabyssZoneSingle = _curRawLayer === 'nabyss2' ? 33 : (_curRawLayer === 'nabyss' ? 28 : false);
       const dropLv = _isElite
         ? (_curLayer ? _curLayer.maxLv : (monster.level || rpg.level))
         : Math.max(monster.level || rpg.level, _curLayer ? _curLayer.maxLv - 2 : 0);
