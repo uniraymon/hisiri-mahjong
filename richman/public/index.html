@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>大富翁 — 網頁版</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Microsoft JhengHei', '微軟正黑體', sans-serif; background: #0d1117; color: #e6edf3; height: 100vh; overflow: hidden; }
+
+/* ===== LOGIN ===== */
+#login-screen {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100vh; gap: 20px;
+  background: radial-gradient(ellipse at center, #1a2744 0%, #0d1117 100%);
+}
+#login-screen h1 {
+  font-size: 64px; font-weight: 900; letter-spacing: 12px;
+  background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  text-shadow: none; filter: drop-shadow(0 0 30px rgba(253,160,133,0.4));
+}
+#login-screen p { color: #8b949e; font-size: 14px; }
+#login-screen input {
+  width: 280px; padding: 14px 20px; border-radius: 12px;
+  border: 2px solid #30363d; background: #161b22; color: #e6edf3;
+  font-size: 18px; text-align: center; outline: none; transition: border-color 0.2s;
+}
+#login-screen input:focus { border-color: #f6d365; }
+#login-screen button {
+  width: 280px; padding: 14px; border-radius: 12px; border: none; cursor: pointer;
+  background: linear-gradient(135deg, #f6d365, #fda085);
+  color: #0d1117; font-size: 18px; font-weight: 900; letter-spacing: 4px;
+  transition: opacity 0.2s, transform 0.1s;
+}
+#login-screen button:hover { opacity: 0.9; transform: scale(1.02); }
+#login-screen .players-waiting { color: #58a6ff; font-size: 13px; min-height: 20px; }
+
+/* ===== GAME LAYOUT ===== */
+#game-screen { display: none; height: 100vh; flex-direction: row; overflow: hidden; }
+
+/* ===== BOARD AREA ===== */
+#board-area {
+  flex: 1; overflow: auto; padding: 16px;
+  background: #0d1117;
+  scrollbar-width: thin; scrollbar-color: #30363d #0d1117;
+}
+#board-area::-webkit-scrollbar { width: 8px; height: 8px; }
+#board-area::-webkit-scrollbar-track { background: #0d1117; }
+#board-area::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+
+#board {
+  display: grid;
+  grid-template-columns: repeat(20, 56px);
+  grid-template-rows: repeat(10, 56px);
+  width: 1120px; height: 560px;
+  border: 2px solid #30363d; border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 0 40px rgba(246,211,101,0.1);
+}
+
+.square {
+  width: 56px; height: 56px;
+  border: 1px solid rgba(0,0,0,0.25);
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-start;
+  padding: 2px 1px; cursor: default; transition: filter 0.15s;
+  user-select: none;
+}
+.square:hover { filter: brightness(1.15); z-index: 10; }
+.square.clickable { cursor: pointer; }
+.sq-num {
+  position: absolute; top: 1px; left: 2px;
+  font-size: 7px; opacity: 0.6; line-height: 1;
+}
+.sq-name {
+  font-size: 7.5px; font-weight: 600; text-align: center;
+  line-height: 1.2; margin-top: 10px; padding: 0 1px;
+  word-break: break-all; max-height: 22px; overflow: hidden;
+}
+.sq-level {
+  position: absolute; bottom: 2px; left: 2px;
+  font-size: 7px; color: #FFD700; letter-spacing: -1px;
+}
+.owner-dot {
+  position: absolute; top: 2px; right: 2px;
+  width: 7px; height: 7px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.5);
+}
+.sq-players {
+  position: absolute; bottom: 2px; right: 2px;
+  display: flex; gap: 1px; flex-wrap: wrap; justify-content: flex-end;
+  max-width: 36px;
+}
+.player-marker {
+  width: 13px; height: 13px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.8);
+  font-size: 7px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; text-shadow: 0 0 2px rgba(0,0,0,0.8);
+  flex-shrink: 0;
+}
+.square.my-position { box-shadow: inset 0 0 0 2px #f6d365; z-index: 5; }
+
+/* ===== SIDEBAR ===== */
+#sidebar {
+  width: 300px; min-width: 300px;
+  background: #161b22; border-left: 1px solid #30363d;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+
+/* My Info Card */
+#my-info {
+  padding: 14px; border-bottom: 1px solid #30363d;
+  background: #0d1117;
+}
+#my-info .player-name {
+  font-size: 16px; font-weight: 700; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.name-color-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.info-label { font-size: 11px; color: #8b949e; }
+.info-val { font-size: 13px; font-weight: 700; color: #f6d365; }
+
+/* Stamina */
+.stamina-bar { display: flex; gap: 4px; margin: 6px 0; }
+.stamina-pip {
+  width: 24px; height: 10px; border-radius: 5px;
+  background: #30363d; border: 1px solid #444; transition: background 0.3s;
+}
+.stamina-pip.full { background: linear-gradient(90deg, #56ab2f, #a8e063); border-color: #56ab2f; }
+.stamina-timer { font-size: 11px; color: #8b949e; }
+
+/* Actions */
+#action-buttons {
+  padding: 10px 12px; border-bottom: 1px solid #30363d;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+}
+.action-btn {
+  padding: 8px 6px; border-radius: 8px; border: 1px solid #30363d;
+  background: #21262d; color: #e6edf3; font-size: 12px; cursor: pointer;
+  text-align: center; transition: all 0.15s; font-family: inherit; font-weight: 600;
+}
+.action-btn:hover { background: #30363d; border-color: #58a6ff; color: #58a6ff; }
+.action-btn.primary {
+  grid-column: span 2;
+  background: linear-gradient(135deg, #f6d365, #fda085);
+  color: #0d1117; border: none; font-size: 14px; font-weight: 900; padding: 10px;
+}
+.action-btn.primary:hover { filter: brightness(1.1); transform: scale(1.02); }
+.action-btn.primary:disabled { background: #30363d; color: #8b949e; cursor: not-allowed; transform: none; filter: none; }
+.action-btn.danger { border-color: #da3633; color: #ff7b72; }
+.action-btn.danger:hover { background: #3d1f20; }
+
+/* Players list */
+#players-section { padding: 10px 12px; border-bottom: 1px solid #30363d; }
+#players-section h3 { font-size: 12px; color: #8b949e; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+.player-card {
+  display: flex; align-items: center; gap: 8px; padding: 6px 0;
+  border-bottom: 1px solid #21262d;
+}
+.player-card:last-child { border-bottom: none; }
+.player-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 900; color: #fff; flex-shrink: 0;
+  border: 2px solid rgba(255,255,255,0.3);
+}
+.player-details { flex: 1; min-width: 0; }
+.player-details .pname { font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player-details .pmoney { font-size: 11px; color: #f6d365; }
+.player-details .ppos { font-size: 10px; color: #8b949e; }
+.player-card.bankrupt .pname { text-decoration: line-through; color: #8b949e; }
+.player-card.bankrupt .pmoney { color: #da3633; }
+.player-card.me { background: rgba(88,166,255,0.05); border-radius: 6px; padding: 6px; margin: -2px -4px; }
+
+/* Event Log */
+#log-section { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+#log-section h3 { padding: 10px 12px 6px; font-size: 12px; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0; }
+#event-log {
+  flex: 1; overflow-y: auto; padding: 0 12px 12px;
+  scrollbar-width: thin; scrollbar-color: #30363d #161b22;
+}
+#event-log::-webkit-scrollbar { width: 4px; }
+#event-log::-webkit-scrollbar-thumb { background: #30363d; }
+.log-entry { font-size: 11px; color: #8b949e; padding: 3px 0; border-bottom: 1px solid #21262d; line-height: 1.4; }
+.log-entry:first-child { color: #e6edf3; }
+
+/* ===== MODAL ===== */
+#modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75); z-index: 100;
+  align-items: center; justify-content: center;
+}
+#modal-overlay.active { display: flex; }
+
+.modal {
+  background: #161b22; border: 1px solid #30363d; border-radius: 16px;
+  padding: 24px; min-width: 360px; max-width: 480px; width: 90%;
+  max-height: 80vh; overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+.modal h2 { font-size: 20px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.modal-close {
+  display: block; width: 100%; padding: 10px; margin-top: 16px;
+  border-radius: 8px; border: 1px solid #30363d; background: #21262d;
+  color: #8b949e; cursor: pointer; font-size: 14px; font-family: inherit;
+}
+.modal-close:hover { background: #30363d; color: #e6edf3; }
+
+/* Property Modal */
+.prop-header { padding: 12px; border-radius: 8px; margin-bottom: 12px; text-align: center; }
+.prop-header .prop-name { font-size: 20px; font-weight: 900; }
+.prop-header .prop-group { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+.prop-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.prop-stat { background: #0d1117; border-radius: 8px; padding: 10px; text-align: center; }
+.prop-stat .label { font-size: 10px; color: #8b949e; margin-bottom: 4px; }
+.prop-stat .value { font-size: 16px; font-weight: 700; color: #f6d365; }
+.rent-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 12px; }
+.rent-table th, .rent-table td { padding: 6px 8px; border: 1px solid #30363d; text-align: center; }
+.rent-table th { background: #21262d; color: #8b949e; }
+.rent-table tr.current-level td { background: rgba(246,211,101,0.1); color: #f6d365; font-weight: 700; }
+.modal-btn {
+  width: 100%; padding: 10px; border-radius: 8px; border: none; cursor: pointer;
+  font-size: 14px; font-weight: 700; margin-bottom: 8px; font-family: inherit;
+  transition: opacity 0.15s;
+}
+.modal-btn:hover { opacity: 0.85; }
+.btn-buy { background: #238636; color: #fff; }
+.btn-upgrade { background: #1f6feb; color: #fff; }
+.btn-sell { background: #da3633; color: #fff; }
+.btn-disabled { background: #21262d; color: #8b949e; cursor: not-allowed; }
+
+/* Jobs Modal */
+.job-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px; border-radius: 8px; background: #21262d; margin-bottom: 8px;
+}
+.job-name { font-size: 14px; font-weight: 600; }
+.job-pay { color: #f6d365; font-size: 13px; font-weight: 700; }
+.job-btn {
+  padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer;
+  font-size: 12px; font-weight: 700; font-family: inherit;
+  background: #238636; color: #fff; transition: opacity 0.15s; flex-shrink: 0;
+}
+.job-btn:disabled { background: #30363d; color: #8b949e; cursor: not-allowed; }
+.job-cooldown { font-size: 10px; color: #8b949e; margin-top: 2px; }
+
+/* Bank Modal */
+.bank-balance { background: #0d1117; border-radius: 8px; padding: 16px; margin-bottom: 16px; text-align: center; }
+.bank-balance .amount { font-size: 28px; font-weight: 900; color: #f6d365; }
+.bank-balance .label { font-size: 12px; color: #8b949e; margin-top: 4px; }
+.bank-rate { font-size: 11px; color: #56ab2f; margin-top: 4px; }
+.amount-input-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.amount-input-row input {
+  flex: 1; padding: 10px; border-radius: 8px;
+  border: 1px solid #30363d; background: #0d1117; color: #e6edf3;
+  font-size: 14px; outline: none; font-family: inherit;
+}
+.amount-input-row input:focus { border-color: #58a6ff; }
+.amount-input-row button {
+  padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer;
+  font-size: 13px; font-weight: 700; font-family: inherit;
+}
+
+/* Stock Modal */
+.stock-item {
+  background: #21262d; border-radius: 8px; padding: 12px; margin-bottom: 10px;
+}
+.stock-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.stock-name { font-size: 14px; font-weight: 700; }
+.stock-price { font-size: 16px; font-weight: 900; color: #f6d365; }
+.stock-owned { font-size: 11px; color: #8b949e; }
+.stock-trade-row { display: flex; gap: 6px; align-items: center; }
+.stock-trade-row input {
+  width: 70px; padding: 6px 8px; border-radius: 6px;
+  border: 1px solid #30363d; background: #0d1117; color: #e6edf3;
+  font-size: 13px; outline: none; text-align: center; font-family: inherit;
+}
+.stock-buy-btn { background: #238636; color: #fff; padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; font-weight: 700; font-family: inherit; }
+.stock-sell-btn { background: #da3633; color: #fff; padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; font-weight: 700; font-family: inherit; }
+
+/* Minigame Modal */
+.game-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.game-tab {
+  flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #30363d;
+  background: #21262d; color: #8b949e; cursor: pointer; font-size: 12px; font-weight: 700; font-family: inherit; text-align: center;
+  transition: all 0.15s;
+}
+.game-tab.active { background: #1f6feb; color: #fff; border-color: #1f6feb; }
+.game-panel { display: none; }
+.game-panel.active { display: block; }
+.guess-btns { display: flex; gap: 8px; margin-top: 12px; }
+.guess-btn {
+  flex: 1; padding: 12px; border-radius: 8px; border: none; cursor: pointer;
+  font-size: 13px; font-weight: 700; font-family: inherit; transition: opacity 0.15s;
+}
+.guess-btn:hover { opacity: 0.85; }
+.dice-display {
+  text-align: center; padding: 16px;
+  background: #0d1117; border-radius: 8px; margin-top: 12px;
+  font-size: 32px; min-height: 70px; display: flex; align-items: center; justify-content: center;
+}
+.result-text { text-align: center; font-size: 14px; margin-top: 8px; min-height: 20px; }
+.result-win { color: #56ab2f; font-weight: 700; }
+.result-lose { color: #da3633; font-weight: 700; }
+.bet-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.bet-row label { font-size: 12px; color: #8b949e; white-space: nowrap; }
+.bet-row input {
+  flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #30363d;
+  background: #0d1117; color: #e6edf3; font-size: 13px; outline: none; font-family: inherit;
+}
+.number-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 12px 0; }
+.num-btn {
+  padding: 10px; border-radius: 8px; border: 1px solid #30363d; background: #21262d;
+  color: #e6edf3; cursor: pointer; font-size: 14px; font-weight: 700; font-family: inherit;
+  transition: all 0.15s;
+}
+.num-btn:hover { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+.num-btn.selected { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+
+/* Toast */
+#toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  z-index: 200; pointer-events: none; opacity: 0; transition: opacity 0.3s;
+  white-space: nowrap;
+}
+#toast.show { opacity: 1; }
+#toast.toast-error { background: #3d1f20; border: 1px solid #da3633; color: #ff7b72; }
+#toast.toast-success { background: #1b2e1e; border: 1px solid #238636; color: #56ab2f; }
+#toast.toast-info { background: #1a2744; border: 1px solid #1f6feb; color: #58a6ff; }
+
+/* Buy Confirm */
+#buy-confirm {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  background: #161b22; border: 1px solid #f6d365; border-radius: 12px;
+  padding: 16px 20px; z-index: 150; text-align: center; display: none;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+#buy-confirm .bc-name { font-size: 16px; font-weight: 900; margin-bottom: 4px; }
+#buy-confirm .bc-price { color: #f6d365; font-size: 14px; margin-bottom: 12px; }
+#buy-confirm .bc-btns { display: flex; gap: 10px; }
+#buy-confirm .bc-btns button {
+  flex: 1; padding: 8px; border-radius: 8px; border: none; cursor: pointer;
+  font-size: 13px; font-weight: 700; font-family: inherit;
+}
+.bc-buy-btn { background: #238636; color: #fff; }
+.bc-pass-btn { background: #30363d; color: #e6edf3; }
+
+/* Game End Banner */
+#game-end-banner {
+  display: none; position: fixed; inset: 0; z-index: 300;
+  background: rgba(0,0,0,0.85); align-items: center; justify-content: center;
+  flex-direction: column; gap: 20px;
+}
+#game-end-banner.active { display: flex; }
+#game-end-banner .end-title { font-size: 48px; font-weight: 900; }
+#game-end-banner .end-winner { font-size: 24px; color: #f6d365; }
+#game-end-banner button {
+  padding: 12px 32px; border-radius: 10px; border: none; cursor: pointer;
+  background: linear-gradient(135deg, #f6d365, #fda085);
+  color: #0d1117; font-size: 16px; font-weight: 900; font-family: inherit;
+}
+
+/* Jail badge */
+.jail-badge {
+  position: absolute; top: 10px; right: 2px;
+  background: #da3633; color: #fff;
+  font-size: 8px; font-weight: 900; padding: 1px 3px; border-radius: 3px;
+}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="login-screen">
+  <h1>大富翁</h1>
+  <p>Web Edition — 體力制非同步大地圖</p>
+  <input id="player-name" placeholder="輸入你的名字" maxlength="12" autocomplete="off">
+  <button id="join-btn">進入遊戲</button>
+  <div class="players-waiting" id="waiting-info"></div>
+</div>
+
+<!-- ===== GAME SCREEN ===== -->
+<div id="game-screen">
+  <!-- Board -->
+  <div id="board-area">
+    <div id="board"></div>
+    <div style="margin-top:10px; font-size:11px; color:#444; text-align:center;">
+      ← 左右捲動查看完整 200 格地圖 →
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <!-- My Info -->
+    <div id="my-info">
+      <div class="player-name" id="my-name-display">
+        <div class="name-color-dot" id="my-color-dot"></div>
+        <span id="my-name-text">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">💰 手頭現金</span>
+        <span class="info-val" id="my-money">$0</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">🏦 銀行存款</span>
+        <span class="info-val" id="my-bank" style="color:#56ab2f">$0</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">📍 目前位置</span>
+        <span class="info-val" id="my-pos" style="color:#58a6ff">第 0 格</span>
+      </div>
+      <div class="info-row" style="margin-top:6px">
+        <span class="info-label">⚡ 體力</span>
+        <span class="info-val" id="my-stamina">0 / 5</span>
+      </div>
+      <div class="stamina-bar" id="stamina-pips">
+        <div class="stamina-pip"></div>
+        <div class="stamina-pip"></div>
+        <div class="stamina-pip"></div>
+        <div class="stamina-pip"></div>
+        <div class="stamina-pip"></div>
+      </div>
+      <div class="stamina-timer" id="stamina-timer">下次回復：—</div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div id="action-buttons">
+      <button class="action-btn primary" id="roll-btn" onclick="rollDice()">🎲 擲骰子 (消耗1體力)</button>
+      <button class="action-btn" onclick="openJobsModal()">💼 打工任務</button>
+      <button class="action-btn" onclick="openBankModal()">🏦 銀行</button>
+      <button class="action-btn" onclick="openStockModal()">📈 股票</button>
+      <button class="action-btn" onclick="openMinigameModal()">🎰 小遊戲</button>
+      <button class="action-btn" onclick="openMyProperties()">🏘️ 我的地產</button>
+    </div>
+
+    <!-- Players List -->
+    <div id="players-section">
+      <h3>玩家列表</h3>
+      <div id="players-list"></div>
+    </div>
+
+    <!-- Event Log -->
+    <div id="log-section">
+      <h3>事件記錄</h3>
+      <div id="event-log"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== BUY CONFIRM ===== -->
+<div id="buy-confirm">
+  <div class="bc-name" id="bc-name"></div>
+  <div class="bc-price" id="bc-price"></div>
+  <div class="bc-btns">
+    <button class="bc-buy-btn" onclick="confirmBuy()">💰 購買</button>
+    <button class="bc-pass-btn" onclick="dismissBuy()">略過</button>
+  </div>
+</div>
+
+<!-- ===== MODAL OVERLAY ===== -->
+<div id="modal-overlay" onclick="closeModal(event)">
+
+  <!-- Property Modal -->
+  <div class="modal" id="property-modal">
+    <h2 id="prop-modal-title">🏘️ 地產資訊</h2>
+    <div class="prop-header" id="prop-header">
+      <div class="prop-name" id="prop-modal-name"></div>
+      <div class="prop-group" id="prop-modal-group"></div>
+    </div>
+    <div class="prop-stats">
+      <div class="prop-stat">
+        <div class="label">售價</div>
+        <div class="value" id="prop-price"></div>
+      </div>
+      <div class="prop-stat">
+        <div class="label">目前等級</div>
+        <div class="value" id="prop-level"></div>
+      </div>
+      <div class="prop-stat">
+        <div class="label">目前租金</div>
+        <div class="value" id="prop-rent"></div>
+      </div>
+      <div class="prop-stat">
+        <div class="label">升級費用</div>
+        <div class="value" id="prop-upgrade-cost"></div>
+      </div>
+    </div>
+    <table class="rent-table">
+      <thead><tr><th>等級</th><th>租金</th></tr></thead>
+      <tbody id="prop-rent-table"></tbody>
+    </table>
+    <div id="prop-actions"></div>
+    <button class="modal-close" onclick="closeModal()">關閉</button>
+  </div>
+
+  <!-- Jobs Modal -->
+  <div class="modal" id="jobs-modal">
+    <h2>💼 打工任務</h2>
+    <p style="font-size:12px;color:#8b949e;margin-bottom:12px">完成任務可獲得金錢，每個任務有冷卻時間</p>
+    <div id="jobs-list"></div>
+    <button class="modal-close" onclick="closeModal()">關閉</button>
+  </div>
+
+  <!-- Bank Modal -->
+  <div class="modal" id="bank-modal">
+    <h2>🏦 銀行</h2>
+    <div class="bank-balance">
+      <div class="label">目前存款</div>
+      <div class="amount" id="modal-bank-amount">$0</div>
+      <div class="bank-rate">年利率 2%（每5分鐘結算）</div>
+    </div>
+    <div class="info-row" style="margin-bottom:12px">
+      <span style="font-size:12px;color:#8b949e">手頭現金：</span>
+      <span style="font-size:14px;font-weight:700;color:#f6d365" id="modal-cash">$0</span>
+    </div>
+    <div class="amount-input-row">
+      <input type="number" id="bank-amount" placeholder="金額" min="1">
+      <button style="background:#238636;color:#fff;border-radius:8px;border:none;cursor:pointer;font-weight:700;font-family:inherit" onclick="doDeposit()">存入</button>
+      <button style="background:#da3633;color:#fff;border-radius:8px;border:none;cursor:pointer;font-weight:700;font-family:inherit" onclick="doWithdraw()">提款</button>
+    </div>
+    <button class="modal-close" onclick="closeModal()">關閉</button>
+  </div>
+
+  <!-- Stock Modal -->
+  <div class="modal" id="stock-modal">
+    <h2>📈 股票市場</h2>
+    <p style="font-size:11px;color:#8b949e;margin-bottom:12px">股價每60秒波動，可隨時交易</p>
+    <div id="stocks-list"></div>
+    <button class="modal-close" onclick="closeModal()">關閉</button>
+  </div>
+
+  <!-- Minigame Modal -->
+  <div class="modal" id="minigame-modal">
+    <h2>🎰 小遊戲</h2>
+    <div class="game-tabs">
+      <button class="game-tab active" onclick="switchTab('guess')">猜大小</button>
+      <button class="game-tab" onclick="switchTab('number')">猜數字</button>
+    </div>
+
+    <!-- Guess High/Low -->
+    <div class="game-panel active" id="tab-guess">
+      <p style="font-size:12px;color:#8b949e;margin-bottom:8px">兩顆骰子，猜總和是大（>7）、小（<7）還是剛好7。大小賠2倍，七賠5倍。</p>
+      <div class="bet-row">
+        <label>押注金額：</label>
+        <input type="number" id="guess-bet" placeholder="500" min="100" value="500">
+      </div>
+      <div class="guess-btns">
+        <button class="guess-btn" style="background:#3498db;color:#fff" onclick="playGuess('low')">⬇ 小（<7）</button>
+        <button class="guess-btn" style="background:#9b59b6;color:#fff" onclick="playGuess('seven')">⭐ 七（=7）</button>
+        <button class="guess-btn" style="background:#e74c3c;color:#fff" onclick="playGuess('high')">⬆ 大（>7）</button>
+      </div>
+      <div class="dice-display" id="guess-dice">🎲 🎲</div>
+      <div class="result-text" id="guess-result"></div>
+    </div>
+
+    <!-- Guess Number -->
+    <div class="game-panel" id="tab-number">
+      <p style="font-size:12px;color:#8b949e;margin-bottom:8px">選一個 1-10 的數字，猜中賠9倍！</p>
+      <div class="bet-row">
+        <label>押注金額：</label>
+        <input type="number" id="number-bet" placeholder="300" min="100" value="300">
+      </div>
+      <div class="number-grid" id="number-grid"></div>
+      <div class="result-text" id="number-result"></div>
+    </div>
+
+    <button class="modal-close" onclick="closeModal()">關閉</button>
+  </div>
+
+  <!-- My Properties Modal -->
+  <div class="modal" id="myprops-modal">
+    <h2>🏘️ 我的地產</h2>
+    <div id="my-props-list"></div>
+    <button class="modal-close" onclick="closeModal()">關閉</button>
+  </div>
+
+</div>
+
+<!-- ===== GAME END ===== -->
+<div id="game-end-banner">
+  <div class="end-title">🏆 遊戲結束</div>
+  <div class="end-winner" id="end-winner-text"></div>
+  <button onclick="location.reload()">再玩一場</button>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div id="toast"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// ===== STATE =====
+const socket = io();
+let myId = null;
+let boardData = null;
+let gameState = null;
+let pendingBuyPos = null;
+let staminaInterval = null;
+let selectedNumber = null;
+let staminaRegenMs = 5 * 60 * 1000; // will be updated from server if available
+
+// ===== SOCKET EVENTS =====
+socket.on('connect', () => { myId = socket.id; });
+
+socket.on('board_data', (board) => {
+  boardData = board;
+  if (gameState) renderBoard();
+});
+
+socket.on('game_state', (state) => {
+  gameState = state;
+  if (document.getElementById('game-screen').style.display === 'flex') {
+    renderAll();
+  } else {
+    updateWaitingInfo(state);
+  }
+});
+
+socket.on('stock_update', (stocks) => {
+  if (gameState) { gameState.stocks = stocks; }
+  if (document.getElementById('stock-modal').closest('#modal-overlay').classList.contains('active')) {
+    renderStocksModal();
+  }
+});
+
+socket.on('log', ({ msg }) => {
+  const log = document.getElementById('event-log');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.textContent = msg;
+  log.insertBefore(entry, log.firstChild);
+  if (log.children.length > 50) log.removeChild(log.lastChild);
+});
+
+socket.on('dice_result', ({ dice1, dice2, steps, position }) => {
+  showToast(`🎲 ${dice1} + ${dice2} = ${steps}，移動到第 ${position} 格`, 'info');
+  setTimeout(() => { if (gameState) renderBoard(); }, 300);
+});
+
+socket.on('can_buy', ({ position, price, name }) => {
+  pendingBuyPos = position;
+  document.getElementById('bc-name').textContent = `「${name}」`;
+  document.getElementById('bc-price').textContent = `售價：$${price.toLocaleString()}`;
+  document.getElementById('buy-confirm').style.display = 'block';
+  setTimeout(dismissBuy, 30000);
+});
+
+socket.on('error_msg', (msg) => showToast(msg, 'error'));
+socket.on('casino_arrive', () => openMinigameModal());
+socket.on('stock_arrive', () => openStockModal());
+socket.on('bank_arrive', () => openBankModal());
+
+socket.on('guess_result', ({ dice1, dice2, sum, win, multiplier }) => {
+  const el = document.getElementById('guess-dice');
+  el.textContent = `🎲${dice1}  🎲${dice2}  =  ${sum}`;
+  const res = document.getElementById('guess-result');
+  if (win) { res.textContent = `✅ 猜對了！${multiplier}倍彩金`; res.className = 'result-text result-win'; }
+  else { res.textContent = `❌ 猜錯了`; res.className = 'result-text result-lose'; }
+});
+
+socket.on('number_result', ({ drawn, guess, win }) => {
+  const res = document.getElementById('number-result');
+  if (win) { res.textContent = `✅ 開出 ${drawn}，猜對了！獲得9倍！`; res.className = 'result-text result-win'; }
+  else { res.textContent = `❌ 開出 ${drawn}，猜錯了`; res.className = 'result-text result-lose'; }
+  renderNumberGrid();
+});
+
+socket.on('game_ended', ({ winner }) => {
+  document.getElementById('end-winner-text').textContent =
+    winner ? `🎉 ${winner} 贏得了這場遊戲！` : '所有玩家破產，平局！';
+  document.getElementById('game-end-banner').classList.add('active');
+});
+
+// ===== JOIN =====
+document.getElementById('join-btn').addEventListener('click', joinGame);
+document.getElementById('player-name').addEventListener('keydown', (e) => { if (e.key === 'Enter') joinGame(); });
+
+function joinGame() {
+  const name = document.getElementById('player-name').value.trim();
+  if (!name) { showToast('請輸入名字', 'error'); return; }
+  socket.emit('join', { name });
+  document.getElementById('login-screen').style.display = 'none';
+  const gs = document.getElementById('game-screen');
+  gs.style.display = 'flex';
+  startStaminaCountdown();
+}
+
+function updateWaitingInfo(state) {
+  const count = Object.keys(state.players || {}).length;
+  const el = document.getElementById('waiting-info');
+  if (el) el.textContent = count > 0 ? `目前 ${count} 人在線` : '';
+}
+
+// ===== RENDER ALL =====
+function renderAll() {
+  renderBoard();
+  renderMyInfo();
+  renderPlayersList();
+  updateRollBtn();
+}
+
+// ===== BOARD RENDER =====
+function renderBoard() {
+  if (!boardData || !gameState) return;
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+
+  // Build player position map
+  const playerAtPos = {};
+  gameState.players.forEach(p => {
+    if (!playerAtPos[p.position]) playerAtPos[p.position] = [];
+    playerAtPos[p.position].push(p);
+  });
+
+  const me = gameState.players.find(p => p.id === myId);
+
+  boardData.forEach((sq, i) => {
+    const row = Math.floor(i / 20);
+    const col = row % 2 === 0 ? (i % 20) + 1 : 20 - (i % 20);
+
+    const div = document.createElement('div');
+    div.className = 'square';
+    if (sq.type === 'property') div.classList.add('clickable');
+    if (me && me.position === i) div.classList.add('my-position');
+    div.style.backgroundColor = sq.color;
+    div.style.color = sq.textColor || '#fff';
+    div.style.gridColumn = col;
+    div.style.gridRow = row + 1;
+    div.dataset.position = i;
+
+    // Owner dot + level
+    const prop = gameState.properties[i];
+    let ownerDot = '', levelStars = '';
+    if (prop) {
+      const owner = gameState.players.find(p => p.id === prop.ownerId);
+      if (owner) {
+        ownerDot = `<div class="owner-dot" style="background:${owner.color}"></div>`;
+        if (prop.level > 0) levelStars = `<div class="sq-level">${'★'.repeat(prop.level)}</div>`;
+      }
+    }
+
+    // Player markers
+    const here = playerAtPos[i] || [];
+    const markers = here.map(p =>
+      `<div class="player-marker" style="background:${p.color}" title="${p.name}">${p.name[0]}</div>`
+    ).join('');
+
+    // Jail badge
+    const jailBadge = (me && me.position === 50 && me.jailTurns > 0 && i === 50)
+      ? `<div class="jail-badge">🔒${me.jailTurns}</div>` : '';
+
+    div.innerHTML = `
+      <div class="sq-num">${i}</div>
+      ${ownerDot}
+      <div class="sq-name">${sq.name}</div>
+      ${levelStars}
+      ${jailBadge}
+      <div class="sq-players">${markers}</div>
+    `;
+
+    if (sq.type === 'property') {
+      div.addEventListener('click', () => openPropertyModal(i));
+    }
+
+    board.appendChild(div);
+  });
+
+  // Scroll my position into view
+  if (me) {
+    const mySquare = board.querySelector(`[data-position="${me.position}"]`);
+    if (mySquare) {
+      const area = document.getElementById('board-area');
+      area.scrollLeft = mySquare.offsetLeft - area.clientWidth / 2 + 28;
+      area.scrollTop = mySquare.offsetTop - area.clientHeight / 2 + 28;
+    }
+  }
+}
+
+// ===== MY INFO =====
+function renderMyInfo() {
+  const me = gameState.players.find(p => p.id === myId);
+  if (!me) return;
+
+  document.getElementById('my-name-text').textContent = me.name;
+  document.getElementById('my-color-dot').style.background = me.color;
+  document.getElementById('my-money').textContent = '$' + me.money.toLocaleString();
+  document.getElementById('my-bank').textContent = '$' + me.bankDeposit.toLocaleString();
+  document.getElementById('my-pos').textContent = `第 ${me.position} 格`;
+
+  // Stamina pips
+  const stamina = me.stamina;
+  document.getElementById('my-stamina').textContent = `${stamina} / 5`;
+  document.querySelectorAll('.stamina-pip').forEach((pip, i) => {
+    pip.classList.toggle('full', i < stamina);
+  });
+}
+
+function startStaminaCountdown() {
+  if (staminaInterval) clearInterval(staminaInterval);
+  staminaInterval = setInterval(() => {
+    const me = gameState && gameState.players.find(p => p.id === myId);
+    if (!me) return;
+
+    // Calculate time until next regen
+    const now = Date.now();
+    // We don't have lastStaminaTime client-side directly, so just show stamina from state
+    if (me.stamina >= 5) {
+      document.getElementById('stamina-timer').textContent = '體力已滿';
+    } else {
+      document.getElementById('stamina-timer').textContent = '每5分鐘回復1體力';
+    }
+    updateRollBtn();
+  }, 5000);
+}
+
+// ===== PLAYERS LIST =====
+function renderPlayersList() {
+  const list = document.getElementById('players-list');
+  list.innerHTML = '';
+  if (!gameState) return;
+
+  gameState.players.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'player-card' + (p.id === myId ? ' me' : '') + (p.isBankrupt ? ' bankrupt' : '');
+    const sq = boardData ? boardData[p.position] : null;
+    div.innerHTML = `
+      <div class="player-avatar" style="background:${p.color}">${p.name[0]}</div>
+      <div class="player-details">
+        <div class="pname">${p.name}${p.id === myId ? ' (你)' : ''}${p.isBankrupt ? ' 💀' : ''}${p.jailTurns > 0 ? ' 🔒' : ''}</div>
+        <div class="pmoney">$${p.money.toLocaleString()}${p.bankDeposit > 0 ? ` + 銀行$${p.bankDeposit.toLocaleString()}` : ''}</div>
+        <div class="ppos">⚡${p.stamina}/5 · ${sq ? sq.name : '?'}</div>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+// ===== ROLL DICE =====
+function rollDice() {
+  const me = gameState && gameState.players.find(p => p.id === myId);
+  if (!me) { showToast('請先加入遊戲', 'error'); return; }
+  if (me.stamina <= 0) { showToast('體力不足！請等待體力回復（每5分鐘+1）', 'error'); return; }
+  socket.emit('roll_dice');
+}
+
+function updateRollBtn() {
+  const me = gameState && gameState.players.find(p => p.id === myId);
+  const btn = document.getElementById('roll-btn');
+  if (!me) return;
+  btn.disabled = me.stamina <= 0 || me.isBankrupt;
+  if (me.isBankrupt) btn.textContent = '💀 已破產';
+  else if (me.stamina <= 0) btn.textContent = '⚡ 等待體力回復...';
+  else btn.textContent = `🎲 擲骰子 (體力 ${me.stamina}/5)`;
+}
+
+// ===== BUY CONFIRM =====
+function confirmBuy() {
+  if (pendingBuyPos === null) return;
+  socket.emit('buy_property', { position: pendingBuyPos });
+  dismissBuy();
+}
+function dismissBuy() {
+  pendingBuyPos = null;
+  document.getElementById('buy-confirm').style.display = 'none';
+}
+
+// ===== PROPERTY MODAL =====
+function openPropertyModal(pos) {
+  if (!boardData || !gameState) return;
+  const sq = boardData[pos];
+  if (sq.type !== 'property') return;
+
+  const prop = gameState.properties[pos];
+  const me = gameState.players.find(p => p.id === myId);
+  const owner = prop ? gameState.players.find(p => p.id === prop.ownerId) : null;
+  const level = prop ? prop.level : 0;
+
+  document.getElementById('prop-modal-name').textContent = sq.name;
+  document.getElementById('prop-modal-group').textContent = sq.groupName || '';
+  document.getElementById('prop-header').style.backgroundColor = sq.color;
+  document.getElementById('prop-header').style.color = sq.textColor || '#fff';
+  document.getElementById('prop-price').textContent = '$' + sq.price.toLocaleString();
+  document.getElementById('prop-level').textContent = prop ? `${level} 級` : '未購買';
+  document.getElementById('prop-rent').textContent = '$' + calcClientRent(sq.rentBase, level).toLocaleString();
+  document.getElementById('prop-upgrade-cost').textContent = prop ? '$' + sq.upgradeCost.toLocaleString() : '—';
+
+  // Rent table
+  const tbody = document.getElementById('prop-rent-table');
+  tbody.innerHTML = '';
+  for (let lv = 0; lv <= 4; lv++) {
+    const tr = document.createElement('tr');
+    if (lv === level && prop) tr.classList.add('current-level');
+    tr.innerHTML = `<td>${lv === 0 ? '基本' : lv + '★'}</td><td>$${calcClientRent(sq.rentBase, lv).toLocaleString()}</td>`;
+    tbody.appendChild(tr);
+  }
+
+  // Actions
+  const actEl = document.getElementById('prop-actions');
+  actEl.innerHTML = '';
+  if (!prop && me) {
+    const btn = document.createElement('button');
+    btn.className = 'modal-btn btn-buy';
+    btn.textContent = `購買 $${sq.price.toLocaleString()}`;
+    btn.onclick = () => {
+      socket.emit('buy_property', { position: pos });
+      closeModal();
+    };
+    actEl.appendChild(btn);
+  } else if (prop && owner && owner.id === myId) {
+    if (level < 4) {
+      const btn = document.createElement('button');
+      btn.className = 'modal-btn btn-upgrade';
+      btn.textContent = `升級 (${level + 1}★) $${sq.upgradeCost.toLocaleString()}`;
+      btn.onclick = () => { socket.emit('upgrade_property', { position: pos }); closeModal(); };
+      actEl.appendChild(btn);
+    }
+    const sellBtn = document.createElement('button');
+    sellBtn.className = 'modal-btn btn-sell';
+    const refund = Math.floor(sq.price * 0.7 + sq.upgradeCost * level * 0.5);
+    sellBtn.textContent = `出售 (回收 $${refund.toLocaleString()})`;
+    sellBtn.onclick = () => { socket.emit('sell_property', { position: pos }); closeModal(); };
+    actEl.appendChild(sellBtn);
+  } else if (prop && owner) {
+    const info = document.createElement('p');
+    info.style.cssText = 'text-align:center;color:#8b949e;font-size:13px;padding:8px';
+    info.textContent = `地主：${owner.name}`;
+    actEl.appendChild(info);
+  }
+
+  showModal('property-modal');
+}
+
+function calcClientRent(base, level) {
+  return Math.floor(base * Math.pow(2, level));
+}
+
+// ===== JOBS MODAL =====
+function openJobsModal() {
+  socket.emit('get_jobs');
+  socket.once('jobs_data', (jobs) => {
+    const list = document.getElementById('jobs-list');
+    list.innerHTML = '';
+    jobs.forEach(job => {
+      const div = document.createElement('div');
+      div.className = 'job-item';
+      const ready = job.remaining === 0;
+      div.innerHTML = `
+        <div>
+          <div class="job-name">${job.name}</div>
+          <div class="job-pay">+$${job.pay.toLocaleString()}</div>
+          ${!ready ? `<div class="job-cooldown">冷卻中：${Math.ceil(job.remaining / 60000)} 分鐘後</div>` : ''}
+        </div>
+        <button class="job-btn" ${ready ? '' : 'disabled'} onclick="doJob('${job.id}')">
+          ${ready ? '接任務' : '冷卻中'}
+        </button>
+      `;
+      list.appendChild(div);
+    });
+    showModal('jobs-modal');
+  });
+}
+
+function doJob(jobId) {
+  socket.emit('do_job', { jobId });
+  closeModal();
+  showToast('正在完成任務...', 'info');
+}
+
+// ===== BANK MODAL =====
+function openBankModal() {
+  const me = gameState && gameState.players.find(p => p.id === myId);
+  if (me) {
+    document.getElementById('modal-bank-amount').textContent = '$' + me.bankDeposit.toLocaleString();
+    document.getElementById('modal-cash').textContent = '$' + me.money.toLocaleString();
+  }
+  showModal('bank-modal');
+}
+
+function doDeposit() {
+  const amount = parseInt(document.getElementById('bank-amount').value);
+  if (!amount || amount <= 0) { showToast('請輸入金額', 'error'); return; }
+  socket.emit('bank_deposit', { amount });
+  document.getElementById('bank-amount').value = '';
+  closeModal();
+}
+
+function doWithdraw() {
+  const amount = parseInt(document.getElementById('bank-amount').value);
+  if (!amount || amount <= 0) { showToast('請輸入金額', 'error'); return; }
+  socket.emit('bank_withdraw', { amount });
+  document.getElementById('bank-amount').value = '';
+  closeModal();
+}
+
+// ===== STOCK MODAL =====
+function openStockModal() {
+  renderStocksModal();
+  showModal('stock-modal');
+}
+
+function renderStocksModal() {
+  if (!gameState) return;
+  const me = gameState.players.find(p => p.id === myId);
+  const list = document.getElementById('stocks-list');
+  list.innerHTML = '';
+  Object.values(gameState.stocks).forEach(stock => {
+    const owned = (me && me.stocks && me.stocks[stock.id]) || 0;
+    const value = owned * stock.price;
+    const div = document.createElement('div');
+    div.className = 'stock-item';
+    div.innerHTML = `
+      <div class="stock-header">
+        <span class="stock-name">${stock.name}</span>
+        <span class="stock-price">$${stock.price}</span>
+      </div>
+      <div class="stock-owned">持股 ${owned} 張（市值 $${value.toLocaleString()}）</div>
+      <div class="stock-trade-row" style="margin-top:8px">
+        <input type="number" id="sq-${stock.id}" placeholder="張數" min="1" value="1">
+        <button class="stock-buy-btn" onclick="doBuyStock('${stock.id}')">買入</button>
+        <button class="stock-sell-btn" onclick="doSellStock('${stock.id}')">賣出</button>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function doBuyStock(stockId) {
+  const amount = parseInt(document.getElementById('sq-' + stockId).value) || 1;
+  socket.emit('buy_stock', { stockId, amount });
+  closeModal();
+}
+
+function doSellStock(stockId) {
+  const amount = parseInt(document.getElementById('sq-' + stockId).value) || 1;
+  socket.emit('sell_stock', { stockId, amount });
+  closeModal();
+}
+
+// ===== MINIGAME MODAL =====
+function openMinigameModal() {
+  renderNumberGrid();
+  showModal('minigame-modal');
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.game-tab').forEach((t, i) => {
+    t.classList.toggle('active', (i === 0 && tab === 'guess') || (i === 1 && tab === 'number'));
+  });
+  document.getElementById('tab-guess').classList.toggle('active', tab === 'guess');
+  document.getElementById('tab-number').classList.toggle('active', tab === 'number');
+}
+
+function playGuess(guess) {
+  const bet = parseInt(document.getElementById('guess-bet').value) || 500;
+  document.getElementById('guess-dice').textContent = '🎲 🎲 rolling...';
+  document.getElementById('guess-result').textContent = '';
+  socket.emit('play_guess', { bet, guess });
+}
+
+function renderNumberGrid() {
+  const grid = document.getElementById('number-grid');
+  grid.innerHTML = '';
+  for (let i = 1; i <= 10; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'num-btn' + (i === selectedNumber ? ' selected' : '');
+    btn.textContent = i;
+    btn.onclick = () => {
+      selectedNumber = i;
+      const bet = parseInt(document.getElementById('number-bet').value) || 300;
+      document.getElementById('number-result').textContent = '';
+      socket.emit('play_number', { bet, guess: i });
+      renderNumberGrid();
+    };
+    grid.appendChild(btn);
+  }
+}
+
+// ===== MY PROPERTIES =====
+function openMyProperties() {
+  if (!gameState || !boardData) return;
+  const me = gameState.players.find(p => p.id === myId);
+  const myProps = me ? me.properties : [];
+
+  const list = document.getElementById('my-props-list');
+  list.innerHTML = '';
+
+  if (myProps.length === 0) {
+    list.innerHTML = '<p style="color:#8b949e;text-align:center;padding:16px">暫無地產</p>';
+  } else {
+    myProps.forEach(pos => {
+      const sq = boardData[pos];
+      const prop = gameState.properties[pos];
+      if (!sq || !prop) return;
+
+      const div = document.createElement('div');
+      div.style.cssText = 'background:#21262d;border-radius:8px;padding:10px;margin-bottom:8px;cursor:pointer;';
+      const rent = calcClientRent(sq.rentBase, prop.level);
+      div.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-weight:700;font-size:13px">
+              <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${sq.color};margin-right:6px;vertical-align:middle"></span>
+              ${sq.name}
+            </div>
+            <div style="font-size:11px;color:#8b949e;margin-top:2px">${sq.groupName} · 第${pos}格</div>
+          </div>
+          <div style="text-align:right">
+            <div style="color:#f6d365;font-weight:700">${prop.level > 0 ? '★'.repeat(prop.level) : '基本'}</div>
+            <div style="font-size:11px;color:#8b949e">租金 $${rent.toLocaleString()}</div>
+          </div>
+        </div>
+      `;
+      div.onclick = () => { closeModal(); setTimeout(() => openPropertyModal(pos), 100); };
+      list.appendChild(div);
+    });
+
+    // Total value
+    let totalValue = 0;
+    myProps.forEach(pos => {
+      const sq = boardData[pos];
+      const prop = gameState.properties[pos];
+      if (sq && prop) totalValue += Math.floor(sq.price * 0.7 + sq.upgradeCost * prop.level * 0.5);
+    });
+    const summary = document.createElement('div');
+    summary.style.cssText = 'text-align:center;color:#8b949e;font-size:12px;padding-top:8px;border-top:1px solid #30363d;margin-top:4px';
+    summary.textContent = `共 ${myProps.length} 筆地產，估值 $${totalValue.toLocaleString()}`;
+    list.appendChild(summary);
+  }
+
+  showModal('myprops-modal');
+}
+
+// ===== MODAL HELPERS =====
+function showModal(id) {
+  document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+  document.getElementById(id).style.display = 'block';
+  document.getElementById('modal-overlay').classList.add('active');
+}
+
+function closeModal(event) {
+  if (event && event.target !== document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').classList.remove('active');
+}
+
+// ===== TOAST =====
+let toastTimer = null;
+function showToast(msg, type = 'info') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = `show toast-${type}`;
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ===== INIT NUMBER GRID =====
+renderNumberGrid();
+</script>
+</body>
+</html>
