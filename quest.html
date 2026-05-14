@@ -15569,7 +15569,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260514133342';
+  const APP_VERSION = '20260514135407';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -22919,6 +22919,89 @@ ${b.text}
     const run     = dungeonGetRun(rpg);
     const stamina = rpg.stamina || 0;
 
+    // ── 寶箱開啟階段（副本完成後，寶箱未全部開完）──
+    if (!run && rpg.dungeonPendingBoxes) {
+      const pb      = rpg.dungeonPendingBoxes;
+      const configs = pb.configs || [];
+      const limit   = pb.limit   || 3;
+      const opened  = pb.opened  || 0;
+      const remain  = Math.max(0, limit - opened);
+      const rLabel  = pb.rankLabel || 'RANK 3';
+      const rColor  = pb.rankColor || '#6ee7b7';
+      const rBg     = pb.rankBg   || 'linear-gradient(135deg,#059669,#6ee7b7)';
+
+      const boxesGrid = Array.from({ length: 8 }, (_, i) => {
+        const alreadyOpened = pb.openedItems && pb.openedItems[i] != null;
+        if (alreadyOpened) {
+          const oi = pb.openedItems[i];
+          let innerHtml = '';
+          let rc2 = '#6b7280';
+          if (oi.type === 'coin') {
+            rc2 = '#fbbf24';
+            innerHtml = `<div style="font-size:20px;">🥚</div>
+              <div style="font-size:8px;color:#fbbf24;margin-top:2px;">幣×${oi.coins||0}</div>`;
+          } else if (oi.treasure_id) {
+            const t = DUNGEON_TREASURES.find(x => x.id === oi.treasure_id);
+            rc2 = t ? (_DT_RARITY_COLOR[t.rarity] || '#9ca3af') : '#9ca3af';
+            const tName = t ? t.name : oi.treasure_id;
+            const tIcon = oi.type === 'high' ? '✨' : '📦';
+            innerHtml = `<div style="font-size:20px;">${tIcon}</div>
+              <div style="font-size:8px;color:${rc2};margin-top:2px;text-align:center;word-break:break-all;line-height:1.3;">${tName}</div>`;
+          } else {
+            innerHtml = `<div style="font-size:20px;">📦</div>
+              <div style="font-size:8px;color:#6b7280;margin-top:2px;">空</div>`;
+          }
+          return `<div class="dungeon-box" style="cursor:default;opacity:0.6;">${innerHtml}</div>`;
+        } else {
+          const canOpen = remain > 0;
+          return `<div class="dungeon-box" id="dbox_${i}" ${canOpen?`onclick="dungeonOpenBox(${i})"`:''} style="${canOpen?'':'cursor:not-allowed;opacity:0.4;'}">
+            <div style="font-size:24px;">🎁</div>
+            <div style="font-size:9px;color:#a78bfa;margin-top:3px;">#${i+1}</div>
+          </div>`;
+        }
+      }).join('');
+
+      // 已開列表
+      const rewardsList = Object.entries(pb.openedItems || {}).map(([idx, oi]) => {
+        let rHtml = '';
+        if (oi.type === 'coin') {
+          rHtml = `<span style="color:#fbbf24;">地城鵝蛋幣 ×${oi.coins||0}</span>`;
+        } else if (oi.treasure_id) {
+          const t = DUNGEON_TREASURES.find(x => x.id === oi.treasure_id);
+          const rc = t ? (_DT_RARITY_COLOR[t.rarity]||'#9ca3af') : '#9ca3af';
+          const rn = t ? (_DT_RARITY_NAME[t.rarity]||'') : '';
+          rHtml = t ? `<span style="color:${rc};">${rn} ${t.name}</span>` : `<span style="color:#6b7280;">${oi.treasure_id}</span>`;
+        } else {
+          rHtml = '<span style="color:#6b7280;">（空箱）</span>';
+        }
+        return `<div style="font-size:12px;padding:5px 10px;background:rgba(0,0,0,0.3);border-radius:6px;margin-bottom:4px;line-height:1.6;">
+          📦 #${parseInt(idx)+1} → ${rHtml}
+        </div>`;
+      }).join('');
+
+      body.innerHTML = `
+        <div style="background:linear-gradient(135deg,#1a0a2e,#2e1065);border:2px solid #7c3aed;border-radius:14px;padding:16px;">
+          <div style="text-align:center;margin-bottom:12px;">
+            <div style="font-size:36px;margin-bottom:4px;">🏆</div>
+            <div style="font-size:16px;font-weight:900;color:#e9d5ff;margin-bottom:6px;">副本完成！選擇寶箱</div>
+            <div style="display:inline-block;background:${rBg};color:#fff;font-size:14px;font-weight:800;padding:4px 20px;border-radius:20px;letter-spacing:2px;">${rLabel}</div>
+          </div>
+          <div style="font-size:11px;color:#9ca3af;text-align:center;margin-bottom:6px;" id="dboxStatusLine">
+            ${remain > 0
+              ? `點選寶箱開啟（剩餘 <span style="color:#c4b5fd;font-weight:700;">${remain}</span> / ${limit} 次）`
+              : '<span style="color:#4ade80;font-weight:700;">✅ 全部開啟完畢！返回中…</span>'}
+          </div>
+          <div style="font-size:10px;color:#6b7280;text-align:center;margin-bottom:8px;">
+            🦢高級×1　🟢普通×2　⬜渣鵝×3　🥚幣×2　（洗牌後隱藏）
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;">
+            ${boxesGrid}
+          </div>
+          ${rewardsList ? `<div id="dungeonBoxRewards">${rewardsList}</div>` : '<div id="dungeonBoxRewards"></div>'}
+        </div>`;
+      return;
+    }
+
     if (!run) {
       // ── 無進行中副本：顯示說明 + 開始按鈕 + 歷史 ──
       const history  = dungeonGetHistory(rpg);
@@ -22934,7 +23017,7 @@ ${b.text}
       body.innerHTML = `
         <div style="font-size:11px;color:#a78bfa;padding:4px 0 10px;line-height:1.8;">
           💡 連續挑戰 5 層副本<br>
-          🔄 每次挑戰（勝/敗）計 1 次，失敗則守護者 HP +10%<br>
+          🔄 每次挑戰（勝/敗）計 1 次，失敗則守護者保留剩餘 HP +5%<br>
           🍀 每清一層可選 1 個 Roguelike BUFF（共 4 次）<br>
           🎖 全通！≤${DUNGEON_ATTEMPTS_S}次→<b style="color:#fde047;">S RANK</b>　≤${DUNGEON_ATTEMPTS_A}次→<b style="color:#c084fc;">RANK 2</b>　其他→<b style="color:#6ee7b7;">RANK 3</b><br>
           📦 S RANK→5箱　RANK 2→4箱　RANK 3→3箱（從 8 箱中選）
@@ -23018,7 +23101,7 @@ ${b.text}
             <div style="background:#1a0a2e;border-radius:6px;height:10px;overflow:hidden;">
               <div style="height:100%;width:${hpPct.toFixed(1)}%;background:linear-gradient(90deg,#dc2626,#ef4444);border-radius:6px;transition:width 0.5s;"></div>
             </div>
-            <div style="font-size:9px;color:#6b7280;margin-top:3px;text-align:right;">${curHp.toLocaleString()} HP（基準 ${floorBaseHp.toLocaleString()}，失敗每次+10%）</div>
+            <div style="font-size:9px;color:#6b7280;margin-top:3px;text-align:right;">${curHp.toLocaleString()} HP（基準 ${floorBaseHp.toLocaleString()}，失敗保留剩餘 HP +5%）</div>
           </div>
 
           <div style="display:flex;gap:6px;font-size:11px;color:#9ca3af;margin-bottom:8px;padding:8px 10px;background:rgba(0,0,0,0.2);border-radius:8px;flex-wrap:wrap;">
@@ -23053,6 +23136,9 @@ ${b.text}
     if (rpg.hp <= 0)             { showToast('💀 HP 太低，先回滿再來'); return; }
     if ((rpg.stamina||0) < DUNGEON_STAMINA_PER_FLOOR) { showToast(`⚡ 體力不足（需 ${DUNGEON_STAMINA_PER_FLOOR} 點）`); return; }
     if (dungeonGetRun(rpg))      { showToast('⚔️ 已有進行中的副本'); return; }
+
+    // 新一輪副本：清掉上次未領完的寶箱
+    rpg.dungeonPendingBoxes = null;
 
     rpg.dungeonRun = {
       active:           true,
@@ -23094,6 +23180,25 @@ ${b.text}
     });
     if (history.length > 20) history.splice(0, history.length - 20);
     rpg.dungeonRun = null;
+
+    // 生成本次副本的 8 個寶箱（存入 rpg，持久化）
+    const boxes  = rankInfo ? rankInfo.boxes : 3;
+    const rLabel = rankInfo ? rankInfo.label : 'RANK 3';
+    const rColor = rankInfo ? rankInfo.color : '#6ee7b7';
+    const rBg    = rankInfo ? rankInfo.bg    : 'linear-gradient(135deg,#059669,#6ee7b7)';
+    rpg.dungeonPendingBoxes = {
+      configs:       _dungeonGenerateBoxes(),
+      limit:         boxes,
+      opened:        0,
+      openedItems:   {},   // idx → { type, treasure_id?, coins? }
+      score,
+      totalAttempts: run.totalAttempts || 0,
+      totalDamage:   run.totalDamage,
+      maxHit:        run.maxHit || 0,
+      rankLabel:     rLabel,
+      rankColor:     rColor,
+      rankBg:        rBg,
+    };
   }
 
   // 執行當前層戰鬥 (v2)
@@ -23217,16 +23322,25 @@ ${b.text}
         _dungeonSaveResult(rpg, run, score, rankInfo);
         saveData();
 
+        // 先顯示完成總結
         if (resultEl) {
           resultEl.innerHTML = _dungeonCompleteHtml(run, score, rankInfo, floorIdx + 1, dmgDealt, rounds);
-          resultEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
+        // dungeonBody 渲染寶箱選擇畫面，並自動滾動至此
         renderDungeon();
+        const db = document.getElementById('dungeonBody');
+        if (db) db.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // 3 秒後自動清掉結果區（保持畫面整潔）
+        setTimeout(() => {
+          const re = document.getElementById('dungeonFightResult');
+          if (re) re.innerHTML = '';
+        }, 3000);
       }
     } else {
-      // 本層失敗：守護者 HP +10% 基礎值，副本繼續
+      // 本層失敗：保留實際剩餘 HP，再追加 5% 基礎 HP 作懲罰
       const baseHp = DUNGEON_FLOOR_HPS[floorIdx];
-      run.floorCurrentHp = Math.round(run.floorCurrentHp + baseHp * 0.10);
+      const remainHp = Math.max(1, result.mHpFinal || 1);
+      run.floorCurrentHp = Math.round(remainHp + baseHp * 0.05);
       saveData();
 
       if (resultEl) {
@@ -23299,11 +23413,9 @@ ${b.text}
             <div style="color:#c4b5fd;font-weight:800;font-size:14px;">${((run.maxHit||0)/1000000).toFixed(1)}百萬</div>
           </div>
         </div>
-        <div style="text-align:center;font-size:13px;color:#e9d5ff;font-weight:700;margin-bottom:12px;">
-          🎁 可開 <span style="color:${rColor};font-size:20px;font-weight:900;">${boxes}</span> / 8 個寶箱
-        </div>
-        <div id="dungeonBoxArea">
-          ${_dungeonBoxesHtml(boxes, _dungeonGenerateBoxes())}
+        <div style="text-align:center;font-size:13px;color:#e9d5ff;font-weight:700;">
+          🎁 可開 <span style="color:${rColor};font-size:20px;font-weight:900;">${boxes}</span> / 8 個寶箱<br>
+          <span style="font-size:11px;color:#a78bfa;font-weight:400;">寶箱已準備好，請向上滾動至副本區域開啟！</span>
         </div>
       </div>`;
   }
@@ -23335,7 +23447,7 @@ ${b.text}
           </div>
         </div>
         <div style="font-size:11px;color:#fbbf24;text-align:center;padding:8px;background:rgba(0,0,0,0.2);border-radius:8px;margin-bottom:10px;">
-          ⚠️ 守護者 HP 已增加 10%（${prevBossHp.toLocaleString()} → ${newHp.toLocaleString()}）<br>
+          ⚠️ 守護者 HP 加回實際剩餘值 +5% 懲罰（${prevBossHp.toLocaleString()} → ${newHp.toLocaleString()}）<br>
           <span style="color:#9ca3af;font-size:10px;">可繼續重試，次數越多評分越低</span>
         </div>
         <button onclick="document.getElementById('dungeonFightResult').innerHTML=''"
@@ -23420,60 +23532,39 @@ ${b.text}
     return configs;
   }
 
-  // HTML：8 個寶箱格，boxConfigs = 預先生成的內容陣列（JSON 編碼存在容器上）
-  function _dungeonBoxesHtml(allowedCount, boxConfigs) {
-    const cfgEncoded = encodeURIComponent(JSON.stringify(boxConfigs));
-    const boxes = Array.from({ length: 8 }, (_, i) => `
-      <div class="dungeon-box" id="dbox_${i}" onclick="dungeonOpenBox(${i},${allowedCount})">
-        <div style="font-size:24px;">🎁</div>
-        <div style="font-size:9px;color:#a78bfa;margin-top:3px;">#${i+1}</div>
-      </div>`).join('');
-    return `
-      <div data-boxcfg="${cfgEncoded}">
-        <div style="font-size:11px;color:#9ca3af;text-align:center;margin-bottom:6px;" id="dboxStatusLine">
-          點選寶箱開啟（剩餘 <span id="dboxRemain" style="color:#c4b5fd;font-weight:700;">${allowedCount}</span> 次）
-        </div>
-        <div style="font-size:10px;color:#6b7280;text-align:center;margin-bottom:8px;">
-          🦢高級×1　🟢普通×2　⬜渣鵝×3　🥚幣×2　（洗牌後隱藏）
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
-          ${boxes}
-        </div>
-        <div id="dungeonBoxRewards" style="margin-top:10px;"></div>
-      </div>`;
-  }
-
-  // 開單個寶箱（v3：固定組成，開前不知哪個是哪個）
-  function dungeonOpenBox(idx, limit) {
-    const el = document.getElementById('dbox_' + idx);
-    if (!el || el.dataset.opened) return;
-
-    const alreadyOpened = document.querySelectorAll('[id^="dbox_"][data-opened]').length;
-    if (alreadyOpened >= limit) { showToast('📦 已達本次可開上限'); return; }
-
+  // 開單個寶箱（v4：從 rpg.dungeonPendingBoxes 讀取設定，開完自動返回首頁）
+  function dungeonOpenBox(idx) {
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
+    const pb  = rpg.dungeonPendingBoxes;
+    if (!pb) { showToast('目前沒有待開寶箱'); return; }
+
+    // 防重複開啟
+    if (pb.openedItems && pb.openedItems[idx] != null) { showToast('📦 此箱已開啟'); return; }
+
+    // 超過次數上限
+    const alreadyOpened = Object.keys(pb.openedItems || {}).length;
+    if (alreadyOpened >= pb.limit) { showToast('📦 已達本次可開上限'); return; }
+
     if (!rpg.dungeonTreasures) rpg.dungeonTreasures = [];
     if (rpg.dungeonEggCoins == null) rpg.dungeonEggCoins = 0;
 
-    // 讀取預先生成的寶箱設定
-    const container = el.closest('[data-boxcfg]');
-    const configs = container ? JSON.parse(decodeURIComponent(container.dataset.boxcfg)) : [];
-    const cfg = configs[idx] || { type: 'trash' };
+    const configs = pb.configs || [];
+    const cfg     = configs[idx] || { type: 'trash' };
 
-    let treasure = null;
-    let coins = 0;
+    let treasure    = null;
+    let coins       = 0;
+    let openRecord  = { type: cfg.type };
+    let rewardHtml  = '';
     let displayEmoji = '📦';
-    let rewardHtml = '';
 
     if (cfg.type === 'coin') {
-      // 純鵝蛋幣
       coins = cfg.amount || 1;
       rpg.dungeonEggCoins += coins;
       displayEmoji = '🥚';
+      openRecord.coins = coins;
       rewardHtml = `<span style="color:#fbbf24;">地城鵝蛋幣 ×${coins}</span>`;
     } else {
-      // 依箱型決定稀有度池
       let targetRarity;
       if (cfg.type === 'high') {
         targetRarity = Math.random() < 0.30 ? 'goose' : 'legend';
@@ -23484,43 +23575,54 @@ ${b.text}
       }
       const pool = DUNGEON_TREASURES.filter(t => t.rarity === targetRarity);
       if (pool.length > 0) treasure = pool[Math.floor(Math.random() * pool.length)];
-      if (treasure) rpg.dungeonTreasures.push(treasure.id);
-      const rc = _DT_RARITY_COLOR[treasure?.rarity] || '#9ca3af';
+      if (treasure) {
+        rpg.dungeonTreasures.push(treasure.id);
+        openRecord.treasure_id = treasure.id;
+      }
       displayEmoji = cfg.type === 'high' ? '✨' : '📦';
+      const rc = _DT_RARITY_COLOR[treasure?.rarity] || '#9ca3af';
       rewardHtml = treasure
         ? `<span style="color:${rc};">${_DT_RARITY_NAME[treasure.rarity]||''} ${treasure.name}</span>`
         : '<span style="color:#6b7280;">（空箱）</span>';
     }
 
-    // 標記已開、更新格子外觀
-    el.dataset.opened = '1';
-    const rc2 = treasure ? (_DT_RARITY_COLOR[treasure.rarity] || '#9ca3af') : (cfg.type === 'coin' ? '#fbbf24' : '#6b7280');
-    el.innerHTML = `<div style="font-size:20px;">${displayEmoji}</div>
-      <div style="font-size:8px;color:${rc2};margin-top:2px;text-align:center;line-height:1.3;word-break:break-all;">
-        ${treasure ? treasure.name : (cfg.type === 'coin' ? `幣×${coins}` : '空')}
-      </div>`;
-
-    const remain = limit - (alreadyOpened + 1);
-    const remainEl = document.getElementById('dboxRemain');
-    if (remainEl) remainEl.textContent = remain;
-
-    // 追加到獎品列表
-    const listEl = document.getElementById('dungeonBoxRewards');
-    if (listEl) {
-      const d = document.createElement('div');
-      d.style.cssText = 'font-size:12px;padding:5px 10px;background:rgba(0,0,0,0.3);border-radius:6px;margin-bottom:4px;line-height:1.6;';
-      d.innerHTML = `📦 #${idx+1} → ${rewardHtml}`;
-      listEl.appendChild(d);
-    }
-
-    if (remain <= 0) {
-      const statusEl = document.getElementById('dboxStatusLine');
-      if (statusEl) statusEl.innerHTML = '<span style="color:#4ade80;font-weight:700;">✅ 全部開啟完畢！</span>';
-    }
+    // 存開啟紀錄
+    if (!pb.openedItems) pb.openedItems = {};
+    pb.openedItems[idx] = openRecord;
+    pb.opened = Object.keys(pb.openedItems).length;
 
     saveData();
+
+    // 顯示即時 toast
+    if (cfg.type === 'coin') {
+      showToast(`🥚 #${idx+1}：地城鵝蛋幣 ×${coins}！`);
+    } else if (treasure) {
+      const rc = _DT_RARITY_COLOR[treasure.rarity] || '#9ca3af';
+      showToast(`📦 #${idx+1}：${_DT_RARITY_NAME[treasure.rarity]||''} ${treasure.name}！`);
+    } else {
+      showToast(`📦 #${idx+1}：空箱…`);
+    }
+
     if (typeof updateStaminaUI === 'function') updateStaminaUI();
     if (typeof renderDungeonTreasures === 'function') renderDungeonTreasures();
+
+    // 檢查是否已達開啟次數上限 → 延遲後清除並回首頁
+    if (pb.opened >= pb.limit) {
+      // 更新狀態文字，再過 1.5 秒自動回主頁
+      const statusEl = document.getElementById('dboxStatusLine');
+      if (statusEl) statusEl.innerHTML = '<span style="color:#4ade80;font-weight:700;">✅ 全部開啟完畢！即將返回…</span>';
+      setTimeout(() => {
+        const rpg2 = getRpg(getMe());
+        if (rpg2) {
+          rpg2.dungeonPendingBoxes = null;
+          saveData();
+        }
+        renderDungeon();
+      }, 1500);
+    } else {
+      // 局部刷新：重新渲染整個副本區域（以反映已開格子）
+      renderDungeon();
+    }
   }
   window.dungeonOpenBox = dungeonOpenBox;
 
