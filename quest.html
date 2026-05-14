@@ -2408,6 +2408,7 @@
       <h2 style="color:#e9d5ff;"><span>🏰 副本探險</span> <span style="font-size:11px; color:#a78bfa; font-weight:500;">（5層挑戰・次數評分・Roguelike BUFF）</span></h2>
       <div id="dungeonBody"></div>
       <div id="dungeonFightResult"></div>
+      <div id="dungeonBattleHistoryArea"></div>
     </div>
 
     <div class="card" style="background:linear-gradient(135deg,#0a0514,#120a1e); border:1px solid #4c1d95;">
@@ -13082,6 +13083,7 @@
     renderPartyHistory();
     renderDungeon();
     renderDungeonTreasures();
+    renderDungeonBattleHistory(); // ⭐ 地城戰鬥歷史（最多 10 場）
     renderForageHistory(); // ⭐ 自己最近 5 場打怪戰報
     renderPersonalBossHistory(); // ⭐ 個人王最近 5 場戰報
     renderWbHistory(); // ⭐ 世界王最近 5 場戰報
@@ -15569,7 +15571,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260514140014';
+  const APP_VERSION = '20260514140456';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -23328,6 +23330,51 @@ ${b.text}
     run.totalRounds += rounds;
     run.maxHit       = Math.max(run.maxHit || 0, maxHitFloor);
 
+    // ⭐ 儲存戰鬥回放快照
+    try {
+      const _dfId = 'df_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+      const _dfCls = CLASSES[rpg.class] || {};
+      const _dfStats = (typeof computeStats === 'function') ? computeStats(me) : {};
+      const _dfSnap = {
+        id:          _dfId,
+        ts:          Date.now(),
+        floor:       floorIdx + 1,
+        bossName:    monster.name,
+        bossIcon:    _fs.icon,
+        bossLevel:   _fs.level,
+        won:         result.won,
+        dmgDealt,
+        rounds,
+        playerSnap: {
+          name:            me.name,
+          level:           rpg.level,
+          maxHp:           _dfStats.maxHp || 1,
+          maxMp:           _dfStats.maxMp || 1,
+          class:           rpg.class,
+          baseCrit:        result.archerStats?.baseCrit ?? null,
+          classImage:      _dfCls.image || null,
+          equippedCosmetic: rpg.equippedCosmetic || null,
+          equippedHat:     rpg.equippedHat || null,
+          equippedBody:    rpg.equippedBody || null,
+          equippedWeapon:  rpg.equippedWeapon || null,
+        },
+        monsterSnap: {
+          name:   monster.name,
+          icon:   _fs.icon,
+          level:  _fs.level,
+          maxHp:  bossHp,
+        },
+      };
+      // log 只存 localStorage（不進 rpg / Firebase，避免資料量爆炸）
+      try { localStorage.setItem('dungeonLog_' + _dfId, JSON.stringify((result.log || []).slice(0, 800))); } catch(e) {}
+      if (!rpg.dungeonBattleHistory) rpg.dungeonBattleHistory = [];
+      rpg.dungeonBattleHistory.unshift(_dfSnap);
+      if (rpg.dungeonBattleHistory.length > 10) {
+        const _dropped = rpg.dungeonBattleHistory.splice(10);
+        for (const _d of _dropped) { try { localStorage.removeItem('dungeonLog_' + _d.id); } catch(e) {} }
+      }
+    } catch(e) { console.warn('[dungeonFight] 戰報儲存失敗', e); }
+
     const resultEl = document.getElementById('dungeonFightResult');
 
     if (result.won) {
@@ -23396,6 +23443,7 @@ ${b.text}
     }
 
     if (typeof updateStaminaUI === 'function') updateStaminaUI();
+    if (typeof renderDungeonBattleHistory === 'function') renderDungeonBattleHistory();
   }
   window.dungeonFight = dungeonFight;
 
@@ -23683,6 +23731,60 @@ ${b.text}
     renderDungeon();
   }
   window.dungeonAbandon = dungeonAbandon;
+
+  // ══════════════════════════════════════════════════════
+  // ⭐ 地城戰鬥歷史 / 回放
+  // ══════════════════════════════════════════════════════
+
+  function renderDungeonBattleHistory() {
+    const area = document.getElementById('dungeonBattleHistoryArea');
+    if (!area) return;
+    const me = getMe();
+    if (!me) { area.innerHTML = ''; return; }
+    const rpg = getRpg(me);
+    const list = Array.isArray(rpg.dungeonBattleHistory) ? rpg.dungeonBattleHistory : [];
+    if (!list.length) { area.innerHTML = ''; return; }
+
+    const rows = list.slice(0, 10).map(h => {
+      const time = (typeof formatRelativeTime === 'function') ? formatRelativeTime(h.ts) : '';
+      const resultLabel = h.won  ? '🏆 勝利' : '💀 失敗';
+      const resultColor = h.won  ? '#86efac' : '#fca5a5';
+      const hasLog = !!(h.id && localStorage.getItem('dungeonLog_' + h.id));
+      return `
+        <button class="boss-history-row ${h.won ? 'is-kill' : ''}"
+                style="cursor:${hasLog ? 'pointer' : 'default'}; width:100%; text-align:left;"
+                ${hasLog ? `onclick="replayDungeonFight('${h.id}')"` : ''}>
+          <span class="bh-icon">${h.bossIcon || '🪿'}</span>
+          <div class="bh-meta">
+            <div class="bh-line1">
+              F${h.floor || '?'} ${escapeHtml(h.bossName || '?')}
+              <span style="color:${resultColor}; font-weight:700; margin-left:6px;">${resultLabel}</span>
+            </div>
+            <div class="bh-line2">傷害 <b>${(h.dmgDealt || 0).toLocaleString()}</b>　·　${h.rounds || 0} 回合　·　${time}</div>
+          </div>
+          <span class="bh-play">${hasLog ? '▶' : ''}</span>
+        </button>`;
+    }).join('');
+
+    area.innerHTML = `
+      <div class="boss-history" style="margin-top:10px;">
+        <div class="boss-history-title">📜 地城戰鬥記錄（最多 10 場）　<span style="font-weight:500; opacity:0.75;">點 → 重播</span></div>
+        ${rows}
+      </div>`;
+  }
+  window.renderDungeonBattleHistory = renderDungeonBattleHistory;
+
+  function replayDungeonFight(historyId) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const list = Array.isArray(rpg.dungeonBattleHistory) ? rpg.dungeonBattleHistory : [];
+    const snap = list.find(h => h.id === historyId);
+    if (!snap) { showToast('找不到該戰報'); return; }
+    let log = [];
+    try { log = JSON.parse(localStorage.getItem('dungeonLog_' + historyId) || '[]'); } catch(e) { log = []; }
+    return _doReplay({ ...snap, log });
+  }
+  window.replayDungeonFight = replayDungeonFight;
 
   // ══════════════════════════════════════════════════════
   // ⭐ 地城寶物交易系統
@@ -30593,8 +30695,9 @@ ${b.text}
         ...data,
         rpg: {
           ...rpg,
-          personalBossHistory: strip(rpg.personalBossHistory),
-          forageBattleHistory: strip(rpg.forageBattleHistory),
+          personalBossHistory:   strip(rpg.personalBossHistory),
+          forageBattleHistory:   strip(rpg.forageBattleHistory),
+          dungeonBattleHistory:  strip(rpg.dungeonBattleHistory),
         },
       };
     };
@@ -30965,9 +31068,16 @@ ${b.text}
               delete r.hellDeeds;          // 地獄使者行為記錄
               delete r.forageBattleHistory;
               delete r.battleLog;
-              // ⭐ 同 save()：personalBossHistory log 陣列不備份進 Firestore
+              // ⭐ 同 save()：personalBossHistory / dungeonBattleHistory log 不備份進 Firestore
               if (Array.isArray(r.personalBossHistory)) {
                 r.personalBossHistory = r.personalBossHistory.map(h => {
+                  if (!h) return h;
+                  const { log, ...rest } = h;
+                  return rest;
+                });
+              }
+              if (Array.isArray(r.dungeonBattleHistory)) {
+                r.dungeonBattleHistory = r.dungeonBattleHistory.map(h => {
                   if (!h) return h;
                   const { log, ...rest } = h;
                   return rest;
