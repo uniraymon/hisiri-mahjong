@@ -6296,24 +6296,66 @@
     { id:'pen10', label:'💥 鵝蛋穿透',  desc:'守護者物理抗性 -10%',        emoji:'🟠' },
   ];
   const DUNGEON_BOSS_DEF = {
-    id:   'dungeon_boss',
-    name: '⚔️ 副本守護者',
-    icon: '⚔️',
-    verb: '守護者斬擊',
-    skills: [
-      { verb: '守護者怒擊', mult: 2.2, cooldown: 3 },
-      { verb: '防壁粉碎',   mult: 1.6, applyStatus: { type: 'paralyze', charges: 2, chance: 0.50 }, cooldown: 4 },
-      { verb: '絕望一擊',   mult: 1.8, ignoreDef: true, cooldown: 5 },
-    ],
-    maxRounds: 200,   // 血量大，多給回合
-    defPen: 0.30,
-    // 每層獨立屬性（index 0 = Floor 1）
+    id:      'dungeon_boss',
+    defPen:  0.30,
+    maxRounds: 200,
+    // 每層獨立屬性（index 0 = Floor 1）——各層有專屬名稱、台詞、圖示、普攻語
     floorStats: [
-      { level: 40, atk:  600, def:  600, physRes: 0.10, magRes: 0.10, spd:  80 },
-      { level: 44, atk:  825, def:  950, physRes: 0.13, magRes: 0.13, spd: 115 },
-      { level: 48, atk: 1050, def: 1300, physRes: 0.15, magRes: 0.15, spd: 150 },
-      { level: 52, atk: 1275, def: 1650, physRes: 0.18, magRes: 0.18, spd: 175 },
-      { level: 56, atk: 1500, def: 2000, physRes: 0.20, magRes: 0.20, spd: 200 },
+      {
+        level: 40, atk:  600, def:  600, physRes: 0.10, magRes: 0.10, spd:  80,
+        icon: '🪿', name: '嘎嘎阿福',
+        quote: '「喂！你亂闖人家地盤！我要告你！嗯嗯嗯！」',
+        verb: '菜鵝啄擊',
+        skills: [
+          { verb: '氣噗噗展翅', mult: 2.2, cooldown: 3 },
+          { verb: '嗯嗯嗯踩踏', mult: 1.6, applyStatus: { type: 'paralyze', charges: 2, chance: 0.50 }, cooldown: 4 },
+          { verb: '福氣大啄', mult: 1.8, ignoreDef: true, cooldown: 5 },
+        ],
+      },
+      {
+        level: 44, atk:  825, def:  950, physRes: 0.13, magRes: 0.13, spd: 115,
+        icon: '😤', name: '鵝式武士二郎',
+        quote: '「我在這蹲了三百年，就等你來挑釁！！準備後悔吧！」',
+        verb: '武士鵝斬',
+        skills: [
+          { verb: '三百年怒氣爆發', mult: 2.2, cooldown: 3 },
+          { verb: '武士麻痺斬', mult: 1.6, applyStatus: { type: 'paralyze', charges: 2, chance: 0.50 }, cooldown: 4 },
+          { verb: '居合鵝一擊', mult: 1.8, ignoreDef: true, cooldown: 5 },
+        ],
+      },
+      {
+        level: 48, atk: 1050, def: 1300, physRes: 0.15, magRes: 0.15, spd: 150,
+        icon: '💢', name: '暴怒鵝三太子',
+        quote: '「我上個月剛健身完！！你今天自己找死的！嗯嗯嗯！」',
+        verb: '太子鵝暴打',
+        skills: [
+          { verb: '健身後怒擊', mult: 2.2, cooldown: 3 },
+          { verb: '太子震地踏', mult: 1.6, applyStatus: { type: 'paralyze', charges: 2, chance: 0.50 }, cooldown: 4 },
+          { verb: '三太子極怒斬', mult: 1.8, ignoreDef: true, cooldown: 5 },
+        ],
+      },
+      {
+        level: 52, atk: 1275, def: 1650, physRes: 0.18, magRes: 0.18, spd: 175,
+        icon: '😡', name: '鵝鵝黑道四哥',
+        quote: '「知道我有多少小弟嗎？......只有一隻，但是牠很兇的，跟我一樣。」',
+        verb: '黑道鵝踢',
+        skills: [
+          { verb: '小弟聯合炮', mult: 2.2, cooldown: 3 },
+          { verb: '黑道恐嚇術', mult: 1.6, applyStatus: { type: 'paralyze', charges: 2, chance: 0.50 }, cooldown: 4 },
+          { verb: '四哥必殺回頭踢', mult: 1.8, ignoreDef: true, cooldown: 5 },
+        ],
+      },
+      {
+        level: 56, atk: 1500, def: 1500, physRes: 0.20, magRes: 0.20, spd: 200,
+        icon: '👑', name: '鵝皇終極體嗎嗯嗯',
+        quote: '「朕是傳說！朕是神話！朕是無敵的！朕......其實有一點怕黑......」',
+        verb: '鵝皇降臨斬',
+        skills: [
+          { verb: '皇者天降鵝爪', mult: 2.2, cooldown: 3 },
+          { verb: '黃金羽毛震顫', mult: 1.6, applyStatus: { type: 'paralyze', charges: 2, chance: 0.50 }, cooldown: 4 },
+          { verb: '鵝皇終極絕招', mult: 1.8, ignoreDef: true, cooldown: 5 },
+        ],
+      },
     ],
   };
 
@@ -15527,7 +15569,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260514132600';
+  const APP_VERSION = '20260514132849';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -22910,8 +22952,9 @@ ${b.text}
               const fs = DUNGEON_BOSS_DEF.floorStats[i];
               const hpLabel = hp >= 100000000 ? (hp/100000000).toFixed(1)+'億' : (hp/10000).toLocaleString()+'萬';
               return `<div style="text-align:center;background:rgba(109,40,217,0.15);border:1px solid #4c1d95;border-radius:8px;padding:6px 2px;">
-                <div style="font-size:10px;color:#a78bfa;font-weight:700;">F${i+1}</div>
-                <div style="font-size:9px;color:#e9d5ff;font-weight:600;">${hpLabel}</div>
+                <div style="font-size:10px;color:#a78bfa;font-weight:700;">F${i+1} ${fs.icon}</div>
+                <div style="font-size:8px;color:#e9d5ff;font-weight:700;margin:1px 0;">${fs.name}</div>
+                <div style="font-size:9px;color:#c4b5fd;">${hpLabel}</div>
                 <div style="font-size:8px;color:#6b7280;">Lv${fs.level}</div>
               </div>`;
             }).join('')}
@@ -22968,9 +23011,10 @@ ${b.text}
 
           <div style="background:rgba(0,0,0,0.35);border:1px solid #4c1d95;border-radius:10px;padding:10px;margin-bottom:8px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-              <span style="font-size:13px;font-weight:800;color:#e9d5ff;">${DUNGEON_BOSS_DEF.icon} Floor ${run.floor} 守護者 Lv ${DUNGEON_BOSS_DEF.floorStats[floorIdx].level}</span>
+              <span style="font-size:13px;font-weight:800;color:#e9d5ff;">${DUNGEON_BOSS_DEF.floorStats[floorIdx].icon} ${DUNGEON_BOSS_DEF.floorStats[floorIdx].name} <span style="font-size:10px;color:#a78bfa;font-weight:500;">Lv${DUNGEON_BOSS_DEF.floorStats[floorIdx].level}</span></span>
               <span style="font-size:10px;color:#a78bfa;">${curHp.toLocaleString()} HP</span>
             </div>
+            <div style="font-size:10px;color:#fbbf24;font-style:italic;margin-bottom:6px;padding:4px 6px;background:rgba(0,0,0,0.2);border-radius:6px;">${DUNGEON_BOSS_DEF.floorStats[floorIdx].quote}</div>
             <div style="background:#1a0a2e;border-radius:6px;height:10px;overflow:hidden;">
               <div style="height:100%;width:${hpPct.toFixed(1)}%;background:linear-gradient(90deg,#dc2626,#ef4444);border-radius:6px;transition:width 0.5s;"></div>
             </div>
@@ -23076,8 +23120,8 @@ ${b.text}
 
     const monster = {
       id:        DUNGEON_BOSS_DEF.id,
-      name:      DUNGEON_BOSS_DEF.name,
-      icon:      DUNGEON_BOSS_DEF.icon,
+      name:      `${_fs.icon} ${_fs.name}`,
+      icon:      _fs.icon,
       level:     _fs.level,
       hp:        bossHp,
       maxHp:     bossHp,
@@ -23087,8 +23131,8 @@ ${b.text}
       defPen:    DUNGEON_BOSS_DEF.defPen,
       physRes,
       magRes:    _fs.magRes,
-      verb:      DUNGEON_BOSS_DEF.verb,
-      skills:    DUNGEON_BOSS_DEF.skills,
+      verb:      _fs.verb,
+      skills:    _fs.skills,
       maxRounds: DUNGEON_BOSS_DEF.maxRounds,
       goldDrop:  0, xpDrop: 0,
     };
