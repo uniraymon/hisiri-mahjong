@@ -49,53 +49,98 @@ body { font-family: 'Microsoft JhengHei', '微軟正黑體', sans-serif; backgro
 #board-area::-webkit-scrollbar-track { background: #0d1117; }
 #board-area::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
 
-#board {
-  display: grid;
-  grid-template-columns: repeat(20, 56px);
-  grid-template-rows: repeat(10, 56px);
-  width: 1120px; height: 560px;
-  border: 2px solid #30363d; border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 0 40px rgba(246,211,101,0.1);
+/* ===== BOARD: 22×20 方形路徑圍繞台灣島 ===== */
+#board-wrap {
+  position: relative;
+  width: 1056px; height: 960px; /* 22×48 × 20×48 */
+  flex-shrink: 0;
 }
 
+#board {
+  display: grid;
+  grid-template-columns: repeat(22, 48px);
+  grid-template-rows: repeat(20, 48px);
+  width: 1056px; height: 960px;
+}
+
+/* 中央台灣島嶼背景 */
+.center-island {
+  grid-column: 2 / 22;
+  grid-row: 2 / 20;
+  background: linear-gradient(160deg, #1a6b35 0%, #2d8a4e 35%, #3aaa60 65%, #266e40 100%);
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid rgba(0,80,0,0.4);
+}
+.center-island svg { opacity: 0.35; position: absolute; inset: 0; width: 100%; height: 100%; }
+.island-title {
+  font-size: 28px; font-weight: 900; color: rgba(255,255,255,0.5);
+  letter-spacing: 8px; text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  pointer-events: none; z-index: 1;
+}
+
+/* 外圍海洋 */
+#board-ocean {
+  position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(135deg, #0a3d6b 0%, #1565c0 40%, #0d47a1 70%, #0a2d5a 100%);
+  border-radius: 12px;
+  box-shadow: 0 0 40px rgba(21,101,192,0.4), inset 0 0 60px rgba(0,0,80,0.3);
+}
+
+/* 格子通用樣式 */
 .square {
-  width: 56px; height: 56px;
-  border: 1px solid rgba(0,0,0,0.25);
+  width: 48px; height: 48px;
+  border: 1px solid rgba(0,0,0,0.3);
   position: relative; overflow: hidden;
   display: flex; flex-direction: column;
-  align-items: center; justify-content: flex-start;
-  padding: 2px 1px; cursor: default; transition: filter 0.15s;
-  user-select: none;
+  align-items: center; justify-content: center;
+  cursor: default; transition: filter 0.15s, transform 0.1s;
+  user-select: none; z-index: 2;
 }
-.square:hover { filter: brightness(1.15); z-index: 10; }
+.square:hover { filter: brightness(1.2); transform: scale(1.05); z-index: 20; }
 .square.clickable { cursor: pointer; }
+
+/* 格子內容 */
 .sq-num {
   position: absolute; top: 1px; left: 2px;
-  font-size: 7px; opacity: 0.6; line-height: 1;
+  font-size: 6px; opacity: 0.5; line-height: 1; font-weight: 600;
 }
 .sq-name {
-  font-size: 7.5px; font-weight: 600; text-align: center;
-  line-height: 1.2; margin-top: 10px; padding: 0 1px;
-  word-break: break-all; max-height: 22px; overflow: hidden;
+  font-size: 7px; font-weight: 700; text-align: center;
+  line-height: 1.15; padding: 0 2px;
+  word-break: keep-all;
 }
+.sq-price {
+  font-size: 6.5px; font-weight: 600; opacity: 0.9;
+  margin-top: 1px;
+}
+/* 地產群組色帶（朝中央方向）*/
+.sq-band {
+  position: absolute;
+  background: rgba(0,0,0,0.25);
+}
+.sq-top    .sq-band { bottom: 0; left: 0; right: 0; height: 5px; }
+.sq-right  .sq-band { left:   0; top:  0; bottom: 0; width: 5px; }
+.sq-bottom .sq-band { top:    0; left: 0; right: 0; height: 5px; }
+.sq-left   .sq-band { right:  0; top:  0; bottom: 0; width: 5px; }
+
 .sq-level {
   position: absolute; bottom: 2px; left: 2px;
-  font-size: 7px; color: #FFD700; letter-spacing: -1px;
+  font-size: 7px; color: #FFD700; letter-spacing: -1px; line-height: 1;
 }
 .owner-dot {
   position: absolute; top: 2px; right: 2px;
-  width: 7px; height: 7px; border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.5);
+  width: 8px; height: 8px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.7);
 }
 .sq-players {
   position: absolute; bottom: 2px; right: 2px;
   display: flex; gap: 1px; flex-wrap: wrap; justify-content: flex-end;
-  max-width: 36px;
+  max-width: 40px;
 }
 .player-marker {
-  width: 13px; height: 13px; border-radius: 50%;
-  border: 1.5px solid rgba(255,255,255,0.8);
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.9);
   font-size: 7px; font-weight: 900;
   display: flex; align-items: center; justify-content: center;
   color: #fff; text-shadow: 0 0 2px rgba(0,0,0,0.8);
@@ -388,9 +433,9 @@ body { font-family: 'Microsoft JhengHei', '微軟正黑體', sans-serif; backgro
 <div id="game-screen">
   <!-- Board -->
   <div id="board-area">
-    <div id="board"></div>
-    <div style="margin-top:10px; font-size:11px; color:#444; text-align:center;">
-      ← 左右捲動查看完整 200 格地圖 →
+    <div id="board-wrap">
+      <div id="board-ocean"></div>
+      <div id="board"></div>
     </div>
   </div>
 
@@ -708,38 +753,74 @@ function renderAll() {
   updateRollBtn();
 }
 
+// ===== 80格路徑 → 22×20 CSS Grid 座標 =====
+const BC = 22, BR = 20; // BOARD_COLS, BOARD_ROWS
+function getGridPos(N) {
+  if (N < BC)                      return { col: N + 1,      row: 1 };           // 上排
+  if (N < BC + BR - 2)             return { col: BC,         row: N - BC + 2 };  // 右排
+  if (N < 2 * BC + BR - 2)        return { col: 2*BC+BR-3-N, row: BR };          // 下排
+  return                                  { col: 1,          row: 2*(BC+BR)-4-N+1 }; // 左排
+}
+function getSide(N) {
+  if (N < BC)            return 'top';
+  if (N < BC + BR - 2)   return 'right';
+  if (N < 2*BC + BR - 2) return 'bottom';
+  return 'left';
+}
+
 // ===== BOARD RENDER =====
 function renderBoard() {
   if (!boardData || !gameState) return;
   const board = document.getElementById('board');
   board.innerHTML = '';
 
-  // Build player position map
+  // 中央島嶼（固定佔 col 2-21, row 2-19）
+  const island = document.createElement('div');
+  island.className = 'center-island';
+  island.style.gridColumn = '2 / 22';
+  island.style.gridRow = '2 / 20';
+  island.innerHTML = `
+    <svg viewBox="0 0 960 864" xmlns="http://www.w3.org/2000/svg">
+      <!-- 台灣島輪廓（簡化版）-->
+      <path d="M480,60 L560,80 L610,130 L640,220 L630,350 L590,480 L540,580 L480,640 L420,620
+               L370,540 L340,420 L350,290 L380,180 L420,100 Z"
+            fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+      <!-- 山脈 -->
+      <path d="M480,200 L510,150 L540,200 M460,320 L490,270 L520,320 M450,440 L475,390 L500,440"
+            fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+      <!-- 澎湖 -->
+      <ellipse cx="220" cy="420" rx="30" ry="20" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+      <!-- 城市點 -->
+      <circle cx="510" cy="180" r="5" fill="rgba(255,220,100,0.7)"/>
+      <circle cx="490" cy="340" r="4" fill="rgba(255,220,100,0.6)"/>
+      <circle cx="470" cy="510" r="4" fill="rgba(255,220,100,0.6)"/>
+      <circle cx="455" cy="600" r="3" fill="rgba(255,220,100,0.5)"/>
+    </svg>
+    <div class="island-title">台灣</div>`;
+  board.appendChild(island);
+
+  // 玩家位置 map
   const playerAtPos = {};
   gameState.players.forEach(p => {
     if (!playerAtPos[p.position]) playerAtPos[p.position] = [];
     playerAtPos[p.position].push(p);
   });
-
   const me = gameState.players.find(p => p.id === myId);
 
   boardData.forEach((sq, i) => {
-    const row = Math.floor(i / 20);
-    const col = row % 2 === 0 ? (i % 20) + 1 : 20 - (i % 20);
+    const { col, row } = getGridPos(i);
+    const side = getSide(i);
 
     const div = document.createElement('div');
-    div.className = 'square';
+    div.className = `square sq-${side}`;
     if (sq.type === 'property') div.classList.add('clickable');
     if (me && me.position === i) div.classList.add('my-position');
-    div.style.backgroundColor = sq.color;
-    div.style.color = sq.textColor || '#fff';
-    div.style.gridColumn = col;
-    div.style.gridRow = row + 1;
+    div.style.cssText = `background:${sq.color};color:${sq.textColor||'#fff'};grid-column:${col};grid-row:${row}`;
     div.dataset.position = i;
 
-    // Owner dot + level
+    // 地產所有者色帶＋等級
     const prop = gameState.properties[i];
-    let ownerDot = '', levelStars = '';
+    let ownerDot = '', levelStars = '', bandColor = '';
     if (prop) {
       const owner = gameState.players.find(p => p.id === prop.ownerId);
       if (owner) {
@@ -748,39 +829,43 @@ function renderBoard() {
       }
     }
 
-    // Player markers
+    // 地產價格顯示
+    const priceHtml = sq.type === 'property'
+      ? `<div class="sq-price">$${sq.price.toLocaleString()}</div>` : '';
+
+    // 特殊格圖示
+    const icons = { start:'🏠', jail:'🔒', free_parking:'🅿️', go_to_jail:'👮',
+                    chance:'❓', chest:'🎁', tax:'🏛️', hospital:'🏥',
+                    bank_square:'🏦', stock_market:'📈', casino:'🎰', airport:'✈️' };
+    const icon = icons[sq.type] || '';
+
+    // 玩家棋子
     const here = playerAtPos[i] || [];
     const markers = here.map(p =>
       `<div class="player-marker" style="background:${p.color}" title="${p.name}">${p.name[0]}</div>`
     ).join('');
 
-    // Jail badge
-    const jailBadge = (me && me.position === 50 && me.jailTurns > 0 && i === 50)
+    const jailBadge = (me && me.jailTurns > 0 && me.position === 21 && i === 21)
       ? `<div class="jail-badge">🔒${me.jailTurns}</div>` : '';
 
     div.innerHTML = `
       <div class="sq-num">${i}</div>
       ${ownerDot}
+      ${icon ? `<div style="font-size:14px;line-height:1">${icon}</div>` : ''}
       <div class="sq-name">${sq.name}</div>
-      ${levelStars}
-      ${jailBadge}
-      <div class="sq-players">${markers}</div>
-    `;
+      ${priceHtml}
+      ${levelStars}${jailBadge}
+      <div class="sq-players">${markers}</div>`;
 
-    if (sq.type === 'property') {
-      div.addEventListener('click', () => openPropertyModal(i));
-    }
-
+    if (sq.type === 'property') div.addEventListener('click', () => openPropertyModal(i));
     board.appendChild(div);
   });
 
-  // Scroll my position into view
+  // 我的位置捲動到中央
   if (me) {
     const mySquare = board.querySelector(`[data-position="${me.position}"]`);
     if (mySquare) {
-      const area = document.getElementById('board-area');
-      area.scrollLeft = mySquare.offsetLeft - area.clientWidth / 2 + 28;
-      area.scrollTop = mySquare.offsetTop - area.clientHeight / 2 + 28;
+      mySquare.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
     }
   }
 }

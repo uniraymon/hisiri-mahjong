@@ -21,102 +21,124 @@ const STAMINA_REGEN_MS = 5 * 60 * 1000; // 5分鐘回1體力（測試可改 30 *
 const MAX_STAMINA = 5;
 const INITIAL_MONEY = 15000;
 const PASS_START_BONUS = 2000;
-const BOARD_SIZE = 200;
+const BOARD_SIZE = 80;
+const BOARD_COLS = 22; // 上下各22格
+const BOARD_ROWS = 20; // 左右各20格（含角落）
 const PLAYER_COLORS = ['#E74C3C','#3498DB','#2ECC71','#F39C12','#9B59B6','#E67E22'];
 const MAX_PROPERTY_LEVEL = 4;
 
-// ===== 地圖建置 =====
+// ===== 地圖建置（80格，方形路徑圍繞台灣地圖）=====
+// 格局：上22格(0-21) → 右18格(22-39) → 下22格(40-61) → 左18格(62-79)
+// 角落：0=起點, 21=監獄, 40=自由廣場, 61=去坐牢
 function buildBoard() {
-  const board = Array.from({ length: BOARD_SIZE }, (_, i) => ({
-    position: i, type: 'empty', name: '空地', color: '#BDC3C7', textColor: '#333'
-  }));
-
-  // 固定特殊格
-  board[0]   = { position: 0,   type: 'start',        name: '起點',     color: '#27AE60', textColor: '#fff', bonus: PASS_START_BONUS };
-  board[50]  = { position: 50,  type: 'jail',          name: '監獄',     color: '#7F8C8D', textColor: '#fff' };
-  board[100] = { position: 100, type: 'free_parking',  name: '免費停車', color: '#8E44AD', textColor: '#fff' };
-  board[150] = { position: 150, type: 'go_to_jail',    name: '去坐牢',   color: '#C0392B', textColor: '#fff' };
-
-  // 事件格配置
-  const eventMap = {
-    chance:       [7,17,22,32,42,57,67,72,82,92,107,117,122,132,142,157,167,172,182,192],
-    chest:        [12,27,37,52,62,77,87,102,112,127,137,152,162,177,187],
-    tax:          [4,24,44,64,84,104,124,144,164,184],
-    casino:       [38,63,88,138,188],
-    hospital:     [25,75,125,175],
-    stock_market: [15,65,115,165],
-    bank_square:  [35,85,135,185],
-    airport:      [48,98,148,198],
-  };
-  const eventDefs = {
-    chance:       { name: '命運',     color: '#E67E22', textColor: '#fff' },
-    chest:        { name: '福利',     color: '#3498DB', textColor: '#fff' },
-    tax:          { name: '稅務局',   color: '#E74C3C', textColor: '#fff', amount: 1000 },
-    casino:       { name: '賭場',     color: '#F39C12', textColor: '#fff' },
-    hospital:     { name: '醫院',     color: '#E91E63', textColor: '#fff', fee: 1500 },
-    stock_market: { name: '股票市場', color: '#1ABC9C', textColor: '#fff' },
-    bank_square:  { name: '銀行',     color: '#2ECC71', textColor: '#fff' },
-    airport:      { name: '機場',     color: '#5DADE2', textColor: '#fff', fee: 500 },
-  };
-  Object.entries(eventMap).forEach(([type, positions]) => {
-    positions.forEach(p => { board[p] = { position: p, type, ...eventDefs[type] }; });
+  const _ = (type, name, opts = {}) => ({ type, name, color: '#BDC3C7', textColor: '#333', ...opts });
+  const P = (name, grpName, color, price) => ({
+    type: 'property', name,
+    groupName: grpName, color, textColor: '#fff',
+    price, rentBase: Math.floor(price * 0.1),
+    upgradeCost: Math.floor(price * 0.5),
   });
 
-  // 地產群組（8組各15筆 = 120個地產）
-  const groups = [
-    { name: '台北市', color: '#8B4513', textColor: '#fff', props: [
-      ['台北車站',800],['忠孝東路',850],['信義計畫',900],['仁愛路',950],['敦化南路',1000],
-      ['南京東路',1050],['和平東路',1050],['長安東路',1100],['光復南路',1100],['市民大道',1150],
-      ['新生南路',1150],['羅斯福路',1200],['大安路',1200],['文山大道',1250],['木柵路',1250] ]},
-    { name: '新北市', color: '#C0392B', textColor: '#fff', props: [
-      ['板橋大道',1400],['新莊路',1450],['三重街',1500],['蘆洲路',1500],['永和街',1550],
-      ['中和路',1550],['土城街',1600],['新店路',1600],['淡水大道',1650],['汐止路',1700],
-      ['瑞芳街',1700],['平溪路',1750],['深坑街',1750],['烏來路',1800],['石碇大道',1800] ]},
-    { name: '桃竹苗', color: '#9B59B6', textColor: '#fff', props: [
-      ['桃園大道',2000],['中壢路',2050],['楊梅街',2100],['龜山路',2100],['平鎮大道',2150],
-      ['新竹大道',2200],['竹北路',2250],['新豐街',2250],['苗栗路',2300],['頭份街',2350],
-      ['公館路',2350],['三義大道',2400],['南庄街',2400],['獅潭路',2450],['造橋大道',2450] ]},
-    { name: '台中市', color: '#2980B9', textColor: '#fff', props: [
-      ['台中大道',2800],['西屯路',2850],['北屯街',2900],['南屯路',2900],['烏日大道',2950],
-      ['霧峰路',3000],['大里街',3050],['太平路',3050],['豐原大道',3100],['東勢路',3150],
-      ['神岡街',3150],['清水路',3200],['梧棲大道',3200],['大肚街',3250],['龍井路',3250] ]},
-    { name: '彰雲嘉', color: '#27AE60', textColor: '#fff', props: [
-      ['彰化大道',3600],['員林路',3650],['溪湖街',3700],['北斗路',3700],['南投大道',3750],
-      ['草屯路',3800],['埔里街',3850],['集集路',3850],['雲林大道',3900],['斗六路',3950],
-      ['北港街',3950],['嘉義大道',4000],['民雄路',4050],['朴子街',4050],['布袋路',4100] ]},
-    { name: '台南高雄', color: '#D4AC0D', textColor: '#fff', props: [
-      ['台南大道',4500],['安平路',4550],['新化街',4600],['永康路',4600],['高雄大道',4700],
-      ['左營路',4750],['三民街',4800],['鳳山路',4800],['苓雅大道',4850],['前金路',4900],
-      ['旗津街',4950],['林園路',4950],['屏東大道',5000],['潮州路',5050],['恆春大道',5100] ]},
-    { name: '東亞', color: '#E67E22', textColor: '#fff', props: [
-      ['東京大道',6000],['大阪路',6100],['京都街',6200],['名古屋路',6200],['橫濱大道',6300],
-      ['首爾路',6400],['釜山街',6500],['濟州路',6500],['香港大道',6600],['澳門路',6700],
-      ['廣州街',6700],['上海路',6800],['北京大道',7000],['深圳路',7000],['成都大道',7100] ]},
-    { name: '歐美', color: '#E74C3C', textColor: '#fff', props: [
-      ['紐約大道',8500],['洛杉磯路',8600],['芝加哥街',8700],['休士頓路',8800],['舊金山大道',9000],
-      ['倫敦路',9200],['巴黎街',9400],['柏林路',9400],['羅馬大道',9600],['馬德里路',9800],
-      ['阿姆斯特丹街',10000],['維也納路',10200],['蘇黎世大道',10500],['盧森堡路',11000],['摩納哥大道',12000] ]},
+  // 顏色常數
+  const C = {
+    PH:'#A0522D', KL:'#CD853F', TP:'#C0392B', NT:'#E74C3C',
+    TY:'#8E44AD', YL:'#6C3483', HL:'#1A5276', TT:'#2471A3',
+    PT:'#0E6655', KH:'#117A65', TN:'#1E8449', CY:'#196F3D',
+    TC:'#1F618D', CH:'#2E4057', NI:'#4A235A', HC:'#784212',
+  };
+
+  const squares = [
+    // ── 上排（位置 0-21，從左到右）────────────────────────────
+    /*0 */ _('start',        '起　點',   { color:'#27AE60', textColor:'#fff', bonus: PASS_START_BONUS }),
+    /*1 */ P('澎湖馬公', '澎湖群島', C.PH, 600),
+    /*2 */ P('澎湖七美', '澎湖群島', C.PH, 650),
+    /*3 */ _('chance',       '命　運',   { color:'#E67E22', textColor:'#fff' }),
+    /*4 */ P('澎湖望安', '澎湖群島', C.PH, 700),
+    /*5 */ P('基隆市',   '基　隆', C.KL, 800),
+    /*6 */ _('airport',      '機　場',   { color:'#5DADE2', textColor:'#fff', fee: 500 }),
+    /*7 */ P('基隆港',   '基　隆', C.KL, 900),
+    /*8 */ P('基隆山',   '基　隆', C.KL, 1000),
+    /*9 */ _('tax',          '稅務局',   { color:'#C0392B', textColor:'#fff', amount: 1000 }),
+    /*10*/ P('台北松山', '台　北', C.TP, 1600),
+    /*11*/ P('台北信義', '台　北', C.TP, 1800),
+    /*12*/ _('chest',        '福　利',   { color:'#2980B9', textColor:'#fff' }),
+    /*13*/ P('台北大安', '台　北', C.TP, 2000),
+    /*14*/ P('台北中正', '台　北', C.TP, 2200),
+    /*15*/ _('stock_market', '股票市場', { color:'#1ABC9C', textColor:'#fff' }),
+    /*16*/ P('新北板橋', '新　北', C.NT, 1200),
+    /*17*/ P('新北淡水', '新　北', C.NT, 1300),
+    /*18*/ _('chance',       '命　運',   { color:'#E67E22', textColor:'#fff' }),
+    /*19*/ P('新北九份', '新　北', C.NT, 1400),
+    /*20*/ P('桃園大溪', '桃　園', C.TY, 1000),
+    /*21*/ _('jail',         '監　獄',   { color:'#7F8C8D', textColor:'#fff' }),
+
+    // ── 右排（位置 22-39，從上到下）─────────────────────────
+    /*22*/ P('桃園市區', '桃　園', C.TY, 1100),
+    /*23*/ P('桃園龜山', '桃　園', C.TY, 1200),
+    /*24*/ _('tax',          '稅務局',   { color:'#C0392B', textColor:'#fff', amount: 1000 }),
+    /*25*/ P('宜蘭市',   '宜　蘭', C.YL, 900),
+    /*26*/ P('宜蘭礁溪', '宜　蘭', C.YL, 1000),
+    /*27*/ _('chance',       '命　運',   { color:'#E67E22', textColor:'#fff' }),
+    /*28*/ P('宜蘭冬山', '宜　蘭', C.YL, 1100),
+    /*29*/ _('bank_square',  '銀　行',   { color:'#27AE60', textColor:'#fff' }),
+    /*30*/ P('花蓮市',   '花　蓮', C.HL, 1100),
+    /*31*/ P('花蓮太魯閣','花　蓮', C.HL, 1300),
+    /*32*/ _('chest',        '福　利',   { color:'#2980B9', textColor:'#fff' }),
+    /*33*/ P('花蓮七星潭','花　蓮', C.HL, 1400),
+    /*34*/ _('hospital',     '醫　院',   { color:'#E91E63', textColor:'#fff', fee: 1500 }),
+    /*35*/ P('台東市',   '台　東', C.TT, 900),
+    /*36*/ P('台東知本', '台　東', C.TT, 1000),
+    /*37*/ _('chance',       '命　運',   { color:'#E67E22', textColor:'#fff' }),
+    /*38*/ P('台東池上', '台　東', C.TT, 1100),
+    /*39*/ _('casino',       '賭　場',   { color:'#F39C12', textColor:'#fff' }),
+
+    // ── 下排（位置 40-61，從右到左）─────────────────────────
+    /*40*/ _('free_parking', '自由廣場', { color:'#8E44AD', textColor:'#fff' }),
+    /*41*/ P('屏東恆春', '屏　東', C.PT, 900),
+    /*42*/ P('屏東墾丁', '屏　東', C.PT, 1000),
+    /*43*/ _('chance',       '命　運',   { color:'#E67E22', textColor:'#fff' }),
+    /*44*/ P('屏東潮州', '屏　東', C.PT, 1100),
+    /*45*/ P('高雄苓雅', '高　雄', C.KH, 1400),
+    /*46*/ _('tax',          '稅務局',   { color:'#C0392B', textColor:'#fff', amount: 1200 }),
+    /*47*/ P('高雄左營', '高　雄', C.KH, 1500),
+    /*48*/ P('高雄鳳山', '高　雄', C.KH, 1600),
+    /*49*/ P('高雄信義', '高　雄', C.KH, 1800),
+    /*50*/ _('chest',        '福　利',   { color:'#2980B9', textColor:'#fff' }),
+    /*51*/ P('台南安平', '台　南', C.TN, 1300),
+    /*52*/ P('台南新化', '台　南', C.TN, 1400),
+    /*53*/ _('chance',       '命　運',   { color:'#E67E22', textColor:'#fff' }),
+    /*54*/ P('台南永康', '台　南', C.TN, 1500),
+    /*55*/ P('台南仁德', '台　南', C.TN, 1600),
+    /*56*/ _('bank_square',  '銀　行',   { color:'#27AE60', textColor:'#fff' }),
+    /*57*/ P('嘉義市',   '嘉　義', C.CY, 1100),
+    /*58*/ P('嘉義阿里山','嘉　義', C.CY, 1300),
+    /*59*/ _('tax',          '稅務局',   { color:'#C0392B', textColor:'#fff', amount: 1000 }),
+    /*60*/ P('嘉義朴子', '嘉　義', C.CY, 1000),
+    /*61*/ _('go_to_jail',   '去坐牢',   { color:'#922B21', textColor:'#fff' }),
+
+    // ── 左排（位置 62-79，從下到上）─────────────────────────
+    /*62*/ P('台中市',   '台　中', C.TC, 1500),
+    /*63*/ P('台中西屯', '台　中', C.TC, 1600),
+    /*64*/ _('chance',       '命　運',   { color:'#E67E22', textColor:'#fff' }),
+    /*65*/ P('台中北屯', '台　中', C.TC, 1700),
+    /*66*/ P('台中太平', '台　中', C.TC, 1800),
+    /*67*/ _('hospital',     '醫　院',   { color:'#E91E63', textColor:'#fff', fee: 1500 }),
+    /*68*/ P('彰化市',   '彰　化', C.CH, 1000),
+    /*69*/ P('彰化鹿港', '彰　化', C.CH, 1100),
+    /*70*/ _('chest',        '福　利',   { color:'#2980B9', textColor:'#fff' }),
+    /*71*/ P('彰化員林', '彰　化', C.CH, 1200),
+    /*72*/ P('南投埔里', '南　投', C.NI, 900),
+    /*73*/ _('chance',       '命　運',   { color:'#E67E22', textColor:'#fff' }),
+    /*74*/ P('南投日月潭','南　投', C.NI, 1200),
+    /*75*/ P('新竹市',   '新　竹', C.HC, 1100),
+    /*76*/ P('新竹竹北', '新　竹', C.HC, 1200),
+    /*77*/ _('tax',          '稅務局',   { color:'#C0392B', textColor:'#fff', amount: 1000 }),
+    /*78*/ P('新竹內灣', '新　竹', C.HC, 1300),
+    /*79*/ _('casino',       '賭　場',   { color:'#F39C12', textColor:'#fff' }),
   ];
 
-  // 把地產填入空格（按順序）
-  const emptyPositions = board.filter(sq => sq.type === 'empty').map(sq => sq.position);
-  let pi = 0;
-  groups.forEach((group, gi) => {
-    group.props.forEach(([name, price]) => {
-      if (pi < emptyPositions.length) {
-        const pos = emptyPositions[pi++];
-        board[pos] = {
-          position: pos, type: 'property',
-          name, groupName: group.name, groupIdx: gi,
-          color: group.color, textColor: group.textColor,
-          price, rentBase: Math.floor(price * 0.1),
-          upgradeCost: Math.floor(price * 0.5),
-        };
-      }
-    });
-  });
-
-  return board;
+  squares.forEach((s, i) => { s.position = i; });
+  return squares;
 }
 
 // ===== 股票初始化 =====
