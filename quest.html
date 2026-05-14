@@ -15569,7 +15569,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260514135407';
+  const APP_VERSION = '20260514140014';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -15625,7 +15625,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260512_nabyss2';
+  const NEWS_LATEST_ID = 'patch_20260514_dungeon_v2';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -15645,6 +15645,51 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#0a0514,#2e1065); border-radius:10px; padding:10px 14px; margin-bottom:14px; border:1px solid #7c3aed;">
+          <div style="font-size:15px; font-weight:800; color:#e9d5ff;">🏰 v21 地下城探險 v2 大改版！　<span style="font-size:11px; opacity:0.85;">2026-05-14</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#a78bfa; margin:6px 0 4px;">🏰 5層副本 + 獨立鵝王守護者</div>
+        <div>・F1 🪿 <b>嘎嘎阿福</b> Lv40　F2 😤 <b>鵝式武士二郎</b> Lv44　F3 💢 <b>暴怒鵝三太子</b> Lv48</div>
+        <div>・F4 😡 <b>鵝鵝黑道四哥</b> Lv52　F5 👑 <b>鵝皇終極體嗎嗯嗯</b> Lv56（DEF 1500）</div>
+        <div>・每層守護者有獨立 HP、台詞、技能組，難度逐層遞增</div>
+
+        <div style="font-weight:700; color:#fbbf24; margin:10px 0 4px;">🍀 Roguelike BUFF 系統（每清一層選 1 個）</div>
+        <div>・通關每層後從 3 個隨機 BUFF 選 1 個，帶入後續全樓層</div>
+        <div>・共 4 次選擇機會（F1→F2 / F2→F3 / F3→F4 / F4→F5）</div>
+
+        <div style="font-weight:700; color:#c084fc; margin:10px 0 4px;">🎖 評分制度（次數越少越好）</div>
+        <div>・每次出戰（勝/敗）計 1 次；失敗後守護者<b>保留實際剩餘 HP + 5% 基礎 HP</b> 懲罰</div>
+        <div>・全通 ≤20 次 → <b style="color:#fde047;">S RANK（5箱）</b>　≤35 次 → <b style="color:#c084fc;">RANK 2（4箱）</b>　其他 → <b style="color:#6ee7b7;">RANK 3（3箱）</b></div>
+
+        <div style="font-weight:700; color:#fde047; margin:10px 0 4px;">📦 打完副本後 → 8 個寶箱選</div>
+        <div>・固定組成（洗牌隱藏）：🦢 高級×1（30%鵝王/70%傳說）　🟢 普通×2　⬜ 渣鵝×3　🥚 地城幣×2</div>
+        <div>・依評分可開 3–5 箱，選完自動返回副本首頁，每次副本寶箱重置</div>
+
+        <div style="font-weight:700; color:#67e8f9; margin:10px 0 4px;">⚡ 閃光級寶物（每層守護者擊倒時）</div>
+        <div>・每次擊倒守護者有 <b>20%</b> 機率直接掉落 1 件閃光級地城寶物</div>
+        <div>・30 種閃光寶物：+ATK / +DEF / +SPD / +暴擊 / +傷害減免 等小加成</div>
+
+        <div style="font-weight:700; color:#e9d5ff; margin:10px 0 4px;">🏺 地城寶物系統（全部帶入戰鬥）</div>
+        <div>・寶物<b>可重複取得</b>，但同 ID 只計算一份加成（不疊加）</div>
+        <div>・🦢 鵝王寶物 16 種 特殊效果舉例：</div>
+        <div style="padding-left:8px;">
+          ・<b>超限神諭</b>：暴擊率超過 100% 後，每多 5% → 爆頭傷害 +1%<br>
+          ・<b>拚命鵝魂</b>：每損失 5% HP → 所有傷害 +1.5%（最多 +30%）<br>
+          ・<b>不死鵝蛋</b>：戰鬥中免疫 1 次致死傷害<br>
+          ・<b>鵝皇護盾</b>：每回合 5% 機率完全格擋 1 次攻擊<br>
+          ・<b>吸血鵝牙</b>：物理攻擊吸血 +3%
+        </div>
+        <div>・🌟 傳說 21 種 / ⚡ 閃光 30 種 / 🟢 普通 63 種 / ⬜ 渣鵝 多種</div>
+
+        <div style="font-weight:700; color:#4ade80; margin:10px 0 4px;">🤝 地城寶物交易系統</div>
+        <div>・在「地城寶物」面板可向其他玩家提出交易請求</div>
+        <div>・選擇你要出的寶物 → 選對方的寶物 → 對方同意即完成交換</div>
+
+        <div style="background:linear-gradient(135deg,#0a0514,#1a0a2e); border-radius:8px; padding:8px 12px; margin:10px 0 16px; font-size:12px; color:#a78bfa; border:1px solid #4c1d95;">
+          💡 地下城每場需消耗 <b>10 ⚡ × 5 層 = 共 50 ⚡</b>。失敗可無限重試，但次數直接影響評分，盡量少試多打！S RANK 只需 20 次以內全通！
+        </div>
 
         <div style="background:linear-gradient(135deg,#0f172a,#1e3a5f); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
           <div style="font-size:15px; font-weight:800; color:#fff;">🌀 v20 深奈（奈落2層）上線！　<span style="font-size:11px; opacity:0.85;">2026-05-12</span></div>
