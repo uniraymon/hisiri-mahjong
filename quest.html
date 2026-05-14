@@ -2265,8 +2265,8 @@
     cursor: pointer;
     background: linear-gradient(135deg, #1e1b4b, #312e81);
     border: 2px solid #4338ca;
-    border-radius: 10px;
-    padding: 10px 4px;
+    border-radius: 8px;
+    padding: 6px 2px;
     text-align: center;
     transition: all 0.2s;
     aspect-ratio: 1;
@@ -15571,7 +15571,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260514150731';
+  const APP_VERSION = '20260514151901';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -17463,6 +17463,7 @@ ${b.text}
     if (!rpg.class) { host.innerHTML = ''; return; }
     const tCount = (rpg.treasures || []).length;
     const tMax = Object.keys(TREASURES).length;
+    const dtCount = Array.isArray(rpg.dungeonTreasures) ? new Set(rpg.dungeonTreasures).size : 0;
     const _activePat = rpg.actionPatterns?.[rpg.activePatternPage ?? 0];
     const ruleCount = (Array.isArray(_activePat) ? _activePat : (rpg.actionPattern || [])).length;
     const sp = rpg.skillPoints || 0;
@@ -17486,10 +17487,15 @@ ${b.text}
         <span class="cqm-label">裝備</span>
         <span class="cqm-badge">${invCount}</span>
       </button>
-      <button class="cqm-btn" onclick="showTreasureVault()" title="寶物庫">
+      <button class="cqm-btn" onclick="showTreasureVault()" title="探險寶物庫">
         <span class="cqm-icon">🎁</span>
         <span class="cqm-label">寶物</span>
         <span class="cqm-badge">${tCount}/${tMax}</span>
+      </button>
+      <button class="cqm-btn" onclick="showDungeonTreasureVault('goose')" title="地城寶物庫">
+        <span class="cqm-icon">🏺</span>
+        <span class="cqm-label">地城寶</span>
+        <span class="cqm-badge">${dtCount}</span>
       </button>
       <button class="cqm-btn" onclick="showSpiritsModal()" title="精魂">
         <span class="cqm-icon">🌟</span>
@@ -22932,9 +22938,9 @@ ${b.text}
   function dungeonGetRankInfo(floorsCleared, score) {
     if (floorsCleared < 5) return null; // 未全通 → 無評分
     // score = totalAttempts（低分=好）
-    if (score <= DUNGEON_ATTEMPTS_S) return { rank:'S', label:'S RANK', boxes:5, color:'#fde047', bg:'linear-gradient(135deg,#ca8a04,#fde047)' };
-    if (score <= DUNGEON_ATTEMPTS_A) return { rank:'A', label:'RANK 2', boxes:4, color:'#c084fc', bg:'linear-gradient(135deg,#7c3aed,#a78bfa)' };
-    return { rank:'B', label:'RANK 3', boxes:3, color:'#6ee7b7', bg:'linear-gradient(135deg,#059669,#6ee7b7)' };
+    if (score <= DUNGEON_ATTEMPTS_S) return { rank:'S', label:'S RANK', boxes:10, color:'#fde047', bg:'linear-gradient(135deg,#ca8a04,#fde047)' };
+    if (score <= DUNGEON_ATTEMPTS_A) return { rank:'A', label:'RANK A', boxes:8,  color:'#c084fc', bg:'linear-gradient(135deg,#7c3aed,#a78bfa)' };
+    return { rank:'C', label:'RANK C', boxes:6,  color:'#6ee7b7', bg:'linear-gradient(135deg,#059669,#6ee7b7)' };
   }
 
   // 渲染副本歷史紀錄
@@ -22994,33 +23000,44 @@ ${b.text}
       const rColor  = pb.rankColor || '#6ee7b7';
       const rBg     = pb.rankBg   || 'linear-gradient(135deg,#059669,#6ee7b7)';
 
-      const boxesGrid = Array.from({ length: 8 }, (_, i) => {
+      const _BOX_EMO = { goose:'🦢', legend:'🌟', flash:'⚡', normal:'🟢', trash:'⬜', coin:'🥚' };
+      const _BOX_BG  = { goose:'linear-gradient(135deg,#78350f,#b45309)', legend:'linear-gradient(135deg,#3b0764,#6d28d9)',
+                         flash:'linear-gradient(135deg,#164e63,#0891b2)', normal:'linear-gradient(135deg,#052e16,#166534)',
+                         trash:'linear-gradient(135deg,#1f2937,#374151)', coin:'linear-gradient(135deg,#713f12,#a16207)' };
+      const _BOX_TC  = { goose:'#fef3c7', legend:'#f3e8ff', flash:'#ecfeff', normal:'#dcfce7', trash:'#e5e7eb', coin:'#fef9c3' };
+      const boxesGrid = Array.from({ length: 20 }, (_, i) => {
         const alreadyOpened = pb.openedItems && pb.openedItems[i] != null;
         if (alreadyOpened) {
           const oi = pb.openedItems[i];
           let innerHtml = '';
-          let rc2 = '#6b7280';
+          let borderColor = '#6b7280';
+          let boxBg = _BOX_BG.trash;
+          let tc = _BOX_TC.trash;
           if (oi.type === 'coin') {
-            rc2 = '#fbbf24';
-            innerHtml = `<div style="font-size:20px;">🥚</div>
-              <div style="font-size:8px;color:#fbbf24;margin-top:2px;">幣×${oi.coins||0}</div>`;
+            borderColor = '#fbbf24'; boxBg = _BOX_BG.coin; tc = _BOX_TC.coin;
+            innerHtml = `<div style="font-size:16px;">🥚</div>
+              <div style="font-size:7px;color:${tc};margin-top:1px;font-weight:700;">地城幣</div>
+              <div style="font-size:8px;color:${tc};">×${oi.coins||0}</div>`;
           } else if (oi.treasure_id) {
             const t = DUNGEON_TREASURES.find(x => x.id === oi.treasure_id);
-            rc2 = t ? (_DT_RARITY_COLOR[t.rarity] || '#9ca3af') : '#9ca3af';
-            const tName = t ? t.name : oi.treasure_id;
-            const tIcon = oi.type === 'high' ? '✨' : '📦';
-            innerHtml = `<div style="font-size:20px;">${tIcon}</div>
-              <div style="font-size:8px;color:${rc2};margin-top:2px;text-align:center;word-break:break-all;line-height:1.3;">${tName}</div>`;
+            const r = t?.rarity || 'trash';
+            borderColor = _DT_RARITY_COLOR[r] || '#9ca3af';
+            boxBg = _BOX_BG[r] || _BOX_BG.trash;
+            tc = _BOX_TC[r] || _BOX_TC.trash;
+            const tEmo = _BOX_EMO[r] || '📦';
+            const desc = t ? dungeonTreasureDesc(t).split('・')[0] : '';
+            innerHtml = `<div style="font-size:16px;">${tEmo}</div>
+              <div style="font-size:7px;font-weight:700;color:${tc};margin-top:1px;line-height:1.2;">${t ? t.name : oi.treasure_id}</div>
+              <div style="font-size:6px;color:${tc};opacity:0.75;margin-top:1px;line-height:1.2;">${desc}</div>`;
           } else {
-            innerHtml = `<div style="font-size:20px;">📦</div>
-              <div style="font-size:8px;color:#6b7280;margin-top:2px;">空</div>`;
+            innerHtml = `<div style="font-size:16px;">📦</div><div style="font-size:7px;color:#6b7280;margin-top:1px;">空</div>`;
           }
-          return `<div class="dungeon-box" style="cursor:default;opacity:0.6;">${innerHtml}</div>`;
+          return `<div class="dungeon-box" style="cursor:default;background:${boxBg};border:2px solid ${borderColor};padding:5px 3px;box-shadow:none;">${innerHtml}</div>`;
         } else {
           const canOpen = remain > 0;
-          return `<div class="dungeon-box" id="dbox_${i}" ${canOpen?`onclick="dungeonOpenBox(${i})"`:''} style="${canOpen?'':'cursor:not-allowed;opacity:0.4;'}">
-            <div style="font-size:24px;">🎁</div>
-            <div style="font-size:9px;color:#a78bfa;margin-top:3px;">#${i+1}</div>
+          return `<div class="dungeon-box" id="dbox_${i}" ${canOpen?`onclick="dungeonOpenBox(${i})"`:''} style="${canOpen?'':'cursor:not-allowed;opacity:0.35;'}">
+            <div style="font-size:20px;">🎁</div>
+            <div style="font-size:8px;color:#a78bfa;margin-top:2px;">#${i+1}</div>
           </div>`;
         }
       }).join('');
@@ -23028,18 +23045,22 @@ ${b.text}
       // 已開列表
       const rewardsList = Object.entries(pb.openedItems || {}).map(([idx, oi]) => {
         let rHtml = '';
+        let descHtml = '';
         if (oi.type === 'coin') {
-          rHtml = `<span style="color:#fbbf24;">地城鵝蛋幣 ×${oi.coins||0}</span>`;
+          rHtml = `<span style="color:#fbbf24;">🥚 地城鵝蛋幣 ×${oi.coins||0}</span>`;
         } else if (oi.treasure_id) {
           const t = DUNGEON_TREASURES.find(x => x.id === oi.treasure_id);
           const rc = t ? (_DT_RARITY_COLOR[t.rarity]||'#9ca3af') : '#9ca3af';
           const rn = t ? (_DT_RARITY_NAME[t.rarity]||'') : '';
-          rHtml = t ? `<span style="color:${rc};">${rn} ${t.name}</span>` : `<span style="color:#6b7280;">${oi.treasure_id}</span>`;
+          const emo = t ? ({ goose:'🦢',legend:'🌟',flash:'⚡',normal:'🟢',trash:'⬜' }[t.rarity]||'📦') : '📦';
+          rHtml = t ? `<span style="color:${rc};font-weight:700;">${emo} ${rn} ${t.name}</span>` : `<span style="color:#6b7280;">${oi.treasure_id}</span>`;
+          if (t) descHtml = `<div style="font-size:10px;color:#9ca3af;margin-top:2px;padding-left:4px;">${dungeonTreasureDesc(t)}</div>`;
         } else {
           rHtml = '<span style="color:#6b7280;">（空箱）</span>';
         }
-        return `<div style="font-size:12px;padding:5px 10px;background:rgba(0,0,0,0.3);border-radius:6px;margin-bottom:4px;line-height:1.6;">
-          📦 #${parseInt(idx)+1} → ${rHtml}
+        return `<div style="padding:6px 10px;background:rgba(0,0,0,0.3);border-radius:6px;margin-bottom:4px;">
+          <div style="font-size:11px;color:#6b7280;">#${parseInt(idx)+1} → ${rHtml}</div>
+          ${descHtml}
         </div>`;
       }).join('');
 
@@ -23056,9 +23077,9 @@ ${b.text}
               : '<span style="color:#4ade80;font-weight:700;">✅ 全部開啟完畢！返回中…</span>'}
           </div>
           <div style="font-size:10px;color:#6b7280;text-align:center;margin-bottom:8px;">
-            🦢高級×1　🟢普通×2　⬜渣鵝×3　🥚幣×2　（洗牌後隱藏）
+            🦢鵝王×1　🌟傳說×2　⚡閃光×3　🟢普通×4　⬜渣鵝×7　🥚幣×3　（洗牌後隱藏）
           </div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;">
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:10px;">
             ${boxesGrid}
           </div>
           ${rewardsList ? `<div id="dungeonBoxRewards">${rewardsList}</div>` : '<div id="dungeonBoxRewards"></div>'}
@@ -23808,12 +23829,24 @@ ${b.text}
   // 固定組成：1 高級（30%鵝王/70%傳說）、2 普通、3 渣鵝、2 鵝蛋幣
   function _dungeonGenerateBoxes() {
     const configs = [
-      { type: 'high' },
+      { type: 'goose' },                                          // 鵝鵝級 ×1
+      { type: 'legend' },                                         // 傳說級 ×2
+      { type: 'legend' },
+      { type: 'flash' },                                          // 閃光級 ×3
+      { type: 'flash' },
+      { type: 'flash' },
+      { type: 'normal' },                                         // 普通級 ×4
       { type: 'normal' },
       { type: 'normal' },
+      { type: 'normal' },
+      { type: 'trash' },                                          // 渣鵝級 ×7
       { type: 'trash' },
       { type: 'trash' },
       { type: 'trash' },
+      { type: 'trash' },
+      { type: 'trash' },
+      { type: 'trash' },
+      { type: 'coin', amount: Math.floor(Math.random()*5)+1 },   // 地城幣 ×3
       { type: 'coin', amount: Math.floor(Math.random()*5)+1 },
       { type: 'coin', amount: Math.floor(Math.random()*5)+1 },
     ];
@@ -23858,21 +23891,15 @@ ${b.text}
       openRecord.coins = coins;
       rewardHtml = `<span style="color:#fbbf24;">地城鵝蛋幣 ×${coins}</span>`;
     } else {
-      let targetRarity;
-      if (cfg.type === 'high') {
-        targetRarity = Math.random() < 0.30 ? 'goose' : 'legend';
-      } else if (cfg.type === 'normal') {
-        targetRarity = 'normal';
-      } else {
-        targetRarity = 'trash';
-      }
+      // 直接以 cfg.type 作為稀有度（goose/legend/flash/normal/trash）
+      const targetRarity = ['goose','legend','flash','normal','trash'].includes(cfg.type) ? cfg.type : 'trash';
       const pool = DUNGEON_TREASURES.filter(t => t.rarity === targetRarity);
       if (pool.length > 0) treasure = pool[Math.floor(Math.random() * pool.length)];
       if (treasure) {
         rpg.dungeonTreasures.push(treasure.id);
         openRecord.treasure_id = treasure.id;
       }
-      displayEmoji = cfg.type === 'high' ? '✨' : '📦';
+      displayEmoji = { goose:'🦢', legend:'🌟', flash:'⚡', normal:'🟢', trash:'⬜' }[targetRarity] || '📦';
       const rc = _DT_RARITY_COLOR[treasure?.rarity] || '#9ca3af';
       rewardHtml = treasure
         ? `<span style="color:${rc};">${_DT_RARITY_NAME[treasure.rarity]||''} ${treasure.name}</span>`
@@ -23886,12 +23913,12 @@ ${b.text}
 
     saveData();
 
-    // 顯示即時 toast
+    // 顯示即時 toast（含品質 + 第一條效果）
     if (cfg.type === 'coin') {
       showToast(`🥚 #${idx+1}：地城鵝蛋幣 ×${coins}！`);
     } else if (treasure) {
-      const rc = _DT_RARITY_COLOR[treasure.rarity] || '#9ca3af';
-      showToast(`📦 #${idx+1}：${_DT_RARITY_NAME[treasure.rarity]||''} ${treasure.name}！`);
+      const desc = dungeonTreasureDesc(treasure).split('・')[0];
+      showToast(`${displayEmoji} #${idx+1}：${_DT_RARITY_NAME[treasure.rarity]||''} ${treasure.name}！\n${desc}`);
     } else {
       showToast(`📦 #${idx+1}：空箱…`);
     }
@@ -24041,15 +24068,9 @@ ${b.text}
       </div>`;
 
     body.innerHTML = `
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-        <div style="flex:1;">
-          <div style="font-size:12px;color:#c4b5fd;">已持有 <b style="color:#e9d5ff;">${uniqueCount}</b> 種 / 共 <b style="color:#e9d5ff;">${owned.length}</b> 件</div>
-          <div style="font-size:11px;color:#fbbf24;margin-top:2px;">🥚 地城幣 ${coins}</div>
-        </div>
-        <button onclick="showDungeonTreasureVault('goose')"
-          style="background:linear-gradient(135deg,#4c1d95,#7c3aed);border:2px solid #a78bfa;box-shadow:0 3px 0 #2e1065;color:#e9d5ff;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">
-          🏺 查看寶物庫
-        </button>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="font-size:12px;color:#c4b5fd;">已持有 <b style="color:#e9d5ff;">${uniqueCount}</b> 種 / 共 <b style="color:#e9d5ff;">${owned.length}</b> 件</div>
+        <div style="font-size:11px;color:#fbbf24;">🥚 地城幣 ${coins}</div>
       </div>
       ${pendingHtml}
     `;
@@ -24127,15 +24148,16 @@ ${b.text}
   }
   window.showDungeonTreasureVault = showDungeonTreasureVault;
 
-  // 選擇要拿去交易的自己的道具 → 在 modal 內顯示選對象面板
+  // 交易第一步：點擊持有寶物 → 先選交易對象（玩家列表）
   function dungeonTradeSelectMyItem(myItemId) {
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
     if (!Array.isArray(rpg.dungeonTreasures)) rpg.dungeonTreasures = [];
     if (!rpg.dungeonTreasures.includes(myItemId)) { showToast('你沒有這件寶物'); return; }
 
-    const myItem = DUNGEON_TREASURES.find(t => t.id === myItemId);
-    const myTabInfo = _DTV_TABS.find(t => t.key === myItem?.rarity) || _DTV_TABS[0];
+    const myItem   = DUNGEON_TREASURES.find(t => t.id === myItemId);
+    const myInfo   = _DTV_TABS.find(t => t.key === myItem?.rarity) || _DTV_TABS[4];
+    const backRarity = window._dtVaultRarity || myItem?.rarity || 'goose';
 
     // 列出有地城寶物的其他玩家
     const otherPlayers = players.filter(p => {
@@ -24143,58 +24165,102 @@ ${b.text}
       try { return (getRpg(p).dungeonTreasures?.length || 0) > 0; } catch(e) { return false; }
     });
 
-    const backRarity = window._dtVaultRarity || myItem?.rarity || 'goose';
+    const myOfferBadge = `<div style="display:inline-flex;align-items:center;gap:6px;background:${myInfo.bg};border:2px solid ${myInfo.color};border-radius:8px;padding:5px 10px;margin-bottom:12px;">
+      <span style="font-size:16px;">${_DTV_EMO[myItem?.rarity]||'📦'}</span>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:${myInfo.tc};">${myItem?.name||myItemId}</div>
+        <div style="font-size:9px;color:${myInfo.tc};opacity:0.75;">${dungeonTreasureDesc(myItem).split('・')[0]}</div>
+      </div>
+    </div>`;
 
     if (!otherPlayers.length) {
       showModal('🔄 提出交易', `
-        <div style="background:linear-gradient(135deg,#0a0514,#1a0a2e);padding:8px;color:#e9d5ff;text-align:center;">
-          <div style="font-size:13px;margin-bottom:12px;">用 <span style="color:${myTabInfo.color};font-weight:700;">${myItem?.name||myItemId}</span> 換取…</div>
-          <div style="color:#6b7280;font-size:12px;padding:16px;">目前沒有其他玩家持有地城寶物</div>
-          <button onclick="showDungeonTreasureVault('${backRarity}')"
-            style="margin-top:8px;background:rgba(109,40,217,0.4);border:1px solid #7c3aed;color:#c4b5fd;padding:6px 16px;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit;">← 返回寶物庫</button>
+        <div style="background:linear-gradient(135deg,#0a0514,#1a0a2e);padding:8px;color:#e9d5ff;">
+          <div style="font-size:11px;color:#a78bfa;margin-bottom:6px;">準備提出：</div>
+          ${myOfferBadge}
+          <div style="color:#6b7280;font-size:12px;padding:12px;text-align:center;">目前沒有其他玩家持有地城寶物</div>
+          <button onclick="showDungeonTreasureVault('${backRarity}')" style="background:rgba(109,40,217,0.4);border:1px solid #7c3aed;color:#c4b5fd;padding:6px 16px;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit;">← 返回寶物庫</button>
         </div>`);
       return;
     }
 
-    const playerOpts = otherPlayers.map(p => {
-      let pRpg;
-      try { pRpg = getRpg(p); } catch(e) { return ''; }
-      if (!pRpg) return '';
-      const theirOwned = Array.isArray(pRpg.dungeonTreasures) ? pRpg.dungeonTreasures : [];
-      const cm = {};
-      for (const id of theirOwned) cm[id] = (cm[id]||0)+1;
-      const itemBtns = Object.keys(cm).map(id2 => {
-        const ti = DUNGEON_TREASURES.find(t => t.id === id2);
-        if (!ti) return '';
-        const tInfo = _DTV_TABS.find(t => t.key === ti.rarity) || _DTV_TABS[4];
-        return `<button onclick="dungeonSendTradeRequest('${me.id}','${p.id}','${myItemId}','${id2}')"
-          style="display:block;width:100%;background:${tInfo.bg};border:2px solid ${tInfo.color};
-                 color:${tInfo.tc};padding:5px 8px;border-radius:8px;font-size:11px;cursor:pointer;
-                 font-family:inherit;text-align:left;margin-bottom:4px;font-weight:700;">
-          ${_DTV_EMO[ti.rarity]||'📦'} ${ti.name}${cm[id2]>1?` <span style="opacity:0.75;">×${cm[id2]}</span>`:''}
-          <span style="font-size:9px;opacity:0.6;display:block;">${dungeonTreasureDesc(ti).split('・')[0]}</span>
-        </button>`;
-      }).join('');
-      return `<div style="margin-bottom:12px;">
-        <div style="font-size:11px;color:#a78bfa;font-weight:700;margin-bottom:5px;">👤 ${escapeHtml(p.name||p.id)}</div>
-        ${itemBtns || '<div style="font-size:10px;color:#6b7280;">無寶物</div>'}
-      </div>`;
+    const playerBtns = otherPlayers.map(p => {
+      let pRpg; let cnt = 0;
+      try { pRpg = getRpg(p); cnt = (pRpg.dungeonTreasures?.length||0); } catch(e) {}
+      return `<button onclick="dungeonTradeShowTheirItems('${myItemId}','${p.id}')"
+        style="display:flex;align-items:center;gap:10px;width:100%;background:rgba(0,0,0,0.3);
+               border:1px solid #4c1d95;color:#e9d5ff;padding:8px 12px;border-radius:10px;
+               font-size:12px;cursor:pointer;font-family:inherit;margin-bottom:6px;text-align:left;">
+        <span style="font-size:20px;">${p.avatar||'👤'}</span>
+        <div style="flex:1;">
+          <div style="font-weight:700;">${escapeHtml(p.name||p.id)}</div>
+          <div style="font-size:10px;color:#a78bfa;">持有 ${cnt} 件地城寶物</div>
+        </div>
+        <span style="color:#7c3aed;font-size:16px;">›</span>
+      </button>`;
     }).join('');
 
-    showModal('🔄 提出交易', `
+    showModal('🔄 選擇交易對象', `
       <div style="background:linear-gradient(135deg,#0a0514,#1a0a2e);padding:4px;color:#e9d5ff;">
-        <div style="font-size:13px;font-weight:700;margin-bottom:10px;">
-          用 <span style="color:${myTabInfo.color};">${myItem?.name||myItemId}</span> 換取…
-        </div>
-        <div style="max-height:360px;overflow-y:auto;">${playerOpts}</div>
-        <button onclick="showDungeonTreasureVault('${backRarity}')"
-          style="margin-top:10px;background:rgba(109,40,217,0.4);border:1px solid #7c3aed;color:#c4b5fd;
-                 padding:6px 16px;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit;">
-          ← 返回寶物庫
-        </button>
+        <div style="font-size:11px;color:#a78bfa;margin-bottom:6px;">你準備提出：</div>
+        ${myOfferBadge}
+        <div style="font-size:11px;color:#a78bfa;margin-bottom:8px;">選擇要交易的對象：</div>
+        <div style="max-height:320px;overflow-y:auto;">${playerBtns}</div>
+        <button onclick="showDungeonTreasureVault('${backRarity}')" style="margin-top:8px;background:rgba(109,40,217,0.4);border:1px solid #7c3aed;color:#c4b5fd;padding:6px 16px;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit;">← 返回寶物庫</button>
       </div>`);
   }
   window.dungeonTradeSelectMyItem = dungeonTradeSelectMyItem;
+
+  // 交易第二步：看對方寶物，選要換哪一件
+  function dungeonTradeShowTheirItems(myItemId, toPlayerId) {
+    const me = getMe(); if (!me) return;
+    const target = players.find(p => p.id === toPlayerId);
+    if (!target) { showToast('找不到對方玩家'); return; }
+    let targetRpg;
+    try { targetRpg = getRpg(target); } catch(e) { showToast('無法讀取對方資料'); return; }
+
+    const myItem  = DUNGEON_TREASURES.find(t => t.id === myItemId);
+    const myInfo  = _DTV_TABS.find(t => t.key === myItem?.rarity) || _DTV_TABS[4];
+    const backRarity = window._dtVaultRarity || myItem?.rarity || 'goose';
+
+    const theirOwned = Array.isArray(targetRpg.dungeonTreasures) ? targetRpg.dungeonTreasures : [];
+    const cm = {};
+    for (const id of theirOwned) cm[id] = (cm[id]||0)+1;
+
+    const myOfferBadge = `<div style="display:inline-flex;align-items:center;gap:6px;background:${myInfo.bg};border:2px solid ${myInfo.color};border-radius:8px;padding:4px 8px;margin-bottom:10px;">
+      <span style="font-size:14px;">${_DTV_EMO[myItem?.rarity]||'📦'}</span>
+      <div><div style="font-size:10px;font-weight:700;color:${myInfo.tc};">${myItem?.name||myItemId}</div></div>
+    </div>`;
+
+    const itemBtns = Object.keys(cm).map(id2 => {
+      const ti = DUNGEON_TREASURES.find(t => t.id === id2);
+      if (!ti) return '';
+      const tInfo = _DTV_TABS.find(t => t.key === ti.rarity) || _DTV_TABS[4];
+      return `<button onclick="dungeonSendTradeRequest('${me.id}','${toPlayerId}','${myItemId}','${id2}')"
+        style="display:flex;align-items:center;gap:8px;width:100%;background:${tInfo.bg};border:2px solid ${tInfo.color};
+               color:${tInfo.tc};padding:7px 10px;border-radius:10px;font-size:11px;cursor:pointer;
+               font-family:inherit;text-align:left;margin-bottom:5px;">
+        <span style="font-size:18px;">${_DTV_EMO[ti.rarity]||'📦'}</span>
+        <div style="flex:1;">
+          <div style="font-weight:700;">${ti.name}${cm[id2]>1?` <span style="opacity:0.7;">×${cm[id2]}</span>`:''}</div>
+          <div style="font-size:9px;opacity:0.7;margin-top:1px;">${dungeonTreasureDesc(ti)}</div>
+        </div>
+        <span style="opacity:0.6;font-size:13px;">換 ›</span>
+      </button>`;
+    }).join('');
+
+    showModal(`🔄 ${escapeHtml(target.name||toPlayerId)} 的寶物`, `
+      <div style="background:linear-gradient(135deg,#0a0514,#1a0a2e);padding:4px;color:#e9d5ff;">
+        <div style="font-size:11px;color:#a78bfa;margin-bottom:4px;">你的提出：</div>
+        ${myOfferBadge}
+        <div style="font-size:11px;color:#a78bfa;margin-bottom:8px;">點選你想要換取的寶物：</div>
+        <div style="max-height:340px;overflow-y:auto;">
+          ${itemBtns || '<div style="color:#6b7280;font-size:12px;padding:12px;text-align:center;">對方沒有寶物</div>'}
+        </div>
+        <button onclick="dungeonTradeSelectMyItem('${myItemId}')" style="margin-top:8px;background:rgba(109,40,217,0.4);border:1px solid #7c3aed;color:#c4b5fd;padding:6px 16px;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit;">← 換個對象</button>
+      </div>`);
+  }
+  window.dungeonTradeShowTheirItems = dungeonTradeShowTheirItems;
 
   // 發送交易請求到對方
   function dungeonSendTradeRequest(fromId, toId, fromItemId, wantItemId) {
