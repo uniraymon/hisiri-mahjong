@@ -3626,30 +3626,50 @@
       isSupremeKing: true,
       // 4 個隨機形態（依 killCount % 4 決定，所有玩家看到相同形態）
       forms: [
-        // Form 0：霸天型 — 多段猛攻
-        { formName: '霸天型', verb: '天道怒拳', ability: { type: 'multiHit', hits: 3 }, skills: [
-          { verb: '天崩地裂', mult: 3.2, cooldown: 3 },
-          { verb: '霸王連擊', mult: 1.8, applyStatus: { type: 'bleed', charges: 4, chance: 1.0 }, cooldown: 4 },
-          { verb: '天命終焉', mult: 10.0, ignoreDef: true, minRound: 30, everyRounds: 30, cooldown: 1 },
-        ]},
-        // Form 1：神聖型 — 削弱玩家攻擊力
-        { formName: '神聖型', verb: '審判天光', ability: null, skills: [
-          { verb: '神聖裁決', mult: 2.8, applyStatus: { type: 'buff', stat: 'atkPct', amount: -0.35, turns: 6, chance: 1.0 }, cooldown: 3 },
-          { verb: '天界護壁', type: 'monsterSelfBuff', stat: 'def', amount: 1000, turns: 8, cooldown: 6 },
-          { verb: '滅世聖光', mult: 9.0, ignoreDef: true, minRound: 30, everyRounds: 30, cooldown: 1 },
-        ]},
-        // Form 2：魔導型 — 吸MP + 毒
-        { formName: '魔導型', verb: '冥術汲取', ability: { type: 'physResist', resist: 0.40 }, skills: [
-          { verb: '冥力汲取', mult: 2.2, ignoreDef: true, mpDrainAll: true, lifestealMult: 8, cooldown: 3 },
-          { verb: '魂魄腐蝕', mult: 1.6, applyStatus: { type: 'poison', charges: 5, chance: 1.0 }, cooldown: 4 },
-          { verb: '老天大法', mult: 9.5, ignoreDef: true, minRound: 30, everyRounds: 30, cooldown: 1 },
-        ]},
-        // Form 3：速影型 — 極高頻率攻擊
-        { formName: '速影型', verb: '幽影疾斬', ability: { type: 'multiHit', hits: 4 }, skills: [
-          { verb: '殘影連刺', mult: 1.2, applyStatus: { type: 'paralyze', charges: 2, chance: 0.70 }, cooldown: 2 },
-          { verb: '幽冥毒霧', mult: 1.4, applyStatus: { type: 'poison', charges: 5, chance: 1.0 }, cooldown: 3 },
-          { verb: '速影滅世', mult: 11.0, ignoreDef: true, minRound: 30, everyRounds: 30, cooldown: 1 },
-        ]},
+        // Form 0：霸天型 — 多段猛攻，玩家ATK/MARK減半
+        { formName: '霸天型', formIdx: 0,
+          art: 'assets/dungeon/boss-elder-swan-form0.png',
+          verb: '天道怒拳', ability: { type: 'multiHit', hits: 3 },
+          formDebuff: { atkMarkHalf: true },
+          skills: [
+            { verb: '天崩地裂', mult: 3.2, cooldown: 3 },
+            { verb: '霸王連擊', mult: 1.8, applyStatus: { type: 'bleed', charges: 4, chance: 1.0 }, cooldown: 4 },
+            { verb: '天命終焉', mult: 10.0, ignoreDef: true, minRound: 50, everyRounds: 50, cooldown: 1 },
+          ]},
+        // Form 1：神聖型 — Boss 每回合回血10萬，玩家暴擊率-100%、爆頭-30%
+        { formName: '神聖型', formIdx: 1,
+          art: 'assets/dungeon/boss-elder-swan-form1.png',
+          verb: '審判天光', ability: null,
+          formDebuff: { critPenalty: 1.0, headshotPenalty: 0.30, bossHpRegen: 100000 },
+          skills: [
+            { verb: '神聖裁決', mult: 2.8, applyStatus: { type: 'buff', stat: 'atkPct', amount: -0.35, turns: 6, chance: 1.0 }, cooldown: 3 },
+            { verb: '天界護壁', type: 'monsterSelfBuff', stat: 'def', amount: 1000, turns: 8, cooldown: 6 },
+            { verb: '滅世聖光', mult: 9.0, ignoreDef: true, minRound: 50, everyRounds: 50, cooldown: 1 },
+          ]},
+        // Form 2：魔導型 — 物抗40%，玩家SPD-50%
+        { formName: '魔導型', formIdx: 2,
+          art: 'assets/dungeon/boss-elder-swan-form2.png',
+          verb: '冥術汲取', ability: { type: 'physResist', resist: 0.40 },
+          formDebuff: { spdHalf: true },
+          skills: [
+            { verb: '冥力汲取', mult: 2.2, ignoreDef: true, mpDrainAll: true, lifestealMult: 8, cooldown: 3 },
+            { verb: '魂魄腐蝕', mult: 1.6, applyStatus: { type: 'poison', charges: 5, chance: 1.0 }, cooldown: 4 },
+            { verb: '老天大法', mult: 9.5, ignoreDef: true, minRound: 50, everyRounds: 50, cooldown: 1 },
+          ]},
+        // Form 3：速影型 — 4段攻擊，Boss SPD+300，玩家狀態抗性-50%
+        { formName: '速影型', formIdx: 3,
+          art: 'assets/dungeon/boss-elder-swan-form3.png',
+          verb: '幽影疾斬', ability: { type: 'multiHit', hits: 4 },
+          formDebuff: { statusResistPenalty: 0.50, bossSpd: 300 },
+          skills: [
+            { verb: '殘影連刺', mult: 1.2, applyStatus: { type: 'paralyze', charges: 2, chance: 0.70 }, cooldown: 2 },
+            { verb: '幽冥毒霧', mult: 1.4,
+              applyStatus:  { type: 'poison', charges: 5, chance: 1.0 },
+              applyStatus2: { type: 'bleed',  charges: 3, chance: 1.0 },
+              applyStatus3: { type: 'scorch', charges: 3, markDmg: 5000, chance: 1.0 },
+              cooldown: 3 },
+            { verb: '速影滅世', mult: 11.0, ignoreDef: true, minRound: 50, everyRounds: 50, cooldown: 1 },
+          ]},
       ],
       skills: [], // 動態從 forms[killCount%4] 填入，見 wb9Attack
       entryCoins: { type: 'dungeonEggCoins', base: 5, buff1Cost: 5, buff2Cost: 15 },
@@ -3769,7 +3789,7 @@
     const stats = computeStats(me);
 
     // ⭐ 老天鵝：依 killCount%4 選形態，填入技能
-    let _skFormName = '';
+    let _skFormName = '', _skFormArt = null, _skFormDebuff = {};
     if (boss.isSupremeKing && Array.isArray(boss.forms)) {
       const _formIdx = (state.killCount || 0) % boss.forms.length;
       const _form = boss.forms[_formIdx];
@@ -3777,6 +3797,9 @@
       boss.ability = _form.ability || null;
       boss.skills  = _form.skills  || [];
       _skFormName  = _form.formName || '';
+      _skFormArt   = _form.art || null;
+      _skFormDebuff = _form.formDebuff || {};
+      if (_skFormDebuff.bossSpd) boss.spd = (boss.spd || 0) + _skFormDebuff.bossSpd;
     }
 
     const monster = {
@@ -3791,7 +3814,7 @@
       skills: boss.skills || [],
       maxRounds: (boss.maxRounds || 100) + 20, // ⭐ 世界王每場多 20 回合
       goldDrop: 0, xpDrop: 0,
-      art: boss.art || null,
+      art: _skFormArt || boss.art || null,
     };
 
     const _wbPage   = r.wbPatternPage?.[bossId];
@@ -3802,6 +3825,7 @@
     // ⭐ 老天鵝入場 BUFF
     const _skWbBuff = Array.isArray(r.skWbBuff) ? [...r.skWbBuff] : [];
     if (_skWbBuff.length) _wbOpts.skBuffs = _skWbBuff;
+    if (Object.keys(_skFormDebuff).length) _wbOpts.skFormDebuff = _skFormDebuff;
     const result  = autoFight(me, monster, Object.keys(_wbOpts).length ? _wbOpts : undefined);
     // 戰鬥後清除入場 buff
     if (_skWbBuff.length) { r.skWbBuff = []; saveData(); }
@@ -3816,7 +3840,7 @@
       attackerId: me.id, attackerName: me.name,
       attackerAvatar: me.avatar || cls?.icon || '🎴',
       playerSnap: { name: me.name, avatar: cls?.icon || '🎴', level: r.level, maxHp: stats.maxHp, maxMp: stats.maxMp, class: r.class, baseCrit: result.archerStats?.baseCrit, classImage: cls?.image || null, equippedCosmetic: r.equippedCosmetic || null, equippedHat: r.equippedHat || null, equippedBody: r.equippedBody || null, equippedWeapon: r.equippedWeapon || null },
-      monsterSnap: { name: monster.name, icon: monster.icon, level: monster.level, maxHp: monster.maxHp, ability: monster.ability, art: boss.art || null },
+      monsterSnap: { name: monster.name, icon: monster.icon, level: monster.level, maxHp: monster.maxHp, ability: monster.ability, art: _skFormArt || boss.art || null },
       log: (result.log || []).slice(0, 400), // ⭐ Firestore 每場限 400 條，recentBattles 限 5 筆 → ~300KB
     };
     // ⭐ 完整 log 分塊存 localStorage（每塊 400 條，超過自動開新 key）
@@ -4451,11 +4475,12 @@
       return;
     }
     // ===== 分頁 tab =====
-    if (!window._wb9ActiveTab || !WB9_BOSSES.find(b => b.id === window._wb9ActiveTab)) {
-      window._wb9ActiveTab = WB9_BOSSES[0]?.id;
+    const _regularBosses = WB9_BOSSES.filter(b => !b.isSupremeKing);
+    if (!window._wb9ActiveTab || !_regularBosses.find(b => b.id === window._wb9ActiveTab)) {
+      window._wb9ActiveTab = _regularBosses[0]?.id;
     }
     const tabNavHtml = `<div style="display:flex;gap:4px;margin-bottom:10px;overflow-x:auto;">
-      ${WB9_BOSSES.map(b => {
+      ${_regularBosses.map(b => {
         const bState = wb9GetState(b.id);
         const bHpPct = Math.max(0, Math.min(100, (bState.hp / b.maxHp) * 100));
         const isActive = window._wb9ActiveTab === b.id;
@@ -4470,7 +4495,78 @@
       }).join('')}
     </div>`;
 
-    const cardsHtml = WB9_BOSSES.filter(b => b.id === window._wb9ActiveTab).map(boss => {
+    // ⭐ 限時傳說討伐：老天鵝獨立卡片
+    const _skBoss = WB9_BOSSES.find(b => b.isSupremeKing);
+    let legendaryHtml = '';
+    if (_skBoss) {
+      const _skState   = wb9GetState(_skBoss.id);
+      const _skHpPct   = Math.max(0, Math.min(100, (_skState.hp / _skBoss.maxHp) * 100));
+      const _skFormIdx = (_skState.killCount || 0) % (_skBoss.forms?.length || 4);
+      const _skForm    = _skBoss.forms?.[_skFormIdx];
+      const _skFName   = _skForm?.formName || '???';
+      const _skFArt    = _skForm?.art || null;
+      const _eggCoins  = r ? (r.dungeonEggCoins || 0) : 0;
+      const _skLastKillTs = _skState.lastKill?.ts || 0;
+      const _skCdRemain   = _skLastKillTs > 0 ? Math.max(0, _skLastKillTs + 5 * 3600 * 1000 - Date.now()) : 0;
+      const _skHpBar = _skHpPct > 60
+        ? 'linear-gradient(90deg,#22c55e,#16a34a)'
+        : _skHpPct > 30
+        ? 'linear-gradient(90deg,#f59e0b,#d97706)'
+        : 'linear-gradient(90deg,#ef4444,#dc2626,#991b1b)';
+      // Queue status for supreme_king
+      const _skQueue   = _skState.queue || [];
+      const _skMyPos   = me ? _skQueue.findIndex(x => x && x.pid === me.id) : -1;
+      const _skIsMyTurn = _skMyPos === 0;
+      const _skQueued   = _skMyPos >= 0;
+      let _skActionHtml = '';
+      if (_skCdRemain > 0) {
+        const _cdH = Math.floor(_skCdRemain / 3600000);
+        const _cdM = Math.floor((_skCdRemain % 3600000) / 60000);
+        const _cdS = Math.ceil((_skCdRemain % 60000) / 1000);
+        _skActionHtml = `<button class="btn btn-primary" disabled style="background:#4b5563;width:100%;margin-top:8px;">⏳ 老天鵝休眠中 ${_cdH}h ${_cdM}m ${String(_cdS).padStart(2,'0')}s</button>`;
+      } else if (onCd) {
+        _skActionHtml = `<button class="btn btn-primary" disabled style="background:#4b5563;width:100%;margin-top:8px;">⏳ 攻擊冷卻中</button>`;
+      } else if (_skIsMyTurn) {
+        _skActionHtml = `
+          <button class="btn btn-primary wb9-attack-btn" onclick="wb9Attack('${_skBoss.id}')" style="background:linear-gradient(135deg,#7c0060,#b91c1c);box-shadow:0 4px 0 #7f1d1d;width:100%;margin-top:8px;font-size:15px;">⚜️ 挑戰老天鵝！</button>
+          <button class="btn btn-secondary" onclick="wb9LeaveQueue('${_skBoss.id}')" style="margin-top:6px;width:100%;">取消</button>`;
+      } else if (_skQueued) {
+        _skActionHtml = `
+          <button class="btn btn-primary" disabled style="background:#6b7280;width:100%;margin-top:8px;">🕒 排隊中：第 ${_skMyPos + 1} 位</button>
+          <button class="btn btn-secondary" onclick="wb9LeaveQueue('${_skBoss.id}')" style="margin-top:6px;width:100%;">取消</button>`;
+      } else {
+        const _canEnter = _eggCoins >= 5;
+        _skActionHtml = `<button class="btn btn-primary" onclick="openSkBuffModal('${_skBoss.id}')"
+          style="background:linear-gradient(135deg,#7c0060,#b91c1c);box-shadow:0 4px 0 #7f1d1d;width:100%;margin-top:8px;${_canEnter ? '' : 'opacity:.5;cursor:not-allowed;'}">
+          ${_canEnter ? '⚜️ 挑戰老天鵝！' : '🥚 地城鵝蛋幣不足（需 5 枚）'}
+        </button>`;
+      }
+      const _skKillBanner = wb9KillBannerHtml(_skState);
+      legendaryHtml = `
+        <div style="background:linear-gradient(135deg,#1a0020,#2d0030,#1a0010);border:2px solid #9d174d;border-radius:14px;padding:12px 14px;margin-bottom:14px;box-shadow:0 0 24px rgba(157,23,77,.4),0 4px 12px rgba(0,0,0,.5);">
+          ${_skKillBanner}
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <div style="background:linear-gradient(135deg,#7c0060,#9d174d);border-radius:8px;padding:3px 10px;font-size:11px;font-weight:800;color:#fde68a;letter-spacing:.5px;text-shadow:0 1px 3px rgba(0,0,0,.5);">⚔️ 限時傳說討伐</div>
+            <div style="font-size:10px;color:#f9a8d4;font-weight:600;">Tier ${_skBoss.tier} ‧ Lv ${_skBoss.level}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            ${_skFArt ? `<img src="${_skFArt}" alt="${_skFName}" style="width:80px;height:80px;image-rendering:pixelated;border-radius:10px;border:2px solid #9d174d;flex-shrink:0;">` : `<span style="font-size:52px;flex-shrink:0;">${_skBoss.icon}</span>`}
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:18px;font-weight:800;color:#fde68a;text-shadow:0 2px 8px rgba(157,23,77,.8);">${_skBoss.name}</div>
+              <div style="font-size:11px;color:#f9a8d4;margin-top:2px;">目前形態：<b style="color:#fbbf24;">${_skFName}</b>　📖 已擊殺 ${_skState.killCount} 次</div>
+              <div style="font-size:11px;color:#d1d5db;margin-top:1px;">⚔️ ATK ${_skBoss.atk} ／ 🛡️ DEF ${_skBoss.def} ／ 💨 SPD ${_skBoss.spd}</div>
+              <div style="font-size:10px;color:#fbbf24;margin-top:2px;">🥚 地城鵝蛋幣：<b>${_eggCoins}</b>　（基礎 5 幣 ／ +5 抽 1 加持 ／ +15 抽 2 加持）</div>
+            </div>
+          </div>
+          <div style="margin-top:8px;position:relative;height:20px;background:#1a0020;border-radius:10px;overflow:hidden;border:1px solid #9d174d;">
+            <div style="position:absolute;left:0;top:0;height:100%;width:${_skHpPct.toFixed(1)}%;background:${_skHpBar};border-radius:10px;transition:width .4s;"></div>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7);">${_skState.hp.toLocaleString()} / ${_skBoss.maxHp.toLocaleString()}　(${_skHpPct.toFixed(1)}%)</div>
+          </div>
+          ${_skActionHtml}
+        </div>`;
+    }
+
+    const cardsHtml = _regularBosses.filter(b => b.id === window._wb9ActiveTab).map(boss => {
       const state = wb9GetState(boss.id);
       const hpPct = Math.max(0, Math.min(100, (state.hp / boss.maxHp) * 100));
       const queue = (state.queue || []);
@@ -4599,6 +4695,7 @@
         🛠️ <b>世界王 v9 — Commit 5</b>　排隊 + 攻擊 + 戰報 + UI（${WB9_TESTING_NO_REWARDS ? '測試：獎勵不發放' : '正式模式'}）<br>
         <span style="font-size:10px; color:#a16207;">EXP 上限 ${WB9_MAX_XP_PER_FIGHT}　·　5 分鐘冷卻</span>
       </div>
+      ${legendaryHtml}
       ${tabNavHtml}
       ${cardsHtml}
     `;
@@ -5282,30 +5379,48 @@
       affixDesc: '普攻傷害 +10%（末世之翼）' },
 
     // ── 老天鵝神裝武器（8 把，每人隨機抽一把）─────────────────────────────
-    { id: 'sk_w_judgment',  name: '天道神劍',     icon: '⚜️', slot: 'weapon', lv: 1, atk: 90, critChance: 0.12, critDmg: 0.40,
+    { id: 'gg_sword',   name: '鵝鵝神劍',   icon: '⚜️🗡️', slot: 'weapon', lv: 1,
+      atk: 150, critChance: 0.20, critDmg: 0.40,
+      weaponHpPct: 0.15,
       isBossGift: true, sourceBossId: 'supreme_king', rarity: 'divine',
-      affixDesc: '暴擊率 +12%、暴擊傷害 +40%（天道神劍）' },
-    { id: 'sk_w_arcane',    name: '老天鵝法杖',   icon: '🌟', slot: 'weapon', lv: 1, mark: 100, mp: 40, mpRegen: 4,
+      affixDesc: 'HP+15%、暴擊率+20%、暴擊傷害+40%（鵝鵝神劍）' },
+    { id: 'gg_staff',   name: '鵝鵝法杖',   icon: '⚜️🪄', slot: 'weapon', lv: 1,
+      mark: 150,
+      weaponSkillDmgPct: 0.30,
       isBossGift: true, sourceBossId: 'supreme_king', rarity: 'divine',
-      affixDesc: 'MP 上限 +40、MP 回復 +4/回（老天鵝法杖）' },
-    { id: 'sk_w_reaper',    name: '永恆鐮刀',     icon: '⚔️', slot: 'weapon', lv: 1, atk: 65, mark: 65, hp: 80,
+      affixDesc: '所有技能傷害+30%（鵝鵝法杖）' },
+    { id: 'gg_scythe',  name: '鵝鵝鐮刀',   icon: '⚜️⚔️', slot: 'weapon', lv: 1,
+      atk: 100, mark: 100, def: 100, mp: 50,
+      weaponLifestealPct: 0.10, weaponBpLifesteal: true,
       isBossGift: true, sourceBossId: 'supreme_king', rarity: 'divine',
-      affixDesc: 'ATK & MARK 均衡，HP +80（永恆鐮刀）' },
-    { id: 'sk_w_shadow',    name: '速影雙刃',     icon: '💨', slot: 'weapon', lv: 1, atk: 60, spd: 35, critChance: 0.08,
+      affixDesc: '所有攻擊吸血10%（劍士計入血池）（鵝鵝鐮刀）' },
+    { id: 'gg_blade',   name: '鵝鵝雙刃',   icon: '⚜️💨', slot: 'weapon', lv: 1,
+      atk: 50, spd: 50,
+      nabyssHs: 0.20,
       isBossGift: true, sourceBossId: 'supreme_king', rarity: 'divine',
-      affixDesc: 'SPD +35、暴擊率 +8%（速影雙刃）' },
-    { id: 'sk_w_titan',     name: '霸天巨劍',     icon: '🗡️', slot: 'weapon', lv: 1, atk: 110, def: 25,
+      affixDesc: '全職業爆頭率+20%（鵝鵝雙刃）' },
+    { id: 'gg_hammer',  name: '鵝鵝審判錘', icon: '⚜️🔨', slot: 'weapon', lv: 1,
+      atk: 100, mark: 100,
+      weaponDefPct: 0.25,
+      weaponOnHitVulnerable: { chance: 0.30, amount: 0.5, hits: 1 },
       isBossGift: true, sourceBossId: 'supreme_king', rarity: 'divine',
-      affixDesc: '純粹高攻、DEF +25（霸天巨劍）' },
-    { id: 'sk_w_verdict',   name: '審判聖錘',     icon: '🔨', slot: 'weapon', lv: 1, atk: 75, mark: 35, critDmg: 0.50,
+      affixDesc: 'DEF+25%、所有攻擊30%機率施加易傷（鵝鵝審判錘）' },
+    { id: 'gg_souldrain', name: '鵝鵝噬魂刃', icon: '⚜️💀', slot: 'weapon', lv: 1,
+      atk: 100, mark: 100, def: 100,
+      weaponMpRestore: 0.15,
       isBossGift: true, sourceBossId: 'supreme_king', rarity: 'divine',
-      affixDesc: '暴擊傷害 +50%（審判聖錘）' },
-    { id: 'sk_w_souldrain', name: '冥界噬魂刃',   icon: '💀', slot: 'weapon', lv: 1, atk: 70, mark: 50, mp: 20, mpRegen: 2,
+      affixDesc: '所有攻擊回復15%最大MP（鵝鵝噬魂刃）' },
+    { id: 'gg_gun',     name: '鵝鵝狙擊槍', icon: '⚜️🏹', slot: 'weapon', lv: 1,
+      atk: 70,
+      weaponAllTrueDmg: true,
       isBossGift: true, sourceBossId: 'supreme_king', rarity: 'divine',
-      affixDesc: 'ATK+MARK 兼備、MPRegen +2（冥界噬魂刃）' },
-    { id: 'sk_w_bow',       name: '至尊神弓',     icon: '🏹', slot: 'weapon', lv: 1, atk: 80, spd: 20, mark: 30, critChance: 0.10,
+      affixDesc: '所有攻擊變為真傷（無視DEF）（鵝鵝狙擊槍）' },
+    { id: 'gg_shield',  name: '鵝鵝戰盾',   icon: '⚜️🛡️', slot: 'weapon', lv: 1,
+      atk: 60, mark: 60, def: 300,
+      weaponDefPct: 0.25,
+      weaponDmgHalve: 0.50,
       isBossGift: true, sourceBossId: 'supreme_king', rarity: 'divine',
-      affixDesc: '暴擊率 +10%、SPD +20（至尊神弓）' },
+      affixDesc: 'DEF+25%、受到傷害減半（鵝鵝戰盾）' },
   ];
 
   // ============================================================
@@ -8526,6 +8641,10 @@
       }
     }
     stats.hpRegenPct = Math.min(10, totalHpRegen); // 存為百分比整數（2 = 2%），上限 10%
+    // ⭐ 神裝武器：百分比屬性加成
+    const _weaponItStat = resolveItem(rpg.equipment?.weapon);
+    if (_weaponItStat?.weaponHpPct)  stats.maxHp = Math.round(stats.maxHp * (1 + _weaponItStat.weaponHpPct));
+    if (_weaponItStat?.weaponDefPct) stats.def   = Math.round((stats.def||0) * (1 + _weaponItStat.weaponDefPct));
     // 套裝加成
     const setInfo = computeSetBonuses(player);
     if (setInfo.bonuses.atk)  stats.atk  += setInfo.bonuses.atk;
@@ -8974,6 +9093,15 @@
     const _skCritDmgBonus  = _skBuffs.has('crit_dmg_200') ? 2.00 : 0;
     const _skStatusResBonus = _skBuffs.has('status_resist_50') ? 0.50 : 0;
 
+    // ⭐ 老天鵝形態負面效果（debuff on player）
+    const _fd = opts?.skFormDebuff || {};
+    if (_fd.atkMarkHalf)     { stats.atk = Math.round(stats.atk * 0.5); stats.mark = Math.round((stats.mark||0) * 0.5); }
+    if (_fd.spdHalf)         stats.spd = Math.round((stats.spd||0) * 0.5);
+    const _fdCritPenalty     = _fd.critPenalty     || 0;   // 暴擊率懲罰（從 baseCritChance 扣）
+    const _fdHeadshotPenalty = _fd.headshotPenalty || 0;   // 爆頭率懲罰
+    const _fdStatusPenalty   = _fd.statusResistPenalty || 0; // 使 _statusResist 降低
+    const _fdBossHpRegen     = _fd.bossHpRegen     || 0;   // Boss 每回合回血
+
     // 綠茶事件：腳本式遭遇，跳過正常戰鬥
     if (monster.ability?.type === 'cameo') {
       const startHp = Math.min(player.rpg.hp ?? stats.maxHp, stats.maxHp);
@@ -9031,7 +9159,7 @@
     const setB = stats.setBonuses || {};
     // ⭐ 合成效果
     const _fx = getFusionEffects(player);
-    const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0) + (setB.critChance || 0) + _skCritRateBonus;
+    let baseCritChance = Math.max(0, 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0) + (setB.critChance || 0) + _skCritRateBonus - _fdCritPenalty);
     let critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0) + _skCritDmgBonus;
     // ⭐ 合成效果疊加層數（getFusionEffectCount = 裝幾層算幾層）
     const _fxGuardian   = getFusionEffectCount(player, 'fx_guardian');
@@ -9068,7 +9196,7 @@
     const _dgCritCount = getFusionEffectCount(player, 'fx_dg_crit');
     // ⭐ 風鵝護符 + 異蝕之印：玩家異常狀態抗性（上限 95%）
     const _earlyDefStacks = getFusionEffectCount(player, 'fx_sg_earlydef');
-    const _statusResist   = Math.min(_fxStatusRes * 0.25 + _fxSdCorrode * 0.25 + _skStatusResBonus, 0.95);
+    const _statusResist   = Math.min(Math.max(-1, _fxStatusRes * 0.25 + _fxSdCorrode * 0.25 + _skStatusResBonus - _fdStatusPenalty), 0.95);
     let _nextForceCrit = 0; // 剩餘必爆次數
     if (_dtSpecials.has('force_crit_r1')) _nextForceCrit = Math.max(_nextForceCrit, 1); // 🥚 鵝鵝神諭：開場首回必定暴擊
     // 弓手普攻流疊加（本場累積，回合間持續）
@@ -9086,6 +9214,13 @@
     const _weaponPhysShield   = _weaponItem?.physShieldPct || 0;  // 鵝盾刀：物理減傷
     const _weaponMagShield    = _weaponItem?.magShieldPct  || 0;  // 鵝盾刀：魔法減傷
     const _weaponHmgBoost     = 1 + (_weaponItem?.hmgDmgBoost || 0); // 混沌裂盾：聖母鵝傷害 +20%
+    const _weaponSkillDmgPct       = _weaponItem?.weaponSkillDmgPct       || 0;  // 鵝鵝法杖：技能傷害+30%
+    const _weaponLifestealPct      = _weaponItem?.weaponLifestealPct      || 0;  // 鵝鵝鐮刀：吸血10%
+    const _weaponBpLifesteal       = !!_weaponItem?.weaponBpLifesteal;           // 鵝鵝鐮刀：吸血進血池
+    const _weaponOnHitVuln         = _weaponItem?.weaponOnHitVulnerable   || null; // 鵝鵝審判錘
+    const _weaponMpRestore         = _weaponItem?.weaponMpRestore         || 0;  // 鵝鵝噬魂刃
+    const _weaponAllTrueDmg        = !!_weaponItem?.weaponAllTrueDmg;             // 鵝鵝狙擊槍：真傷
+    const _weaponDmgHalve          = _weaponItem?.weaponDmgHalve          || 0;  // 鵝鵝戰盾：減傷50%
     // ⭐ 覺醒破甲：掃描所有裝備的詞條，累計對「已覺醒」怪物的傷害加成
     let _awakenDmgBonus = 0;
     for (const _chkSlot of ['weapon', 'armor', 'helmet', 'gloves', 'boots', 'cape', 'ring1', 'ring2', 'accessory', 'wings']) {
@@ -9628,8 +9763,9 @@
               dmg = Math.max(0, dmg) + effMark * skill.markMult;
             }
             // ⭐ DEF 百分比公式：爆血（真傷）完全無視；ignoreDef 技能半效（monDef/2）；一般技能全效
+            // ⭐ 鵝鵝狙擊槍（weaponAllTrueDmg）：所有攻擊視為真傷（無視DEF）
             if (!skill.usesBloodPool) {
-              const _defForCalc = skill.ignoreDef ? monDef / 2 : monDef;
+              const _defForCalc = (_weaponAllTrueDmg || skill.ignoreDef) ? 0 : monDef;
               dmg *= DEF_PIERCE_K / (_defForCalc + DEF_PIERCE_K);
             }
             dmg *= perHitFactor;
@@ -9656,6 +9792,8 @@
             }
             // ⭐ 混沌鵝翼（wingSkillDmgPct）：技能傷害 +5%
             if (_wingsSkillDmgPct > 0) dmg *= (1 + _wingsSkillDmgPct);
+            // ⭐ 鵝鵝法杖（weaponSkillDmgPct）：技能傷害 +30%
+            if (_weaponSkillDmgPct > 0) dmg *= (1 + _weaponSkillDmgPct);
             // ⭐ 血之覺醒：下一技能 +20%（消耗旗標）
             if (_bloodAwakenBoost && !skill.usesBloodPool) {
               dmg *= 1.20;
@@ -9795,6 +9933,29 @@
               }
               applyStatus(playerObj, { type: 'buff', stat: 'atkPct', amount: 0.20, turns: 3 });
               extra += ` ⚔️嗜血`;
+            }
+            // ⭐ 鵝鵝鐮刀：吸血10%
+            if (_weaponLifestealPct > 0 && totalDmg > 0) {
+              const _lsHeal = Math.round(totalDmg * _weaponLifestealPct);
+              if (_weaponBpLifesteal && player.rpg.class === 'warrior') {
+                bloodPool += _lsHeal;
+                extra += ` ⚜️血池+${_lsHeal}（鐮刀）`;
+              } else {
+                const _lsBefore = pHp;
+                pHp = Math.min(stats.maxHp, pHp + _lsHeal);
+                if (pHp - _lsBefore > 0) extra += ` ⚜️+${pHp - _lsBefore} HP（鐮刀）`;
+              }
+            }
+            // ⭐ 鵝鵝審判錘：30%機率施加易傷
+            if (_weaponOnHitVuln && totalDmg > 0 && Math.random() < (_weaponOnHitVuln.chance || 0.30)) {
+              applyStatus(monster, { type: 'vulnerable', amount: _weaponOnHitVuln.amount || 0.5, hits: _weaponOnHitVuln.hits || 1 });
+              extra += ` ⚜️易傷（錘）`;
+            }
+            // ⭐ 鵝鵝噬魂刃：攻擊後回 15% MP
+            if (_weaponMpRestore > 0 && totalDmg > 0) {
+              const _mpBefore = pMp;
+              pMp = Math.min(stats.maxMp, pMp + Math.round(stats.maxMp * _weaponMpRestore));
+              if (pMp - _mpBefore > 0) extra += ` ⚜️+${pMp - _mpBefore} MP（噬魂刃）`;
             }
             if (skill.healCaster) {
               const heal = Math.max(1, Math.round(stats.maxHp * skill.healCaster));
@@ -10133,7 +10294,7 @@
             const _madStatus = (pBuff.madGooseStatus || 0) > 0;
             // ⭐ 弓手多連射：每發 0.30×ATK，獨立爆擊，爆頭率 5%+爆擊率×20%
             // ⭐ 爆頭里程碑（場內）：每 50 爆頭 +5%（本場累積，不永久存檔）
-            const HEADSHOT_CHANCE = 0.05 + baseCrit2 * 0.2 + (pBuff.headshotChance || 0) + Math.floor(_aHs / 50) * 0.05;
+            const HEADSHOT_CHANCE = Math.max(0, 0.05 + baseCrit2 * 0.2 + (pBuff.headshotChance || 0) + Math.floor(_aHs / 50) * 0.05 - _fdHeadshotPenalty);
             // 六連固定 6 段（不與其他段數疊加）；聚擊 1 段；其他正常
             const totalHits = _madSix ? 6 : _madFocus ? 1 : 3 + Math.round(pBuff.extraHits || 0);
             // 隱身爆頭保證：消耗後第一箭必中爆頭
@@ -10665,6 +10826,12 @@
           }
         }
         if (mHp <= 0) { pushDeathLine(); break; }
+        // ⭐ 老天鵝形態：每回合回血
+        if (_fdBossHpRegen > 0 && mHp > 0 && mHp < monster.maxHp) {
+          const _regen = Math.min(_fdBossHpRegen, monster.maxHp - mHp);
+          mHp += _regen;
+          log.push({ type: 'monster', text: `回合 ${round}：⚜️老天鵝【神聖型】回復 ${_regen.toLocaleString()} HP`, hp: { player: pHp, monster: mHp, mp: pMp } });
+        }
         // ⭐ 麻痺（charge-based）：50% RNG 決定跳過，消耗 1 層
         if (consumeParalyze(monster, 0.50)) {
           log.push({ type: 'system', text: `回合 ${round}：${monster.name} ⚡麻痺，行動被取消`, hp: { player: pHp, monster: mHp, mp: pMp } });
@@ -10894,6 +11061,8 @@
             if (!mSkill.magic && _weaponPhysShield > 0) dmg = Math.max(1, Math.round(dmg * (1 - Math.min(0.5, _weaponPhysShield))));
             // ⭐ 虛空鵝翼（wingDmgReduct）：受到傷害 -15%
             if (_wingsDmgReduct > 0) dmg = Math.max(1, Math.round(dmg * (1 - _wingsDmgReduct)));
+            // ⭐ 鵝鵝戰盾（weaponDmgHalve）：受到傷害減半
+            if (_weaponDmgHalve > 0) dmg = Math.max(1, Math.round(dmg * (1 - _weaponDmgHalve)));
             if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1) * (_weaponBpBoostMult || 1);
             pHp = Math.max(0, pHp - dmg);
             if (dmg > 0) {
@@ -10933,6 +11102,10 @@
               applyStatus(playerObj, mSkill.applyStatus);
               log.push({ type: 'system', text: `回合 ${round}：${player.name} 進入 ${statusEmoji(mSkill.applyStatus.type)}${statusLabel(mSkill.applyStatus.type)} 狀態`, hp: { player: pHp, monster: mHp, mp: pMp } });
             }
+            if (!dead && dmg > 0 && mSkill.applyStatus2 && Math.random() < (mSkill.applyStatus2.chance || 1) * (1 - _statusResist))
+              applyStatus(playerObj, mSkill.applyStatus2);
+            if (!dead && dmg > 0 && mSkill.applyStatus3 && Math.random() < (mSkill.applyStatus3.chance || 1) * (1 - _statusResist))
+              applyStatus(playerObj, mSkill.applyStatus3);
           }
         } else {
           // 多段攻擊：1.3x 總傷害平均分散
@@ -10975,6 +11148,8 @@
             if (_weaponPhysShield > 0) dmg = Math.max(1, Math.round(dmg * (1 - Math.min(0.5, _weaponPhysShield))));
             // ⭐ 虛空鵝翼（wingDmgReduct）：受到傷害 -15%
             if (_wingsDmgReduct > 0) dmg = Math.max(1, Math.round(dmg * (1 - _wingsDmgReduct)));
+            // ⭐ 鵝鵝戰盾（weaponDmgHalve）：受到傷害減半
+            if (_weaponDmgHalve > 0) dmg = Math.max(1, Math.round(dmg * (1 - _weaponDmgHalve)));
             if (player.rpg.class === 'warrior') bloodPool += Math.min(Math.max(0, pHp), dmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1) * (_weaponBpBoostMult || 1);
             pHp -= dmg;
             if (dmg > 0) {
@@ -11345,7 +11520,7 @@
     const _wingsSkillDmgPct  = _wingsItemM?.wingSkillDmgPct  || 0;
     const _wingsDmgReduct    = _wingsItemM?.wingDmgReduct    || 0;
     const _wingsBasicAtkPct  = _wingsItemM?.wingBasicAtkPct  || 0;
-    const baseCritChance = 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0) + (setB.critChance || 0) + _skCritRateBonus;
+    let baseCritChance = Math.max(0, 0.08 + (cls.critBonus || 0) + (bonus.critChance || 0) + (abil.critChance || 0) + (passive.critChance || 0) + (setB.critChance || 0) + _skCritRateBonus - _fdCritPenalty);
     let critMult = 1.7 + (abil.critDmgBonus || 0) + (passive.critDmg || 0) + (setB.critDmg || 0) + _skCritDmgBonus;
     // fx_guardian: 每回合 HP 回復最大值 3%/層
     const regenPer = (cls.regenPer || 0) + (bonus.regen || 0) + _fxGuardian * 0.03;
@@ -11357,7 +11532,7 @@
     // ⭐ 風鵝護符效果
     const _earlyDefStacksM = getFusionEffectCount(player, 'fx_sg_earlydef');
     // ⭐ 風鵝護符 + 異蝕之印：玩家異常狀態抗性（上限 95%）
-    const _statusResistM   = Math.min(_fxStatusRes * 0.25 + _fxSdCorrode * 0.25 + _skStatusResBonus, 0.95);
+    const _statusResistM   = Math.min(Math.max(-1, _fxStatusRes * 0.25 + _fxSdCorrode * 0.25 + _skStatusResBonus - _fdStatusPenalty), 0.95);
     let _spellBookM = [];                // ⭐ 法書：記錄法師施放的元素（最多10格）
     let _chantCycleIdxM = 0;            // ⭐ 自動唸咒-輪（組隊）：當前週期位置
     // 弓手普攻流疊加（本場累積）
@@ -11375,6 +11550,13 @@
     const _weaponPhysShield   = _weaponItemM?.physShieldPct || 0;
     const _weaponMagShield    = _weaponItemM?.magShieldPct  || 0;
     const _weaponHmgBoost     = 1 + (_weaponItemM?.hmgDmgBoost || 0); // 混沌裂盾：聖母鵝傷害 +20%
+    const _weaponSkillDmgPctM      = _weaponItemM?.weaponSkillDmgPct       || 0;
+    const _weaponLifestealPctM     = _weaponItemM?.weaponLifestealPct      || 0;
+    const _weaponBpLifestealM      = !!_weaponItemM?.weaponBpLifesteal;
+    const _weaponOnHitVulnM        = _weaponItemM?.weaponOnHitVulnerable   || null;
+    const _weaponMpRestoreM        = _weaponItemM?.weaponMpRestore         || 0;
+    const _weaponAllTrueDmgM       = !!_weaponItemM?.weaponAllTrueDmg;
+    const _weaponDmgHalveM         = _weaponItemM?.weaponDmgHalve          || 0;
     // ⭐ 覺醒破甲：掃描所有裝備的詞條，累計對「已覺醒」怪物的傷害加成
     let _awakenDmgBonus = 0;
     for (const _chkSlotM of ['weapon', 'armor', 'helmet', 'gloves', 'boots', 'cape', 'ring1', 'ring2', 'accessory', 'wings']) {
@@ -11823,8 +12005,9 @@
                 dmg = Math.max(0, dmg) + effMark * skill.markMult;
               }
               // ⭐ DEF 百分比公式：爆血（真傷）完全無視；ignoreDef 技能半效（tgtMonDef/2）；一般技能全效
+              // ⭐ 鵝鵝狙擊槍（weaponAllTrueDmgM）：所有攻擊視為真傷（無視DEF）
               if (!skill.usesBloodPool) {
-                const _defForCalcM = skill.ignoreDef ? tgtMonDef / 2 : tgtMonDef;
+                const _defForCalcM = (_weaponAllTrueDmgM || skill.ignoreDef) ? 0 : tgtMonDef;
                 dmg *= DEF_PIERCE_K / (_defForCalcM + DEF_PIERCE_K);
               }
               // 爆血（真傷）不吃技能加成與被動加成
@@ -11865,6 +12048,8 @@
               if (_fxPgHp > 0 && pHp < stats.maxHp * 0.3) dmg *= (1 + _fxPgHp * 0.50);
               // ⭐ 混沌鵝翼（wingSkillDmgPct）：技能傷害 +5%
               if (_wingsSkillDmgPct > 0) dmg *= (1 + _wingsSkillDmgPct);
+              // ⭐ 鵝鵝法杖（weaponSkillDmgPctM）：技能傷害 +30%
+              if (_weaponSkillDmgPctM > 0) dmg *= (1 + _weaponSkillDmgPctM);
               // ⭐ 血之覺醒：下一技能 +20%（消耗旗標）
               if (_bloodAwakenBoostM && !skill.usesBloodPool) {
                 dmg *= 1.20;
@@ -12013,6 +12198,37 @@
                 }
                 applyStatus(playerObj, { type: 'buff', stat: 'atkPct', amount: 0.20, turns: 3 });
                 extra += ` ⚔️嗜血`;
+              }
+            }
+            // ⭐ 鵝鵝鐮刀：吸血10%（組隊）
+            if (_weaponLifestealPctM > 0 && hits.length) {
+              const _lsTotalM = hits.reduce((s, h) => s + h.dmg, 0);
+              if (_lsTotalM > 0) {
+                const _lsHealM = Math.round(_lsTotalM * _weaponLifestealPctM);
+                if (_weaponBpLifestealM && player.rpg.class === 'warrior') {
+                  bloodPool += _lsHealM;
+                  extra += ` ⚜️血池+${_lsHealM}（鐮刀）`;
+                } else {
+                  const _lsBeforeM = pHp;
+                  pHp = Math.min(stats.maxHp, pHp + _lsHealM);
+                  if (pHp - _lsBeforeM > 0) extra += ` ⚜️+${pHp - _lsBeforeM} HP（鐮刀）`;
+                }
+              }
+            }
+            // ⭐ 鵝鵝審判錘：30%機率施加易傷（組隊）
+            if (_weaponOnHitVulnM && hits.length && Math.random() < (_weaponOnHitVulnM.chance || 0.30)) {
+              for (const h of hits) {
+                if (h.tgt.hp > 0) applyStatus(h.tgt, { type: 'vulnerable', amount: _weaponOnHitVulnM.amount || 0.5, hits: _weaponOnHitVulnM.hits || 1 });
+              }
+              extra += ` ⚜️易傷（錘）`;
+            }
+            // ⭐ 鵝鵝噬魂刃：攻擊後回 15% MP（組隊）
+            if (_weaponMpRestoreM > 0 && hits.length) {
+              const _anyDmgM = hits.some(h => h.dmg > 0);
+              if (_anyDmgM) {
+                const _mpBeforeM = pMp;
+                pMp = Math.min(stats.maxMp, pMp + Math.round(stats.maxMp * _weaponMpRestoreM));
+                if (pMp - _mpBeforeM > 0) extra += ` ⚜️+${pMp - _mpBeforeM} MP（噬魂刃）`;
               }
             }
             if (skill.healCaster) {
@@ -12300,7 +12516,7 @@
             const _madStatusM = (pBuff.madGooseStatus || 0) > 0;
             // ⭐ 弓手多連射：每發 0.30×ATK，獨立爆擊，爆頭率 5%+爆擊率×20%
             // ⭐ 爆頭里程碑（場內）：每 50 爆頭 +5%
-            const HEADSHOT_CHANCE = 0.05 + baseCrit2 * 0.2 + (pBuff.headshotChance || 0) + Math.floor(_aHs / 50) * 0.05;
+            const HEADSHOT_CHANCE = Math.max(0, 0.05 + baseCrit2 * 0.2 + (pBuff.headshotChance || 0) + Math.floor(_aHs / 50) * 0.05 - _fdHeadshotPenalty);
             // 六連固定 6 段；聚擊 1 段；其他正常
             const totalHits = _madSixM ? 6 : _madFocusM ? 1 : 3 + Math.round(pBuff.extraHits || 0);
             const _stealthHsSt = (playerObj.statuses || []).find(s => s.type === 'stealthHeadshot');
@@ -12809,6 +13025,12 @@
           }
         }
         if (!m.alive) continue;
+        // ⭐ 老天鵝形態：每回合回血
+        if (_fdBossHpRegen > 0 && m.hp > 0 && m.hp < m.maxHp) {
+          const _regenM = Math.min(_fdBossHpRegen, m.maxHp - m.hp);
+          m.hp += _regenM;
+          log.push({ type: 'monster', text: `回合 ${round}：⚜️老天鵝【神聖型】回復 ${_regenM.toLocaleString()} HP`, hp: hpsSnapshot() });
+        }
         // ⭐ 麻痺（charge-based）：50% RNG 決定跳過，消耗 1 層
         if (consumeParalyze(m, 0.50)) {
           log.push({ type: 'system', text: `回合 ${round}：${m.icon}${m.name} ⚡麻痺，行動被取消`, hp: hpsSnapshot() });
@@ -12981,6 +13203,10 @@
               applyStatus(playerObj, mSkill.applyStatus);
               log.push({ type: 'system', text: `回合 ${round}：${player.name} 進入 ${statusEmoji(mSkill.applyStatus.type)}${statusLabel(mSkill.applyStatus.type)} 狀態`, hp: hpsSnapshot() });
             }
+            if (pHp > 0 && dmg > 0 && mSkill.applyStatus2 && Math.random() < (mSkill.applyStatus2.chance || 1) * (1 - _statusResistM))
+              applyStatus(playerObj, mSkill.applyStatus2);
+            if (pHp > 0 && dmg > 0 && mSkill.applyStatus3 && Math.random() < (mSkill.applyStatus3.chance || 1) * (1 - _statusResistM))
+              applyStatus(playerObj, mSkill.applyStatus3);
           }
         } else {
           // 攻擊（含多段）
@@ -15969,7 +16195,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260515011222';
+  const APP_VERSION = '20260515015915';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -16025,7 +16251,7 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260514_dungeon_v2';
+  const NEWS_LATEST_ID = 'patch_20260515_supreme_king';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
@@ -16045,6 +16271,33 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#1a0020,#2d0030); border-radius:10px; padding:10px 14px; margin-bottom:14px; border:2px solid #9d174d; box-shadow:0 0 12px rgba(157,23,77,.35);">
+          <div style="font-size:15px; font-weight:800; color:#fde68a;">⚜️ v21.3 老天鵝・限時傳說討伐 <span style="font-size:11px; opacity:0.85; color:#f9a8d4;">2026-05-15</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#fde68a; margin:6px 0 4px;">⚜️ 限時傳說討伐「老天鵝」登場</div>
+        <div>◆ 世界王頁面頂端全新 <b>限時傳說討伐</b> 區塊，與一般世界王分開</div>
+        <div>◆ 老天鵝 100億 HP・ATK/DEF 2500・SPD 500 ── 史上最強隱藏 Boss</div>
+        <div>◆ 每場隨機 <b>4 種形態</b>（霸天/神聖/魔導/速影），各有獨立技能 + 形態 Debuff</div>
+        <div>◆ 入場消耗 🥚 地城鵝蛋幣（基礎 5 幣），可額外加持 1～2 個強化 Buff</div>
+        <div>◆ 擊殺獎勵：<b>至尊寶玉</b> + 隨機 <b>神聖武器</b></div>
+        <div>◆ 擊殺後 <b>5 小時</b>休眠冷卻</div>
+
+        <div style="font-weight:700; color:#c084fc; margin:10px 0 4px;">✨ 8 件神聖武器（gg_ 系列）</div>
+        <div>◆ <b>鵝鵝神劍</b> ATK+150・暴擊率+20%・暴擊傷害+40%・最大HP+15%</div>
+        <div>◆ <b>鵝鵝法杖</b> MARK+150・技能傷害+30%</div>
+        <div>◆ <b>鵝鵝鐮刀</b> ATK/MARK/DEF+100・吸血+10%（含血池）</div>
+        <div>◆ <b>鵝鵝雙刃</b> ATK+50・SPD+50・爆頭率+20%</div>
+        <div>◆ <b>鵝鵝審判錘</b> ATK/MARK+100・DEF+25%・命中時 30% 附加易傷</div>
+        <div>◆ <b>鵝鵝噬魂刃</b> ATK/MARK/DEF+100・命中回覆 15% MP</div>
+        <div>◆ <b>鵝鵝狙擊槍</b> ATK+70・攻擊全為真傷（無視 DEF）</div>
+        <div>◆ <b>鵝鵝戰盾</b> DEF+300・ATK/MARK+60・DEF+25%・受傷減半</div>
+
+        <div style="background:rgba(157,23,77,.15); border-radius:8px; padding:8px 12px; margin:8px 0 14px; font-size:12px; color:#f9a8d4; border:1px solid #9d174d;">
+          ⚜️ 老天鵝為本遊戲最高挑戰內容，建議先蒐集強力裝備再嘗試！
+        </div>
+
 
         <div style="background:linear-gradient(135deg,#0a0514,#1a0a2e); border-radius:10px; padding:10px 14px; margin-bottom:14px; border:1px solid #4c1d95;">
           <div style="font-size:15px; font-weight:800; color:#e9d5ff;">🛠️ v21.2 地城系統大升級　<span style="font-size:11px; opacity:0.85;">2026-05-14</span></div>
