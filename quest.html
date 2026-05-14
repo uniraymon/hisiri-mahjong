@@ -15571,7 +15571,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260514145206';
+  const APP_VERSION = '20260514150731';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -23990,7 +23990,17 @@ ${b.text}
   // ⭐ 地城寶物交易系統
   // ══════════════════════════════════════════════════════
 
-  // 渲染地城寶物＋交易面板（掛在 dungeonBody 之外的獨立容器）
+  // ── 地城寶物共用常數 ──────────────────────────────────────────
+  const _DTV_TABS = [
+    { key:'goose',  label:'🦢 鵝王', color:'#fde047', bg:'linear-gradient(135deg,#78350f,#b45309)', shadow:'#451a03', tc:'#fef3c7' },
+    { key:'legend', label:'🌟 傳說', color:'#c084fc', bg:'linear-gradient(135deg,#3b0764,#6d28d9)', shadow:'#1e0a3c', tc:'#f3e8ff' },
+    { key:'flash',  label:'⚡ 閃光', color:'#67e8f9', bg:'linear-gradient(135deg,#164e63,#0891b2)', shadow:'#082f49', tc:'#ecfeff' },
+    { key:'normal', label:'🟢 普通', color:'#86efac', bg:'linear-gradient(135deg,#052e16,#166534)', shadow:'#021407', tc:'#dcfce7' },
+    { key:'trash',  label:'⬜ 極鵝', color:'#9ca3af', bg:'linear-gradient(135deg,#1f2937,#374151)', shadow:'#111827', tc:'#e5e7eb' },
+  ];
+  const _DTV_EMO = { goose:'🦢', legend:'🌟', flash:'⚡', normal:'🟢', trash:'⬜' };
+
+  // 渲染地城寶物面板（只顯示摘要 + 按鈕 + 待處理交易）
   function renderDungeonTreasures() {
     const body = document.getElementById('dungeonTreasureBody');
     if (!body) return;
@@ -23999,56 +24009,18 @@ ${b.text}
     const rpg = getRpg(me);
     const owned = Array.isArray(rpg.dungeonTreasures) ? rpg.dungeonTreasures : [];
     const coins = rpg.dungeonEggCoins || 0;
-
-    // 我的寶物（去重顯示，但顯示持有數量）
-    const countMap = {};
-    for (const id of owned) countMap[id] = (countMap[id]||0) + 1;
-    const uniqueIds = Object.keys(countMap);
-
-    const _DT_RARITY_EMOJI = { goose:'🦢', legend:'🌟', flash:'⚡', normal:'🟢', trash:'⬜' };
-    const _DT_RARITY_BG = {
-      goose:  'linear-gradient(135deg,#78350f,#b45309)',
-      legend: 'linear-gradient(135deg,#3b0764,#6d28d9)',
-      flash:  'linear-gradient(135deg,#164e63,#0891b2)',
-      normal: 'linear-gradient(135deg,#052e16,#166534)',
-      trash:  'linear-gradient(135deg,#1f2937,#374151)',
-    };
-    const _DT_RARITY_SHADOW = { goose:'#451a03', legend:'#1e0a3c', flash:'#082f49', normal:'#021407', trash:'#111827' };
-    const _DT_RARITY_TEXT   = { goose:'#fef3c7', legend:'#f3e8ff', flash:'#ecfeff', normal:'#dcfce7', trash:'#e5e7eb' };
-
-    const myTreasureHtml = uniqueIds.length === 0
-      ? '<div style="color:#6b7280;font-size:11px;text-align:center;padding:12px;">尚未持有任何地城寶物</div>'
-      : `<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">${
-          uniqueIds.map(id => {
-            const item = DUNGEON_TREASURES.find(t => t.id === id);
-            if (!item) return '';
-            const rc     = _DT_RARITY_COLOR[item.rarity]  || '#9ca3af';
-            const emo    = _DT_RARITY_EMOJI[item.rarity]  || '📦';
-            const bg     = _DT_RARITY_BG[item.rarity]     || 'linear-gradient(135deg,#1f2937,#374151)';
-            const shadow = _DT_RARITY_SHADOW[item.rarity] || '#111827';
-            const tc     = _DT_RARITY_TEXT[item.rarity]   || '#e5e7eb';
-            const cnt    = countMap[id];
-            return `<div onclick="dungeonTradeSelectMyItem('${id}')"
-              style="background:${bg};border:2px solid ${rc};box-shadow:0 3px 0 ${shadow};border-radius:10px;padding:8px 3px 6px;cursor:pointer;text-align:center;transition:filter 0.15s;position:relative;"
-              onmouseenter="this.style.filter='brightness(1.2)'" onmouseleave="this.style.filter=''">
-              <div style="font-size:22px;line-height:1.2;">${emo}</div>
-              <div style="font-size:9px;font-weight:700;color:${tc};line-height:1.3;margin-top:3px;word-break:keep-all;">${item.name}</div>
-              <div style="font-size:9px;color:${tc};opacity:0.8;margin-top:1px;">${cnt > 1 ? `×${cnt}` : '　'}</div>
-            </div>`;
-          }).join('')
-        }</div>`;
-
-    // 待處理交易請求
+    const uniqueCount = new Set(owned).size;
     const pending = rpg.pendingDungeonTrades || [];
+
     const pendingHtml = pending.length === 0 ? '' : `
-      <div style="margin-top:12px;">
+      <div style="margin-top:10px;">
         <div style="font-size:11px;font-weight:700;color:#fbbf24;margin-bottom:6px;">📬 待處理交易請求（${pending.length}）</div>
         ${pending.map(tr => {
           const fromPlayer = players.find(p => p.id === tr.fromId);
           const fromName = fromPlayer ? (fromPlayer.name || tr.fromId) : tr.fromId;
-          const myItem  = DUNGEON_TREASURES.find(t => t.id === tr.wantItemId);
+          const myItem    = DUNGEON_TREASURES.find(t => t.id === tr.wantItemId);
           const theirItem = DUNGEON_TREASURES.find(t => t.id === tr.fromItemId);
-          const myRc    = myItem   ? (_DT_RARITY_COLOR[myItem.rarity]   || '#9ca3af') : '#9ca3af';
+          const myRc    = myItem    ? (_DT_RARITY_COLOR[myItem.rarity]    || '#9ca3af') : '#9ca3af';
           const theirRc = theirItem ? (_DT_RARITY_COLOR[theirItem.rarity] || '#9ca3af') : '#9ca3af';
           const dt = new Date(tr.ts);
           const timeStr = `${dt.getMonth()+1}/${dt.getDate()} ${dt.getHours()}:${String(dt.getMinutes()).padStart(2,'0')}`;
@@ -24060,83 +24032,167 @@ ${b.text}
             </div>
             <div style="display:flex;gap:6px;">
               <button onclick="dungeonAcceptTrade('${tr.id}')"
-                style="flex:1;background:linear-gradient(135deg,#166534,#16a34a);color:#fff;border:none;padding:6px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">
-                ✅ 接受
-              </button>
+                style="flex:1;background:linear-gradient(135deg,#166534,#16a34a);color:#fff;border:none;padding:6px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">✅ 接受</button>
               <button onclick="dungeonDeclineTrade('${tr.id}')"
-                style="flex:1;background:rgba(0,0,0,0.3);color:#9ca3af;border:1px solid #374151;padding:6px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;">
-                ❌ 拒絕
-              </button>
+                style="flex:1;background:rgba(0,0,0,0.3);color:#9ca3af;border:1px solid #374151;padding:6px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;">❌ 拒絕</button>
             </div>
           </div>`;
         }).join('')}
       </div>`;
 
     body.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <div style="font-size:12px;font-weight:700;color:#c4b5fd;">🏺 我的地城寶物（${uniqueIds.length} 種 / 共 ${owned.length} 件）</div>
-        <div style="font-size:11px;color:#fbbf24;">🥚 地城幣 ${coins}</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div style="flex:1;">
+          <div style="font-size:12px;color:#c4b5fd;">已持有 <b style="color:#e9d5ff;">${uniqueCount}</b> 種 / 共 <b style="color:#e9d5ff;">${owned.length}</b> 件</div>
+          <div style="font-size:11px;color:#fbbf24;margin-top:2px;">🥚 地城幣 ${coins}</div>
+        </div>
+        <button onclick="showDungeonTreasureVault('goose')"
+          style="background:linear-gradient(135deg,#4c1d95,#7c3aed);border:2px solid #a78bfa;box-shadow:0 3px 0 #2e1065;color:#e9d5ff;padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">
+          🏺 查看寶物庫
+        </button>
       </div>
-      ${myTreasureHtml}
       ${pendingHtml}
     `;
   }
   window.renderDungeonTreasures = renderDungeonTreasures;
 
-  // 選擇要拿去交易的自己的道具 → 彈出選對象面板
+  // 地城寶物庫 modal（分頁：鵝王/傳說/閃光/普通/極鵝，顯示全部道具）
+  function showDungeonTreasureVault(activeRarity) {
+    const me = getMe(); if (!me) { showToast('請先登入'); return; }
+    const rpg = getRpg(me);
+    const owned = Array.isArray(rpg.dungeonTreasures) ? rpg.dungeonTreasures : [];
+    const countMap = {};
+    for (const id of owned) countMap[id] = (countMap[id]||0)+1;
+    window._dtVaultRarity = activeRarity || 'goose';
+    const active = window._dtVaultRarity;
+
+    // 分頁列
+    const tabHtml = _DTV_TABS.map(t => {
+      const ownedCnt = DUNGEON_TREASURES.filter(it => it.rarity === t.key && countMap[it.id]).length;
+      const totalCnt = DUNGEON_TREASURES.filter(it => it.rarity === t.key).length;
+      const isActive = t.key === active;
+      return `<button onclick="showDungeonTreasureVault('${t.key}')"
+        style="background:${isActive ? t.color : 'rgba(0,0,0,0.35)'};border:2px solid ${t.color};
+               border-radius:8px;padding:5px 7px;font-size:10px;font-weight:700;cursor:pointer;
+               font-family:inherit;color:${isActive ? '#1a0a2e' : t.color};
+               box-shadow:${isActive ? `0 2px 0 rgba(0,0,0,0.4)` : 'none'};
+               transition:filter 0.1s;min-width:52px;text-align:center;"
+        onmouseenter="this.style.filter='brightness(1.2)'" onmouseleave="this.style.filter=''">
+        ${t.label}<br><span style="font-size:9px;opacity:0.85;">${ownedCnt}/${totalCnt}</span>
+      </button>`;
+    }).join('');
+
+    // 格子
+    const tabInfo = _DTV_TABS.find(t => t.key === active) || _DTV_TABS[0];
+    const items = DUNGEON_TREASURES.filter(it => it.rarity === active);
+    const ownedInTab = items.filter(it => countMap[it.id]).length;
+
+    const gridHtml = items.map(item => {
+      const cnt = countMap[item.id] || 0;
+      const desc = dungeonTreasureDesc(item);
+      const shortDesc = desc.split('・')[0];
+      if (cnt > 0) {
+        return `<div onclick="dungeonTradeSelectMyItem('${item.id}')" title="${desc}"
+          style="position:relative;background:${tabInfo.bg};border:2px solid ${tabInfo.color};
+                 box-shadow:0 3px 0 ${tabInfo.shadow};border-radius:10px;padding:8px 4px 6px;
+                 cursor:pointer;text-align:center;transition:filter 0.15s;"
+          onmouseenter="this.style.filter='brightness(1.2)'" onmouseleave="this.style.filter=''">
+          ${cnt > 1 ? `<div style="position:absolute;top:2px;right:3px;font-size:8px;background:${tabInfo.color};color:#1a0a2e;border-radius:4px;padding:1px 3px;font-weight:800;line-height:1.4;">×${cnt}</div>` : ''}
+          <div style="font-size:20px;line-height:1.2;">${_DTV_EMO[active]||'📦'}</div>
+          <div style="font-size:9px;font-weight:700;color:${tabInfo.tc};line-height:1.3;margin-top:2px;">${item.name}</div>
+          <div style="font-size:8px;color:${tabInfo.tc};opacity:0.7;margin-top:1px;line-height:1.2;">${shortDesc}</div>
+        </div>`;
+      } else {
+        return `<div title="${desc}"
+          style="background:rgba(0,0,0,0.45);border:2px solid #374151;border-radius:10px;
+                 padding:8px 4px 6px;text-align:center;opacity:0.45;filter:grayscale(0.7);">
+          <div style="font-size:20px;line-height:1.2;filter:grayscale(1);">🔒</div>
+          <div style="font-size:9px;color:#6b7280;line-height:1.3;margin-top:2px;">${item.name}</div>
+          <div style="font-size:8px;color:#4b5563;margin-top:1px;line-height:1.2;">${shortDesc}</div>
+        </div>`;
+      }
+    }).join('');
+
+    const html = `
+      <div style="background:linear-gradient(135deg,#0a0514,#1a0a2e);padding:4px;color:#e9d5ff;">
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;">${tabHtml}</div>
+        <div style="font-size:11px;color:#a78bfa;margin-bottom:8px;">
+          已收集 <b style="color:#e9d5ff;">${ownedInTab} / ${items.length}</b>
+          <span style="color:#6b7280;font-size:10px;margin-left:6px;">・點擊已持有的寶物可發起交易</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">${gridHtml}</div>
+      </div>`;
+
+    showModal('🏺 地城寶物庫', html);
+  }
+  window.showDungeonTreasureVault = showDungeonTreasureVault;
+
+  // 選擇要拿去交易的自己的道具 → 在 modal 內顯示選對象面板
   function dungeonTradeSelectMyItem(myItemId) {
     const me = getMe(); if (!me) return;
     const rpg = getRpg(me);
     if (!Array.isArray(rpg.dungeonTreasures)) rpg.dungeonTreasures = [];
     if (!rpg.dungeonTreasures.includes(myItemId)) { showToast('你沒有這件寶物'); return; }
 
-    // 列出有地城寶物的其他玩家（getRpg 可能因資料不完整 throw，用 try-catch 保護）
+    const myItem = DUNGEON_TREASURES.find(t => t.id === myItemId);
+    const myTabInfo = _DTV_TABS.find(t => t.key === myItem?.rarity) || _DTV_TABS[0];
+
+    // 列出有地城寶物的其他玩家
     const otherPlayers = players.filter(p => {
       if (!p || p.id === me.id) return false;
       try { return (getRpg(p).dungeonTreasures?.length || 0) > 0; } catch(e) { return false; }
     });
-    if (!otherPlayers.length) { showToast('目前沒有其他玩家持有地城寶物'); return; }
 
-    const myItem = DUNGEON_TREASURES.find(t => t.id === myItemId);
-    const myRc = _DT_RARITY_COLOR[myItem?.rarity] || '#9ca3af';
+    const backRarity = window._dtVaultRarity || myItem?.rarity || 'goose';
 
-    // 建立選人面板
-    const panel = document.getElementById('dungeonTradePanel');
-    if (!panel) { showToast('找不到交易面板容器'); return; }
+    if (!otherPlayers.length) {
+      showModal('🔄 提出交易', `
+        <div style="background:linear-gradient(135deg,#0a0514,#1a0a2e);padding:8px;color:#e9d5ff;text-align:center;">
+          <div style="font-size:13px;margin-bottom:12px;">用 <span style="color:${myTabInfo.color};font-weight:700;">${myItem?.name||myItemId}</span> 換取…</div>
+          <div style="color:#6b7280;font-size:12px;padding:16px;">目前沒有其他玩家持有地城寶物</div>
+          <button onclick="showDungeonTreasureVault('${backRarity}')"
+            style="margin-top:8px;background:rgba(109,40,217,0.4);border:1px solid #7c3aed;color:#c4b5fd;padding:6px 16px;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit;">← 返回寶物庫</button>
+        </div>`);
+      return;
+    }
 
     const playerOpts = otherPlayers.map(p => {
       let pRpg;
       try { pRpg = getRpg(p); } catch(e) { return ''; }
       if (!pRpg) return '';
-      const theirOwned = pRpg.dungeonTreasures || [];
-      const countMap2 = {};
-      for (const id of theirOwned) countMap2[id] = (countMap2[id]||0)+1;
-      const items = Object.keys(countMap2).map(id2 => {
+      const theirOwned = Array.isArray(pRpg.dungeonTreasures) ? pRpg.dungeonTreasures : [];
+      const cm = {};
+      for (const id of theirOwned) cm[id] = (cm[id]||0)+1;
+      const itemBtns = Object.keys(cm).map(id2 => {
         const ti = DUNGEON_TREASURES.find(t => t.id === id2);
         if (!ti) return '';
-        const tRc = _DT_RARITY_COLOR[ti.rarity] || '#9ca3af';
-        const cnt2 = countMap2[id2];
+        const tInfo = _DTV_TABS.find(t => t.key === ti.rarity) || _DTV_TABS[4];
         return `<button onclick="dungeonSendTradeRequest('${me.id}','${p.id}','${myItemId}','${id2}')"
-          style="display:block;width:100%;background:rgba(0,0,0,0.2);border:1px solid #374151;color:#e9d5ff;padding:5px 8px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;text-align:left;margin-bottom:3px;">
-          <span style="color:${tRc};">${ti.name}</span>${cnt2>1?` ×${cnt2}`:''}
+          style="display:block;width:100%;background:${tInfo.bg};border:2px solid ${tInfo.color};
+                 color:${tInfo.tc};padding:5px 8px;border-radius:8px;font-size:11px;cursor:pointer;
+                 font-family:inherit;text-align:left;margin-bottom:4px;font-weight:700;">
+          ${_DTV_EMO[ti.rarity]||'📦'} ${ti.name}${cm[id2]>1?` <span style="opacity:0.75;">×${cm[id2]}</span>`:''}
+          <span style="font-size:9px;opacity:0.6;display:block;">${dungeonTreasureDesc(ti).split('・')[0]}</span>
         </button>`;
       }).join('');
-      return `<div style="margin-bottom:10px;">
-        <div style="font-size:11px;color:#a78bfa;font-weight:700;margin-bottom:4px;">👤 ${escapeHtml(p.name||p.id)}</div>
-        ${items || '<div style="font-size:10px;color:#6b7280;">無寶物</div>'}
+      return `<div style="margin-bottom:12px;">
+        <div style="font-size:11px;color:#a78bfa;font-weight:700;margin-bottom:5px;">👤 ${escapeHtml(p.name||p.id)}</div>
+        ${itemBtns || '<div style="font-size:10px;color:#6b7280;">無寶物</div>'}
       </div>`;
     }).join('');
 
-    panel.innerHTML = `
-      <div style="background:linear-gradient(135deg,#1a0a2e,#2e1065);border:2px solid #7c3aed;border-radius:14px;padding:14px;margin-top:10px;">
-        <div style="font-size:13px;font-weight:800;color:#e9d5ff;margin-bottom:10px;">
-          🔄 用 <span style="color:${myRc};">${myItem?.name||myItemId}</span> 換取...
-          <button onclick="document.getElementById('dungeonTradePanel').innerHTML=''"
-            style="float:right;background:transparent;border:1px solid #374151;color:#6b7280;padding:2px 8px;border-radius:6px;font-size:10px;cursor:pointer;font-family:inherit;">✕</button>
+    showModal('🔄 提出交易', `
+      <div style="background:linear-gradient(135deg,#0a0514,#1a0a2e);padding:4px;color:#e9d5ff;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;">
+          用 <span style="color:${myTabInfo.color};">${myItem?.name||myItemId}</span> 換取…
         </div>
-        <div style="max-height:300px;overflow-y:auto;">${playerOpts}</div>
-      </div>`;
-    panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+        <div style="max-height:360px;overflow-y:auto;">${playerOpts}</div>
+        <button onclick="showDungeonTreasureVault('${backRarity}')"
+          style="margin-top:10px;background:rgba(109,40,217,0.4);border:1px solid #7c3aed;color:#c4b5fd;
+                 padding:6px 16px;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit;">
+          ← 返回寶物庫
+        </button>
+      </div>`);
   }
   window.dungeonTradeSelectMyItem = dungeonTradeSelectMyItem;
 
@@ -24173,9 +24229,8 @@ ${b.text}
     const theirItem = DUNGEON_TREASURES.find(t => t.id === wantItemId);
     showToast(`✅ 已向 ${target.name||toId} 提出交易：${myItem?.name||fromItemId} ↔ ${theirItem?.name||wantItemId}`);
 
-    const panel = document.getElementById('dungeonTradePanel');
-    if (panel) panel.innerHTML = '';
     renderDungeonTreasures();
+    showDungeonTreasureVault(window._dtVaultRarity || myItem?.rarity || 'goose');
   }
   window.dungeonSendTradeRequest = dungeonSendTradeRequest;
 
