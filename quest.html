@@ -1,11 +1,3 @@
-    // ⭐ v23：神聖型回血 50000、戰鬥 150 回
-    if (!player.rpg.updateV23 && typeof getMeId === 'function' && player.id === getMeId()) {
-      player.rpg.updateV23 = true;
-      if (typeof window !== 'undefined') {
-        window.__pendingUpdateV23 = window.__pendingUpdateV23 || new Set();
-        window.__pendingUpdateV23.add(player.id);
-      }
-    }
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -16370,7 +16362,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260515030500';
+  const APP_VERSION = '20260515030631';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
