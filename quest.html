@@ -4562,6 +4562,7 @@
             <div style="position:absolute;left:0;top:0;height:100%;width:${_skHpPct.toFixed(1)}%;background:${_skHpBar};border-radius:10px;transition:width .4s;"></div>
             <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7);">${_skState.hp.toLocaleString()} / ${_skBoss.maxHp.toLocaleString()}　(${_skHpPct.toFixed(1)}%)</div>
           </div>
+          ${wb9DamageLeaderboardHtml(_skState)}
           ${_skActionHtml}
           ${wb9RecentBattlesHtml(_skState, _skBoss)}
         </div>`;
@@ -16196,7 +16197,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260515022621';
+  const APP_VERSION = '20260515022817';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -29318,6 +29319,10 @@ ${b.text}
         <button class="btn btn-secondary" onclick="adminAddDungeonEggCoins(100)">+100</button>
       </div>
 
+
+      <div class="shop-section-title">🏺 地城寶物</div>
+      <div style="font-size:11px; color:#6b7280; margin-bottom:6px;">一鍵取得全部地城寶物各 ×1（不重複計算已有的）</div>
+      <button class="btn btn-secondary" onclick="adminGrantAllDungeonTreasures()" style="width:100%;">🏺 一鍵全拿地城寶物 ×1</button>
       <div class="shop-section-title">👑 王硬幣（快捷）</div>
       ${[
         { id:'bc_goose_king',    icon:'👑', name:'鵝皇'    },
@@ -29440,6 +29445,20 @@ ${b.text}
     showToast(`🪺 +${amount} 地城鵝蛋幣　現在：${r.dungeonEggCoins}`);
   }
   window.adminAddDungeonEggCoins = adminAddDungeonEggCoins;
+
+  function adminGrantAllDungeonTreasures() {
+    const me = getMe(); if (!me) return;
+    const r = getRpg(me); if (!r) return;
+    if (!Array.isArray(r.dungeonTreasures)) r.dungeonTreasures = [];
+    const owned = new Set(r.dungeonTreasures);
+    let added = 0;
+    for (const t of DUNGEON_TREASURES) {
+      if (!owned.has(t.id)) { r.dungeonTreasures.push(t.id); added++; }
+    }
+    saveData(); showDebugModal();
+    showToast(`🏺 已新增 ${added} 件地城寶物（各×1）`);
+  }
+  window.adminGrantAllDungeonTreasures = adminGrantAllDungeonTreasures;
 
   async function adminAddBossCoins(coinId, amount) {
     const me = getMe(); if (!me) return;
