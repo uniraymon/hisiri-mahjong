@@ -2551,6 +2551,11 @@
         { id: 'w_guts',         name: '底氣',     icon: '💪', unlockLv: 4,  cooldown: 0, mpCost: 15, type: 'buff', applyPartialShield: { reducePct: 0.20, hits: 3 }, bonusHealPct: 0.50, cast: 75, maxLv: 1 },
         // ⭐ 新增：血鵝刀法 — 傷害 + 讓敵人流血 3 次（每次 0.5% 當前 HP）
         { id: 'w_bleed_sword',  name: '血鵝刀法', icon: '🗡', unlockLv: 3,  cooldown: 0, mpCost: 18, type: 'damage', mult: 1.2, applyStatus: { type: 'bleed', charges: 3, chance: 1.0 } },
+        // ⭐ 大絕：血之覺醒 — 90% HP 轉血池（HP 剩 10%），2次無敵，下一技能+20%
+        { id: 'w_blood_awakening', name: '血之覺醒', icon: '🩸⚡', unlockLv: 15, cooldown: 99, mpCost: 0, type: 'buff',
+          isBloodAwakening: true, applyShield: 2,
+          isUltimate: true, maxLv: 1,
+          desc: '【大絕】將 90% 血量化為血池！HP 剩 10%，接下來 2 次受傷無敵，下一個技能增傷 20%。每場限用一次。' },
       ],
       skillTree: [
         { id: 'w_hp',   name: '鋼鐵之軀', icon: '🛡',  desc: '+5% 最大 HP',         maxLevel: 5, effect: 'hpPct',     per: 0.05 },
@@ -8890,6 +8895,7 @@
     let _perfectTempoStreak = 0;          // 完美節拍：連續暴擊層數 0-4
     let _midnightLateActivated = false;   // 最後的宵夜：每場限一次
     let _sdVoidBuff = false;              // 冥魂之印：下次技能 +20% 旗標
+    let _bloodAwakenBoost = false;        // 血之覺醒：下一技能 +20%
     let _petTurnCount = 0;               // 寵物觸發計數（實際行動次數）
     let _spellBook = [];                 // ⭐ 法書：記錄法師施放的元素（最多10格）
     let _chantCycleIdx = 0;              // ⭐ 自動唸咒-輪：當前週期位置（0冰/1火/2雷/3血，循環）
@@ -9442,6 +9448,12 @@
             }
             // ⭐ 混沌鵝翼（wingSkillDmgPct）：技能傷害 +5%
             if (_wingsSkillDmgPct > 0) dmg *= (1 + _wingsSkillDmgPct);
+            // ⭐ 血之覺醒：下一技能 +20%（消耗旗標）
+            if (_bloodAwakenBoost && !skill.usesBloodPool) {
+              dmg *= 1.20;
+              _bloodAwakenBoost = false;
+              extra += ' ⚡覺醒+20%';
+            }
             // ⭐ 虛空之印（fx_cg_void）：無視 DEF 20%；敵有 buff 時再+20%/層
             if (_fxCgVoid > 0) {
               // 無視 DEF 效果已在 effDef 計算中無法回退，改在傷害上補乘（近似：+20% 等效）
@@ -9760,6 +9772,18 @@
             if (skill.id === 'w_bloodlust') {
               applyStatus(playerObj, { type: 'bloodlust_pool', turns: skill.selfBuff.turns });
               extraNote.push('🩸 血池加倍');
+            }
+            // ⭐ 血之覺醒：HP×90% 轉血池，HP 剩 10%；下一技能+20%
+            if (skill.isBloodAwakening) {
+              const _baTarget = Math.max(1, Math.floor(stats.maxHp * 0.10));
+              const _baConvert = Math.max(0, pHp - _baTarget);
+              pHp = _baTarget;
+              if (_baConvert > 0) {
+                bloodPool += Math.round(_baConvert * ((hasStatus(playerObj, 'bloodlust_pool') || (pBuff.berserk || 0) > 0) ? 2 : 1) * (_weaponBpBoostMult || 1));
+                extraNote.push(`🩸 HP×90%→血池 +${_baConvert}（血池→${bloodPool}）`);
+              }
+              _bloodAwakenBoost = true;
+              extraNote.push('⚡ 下一技能 +20%');
             }
             // ⭐ 隱身：另加 shield 狀態（吸收一次傷害）+ Lv 5 額外 +20% 爆傷 buff
             if (skill.applyShield) {
@@ -11156,6 +11180,7 @@
     let _perfectTempoStreak = 0;
     let _midnightLateActivated = false;   // 最後的宵夜：每場限一次
     let _sdVoidBuff = false;              // 冥魂之印：下次技能 +20% 旗標
+    let _bloodAwakenBoostM = false;       // 血之覺醒：下一技能 +20%
     let _petTurnCount = 0;               // 寵物觸發計數
 
     let pHp = stats.maxHp; // ⭐ 每場戰鬥 HP 自動回滿（HP 變成屬性，不是耗材）
@@ -11628,6 +11653,12 @@
               if (_fxPgHp > 0 && pHp < stats.maxHp * 0.3) dmg *= (1 + _fxPgHp * 0.50);
               // ⭐ 混沌鵝翼（wingSkillDmgPct）：技能傷害 +5%
               if (_wingsSkillDmgPct > 0) dmg *= (1 + _wingsSkillDmgPct);
+              // ⭐ 血之覺醒：下一技能 +20%（消耗旗標）
+              if (_bloodAwakenBoostM && !skill.usesBloodPool) {
+                dmg *= 1.20;
+                _bloodAwakenBoostM = false;
+                extra += ' ⚡覺醒+20%';
+              }
               // ⭐ 虛空之印（fx_cg_void）：無視 DEF 20% + 敵有 buff 再+20%/層
               if (_fxCgVoid > 0) {
                 dmg *= (1 + 0.20 * _fxCgVoid);
@@ -11924,6 +11955,18 @@
             if (skill.id === 'w_bloodlust') {
               applyStatus(playerObj, { type: 'bloodlust_pool', turns: skill.selfBuff.turns });
               extraNote.push('🩸 血池加倍');
+            }
+            // ⭐ 血之覺醒（組隊）：HP×90% 轉血池，HP 剩 10%；下一技能+20%
+            if (skill.isBloodAwakening) {
+              const _baTargetM = Math.max(1, Math.floor(stats.maxHp * 0.10));
+              const _baConvertM = Math.max(0, pHp - _baTargetM);
+              pHp = _baTargetM;
+              if (_baConvertM > 0) {
+                bloodPool += Math.round(_baConvertM * ((hasStatus(playerObj, 'bloodlust_pool') || (pBuff.berserk || 0) > 0) ? 2 : 1) * (_weaponBpBoostMult || 1));
+                extraNote.push(`🩸 HP×90%→血池 +${_baConvertM}（血池→${bloodPool}）`);
+              }
+              _bloodAwakenBoostM = true;
+              extraNote.push('⚡ 下一技能 +20%');
             }
             if (skill.applyShield) {
               applyStatus(playerObj, { type: 'shield', charges: skill.applyShield, turns: 99 });
@@ -15710,7 +15753,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260514210822';
+  const APP_VERSION = '20260514234112';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
