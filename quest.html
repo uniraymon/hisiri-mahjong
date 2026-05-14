@@ -3672,7 +3672,7 @@
           ]},
       ],
       skills: [], // 動態從 forms[killCount%4] 填入，見 wb9Attack
-      entryCoins: { type: 'dungeonEggCoins', base: 5, buff1Cost: 5, buff2Cost: 15 },
+      entryCoins: { base: 1000000, buff1EggCost: 5, buff2EggCost: 10 },
       bossCoin: { id: 'bc_supreme_king', name: '至尊鵝羽', icon: '⚜️' },
       killRewards: {
         top:         { bossCoinQty: 50, supremeJadeQty: 5, skWeapon: true },
@@ -4052,22 +4052,23 @@
   window.openSkBuffModal = function(bossId) {
     const me = getMe(); if (!me) return;
     const r = getRpg(me);
-    const coins = r.dungeonEggCoins || 0;
-    if (coins < 5) { showToast('🪺 地城鵝蛋幣不足（需 5 枚）'); return; }
+    const gooseCoins = getCoins(me.id);
+    const eggCoins = r.dungeonEggCoins || 0;
+    if (gooseCoins < 1000000) { showToast('🪙 鵝鵝幣不足（需 100 萬）'); return; }
     const html = `
       <div id="skBuffModal" style="position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:16px;">
         <div style="background:linear-gradient(160deg,#1a0030,#3b0060);border:2px solid #9d174d;border-radius:16px;padding:20px;max-width:340px;width:100%;">
           <div style="font-size:20px;font-weight:900;color:#f9a8d4;margin-bottom:4px;">⚜️ 挑戰老天鵝</div>
-          <div style="font-size:11px;color:#fbbf24;margin-bottom:14px;">🪺 地城鵝蛋幣：<b>${coins}</b></div>
+          <div style="font-size:11px;color:#fbbf24;margin-bottom:14px;">🪙 鵝鵝幣：<b>${gooseCoins.toLocaleString()}</b>　🪺 地城鵝蛋幣：<b>${eggCoins}</b></div>
           <div style="display:flex;flex-direction:column;gap:8px;">
             <button onclick="skConfirmEntry('${bossId}',0)" style="padding:12px;border-radius:10px;border:none;cursor:pointer;background:linear-gradient(135deg,#374151,#1f2937);color:#e5e7eb;font-size:13px;font-weight:700;text-align:left;">
-              🗡️ 基礎挑戰<br><span style="font-size:11px;color:#9ca3af;">消耗 5 枚地城鵝蛋幣，無加持</span>
+              🗡️ 基礎挑戰<br><span style="font-size:11px;color:#9ca3af;">消耗 100 萬鵝鵝幣，無加持</span>
             </button>
-            <button onclick="skConfirmEntry('${bossId}',1)" style="padding:12px;border-radius:10px;border:none;cursor:pointer;background:linear-gradient(135deg,#1e3a5f,#1d4ed8);color:#bfdbfe;font-size:13px;font-weight:700;text-align:left;${coins<10?'opacity:.4;cursor:not-allowed;':''}">
-              ✨ 強化挑戰<br><span style="font-size:11px;color:#93c5fd;">消耗 10 枚（+5 幣）→ 隨機抽 1 個加持</span>
+            <button onclick="skConfirmEntry('${bossId}',1)" style="padding:12px;border-radius:10px;border:none;cursor:pointer;background:linear-gradient(135deg,#1e3a5f,#1d4ed8);color:#bfdbfe;font-size:13px;font-weight:700;text-align:left;${eggCoins<5?'opacity:.4;cursor:not-allowed;':''}">
+              ✨ 強化挑戰<br><span style="font-size:11px;color:#93c5fd;">+5 🪺 地城鵝蛋幣 → 隨機抽 1 個加持</span>
             </button>
-            <button onclick="skConfirmEntry('${bossId}',2)" style="padding:12px;border-radius:10px;border:none;cursor:pointer;background:linear-gradient(135deg,#4c1d95,#7c3aed);color:#e9d5ff;font-size:13px;font-weight:700;text-align:left;${coins<20?'opacity:.4;cursor:not-allowed;':''}">
-              🔥 極限挑戰<br><span style="font-size:11px;color:#c4b5fd;">消耗 20 枚（+15 幣）→ 隨機抽 2 個加持</span>
+            <button onclick="skConfirmEntry('${bossId}',2)" style="padding:12px;border-radius:10px;border:none;cursor:pointer;background:linear-gradient(135deg,#4c1d95,#7c3aed);color:#e9d5ff;font-size:13px;font-weight:700;text-align:left;${eggCoins<10?'opacity:.4;cursor:not-allowed;':''}">
+              🔥 極限挑戰<br><span style="font-size:11px;color:#c4b5fd;">+10 🪺 地城鵝蛋幣 → 隨機抽 2 個加持</span>
             </button>
           </div>
           <button onclick="document.getElementById('skBuffModal')?.remove()" style="margin-top:12px;width:100%;padding:8px;border-radius:8px;border:1px solid #6b7280;background:transparent;color:#9ca3af;cursor:pointer;font-size:12px;">取消</button>
@@ -4078,10 +4079,11 @@
   window.skConfirmEntry = function(bossId, tier) {
     const me = getMe(); if (!me) return;
     const r = getRpg(me);
-    const coins = r.dungeonEggCoins || 0;
-    const cost = tier === 0 ? 5 : tier === 1 ? 10 : 20;
-    if (coins < cost) { showToast('🪺 地城鵝蛋幣不足'); return; }
-    r.dungeonEggCoins = coins - cost;
+    if (!spendCoins(me.id, 1000000)) { showToast('🪙 鵝鵝幣不足（需 100 萬）'); return; }
+    const eggCoins = r.dungeonEggCoins || 0;
+    const eggCost = tier === 1 ? 5 : tier === 2 ? 10 : 0;
+    if (eggCost > 0 && eggCoins < eggCost) { showToast('🪺 地城鵝蛋幣不足'); return; }
+    if (eggCost > 0) r.dungeonEggCoins = eggCoins - eggCost;
     const buffs = [];
     if (tier >= 1) {
       const b1 = skRollBuff();
@@ -4506,6 +4508,7 @@
       const _skFName   = _skForm?.formName || '???';
       const _skFArt    = _skForm?.art || null;
       const _eggCoins  = r ? (r.dungeonEggCoins || 0) : 0;
+      const _gooseCoins = me ? getCoins(me.id) : 0;
       const _skLastKillTs = _skState.lastKill?.ts || 0;
       const _skCdRemain   = _skLastKillTs > 0 ? Math.max(0, _skLastKillTs + 5 * 3600 * 1000 - Date.now()) : 0;
       const _skHpBar = _skHpPct > 60
@@ -4535,10 +4538,10 @@
           <button class="btn btn-primary" disabled style="background:#6b7280;width:100%;margin-top:8px;">🕒 排隊中：第 ${_skMyPos + 1} 位</button>
           <button class="btn btn-secondary" onclick="wb9LeaveQueue('${_skBoss.id}')" style="margin-top:6px;width:100%;">取消</button>`;
       } else {
-        const _canEnter = _eggCoins >= 5;
+        const _canEnter = _gooseCoins >= 1000000;
         _skActionHtml = `<button class="btn btn-primary" onclick="openSkBuffModal('${_skBoss.id}')"
           style="background:linear-gradient(135deg,#7c0060,#b91c1c);box-shadow:0 4px 0 #7f1d1d;width:100%;margin-top:8px;${_canEnter ? '' : 'opacity:.5;cursor:not-allowed;'}">
-          ${_canEnter ? '⚜️ 挑戰老天鵝！' : '🪺 地城鵝蛋幣不足（需 5 枚）'}
+          ${_canEnter ? '⚜️ 挑戰老天鵝！' : '🪙 鵝鵝幣不足（需 100 萬）'}
         </button>`;
       }
       const _skKillBanner = wb9KillBannerHtml(_skState);
@@ -4555,7 +4558,7 @@
               <div style="font-size:18px;font-weight:800;color:#fde68a;text-shadow:0 2px 8px rgba(157,23,77,.8);">${_skBoss.name}</div>
               <div style="font-size:11px;color:#f9a8d4;margin-top:2px;">目前形態：<b style="color:#fbbf24;">${_skFName}</b>　📖 已擊殺 ${_skState.killCount} 次</div>
               <div style="font-size:11px;color:#d1d5db;margin-top:1px;">⚔️ ATK ${_skBoss.atk} ／ 🛡️ DEF ${_skBoss.def} ／ 💨 SPD ${_skBoss.spd}</div>
-              <div style="font-size:10px;color:#fbbf24;margin-top:2px;">🪺 地城鵝蛋幣：<b>${_eggCoins}</b>　（基礎 5 幣 ／ +5 抽 1 加持 ／ +15 抽 2 加持）</div>
+              <div style="font-size:10px;color:#fbbf24;margin-top:2px;">🪙 鵝鵝幣：<b>${_gooseCoins.toLocaleString()}</b>　🪺 地城鵝蛋幣：<b>${_eggCoins}</b>　（基礎 100萬幣 ／ +1加持 +5🪺 ／ +2加持 +10🪺）</div>
             </div>
           </div>
           <div style="margin-top:8px;position:relative;height:20px;background:#1a0020;border-radius:10px;overflow:hidden;border:1px solid #9d174d;">
@@ -4617,16 +4620,17 @@
         const _eggCoins = r.dungeonEggCoins || 0;
         const _skFormIdx  = (state.killCount || 0) % (boss.forms?.length || 4);
         const _skFormName = boss.forms?.[_skFormIdx]?.formName || '???';
-        const _canEnter   = _eggCoins >= 5;
+        const _gooseCoins2 = me ? getCoins(me.id) : 0;
+        const _canEnter   = _gooseCoins2 >= 1000000;
         actionHtml = `
           <div style="background:rgba(120,0,60,.25);border:1px solid #9d174d;border-radius:10px;padding:10px;margin-bottom:8px;">
             <div style="font-size:11px;color:#f9a8d4;font-weight:700;margin-bottom:4px;">⚜️ 老天鵝入場</div>
             <div style="font-size:11px;color:#fbbf24;">目前形態：<b>${_skFormName}</b>　🪺 地城鵝蛋幣：<b>${_eggCoins}</b></div>
-            <div style="font-size:10px;color:#d1d5db;margin-top:3px;">基礎挑戰 5幣 ／ +5幣抽1加持 ／ +15幣抽2加持</div>
+            <div style="font-size:10px;color:#d1d5db;margin-top:3px;">基礎 100萬幣 ／ +1加持 +5🪺 ／ +2加持 +10🪺</div>
           </div>
           <button class="btn btn-primary" onclick="openSkBuffModal('${boss.id}')"
             style="background:linear-gradient(135deg,#7c0060,#b91c1c);box-shadow:0 4px 0 #7f1d1d;${_canEnter?'':'opacity:.5;cursor:not-allowed;'}">
-            ${_canEnter ? '⚜️ 挑戰老天鵝！' : '🪺 地城鵝蛋幣不足（需 5 枚）'}
+            ${_canEnter ? '⚜️ 挑戰老天鵝！' : '🪙 鵝鵝幣不足（需 100 萬）'}
           </button>`;
       } else {
         actionHtml = `<button class="btn btn-primary" onclick="wb9JoinQueue('${boss.id}')" style="background:linear-gradient(135deg,#f59e0b,#dc2626); box-shadow:0 4px 0 #991b1b;">📋 加入排隊${queueCount > 0 ? `（前面 ${queueCount} 人）` : ''}</button>`;
@@ -16197,7 +16201,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260515022817';
+  const APP_VERSION = '20260515024100';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
