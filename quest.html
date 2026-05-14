@@ -1184,6 +1184,11 @@
     width: 56px; height: 56px;
     margin: 0 auto;
   }
+  /* 地城 Boss 美工（96×96 原始尺寸 1:1，像素最銳利） */
+  .combatant-icon .boss-art.dungeon-boss {
+    width: 96px; height: 96px;
+    filter: drop-shadow(0 4px 16px rgba(124,58,237,0.65));
+  }
   .skill-art {
     width: 32px; height: 32px;
     border-radius: 50%;
@@ -6307,7 +6312,7 @@
     floorStats: [
       {
         level: 40, atk:  600, def:  600, physRes: 0.10, magRes: 0.10, spd:  80,
-        icon: '🪿', name: '嘎嘎阿福',
+        icon: '🪿', name: '嘎嘎阿福', art: 'assets/dungeon/boss-floor1.png',
         quote: '「喂！你亂闖人家地盤！我要告你！嗯嗯嗯！」',
         verb: '菜鵝啄擊',
         skills: [
@@ -6318,7 +6323,7 @@
       },
       {
         level: 44, atk:  825, def:  950, physRes: 0.13, magRes: 0.13, spd: 115,
-        icon: '😤', name: '鵝式武士二郎',
+        icon: '😤', name: '鵝式武士二郎', art: 'assets/dungeon/boss-floor2.png',
         quote: '「我在這蹲了三百年，就等你來挑釁！！準備後悔吧！」',
         verb: '武士鵝斬',
         skills: [
@@ -6329,7 +6334,7 @@
       },
       {
         level: 48, atk: 1050, def: 1300, physRes: 0.15, magRes: 0.15, spd: 150,
-        icon: '💢', name: '暴怒鵝三太子',
+        icon: '💢', name: '暴怒鵝三太子', art: 'assets/dungeon/boss-floor3.png',
         quote: '「我上個月剛健身完！！你今天自己找死的！嗯嗯嗯！」',
         verb: '太子鵝暴打',
         skills: [
@@ -6340,7 +6345,7 @@
       },
       {
         level: 52, atk: 1275, def: 1650, physRes: 0.18, magRes: 0.18, spd: 175,
-        icon: '😡', name: '鵝鵝黑道四哥',
+        icon: '😡', name: '鵝鵝黑道四哥', art: 'assets/dungeon/boss-floor4.png',
         quote: '「知道我有多少小弟嗎？......只有一隻，但是牠很兇的，跟我一樣。」',
         verb: '黑道鵝踢',
         skills: [
@@ -6351,7 +6356,7 @@
       },
       {
         level: 56, atk: 1500, def: 1500, physRes: 0.20, magRes: 0.20, spd: 200,
-        icon: '👑', name: '鵝皇終極體嗎嗯嗯',
+        icon: '👑', name: '鵝皇終極體嗎嗯嗯', art: 'assets/dungeon/boss-floor5.png',
         quote: '「朕是傳說！朕是神話！朕是無敵的！朕......其實有一點怕黑......」',
         verb: '鵝皇降臨斬',
         skills: [
@@ -15626,7 +15631,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260514161817';
+  const APP_VERSION = '20260514171559';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -24736,7 +24741,7 @@ ${b.text}
         </div>
         <div class="vs-icon">⚔️</div>
         <div class="combatant" id="replayMonster">
-          <div class="combatant-icon">${ms.art ? `<img class="boss-art" src="${ms.art}" alt="${escapeHtml(ms.name||'?')}" style="image-rendering:pixelated;image-rendering:crisp-edges;">` : (ms.icon || '👹')}</div>
+          <div class="combatant-icon">${ms.art ? `<img class="boss-art dungeon-boss" src="${ms.art}" alt="${escapeHtml(ms.name||'?')}" style="image-rendering:pixelated;image-rendering:crisp-edges;" onerror="this.onerror=null;this.style.display='none';">` : (ms.icon || '👹')}</div>
           <div class="combatant-name">${escapeHtml(ms.name || '?')} Lv${ms.level || '?'}</div>
           <div class="combatant-hp-track"><div class="combatant-hp-fill" id="replayMHpBar" style="width:100%"></div></div>
           <div class="combatant-hp-text" id="replayMHpText">${monsterMaxHp.toLocaleString()}/${monsterMaxHp.toLocaleString()}</div>
@@ -25141,7 +25146,7 @@ ${b.text}
           </div>
           <div class="vs-icon">⚔️</div>
           <div class="combatant" id="combatMonster">
-            <div class="combatant-icon">${monster.art ? `<img class="boss-art" src="${monster.art}" alt="${monster.name}">` : monster.icon}</div>
+            <div class="combatant-icon">${monster.art ? `<img class="boss-art dungeon-boss" src="${monster.art}" alt="${monster.name}" style="image-rendering:pixelated;image-rendering:crisp-edges;" onerror="this.onerror=null;this.style.display='none';">` : monster.icon}</div>
             <div class="combatant-name">${monster.name} Lv${monster.level}</div>
             <div class="combatant-hp-track"><div class="combatant-hp-fill" id="mHpBar" style="width:${(monster.hp/monster.maxHp)*100}%"></div></div>
             <div class="combatant-hp-text" id="mHpText">${monster.hp}/${monster.maxHp}</div>
