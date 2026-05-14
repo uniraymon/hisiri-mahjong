@@ -4563,6 +4563,7 @@
             <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7);">${_skState.hp.toLocaleString()} / ${_skBoss.maxHp.toLocaleString()}　(${_skHpPct.toFixed(1)}%)</div>
           </div>
           ${_skActionHtml}
+          ${wb9RecentBattlesHtml(_skState, _skBoss)}
         </div>`;
     }
 
@@ -16195,7 +16196,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260515015915';
+  const APP_VERSION = '20260515021144';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -19803,7 +19804,7 @@ ${b.text}
             ${!hasProtect ? `<button onclick="hellBuyProtect()" style="padding:4px 8px; border:none; border-radius:6px; cursor:pointer; font-size:11px; font-weight:700; background:linear-gradient(135deg,#001a00,#16a34a); color:#fff;">🛡️ 防護符 5000幣</button>` : ''}
           </div>${defHtml}`;
         })()}
-        <div class="char-coins">🪙 ${coins} 鵝鵝幣　·　🧭 ${rpg.exploreCoins || 0} 探險幣　·　🥚 ${me.eggCoins || 0} 鵝蛋幣</div>
+        <div class="char-coins">🪙 ${coins} 鵝鵝幣　·　🧭 ${rpg.exploreCoins || 0} 探險幣　·　🥚 ${me.eggCoins || 0} 鵝蛋幣　·　⚜️ ${rpg.dungeonEggCoins || 0} 地城鵝蛋幣</div>
         <div class="stat-bar">
           <div class="stat-bar-label"><span>❤️ HP</span><span>${rpg.hp} / ${stats.maxHp}</span></div>
           <div class="stat-bar-track"><div class="stat-bar-fill hp-fill" style="width:${hpPercent}%"></div></div>
