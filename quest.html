@@ -2665,12 +2665,9 @@
         // ⭐ 自動唸咒-輪：固定冰→火→雷→血順序施法，持續20回合
         { id: 'm_auto_chant_cycle', name: '自動唸咒-輪', icon: '🔄📖', unlockLv: 6, cooldown: 0, mpCost: 20, type: 'buff',
           selfBuff: { stat: 'autoChantCycle', amount: 1, turns: 20, playerTurnOnly: true }, maxLv: 1 },
-        // 元素爆發：爆發法書所有屬性為魔法傷害（無視DEF，爆傷跟角色爆傷），清空法書
+        // 元素爆發（合體技）：爆發法書傷害 + 同時觸發元素吸收 buff，清空法書
         { id: 'm_elem_burst', name: '元素爆發', icon: '💥', unlockLv: 7, cooldown: 0, mpCost: 35, type: 'damage',
-          isSpellBurst: true, magic: true, ignoreDef: true, maxLv: 1 },
-        // 元素吸收：法書所有屬性轉換為增益（5玩家回合），清空法書
-        { id: 'm_elem_absorb', name: '元素吸收', icon: '🌀', unlockLv: 7, cooldown: 0, mpCost: 20, type: 'buff',
-          isSpellAbsorb: true, maxLv: 1 },
+          isSpellBurst: true, isSpellAbsorb: true, magic: true, ignoreDef: true, maxLv: 1 },
         // ⭐ 大絕：最後的大咒書 — 15回合，自動唸咒施放實際技能(固定10等)，加入怒雷風暴與毀滅之怒
         { id: 'm_final_grimoire', name: '最後的大咒書', icon: '📕', unlockLv: 15, cooldown: 99, mpCost: 50, type: 'buff',
           selfBuff: { stat: 'finalGrimoire', amount: 1, turns: 15, playerTurnOnly: true },
@@ -2718,7 +2715,7 @@
         // ⭐ 神聖祝福：DEF +40%（3 回合）+ 臨時最大HP +20%（僅戰鬥中有效）
         { id: 'p_blessing',  name: '神聖祝福', icon: '🙌', unlockLv: 1,  cooldown: 0, mpCost: 30, type: 'buff', selfBuff: { stat: 'defPct', amount: 0.25, turns: 3, key: 'p_blessing' }, buffMaxHpPct: 0.20 },
         // ⭐ 護盾衝鋒：6× DEF；攻擊完後 DEF +10%（持續 3 回合）硬值 40
-        { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 45, type: 'damage', defMult: 6.1, postSelfBuff: { stat: 'defPct', amount: 0.10, turns: 3, key: 'p_shield_charge' }, cast: 35 },
+        { id: 'p_shield_charge', name: '護盾衝鋒', icon: '🛡', unlockLv: 2,  cooldown: 0, mpCost: 45, type: 'damage', defMult: 7.3, postSelfBuff: { stat: 'defPct', amount: 0.10, turns: 3, key: 'p_shield_charge' }, cast: 35 },
         { id: 'p_aegis',         name: '百倍返しだ', icon: '💢', unlockLv: 8,  cooldown: 0, mpCost: 30, type: 'buff', applyHundredfoldReflect: 1, maxLv: 1 },
         // ⭐ 不滅聖盾：終極大技 — 20×DEF + 10%maxHp / 攻後 DEF+60%(5回) + 免疫2次
         { id: 'p_immortal_shield', name: '不滅聖盾', icon: '🛡✨', unlockLv: 10, cooldown: 0, mpCost: 80, type: 'damage', defMult: 24, bonusMaxHpPct: 0.10, postSelfBuff: { stat: 'defPct', amount: 0.60, turns: 5, key: 'p_immortal_shield' }, applyShield: 2, cast: 50, maxLv: 1 },
@@ -2727,7 +2724,7 @@
         // ⭐ 鵝鵝的刀盾：buff 持續 10 次自身行動（playerTurnOnly）
         //    啟動後：① 普攻追加 當前HP×3 真傷  ② 每次護盾衝鋒後自動補一次免費普攻
         { id: 'p_sword_shield',  name: '鵝鵝的刀盾', icon: '⚔🛡', unlockLv: 5, cooldown: 0, mpCost: 55, type: 'buff',
-          selfBuff: { stat: 'swordShield', amount: 1, turns: 10, key: 'p_sword_shield', playerTurnOnly: true },
+          selfBuff: { stat: 'swordShield', amount: 1, turns: 20, key: 'p_sword_shield', playerTurnOnly: true },
           maxLv: 1 },
         // ⭐ 聖母鵝招喚：召喚聖母鵝（持續 floor(round/5) 次行動）；計數器在召喚後凍結；不可升級
         { id: 'p_holy_mother',   name: '聖母鵝招喚', icon: '🕊️', unlockLv: 10, cooldown: 0, mpCost: 50, type: 'summon', maxLv: 1 },
@@ -9353,6 +9350,18 @@
               text: `回合 ${round}：💥 元素爆發（${_bcDesc || '法書空'}）${_burstIsCrit ? '【暴擊】' : ''} → ${monster.name} -${_burstDmg} HP${_burstFx.length ? '　' + _burstFx.join('、') : ''}（${costStr}）`,
               hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp, spellBook: [] },
             });
+            // ⭐ 元素爆發（合體技）：同步觸發元素吸收 buff
+            if (skill.isSpellAbsorb) {
+              const _abTurns = _spellBook.length >= 10 ? 6 : 5;
+              const _abMark = (stats.mark || 0) * (1 + (pBuff.atkPct || 0) + (pBuff.markPct || 0));
+              const _abLog = [];
+              if (_bc.fire > 0)    { const a=Math.min(0.60,_bc.fire*0.12);    applyStatus(playerObj,{type:'buff',stat:'markPct',amount:a,turns:_abTurns,playerTurnOnly:true,key:'absorb_fire'});    _abLog.push(`🔥MARK+${Math.round(a*100)}%`); }
+              if (_bc.ice > 0)     { const a=_bc.ice*0.20;                     applyStatus(playerObj,{type:'buff',stat:'defPct',amount:a,turns:_abTurns,playerTurnOnly:true,key:'absorb_ice'});     _abLog.push(`🧊DEF+${Math.round(a*100)}%`); }
+              if (_bc.thunder > 0) { const a=_bc.thunder*0.10;                 applyStatus(playerObj,{type:'buff',stat:'critDmg',amount:a,turns:_abTurns,playerTurnOnly:true,key:'absorb_thunder'}); _abLog.push(`⚡爆傷+${Math.round(a*100)}%`); }
+              if (_bc.poison > 0)  { applyStatus(playerObj,{type:'buff',stat:'spellPoison',amount:_bc.poison,turns:_bc.poison,playerTurnOnly:true,key:'absorb_poison'}); _abLog.push(`☠️毒吐息×${_bc.poison}回`); }
+              if (_bc.blood > 0)   { const h=Math.round(_abMark*_bc.blood*2); pHp=Math.min(stats.maxHp,pHp+h); applyStatus(playerObj,{type:'buff',stat:'maxHpPct',amount:_bc.blood*0.04,turns:_abTurns,playerTurnOnly:true,key:'absorb_blood_hp'}); applyStatus(playerObj,{type:'buff',stat:'mpRegen',amount:_bc.blood*3,turns:_abTurns,playerTurnOnly:true,key:'absorb_blood_mp'}); _abLog.push(`🩸回HP+${h}、MaxHP+${_bc.blood*4}%、MP+${_bc.blood*3}/回`); }
+              if (_abLog.length > 0) log.push({ type:'player', text:`回合 ${round}：🌀 元素吸收（自動）→ ${_abLog.join('　')}（${_abTurns}回）`, hp:{player:pHp,monster:Math.max(0,mHp),mp:pMp} });
+            }
             // 清空法書
             _spellBook = [];
             if (mHp <= 0) { pushDeathLine(); break; }
@@ -9391,7 +9400,7 @@
               dmg = (skill.flat + (bonus.skillFlat || 0) + (abil.skillFlat || 0)) + (skill.perLv || 0) * (player.rpg.level || 1);
             } else if (skill.usesBloodPool) {
               // ⭐ 爆血：（血池 + 當前HP×25%）× 3，無視 DEF / 抗性，易傷 / 暴擊正常計算，無隨機變異
-              const _bpHpContrib = Math.floor(pHp * 0.25);
+              _bpHpContrib = Math.floor(pHp * 0.25);
               pHp = Math.max(1, pHp - _bpHpContrib); // 消耗 25% 當前HP（最少留1）
               dmg = (bloodPool + _bpHpContrib) * 3;
               bloodPool = 0;
@@ -9527,6 +9536,11 @@
             let extra = '';
             // ⭐ 爆血：顯示 HP 貢獻（_bpHpContrib 在 damage 計算區塊已設定）
             if (skill.usesBloodPool && _bpHpContrib > 0) extra += ` 🩸HP×25% -${_bpHpContrib}`;
+            // ⭐ 爆血：消耗HP的10%直接回復（可超過最大值）
+            if (skill.usesBloodPool && _bpHpContrib > 0) {
+              const _bbRestore = Math.floor(_bpHpContrib * 0.10);
+              if (_bbRestore > 0) { pHp += _bbRestore; extra += ` ❤️+${_bbRestore} HP（爆血回饋）`; }
+            }
             // ⭐ 血祭斬 真傷補正顯示（放在 extra 最前面）
             if (skill.id === 'w_blood_slash' && bloodPool > 0) {
               const _btd = Math.floor(bloodPool / 10);
@@ -10114,6 +10128,30 @@
               log.push({ type: 'player', text: `回合 ${round}：👁️ 靈噬之印 → ${monster.name} 陷入⚡麻痺！`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
             }
           }
+          // ⭐ 聖騎普攻：10% 機率觸發聖母鵝之激動亂舞
+          if (_isPaladin && mHp > 0 && Math.random() < 0.10) {
+            const _ppBuff = getBuffBonus(playerObj);
+            const _ppAtk  = stats.atk  * (1 + (_ppBuff.atkPct  || 0));
+            const _ppMark = stats.mark * (1 + (_ppBuff.atkPct  || 0) + (_ppBuff.markPct || 0));
+            const _ppDef  = (stats.def + (_ppBuff.def || 0)) * (1 + (_ppBuff.defPct || 0));
+            const _ppMonDef = monster.def + (getBuffBonus(monster).def || 0);
+            const _ppPhys = Math.max(1, (_ppAtk + _ppDef) * (1 + _hmgHitCount / 5) - Math.floor(_ppMonDef / 2));
+            const _ppMag  = Math.max(1, (_ppMark + _ppDef) * (1 + _hmgHitCount / 5) - Math.floor(_ppMonDef / 2));
+            const _ppCritC = Math.min(0.95, _hmgHealCount * 0.1);
+            const _ppCP = Math.random() < _ppCritC, _ppCM = Math.random() < _ppCritC;
+            const _ppPF = Math.round(_ppPhys * (_ppCP ? critMult : 1));
+            const _ppMF = Math.round(_ppMag  * (_ppCM ? critMult : 1));
+            const _ppDmg = Math.max(1, Math.round((_ppPF + _ppMF) * _weaponHmgBoost * 1.2));
+            if (_ppCP || _ppCM) critCount++;
+            mHp = Math.max(0, mHp - _ppDmg);
+            const _ppCS = (_ppCP && _ppCM) ? '【雙暴擊】' : _ppCP ? '【物理暴擊】' : _ppCM ? '【魔法暴擊】' : '';
+            log.push({
+              type: (_ppCP || _ppCM) ? 'crit-player' : 'player',
+              text: `回合 ${round}（✨ 激動亂舞觸發！）：${monster.name} -${_ppDmg} HP${_ppCS}（物理 ${_ppPF} + 魔法 ${_ppMF}）`,
+              hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp },
+            });
+            if (mHp <= 0) pushDeathLine();
+          }
         }
         // ⭐ 自動唸咒（法書）：每玩家回合追加隨機施法
         // ⭐ 最後的大咒書：火→火焰風暴 / 雷→怒雷風暴 / 血→毀滅之怒（固定10等，100% MARK）
@@ -10339,7 +10377,7 @@
             const _mCrit = Math.random() < _critChance;
             const physFinal = Math.round(physDmg * (_pCrit ? critMult : 1));
             const magFinal  = Math.round(magDmg  * (_mCrit ? critMult : 1));
-            let _hmgDmg = Math.max(1, Math.round((physFinal + magFinal) * _weaponHmgBoost));
+            let _hmgDmg = Math.max(1, Math.round((physFinal + magFinal) * _weaponHmgBoost * 1.2));
             const _anyCrit = _pCrit || _mCrit;
             if (_anyCrit) { _hmgIsCrit = true; critCount++; }
             mHp -= _hmgDmg;
@@ -10348,7 +10386,7 @@
           } else { // 獻身
             const _turnsUsed = _hmgActionsLeft + 1; // 含本次（已 -- 過）
             const _devBase = (_hmgAtk + _hmgMark + _hmgDef) * (1 + _hmgHitCount / 10 + _hmgTakenCount / 10) * _turnsUsed;
-            const _devDmg  = Math.max(1, Math.round(_devBase * critMult * _weaponHmgBoost));
+            const _devDmg  = Math.max(1, Math.round(_devBase * critMult * _weaponHmgBoost * 1.2));
             _hmgIsCrit = true; critCount++;
             mHp -= _devDmg;
             _hmgActive = false; _hmgActionsLeft = 0;
@@ -11495,6 +11533,18 @@
               text: `回合 ${round}：💥 元素爆發（${_bcDescM || '法書空'}）${_burstIsCritM ? '【暴擊】' : ''} → ${tgt.icon}${tgt.name} -${_burstDmgM} HP${_burstFxM.length ? '　' + _burstFxM.join('、') : ''}（${costStr}）`,
               hp: hpsSnapshot(),
             });
+            // ⭐ 元素爆發（合體技）：同步觸發元素吸收 buff
+            if (skill.isSpellAbsorb) {
+              const _abTurnsM = _spellBookM.length >= 10 ? 6 : 5;
+              const _abMarkM = (stats.mark || 0) * (1 + (pBuff.atkPct || 0) + (pBuff.markPct || 0));
+              const _abLogM = [];
+              if (_bcM.fire > 0)    { const a=Math.min(0.60,_bcM.fire*0.12);    applyStatus(playerObj,{type:'buff',stat:'markPct',amount:a,turns:_abTurnsM,playerTurnOnly:true,key:'absorb_fire'});    _abLogM.push(`🔥MARK+${Math.round(a*100)}%`); }
+              if (_bcM.ice > 0)     { const a=_bcM.ice*0.20;                     applyStatus(playerObj,{type:'buff',stat:'defPct',amount:a,turns:_abTurnsM,playerTurnOnly:true,key:'absorb_ice'});     _abLogM.push(`🧊DEF+${Math.round(a*100)}%`); }
+              if (_bcM.thunder > 0) { const a=_bcM.thunder*0.10;                 applyStatus(playerObj,{type:'buff',stat:'critDmg',amount:a,turns:_abTurnsM,playerTurnOnly:true,key:'absorb_thunder'}); _abLogM.push(`⚡爆傷+${Math.round(a*100)}%`); }
+              if (_bcM.poison > 0)  { applyStatus(playerObj,{type:'buff',stat:'spellPoison',amount:_bcM.poison,turns:_bcM.poison,playerTurnOnly:true,key:'absorb_poison'}); _abLogM.push(`☠️毒吐息×${_bcM.poison}回`); }
+              if (_bcM.blood > 0)   { const h=Math.round(_abMarkM*_bcM.blood*2); pHp=Math.min(stats.maxHp,pHp+h); applyStatus(playerObj,{type:'buff',stat:'maxHpPct',amount:_bcM.blood*0.04,turns:_abTurnsM,playerTurnOnly:true,key:'absorb_blood_hp'}); applyStatus(playerObj,{type:'buff',stat:'mpRegen',amount:_bcM.blood*3,turns:_abTurnsM,playerTurnOnly:true,key:'absorb_blood_mp'}); _abLogM.push(`🩸回HP+${h}、MaxHP+${_bcM.blood*4}%、MP+${_bcM.blood*3}/回`); }
+              if (_abLogM.length > 0) log.push({ type:'player', text:`回合 ${round}：🌀 元素吸收（自動）→ ${_abLogM.join('　')}（${_abTurnsM}回）`, hp:hpsSnapshot() });
+            }
             _spellBookM = [];
           } else if (skill.type === 'damage') {
             const isFlat = skill.flat != null;
@@ -11752,7 +11802,12 @@
               extra += ` 🛡 免疫 ${skill.applyShield} 次傷害`;
             }
             // ⭐ 爆血：攻擊完畢後清空血池
-            if (skill.usesBloodPool) { if (_bpHpContribM > 0) extra += ` 🩸HP×25% -${_bpHpContribM}`; bloodPool = 0; }
+            if (skill.usesBloodPool) {
+              if (_bpHpContribM > 0) extra += ` 🩸HP×25% -${_bpHpContribM}`;
+              // ⭐ 爆血：消耗HP的10%直接回復（可超過最大值）
+              if (_bpHpContribM > 0) { const _bbR = Math.floor(_bpHpContribM * 0.10); if (_bbR > 0) { pHp += _bbR; extra += ` ❤️+${_bbR} HP（爆血回饋）`; } }
+              bloodPool = 0;
+            }
             const targetSummary = hits.map(h => `${h.tgt.icon}${h.tgt.name} -${h.dmg}${h.isCrit ? '【爆】' : ''}`).join(' / ');
             // ⭐ 聖母鵝計數：技能擊中（按段數加成）
             if (_isPaladinM && !_hmgFrozenM && hits.some(h => h.dmg > 0)) _hmgHitCountM += (skill.hits || 1);
@@ -12186,6 +12241,30 @@
               log.push({ type: 'player', text: `回合 ${round}：👁️ 靈噬之印 → ${tgt.icon}${tgt.name} 陷入⚡麻痺！`, hp: hpsSnapshot() });
             }
           }
+          // ⭐ 聖騎普攻：10% 機率觸發聖母鵝之激動亂舞
+          if (_isPaladinM && tgt.hp > 0 && Math.random() < 0.10) {
+            const _ppBuffM = getBuffBonus(playerObj);
+            const _ppAtkM  = stats.atk  * (1 + (_ppBuffM.atkPct  || 0));
+            const _ppMarkM = stats.mark * (1 + (_ppBuffM.atkPct  || 0) + (_ppBuffM.markPct || 0));
+            const _ppDefM  = (stats.def + (_ppBuffM.def || 0)) * (1 + (_ppBuffM.defPct || 0));
+            const _ppMonDefM = tgt.def + (getBuffBonus(tgt).def || 0);
+            const _ppPhysM = Math.max(1, (_ppAtkM + _ppDefM) * (1 + _hmgHitCountM / 5) - Math.floor(_ppMonDefM / 2));
+            const _ppMagM  = Math.max(1, (_ppMarkM + _ppDefM) * (1 + _hmgHitCountM / 5) - Math.floor(_ppMonDefM / 2));
+            const _ppCritCM = Math.min(0.95, _hmgHealCountM * 0.1);
+            const _ppCPM = Math.random() < _ppCritCM, _ppCMM = Math.random() < _ppCritCM;
+            const _ppPFM = Math.round(_ppPhysM * (_ppCPM ? critMult : 1));
+            const _ppMFM = Math.round(_ppMagM  * (_ppCMM ? critMult : 1));
+            const _ppDmgM = Math.max(1, Math.round((_ppPFM + _ppMFM) * _weaponHmgBoost * 1.2));
+            if (_ppCPM || _ppCMM) critCount++;
+            tgt.hp = Math.max(0, tgt.hp - _ppDmgM);
+            if (tgt.hp <= 0) tgt.alive = false;
+            const _ppCSM = (_ppCPM && _ppCMM) ? '【雙暴擊】' : _ppCPM ? '【物理暴擊】' : _ppCMM ? '【魔法暴擊】' : '';
+            log.push({
+              type: (_ppCPM || _ppCMM) ? 'crit-player' : 'player',
+              text: `回合 ${round}（✨ 激動亂舞觸發！）：${tgt.icon}${tgt.name} -${_ppDmgM} HP${_ppCSM}（物理 ${_ppPFM} + 魔法 ${_ppMFM}）`,
+              hp: hpsSnapshot(),
+            });
+          }
         }
         // ⭐ 自動唸咒（組隊）：每玩家回合追加隨機施法
         // ⭐ 最後的大咒書：火→火焰風暴 / 雷→怒雷風暴 / 血→毀滅之怒（固定10等，100% MARK）
@@ -12395,7 +12474,7 @@
               const _mCritM = Math.random() < _critChanceM;
               const physFinalM = Math.round(physDmgM * (_pCritM ? critMult : 1));
               const magFinalM  = Math.round(magDmgM  * (_mCritM ? critMult : 1));
-              let _hmgDmgM = Math.max(1, Math.round((physFinalM + magFinalM) * _weaponHmgBoost));
+              let _hmgDmgM = Math.max(1, Math.round((physFinalM + magFinalM) * _weaponHmgBoost * 1.2));
               const _anyCritM = _pCritM || _mCritM;
               if (_anyCritM) { _hmgIsCritM = true; critCount++; }
               _hmgTgt.hp = Math.max(0, _hmgTgt.hp - _hmgDmgM);
@@ -12407,7 +12486,7 @@
             if (_hmgTgt) {
               const _turnsUsedM = _hmgActionsLeftM + 1;
               const _devBaseM = (_hmgAtkM + _hmgMarkM + _hmgDefM) * (1 + _hmgHitCountM / 10 + _hmgTakenCountM / 10) * _turnsUsedM;
-              const _devDmgM  = Math.max(1, Math.round(_devBaseM * critMult * _weaponHmgBoost));
+              const _devDmgM  = Math.max(1, Math.round(_devBaseM * critMult * _weaponHmgBoost * 1.2));
               _hmgIsCritM = true; critCount++;
               _hmgTgt.hp = Math.max(0, _hmgTgt.hp - _devDmgM);
               if (_hmgTgt.hp <= 0) _hmgTgt.alive = false;
@@ -15631,7 +15710,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260514190719';
+  const APP_VERSION = '20260514195603';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
