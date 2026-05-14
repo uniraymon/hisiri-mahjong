@@ -2648,10 +2648,10 @@
         { id: 'm_absolute_defense', name: '絕對防禦', icon: '🔰', unlockLv: 8,  cooldown: 0, mpCost: 55, type: 'heal', healPct: 0.5, applyShield: 1, maxLv: 1 },
         { id: 'm_destruction',    name: '毀滅之怒',   icon: '💀', unlockLv: 12, cooldown: 0, mpCost: 65, type: 'damage', mult: 3.6, magic: true, useMark: true, ignoreDef: true, applyStatus: { type: 'vulnerable', amount: 0.5, hits: 1, chance: 1 }, cast: 37, customLv: true, spellElement: 'blood' },
         // ⭐ 冰霜風暴：固定傷害 144 + MARK×6.6，無視 DEF，50% 機率霜凍（SPD-30%，3行動回合，noStack）
-        { id: 'm_ice_storm',      name: '冰霜風暴',   icon: '🌨️', unlockLv: 10, cooldown: 0, mpCost: 45, type: 'damage', flat: 144, markMult: 6.6, ignoreDef: true, cast: 45, spellElement: 'ice', maxLv: 1,
+        { id: 'm_ice_storm',      name: '冰霜風暴',   icon: '🌨️', unlockLv: 10, cooldown: 0, mpCost: 45, type: 'damage', flat: 173, markMult: 8.0, ignoreDef: true, cast: 45, spellElement: 'ice', maxLv: 1,
           applyStatus: { type: 'buff', stat: 'spdPct', amount: -0.30, turns: 3, key: 'frost', noStack: true, monsterTurnOnly: true, chance: 0.50 } },
-        { id: 'm_firestorm',      name: '火焰風暴',   icon: '🌋', unlockLv: 7,  cooldown: 0, mpCost: 55, type: 'damage', flat: 180, markMult: 7.2, ignoreDef: true, targetCount: 'all', cast: 50, spellElement: 'fire' },
-        { id: 'm_thunder_storm',  name: '怒雷風暴',   icon: '⚡', unlockLv: 9,  cooldown: 0, mpCost: 45, type: 'damage', flat: 432, markMult: 8.4, magic: true, ignoreDef: true, cast: 25, spellElement: 'thunder' },
+        { id: 'm_firestorm',      name: '火焰風暴',   icon: '🌋', unlockLv: 7,  cooldown: 0, mpCost: 55, type: 'damage', flat: 216, markMult: 8.6, ignoreDef: true, targetCount: 'all', cast: 50, spellElement: 'fire' },
+        { id: 'm_thunder_storm',  name: '怒雷風暴',   icon: '⚡', unlockLv: 9,  cooldown: 0, mpCost: 45, type: 'damage', flat: 518, markMult: 10.0, magic: true, ignoreDef: true, cast: 25, spellElement: 'thunder' },
         { id: 'm_poison_cloud',   name: '毒霧',       icon: '☠️', unlockLv: 3,  cooldown: 0, mpCost: 30, type: 'damage', flat: 60, perLv: 4, ignoreDef: true, targetCount: 'all', maxLv: 5, applyStatus: { type: 'poison', charges: 4, chance: 0.85 }, spellElement: 'poison' },
         { id: 'm_arcane_focus',   name: '元素灌注',   icon: '🌀', unlockLv: 2,  cooldown: 0, mpCost: 18, type: 'buff', selfBuff: { stat: 'markPct', amount: 0.30, turns: 4 } },
         // ⭐ 魔力虹吸：物理傷（MARK 計算）+ 回 10% maxMP
@@ -15631,7 +15631,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260514190537';
+  const APP_VERSION = '20260514190719';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
