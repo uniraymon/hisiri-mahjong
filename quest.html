@@ -3635,7 +3635,7 @@
         // ③ 世界震盪：ATK×2.0 重擊（相當於 2 次 1.0×）
         { verb: '世界震盪', mult: 2.0, cooldown: 5 },
       ],
-      bossCoin: { id: 'bc_world_chaos', name: '世界幣', icon: '🌍' },
+      bossCoin: { id: 'bc_world_chaos', name: '鵝尊硬幣', icon: '🌍' },
       killRewards: {
         top:         { bossCoinQty: 20 },
         second:      { bossCoinQty: 16 },
@@ -15526,12 +15526,12 @@
     },
     {
       id: 'boss_world', icon: '🌍', name: '世界王扭蛋',
-      desc: '消耗 3 顆世界幣抽世界王印記（效果型金飾品）/ 體力 / EXP',
+      desc: '消耗 3 顆鵝尊硬幣抽世界王印記（效果型金飾品）/ 體力 / EXP',
       cost: 3,
       isBossCoin: true,
       coinFilter: 'bc_world_chaos',
       currencyIcon: '🌍',
-      currencyName: '世界幣',
+      currencyName: '鵝尊硬幣',
       status: 'open',
       pool: [
         { type: 'item', id: 'bg_wb_aegis',    weight: 10 },
@@ -16700,7 +16700,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260516021458';
+  const APP_VERSION = '20260516021616';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -16791,12 +16791,12 @@ ${b.text}
         <div>・<b>虛空重壓</b>：ATK×1.4 物理傷害（CD 4）</div>
         <div>・<b>世界震盪</b>：ATK×2.0 重擊（CD 5）</div>
 
-        <div style="font-weight:700; color:#fbbf24; margin:10px 0 4px;">🪙 擊殺獎勵（世界幣）</div>
+        <div style="font-weight:700; color:#fbbf24; margin:10px 0 4px;">🪙 擊殺獎勵（鵝尊硬幣）</div>
         <div>・🥇 傷害第一 <b>20 幣</b>　🥈 第二名 <b>16 幣</b>　🥉 第三名 <b>14 幣</b></div>
         <div>・其他參與 <b>12 幣</b>　🗡️ 擊殺者額外 <b>10 幣</b></div>
 
         <div style="font-weight:700; color:#4ade80; margin:10px 0 4px;">⚗️ 新合成槽：🌍 世界槽（第 7 槽）</div>
-        <div>・世界幣可至扭蛋機兌換「世界王扭蛋」（每抽消耗 3 枚世界幣）</div>
+        <div>・鵝尊硬幣可至扭蛋機兌換「世界王扭蛋」（每抽消耗 3 枚鵝尊硬幣）</div>
         <div>・<b>🛡️ 護世之印</b>：受到所有傷害 <b>-15%</b></div>
         <div>・<b>⚰️ 終焉之印</b>：敵 HP 每降 10%，傷害 <b>+4%</b>（上限 +40%）</div>
         <div>・<b>⚡ 先鋒之印</b>：敵 HP=100% 時 <b>+30%</b>，每少 10% 傷害 -3%（反向加成）</div>
