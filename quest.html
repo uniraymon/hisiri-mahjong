@@ -5467,7 +5467,7 @@
       isBossGift: true, sourceBossId: 'chaos_goose', rarity: 'gold', fusionEffect: 'fx_cg_decree',
       affixDesc: '敵方 HP≥70% 時所有傷害+15%（WB以本生最大HP計算；鵝尊之令）' },
 
-    // ── 世界王印記（世界王扭蛋獎勵，合成用）─────────────────────────
+    // ── 世界王印記（鵝尊扭蛋獎勵，合成用）─────────────────────────
     { id: 'bg_wb_aegis',    name: '護世之印', icon: '🛡️', slot: 'accessory', lv: 1, def: 15, hp: 80, mp: 10, mpRegen: 1,
       isBossGift: true, sourceBossId: 'world_chaos', rarity: 'gold', fusionEffect: 'fx_wb_aegis',
       affixDesc: '受到所有傷害 -15%（可疊加；護世之印）' },
@@ -15525,7 +15525,7 @@
       ],
     },
     {
-      id: 'boss_world', icon: '🌍', name: '世界王扭蛋',
+      id: 'boss_world', icon: '🌍', name: '鵝尊扭蛋',
       desc: '消耗 3 顆鵝尊硬幣抽世界王印記（效果型金飾品）/ 體力 / EXP',
       cost: 3,
       isBossCoin: true,
@@ -16700,7 +16700,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260516022008';
+  const APP_VERSION = '20260516022041';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -16810,7 +16810,7 @@ ${b.text}
         <div>・<b>💀 不朽之印</b>：HP 降至 0 時<b>免死一次</b> + 回復 25% HP</div>
 
         <div style="background:rgba(74,222,128,0.12); border-radius:8px; padding:8px 12px; margin:10px 0 4px; font-size:12px; color:#86efac; border:1px solid #14532d;">
-          💡 鵝尊硬幣可至扭蛋機兌換「世界王扭蛋」（每抽 3 枚）
+          💡 鵝尊硬幣可至扭蛋機兌換「鵝尊扭蛋」（每抽 3 枚）
         </div>
 
         <button onclick="hideModal()" style="margin-top:10px; width:100%; padding:10px; background:linear-gradient(135deg,#16a34a,#15803d); border:none; border-radius:8px; color:#fff; font-size:14px; font-weight:700; cursor:pointer;">
@@ -16846,7 +16846,7 @@ ${b.text}
         <div>・其他參與 <b>12 幣</b>　🗡️ 擊殺者額外 <b>10 幣</b></div>
 
         <div style="font-weight:700; color:#4ade80; margin:10px 0 4px;">⚗️ 新合成槽：🌍 世界槽（第 7 槽）</div>
-        <div>・鵝尊硬幣可至扭蛋機兌換「世界王扭蛋」（每抽消耗 3 枚鵝尊硬幣）</div>
+        <div>・鵝尊硬幣可至扭蛋機兌換「鵝尊扭蛋」（每抽消耗 3 枚鵝尊硬幣）</div>
         <div>・<b>🛡️ 護世之印</b>：受到所有傷害 <b>-15%</b></div>
         <div>・<b>⚰️ 終焉之印</b>：敵 HP 每降 10%，傷害 <b>+4%</b>（上限 +40%）</div>
         <div>・<b>⚡ 先鋒之印</b>：敵 HP=100% 時 <b>+30%</b>，每少 10% 傷害 -3%（反向加成）</div>
