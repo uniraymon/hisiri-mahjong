@@ -16700,7 +16700,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260516021235';
+  const APP_VERSION = '20260516021458';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -16776,6 +16776,35 @@ ${b.text}
     markNewsSeen();
     const html = `
       <div style="line-height:1.7; font-size:13px; color:#374151;">
+
+        <div style="background:linear-gradient(135deg,#14532d,#166534); border-radius:10px; padding:10px 14px; margin-bottom:14px; border:2px solid #4ade80; box-shadow:0 0 14px rgba(74,222,128,.35);">
+          <div style="font-size:15px; font-weight:800; color:#fff;">🌍 v26 世界王「混沌元靈・鵝尊」登場　<span style="font-size:11px; opacity:0.85;">2026-05-16</span></div>
+        </div>
+
+        <div style="font-weight:700; color:#4ade80; margin:6px 0 4px;">🌍 新世界王登場</div>
+        <div>・<b>混沌元靈・鵝尊</b>（Lv70）── HP <b>7,000 萬</b>、ATK 1200、DEF 1500、SPD 450</div>
+        <div>・顯示在世界王頁面，與其他世界王<b>共用冷卻時間</b></div>
+        <div>・每 <b>10 回合</b>觸發「🌍 混沌再生」──自動回復 <b>100 萬 HP</b></div>
+
+        <div style="font-weight:700; color:#86efac; margin:10px 0 4px;">💜 技能組（無異常狀態、無大絕）</div>
+        <div>・<b>元力侵蝕</b>：ATK×0.5 傷害 + 扣除目標 <b>35% 當前 MP</b>（CD 3）</div>
+        <div>・<b>虛空重壓</b>：ATK×1.4 物理傷害（CD 4）</div>
+        <div>・<b>世界震盪</b>：ATK×2.0 重擊（CD 5）</div>
+
+        <div style="font-weight:700; color:#fbbf24; margin:10px 0 4px;">🪙 擊殺獎勵（世界幣）</div>
+        <div>・🥇 傷害第一 <b>20 幣</b>　🥈 第二名 <b>16 幣</b>　🥉 第三名 <b>14 幣</b></div>
+        <div>・其他參與 <b>12 幣</b>　🗡️ 擊殺者額外 <b>10 幣</b></div>
+
+        <div style="font-weight:700; color:#4ade80; margin:10px 0 4px;">⚗️ 新合成槽：🌍 世界槽（第 7 槽）</div>
+        <div>・世界幣可至扭蛋機兌換「世界王扭蛋」（每抽消耗 3 枚世界幣）</div>
+        <div>・<b>🛡️ 護世之印</b>：受到所有傷害 <b>-15%</b></div>
+        <div>・<b>⚰️ 終焉之印</b>：敵 HP 每降 10%，傷害 <b>+4%</b>（上限 +40%）</div>
+        <div>・<b>⚡ 先鋒之印</b>：敵 HP=100% 時 <b>+30%</b>，每少 10% 傷害 -3%（反向加成）</div>
+        <div>・<b>💀 不朽之印</b>：HP 降至 0 時<b>免死一次</b>，立刻回復 25% 最大 HP</div>
+
+        <div style="background:rgba(74,222,128,0.1); border-radius:8px; padding:8px 12px; margin:8px 0 16px; font-size:12px; color:#86efac; border:1px solid #14532d;">
+          💡 先鋒之印 × 終焉之印 組合：開場最強、決殺最猛 ── 建議搭配高輸出職業使用！
+        </div>
 
         <div style="background:linear-gradient(135deg,#1e3a5f,#1e40af); border-radius:10px; padding:10px 14px; margin-bottom:14px; border:2px solid #60a5fa; box-shadow:0 0 12px rgba(96,165,250,.3);">
           <div style="font-size:15px; font-weight:800; color:#fff;">🎯 v25 爆頭系統全面開放　<span style="font-size:11px; opacity:0.85;">2026-05-15</span></div>
