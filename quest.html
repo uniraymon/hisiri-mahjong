@@ -4546,7 +4546,7 @@
       return;
     }
     // ===== 分頁 tab =====
-    const _regularBosses = WB9_BOSSES.filter(b => !b.isSupremeKing);
+    const _regularBosses = WB9_BOSSES.filter(b => !b.isSupremeKing).slice().reverse(); // ⭐ 最新的放最左邊
     if (!window._wb9ActiveTab || !_regularBosses.find(b => b.id === window._wb9ActiveTab)) {
       window._wb9ActiveTab = _regularBosses[0]?.id;
     }
@@ -16700,7 +16700,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260516021616';
+  const APP_VERSION = '20260516022008';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -16756,10 +16756,12 @@ ${b.text}
   })();
 
   const NEWS_SEEN_KEY = 'hisiri_news_seen_v1';
-  const NEWS_LATEST_ID = 'patch_20260515_supreme_king';
+  const NEWS_LATEST_ID = 'patch_20260516_world_boss';
+  const NEWS_POPUP_KEY = 'hisiri_news_popup_v1';
 
   function markNewsSeen() {
     try { localStorage.setItem(NEWS_SEEN_KEY, NEWS_LATEST_ID); } catch(e) {}
+    try { localStorage.setItem(NEWS_POPUP_KEY, NEWS_LATEST_ID); } catch(e) {}
     document.getElementById('newsBtn')?.classList.remove('has-new');
   }
 
@@ -16770,7 +16772,55 @@ ${b.text}
         document.getElementById('newsBtn')?.classList.add('has-new');
       }
     } catch(e) {}
+    // ⭐ 自動彈出：新版本第一次進入時顯示公告
+    try {
+      const popped = localStorage.getItem(NEWS_POPUP_KEY);
+      if (popped !== NEWS_LATEST_ID) {
+        setTimeout(() => showNewsPopup(), 800);
+      }
+    } catch(e) {}
   }
+
+  function showNewsPopup() {
+    try { localStorage.setItem(NEWS_POPUP_KEY, NEWS_LATEST_ID); } catch(e) {}
+    const html = `
+      <div style="line-height:1.7; font-size:13px; color:#e5e7eb;">
+        <div style="background:linear-gradient(135deg,#14532d,#166534); border-radius:10px; padding:12px 16px; margin-bottom:14px; border:2px solid #4ade80; box-shadow:0 0 16px rgba(74,222,128,.4);">
+          <div style="font-size:16px; font-weight:800; color:#fff; margin-bottom:2px;">🌍 世界王登場！</div>
+          <div style="font-size:11px; color:#bbf7d0;">混沌元靈・鵝尊　2026-05-16</div>
+        </div>
+
+        <div style="font-weight:700; color:#4ade80; margin:4px 0 3px;">🌍 Boss 資訊</div>
+        <div>・<b>混沌元靈・鵝尊</b>（Lv70）── HP <b>7,000 萬</b>・ATK 1200・DEF 1500・SPD 450</div>
+        <div>・每 <b>10 回合</b>觸發「混沌再生」自動回復 <b>100 萬 HP</b></div>
+        <div>・<b>無異常狀態、無大絕</b> ── 純輸出王，打傷害就對了！</div>
+
+        <div style="font-weight:700; color:#86efac; margin:10px 0 3px;">💜 技能</div>
+        <div>・<b>元力侵蝕</b>：小傷害 + 扣 <b>35% 當前 MP</b></div>
+        <div>・<b>虛空重壓</b>：ATK×1.4 物理傷害</div>
+        <div>・<b>世界震盪</b>：ATK×2.0 重擊</div>
+
+        <div style="font-weight:700; color:#fbbf24; margin:10px 0 3px;">🪙 獎勵（鵝尊硬幣）</div>
+        <div>・🥇 <b>20</b>　🥈 <b>16</b>　🥉 <b>14</b>　其他 <b>12</b>　🗡️擊殺 +<b>10</b></div>
+
+        <div style="font-weight:700; color:#4ade80; margin:10px 0 3px;">⚗️ 新合成槽：🌍 世界槽（第 7 槽）</div>
+        <div>・<b>🛡️ 護世之印</b>：受所有傷害 <b>-15%</b></div>
+        <div>・<b>⚰️ 終焉之印</b>：敵每少 10% HP → 傷害 <b>+4%</b>（上限 +40%）</div>
+        <div>・<b>⚡ 先鋒之印</b>：敵 HP=100% 時 <b>+30%</b>，每降 10% 傷害 -3%</div>
+        <div>・<b>💀 不朽之印</b>：HP 降至 0 時<b>免死一次</b> + 回復 25% HP</div>
+
+        <div style="background:rgba(74,222,128,0.12); border-radius:8px; padding:8px 12px; margin:10px 0 4px; font-size:12px; color:#86efac; border:1px solid #14532d;">
+          💡 鵝尊硬幣可至扭蛋機兌換「世界王扭蛋」（每抽 3 枚）
+        </div>
+
+        <button onclick="hideModal()" style="margin-top:10px; width:100%; padding:10px; background:linear-gradient(135deg,#16a34a,#15803d); border:none; border-radius:8px; color:#fff; font-size:14px; font-weight:700; cursor:pointer;">
+          好的，去挑戰世界王！🌍
+        </button>
+      </div>
+    `;
+    showModal('🌍 v26 新版本更新', html);
+  }
+  window.showNewsPopup = showNewsPopup;
 
   function showNewsModal() {
     markNewsSeen();
