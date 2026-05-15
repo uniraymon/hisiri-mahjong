@@ -4225,6 +4225,8 @@
         }
         // ⭐ 法書 UI 更新
         if (entry.hp.spellBook !== undefined) updateSpellBookPanel(entry.hp.spellBook);
+        // ⭐ 即時屬性條更新
+        if (entry.hp.pStats) _updateBattleStatsStrip('bss-', entry.hp.pStats);
         // 浮動傷害 + 精靈動畫（舊版完整邏輯）
         const _mDmg = _wbPrevMHp - entry.hp.monster;
         const _pDmg = _wbPrevPHp - entry.hp.player;
@@ -5628,7 +5630,8 @@
   window.updateSpellBookPanel = updateSpellBookPanel;
 
   // ⭐ 戰鬥屬性條 HTML（嵌入各戰鬥 arena，顯示 ATK/MARK/DEF/爆擊/爆傷/爆頭）
-  function _battleStatsStripHtml(stats, rpg) {
+  function _battleStatsStripHtml(stats, rpg, idPfx) {
+    const _p = idPfx || 'bss-';
     const _crit = stats.totalCritChance || 0;
     const _critDmg = stats.totalCritDmg || 1.7;
     const _wpn = rpg?.equipment?.weapon ? (ITEMS[rpg.equipment.weapon.baseId || rpg.equipment.weapon.id] || {}) : {};
@@ -5636,13 +5639,22 @@
     const _hs = Math.floor(Math.max(0, _crit - 1.0) / 0.05) * 0.01 + _nhs;
     const _hsText = _hs > 0 ? Math.round(_hs * 100) + '%' : (_crit >= 1.0 ? '0%' : '-');
     return `<div style="display:flex;flex-wrap:wrap;gap:3px 12px;padding:4px 10px;margin:4px 0;background:rgba(0,0,0,0.30);border-radius:7px;border:1px solid rgba(124,58,237,0.20);font-size:11px;">
-      <span style="color:#f87171;">⚔️ ATK <b>${stats.atk || 0}</b></span>
-      <span style="color:#818cf8;">✨ MARK <b>${stats.mark || 0}</b></span>
-      <span style="color:#34d399;">🛡 DEF <b>${stats.def || 0}</b></span>
-      <span style="color:#fbbf24;">💥 爆擊 <b>${Math.round(_crit * 100)}%</b></span>
-      <span style="color:#fb923c;">⚡ 爆傷 <b>${Math.round(_critDmg * 100)}%</b></span>
-      <span style="color:#f59e0b;">🎯 爆頭 <b>${_hsText}</b></span>
+      <span style="color:#f87171;">⚔️ ATK <b id="${_p}atk">${stats.atk || 0}</b></span>
+      <span style="color:#818cf8;">✨ MARK <b id="${_p}mark">${stats.mark || 0}</b></span>
+      <span style="color:#34d399;">🛡 DEF <b id="${_p}def">${stats.def || 0}</b></span>
+      <span style="color:#fbbf24;">💥 爆擊 <b id="${_p}crit">${Math.round(_crit * 100)}%</b></span>
+      <span style="color:#fb923c;">⚡ 爆傷 <b id="${_p}critdmg">${Math.round(_critDmg * 100)}%</b></span>
+      <span style="color:#f59e0b;">🎯 爆頭 <b id="${_p}hs">${_hsText}</b></span>
     </div>`;
+  }
+  function _updateBattleStatsStrip(idPfx, ps) {
+    const _g = id => document.getElementById(idPfx + id);
+    const _ea = _g('atk');    if (_ea) _ea.textContent = ps.atk;
+    const _em = _g('mark');   if (_em) _em.textContent = ps.mark;
+    const _ed = _g('def');    if (_ed) _ed.textContent = ps.def;
+    const _ec = _g('crit');   if (_ec) _ec.textContent = ps.crit + '%';
+    const _ecd= _g('critdmg');if (_ecd)_ecd.textContent= ps.critDmg + '%';
+    const _ehs= _g('hs');     if (_ehs)_ehs.textContent= ps.hs > 0 ? ps.hs + '%' : (ps.crit >= 100 ? '0%' : '-');
   }
 
   // ⭐ 法書面板 HTML（嵌入各戰鬥 arena）
@@ -9577,7 +9589,7 @@
           stats.def  = Math.round(stats.def  * (1 + MIDNIGHT_LATE_DEF_BONUS));
           stats.mark = Math.round((stats.mark || 0) * (1 + MIDNIGHT_LATE_MARK_BONUS));
           critMult  += MIDNIGHT_LATE_CRITDMG_BONUS;
-          log.push({ type: 'crit-player', text: `🍜【最後的宵夜】發動！ATK/MARK/DEF +${Math.round(MIDNIGHT_LATE_ATK_BONUS*100)}%，爆傷 +${Math.round(MIDNIGHT_LATE_CRITDMG_BONUS*100)}%（剩 ${monster.maxRounds - round} 回合）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+          log.push({ type: 'crit-player', text: `🍜【最後的宵夜】發動！ATK/MARK/DEF +${Math.round(MIDNIGHT_LATE_ATK_BONUS*100)}%，爆傷 +${Math.round(MIDNIGHT_LATE_CRITDMG_BONUS*100)}%（剩 ${monster.maxRounds - round} 回合）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp, pStats:{atk:Math.round(stats.atk*(1+(pBuff.atkPct||0))),mark:Math.round((stats.mark||0)*(1+(pBuff.atkPct||0)+(pBuff.markPct||0))),def:Math.round((stats.def+(pBuff.def||0))*(1+(pBuff.defPct||0))),crit:Math.round((baseCritChance+(pBuff.critChance||0))*100),critDmg:Math.round((critMult+(pBuff.critDmg||0))*100),hs:Math.round(Math.max(0,Math.floor(Math.max(0,baseCritChance+(pBuff.critChance||0)-1.0)/0.05)*0.01+_weaponNabyssHs+(pBuff.headshotChance||0)+Math.floor(_aHs/50)*0.05-_fdHeadshotPenalty)*100)} } });
         }
         pGauge -= ATB_THRESHOLD;
         playerActions++;
@@ -9621,14 +9633,14 @@
           _dtLowHp30Done = true;
           stats.atk  = Math.round(stats.atk  * (1 + _dtLowHp30Atk));
           stats.mark = Math.round((stats.mark||0) * (1 + _dtLowHp30Atk));
-          log.push({ type:'system', text:`🔥 [地城寶物] 絕境鵝魂！ATK +${Math.round(_dtLowHp30Atk*100)}%`, hp:{player:pHp,monster:mHp,mp:pMp} });
+          log.push({ type:'system', text:`🔥 [地城寶物] 絕境鵝魂！ATK +${Math.round(_dtLowHp30Atk*100)}%`, hp:{player:pHp,monster:mHp,mp:pMp, pStats:{atk:Math.round(stats.atk*(1+(pBuff.atkPct||0))),mark:Math.round((stats.mark||0)*(1+(pBuff.atkPct||0)+(pBuff.markPct||0))),def:Math.round((stats.def+(pBuff.def||0))*(1+(pBuff.defPct||0))),crit:Math.round((baseCritChance+(pBuff.critChance||0))*100),critDmg:Math.round((critMult+(pBuff.critDmg||0))*100),hs:Math.round(Math.max(0,Math.floor(Math.max(0,baseCritChance+(pBuff.critChance||0)-1.0)/0.05)*0.01+_weaponNabyssHs+(pBuff.headshotChance||0)+Math.floor(_aHs/50)*0.05-_fdHeadshotPenalty)*100)}} });
         }
         // ⭐ 地城寶物：危機應戰（HP<50%）
         if (_dtLowHp50Atk > 0 && !_dtLowHp50Done && pHp < stats.maxHp * 0.50) {
           _dtLowHp50Done = true;
           stats.atk  = Math.round(stats.atk  * (1 + _dtLowHp50Atk));
           stats.mark = Math.round((stats.mark||0) * (1 + _dtLowHp50Atk));
-          log.push({ type:'system', text:`⚡ [地城寶物] 危機應戰！ATK +${Math.round(_dtLowHp50Atk*100)}%`, hp:{player:pHp,monster:mHp,mp:pMp} });
+          log.push({ type:'system', text:`⚡ [地城寶物] 危機應戰！ATK +${Math.round(_dtLowHp50Atk*100)}%`, hp:{player:pHp,monster:mHp,mp:pMp, pStats:{atk:Math.round(stats.atk*(1+(pBuff.atkPct||0))),mark:Math.round((stats.mark||0)*(1+(pBuff.atkPct||0)+(pBuff.markPct||0))),def:Math.round((stats.def+(pBuff.def||0))*(1+(pBuff.defPct||0))),crit:Math.round((baseCritChance+(pBuff.critChance||0))*100),critDmg:Math.round((critMult+(pBuff.critDmg||0))*100),hs:Math.round(Math.max(0,Math.floor(Math.max(0,baseCritChance+(pBuff.critChance||0)-1.0)/0.05)*0.01+_weaponNabyssHs+(pBuff.headshotChance||0)+Math.floor(_aHs/50)*0.05-_fdHeadshotPenalty)*100)}} });
         }
         // ⭐ 寵物觸發（每 N 次實際行動）
         _petTurnCount++;
@@ -10131,7 +10143,7 @@
             log.push({
               type: 'crit-player',
               text: `回合 ${round}：${skill.icon} ${skill.name}${lastIsCrit ? '【暴擊】' : ''}${_anyHsHit && skillHits === 1 ? '🎯【爆頭】' : ''}${isMagic ? '【魔攻】' : ''}${skillHits > 1 ? `×${skillHits}` : ''} → ${monster.name} ${skillHits > 1 ? '共 ' + totalDmg + ' HP ' + dmgStr : dmgStr}${extra}${costStr}`,
-              hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp, bloodPool },
+              hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp, bloodPool, pStats: { atk: Math.round(effAtk), mark: Math.round(effMark), def: Math.round(effDef), crit: Math.round((baseCritChance+(pBuff.critChance||0))*100), critDmg: Math.round((critMult+(pBuff.critDmg||0))*100), hs: Math.round(_skillHsChance*100) } },
               hmgCounters: _isPaladin ? { hit: _hmgHitCount + (_hmgFrozen ? 0 : 1), taken: _hmgTakenCount, heal: _hmgHealCount, active: _hmgActive, actionsLeft: _hmgActionsLeft } : undefined,
             });
             // ⭐ 聖母鵝計數：玩家技能擊中（按段數加成）
@@ -10505,7 +10517,7 @@
               log.push({
                 type: (isHs || isCrit) ? 'crit-player' : 'player',
                 text: `回合 ${round}（${hit}/${totalHits}）：${cls.attackVerb}${_modeTag}${label}${_stackHint} → ${monster.name} -${dmg} HP`,
-                hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp },
+                hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp, pStats: hit === 1 ? { atk: Math.round(effAtk), mark: Math.round((stats.mark||0)*(1+(pBuff.atkPct||0)+(pBuff.markPct||0))), def: Math.round((stats.def+(pBuff.def||0))*(1+(pBuff.defPct||0))), crit: Math.round(baseCrit2*100), critDmg: Math.round(critMult2*100), hs: Math.round(HEADSHOT_CHANCE*100) } : undefined },
                 stacks: { hit: _aHit, crit: _aCrit, hs: _aHs, critBonus: _aCritBonus, hsBonus: _aHsBonus },
               });
               // ⭐ 合成效果：fx_vamp（普攻吸血：傷害×3%/層，每箭各自吸）
@@ -10638,7 +10650,7 @@
             log.push({
               type: (_nonArcHs || isCrit2) ? 'crit-player' : 'player',
               text: `回合 ${round}：${cls.attackVerb}${_hsLabel}${isCrit2 ? '【暴擊】' : ''} → ${monster.name} -${dmg} HP${_ssBonusTrueDmg > 0 ? ` + ${_ssBonusTrueDmg.toLocaleString()} 真傷` : ''}`,
-              hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp },
+              hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp, pStats: { atk: Math.round(effAtk), mark: Math.round((stats.mark||0)*(1+(pBuff.atkPct||0)+(pBuff.markPct||0))), def: Math.round((stats.def+(pBuff.def||0))*(1+(pBuff.defPct||0))), crit: Math.round(baseCrit2*100), critDmg: Math.round(critMult2*100), hs: Math.round(HEADSHOT_CHANCE*100) } },
               hmgCounters: _isPaladin ? { hit: _hmgHitCount, taken: _hmgTakenCount, heal: _hmgHealCount, active: _hmgActive, actionsLeft: _hmgActionsLeft } : undefined,
             });
             if (mAbility?.type === 'reflect' && mAbility.resist) {
@@ -16515,7 +16527,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260515042853';
+  const APP_VERSION = '20260515094822';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -24690,6 +24702,8 @@ ${b.text}
           }
           const sc = document.getElementById('dfSbCount'); if (sc) sc.textContent = `${book.length}/10`;
         }
+        // ⭐ 即時屬性條更新
+        if (entry.hp.pStats) _updateBattleStatsStrip('bss-', entry.hp.pStats);
         // 傷害浮字 + 動畫
         const mDmg = _prevMHp - entry.hp.monster;
         const pDmg = _prevPHp - entry.hp.player;
@@ -26272,6 +26286,8 @@ ${b.text}
           }
           // ⭐ 法書 UI 更新
           if (entry.hp.spellBook !== undefined) updateSpellBookPanel(entry.hp.spellBook);
+          // ⭐ 即時屬性條更新
+          if (entry.hp.pStats) _updateBattleStatsStrip('bss-', entry.hp.pStats);
           // ⭐ 浮動傷害 + 攻擊者/受傷者動畫（舊版完整邏輯）
           const _dmgM = _dPrevMHp - entry.hp.monster;
           const _dmgP = _dPrevPHp - entry.hp.player;
@@ -29098,6 +29114,8 @@ ${b.text}
         }
         // ⭐ 法書 UI 更新
         if (entry.hp.spellBook !== undefined) updateSpellBookPanel(entry.hp.spellBook);
+        // ⭐ 即時屬性條更新
+        if (entry.hp.pStats) _updateBattleStatsStrip('bss-', entry.hp.pStats);
         // 浮動傷害數字
         const _mDmg = _prevMHp - entry.hp.monster;
         const _pDmg = _prevPHp - entry.hp.player;
