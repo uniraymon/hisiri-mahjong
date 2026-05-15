@@ -10013,7 +10013,7 @@
                 hitDmg *= _effSkillCritMult; if (_fcS && _dgCritCount > 0) hitDmg *= 1.30; critCount++; lastIsCrit = true; if (_dgCritCount > 0 && !_fcS) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount);
               }
               // ⭐ 技能爆頭（全職業）：×3 傷害（血池技能除外）
-              const _isHsSkill = !skill.usesBloodPool && Math.random() < _skillHsChance;
+              const _isHsSkill = Math.random() < _skillHsChance; // ⭐ 真傷（usesBloodPool）也可爆頭
               if (_isHsSkill) { hitDmg *= 3; _aHs++; _aHsBonus += 0.05 + Math.random() * 0.08; _anyHsHit = true; }
               // ⭐ 易傷（hit-based）：每段各消耗 1 層
               hitDmg *= consumeVulnerable(monster);
@@ -10686,13 +10686,16 @@
             const _ppCP = Math.random() < _ppCritC, _ppCM = Math.random() < _ppCritC;
             const _ppPF = Math.round(_ppPhys * (_ppCP ? critMult : 1));
             const _ppMF = Math.round(_ppMag  * (_ppCM ? critMult : 1));
-            const _ppDmg = Math.max(1, Math.round((_ppPF + _ppMF) * _weaponHmgBoost * 1.2));
+            let _ppDmg = Math.max(1, Math.round((_ppPF + _ppMF) * _weaponHmgBoost * 1.2));
             if (_ppCP || _ppCM) critCount++;
+            // ⭐ 爆頭（普攻激動亂舞 proc）
+            const _ppIsHs = Math.random() < HEADSHOT_CHANCE;
+            if (_ppIsHs) { _ppDmg = Math.round(_ppDmg * 3); _aHs++; _aHsBonus += 0.05 + Math.random() * 0.08; }
             mHp = Math.max(0, mHp - _ppDmg);
             const _ppCS = (_ppCP && _ppCM) ? '【雙暴擊】' : _ppCP ? '【物理暴擊】' : _ppCM ? '【魔法暴擊】' : '';
             log.push({
-              type: (_ppCP || _ppCM) ? 'crit-player' : 'player',
-              text: `回合 ${round}（✨ 激動亂舞觸發！）：${monster.name} -${_ppDmg} HP${_ppCS}（物理 ${_ppPF} + 魔法 ${_ppMF}）`,
+              type: (_ppCP || _ppCM || _ppIsHs) ? 'crit-player' : 'player',
+              text: `回合 ${round}（✨ 激動亂舞觸發！）：${monster.name} -${_ppDmg} HP${_ppIsHs ? '🎯【爆頭】' : ''}${_ppCS}（物理 ${_ppPF} + 魔法 ${_ppMF}）`,
               hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp },
             });
             if (mHp <= 0) pushDeathLine();
@@ -10874,6 +10877,8 @@
         // ⭐ 聖母鵝行動（每次玩家行動後觸發，不佔回合）
         if (_isPaladin && _hmgActive && _hmgActionsLeft > 0 && mHp > 0) {
           _hmgActionsLeft--;
+          // ⭐ 聖母鵝爆頭率（與技能/普攻相同公式）
+          const _hmgHsChance = Math.max(0, Math.floor(Math.max(0, baseCritChance + (pBuff.critChance || 0) - 1.0) / 0.05) * 0.01 + _weaponNabyssHs + (pBuff.headshotChance || 0) + Math.floor(_aHs / 50) * 0.05 - _fdHeadshotPenalty);
           const _HMG_DLG = {
             '慈悲':     ['媽媽保護你！💖', '母愛是最強的盾！', '聖母鵝賜予庇護！✨', '孩子，讓我守護你！'],
             '吻':       ['壞壞的怪物，罰你！💋', '吃我一個聖母之吻！', '讓你嘗嘗我的吻！💋', '你怎麼可以欺負我孩子！'],
@@ -10925,17 +10930,23 @@
             let _hmgDmg = Math.max(1, Math.round((physFinal + magFinal) * _weaponHmgBoost * 1.2));
             const _anyCrit = _pCrit || _mCrit;
             if (_anyCrit) { _hmgIsCrit = true; critCount++; }
+            // ⭐ 爆頭（激動亂舞）
+            const _hmgIsHs = Math.random() < _hmgHsChance;
+            if (_hmgIsHs) { _hmgDmg = Math.round(_hmgDmg * 3); _aHs++; _aHsBonus += 0.05 + Math.random() * 0.08; }
             mHp -= _hmgDmg;
             const _critStr = _pCrit && _mCrit ? '【雙暴擊】' : _pCrit ? '【物理暴擊】' : _mCrit ? '【魔法暴擊】' : '';
-            _hmgLogText = `${monster.name} -${_hmgDmg} HP${_critStr}（物理 ${physFinal} + 魔法 ${magFinal}${_weaponHmgBoost > 1 ? ' ×' + _weaponHmgBoost.toFixed(2) : ''}）`;
+            _hmgLogText = `${monster.name} -${_hmgDmg} HP${_hmgIsHs ? '🎯【爆頭】' : ''}${_critStr}（物理 ${physFinal} + 魔法 ${magFinal}${_weaponHmgBoost > 1 ? ' ×' + _weaponHmgBoost.toFixed(2) : ''}）`;
           } else { // 獻身
             const _turnsUsed = _hmgActionsLeft + 1; // 含本次（已 -- 過）
             const _devBase = (_hmgAtk + _hmgMark + _hmgDef) * (1 + _hmgHitCount / 10 + _hmgTakenCount / 10) * _turnsUsed;
-            const _devDmg  = Math.max(1, Math.round(_devBase * critMult * _weaponHmgBoost * 1.2));
+            let _devDmg  = Math.max(1, Math.round(_devBase * critMult * _weaponHmgBoost * 1.2));
             _hmgIsCrit = true; critCount++;
+            // ⭐ 爆頭（獻身）
+            const _devIsHs = Math.random() < _hmgHsChance;
+            if (_devIsHs) { _devDmg = Math.round(_devDmg * 3); _aHs++; _aHsBonus += 0.05 + Math.random() * 0.08; }
             mHp -= _devDmg;
             _hmgActive = false; _hmgActionsLeft = 0;
-            _hmgLogText = `${monster.name} -${_devDmg} HP【必殺暴擊】✨ 聖母鵝消失${_weaponHmgBoost > 1 ? ` ×${_weaponHmgBoost.toFixed(2)}` : ''}`;
+            _hmgLogText = `${monster.name} -${_devDmg} HP${_devIsHs ? '🎯【爆頭】' : ''}【必殺暴擊】✨ 聖母鵝消失${_weaponHmgBoost > 1 ? ` ×${_weaponHmgBoost.toFixed(2)}` : ''}`;
           }
           log.push({
             type: _hmgIsCrit ? 'crit-player' : 'player',
@@ -12262,7 +12273,7 @@
                 dmg *= _effSkillCritMultM; if (_fcSM && _dgCritCount > 0) dmg *= 1.30; critCount++; if (_dgCritCount > 0 && !_fcSM) _nextForceCrit = Math.max(_nextForceCrit, _dgCritCount);
               }
               // ⭐ 技能爆頭（全職業）：×3 傷害（血池技能除外）
-              const _isHsSkillM = !skill.usesBloodPool && Math.random() < _skillHsChanceM;
+              const _isHsSkillM = Math.random() < _skillHsChanceM; // ⭐ 真傷（usesBloodPool）也可爆頭
               if (_isHsSkillM) { dmg *= 3; _aHs++; _aHsBonus += 0.05 + Math.random() * 0.08; _anyHsHitM = true; }
               // ⭐ 覺醒破甲詞條：對已覺醒怪物傷害加成
               if (_awakenDmgBonus > 0 && tgt._awakened) dmg *= (1 + _awakenDmgBonus);
@@ -12907,14 +12918,17 @@
             const _ppCPM = Math.random() < _ppCritCM, _ppCMM = Math.random() < _ppCritCM;
             const _ppPFM = Math.round(_ppPhysM * (_ppCPM ? critMult : 1));
             const _ppMFM = Math.round(_ppMagM  * (_ppCMM ? critMult : 1));
-            const _ppDmgM = Math.max(1, Math.round((_ppPFM + _ppMFM) * _weaponHmgBoost * 1.2));
+            let _ppDmgM = Math.max(1, Math.round((_ppPFM + _ppMFM) * _weaponHmgBoost * 1.2));
             if (_ppCPM || _ppCMM) critCount++;
+            // ⭐ 爆頭（普攻激動亂舞 proc 組隊）
+            const _ppIsHsM = Math.random() < HEADSHOT_CHANCE;
+            if (_ppIsHsM) { _ppDmgM = Math.round(_ppDmgM * 3); _aHs++; _aHsBonus += 0.05 + Math.random() * 0.08; }
             tgt.hp = Math.max(0, tgt.hp - _ppDmgM);
             if (tgt.hp <= 0) tgt.alive = false;
             const _ppCSM = (_ppCPM && _ppCMM) ? '【雙暴擊】' : _ppCPM ? '【物理暴擊】' : _ppCMM ? '【魔法暴擊】' : '';
             log.push({
-              type: (_ppCPM || _ppCMM) ? 'crit-player' : 'player',
-              text: `回合 ${round}（✨ 激動亂舞觸發！）：${tgt.icon}${tgt.name} -${_ppDmgM} HP${_ppCSM}（物理 ${_ppPFM} + 魔法 ${_ppMFM}）`,
+              type: (_ppCPM || _ppCMM || _ppIsHsM) ? 'crit-player' : 'player',
+              text: `回合 ${round}（✨ 激動亂舞觸發！）：${_ppIsHsM ? '🎯【爆頭】' : ''}${tgt.icon}${tgt.name} -${_ppDmgM} HP${_ppCSM}（物理 ${_ppPFM} + 魔法 ${_ppMFM}）`,
               hp: hpsSnapshot(),
             });
           }
@@ -13082,6 +13096,8 @@
         // ⭐ 聖母鵝行動（試煉場）
         if (_isPaladinM && _hmgActiveM && _hmgActionsLeftM > 0 && mList.some(m => m.alive)) {
           _hmgActionsLeftM--;
+          // ⭐ 聖母鵝爆頭率（組隊）
+          const _hmgHsChanceM = Math.max(0, Math.floor(Math.max(0, baseCritChance + (pBuff.critChance || 0) - 1.0) / 0.05) * 0.01 + _weaponNabyssHs + (pBuff.headshotChance || 0) + Math.floor(_aHs / 50) * 0.05);
           const _HMG_DLG_M = {
             '慈悲':['媽媽保護你！💖','母愛是最強的盾！','聖母鵝賜予庇護！✨','孩子，讓我守護你！'],
             '吻':['壞壞的怪物，罰你！💋','吃我一個聖母之吻！','讓你嘗嘗我的吻！💋','你怎麼可以欺負我孩子！'],
@@ -13130,20 +13146,26 @@
               let _hmgDmgM = Math.max(1, Math.round((physFinalM + magFinalM) * _weaponHmgBoost * 1.2));
               const _anyCritM = _pCritM || _mCritM;
               if (_anyCritM) { _hmgIsCritM = true; critCount++; }
+              // ⭐ 爆頭（激動亂舞 組隊）
+              const _hmgIsHsM = Math.random() < _hmgHsChanceM;
+              if (_hmgIsHsM) { _hmgDmgM = Math.round(_hmgDmgM * 3); _aHs++; _aHsBonus += 0.05 + Math.random() * 0.08; }
               _hmgTgt.hp = Math.max(0, _hmgTgt.hp - _hmgDmgM);
               if (_hmgTgt.hp <= 0) _hmgTgt.alive = false;
               const _critStrM = _pCritM && _mCritM ? '【雙暴擊】' : _pCritM ? '【物理暴擊】' : _mCritM ? '【魔法暴擊】' : '';
-              _hmgLogTextM = `${_hmgTgt.icon}${_hmgTgt.name} -${_hmgDmgM} HP${_critStrM}（物理 ${physFinalM} + 魔法 ${magFinalM}${_weaponHmgBoost > 1 ? ' ×' + _weaponHmgBoost.toFixed(2) : ''}）`;
+              _hmgLogTextM = `${_hmgTgt.icon}${_hmgTgt.name} -${_hmgDmgM} HP${_hmgIsHsM ? '🎯【爆頭】' : ''}${_critStrM}（物理 ${physFinalM} + 魔法 ${magFinalM}${_weaponHmgBoost > 1 ? ' ×' + _weaponHmgBoost.toFixed(2) : ''}）`;
             }
           } else { // 獻身
             if (_hmgTgt) {
               const _turnsUsedM = _hmgActionsLeftM + 1;
               const _devBaseM = (_hmgAtkM + _hmgMarkM + _hmgDefM) * (1 + _hmgHitCountM / 10 + _hmgTakenCountM / 10) * _turnsUsedM;
-              const _devDmgM  = Math.max(1, Math.round(_devBaseM * critMult * _weaponHmgBoost * 1.2));
+              let _devDmgM  = Math.max(1, Math.round(_devBaseM * critMult * _weaponHmgBoost * 1.2));
               _hmgIsCritM = true; critCount++;
+              // ⭐ 爆頭（獻身 組隊）
+              const _devIsHsM = Math.random() < _hmgHsChanceM;
+              if (_devIsHsM) { _devDmgM = Math.round(_devDmgM * 3); _aHs++; _aHsBonus += 0.05 + Math.random() * 0.08; }
               _hmgTgt.hp = Math.max(0, _hmgTgt.hp - _devDmgM);
               if (_hmgTgt.hp <= 0) _hmgTgt.alive = false;
-              _hmgLogTextM = `${_hmgTgt.icon}${_hmgTgt.name} -${_devDmgM} HP【必殺暴擊】✨${_weaponHmgBoost > 1 ? ` ×${_weaponHmgBoost.toFixed(2)}` : ''}`;
+              _hmgLogTextM = `${_hmgTgt.icon}${_hmgTgt.name} -${_devDmgM} HP${_devIsHsM ? '🎯【爆頭】' : ''}【必殺暴擊】✨${_weaponHmgBoost > 1 ? ` ×${_weaponHmgBoost.toFixed(2)}` : ''}`;
             }
             _hmgActiveM = false; _hmgActionsLeftM = 0;
             _hmgLogTextM += ' 聖母鵝消失';
@@ -16527,7 +16549,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260516011727';
+  const APP_VERSION = '20260516012619';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
