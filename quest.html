@@ -3614,6 +3614,37 @@
         killer:      { bossCoinQty: 15 },
       },
     },
+    // ⭐ 混沌元靈・鵝尊（世界王）
+    {
+      id: 'world_chaos',
+      name: '🌍 混沌元靈・鵝尊', icon: '🌍', art: 'art/png/modern_v3/bosses/boss_world_chaos.png',
+      maxHp: 70000000,
+      atk: 1200, def: 1500, spd: 450,
+      physRes: 0, magRes: 0,
+      defPen: 0,
+      tier: 99,
+      level: 70,
+      verb: '混沌撕裂',
+      regenEveryRounds: 10,   // 每 10 回合觸發混沌再生
+      regenAmount: 1000000,   // 每次回復 100 萬 HP
+      skills: [
+        // ① 元力侵蝕：ATK×0.5 傷害 + 扣 35% 當前 MP
+        { verb: '元力侵蝕', type: 'mpDrain', mult: 0.5, mpDrainPct: 0.35, cooldown: 3 },
+        // ② 虛空重壓：ATK×1.4 物理傷害
+        { verb: '虛空重壓', mult: 1.4, cooldown: 4 },
+        // ③ 世界震盪：ATK×2.0 重擊（相當於 2 次 1.0×）
+        { verb: '世界震盪', mult: 2.0, cooldown: 5 },
+      ],
+      bossCoin: { id: 'bc_world_chaos', name: '世界幣', icon: '🌍' },
+      killRewards: {
+        top:         { bossCoinQty: 20 },
+        second:      { bossCoinQty: 16 },
+        third:       { bossCoinQty: 14 },
+        fourth:      { bossCoinQty: 12 },
+        participant: { bossCoinQty: 12 },
+        killer:      { bossCoinQty: 10 },
+      },
+    },
     // ⭐ 老天鵝（隱藏 Boss）
     {
       id: 'supreme_king',
@@ -5435,6 +5466,20 @@
     { id: 'bg_cg_decree',  name: '鵝尊之令', icon: '👑', slot: 'accessory', lv: 1, atk: 8,  mark: 12, mp: 15, mpRegen: 1,
       isBossGift: true, sourceBossId: 'chaos_goose', rarity: 'gold', fusionEffect: 'fx_cg_decree',
       affixDesc: '敵方 HP≥70% 時所有傷害+15%（WB以本生最大HP計算；鵝尊之令）' },
+
+    // ── 世界王印記（世界王扭蛋獎勵，合成用）─────────────────────────
+    { id: 'bg_wb_aegis',    name: '護世之印', icon: '🛡️', slot: 'accessory', lv: 1, def: 15, hp: 80, mp: 10, mpRegen: 1,
+      isBossGift: true, sourceBossId: 'world_chaos', rarity: 'gold', fusionEffect: 'fx_wb_aegis',
+      affixDesc: '受到所有傷害 -15%（可疊加；護世之印）' },
+    { id: 'bg_wb_doom',     name: '終焉之印', icon: '⚰️', slot: 'accessory', lv: 1, atk: 10, mark: 10, mp: 12, mpRegen: 1,
+      isBossGift: true, sourceBossId: 'world_chaos', rarity: 'gold', fusionEffect: 'fx_wb_doom',
+      affixDesc: '敵HP每降10%，所有傷害+4%（上限+40%；終焉之印）' },
+    { id: 'bg_wb_vanguard', name: '先鋒之印', icon: '⚡', slot: 'accessory', lv: 1, atk: 12, mark: 8, mp: 12, mpRegen: 1,
+      isBossGift: true, sourceBossId: 'world_chaos', rarity: 'gold', fusionEffect: 'fx_wb_vanguard',
+      affixDesc: '敵HP=100%時傷害+30%，每少10%傷害-3%（下限0%；先鋒之印）' },
+    { id: 'bg_wb_undying',  name: '不朽之印', icon: '💀', slot: 'accessory', lv: 1, hp: 100, def: 10, mpRegen: 2,
+      isBossGift: true, sourceBossId: 'world_chaos', rarity: 'gold', fusionEffect: 'fx_wb_undying',
+      affixDesc: 'HP降至0時免死一次，立刻回復25% maxHP（每場觸發一次；不朽之印）' },
 
     // ── 混沌鵝尊翅膀（混沌扭蛋獎勵，wings 格，不可融合）─────────────
     { id: 'bg_cg_wing_chaos', name: '混沌鵝翼', icon: '🪶',   slot: 'wings', lv: 1, atk: 10, mark: 8,  spd: 8, mp: 10, mpRegen: 1,
@@ -9332,6 +9377,15 @@
     const _fxCgVoid    = getFusionEffectCount(player, 'fx_cg_void');    // 虛空之印：無視 DEF 20%；敵有 buff 再+20%
     const _fxCgRuin    = getFusionEffectCount(player, 'fx_cg_ruin');    // 滅世之印：敵 HP<20% 時+20%
     const _fxCgDecree  = getFusionEffectCount(player, 'fx_cg_decree');  // 鵝尊之令：敵 HP≥70% 時+15%
+    // ⭐ 世界王印記效果
+    const _fxWbAegis    = getFusionEffectCount(player, 'fx_wb_aegis');    // 護世之印：受傷 -15%/層
+    const _fxWbDoom     = getFusionEffectCount(player, 'fx_wb_doom');     // 終焉之印：敵HP每降10%傷+4%（上限+40%）
+    const _fxWbVanguard = getFusionEffectCount(player, 'fx_wb_vanguard'); // 先鋒之印：敵HP100%+30%，每-10%傷-3%
+    const _fxWbUndying  = getFusionEffectCount(player, 'fx_wb_undying');  // 不朽之印：免死一次+25% HP
+    // 護世之印：加入 passive.dmgReduction（適用所有怪物傷害）
+    if (_fxWbAegis > 0) passive.dmgReduction = Math.min(0.80, (passive.dmgReduction || 0) + _fxWbAegis * 0.15);
+    // 不朽之印：免死旗標（每場一次）
+    let _wbUndyingUsed = false;
     // ⭐ 翅膀被動（wings 格裝備）
     const _wingsItem        = resolveItem(player.rpg?.equipment?.wings);
     const _wingsSkillDmgPct = _wingsItem?.wingSkillDmgPct  || 0; // 混沌鵝翼：技能傷害 +5%
@@ -9958,6 +10012,10 @@
             if (_fxCgRuin > 0 && mHp < monster.maxHp * 0.20) dmg *= (1 + 0.20 * _fxCgRuin);
             // ⭐ 鵝尊之令（fx_cg_decree）：敵 HP≥70% 時+15%/層（WB用本生最大HP）
             if (_fxCgDecree > 0 && mHp >= monster.maxHp * 0.70) dmg *= (1 + 0.15 * _fxCgDecree);
+            // ⭐ 終焉之印（fx_wb_doom）：敵HP每降10%，傷害+4%（上限+40%）
+            if (_fxWbDoom > 0) { const _doomB = Math.min(0.40, Math.floor(Math.max(0, 1 - mHp / monster.maxHp) / 0.10) * 0.04) * _fxWbDoom; if (_doomB > 0) dmg *= (1 + _doomB); }
+            // ⭐ 先鋒之印（fx_wb_vanguard）：敵HP=100%+30%，每少10%傷-3%（下限0%）
+            if (_fxWbVanguard > 0) { const _vgB = Math.max(0, 0.30 - Math.floor(Math.max(0, 1 - mHp / monster.maxHp) / 0.10) * 0.03) * _fxWbVanguard; if (_vgB > 0) dmg *= (1 + _vgB); }
             // ⭐ 聖騎 bonusMaxHpPct：純加值（maxHp × X），不吃怪 DEF
             //    例：聖光斬 1.2× ATK + 5% maxHp → 200 maxHp 玩家額外 +10 傷害
             //    ATK 部分被高 DEF 壓到負值時，先 clamp 0 再加 maxHp，避免被 Math.max(1) 蓋掉
@@ -10491,6 +10549,9 @@
               // ⭐ 滅世之印（fx_cg_ruin）+ 鵝尊之令（fx_cg_decree）：普攻也適用
               if (_fxCgRuin > 0 && mHp < monster.maxHp * 0.20) dmg *= (1 + 0.20 * _fxCgRuin);
               if (_fxCgDecree > 0 && mHp >= monster.maxHp * 0.70) dmg *= (1 + 0.15 * _fxCgDecree);
+              // ⭐ 終焉之印 + 先鋒之印：普攻也適用
+              if (_fxWbDoom > 0) { const _doomB = Math.min(0.40, Math.floor(Math.max(0, 1 - mHp / monster.maxHp) / 0.10) * 0.04) * _fxWbDoom; if (_doomB > 0) dmg *= (1 + _doomB); }
+              if (_fxWbVanguard > 0) { const _vgB = Math.max(0, 0.30 - Math.floor(Math.max(0, 1 - mHp / monster.maxHp) / 0.10) * 0.03) * _fxWbVanguard; if (_vgB > 0) dmg *= (1 + _vgB); }
               if (_monPhysRes) dmg *= (1 - _monPhysRes);
               dmg *= consumeVulnerable(monster);
               // ⭐ 覺醒破甲詞條：對已覺醒怪物傷害加成
@@ -10612,6 +10673,9 @@
             // ⭐ 滅世之印（fx_cg_ruin）+ 鵝尊之令（fx_cg_decree）：普攻也適用
             if (_fxCgRuin > 0 && mHp < monster.maxHp * 0.20) dmg *= (1 + 0.20 * _fxCgRuin);
             if (_fxCgDecree > 0 && mHp >= monster.maxHp * 0.70) dmg *= (1 + 0.15 * _fxCgDecree);
+            // ⭐ 終焉之印 + 先鋒之印：普攻也適用
+            if (_fxWbDoom > 0) { const _doomB = Math.min(0.40, Math.floor(Math.max(0, 1 - mHp / monster.maxHp) / 0.10) * 0.04) * _fxWbDoom; if (_doomB > 0) dmg *= (1 + _doomB); }
+            if (_fxWbVanguard > 0) { const _vgB = Math.max(0, 0.30 - Math.floor(Math.max(0, 1 - mHp / monster.maxHp) / 0.10) * 0.03) * _fxWbVanguard; if (_vgB > 0) dmg *= (1 + _vgB); }
             if (!_nonArcHs && _monPhysRes) dmg *= (1 - _monPhysRes); // 爆頭無視抗性
             dmg *= consumeVulnerable(monster);
             // ⭐ 覺醒破甲詞條：對已覺醒怪物傷害加成
@@ -10990,6 +11054,14 @@
           }
         }
         if (mHp <= 0) { pushDeathLine(); break; }
+        // ⭐ 世界王被動：每 N 回合混沌再生
+        if (monster.regenEveryRounds && round % monster.regenEveryRounds === 0 && mHp > 0 && mHp < monster.maxHp) {
+          const _wbRegen = Math.min(monster.regenAmount || 0, monster.maxHp - mHp);
+          if (_wbRegen > 0) {
+            mHp += _wbRegen;
+            log.push({ type: 'monster', text: `回合 ${round}：🌍【混沌再生】${monster.name} 回復 ${_wbRegen.toLocaleString()} HP！`, hp: { player: pHp, monster: mHp, mp: pMp } });
+          }
+        }
         // ⭐ 老天鵝形態：每回合回血
         if (_fdBossHpRegen > 0 && mHp > 0 && mHp < monster.maxHp) {
           const _regen = Math.min(_fdBossHpRegen, monster.maxHp - mHp);
@@ -11176,6 +11248,37 @@
               _tenaciousUsed = true; pHp = 1;
               log.push({ type: 'system', text: `🛡 不屈發動！${player.name} 以 1 HP 撐過！`, hp: { player: pHp, monster: mHp, mp: pMp } });
             }
+            if (pHp <= 0 && _fxWbUndying > 0 && !_wbUndyingUsed) {
+              _wbUndyingUsed = true; pHp = Math.round(stats.maxHp * 0.25);
+              log.push({ type: 'system', text: `💀【不朽之印】發動！${player.name} 免死！HP 回復至 ${pHp}！`, hp: { player: pHp, monster: mHp, mp: pMp } });
+            }
+            if (pHp <= 0) dead = true;
+          } else if (mSkill.type === 'mpDrain') {
+            // ⭐ 元力侵蝕（世界王技能）：小傷害 + 扣 35% 當前 MP
+            const _monAtkBuff_md = 1 + (getBuffBonus(monster).atkPct || 0);
+            let _mpDmg = Math.max(1, monster.atk * _monAtkBuff_md * (mSkill.mult || 0.5) - Math.floor(effDef / 2));
+            _mpDmg *= (0.85 + Math.random() * 0.3);
+            _mpDmg *= (1 - (passive.dmgReduction || 0));
+            _mpDmg *= (1 - (pBuff.dmgReducePct || 0));
+            _mpDmg = Math.max(1, Math.round(_mpDmg));
+            _mpDmg = consumeShield(_mpDmg);
+            _mpDmg = consumePartialShield(_mpDmg);
+            if (_fxPhysShield > 0) _mpDmg = Math.max(1, Math.round(_mpDmg * Math.max(0.40, 1 - _fxPhysShield * 0.20)));
+            const _mpDrained = Math.floor(pMp * (mSkill.mpDrainPct || 0.35));
+            pMp = Math.max(0, pMp - _mpDrained);
+            if (player.rpg.class === 'warrior') bloodPool += Math.min(pHp, _mpDmg) * (hasStatus(playerObj, 'bloodlust_pool') ? 2 : 1) * (_weaponBpBoostMult || 1);
+            pHp = Math.max(0, pHp - _mpDmg);
+            if (_isPaladin && !_hmgFrozen) _hmgTakenCount++;
+            log.push({ type: 'monster', text: `回合 ${round}：${monster.icon}${monster.name} 💜 ${mSkill.verb} → ${player.name} -${_mpDmg} HP、MP -${_mpDrained}（-${Math.round((mSkill.mpDrainPct||0.35)*100)}%）`, hp: { player: pHp, monster: Math.max(0, mHp), mp: pMp } });
+            applyReflect(_mpDmg);
+            if (pHp <= 0 && _spiritSpecials.has('tenacious') && !_tenaciousUsed) {
+              _tenaciousUsed = true; pHp = 1;
+              log.push({ type: 'system', text: `🛡 不屈發動！${player.name} 以 1 HP 撐過元力侵蝕！`, hp: { player: pHp, monster: mHp, mp: pMp } });
+            }
+            if (pHp <= 0 && _fxWbUndying > 0 && !_wbUndyingUsed) {
+              _wbUndyingUsed = true; pHp = Math.round(stats.maxHp * 0.25);
+              log.push({ type: 'system', text: `💀【不朽之印】發動！${player.name} 免死！HP 回復至 ${pHp}！`, hp: { player: pHp, monster: mHp, mp: pMp } });
+            }
             if (pHp <= 0) dead = true;
           } else if (mSkill.mpDrainAll) {
             // ⭐ 靈魂汲取：魔法傷害 + 吸光玩家 MP + 吸血回血
@@ -11204,6 +11307,10 @@
             if (pHp <= 0 && _spiritSpecials.has('tenacious') && !_tenaciousUsed) {
               _tenaciousUsed = true; pHp = 1;
               log.push({ type: 'system', text: `🛡 不屈發動！${player.name} 以 1 HP 撐過靈魂汲取！`, hp: { player: pHp, monster: mHp, mp: pMp } });
+            }
+            if (pHp <= 0 && _fxWbUndying > 0 && !_wbUndyingUsed) {
+              _wbUndyingUsed = true; pHp = Math.round(stats.maxHp * 0.25);
+              log.push({ type: 'system', text: `💀【不朽之印】發動！${player.name} 免死！HP 回復至 ${pHp}！`, hp: { player: pHp, monster: mHp, mp: pMp } });
             }
             if (pHp <= 0) dead = true;
           } else {
@@ -11284,6 +11391,10 @@
               _skDeathPrevented = true; pHp = 1;
               log.push({ type: 'system', text: `⚜️ 老天鵝加持發動！${player.name} 以 1 HP 奇蹟存活！`, hp: { player: pHp, monster: mHp, mp: pMp } });
             }
+            if (pHp <= 0 && _fxWbUndying > 0 && !_wbUndyingUsed) {
+              _wbUndyingUsed = true; pHp = Math.round(stats.maxHp * 0.25);
+              log.push({ type: 'system', text: `💀【不朽之印】發動！${player.name} 免死！HP 回復至 ${pHp}！`, hp: { player: pHp, monster: mHp, mp: pMp } });
+            }
             if (pHp <= 0) { dead = true; }
             if (mHp <= 0) { pushDeathLine(); break; }
             // 對玩家上狀態（⭐ 風鵝護符：異常狀態抵抗 -25%；shield 擋下傷害時同時免疫附加狀態）
@@ -11363,6 +11474,10 @@
             if (pHp <= 0 && _spiritSpecials.has('tenacious') && !_tenaciousUsed) {
               _tenaciousUsed = true; pHp = 1;
               log.push({ type: 'system', text: `🛡 不屈發動！${player.name} 以 1 HP 撐過致命一擊！`, hp: { player: pHp, monster: mHp, mp: pMp } });
+            }
+            if (pHp <= 0 && _fxWbUndying > 0 && !_wbUndyingUsed) {
+              _wbUndyingUsed = true; pHp = Math.round(stats.maxHp * 0.25);
+              log.push({ type: 'system', text: `💀【不朽之印】發動！${player.name} 免死！HP 回復至 ${pHp}！`, hp: { player: pHp, monster: mHp, mp: pMp } });
             }
             if (pHp <= 0) { dead = true; break; }
           }
@@ -11704,6 +11819,13 @@
     const _fxCgVoid    = getFusionEffectCount(player, 'fx_cg_void');
     const _fxCgRuin    = getFusionEffectCount(player, 'fx_cg_ruin');
     const _fxCgDecree  = getFusionEffectCount(player, 'fx_cg_decree');
+    // ⭐ 世界王印記效果
+    const _fxWbAegisM    = getFusionEffectCount(player, 'fx_wb_aegis');
+    const _fxWbDoomM     = getFusionEffectCount(player, 'fx_wb_doom');
+    const _fxWbVanguardM = getFusionEffectCount(player, 'fx_wb_vanguard');
+    const _fxWbUndyingM  = getFusionEffectCount(player, 'fx_wb_undying');
+    if (_fxWbAegisM > 0) passive.dmgReduction = Math.min(0.80, (passive.dmgReduction || 0) + _fxWbAegisM * 0.15);
+    let _wbUndyingUsedM = false;
     // ⭐ 翅膀被動（wings 格裝備）
     const _wingsItemM        = resolveItem(player.rpg?.equipment?.wings);
     const _wingsSkillDmgPct  = _wingsItemM?.wingSkillDmgPct  || 0;
@@ -12255,6 +12377,9 @@
               if (_fxCgRuin > 0 && tgt.hp < tgt.maxHp * 0.20) dmg *= (1 + 0.20 * _fxCgRuin);
               // ⭐ 鵝尊之令（fx_cg_decree）：敵 HP≥70% 時+15%/層
               if (_fxCgDecree > 0 && tgt.hp >= tgt.maxHp * 0.70) dmg *= (1 + 0.15 * _fxCgDecree);
+              // ⭐ 終焉之印 + 先鋒之印（組隊）
+              if (_fxWbDoomM > 0) { const _doomB = Math.min(0.40, Math.floor(Math.max(0, 1 - tgt.hp / tgt.maxHp) / 0.10) * 0.04) * _fxWbDoomM; if (_doomB > 0) dmg *= (1 + _doomB); }
+              if (_fxWbVanguardM > 0) { const _vgB = Math.max(0, 0.30 - Math.floor(Math.max(0, 1 - tgt.hp / tgt.maxHp) / 0.10) * 0.03) * _fxWbVanguardM; if (_vgB > 0) dmg *= (1 + _vgB); }
               const skillCrit = baseCritChance + (skill.extraCritChance || 0) + (pBuff.critChance || 0);
               // ⭐ 技能爆頭率（全職業）：crit 超過 100% 後每 5% +1%；nabyssHs 武器額外加成
               const _skillHsChanceM = Math.max(0, Math.floor(Math.max(0, skillCrit - 1.0) / 0.05) * 0.01 + _weaponNabyssHs + (pBuff.headshotChance || 0) + Math.floor(_aHs / 50) * 0.05);
@@ -12749,6 +12874,9 @@
               if (_wingsBasicAtkPct > 0) dmg *= (1 + _wingsBasicAtkPct);
               if (_fxCgRuin > 0 && tgt.hp < tgt.maxHp * 0.20) dmg *= (1 + 0.20 * _fxCgRuin);
               if (_fxCgDecree > 0 && tgt.hp >= tgt.maxHp * 0.70) dmg *= (1 + 0.15 * _fxCgDecree);
+              // ⭐ 終焉之印 + 先鋒之印（組隊普攻）
+              if (_fxWbDoomM > 0) { const _doomB = Math.min(0.40, Math.floor(Math.max(0, 1 - tgt.hp / tgt.maxHp) / 0.10) * 0.04) * _fxWbDoomM; if (_doomB > 0) dmg *= (1 + _doomB); }
+              if (_fxWbVanguardM > 0) { const _vgB = Math.max(0, 0.30 - Math.floor(Math.max(0, 1 - tgt.hp / tgt.maxHp) / 0.10) * 0.03) * _fxWbVanguardM; if (_vgB > 0) dmg *= (1 + _vgB); }
               if (tgt.physRes) dmg *= (1 - tgt.physRes);
               dmg *= consumeVulnerable(tgt);
               // ⭐ 覺醒破甲詞條：對已覺醒怪物傷害加成
@@ -12845,6 +12973,9 @@
             if (_wingsBasicAtkPct > 0) dmg *= (1 + _wingsBasicAtkPct);
             if (_fxCgRuin > 0 && tgt.hp < tgt.maxHp * 0.20) dmg *= (1 + 0.20 * _fxCgRuin);
             if (_fxCgDecree > 0 && tgt.hp >= tgt.maxHp * 0.70) dmg *= (1 + 0.15 * _fxCgDecree);
+            // ⭐ 終焉之印 + 先鋒之印（組隊弓箭手普攻）
+            if (_fxWbDoomM > 0) { const _doomB = Math.min(0.40, Math.floor(Math.max(0, 1 - tgt.hp / tgt.maxHp) / 0.10) * 0.04) * _fxWbDoomM; if (_doomB > 0) dmg *= (1 + _doomB); }
+            if (_fxWbVanguardM > 0) { const _vgB = Math.max(0, 0.30 - Math.floor(Math.max(0, 1 - tgt.hp / tgt.maxHp) / 0.10) * 0.03) * _fxWbVanguardM; if (_vgB > 0) dmg *= (1 + _vgB); }
             if (!_nonArcHsM && tgt.physRes) dmg *= (1 - tgt.physRes);
             dmg *= consumeVulnerable(tgt); // ⭐ 易傷（hit-based）
             // ⭐ 覺醒破甲詞條：對已覺醒怪物傷害加成
@@ -15394,6 +15525,26 @@
       ],
     },
     {
+      id: 'boss_world', icon: '🌍', name: '世界王扭蛋',
+      desc: '消耗 3 顆世界幣抽世界王印記（效果型金飾品）/ 體力 / EXP',
+      cost: 3,
+      isBossCoin: true,
+      coinFilter: 'bc_world_chaos',
+      currencyIcon: '🌍',
+      currencyName: '世界幣',
+      status: 'open',
+      pool: [
+        { type: 'item', id: 'bg_wb_aegis',    weight: 10 },
+        { type: 'item', id: 'bg_wb_doom',     weight: 10 },
+        { type: 'item', id: 'bg_wb_vanguard', weight: 10 },
+        { type: 'item', id: 'bg_wb_undying',  weight: 8  },
+        { type: 'stamina', amount: 80,  weight: 20, label: '體力 +80',   icon: '⚡' },
+        { type: 'stamina', amount: 150, weight: 10, label: '體力 +150',  icon: '⚡' },
+        { type: 'xp',      amount: 1000,weight: 11, label: 'EXP +1000',  icon: '✨' },
+        { type: 'xp',      amount: 1500,weight: 8,  label: 'EXP +1500',  icon: '✨' },
+      ],
+    },
+    {
       id: 'egg', icon: '🥚', name: '鵝蛋扭蛋', desc: '用鵝蛋幣抽頭像 / 稱號 / 翅膀寵物',
       status: 'locked', // 之後做（目前在 index.html）
     },
@@ -16549,7 +16700,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260516012753';
+  const APP_VERSION = '20260516021235';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -21233,11 +21384,11 @@ ${b.text}
     }
     __fusionBaseIdx = baseIdx;
 
-    const slotColor = { king: '#f59e0b', dragon: '#06b6d4', pebble: '#94a3b8', storm: '#ca8a04', soul: '#a855f7', chaos: '#f43f5e' };
-    const slotBg    = { king: '#fef9c3', dragon: '#ecfeff', pebble: '#f1f5f9', storm: '#fefce8', soul: '#fdf4ff', chaos: '#fff1f2' };
-    const slotIcon  = { king: '👑', dragon: '🐉', pebble: '🪨', storm: '⚡', soul: '👁️', chaos: '🌀' };
-    const slotLabel = { king: '鵝王槽', dragon: '古龍槽', pebble: '鵝卵石槽', storm: '風鵝槽', soul: '靈噬槽', chaos: '混沌槽' };
-    const ALL_SLOTS = ['king', 'dragon', 'pebble', 'storm', 'soul', 'chaos'];
+    const slotColor = { king: '#f59e0b', dragon: '#06b6d4', pebble: '#94a3b8', storm: '#ca8a04', soul: '#a855f7', chaos: '#f43f5e', world: '#16a34a' };
+    const slotBg    = { king: '#fef9c3', dragon: '#ecfeff', pebble: '#f1f5f9', storm: '#fefce8', soul: '#fdf4ff', chaos: '#fff1f2', world: '#f0fdf4' };
+    const slotIcon  = { king: '👑', dragon: '🐉', pebble: '🪨', storm: '⚡', soul: '👁️', chaos: '🌀', world: '🌍' };
+    const slotLabel = { king: '鵝王槽', dragon: '古龍槽', pebble: '鵝卵石槽', storm: '風鵝槽', soul: '靈噬槽', chaos: '混沌槽', world: '世界槽' };
+    const ALL_SLOTS = ['king', 'dragon', 'pebble', 'storm', 'soul', 'chaos', 'world'];
 
     // ── 基底選擇：橫向滾動 chips ──
     const baseChips = allGifts.length === 0
@@ -21378,17 +21529,20 @@ ${b.text}
     if (s === 'soul_devourer') return 'soul';
     if (s === 'goose_king')    return 'king';
     if (s === 'chaos_goose')   return 'chaos';
+    if (s === 'world_chaos')   return 'world';
     // fallback by baseId prefix（舊物件可能沒有 sourceBossId）
     if ((item.baseId || '').startsWith('bg_dg'))  return 'dragon';
     if ((item.baseId || '').startsWith('bg_pg'))  return 'pebble';
     if ((item.baseId || '').startsWith('bg_sg'))  return 'storm';
     if ((item.baseId || '').startsWith('bg_sd'))  return 'soul';
     if ((item.baseId || '').startsWith('bg_cg'))  return 'chaos';
+    if ((item.baseId || '').startsWith('bg_wb'))  return 'world';
     if ((item.id    || '').startsWith('bg_dg'))   return 'dragon';
     if ((item.id    || '').startsWith('bg_pg'))   return 'pebble';
     if ((item.id    || '').startsWith('bg_sg'))   return 'storm';
     if ((item.id    || '').startsWith('bg_sd'))   return 'soul';
     if ((item.id    || '').startsWith('bg_cg'))   return 'chaos';
+    if ((item.id    || '').startsWith('bg_wb'))   return 'world';
     return 'king';
   }
 
@@ -21413,8 +21567,8 @@ ${b.text}
         return true;
       });
 
-    const slotLabel = { king: '鵝王槽', dragon: '古龍槽', pebble: '鵝卵石槽', storm: '風鵝槽', soul: '靈噬槽', chaos: '混沌槽' };
-    const slotColor = { king: '#fbbf24', dragon: '#22d3ee', pebble: '#a3a3a3', storm: '#ca8a04', soul: '#a855f7', chaos: '#f43f5e' };
+    const slotLabel = { king: '鵝王槽', dragon: '古龍槽', pebble: '鵝卵石槽', storm: '風鵝槽', soul: '靈噬槽', chaos: '混沌槽', world: '世界槽' };
+    const slotColor = { king: '#fbbf24', dragon: '#22d3ee', pebble: '#a3a3a3', storm: '#ca8a04', soul: '#a855f7', chaos: '#f43f5e', world: '#16a34a' };
 
     const currentFusedHtml = fusedComponents.length > 0
       ? fusedComponents.map(fc => {
