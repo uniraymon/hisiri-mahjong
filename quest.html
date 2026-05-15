@@ -9942,6 +9942,7 @@
             // ⭐ 鵝鵝法杖（weaponSkillDmgPct）：技能傷害 +30%
             if (_weaponSkillDmgPct > 0) dmg *= (1 + _weaponSkillDmgPct);
             // ⭐ 血之覺醒：下一技能 +20%（消耗旗標）
+            let extra = ''; // 宣告在此以讓覺醒 extra 可正常使用
             if (_bloodAwakenBoost && !skill.usesBloodPool) {
               dmg *= 1.20;
               _bloodAwakenBoost = false;
@@ -10043,8 +10044,7 @@
                 if (mHp <= 0 && !monsterDied) monsterDied = true;
               }
             }
-            // 吸血 / 自癒：用總傷害計
-            let extra = '';
+            // 吸血 / 自癒：用總傷害計（extra 已在血之覺醒區段宣告）
             // ⭐ 爆血：爆發後回血 血池×50%（可超過最大HP）
             if (skill.usesBloodPool && _bpHpContrib > 0) {
               const _bbRestore = Math.round(_bpHpContrib * 0.50);
@@ -12240,6 +12240,7 @@
               // ⭐ 鵝鵝法杖（weaponSkillDmgPctM）：技能傷害 +30%
               if (_weaponSkillDmgPctM > 0) dmg *= (1 + _weaponSkillDmgPctM);
               // ⭐ 血之覺醒：下一技能 +20%（消耗旗標）
+              let extra = ''; // 宣告在此以讓覺醒 extra 可正常使用
               if (_bloodAwakenBoostM && !skill.usesBloodPool) {
                 dmg *= 1.20;
                 _bloodAwakenBoostM = false;
@@ -12348,8 +12349,7 @@
                 }
               }
             }
-            // 吸血（總和）
-            let extra = '';
+            // 吸血（總和）（extra 已在血之覺醒區段宣告）
             // ⭐ 血祭斬 真傷補正顯示
             if (skill.id === 'w_blood_slash' && bloodPool > 0) {
               const _btd = Math.floor(bloodPool / 10);
@@ -16549,7 +16549,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260516012619';
+  const APP_VERSION = '20260516012753';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
