@@ -2400,6 +2400,15 @@
       <div id="dungeonBattleHistoryArea"></div>
     </div>
 
+    <div class="card" style="background:linear-gradient(135deg,#020814,#050a1e); border:1px solid #1d4ed8;">
+      <img src="assets/dungeon/dungeon-banner.png" alt=""
+        style="width:100%;border-radius:8px;margin-bottom:8px;display:block;image-rendering:pixelated;"
+        onerror="this.style.display='none'">
+      <h2 style="color:#bfdbfe;"><span>🌑 深淵副本</span> <span style="font-size:11px; color:#93c5fd; font-weight:500;">（第二層・5層挑戰・次數評分・Roguelike BUFF）</span></h2>
+      <div id="dungeon2Body"></div>
+      <div id="dungeon2FightResult"></div>
+    </div>
+
     <div class="card" style="background:linear-gradient(135deg,#0a0514,#120a1e); border:1px solid #4c1d95;">
       <h2 style="color:#e9d5ff;"><span>🏺 地城寶物</span> <span style="font-size:11px; color:#a78bfa; font-weight:500;">（收集・交易・強化效果）</span></h2>
       <div id="dungeonTreasureBody"></div>
@@ -7050,6 +7059,295 @@
     {id:'dt_t70',name:'古老戰鬥符',  rarity:'trash', bonuses:{atk:2,def:2,spd:2}},
   ]; // total = 16+21+30+63+70 = 200
 
+  // ══════════════════════════════════════════════════════
+  // 🌑 第二層地城（深淵副本）資料常數
+  // ══════════════════════════════════════════════════════
+  const DUNGEON2_FLOOR_HPS = [100000000, 140000000, 180000000, 220000000, 260000000];
+  const DUNGEON2_HP_RECOVER_MULT = 1.10;
+  const DUNGEON2_STAMINA_PER_FLOOR = 20;
+  const DUNGEON2_ATTEMPTS_S = 20;
+  const DUNGEON2_ATTEMPTS_A = 35;
+  // 深淵 Roguelike BUFF 池（強化版）
+  const DUNGEON2_BUFF_POOL = [
+    { id:'atk50', label:'⚔️ 深淵戰意',  desc:'ATK & MARK +50%',          emoji:'🔴' },
+    { id:'def60', label:'🛡 深淵護甲',  desc:'DEF +60（固定加值）',        emoji:'🔵' },
+    { id:'imm8',  label:'🌟 深淵無敵',  desc:'首 8 回合免疫所有傷害',      emoji:'🟡' },
+    { id:'hp80',  label:'💚 深淵生命',  desc:'HP 上限 +80%',               emoji:'🟢' },
+    { id:'spd50', label:'💨 深淵疾速',  desc:'SPD +50%',                   emoji:'⚪' },
+    { id:'pen20', label:'💥 深淵穿透',  desc:'守護者物理抗性 -20%',        emoji:'🟠' },
+  ];
+  const DUNGEON2_BOSS_DEF = {
+    id:      'dungeon2_boss',
+    defPen:  0.35,
+    maxRounds: 140,
+    floorStats: [
+      {
+        level: 65, atk: 900, def: 900, physRes: 0.12, magRes: 0.12, spd: 100,
+        icon: '🌑', name: '深淵鵝守衛', art: 'assets/dungeon/boss-floor1.png',
+        quote: '「這裡是深淵！你竟然敢進來？……不過你看起來很好咬。嗯嗯嗯！」',
+        verb: '深淵啄擊',
+        skills: [
+          { verb: '黑翼展壓', mult: 2.4, cooldown: 3 },
+          { verb: '深淵沉默', mult: 1.8, applyStatus: { type: 'paralyze', charges: 2, chance: 0.55 }, cooldown: 4 },
+          { verb: '冥界重擊', mult: 2.0, ignoreDef: true, cooldown: 5 },
+        ],
+      },
+      {
+        level: 69, atk: 1150, def: 1250, physRes: 0.15, magRes: 0.15, spd: 140,
+        icon: '🌒', name: '暗影武士鵝', art: 'assets/dungeon/boss-floor2.png',
+        quote: '「我在深淵蹲了五百年，連太陽都不記得長什麼樣！但我很帥就是了！」',
+        verb: '暗影鵝斬',
+        skills: [
+          { verb: '五百年暗怒爆發', mult: 2.4, cooldown: 3 },
+          { verb: '影武者麻痺斬',   mult: 1.8, applyStatus: { type: 'paralyze', charges: 2, chance: 0.55 }, cooldown: 4 },
+          { verb: '深淵居合一擊',   mult: 2.0, ignoreDef: true, cooldown: 5 },
+        ],
+      },
+      {
+        level: 73, atk: 1450, def: 1650, physRes: 0.18, magRes: 0.18, spd: 185,
+        icon: '🌓', name: '混沌鵝祭司', art: 'assets/dungeon/boss-floor3.png',
+        quote: '「我召喚的不是惡魔，是上個月沒繳的電費帳單！恐懼吧！嗯嗯嗯！」',
+        verb: '混沌鵝咒',
+        skills: [
+          { verb: '混沌能量爆擊', mult: 2.4, cooldown: 3 },
+          { verb: '祭司詛咒踏',   mult: 1.8, applyStatus: { type: 'paralyze', charges: 2, chance: 0.55 }, cooldown: 4 },
+          { verb: '混沌極怒降臨', mult: 2.0, ignoreDef: true, cooldown: 5 },
+        ],
+      },
+      {
+        level: 77, atk: 1750, def: 2050, physRes: 0.20, magRes: 0.20, spd: 220,
+        icon: '🌔', name: '深淵鵝將軍', art: 'assets/dungeon/boss-floor4.png',
+        quote: '「我手下有一萬隻深淵鵝！……都已經退休了，但我沒有！嗯嗯嗯！」',
+        verb: '深淵將軍踢',
+        skills: [
+          { verb: '萬鵝退休聯合炮', mult: 2.4, cooldown: 3 },
+          { verb: '深淵軍威壓制',   mult: 1.8, applyStatus: { type: 'paralyze', charges: 2, chance: 0.55 }, cooldown: 4 },
+          { verb: '將軍深淵必殺',   mult: 2.0, ignoreDef: true, cooldown: 5 },
+        ],
+      },
+      {
+        level: 81, atk: 2100, def: 2100, physRes: 0.23, magRes: 0.23, spd: 270,
+        icon: '🌕', name: '鵝界冥王・無極', art: 'assets/dungeon/boss-floor5.png',
+        quote: '「朕統治深淵！朕超越時空！朕……其實也有一點怕黑，不許說出去！」',
+        verb: '冥王降世斬',
+        skills: [
+          { verb: '冥王無極天降爪', mult: 2.4, cooldown: 3 },
+          { verb: '深淵黃金羽震顫', mult: 1.8, applyStatus: { type: 'paralyze', charges: 2, chance: 0.55 }, cooldown: 4 },
+          { verb: '冥王終極無極斬', mult: 2.0, ignoreDef: true, cooldown: 5 },
+        ],
+      },
+    ],
+  };
+
+  // ⚔️ 第二層地城寶物（200 樣，dt2_ 前綴）
+  const DUNGEON2_TREASURES = [
+    // ─── 🌟 鵝鵝級 (16) ───
+    {id:'dt2_g01',name:'深淵鵝魂',    rarity:'goose', bonuses:{allPct:0.08,critChance:0.12}},
+    {id:'dt2_g02',name:'深淵爆頭卵',  rarity:'goose', bonuses:{headshotChance:0.05}},
+    {id:'dt2_g03',name:'冥界神諭',    rarity:'goose', special:'overcrit_convert', bonuses:{critDmg:0.30}},
+    {id:'dt2_g04',name:'深淵鵝印',    rarity:'goose', bonuses:{hpRegenPct:0.04}},
+    {id:'dt2_g05',name:'深淵極力',    rarity:'goose', bonuses:{critDmg:0.80}},
+    {id:'dt2_g06',name:'深淵護盾',    rarity:'goose', special:'full_block_5pct', bonuses:{dmgReduction:0.05}},
+    {id:'dt2_g07',name:'深淵血牙',    rarity:'goose', bonuses:{physVampPct:0.05,magVampPct:0.02}},
+    {id:'dt2_g08',name:'深淵拼命',    rarity:'goose', special:'hp_loss_dmg_boost', bonuses:{atk:30}},
+    {id:'dt2_g09',name:'深淵連擊',    rarity:'goose', bonuses:{comboBonus:0.25}},
+    {id:'dt2_g10',name:'深淵節能',    rarity:'goose', bonuses:{mpDiscountPct:0.25}},
+    {id:'dt2_g11',name:'冥王全能',    rarity:'goose', bonuses:{allPct:0.07}},
+    {id:'dt2_g12',name:'深淵疾神',    rarity:'goose', bonuses:{spd:80,mpRegen:5}},
+    {id:'dt2_g13',name:'深淵霸主',    rarity:'goose', bonuses:{atk:80,critChance:0.20}},
+    {id:'dt2_g14',name:'深淵最盾',    rarity:'goose', bonuses:{def:120,dmgReduction:0.15}},
+    {id:'dt2_g15',name:'深淵覺醒',    rarity:'goose', bonuses:{maxHp:800,hpRegenPct:0.02}},
+    {id:'dt2_g16',name:'冥王祝福',    rarity:'goose', bonuses:{skillDmgPct:0.35}},
+    // ─── 💎 傳說級 (21) ───
+    {id:'dt2_l01',name:'深淵全能石',  rarity:'legend',bonuses:{allPct:0.04}},
+    {id:'dt2_l02',name:'深淵爆發符',  rarity:'legend',special:'early_atk15pct', bonuses:{atk:15}},
+    {id:'dt2_l03',name:'深淵絕境魂',  rarity:'legend',special:'low_hp30_atk20pct', bonuses:{maxHp:150}},
+    {id:'dt2_l04',name:'深淵精準石',  rarity:'legend',bonuses:{critDmg:0.20}},
+    {id:'dt2_l05',name:'深淵應戰',    rarity:'legend',special:'low_hp50_atk8pct', bonuses:{def:20}},
+    {id:'dt2_l06',name:'深淵節能石',  rarity:'legend',bonuses:{mpDiscountPct:0.10}},
+    {id:'dt2_l07',name:'深淵甲修',    rarity:'legend',bonuses:{dmgReduction:0.04,hpRegenPct:0.02}},
+    {id:'dt2_l08',name:'深淵暴擊石',  rarity:'legend',bonuses:{critChance:0.12,critDmg:0.35}},
+    {id:'dt2_l09',name:'深淵破甲符',  rarity:'legend',bonuses:{defIgnorePct:0.20}},
+    {id:'dt2_l10',name:'深淵疾風符',  rarity:'legend',bonuses:{spd:80}},
+    {id:'dt2_l11',name:'深淵烈焰石',  rarity:'legend',bonuses:{magDmgPct:0.25}},
+    {id:'dt2_l12',name:'深淵護甲',    rarity:'legend',bonuses:{def:150,hpFlatRegen:500}},
+    {id:'dt2_l13',name:'深淵戰靈',    rarity:'legend',special:'growing_atk5', bonuses:{atk:20}},
+    {id:'dt2_l14',name:'深淵連擊符',  rarity:'legend',bonuses:{comboBonus:0.18}},
+    {id:'dt2_l15',name:'深淵吸血石',  rarity:'legend',bonuses:{magVampPct:0.04,physVampPct:0.02}},
+    {id:'dt2_l16',name:'深淵封印石',  rarity:'legend',bonuses:{dmgReduction:0.06}},
+    {id:'dt2_l17',name:'深淵鷹眼',    rarity:'legend',bonuses:{critDmg:0.50}},
+    {id:'dt2_l18',name:'深淵攻速石',  rarity:'legend',bonuses:{atk:40,spd:50}},
+    {id:'dt2_l19',name:'深淵魔力石',  rarity:'legend',bonuses:{maxMp:80,mpRegen:5}},
+    {id:'dt2_l20',name:'深淵生命石',  rarity:'legend',bonuses:{maxHp:500,hpFlatRegen:10}},
+    {id:'dt2_l21',name:'深淵克星',    rarity:'legend',bonuses:{bossExtraDmg:0.15}},
+    // ─── ✨ 閃光級 (30) ───
+    {id:'dt2_f01',name:'深淵破甲',  rarity:'flash', bonuses:{defIgnorePct:0.08}},
+    {id:'dt2_f02',name:'深淵疾速',  rarity:'flash', bonuses:{spd:50}},
+    {id:'dt2_f03',name:'深淵狂攻',  rarity:'flash', bonuses:{atk:35}},
+    {id:'dt2_f04',name:'深淵魔力',  rarity:'flash', bonuses:{mpDiscountPct:0.12}},
+    {id:'dt2_f05',name:'深淵生命',  rarity:'flash', bonuses:{maxHp:350}},
+    {id:'dt2_f06',name:'深淵暴擊',  rarity:'flash', bonuses:{critChance:0.08}},
+    {id:'dt2_f07',name:'深淵護甲',  rarity:'flash', bonuses:{def:50}},
+    {id:'dt2_f08',name:'深淵魔攻',  rarity:'flash', bonuses:{mark:25}},
+    {id:'dt2_f09',name:'深淵堅壁',  rarity:'flash', bonuses:{def:25}},
+    {id:'dt2_f10',name:'深淵連斬',  rarity:'flash', bonuses:{comboBonus:0.13}},
+    {id:'dt2_f11',name:'深淵吸血',  rarity:'flash', bonuses:{physVampPct:0.02}},
+    {id:'dt2_f12',name:'深淵快攻',  rarity:'flash', bonuses:{critChance:0.05}},
+    {id:'dt2_f13',name:'深淵魔盾',  rarity:'flash', bonuses:{dmgReduction:0.12}},
+    {id:'dt2_f14',name:'深淵暴眼',  rarity:'flash', bonuses:{critChance:0.08}},
+    {id:'dt2_f15',name:'深淵回復',  rarity:'flash', bonuses:{hpFlatRegen:6}},
+    {id:'dt2_f16',name:'深淵魔回',  rarity:'flash', bonuses:{mpRegen:4}},
+    {id:'dt2_f17',name:'深淵雙刃',  rarity:'flash', bonuses:{atk:25,spd:25}},
+    {id:'dt2_f18',name:'深淵堅甲',  rarity:'flash', bonuses:{def:35,maxHp:180}},
+    {id:'dt2_f19',name:'深淵魔印',  rarity:'flash', bonuses:{mark:18,mpDiscountPct:0.05}},
+    {id:'dt2_f20',name:'深淵衝刺',  rarity:'flash', bonuses:{spd:35,critChance:0.04}},
+    {id:'dt2_f21',name:'深淵連擊',  rarity:'flash', bonuses:{comboBonus:0.10}},
+    {id:'dt2_f22',name:'深淵穿透',  rarity:'flash', bonuses:{physDmgPct:0.14}},
+    {id:'dt2_f23',name:'深淵魔法',  rarity:'flash', bonuses:{magDmgPct:0.14}},
+    {id:'dt2_f24',name:'深淵強心',  rarity:'flash', bonuses:{def:25,maxHp:100}},
+    {id:'dt2_f25',name:'深淵蓄力',  rarity:'flash', bonuses:{critDmg:0.14}},
+    {id:'dt2_f26',name:'深淵守護',  rarity:'flash', bonuses:{dmgReduction:0.08}},
+    {id:'dt2_f27',name:'深淵靈魂',  rarity:'flash', bonuses:{critDmg:0.25}},
+    {id:'dt2_f28',name:'深淵封印',  rarity:'flash', bonuses:{skillDmgPct:0.10}},
+    {id:'dt2_f29',name:'深淵光環',  rarity:'flash', bonuses:{dmgReduction:0.07}},
+    {id:'dt2_f30',name:'深淵全能',  rarity:'flash', bonuses:{atk:20,def:20,spd:20}},
+    // ─── 🥚 普通級 (63) ───
+    {id:'dt2_n01',name:'深力護符 I',   rarity:'normal',bonuses:{atk:6}},
+    {id:'dt2_n02',name:'深力護符 II',  rarity:'normal',bonuses:{atk:9}},
+    {id:'dt2_n03',name:'深力護符 III', rarity:'normal',bonuses:{atk:12}},
+    {id:'dt2_n04',name:'深力護符 IV',  rarity:'normal',bonuses:{atk:15}},
+    {id:'dt2_n05',name:'深力護符 V',   rarity:'normal',bonuses:{atk:18}},
+    {id:'dt2_n06',name:'深戰士石 I',   rarity:'normal',bonuses:{atk:8,def:5}},
+    {id:'dt2_n07',name:'深戰士石 II',  rarity:'normal',bonuses:{atk:11,def:8}},
+    {id:'dt2_n08',name:'深攻擊寶珠',   rarity:'normal',bonuses:{atk:10,maxHp:65}},
+    {id:'dt2_n09',name:'深鬥氣石',     rarity:'normal',bonuses:{atk:8,critChance:0.02}},
+    {id:'dt2_n10',name:'深破甲石',     rarity:'normal',bonuses:{atk:9,defIgnorePct:0.03}},
+    {id:'dt2_n11',name:'深戰鬥玉',     rarity:'normal',bonuses:{atk:12,spd:8}},
+    {id:'dt2_n12',name:'深力量精華',   rarity:'normal',bonuses:{atk:7,mark:5}},
+    {id:'dt2_n13',name:'深戰鬥晶石',   rarity:'normal',bonuses:{atk:11}},
+    {id:'dt2_n14',name:'深猛攻石',     rarity:'normal',bonuses:{atk:15,critChance:0.02}},
+    {id:'dt2_n15',name:'深鐵拳護符',   rarity:'normal',bonuses:{atk:14,critChance:0.03}},
+    {id:'dt2_n16',name:'深生命石 I',   rarity:'normal',bonuses:{maxHp:100}},
+    {id:'dt2_n17',name:'深生命石 II',  rarity:'normal',bonuses:{maxHp:130}},
+    {id:'dt2_n18',name:'深生命石 III', rarity:'normal',bonuses:{maxHp:160}},
+    {id:'dt2_n19',name:'深生命石 IV',  rarity:'normal',bonuses:{maxHp:190}},
+    {id:'dt2_n20',name:'深生命石 V',   rarity:'normal',bonuses:{maxHp:230}},
+    {id:'dt2_n21',name:'深護盾石 I',   rarity:'normal',bonuses:{maxHp:110,def:5}},
+    {id:'dt2_n22',name:'深護盾石 II',  rarity:'normal',bonuses:{maxHp:140,def:8}},
+    {id:'dt2_n23',name:'深生命精華',   rarity:'normal',bonuses:{maxHp:130,hpFlatRegen:2}},
+    {id:'dt2_n24',name:'深鐵壁石',     rarity:'normal',bonuses:{maxHp:160,dmgReduction:0.03}},
+    {id:'dt2_n25',name:'深強體石',     rarity:'normal',bonuses:{maxHp:190,atk:5}},
+    {id:'dt2_n26',name:'深疾速石 I',   rarity:'normal',bonuses:{spd:12}},
+    {id:'dt2_n27',name:'深疾速石 II',  rarity:'normal',bonuses:{spd:18}},
+    {id:'dt2_n28',name:'深疾速石 III', rarity:'normal',bonuses:{spd:24}},
+    {id:'dt2_n29',name:'深疾速精華',   rarity:'normal',bonuses:{spd:16,atk:6}},
+    {id:'dt2_n30',name:'深風行石',     rarity:'normal',bonuses:{spd:18,def:6}},
+    {id:'dt2_n31',name:'深輕盈石',     rarity:'normal',bonuses:{spd:24,maxHp:80}},
+    {id:'dt2_n32',name:'深魔力石 I',   rarity:'normal',bonuses:{mark:8}},
+    {id:'dt2_n33',name:'深魔力石 II',  rarity:'normal',bonuses:{mark:12}},
+    {id:'dt2_n34',name:'深魔力石 III', rarity:'normal',bonuses:{mark:16}},
+    {id:'dt2_n35',name:'深魔攻精華',   rarity:'normal',bonuses:{mark:11,mpDiscountPct:0.03}},
+    {id:'dt2_n36',name:'深魔法晶石',   rarity:'normal',bonuses:{mark:12,spd:8}},
+    {id:'dt2_n37',name:'深魔印石',     rarity:'normal',bonuses:{mark:16,maxHp:65}},
+    {id:'dt2_n38',name:'深防禦石 I',   rarity:'normal',bonuses:{def:12}},
+    {id:'dt2_n39',name:'深防禦石 II',  rarity:'normal',bonuses:{def:18}},
+    {id:'dt2_n40',name:'深防禦石 III', rarity:'normal',bonuses:{def:24}},
+    {id:'dt2_n41',name:'深防禦石 IV',  rarity:'normal',bonuses:{def:30}},
+    {id:'dt2_n42',name:'深護甲石',     rarity:'normal',bonuses:{def:18,maxHp:100}},
+    {id:'dt2_n43',name:'深堅甲石',     rarity:'normal',bonuses:{def:27}},
+    {id:'dt2_n44',name:'深鐵壁晶石',   rarity:'normal',bonuses:{def:21,atk:5}},
+    {id:'dt2_n45',name:'深防禦精華',   rarity:'normal',bonuses:{def:24,critChance:0.02}},
+    {id:'dt2_n46',name:'深魔力容器 I', rarity:'normal',bonuses:{maxMp:30}},
+    {id:'dt2_n47',name:'深魔力容器 II',rarity:'normal',bonuses:{maxMp:45}},
+    {id:'dt2_n48',name:'深魔力容器III',rarity:'normal',bonuses:{maxMp:60}},
+    {id:'dt2_n49',name:'深魔力回復 I', rarity:'normal',bonuses:{mpRegen:2}},
+    {id:'dt2_n50',name:'深魔力回復 II',rarity:'normal',bonuses:{mpRegen:3}},
+    {id:'dt2_n51',name:'深節能石 I',   rarity:'normal',bonuses:{mpDiscountPct:0.03}},
+    {id:'dt2_n52',name:'深節能石 II',  rarity:'normal',bonuses:{mpDiscountPct:0.05}},
+    {id:'dt2_n53',name:'深魔力精華',   rarity:'normal',bonuses:{maxMp:40,mpRegen:2}},
+    {id:'dt2_n54',name:'深暴擊石 I',   rarity:'normal',bonuses:{critChance:0.03}},
+    {id:'dt2_n55',name:'深暴擊石 II',  rarity:'normal',bonuses:{critChance:0.05}},
+    {id:'dt2_n56',name:'深暴擊石 III', rarity:'normal',bonuses:{critChance:0.06}},
+    {id:'dt2_n57',name:'深暴擊傷害 I', rarity:'normal',bonuses:{critDmg:0.12}},
+    {id:'dt2_n58',name:'深暴擊傷害 II',rarity:'normal',bonuses:{critDmg:0.18}},
+    {id:'dt2_n59',name:'深鷹眼石 I',   rarity:'normal',bonuses:{critChance:0.03,critDmg:0.08}},
+    {id:'dt2_n60',name:'深鷹眼石 II',  rarity:'normal',bonuses:{critChance:0.05,critDmg:0.12}},
+    {id:'dt2_n61',name:'深守護石 I',   rarity:'normal',bonuses:{def:8,dmgReduction:0.02}},
+    {id:'dt2_n62',name:'深守護石 II',  rarity:'normal',bonuses:{def:12,dmgReduction:0.03}},
+    {id:'dt2_n63',name:'深精準石',     rarity:'normal',bonuses:{critChance:0.05,critDmg:0.08}},
+    // ─── 🪨 渣鵝級 (70) ───
+    {id:'dt2_t01',name:'深舊攻擊符',  rarity:'trash', bonuses:{atk:3}},
+    {id:'dt2_t02',name:'深鏽劍刃',   rarity:'trash', bonuses:{atk:4}},
+    {id:'dt2_t03',name:'深碎片力量', rarity:'trash', bonuses:{atk:3,maxHp:25}},
+    {id:'dt2_t04',name:'深舊戰士符', rarity:'trash', bonuses:{atk:4,def:2}},
+    {id:'dt2_t05',name:'深磨損利刃', rarity:'trash', bonuses:{atk:3,critChance:0.007}},
+    {id:'dt2_t06',name:'深廢鐵武器', rarity:'trash', bonuses:{atk:5}},
+    {id:'dt2_t07',name:'深舊鬥氣石', rarity:'trash', bonuses:{atk:3,spd:3}},
+    {id:'dt2_t08',name:'深碎裂攻擊玉',rarity:'trash',bonuses:{atk:4}},
+    {id:'dt2_t09',name:'深訓練劍符', rarity:'trash', bonuses:{atk:3,mark:2}},
+    {id:'dt2_t10',name:'深舊力量符', rarity:'trash', bonuses:{atk:4,def:3}},
+    {id:'dt2_t11',name:'深鈍器碎片', rarity:'trash', bonuses:{atk:5,maxHp:20}},
+    {id:'dt2_t12',name:'深戰鬥廢料', rarity:'trash', bonuses:{atk:3}},
+    {id:'dt2_t13',name:'深古舊武器', rarity:'trash', bonuses:{atk:4,spd:3}},
+    {id:'dt2_t14',name:'深磨損劍石', rarity:'trash', bonuses:{atk:3,def:2}},
+    {id:'dt2_t15',name:'深淘汰攻擊', rarity:'trash', bonuses:{atk:4,maxHp:14}},
+    {id:'dt2_t16',name:'深殘舊生命', rarity:'trash', bonuses:{maxHp:28}},
+    {id:'dt2_t17',name:'深破損護盾', rarity:'trash', bonuses:{maxHp:33}},
+    {id:'dt2_t18',name:'深舊生命符', rarity:'trash', bonuses:{maxHp:38}},
+    {id:'dt2_t19',name:'深碎裂盾片', rarity:'trash', bonuses:{maxHp:28,def:2}},
+    {id:'dt2_t20',name:'深廢舊鐵甲', rarity:'trash', bonuses:{maxHp:33,atk:2}},
+    {id:'dt2_t21',name:'深舊生命玉', rarity:'trash', bonuses:{maxHp:38,spd:3}},
+    {id:'dt2_t22',name:'深訓練護甲', rarity:'trash', bonuses:{maxHp:28}},
+    {id:'dt2_t23',name:'深舊護盾符', rarity:'trash', bonuses:{maxHp:36}},
+    {id:'dt2_t24',name:'深生命碎片', rarity:'trash', bonuses:{maxHp:28,def:2}},
+    {id:'dt2_t25',name:'深訓練護體', rarity:'trash', bonuses:{maxHp:30}},
+    {id:'dt2_t26',name:'深廢舊生命', rarity:'trash', bonuses:{maxHp:25}},
+    {id:'dt2_t27',name:'深古老生命', rarity:'trash', bonuses:{maxHp:32,atk:2}},
+    {id:'dt2_t28',name:'深破舊疾速', rarity:'trash', bonuses:{spd:4}},
+    {id:'dt2_t29',name:'深磨損速度', rarity:'trash', bonuses:{spd:5}},
+    {id:'dt2_t30',name:'深舊風行符', rarity:'trash', bonuses:{spd:4,atk:2}},
+    {id:'dt2_t31',name:'深碎裂疾速', rarity:'trash', bonuses:{spd:5,maxHp:14}},
+    {id:'dt2_t32',name:'深廢舊速度', rarity:'trash', bonuses:{spd:4}},
+    {id:'dt2_t33',name:'深舊輕盈符', rarity:'trash', bonuses:{spd:7}},
+    {id:'dt2_t34',name:'深訓練速度', rarity:'trash', bonuses:{spd:4,maxHp:14}},
+    {id:'dt2_t35',name:'深古老速度', rarity:'trash', bonuses:{spd:5,def:2}},
+    {id:'dt2_t36',name:'深破舊防禦', rarity:'trash', bonuses:{def:4}},
+    {id:'dt2_t37',name:'深磨損護甲', rarity:'trash', bonuses:{def:5}},
+    {id:'dt2_t38',name:'深舊防禦符', rarity:'trash', bonuses:{def:4,maxHp:20}},
+    {id:'dt2_t39',name:'深碎裂鐵甲', rarity:'trash', bonuses:{def:5,atk:2}},
+    {id:'dt2_t40',name:'深廢舊防盾', rarity:'trash', bonuses:{def:7}},
+    {id:'dt2_t41',name:'深訓練防禦', rarity:'trash', bonuses:{def:4}},
+    {id:'dt2_t42',name:'深碎片護甲', rarity:'trash', bonuses:{def:5,spd:2}},
+    {id:'dt2_t43',name:'深舊堅甲石', rarity:'trash', bonuses:{def:7,maxHp:16}},
+    {id:'dt2_t44',name:'深古老防禦', rarity:'trash', bonuses:{def:4,critChance:0.007}},
+    {id:'dt2_t45',name:'深廢舊鐵片', rarity:'trash', bonuses:{def:5}},
+    {id:'dt2_t46',name:'深破舊魔力', rarity:'trash', bonuses:{mark:3}},
+    {id:'dt2_t47',name:'深舊魔法符', rarity:'trash', bonuses:{mark:4}},
+    {id:'dt2_t48',name:'深碎裂魔玉', rarity:'trash', bonuses:{mark:3,maxHp:20}},
+    {id:'dt2_t49',name:'深廢舊魔印', rarity:'trash', bonuses:{mark:4,atk:2}},
+    {id:'dt2_t50',name:'深古老魔力', rarity:'trash', bonuses:{mark:3,spd:3}},
+    {id:'dt2_t51',name:'深舊魔力容器',rarity:'trash',bonuses:{maxMp:10}},
+    {id:'dt2_t52',name:'深廢舊節能', rarity:'trash', bonuses:{mpDiscountPct:0.015}},
+    {id:'dt2_t53',name:'深舊魔力符', rarity:'trash', bonuses:{maxMp:13}},
+    {id:'dt2_t54',name:'深碎裂魔符', rarity:'trash', bonuses:{maxMp:16,atk:2}},
+    {id:'dt2_t55',name:'深古老魔石', rarity:'trash', bonuses:{mpDiscountPct:0.015,maxHp:20}},
+    {id:'dt2_t56',name:'深破舊暴擊', rarity:'trash', bonuses:{critChance:0.007}},
+    {id:'dt2_t57',name:'深舊暴擊符', rarity:'trash', bonuses:{critChance:0.015}},
+    {id:'dt2_t58',name:'深磨損暴擊', rarity:'trash', bonuses:{critChance:0.015}},
+    {id:'dt2_t59',name:'深舊防護石', rarity:'trash', bonuses:{def:3,maxHp:8}},
+    {id:'dt2_t60',name:'深碎裂暴擊', rarity:'trash', bonuses:{critChance:0.015,critDmg:0.03}},
+    {id:'dt2_t61',name:'深廢舊暴擊', rarity:'trash', bonuses:{critChance:0.015,atk:2}},
+    {id:'dt2_t62',name:'深舊精準符', rarity:'trash', bonuses:{def:3,critChance:0.007}},
+    {id:'dt2_t63',name:'深訓練暴擊', rarity:'trash', bonuses:{critChance:0.007,maxHp:14}},
+    {id:'dt2_t64',name:'深古老爆傷', rarity:'trash', bonuses:{critDmg:0.03,def:2}},
+    {id:'dt2_t65',name:'深廢舊閃石', rarity:'trash', bonuses:{def:3,spd:3}},
+    {id:'dt2_t66',name:'深舊戰鬥誌', rarity:'trash', bonuses:{hpFlatRegen:2}},
+    {id:'dt2_t67',name:'深破舊技能', rarity:'trash', bonuses:{skillDmgPct:0.015}},
+    {id:'dt2_t68',name:'深舊魔法回', rarity:'trash', bonuses:{mpRegen:1}},
+    {id:'dt2_t69',name:'深廢舊連擊', rarity:'trash', bonuses:{comboBonus:0.03}},
+    {id:'dt2_t70',name:'深古老戰符', rarity:'trash', bonuses:{atk:3,def:3,spd:3}},
+  ]; // dt2 total = 16+21+30+63+70 = 200
+
   // 由 bonuses/special 自動推導每件地城寶物的 emoji（不需手動在 200 件上加欄位）
   function getDtEmoji(item) {
     if (!item) return '📦';
@@ -7062,6 +7360,7 @@
     if (s === 'early_atk15pct')          return '⚡';
     if (s.startsWith('low_hp'))          return '🔥';
     if (s === 'growing_atk5')            return '📈';
+    if (b.headshotChance)                 return '🎯';
     if (b.bossExtraDmg)                  return '👊';
     if (b.physVampPct || b.magVampPct)   return '🩸';
     if (b.allPct)                        return '👑';
@@ -7087,21 +7386,23 @@
   }
   window.getDtEmoji = getDtEmoji;
 
-  // 計算玩家持有地下城寶物的戰鬥加成
+  // 計算玩家持有地下城寶物的戰鬥加成（L1 + L2 合併）
   function computeDungeonTreasureBonus(player) {
-    const owned = player?.rpg?.dungeonTreasures || [];
+    const owned  = player?.rpg?.dungeonTreasures  || [];
+    const owned2 = player?.rpg?.dungeon2Treasures || [];
     // 同一件道具不疊加：先去重，保留每個 id 只算一次
-    const uniqueOwned = [...new Set(owned)];
+    const uniqueOwned = [...new Set([...owned, ...owned2])];
     const r = {
       atk:0,def:0,spd:0,mark:0,maxHp:0,maxMp:0,
       critChance:0,critDmg:0,mpRegen:0,hpRegenPct:0,hpFlatRegen:0,
       dmgReduction:0,defIgnorePct:0,physVampPct:0,magVampPct:0,
       mpDiscountPct:0,physDmgPct:0,magDmgPct:0,skillDmgPct:0,
-      comboBonus:0,bossExtraDmg:0,allPct:0,
+      comboBonus:0,bossExtraDmg:0,allPct:0,headshotChance:0,
       specials: new Set(),
     };
+    const _allTreasures = [...DUNGEON_TREASURES, ...DUNGEON2_TREASURES];
     for (const id of uniqueOwned) {
-      const item = DUNGEON_TREASURES.find(t => t.id === id);
+      const item = _allTreasures.find(t => t.id === id);
       if (!item) continue;
       const b = item.bonuses || {};
       for (const k of Object.keys(r)) {
@@ -7138,8 +7439,9 @@
     if (b.magDmgPct)    parts.push(`魔法傷害+${Math.round(b.magDmgPct*100)}%`);
     if (b.skillDmgPct)  parts.push(`技能傷害+${Math.round(b.skillDmgPct*100)}%`);
     if (b.comboBonus)   parts.push(`連擊傷害+${Math.round(b.comboBonus*100)}%`);
-    if (b.bossExtraDmg) parts.push(`對BOSS傷害+${Math.round(b.bossExtraDmg*100)}%`);
-    if (b.allPct)       parts.push(`全屬性+${Math.round(b.allPct*100)}%`);
+    if (b.bossExtraDmg)    parts.push(`對BOSS傷害+${Math.round(b.bossExtraDmg*100)}%`);
+    if (b.headshotChance)  parts.push(`爆頭率+${Math.round(b.headshotChance*100)}%`);
+    if (b.allPct)          parts.push(`全屬性+${Math.round(b.allPct*100)}%`);
     const sp = item.special;
     if (sp === 'imm1_death')         parts.push('HP歸零一次無效（免死）');
     if (sp === 'overcrit_convert')   parts.push('暴擊率>100%時每多5%→爆傷+1%');
@@ -9253,7 +9555,8 @@
 
     // ⭐ 副本 Roguelike BUFF & 地城寶物特殊效果旗標
     const _dungeonBuffs     = opts?.dungeonBuffs || [];
-    const _dungeonImm5      = _dungeonBuffs.includes('imm5');
+    const _dungeonImm5      = _dungeonBuffs.includes('imm5') || _dungeonBuffs.includes('imm8');
+    const _dungeonImm5Rounds = _dungeonBuffs.includes('imm8') ? 8 : 5;
     const _dtBonus          = opts?.dungeonTreasureBonus || {};
     const _dtSpecials       = new Set(opts?.dungeonTreasureSpecials || []);
     const _dtFullBlock      = _dtSpecials.has('full_block_5pct')    ? 0.05 : 0;
@@ -9272,6 +9575,14 @@
     if (_dungeonBuffs.includes('def30'))  stats.def   = (stats.def||0) + 30;
     if (_dungeonBuffs.includes('hp50'))   stats.maxHp = Math.round(stats.maxHp * 1.50);
     if (_dungeonBuffs.includes('spd30'))  stats.spd   = Math.round(stats.spd  * 1.30);
+    // ── 第二層深淵 BUFF ──
+    if (_dungeonBuffs.includes('atk50')) {
+      stats.atk  = Math.round(stats.atk  * 1.50);
+      stats.mark = Math.round((stats.mark||0) * 1.50);
+    }
+    if (_dungeonBuffs.includes('def60'))  stats.def   = (stats.def||0) + 60;
+    if (_dungeonBuffs.includes('hp80'))   stats.maxHp = Math.round(stats.maxHp * 1.80);
+    if (_dungeonBuffs.includes('spd50'))  stats.spd   = Math.round(stats.spd  * 1.50);
 
     // ⭐ 老天鵝挑戰 BUFF（入場加持）
     const _skBuffs = new Set(opts?.skBuffs || []);
@@ -10043,7 +10354,7 @@
             // ⭐ 合成效果：fx_dg_def（攻擊無視 DEF 15%，修正 DEF 折算）— 已在 dmg 計算中套用
             const skillCrit = baseCritChance + (skill.extraCritChance || 0) + (pBuff.critChance || 0);
             // ⭐ 技能爆頭率（全職業）：crit 超過 100% 後每 5% +1%；nabyssHs 武器額外加成
-            const _skillHsChance = Math.max(0, Math.floor(Math.max(0, skillCrit - 1.0) / 0.05) * 0.01 + _weaponNabyssHs + (pBuff.headshotChance || 0) + Math.floor(_aHs / 50) * 0.05 - _fdHeadshotPenalty);
+            const _skillHsChance = Math.max(0, Math.floor(Math.max(0, skillCrit - 1.0) / 0.05) * 0.01 + _weaponNabyssHs + (pBuff.headshotChance || 0) + (_dtBonus.headshotChance || 0) + Math.floor(_aHs / 50) * 0.05 - _fdHeadshotPenalty);
             // ⭐ 合成效果：fx_pg_critdmg（目標 HP<25% 時爆傷+30%/層）
             const _pgCritBonus = (_fxPgCrit > 0 && mHp <= monster.hp * 0.25) ? _fxPgCrit * 0.30 : 0;
             // ⭐ 完美節拍（晚餐鵝精魂刻印特殊）：連爆時爆傷疊加（技能也吃）
@@ -10496,7 +10807,7 @@
           const _ptBonus2 = _spiritSpecials.has('perfect_tempo') ? _perfectTempoStreak * 0.08 : 0;
           const critMult2 = critMult + (pBuff.critDmg || 0) + _pgCritBonus2 + _ptBonus2;
           // ⭐ 爆頭率（全職業）：crit 超過 100% 後每 5% 增加 1%；nabyssHs 武器額外加成；爆頭里程碑每 50 次 +5%
-          const HEADSHOT_CHANCE = Math.max(0, Math.floor(Math.max(0, baseCrit2 - 1.0) / 0.05) * 0.01 + _weaponNabyssHs + (pBuff.headshotChance || 0) + Math.floor(_aHs / 50) * 0.05 - _fdHeadshotPenalty);
+          const HEADSHOT_CHANCE = Math.max(0, Math.floor(Math.max(0, baseCrit2 - 1.0) / 0.05) * 0.01 + _weaponNabyssHs + (pBuff.headshotChance || 0) + (_dtBonus.headshotChance || 0) + Math.floor(_aHs / 50) * 0.05 - _fdHeadshotPenalty);
 
           if (player.rpg.class === 'archer') {
             // ⭐ 瘋鵝術模式判定（六連優先於聚擊）
@@ -11331,7 +11642,7 @@
             dmg *= (1 - (_dtBonus.dmgReduction || 0));
             dmg = Math.max(1, Math.round(dmg));
             // ⭐ 副本免疫 / 完全格擋
-            if (_dungeonImm5 && round <= 5) { dmg = 0; }
+            if (_dungeonImm5 && round <= _dungeonImm5Rounds) { dmg = 0; }
             else if (_dtFullBlock > 0 && Math.random() < _dtFullBlock) {
               log.push({ type:'system', text:`🛡 [鵝皇護盾] 完全格擋！`, hp:{player:pHp,monster:mHp,mp:pMp} });
               dmg = 0;
@@ -11427,7 +11738,7 @@
             dmg *= (1 - (_dtBonus.dmgReduction || 0));
             dmg = Math.max(1, Math.round(dmg));
             // ⭐ 副本免疫 / 完全格擋（多段）
-            if (_dungeonImm5 && round <= 5) { dmg = 0; }
+            if (_dungeonImm5 && round <= _dungeonImm5Rounds) { dmg = 0; }
             else if (_dtFullBlock > 0 && h === 0 && Math.random() < _dtFullBlock) { dmg = 0; }
             dmg = consumeShield(dmg);
             dmg = consumePartialShield(dmg);
@@ -14064,6 +14375,7 @@
     renderPartyTab();
     renderPartyHistory();
     renderDungeon();
+    renderDungeon2();
     renderDungeonTreasures();
     renderDungeonBattleHistory(); // ⭐ 地城戰鬥歷史（最多 10 場）
     renderForageHistory(); // ⭐ 自己最近 5 場打怪戰報
@@ -16700,7 +17012,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260516022041';
+  const APP_VERSION = '20260516212751';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -25294,6 +25606,655 @@ ${b.text}
   window.dungeonAbandon = dungeonAbandon;
 
   // ══════════════════════════════════════════════════════
+  // 🌑 第二層地城（深淵副本）函式
+  // ══════════════════════════════════════════════════════
+
+  function dungeon2GetRun(rpg)     { return (rpg.dungeon2Run && rpg.dungeon2Run.active) ? rpg.dungeon2Run : null; }
+  function dungeon2GetHistory(rpg) { if (!Array.isArray(rpg.dungeon2History)) rpg.dungeon2History = []; return rpg.dungeon2History; }
+
+  function calcDungeon2Score(run)  { return run.totalAttempts || 0; }
+
+  function dungeon2GetRankInfo(floorsCleared, score) {
+    if (floorsCleared < 5) return null;
+    if (score <= DUNGEON2_ATTEMPTS_S) return { rank:'S', label:'S RANK', boxes:10, color:'#fde047', bg:'linear-gradient(135deg,#ca8a04,#fde047)' };
+    if (score <= DUNGEON2_ATTEMPTS_A) return { rank:'A', label:'RANK A', boxes:8,  color:'#93c5fd', bg:'linear-gradient(135deg,#1d4ed8,#93c5fd)' };
+    return { rank:'C', label:'RANK C', boxes:6, color:'#6ee7b7', bg:'linear-gradient(135deg,#059669,#6ee7b7)' };
+  }
+
+  function renderDungeon2History(rpg) {
+    const history = dungeon2GetHistory(rpg);
+    if (!history.length) return '';
+    const rows = history.slice(0, 5).map(h => {
+      const ri = dungeon2GetRankInfo(h.floorsCleared, h.score);
+      return `<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:rgba(0,0,0,0.3);border-radius:8px;margin-bottom:4px;font-size:11px;">
+        <span style="color:${ri ? ri.color : '#6b7280'};font-weight:800;">${ri ? ri.label : (h.floorsCleared+'/5層')}</span>
+        <span style="color:#93c5fd;">${h.floorsCleared}/5層</span>
+        <span style="color:#9ca3af;">${h.totalAttempts != null ? h.totalAttempts+'次' : ''}</span>
+        <span style="color:#6b7280;margin-left:auto;">${new Date(h.ts).toLocaleDateString()}</span>
+      </div>`;
+    }).join('');
+    return `<div style="margin-top:8px;"><div style="font-size:10px;color:#6b7280;margin-bottom:4px;">📜 最近記錄</div>${rows}</div>`;
+  }
+
+  // 主渲染：深淵副本 UI
+  function renderDungeon2() {
+    const body = document.getElementById('dungeon2Body');
+    if (!body) return;
+    const me = getMe();
+    if (!me) { body.innerHTML = '<div style="color:#93c5fd;padding:8px;font-size:12px;">請先登入</div>'; return; }
+    const rpg = getRpg(me);
+    if (!rpg.class) { body.innerHTML = '<div style="color:#93c5fd;padding:8px;font-size:12px;text-align:center;">先選職業 ♡</div>'; return; }
+
+    const run     = dungeon2GetRun(rpg);
+    const stamina = rpg.stamina || 0;
+
+    // ── 寶箱開啟頁 ──
+    const pb = rpg.dungeon2PendingBoxes;
+    if (pb && !run) {
+      const limit   = pb.limit  || 3;
+      const opened  = pb.opened || 0;
+      const remain  = limit - opened;
+      const rLabel  = pb.rankLabel || 'RANK C';
+      const rBg     = pb.rankBg    || 'linear-gradient(135deg,#059669,#6ee7b7)';
+      const boxesGrid = (pb.configs || []).map((cfg, i) => {
+        const oi = (pb.openedItems || {})[i];
+        const canOpen = !oi && opened < limit;
+        let inner = '📦';
+        if (oi) {
+          if (oi.type === 'coin') inner = `🥚<br><span style="font-size:8px;color:#fbbf24;">×${oi.coins}</span>`;
+          else {
+            const t2 = [...DUNGEON_TREASURES, ...DUNGEON2_TREASURES].find(x => x.id === oi.treasure_id);
+            inner = t2 ? getDtEmoji(t2) : '✅';
+          }
+        }
+        return `<div class="dungeon-box" id="d2box_${i}" ${canOpen?`onclick="dungeon2OpenBox(${i})"`:''} style="${canOpen?'':'cursor:not-allowed;opacity:0.35;'}">
+          <div style="font-size:20px;">${inner}</div>
+          <div style="font-size:8px;color:#6b7280;">#${i+1}</div>
+        </div>`;
+      }).join('');
+      const rewardsList = Object.entries(pb.openedItems || {}).map(([idx, oi]) => {
+        let rHtml = '', descHtml = '';
+        if (oi.type === 'coin') {
+          rHtml = `<span style="color:#fbbf24;">地城鵝蛋幣 ×${oi.coins||0}</span>`;
+        } else if (oi.treasure_id) {
+          const t2 = [...DUNGEON_TREASURES, ...DUNGEON2_TREASURES].find(x => x.id === oi.treasure_id);
+          const rc = t2 ? (_DT_RARITY_COLOR[t2.rarity]||'#9ca3af') : '#9ca3af';
+          const rn = t2 ? (_DT_RARITY_NAME[t2.rarity]||'') : '';
+          const emo = getDtEmoji(t2);
+          rHtml = t2 ? `<span style="color:${rc};font-weight:700;">${emo} ${rn} ${t2.name}</span>` : `<span style="color:#6b7280;">${oi.treasure_id}</span>`;
+          if (t2) descHtml = `<div style="font-size:10px;color:#9ca3af;margin-top:2px;padding-left:4px;">${dungeonTreasureDesc(t2)}</div>`;
+        } else {
+          rHtml = '<span style="color:#6b7280;">（空箱）</span>';
+        }
+        return `<div style="padding:6px 10px;background:rgba(0,0,0,0.3);border-radius:6px;margin-bottom:4px;">
+          <div style="font-size:11px;color:#6b7280;">#${parseInt(idx)+1} → ${rHtml}</div>${descHtml}
+        </div>`;
+      }).join('');
+      body.innerHTML = `
+        <div style="background:linear-gradient(135deg,#050a1e,#0a1a3e);border:2px solid #1d4ed8;border-radius:14px;padding:16px;">
+          <div style="text-align:center;margin-bottom:12px;">
+            <img src="assets/dungeon/open-box.png" alt="" style="width:100%;border-radius:8px;margin-bottom:8px;display:block;image-rendering:pixelated;" onerror="this.style.display='none'">
+            <div style="font-size:16px;font-weight:900;color:#bfdbfe;margin-bottom:6px;">深淵副本完成！選擇寶箱</div>
+            <div style="display:inline-block;background:${rBg};color:#fff;font-size:14px;font-weight:800;padding:4px 20px;border-radius:20px;letter-spacing:2px;">${rLabel}</div>
+          </div>
+          <div style="font-size:11px;color:#9ca3af;text-align:center;margin-bottom:6px;" id="d2boxStatusLine">
+            ${remain > 0 ? `點選寶箱開啟（剩餘 <span style="color:#93c5fd;font-weight:700;">${remain}</span> / ${limit} 次）` : '<span style="color:#4ade80;font-weight:700;">✅ 全部開啟完畢！返回中…</span>'}
+          </div>
+          <div style="font-size:10px;color:#6b7280;text-align:center;margin-bottom:8px;">
+            🦢鵝王×1　🌟傳說×2　⚡閃光×3　🟢普通×4　⬜渣鵝×7　🥚幣×3（翻倍）
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:10px;">${boxesGrid}</div>
+          ${rewardsList ? `<div id="dungeon2BoxRewards">${rewardsList}</div>` : '<div id="dungeon2BoxRewards"></div>'}
+        </div>`;
+      return;
+    }
+
+    if (!run) {
+      // 無進行中副本
+      const history  = dungeon2GetHistory(rpg);
+      const bestRun  = history.length ? history.reduce((b,h) => {
+        if (!b) return h;
+        if (h.floorsCleared < 5) return b.floorsCleared === 5 ? b : (h.floorsCleared > b.floorsCleared ? h : b);
+        if (b.floorsCleared < 5) return h;
+        return (h.score < b.score) ? h : b;
+      }, null) : null;
+      const bestRI   = bestRun ? dungeon2GetRankInfo(bestRun.floorsCleared, bestRun.score) : null;
+      const canStart = stamina >= DUNGEON2_STAMINA_PER_FLOOR;
+
+      body.innerHTML = `
+        <div style="font-size:11px;color:#93c5fd;padding:4px 0 10px;line-height:1.8;">
+          💡 連續挑戰 5 層深淵副本<br>
+          🔄 每次挑戰（勝/敗）計 1 次，失敗則守護者保留剩餘 HP +5%<br>
+          🍀 每清一層可選 1 個 Roguelike BUFF（共 4 次）<br>
+          🎖 全通！≤${DUNGEON2_ATTEMPTS_S}次→<b style="color:#fde047;">S RANK</b>　≤${DUNGEON2_ATTEMPTS_A}次→<b style="color:#93c5fd;">RANK A</b>　其他→<b style="color:#6ee7b7;">RANK C</b><br>
+          📦 S RANK→10箱　RANK A→8箱　RANK C→6箱（從 20 箱中選）
+        </div>
+        ${bestRI ? `
+          <div style="background:rgba(0,0,0,0.35);border:1px solid #1d4ed8;border-radius:10px;padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px;font-size:11px;">
+            <span style="color:#93c5fd;font-weight:700;">🏅 最佳</span>
+            <span style="font-weight:800;color:${bestRI.color};">${bestRI.label}</span>
+            <span style="color:#9ca3af;">${bestRun.floorsCleared}/5層</span>
+            <span style="color:#93c5fd;">${bestRun.totalAttempts != null ? bestRun.totalAttempts+'次' : ''}</span>
+          </div>` : ''}
+        <div style="background:rgba(0,0,0,0.2);border:1px solid #1d4ed8;border-radius:12px;padding:12px;margin-bottom:10px;">
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:12px;">
+            ${DUNGEON2_FLOOR_HPS.map((hp,i) => {
+              const fs = DUNGEON2_BOSS_DEF.floorStats[i];
+              const hpLabel = (hp/100000000).toFixed(1)+'億';
+              return `<div style="text-align:center;background:rgba(29,78,216,0.15);border:1px solid #1d4ed8;border-radius:8px;padding:6px 2px;">
+                <div style="font-size:10px;color:#93c5fd;font-weight:700;">F${i+1} ${fs.icon}</div>
+                <div style="font-size:8px;color:#bfdbfe;font-weight:700;margin:1px 0;">${fs.name}</div>
+                <div style="font-size:9px;color:#93c5fd;">${hpLabel}</div>
+                <div style="font-size:8px;color:#6b7280;">Lv${fs.level}</div>
+              </div>`;
+            }).join('')}
+          </div>
+          <button onclick="dungeon2StartRun()" ${canStart?'':'disabled'}
+            style="display:block;width:100%;background:${canStart?'linear-gradient(135deg,#1d4ed8,#1e40af)':'#374151'};color:${canStart?'#fff':'#6b7280'};border:none;padding:13px;border-radius:12px;font-size:14px;font-weight:800;cursor:${canStart?'pointer':'not-allowed'};font-family:inherit;${canStart?'box-shadow:0 4px 0 #1e3a8a;':''}letter-spacing:1px;">
+            🌑 進入深淵　<span style="font-size:11px;font-weight:500;">(每層 ${DUNGEON2_STAMINA_PER_FLOOR}⚡，共需 ${DUNGEON2_STAMINA_PER_FLOOR*5}⚡)</span>
+          </button>
+          ${!canStart ? `<div style="text-align:center;font-size:11px;color:#ef4444;margin-top:6px;">⚡ 體力不足（目前 ${stamina}/${DUNGEON2_STAMINA_PER_FLOOR} 點）</div>` : ''}
+        </div>
+        ${renderDungeon2History(rpg)}
+      `;
+    } else {
+      // 副本進行中
+      const floorIdx      = run.floor - 1;
+      const curHp         = run.floorCurrentHp;
+      const floorBaseHp   = DUNGEON2_FLOOR_HPS[floorIdx];
+      const hpPct         = Math.max(0, Math.min(100, (curHp / floorBaseHp) * 100));
+      const canFight      = stamina >= DUNGEON2_STAMINA_PER_FLOOR;
+      const totalAttempts = run.totalAttempts || 0;
+
+      const floorBadges = [1,2,3,4,5].map(i => {
+        const done = i < run.floor, cur = i === run.floor;
+        return `<div class="dungeon-floor-badge"
+          style="background:${done?'#1e3a8a':cur?'linear-gradient(135deg,#1d4ed8,#1e40af)':'rgba(0,0,0,0.2)'};
+                 color:${done?'#93c5fd':cur?'#bfdbfe':'#4b5563'};
+                 border:1px solid ${done?'#1d4ed8':cur?'#3b82f6':'#374151'};">
+          ${done?'✓':i}
+        </div>`;
+      }).join('');
+
+      const buffBadges = (run.dungeon2Buffs || []).map(bid => {
+        const b = DUNGEON2_BUFF_POOL.find(x => x.id === bid);
+        return b ? `<span style="font-size:10px;background:rgba(29,78,216,0.3);border:1px solid #1d4ed8;border-radius:6px;padding:2px 6px;color:#93c5fd;">${b.emoji} ${b.label}</span>` : '';
+      }).join('');
+
+      if (run.pendingBuffChoice && (run.pendingBuffOptions || []).length) {
+        body.innerHTML = `
+          <div style="display:flex;gap:4px;margin-bottom:8px;">${floorBadges}</div>
+          ${_dungeon2BuffChoiceHtml(run)}
+          <div style="text-align:center;margin-top:8px;">
+            <button onclick="dungeon2Abandon()" style="background:none;border:1px solid #374151;color:#6b7280;padding:6px 14px;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit;">⛔ 放棄副本</button>
+          </div>`;
+        return;
+      }
+
+      const _fs = DUNGEON2_BOSS_DEF.floorStats[floorIdx];
+      const hpLabel = (curHp/100000000).toFixed(2)+'億';
+      const baseHpLabel = (floorBaseHp/100000000).toFixed(1)+'億';
+      body.innerHTML = `
+        <div style="background:linear-gradient(135deg,#050a1e,#0a1a3e);border:1px solid #1d4ed8;border-radius:12px;padding:12px;margin-bottom:10px;">
+          <div style="display:flex;gap:4px;margin-bottom:10px;">${floorBadges}</div>
+          ${buffBadges ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">${buffBadges}</div>` : ''}
+          <div style="background:rgba(0,0,0,0.4);border:1px solid #1d4ed8;border-radius:10px;padding:10px;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              ${_fs.art ? `<img src="${_fs.art}" style="width:40px;height:40px;image-rendering:pixelated;border-radius:6px;" onerror="this.style.display='none'">` : `<span style="font-size:28px;">${_fs.icon}</span>`}
+              <div>
+                <div style="font-size:12px;color:#bfdbfe;font-weight:800;">${_fs.icon} ${_fs.name} <span style="font-size:10px;color:#93c5fd;">Lv${_fs.level}</span></div>
+                <div style="font-size:10px;color:#93c5fd;font-style:italic;">${_fs.quote}</div>
+              </div>
+            </div>
+            <div style="font-size:10px;color:#6b7280;margin-bottom:3px;">HP：${hpLabel} / ${baseHpLabel}</div>
+            <div style="background:#0f172a;border-radius:4px;height:8px;overflow:hidden;">
+              <div style="height:100%;width:${hpPct}%;background:linear-gradient(90deg,#1d4ed8,#3b82f6);transition:width 0.3s;"></div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:#6b7280;margin-bottom:8px;text-align:center;">
+            累計挑戰：<b style="color:#93c5fd;">${totalAttempts}</b> 次（越少評分越好）
+          </div>
+          <button onclick="dungeon2Fight()" id="dungeon2FightBtn" ${canFight?'':'disabled'}
+            style="display:block;width:100%;background:${canFight?'linear-gradient(135deg,#1d4ed8,#1e40af)':'#374151'};color:${canFight?'#fff':'#6b7280'};border:none;padding:13px;border-radius:12px;font-size:14px;font-weight:800;cursor:${canFight?'pointer':'not-allowed'};font-family:inherit;${canFight?'box-shadow:0 4px 0 #1e3a8a;':''}">
+            ⚔️ 挑戰 Floor ${run.floor}　<span style="font-size:11px;font-weight:500;">(-${DUNGEON2_STAMINA_PER_FLOOR}⚡)</span>
+          </button>
+          ${!canFight ? `<div style="text-align:center;font-size:11px;color:#ef4444;margin-top:6px;">⚡ 體力不足</div>` : ''}
+          <div style="text-align:center;margin-top:8px;">
+            <button onclick="dungeon2Abandon()" style="background:none;border:1px solid #374151;color:#6b7280;padding:6px 14px;border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit;">⛔ 放棄副本</button>
+          </div>
+        </div>`;
+    }
+  }
+  window.renderDungeon2 = renderDungeon2;
+
+  function dungeon2StartRun() {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    if (!rpg.class)              { showToast('先選職業'); return; }
+    if (rpg.hp <= 0)             { showToast('💀 HP 太低，先回滿再來'); return; }
+    if ((rpg.stamina||0) < DUNGEON2_STAMINA_PER_FLOOR) { showToast(`⚡ 體力不足（需 ${DUNGEON2_STAMINA_PER_FLOOR} 點）`); return; }
+    if (dungeon2GetRun(rpg))     { showToast('⚔️ 已有進行中的深淵副本'); return; }
+    rpg.dungeon2PendingBoxes = null;
+    rpg.dungeon2Run = {
+      active: true, startedAt: Date.now(),
+      floor: 1, floorCurrentHp: DUNGEON2_FLOOR_HPS[0],
+      floorsCleared: 0, totalDamage: 0, totalRounds: 0, maxHit: 0,
+      totalAttempts: 0, floorAttempts: [0,0,0,0,0],
+      dungeon2Buffs: [], pendingBuffChoice: false, pendingBuffOptions: [],
+    };
+    saveData();
+    const fr = document.getElementById('dungeon2FightResult');
+    if (fr) fr.innerHTML = '';
+    renderDungeon2();
+    document.getElementById('dungeon2Body')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  window.dungeon2StartRun = dungeon2StartRun;
+
+  function _dungeon2SaveResult(rpg, run, score, rankInfo) {
+    const history = dungeon2GetHistory(rpg);
+    history.push({
+      ts: Date.now(), floorsCleared: run.floorsCleared,
+      totalDamage: run.totalDamage, totalRounds: run.totalRounds,
+      maxHit: run.maxHit || 0, score,
+      totalAttempts: run.totalAttempts || 0,
+      rank: rankInfo ? rankInfo.rank : null,
+    });
+    if (history.length > 20) history.splice(0, history.length - 20);
+    rpg.dungeon2Run = null;
+    const boxes  = rankInfo ? rankInfo.boxes : 6;
+    const rLabel = rankInfo ? rankInfo.label : 'RANK C';
+    const rColor = rankInfo ? rankInfo.color : '#6ee7b7';
+    const rBg    = rankInfo ? rankInfo.bg    : 'linear-gradient(135deg,#059669,#6ee7b7)';
+    rpg.dungeon2PendingBoxes = {
+      configs: _dungeon2GenerateBoxes(), limit: boxes,
+      opened: 0, openedItems: {},
+      score, totalAttempts: run.totalAttempts || 0,
+      totalDamage: run.totalDamage, maxHit: run.maxHit || 0,
+      rankLabel: rLabel, rankColor: rColor, rankBg: rBg,
+    };
+  }
+
+  function dungeon2Fight() {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const run = dungeon2GetRun(rpg);
+    if (!run) { showToast('先進入深淵副本'); return; }
+    if (run.pendingBuffChoice) { showToast('🍀 請先選擇 BUFF！'); return; }
+    if ((rpg.stamina||0) < DUNGEON2_STAMINA_PER_FLOOR) { showToast('⚡ 體力不足'); return; }
+
+    const fightBtn = document.getElementById('dungeon2FightBtn');
+    if (fightBtn) fightBtn.disabled = true;
+
+    const floorIdx = run.floor - 1;
+    const bossHp   = run.floorCurrentHp;
+    const _fs = DUNGEON2_BOSS_DEF.floorStats[floorIdx];
+    let physRes = _fs.physRes;
+    if ((run.dungeon2Buffs || []).includes('pen20')) physRes = Math.max(0, physRes - 0.20);
+
+    const monster = {
+      id:        DUNGEON2_BOSS_DEF.id,
+      name:      `${_fs.icon} ${_fs.name}`,
+      icon:      _fs.icon,
+      art:       _fs.art || null,
+      level:     _fs.level,
+      hp:        bossHp,
+      maxHp:     bossHp,
+      atk:       _fs.atk,
+      def:       _fs.def,
+      spd:       _fs.spd,
+      defPen:    DUNGEON2_BOSS_DEF.defPen,
+      physRes,
+      magRes:    _fs.magRes,
+      verb:      _fs.verb,
+      skills:    _fs.skills,
+      maxRounds: DUNGEON2_BOSS_DEF.maxRounds,
+      goldDrop: 0, xpDrop: 0,
+    };
+
+    const _dtb = (typeof computeDungeonTreasureBonus === 'function') ? computeDungeonTreasureBonus(rpg) : {};
+    const _dtSpecials = _dtb.specials ? [..._dtb.specials] : [];
+
+    rpg.stamina = Math.max(0, (rpg.stamina||0) - DUNGEON2_STAMINA_PER_FLOOR);
+    run.totalAttempts = (run.totalAttempts||0) + 1;
+    if (!run.floorAttempts) run.floorAttempts = [0,0,0,0,0];
+    run.floorAttempts[floorIdx] = (run.floorAttempts[floorIdx]||0) + 1;
+
+    let result;
+    try {
+      result = autoFight(me, monster, {
+        skipStamina: true,
+        dungeonBuffs: run.dungeon2Buffs || [],
+        dungeonTreasureBonus: _dtb,
+        dungeonTreasureSpecials: _dtSpecials,
+      });
+    } catch (e) {
+      console.error('[dungeon2Fight] autoFight 崩潰', e);
+      rpg.stamina = Math.min(STAMINA_MAX, (rpg.stamina||0) + DUNGEON2_STAMINA_PER_FLOOR);
+      run.totalAttempts = Math.max(0, run.totalAttempts - 1);
+      run.floorAttempts[floorIdx] = Math.max(0, run.floorAttempts[floorIdx] - 1);
+      saveData();
+      if (fightBtn) fightBtn.disabled = false;
+      showToast(`⚠️ 戰鬥引擎出錯（${e?.message||e}）`);
+      return;
+    }
+
+    const dmgDealt    = Math.max(0, bossHp - result.mHpFinal);
+    const rounds      = dungeonExtractRounds(result.log);
+    const maxHitFloor = dungeonExtractMaxHit(result.log, bossHp);
+    run.totalDamage += dmgDealt;
+    run.totalRounds += rounds;
+    run.maxHit = Math.max(run.maxHit||0, maxHitFloor);
+
+    const _dFightStats = (typeof computeStats === 'function') ? computeStats(me) : {};
+
+    const resultEl = document.getElementById('dungeon2FightResult');
+    let _doneHtml = '', _doneRenderDungeon = false, _doneScrollBox = false, _doneAutoHide = false;
+
+    if (result.won) {
+      run.floorsCleared++;
+      // 20% 機率掉落閃光級深淵寶物
+      if (Math.random() < 0.20) {
+        const _flashPool = DUNGEON2_TREASURES.filter(t => t.rarity === 'flash');
+        if (_flashPool.length > 0) {
+          const _dropped = _flashPool[Math.floor(Math.random() * _flashPool.length)];
+          if (!rpg.dungeon2Treasures) rpg.dungeon2Treasures = [];
+          rpg.dungeon2Treasures.push(_dropped.id);
+          showToast(`⚡ 深淵守護者掉落：閃光 ${_dropped.name}！`);
+        }
+      }
+      if (run.floor < 5) {
+        run.floor++;
+        run.floorCurrentHp = DUNGEON2_FLOOR_HPS[run.floor - 1];
+        run.pendingBuffChoice  = true;
+        run.pendingBuffOptions = _dungeon2GenBuffOptions();
+        saveData();
+        renderDungeon2();
+        _doneHtml = _dungeon2FloorClearHtml(run, floorIdx + 1, dmgDealt, rounds, maxHitFloor);
+      } else {
+        const score    = calcDungeon2Score(run);
+        const rankInfo = dungeon2GetRankInfo(run.floorsCleared, score);
+        _dungeon2SaveResult(rpg, run, score, rankInfo);
+        saveData();
+        _doneHtml          = _dungeon2CompleteHtml(run, score, rankInfo, floorIdx + 1, dmgDealt, rounds);
+        _doneRenderDungeon = true;
+        _doneScrollBox     = true;
+        _doneAutoHide      = true;
+      }
+    } else {
+      const baseHp   = DUNGEON2_FLOOR_HPS[floorIdx];
+      const remainHp = Math.max(1, result.mHpFinal || 1);
+      run.floorCurrentHp = Math.round(remainHp + baseHp * 0.05);
+      saveData();
+      renderDungeon2();
+      _doneHtml = _dungeon2RetryHtml(run, floorIdx + 1, dmgDealt, rounds, bossHp);
+    }
+
+    if (typeof updateStaminaUI === 'function') updateStaminaUI();
+
+    if (resultEl) {
+      if (result.log && result.log.length > 0) {
+        _dungeonPlayBattleLog(resultEl, result, _dFightStats, monster, rpg, {
+          doneHtml: _doneHtml,
+          renderDungeonAfter: false,
+          scrollToBox: false,
+          autoHideMs: 0,
+        });
+        if (_doneRenderDungeon) {
+          setTimeout(() => { renderDungeon2(); if (_doneScrollBox) document.getElementById('dungeon2Body')?.scrollIntoView({ behavior:'smooth', block:'start' }); }, 800);
+        }
+        if (_doneAutoHide) setTimeout(() => { if (resultEl) resultEl.innerHTML = ''; }, 3500);
+      } else {
+        resultEl.innerHTML = _doneHtml;
+        resultEl.scrollIntoView({ behavior:'smooth', block:'center' });
+        if (_doneRenderDungeon) { renderDungeon2(); document.getElementById('dungeon2Body')?.scrollIntoView({ behavior:'smooth', block:'start' }); }
+        if (_doneAutoHide) setTimeout(() => { if (resultEl) resultEl.innerHTML = ''; }, 3000);
+      }
+    }
+  }
+  window.dungeon2Fight = dungeon2Fight;
+
+  function _dungeon2GenBuffOptions() {
+    const pool = DUNGEON2_BUFF_POOL.slice();
+    const opts = [];
+    while (opts.length < 3 && pool.length > 0) {
+      const i = Math.floor(Math.random() * pool.length);
+      opts.push(pool.splice(i, 1)[0].id);
+    }
+    return opts;
+  }
+
+  function _dungeon2BuffChoiceHtml(run) {
+    const opts = (run.pendingBuffOptions || []).map(bid => {
+      const b = DUNGEON2_BUFF_POOL.find(x => x.id === bid);
+      if (!b) return '';
+      return `
+        <button onclick="dungeon2PickBuff('${b.id}')"
+          style="display:block;width:100%;background:linear-gradient(135deg,#0f2055,#0a1a3e);border:2px solid #1d4ed8;color:#bfdbfe;padding:12px 10px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;text-align:left;">
+          <span style="font-size:18px;margin-right:8px;">${b.emoji}</span>
+          <span style="color:#93c5fd;font-weight:900;">${b.label}</span>
+          <span style="color:#9ca3af;font-size:11px;margin-left:8px;">${b.desc}</span>
+        </button>`;
+    }).join('');
+    const cleared = run.floorsCleared || 0;
+    return `
+      <div style="background:linear-gradient(135deg,#050a1e,#0a1a3e);border:2px solid #fbbf24;border-radius:14px;padding:14px;margin-top:4px;">
+        <div style="text-align:center;margin-bottom:12px;">
+          <div style="font-size:26px;margin-bottom:4px;">🍀</div>
+          <div style="font-size:14px;font-weight:800;color:#fde047;">深淵 Floor ${cleared} 通關！選擇 Roguelike BUFF</div>
+          <div style="font-size:10px;color:#9ca3af;margin-top:3px;">選 1 個永久生效，帶入後續所有樓層</div>
+        </div>
+        ${opts}
+      </div>`;
+  }
+
+  function dungeon2PickBuff(buffId) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const run = dungeon2GetRun(rpg);
+    if (!run || !run.pendingBuffChoice) { showToast('❌ 目前無法選擇 BUFF'); return; }
+    const buff = DUNGEON2_BUFF_POOL.find(b => b.id === buffId);
+    if (!buff) { showToast('❌ 無效的 BUFF'); return; }
+    if (!run.dungeon2Buffs) run.dungeon2Buffs = [];
+    run.dungeon2Buffs.push(buffId);
+    run.pendingBuffChoice  = false;
+    run.pendingBuffOptions = [];
+    saveData();
+    showToast(`🍀 深淵 BUFF：${buff.emoji} ${buff.label}`);
+    const fr = document.getElementById('dungeon2FightResult');
+    if (fr) fr.innerHTML = '';
+    renderDungeon2();
+  }
+  window.dungeon2PickBuff = dungeon2PickBuff;
+
+  // 深淵寶箱生成（幣量翻倍：2-10）
+  function _dungeon2GenerateBoxes() {
+    const configs = [
+      { type: 'goose' },
+      { type: 'legend' }, { type: 'legend' },
+      { type: 'flash' },  { type: 'flash' },  { type: 'flash' },
+      { type: 'normal' }, { type: 'normal' }, { type: 'normal' }, { type: 'normal' },
+      { type: 'trash' },  { type: 'trash' },  { type: 'trash' },
+      { type: 'trash' },  { type: 'trash' },  { type: 'trash' },  { type: 'trash' },
+      { type: 'coin', amount: Math.floor(Math.random()*9)+2 },  // 2~10
+      { type: 'coin', amount: Math.floor(Math.random()*9)+2 },
+      { type: 'coin', amount: Math.floor(Math.random()*9)+2 },
+    ];
+    for (let i = configs.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [configs[i], configs[j]] = [configs[j], configs[i]];
+    }
+    return configs;
+  }
+
+  function dungeon2OpenBox(idx) {
+    const me = getMe(); if (!me) return;
+    const rpg = getRpg(me);
+    const pb  = rpg.dungeon2PendingBoxes;
+    if (!pb) { showToast('目前沒有待開深淵寶箱'); return; }
+    if (pb.openedItems && pb.openedItems[idx] != null) { showToast('📦 此箱已開啟'); return; }
+    const alreadyOpened = Object.keys(pb.openedItems || {}).length;
+    if (alreadyOpened >= pb.limit) { showToast('📦 已達本次可開上限'); return; }
+
+    if (!rpg.dungeon2Treasures) rpg.dungeon2Treasures = [];
+    if (rpg.dungeonEggCoins == null) rpg.dungeonEggCoins = 0;
+
+    const configs = pb.configs || [];
+    const cfg     = configs[idx] || { type: 'trash' };
+    let treasure = null, coins = 0, openRecord = { type: cfg.type };
+    let rewardHtml = '', displayEmoji = '📦';
+
+    if (cfg.type === 'coin') {
+      coins = cfg.amount || 2;
+      rpg.dungeonEggCoins += coins;
+      displayEmoji = '🥚';
+      openRecord.coins = coins;
+      rewardHtml = `<span style="color:#fbbf24;">地城鵝蛋幣 ×${coins}</span>`;
+    } else {
+      const targetRarity = ['goose','legend','flash','normal','trash'].includes(cfg.type) ? cfg.type : 'trash';
+      const pool = DUNGEON2_TREASURES.filter(t => t.rarity === targetRarity);
+      if (pool.length > 0) treasure = pool[Math.floor(Math.random() * pool.length)];
+      if (treasure) { rpg.dungeon2Treasures.push(treasure.id); openRecord.treasure_id = treasure.id; }
+      displayEmoji = getDtEmoji(treasure);
+      const rc = _DT_RARITY_COLOR[treasure?.rarity] || '#9ca3af';
+      rewardHtml = treasure
+        ? `<span style="color:${rc};">${_DT_RARITY_NAME[treasure.rarity]||''} ${treasure.name}</span>`
+        : '<span style="color:#6b7280;">（空箱）</span>';
+    }
+
+    if (!pb.openedItems) pb.openedItems = {};
+    pb.openedItems[idx] = openRecord;
+    pb.opened = Object.keys(pb.openedItems).length;
+    saveData();
+
+    if (cfg.type === 'coin') {
+      showToast(`🪺 #${idx+1}：地城鵝蛋幣 ×${coins}！`);
+    } else if (treasure) {
+      const desc = dungeonTreasureDesc(treasure).split('・')[0];
+      showToast(`${displayEmoji} #${idx+1}：${_DT_RARITY_NAME[treasure.rarity]||''} ${treasure.name}！\n${desc}`);
+    } else {
+      showToast(`📦 #${idx+1}：空箱…`);
+    }
+
+    if (typeof updateStaminaUI === 'function') updateStaminaUI();
+    if (typeof renderDungeonTreasures === 'function') renderDungeonTreasures();
+
+    if (pb.opened >= pb.limit) {
+      const statusEl = document.getElementById('d2boxStatusLine');
+      if (statusEl) statusEl.innerHTML = '<span style="color:#4ade80;font-weight:700;">✅ 全部開啟完畢！即將返回…</span>';
+      setTimeout(() => {
+        const rpg2 = getRpg(getMe());
+        if (rpg2) { rpg2.dungeon2PendingBoxes = null; saveData(); }
+        renderDungeon2();
+      }, 1500);
+    } else {
+      renderDungeon2();
+    }
+  }
+  window.dungeon2OpenBox = dungeon2OpenBox;
+
+  function dungeon2Abandon() {
+    const me = getMe(); if (!me) return;
+    if (!confirm('確定放棄深淵副本？本次進度不計分，已消耗體力不退還。')) return;
+    const rpg = getRpg(me);
+    rpg.dungeon2Run = null;
+    saveData();
+    const fr = document.getElementById('dungeon2FightResult');
+    if (fr) fr.innerHTML = '';
+    renderDungeon2();
+  }
+  window.dungeon2Abandon = dungeon2Abandon;
+
+  // 結算卡片 HTML
+  function _dungeon2FloorClearHtml(run, clearedFloor, dmgDealt, rounds, maxHit) {
+    const nextFloor = run.floor, nextHp = run.floorCurrentHp;
+    return `
+      <div style="background:linear-gradient(135deg,#052e16,#14532d);border:1px solid #16a34a;border-radius:12px;padding:14px;margin-top:10px;" class="dungeon-rank-pop">
+        <div style="text-align:center;margin-bottom:10px;">
+          <div style="font-size:30px;">✨⚔️✨</div>
+          <div style="font-size:16px;font-weight:800;color:#4ade80;">深淵 Floor ${clearedFloor} 通關！</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px;margin-bottom:10px;">
+          <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:8px;text-align:center;">
+            <div style="color:#9ca3af;">本層傷害</div>
+            <div style="color:#4ade80;font-weight:700;font-size:13px;">${(dmgDealt/1000000).toFixed(1)}百萬</div>
+          </div>
+          <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:8px;text-align:center;">
+            <div style="color:#9ca3af;">本層回合</div>
+            <div style="color:#4ade80;font-weight:700;font-size:13px;">${rounds}</div>
+          </div>
+          <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:8px;text-align:center;">
+            <div style="color:#9ca3af;">最大單擊</div>
+            <div style="color:#4ade80;font-weight:700;font-size:13px;">${(maxHit/1000000).toFixed(1)}百萬</div>
+          </div>
+        </div>
+        <div style="font-size:12px;color:#fbbf24;text-align:center;padding:10px;background:rgba(0,0,0,0.25);border-radius:8px;font-weight:700;">
+          🍀 請至上方選擇深淵 Roguelike BUFF，再挑戰 Floor ${nextFloor}！<br>
+          <span style="font-size:10px;color:#86efac;font-weight:400;">下層守護者 HP：${(nextHp/100000000).toFixed(2)}億</span>
+        </div>
+      </div>`;
+  }
+
+  function _dungeon2CompleteHtml(run, score, rankInfo, lastFloor, lastDmg, lastRounds) {
+    const rLabel = rankInfo ? rankInfo.label : 'RANK C';
+    const rColor = rankInfo ? rankInfo.color : '#6ee7b7';
+    const rBg    = rankInfo ? rankInfo.bg    : 'linear-gradient(135deg,#059669,#6ee7b7)';
+    const boxes  = rankInfo ? rankInfo.boxes : 6;
+    const attempts = run.totalAttempts || score;
+    return `
+      <div style="background:linear-gradient(135deg,#050a1e,#0a1a3e);border:2px solid #1d4ed8;border-radius:14px;padding:16px;margin-top:10px;" class="dungeon-rank-pop">
+        <div style="text-align:center;margin-bottom:12px;">
+          <div style="font-size:40px;margin-bottom:4px;">🏆</div>
+          <div style="font-size:18px;font-weight:900;color:#bfdbfe;margin-bottom:6px;">深淵副本全通！</div>
+          <div style="display:inline-block;background:${rBg};color:#fff;font-size:15px;font-weight:800;padding:5px 24px;border-radius:20px;letter-spacing:2px;">${rLabel}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;font-size:11px;">
+          <div style="background:rgba(0,0,0,0.4);border-radius:8px;padding:8px;text-align:center;">
+            <div style="color:#9ca3af;">總挑戰次數</div>
+            <div style="color:${rColor};font-weight:900;font-size:18px;">${attempts}</div>
+          </div>
+          <div style="background:rgba(0,0,0,0.4);border-radius:8px;padding:8px;text-align:center;">
+            <div style="color:#9ca3af;">總傷害</div>
+            <div style="color:#93c5fd;font-weight:800;font-size:14px;">${(run.totalDamage/100000000).toFixed(2)}億</div>
+          </div>
+          <div style="background:rgba(0,0,0,0.4);border-radius:8px;padding:8px;text-align:center;">
+            <div style="color:#9ca3af;">最大單擊</div>
+            <div style="color:#93c5fd;font-weight:800;font-size:14px;">${((run.maxHit||0)/1000000).toFixed(1)}百萬</div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:13px;color:#bfdbfe;font-weight:700;">
+          🎁 可開 <span style="color:${rColor};font-size:20px;font-weight:900;">${boxes}</span> / 20 個深淵寶箱<br>
+          <span style="font-size:11px;color:#93c5fd;font-weight:400;">寶箱已準備好，請向上滾動至深淵區域開啟！</span>
+        </div>
+      </div>`;
+  }
+
+  function _dungeon2RetryHtml(run, failFloor, dmgDealt, rounds, prevBossHp) {
+    const newHp = run.floorCurrentHp, attempts = run.totalAttempts || 0;
+    const floorTries = (run.floorAttempts || [])[failFloor - 1] || 0;
+    return `
+      <div style="background:linear-gradient(135deg,#1a0505,#450a0a);border:1px solid #991b1b;border-radius:12px;padding:14px;margin-top:10px;" class="dungeon-rank-pop">
+        <div style="text-align:center;margin-bottom:10px;">
+          <div style="font-size:30px;">💀</div>
+          <div style="font-size:15px;font-weight:800;color:#fca5a5;">深淵 Floor ${failFloor} 失敗</div>
+          <div style="font-size:11px;color:#9ca3af;margin-top:4px;">副本仍在進行中！已試 ${floorTries} 次／累計 ${attempts} 次</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:11px;margin-bottom:10px;">
+          <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:7px;text-align:center;"><div style="color:#9ca3af;">本次傷害</div><div style="color:#fca5a5;font-weight:700;">${(dmgDealt/1000000).toFixed(1)}百萬</div></div>
+          <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:7px;text-align:center;"><div style="color:#9ca3af;">本次回合</div><div style="color:#fca5a5;font-weight:700;">${rounds}</div></div>
+          <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:7px;text-align:center;"><div style="color:#9ca3af;">守護者新HP</div><div style="color:#f97316;font-weight:700;">${(newHp/100000000).toFixed(2)}億</div></div>
+        </div>
+        <div style="font-size:11px;color:#fbbf24;text-align:center;padding:8px;background:rgba(0,0,0,0.2);border-radius:8px;margin-bottom:10px;">
+          ⚠️ 守護者 HP 加回實際剩餘值 +5% 懲罰<br>
+          <span style="color:#9ca3af;font-size:10px;">可繼續重試，次數越多評分越低</span>
+        </div>
+        <button onclick="document.getElementById('dungeon2FightResult').innerHTML=''"
+          style="display:block;width:100%;background:linear-gradient(135deg,#dc2626,#991b1b);color:#fff;border:none;padding:11px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+          🔄 再次挑戰 深淵 Floor ${failFloor}
+        </button>
+      </div>`;
+  }
+
+  // ══════════════════════════════════════════════════════
   // ⭐ 地城戰鬥歷史 / 回放
   // ══════════════════════════════════════════════════════
 
@@ -25368,9 +26329,11 @@ ${b.text}
     const me = getMe();
     if (!me) { body.innerHTML = '<div style="color:#a78bfa;padding:8px;font-size:12px;">請先登入</div>'; return; }
     const rpg = getRpg(me);
-    const owned = Array.isArray(rpg.dungeonTreasures) ? rpg.dungeonTreasures : [];
+    const owned  = Array.isArray(rpg.dungeonTreasures)  ? rpg.dungeonTreasures  : [];
+    const owned2 = Array.isArray(rpg.dungeon2Treasures) ? rpg.dungeon2Treasures : [];
+    const allOwned = [...owned, ...owned2];
     const coins = rpg.dungeonEggCoins || 0;
-    const uniqueCount = new Set(owned).size;
+    const uniqueCount = new Set(allOwned).size;
     const pending = rpg.pendingDungeonTrades || [];
 
     const pendingHtml = pending.length === 0 ? '' : `
@@ -25403,7 +26366,7 @@ ${b.text}
 
     body.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <div style="font-size:12px;color:#c4b5fd;">已持有 <b style="color:#e9d5ff;">${uniqueCount}</b> 種 / 共 <b style="color:#e9d5ff;">${owned.length}</b> 件</div>
+        <div style="font-size:12px;color:#c4b5fd;">已持有 <b style="color:#e9d5ff;">${uniqueCount}</b> 種 / 共 <b style="color:#e9d5ff;">${allOwned.length}</b> 件 <span style="color:#93c5fd;font-size:10px;">（含L2深淵：${owned2.length}件）</span></div>
 
       </div>
       ${pendingHtml}
@@ -25415,11 +26378,14 @@ ${b.text}
   function showDungeonTreasureVault(activeRarity) {
     const me = getMe(); if (!me) { showToast('請先登入'); return; }
     const rpg = getRpg(me);
-    const owned = Array.isArray(rpg.dungeonTreasures) ? rpg.dungeonTreasures : [];
+    const owned  = Array.isArray(rpg.dungeonTreasures)  ? rpg.dungeonTreasures  : [];
+    const owned2 = Array.isArray(rpg.dungeon2Treasures) ? rpg.dungeon2Treasures : [];
+    const allOwned = [...owned, ...owned2];
     const countMap = {};
-    for (const id of owned) countMap[id] = (countMap[id]||0)+1;
+    for (const id of allOwned) countMap[id] = (countMap[id]||0)+1;
     window._dtVaultRarity = activeRarity || 'goose';
     const active = window._dtVaultRarity;
+    const _allTreasures = [...DUNGEON_TREASURES, ...DUNGEON2_TREASURES];
 
     // 稀有度說明圖
     const rarityBannerHtml = `<img src="assets/dungeon/rarity-cards.png" alt=""
@@ -25428,8 +26394,8 @@ ${b.text}
 
     // 分頁列
     const tabHtml = _DTV_TABS.map(t => {
-      const ownedCnt = DUNGEON_TREASURES.filter(it => it.rarity === t.key && countMap[it.id]).length;
-      const totalCnt = DUNGEON_TREASURES.filter(it => it.rarity === t.key).length;
+      const ownedCnt = _allTreasures.filter(it => it.rarity === t.key && countMap[it.id]).length;
+      const totalCnt = _allTreasures.filter(it => it.rarity === t.key).length;
       const isActive = t.key === active;
       return `<button onclick="showDungeonTreasureVault('${t.key}')"
         style="background:${isActive ? t.color : 'rgba(0,0,0,0.35)'};border:2px solid ${t.color};
@@ -25444,7 +26410,7 @@ ${b.text}
 
     // 格子
     const tabInfo = _DTV_TABS.find(t => t.key === active) || _DTV_TABS[0];
-    const items = DUNGEON_TREASURES.filter(it => it.rarity === active);
+    const items = _allTreasures.filter(it => it.rarity === active);
     const ownedInTab = items.filter(it => countMap[it.id]).length;
 
     const gridHtml = items.map(item => {
