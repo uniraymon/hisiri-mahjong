@@ -17012,7 +17012,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260516212751';
+  const APP_VERSION = '20260517124928';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -31006,6 +31006,7 @@ ${b.text}
         <button class="btn btn-secondary" onclick="adminPickSpirit()" style="grid-column:1/-1; background:linear-gradient(135deg,#fce7f3,#a21caf); color:#fff;">✨ 生成晶魂 + 加入袋中（Debug）</button>
       </div>
       <button class="btn btn-secondary" onclick="adminResetPoints()" style="background:linear-gradient(135deg,#a7f3d0,#10b981); color:#fff;">🔄 退回所有技能點 + 能力點</button>
+      <button class="btn btn-secondary" onclick="adminShowGiveRewardModal()" style="margin-top:6px; background:linear-gradient(135deg,#fde68a,#b45309); box-shadow:0 4px 0 #92400e; color:#fff;">⚜️ 發神裝武器 / 至尊寶玉（指定玩家）</button>
 
       <div class="shop-section-title">💾 備份 / 還原（洗白前先按一次！）</div>
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:8px;">
@@ -31957,6 +31958,79 @@ ${b.text}
     showToast('🔐 Debug 已鎖回');
   }
   window.adminLockDebug = adminLockDebug;
+
+  // ⚜️ 發神裝武器 / 至尊寶玉（指定玩家）
+  function adminShowGiveRewardModal() {
+    const sortedPlayers = (players || [])
+      .filter(p => p && p.id && p.rpg)
+      .slice()
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    if (!sortedPlayers.length) { showToast('❌ 目前沒有任何玩家'); return; }
+    const playerOpts = sortedPlayers
+      .map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name || p.id)}</option>`)
+      .join('');
+    const _skWeapons = ITEMS.filter(it => it.sourceBossId === 'supreme_king' && it.slot === 'weapon');
+    const weaponList = _skWeapons.map(w => `<li style="font-size:11px; color:#92400e;">${w.icon||'🗡️'} ${w.name}</li>`).join('');
+    showModal('⚜️ 發神裝武器 / 至尊寶玉', `
+      <div style="font-size:13px;">
+        <div style="font-weight:700; color:#92400e; margin-bottom:5px;">目標玩家</div>
+        <select id="giveRwdTarget" style="width:100%; padding:8px; border:2px solid #fcd34d; border-radius:8px; font-size:13px; margin-bottom:14px;">
+          ${playerOpts}
+        </select>
+
+        <div style="font-weight:700; color:#b45309; margin-bottom:4px;">🗡️ 神裝武器（隨機）</div>
+        <div style="background:#fef3c7; border-radius:8px; padding:8px; margin-bottom:8px;">
+          <ul style="margin:0; padding-left:16px;">${weaponList || '<li>（無武器資料）</li>'}</ul>
+        </div>
+        <button class="btn btn-primary" style="width:100%; background:linear-gradient(135deg,#fde68a,#d97706); box-shadow:0 4px 0 #b45309; color:#7c2d12; margin-bottom:14px;"
+          onclick="adminDoGiveSupremeWeapon(document.getElementById('giveRwdTarget').value)">🗡️ 隨機發一把神裝武器</button>
+
+        <div style="font-weight:700; color:#b45309; margin-bottom:4px;">⚜️ 至尊寶玉</div>
+        <div style="display:flex; gap:6px; align-items:center; margin-bottom:12px;">
+          <input id="giveJadeQty" type="number" min="1" max="99" value="1"
+            style="flex:1; padding:8px; border:2px solid #fcd34d; border-radius:8px; font-size:18px; text-align:center;">
+          <button class="btn btn-primary" style="width:auto; padding:8px 16px; background:linear-gradient(135deg,#a78bfa,#7c3aed); box-shadow:0 4px 0 #6d28d9;"
+            onclick="adminDoGiveSupremeJade(document.getElementById('giveRwdTarget').value, document.getElementById('giveJadeQty').value)">⚜️ 發放</button>
+        </div>
+
+        <button class="btn btn-secondary" style="width:100%;" onclick="showDebugModal()">← 返回</button>
+      </div>
+    `);
+  }
+  window.adminShowGiveRewardModal = adminShowGiveRewardModal;
+
+  async function adminDoGiveSupremeWeapon(pid) {
+    const target = players.find(p => p.id === pid);
+    if (!target || !target.rpg) { showToast('❌ 找不到玩家'); return; }
+    const _skWeapons = ITEMS.filter(it => it.sourceBossId === 'supreme_king' && it.slot === 'weapon');
+    if (!_skWeapons.length) { showToast('❌ 找不到神裝武器資料'); return; }
+    const _w = _skWeapons[Math.floor(Math.random() * _skWeapons.length)];
+    const r = target.rpg;
+    r.inventory = Array.isArray(r.inventory) ? r.inventory : [];
+    r.inventory.push({ id: _w.id, qty: 1 });
+    target.lastTouchedAt = Date.now() + 60_000;
+    if (window.__firebaseSync?.forceWriteAllPlayers) {
+      try { await window.__firebaseSync.forceWriteAllPlayers([target]); } catch(e) { showToast('⚠️ 雲端同步失敗：' + e.message); }
+    }
+    __persistLocalSnapshot();
+    showToast(`🗡️ 已給「${target.name}」${_w.icon||''}${_w.name}`);
+  }
+  window.adminDoGiveSupremeWeapon = adminDoGiveSupremeWeapon;
+
+  async function adminDoGiveSupremeJade(pid, qtyStr) {
+    const target = players.find(p => p.id === pid);
+    if (!target || !target.rpg) { showToast('❌ 找不到玩家'); return; }
+    const qty = Math.max(1, parseInt(qtyStr) || 1);
+    const r = target.rpg;
+    r.supremeJade = (r.supremeJade || 0) + qty;
+    target.lastTouchedAt = Date.now() + 60_000;
+    if (window.__firebaseSync?.forceWriteAllPlayers) {
+      try { await window.__firebaseSync.forceWriteAllPlayers([target]); } catch(e) { showToast('⚠️ 雲端同步失敗：' + e.message); }
+    }
+    __persistLocalSnapshot();
+    showToast(`⚜️ 已給「${target.name}」至尊寶玉×${qty}（現有 ${r.supremeJade}）`);
+  }
+  window.adminDoGiveSupremeJade = adminDoGiveSupremeJade;
 
   // ⭐ 玩家自助存檔下載（💾 右上角按鈕）
   function playerDownloadSave() {
@@ -33782,11 +33856,13 @@ ${b.text}
               const isKiller = entry.pid === attackerId;
               const bonus = isKiller ? (_kr.killer || _zeroBonus) : _zeroBonus;
               return { pid: entry.pid, rank, dmg: entry.dmg, isKiller, bossCoinId: _bossCoinId,
-                gemRaw:     (base.gemRaw     || 0) + (bonus.gemRaw     || 0),
-                bossCoinQty:(base.bossCoinQty|| 0) + (bonus.bossCoinQty|| 0),
-                gem2Qty:    (base.gem2Qty    || 0) + (bonus.gem2Qty    || 0),
-                gem3Qty:    (base.gem3Qty    || 0) + (bonus.gem3Qty    || 0),
-                gooseCoins: (base.gooseCoins || 0) + (bonus.gooseCoins || 0),
+                gemRaw:         (base.gemRaw         || 0) + (bonus.gemRaw         || 0),
+                bossCoinQty:    (base.bossCoinQty     || 0) + (bonus.bossCoinQty    || 0),
+                gem2Qty:        (base.gem2Qty         || 0) + (bonus.gem2Qty        || 0),
+                gem3Qty:        (base.gem3Qty         || 0) + (bonus.gem3Qty        || 0),
+                gooseCoins:     (base.gooseCoins      || 0) + (bonus.gooseCoins     || 0),
+                supremeJadeQty: (base.supremeJadeQty  || 0) + (bonus.supremeJadeQty || 0),
+                skWeapon:       !!(base.skWeapon || bonus.skWeapon),
               };
             });
             state.lastKill = { pid: attackerId, ts: Date.now(), killCount: state.killCount,
