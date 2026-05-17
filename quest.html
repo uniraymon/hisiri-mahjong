@@ -4055,7 +4055,7 @@
     }
     // ⭐ 老天鵝：隨機神裝武器
     if (myEntry.skWeapon) {
-      const _skWeapons = ITEMS.filter(it => it.sourceBossId === 'supreme_king' && it.slot === 'weapon');
+      const _skWeapons = BOSS_GIFTS.filter(it => it.sourceBossId === 'supreme_king' && it.slot === 'weapon');
       if (_skWeapons.length) {
         const _w = _skWeapons[Math.floor(Math.random() * _skWeapons.length)];
         r.inventory = Array.isArray(r.inventory) ? r.inventory : [];
@@ -17012,7 +17012,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260517124928';
+  const APP_VERSION = '20260517165039';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -31969,7 +31969,7 @@ ${b.text}
     const playerOpts = sortedPlayers
       .map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name || p.id)}</option>`)
       .join('');
-    const _skWeapons = ITEMS.filter(it => it.sourceBossId === 'supreme_king' && it.slot === 'weapon');
+    const _skWeapons = BOSS_GIFTS.filter(it => it.sourceBossId === 'supreme_king' && it.slot === 'weapon');
     const weaponList = _skWeapons.map(w => `<li style="font-size:11px; color:#92400e;">${w.icon||'🗡️'} ${w.name}</li>`).join('');
     showModal('⚜️ 發神裝武器 / 至尊寶玉', `
       <div style="font-size:13px;">
@@ -32002,7 +32002,7 @@ ${b.text}
   async function adminDoGiveSupremeWeapon(pid) {
     const target = players.find(p => p.id === pid);
     if (!target || !target.rpg) { showToast('❌ 找不到玩家'); return; }
-    const _skWeapons = ITEMS.filter(it => it.sourceBossId === 'supreme_king' && it.slot === 'weapon');
+    const _skWeapons = BOSS_GIFTS.filter(it => it.sourceBossId === 'supreme_king' && it.slot === 'weapon');
     if (!_skWeapons.length) { showToast('❌ 找不到神裝武器資料'); return; }
     const _w = _skWeapons[Math.floor(Math.random() * _skWeapons.length)];
     const r = target.rpg;
