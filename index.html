@@ -3071,10 +3071,17 @@
     //    Firebase 拆檔架構：只有本人才能寫自己的 player doc。
     //    直接 push 進記憶體後 Firebase 同步一到就被覆蓋，裝備消失。
     //    改法：把完整 itemData 存入 gifts（meta，共用），讓對方自己 claim。
+    // ⭐ 若 entry 是 { id, qty } reference（如神裝武器），補上 catalog 資料，
+    //    確保 itemData 包含 name/icon 讓信箱正確顯示，也防被 purge 誤刪。
+    let itemDataToSend = entry;
+    if (!entry.name && entry.id) {
+      const catalogItem = lookupQuestItem(entry.id);
+      if (catalogItem) itemDataToSend = Object.assign({}, catalogItem, entry);
+    }
     gifts.push({
       id: Date.now() + '_' + Math.random().toString(36).slice(2,6),
       from: me.id, to: toPid, type: 'equip',
-      itemData: entry,                          // ⭐ 完整裝備資料
+      itemData: itemDataToSend,                 // ⭐ 完整裝備資料（含 name/icon）
       itemIcon: info?.icon || '📦', itemName: info?.name || '物品',
       ts: new Date().toISOString(),
     });
