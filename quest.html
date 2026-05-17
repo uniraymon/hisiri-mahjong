@@ -10414,10 +10414,14 @@
               }
             }
             // 吸血 / 自癒：用總傷害計（extra 已在血之覺醒區段宣告）
-            // ⭐ 爆血：爆發後回血 血池×50%（可超過最大HP）
+            // ⭐ 爆血：爆發後回血 血池×50%（上限 maxHp）
             if (skill.usesBloodPool && _bpHpContrib > 0) {
               const _bbRestore = Math.round(_bpHpContrib * 0.50);
-              if (_bbRestore > 0) { pHp += _bbRestore; extra += ` ❤️+${_bbRestore} HP（爆血回血）`; }
+              if (_bbRestore > 0) {
+                const _bbBefore = pHp;
+                pHp = Math.min(stats.maxHp, pHp + _bbRestore);
+                if (pHp - _bbBefore > 0) extra += ` ❤️+${pHp - _bbBefore} HP（爆血回血）`;
+              }
             }
             // ⭐ 血祭斬 真傷補正顯示（放在 extra 最前面）
             if (skill.id === 'w_blood_slash' && bloodPool > 0) {
@@ -12890,9 +12894,16 @@
               applyStatus(playerObj, { type: 'shield', charges: skill.applyShield, turns: 99 });
               extra += ` 🛡 免疫 ${skill.applyShield} 次傷害`;
             }
-            // ⭐ 爆血：爆發後回血 血池×50%（可超過最大HP），清空血池
+            // ⭐ 爆血：爆發後回血 血池×50%（上限 maxHp），清空血池
             if (skill.usesBloodPool) {
-              if (_bpHpContribM > 0) { const _bbR = Math.round(_bpHpContribM * 0.50); if (_bbR > 0) { pHp += _bbR; extra += ` ❤️+${_bbR} HP（爆血回血）`; } }
+              if (_bpHpContribM > 0) {
+                const _bbR = Math.round(_bpHpContribM * 0.50);
+                if (_bbR > 0) {
+                  const _bbBeforeM = pHp;
+                  pHp = Math.min(stats.maxHp, pHp + _bbR);
+                  if (pHp - _bbBeforeM > 0) extra += ` ❤️+${pHp - _bbBeforeM} HP（爆血回血）`;
+                }
+              }
               bloodPool = 0;
             }
             const targetSummary = hits.map(h => `${h.tgt.icon}${h.tgt.name} -${h.dmg}${h.isCrit ? '【爆】' : ''}${h.isHs ? '🎯' : ''}`).join(' / ');
@@ -17012,7 +17023,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260517165039';
+  const APP_VERSION = '20260517175814';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
