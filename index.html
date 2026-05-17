@@ -2863,18 +2863,21 @@
         };
       }
       // drop / 套裝件 / 扭蛋裝備物件
-      const rarColor = entry.rarity ? RARITY_COLOR[entry.rarity] : '#9ca3af';
-      const affixCount = (entry.affixes || []).length;
-      const stats = ['atk','def','spd','hp','critChance','critDmg'].filter(k=>entry[k]).map(k => {
-        if (k === 'critChance' || k === 'critDmg') return `${k==='critDmg'?'爆傷':'暴擊'}+${Math.round(entry[k]*100)}%`;
-        return `${k.toUpperCase()}+${entry[k]}`;
+      // ⭐ 若只有 id（如神裝武器 { id:'gg_sword', qty:1 }），補查 catalog
+      const _idLookup = (!entry.name && entry.id) ? lookupQuestItem(entry.id) : null;
+      const _entry = _idLookup ? Object.assign({}, _idLookup, entry) : entry;
+      const rarColor = _entry.rarity ? (RARITY_COLOR[_entry.rarity] || '#f59e0b') : '#9ca3af';
+      const affixCount = (_entry.affixes || []).length;
+      const stats = ['atk','def','spd','hp','critChance','critDmg'].filter(k=>_entry[k]).map(k => {
+        if (k === 'critChance' || k === 'critDmg') return `${k==='critDmg'?'爆傷':'暴擊'}+${Math.round(_entry[k]*100)}%`;
+        return `${k.toUpperCase()}+${_entry[k]}`;
       }).join(' ');
       return {
-        icon: entry.icon || '🎁',
-        name: entry.name || '?',
+        icon: _entry.icon || '🎁',
+        name: _entry.name || '?',
         color: rarColor,
-        sub: `${entry.lv ? `Lv ${entry.lv} · ` : ''}${stats || ''}${affixCount ? ` · ${affixCount} 詞條` : ''}`,
-        gachaOnly: !!entry.gachaOnly,
+        sub: `${_entry.lv ? `Lv ${_entry.lv} · ` : ''}${stats || ''}${affixCount ? ` · ${affixCount} 詞條` : ''}`,
+        gachaOnly: !!_entry.gachaOnly,
       };
     }
     // 字串 id：先查扭蛋裝備清單、再查 quest.html 物品表
@@ -2979,6 +2982,18 @@
         add(`${prefix}_${slot}`, name, icon, { setName });
       });
     });
+
+    // 老天鵝神裝武器（BOSS_GIFTS，以 id 存入 inventory）
+    [
+      ['gg_sword',     '鵝鵝神劍',   '⚜️🗡️'],
+      ['gg_staff',     '鵝鵝法杖',   '⚜️🪄'],
+      ['gg_scythe',    '鵝鵝鐮刀',   '⚜️⚔️'],
+      ['gg_blade',     '鵝鵝雙刃',   '⚜️💨'],
+      ['gg_hammer',    '鵝鵝審判錘', '⚜️🔨'],
+      ['gg_souldrain', '鵝鵝噬魂刃', '⚜️💀'],
+      ['gg_gun',       '鵝鵝狙擊槍', '⚜️🏹'],
+      ['gg_shield',    '鵝鵝戰盾',   '⚜️🛡️'],
+    ].forEach(([id, name, icon]) => add(id, name, icon, { rarity: 'divine' }));
 
     return cat;
   })();
