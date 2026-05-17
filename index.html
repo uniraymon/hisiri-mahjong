@@ -1639,15 +1639,22 @@
     if (!me || !me.rpg) return false;
     if (!Array.isArray(me.rpg.claimedGiftIds)) me.rpg.claimedGiftIds = [];
     const claimedSet = new Set(me.rpg.claimedGiftIds);
+    // ⭐ 同時排除 gift.claimed（quest.html 手動領取路徑）避免重複領取
     const unclaimed = gifts.filter(g =>
-      g.to === me.id && g.type === 'equip' && g.itemData && !claimedSet.has(g.id)
+      g.to === me.id && g.type === 'equip' && g.itemData && !g.claimed && !claimedSet.has(g.id)
     );
     if (unclaimed.length === 0) return false;
     if (!Array.isArray(me.rpg.inventory)) me.rpg.inventory = [];
+    let giftsModified = false;
     for (const g of unclaimed) {
       me.rpg.inventory.push(g.itemData);
       me.rpg.claimedGiftIds.push(g.id);
+      // ⭐ 標記 claimed:true，讓 quest.html 信箱不再顯示此禮物
+      const idx = gifts.findIndex(x => x.id === g.id);
+      if (idx !== -1) { gifts[idx] = { ...gifts[idx], claimed: true, claimedAt: new Date().toISOString() }; giftsModified = true; }
     }
+    // ⭐ 立即寫入 gifts，防止 quest.html 再次顯示已領取的禮物
+    if (giftsModified) window.__firebaseSync?.forceSaveGifts?.(gifts);
     return unclaimed.length; // 回傳認領件數
   }
 
@@ -3072,6 +3079,8 @@
       ts: new Date().toISOString(),
     });
     saveData();
+    // ⭐ 立即強制寫入 gifts，避免 debounce 延遲導致收件方看不到禮物
+    window.__firebaseSync?.forceSaveGifts?.(gifts);
     closeGenericModal();
     showToast(`✨ 送出 ${info?.icon} ${info?.name} 給 ${target.name}`);
     if (currentTab === toPid) renderPlayerPage(toPid);
@@ -4694,6 +4703,20 @@
             }
           }, 250);
         }
+      },
+      // ⭐ 直接寫入 gifts（不 debounce，送禮 / 認領後立即同步）
+      forceSaveGifts: async (giftsArr) => {
+        const pruneUndef = (v) => {
+          if (Array.isArray(v)) return v.map(pruneUndef).filter(x => x !== undefined);
+          if (v !== null && typeof v === 'object') {
+            const out = {};
+            for (const k of Object.keys(v)) { const x = pruneUndef(v[k]); if (x !== undefined) out[k] = x; }
+            return out;
+          }
+          return v;
+        };
+        try { await setDoc(metaRef, { gifts: pruneUndef(giftsArr) }, { merge: true }); }
+        catch (e) { console.error('forceSaveGifts failed:', e); }
       },
     };
 

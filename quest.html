@@ -17023,7 +17023,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260517175814';
+  const APP_VERSION = '20260517191645';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -20617,8 +20617,11 @@ ${b.text}
       toastMsg = `✨ 收下 ${item.icon || '📦'} ${escapeHtml(item.name || '裝備')}！已放入背包`;
     }
 
-    // 標記已領
+    // 標記已領（同步到 claimedGiftIds，防止 index.html 重複自動認領）
     gifts[idx] = { ...gift, claimed: true, claimedAt: new Date().toISOString() };
+    const rpgForClaim = getRpg(me);
+    if (!Array.isArray(rpgForClaim.claimedGiftIds)) rpgForClaim.claimedGiftIds = [];
+    if (!rpgForClaim.claimedGiftIds.includes(gift.id)) rpgForClaim.claimedGiftIds.push(gift.id);
     me.lastTouchedAt = Date.now();
     _giftsLocalTs = Date.now(); // ⭐ 防 Firebase 快照回朔
     __persistLocalSnapshot();
