@@ -9085,7 +9085,7 @@
 
     const _ck = _statsKey(rpg);
     const _cached = _statsCache.get(player.id);
-    if (_cached && _cached.k === _ck) return _cached.v;
+    if (_cached && _cached.k === _ck) return { ..._cached.v };
 
     const lv = rpg.level || 1;
     const b = computeSkillBonuses(player);
@@ -10458,8 +10458,8 @@
               applyStatus(playerObj, { type: 'buff', stat: 'atkPct', amount: 0.20, turns: 3 });
               extra += ` ⚔️嗜血`;
             }
-            // ⭐ 鵝鵝鐮刀：吸血10%
-            if (_weaponLifestealPct > 0 && totalDmg > 0) {
+            // ⭐ 鵝鵝鐮刀：吸血10%（爆血技能跳過，避免吸血回血池形成無限迴圈）
+            if (_weaponLifestealPct > 0 && totalDmg > 0 && !skill.usesBloodPool) {
               const _lsHeal = Math.round(totalDmg * _weaponLifestealPct);
               if (_weaponBpLifesteal && player.rpg.class === 'warrior') {
                 bloodPool += _lsHeal;
@@ -12834,8 +12834,8 @@
                 extra += ` ⚔️嗜血`;
               }
             }
-            // ⭐ 鵝鵝鐮刀：吸血10%（組隊）
-            if (_weaponLifestealPctM > 0 && hits.length) {
+            // ⭐ 鵝鵝鐮刀：吸血10%（組隊，爆血跳過）
+            if (_weaponLifestealPctM > 0 && hits.length && !skill.usesBloodPool) {
               const _lsTotalM = hits.reduce((s, h) => s + h.dmg, 0);
               if (_lsTotalM > 0) {
                 const _lsHealM = Math.round(_lsTotalM * _weaponLifestealPctM);
@@ -14072,6 +14072,19 @@
     document.getElementById('loError').textContent = '';
   };
 
+  // ---------- 清理舊戰鬥 log（釋放 localStorage 空間）----------
+  function _cleanupOldLogs() {
+    try {
+      const toRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('wbLog_')) toRemove.push(k);
+      }
+      toRemove.forEach(k => localStorage.removeItem(k));
+      if (toRemove.length > 0) console.log(`[storage] 清理 ${toRemove.length} 個舊戰鬥 log`);
+    } catch(e) {}
+  }
+
   // ---------- 登入送出 ----------
   window.submitLogin = async function() {
     const pid = _loginSelectedPid; if (!pid) return;
@@ -14105,6 +14118,9 @@
 
   // ---------- 完成登入 ----------
   async function _doCompleteLogin(pid, token, isMaster) {
+    // 0. 先清舊戰鬥 log，騰出 localStorage 空間
+    _cleanupOldLogs();
+
     // 1. 從雲端下載最新資料，判斷誰更新
     if (window.__firebaseSync?.getPlayerCloud) {
       try {
@@ -14118,16 +14134,16 @@
       } catch(e) { console.warn('[login] cloud fetch error:', e); }
     }
 
-    // 2. 儲存會話
+    // 2. 儲存會話（catch 防止 localStorage 滿了中斷登入）
     if (token) {
-      localStorage.setItem(SESSION_TOKEN_KEY, token);
-      localStorage.setItem(SESSION_PID_KEY, pid);
+      try { localStorage.setItem(SESSION_TOKEN_KEY, token); } catch(e) {}
+      try { localStorage.setItem(SESSION_PID_KEY, pid); } catch(e) {}
       _sessionToken = token;
       _sessionPid   = pid;
       startSessionWatch(pid, token);
     }
-    localStorage.setItem(ME_KEY, pid);
-    localStorage.setItem(PASS_KEY, '1');
+    try { localStorage.setItem(ME_KEY, pid); } catch(e) {}
+    try { localStorage.setItem(PASS_KEY, '1'); } catch(e) {}
 
     // 3. 隱藏遮罩，渲染
     hideLoginOverlay();
@@ -17023,7 +17039,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260517192034';
+  const APP_VERSION = '20260518105801';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
