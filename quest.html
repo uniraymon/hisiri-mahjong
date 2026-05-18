@@ -10458,12 +10458,19 @@
               applyStatus(playerObj, { type: 'buff', stat: 'atkPct', amount: 0.20, turns: 3 });
               extra += ` ⚔️嗜血`;
             }
-            // ⭐ 鵝鵝鐮刀：吸血10% → 直接回HP，上限 maxHp（所有技能統一，不進血池）
+            // ⭐ 鵝鵝鐮刀：吸血10% → 回HP上限maxHp，實際回了多少才加進血池
             if (_weaponLifestealPct > 0 && totalDmg > 0) {
               const _lsHeal = Math.round(totalDmg * _weaponLifestealPct);
               const _lsBefore = pHp;
               pHp = Math.min(stats.maxHp, pHp + _lsHeal);
-              if (pHp - _lsBefore > 0) extra += ` ⚜️+${pHp - _lsBefore} HP（鐮刀）`;
+              const _actualHeal = pHp - _lsBefore;
+              if (_actualHeal > 0) {
+                extra += ` ⚜️+${_actualHeal} HP（鐮刀）`;
+                if (_weaponBpLifesteal && player.rpg.class === 'warrior') {
+                  bloodPool += _actualHeal;
+                  extra += `🩸+${_actualHeal}`;
+                }
+              }
             }
             // ⭐ 鵝鵝審判錘：30%機率施加易傷
             if (_weaponOnHitVuln && totalDmg > 0 && Math.random() < (_weaponOnHitVuln.chance || 0.30)) {
@@ -12829,14 +12836,21 @@
                 extra += ` ⚔️嗜血`;
               }
             }
-            // ⭐ 鵝鵝鐮刀：吸血10%（組隊）→ 直接回HP，上限 maxHp（所有技能統一，不進血池）
+            // ⭐ 鵝鵝鐮刀：吸血10%（組隊）→ 回HP上限maxHp，實際回了多少才加進血池
             if (_weaponLifestealPctM > 0 && hits.length) {
               const _lsTotalM = hits.reduce((s, h) => s + h.dmg, 0);
               if (_lsTotalM > 0) {
                 const _lsHealM = Math.round(_lsTotalM * _weaponLifestealPctM);
                 const _lsBeforeM = pHp;
                 pHp = Math.min(stats.maxHp, pHp + _lsHealM);
-                if (pHp - _lsBeforeM > 0) extra += ` ⚜️+${pHp - _lsBeforeM} HP（鐮刀）`;
+                const _actualHealM = pHp - _lsBeforeM;
+                if (_actualHealM > 0) {
+                  extra += ` ⚜️+${_actualHealM} HP（鐮刀）`;
+                  if (_weaponBpLifestealM && player.rpg.class === 'warrior') {
+                    bloodPool += _actualHealM;
+                    extra += `🩸+${_actualHealM}`;
+                  }
+                }
               }
             }
             // ⭐ 鵝鵝審判錘：30%機率施加易傷（組隊）
@@ -17029,7 +17043,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260518121435';
+  const APP_VERSION = '20260518121705';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
