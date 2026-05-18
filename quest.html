@@ -17043,7 +17043,7 @@ ${b.text}
   // 📢 最新公告
   // ============================================================
   // ⭐ 版本偵測：背景 fetch 自己，偵測到新版本就提示用戶重新整理
-  const APP_VERSION = '20260518121705';
+  const APP_VERSION = '20260518191454';
   window.__APP_VERSION = APP_VERSION; // 供 Firebase module 備份用
 
   // ⭐ 每小時自動備份（只有 tab leader 執行，30 秒後首次，之後每小時一次）
@@ -21565,7 +21565,7 @@ ${b.text}
         ${rerollHtml}
         ${compareHtml}
         ${setHtml}
-        ${item.isBossGift ? (() => {
+        ${item.isBossGift && item.slot === 'accessory' ? (() => {
           const _isc = { king:'#f59e0b', dragon:'#06b6d4', pebble:'#94a3b8', storm:'#ca8a04' };
           const _isl = { king:'鵝王', dragon:'古龍', pebble:'鵝卵石', storm:'風鵝' };
           const _fused = item.fusedComponents || [];
